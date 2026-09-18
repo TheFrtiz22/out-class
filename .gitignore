@@ -5,6 +5,8 @@
 
 # next.js
 /.next/
+/.next-publish/
+.DS_Store
 /out/
 
 # production
