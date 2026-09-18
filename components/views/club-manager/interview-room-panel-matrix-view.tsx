@@ -236,7 +236,7 @@ export function InterviewRoomPanelMatrixView() {
       </div>
 
       {/* Top Controls */}
-      <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Clock className="size-4 shrink-0 text-slate-400" />
           <Select value={timeSlot} onValueChange={setTimeSlot}>
@@ -366,7 +366,7 @@ export function InterviewRoomPanelMatrixView() {
                         key={index}
                         className={cn(
                           "flex items-center gap-2 rounded-md border px-2.5 py-2",
-                          isWithinCapacity ? "border-gray-200 bg-slate-50" : "border-dashed border-gray-200 bg-white",
+                          isWithinCapacity ? "border-gray-200 bg-white" : "border-dashed border-gray-200 bg-white",
                         )}
                       >
                         <Avatar className="size-6">
@@ -436,7 +436,7 @@ export function InterviewRoomPanelMatrixView() {
       </div>
 
       {/* Privacy & Applicant Preview Banner */}
-      <div className="mt-5 flex flex-col gap-3 rounded-md border border-gray-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-5 flex flex-col gap-3 rounded-md border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-2.5">
           <Lock className="mt-0.5 size-4 shrink-0 text-foreground" />
           <p className="text-sm text-slate-600">
@@ -462,7 +462,7 @@ export function InterviewRoomPanelMatrixView() {
             <DialogTitle className="text-foreground">Applicant View</DialogTitle>
             <DialogDescription>This is the minimal, scrubbed version the student sees.</DialogDescription>
           </DialogHeader>
-          <div className="rounded-md border border-gray-200 bg-slate-50 p-4">
+          <div className="rounded-md border border-gray-200 bg-white p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Your Interview</p>
             <p className="mt-1 text-lg font-semibold text-foreground">{timeSlot.split("—")[1]?.trim() ?? timeSlot}</p>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600">

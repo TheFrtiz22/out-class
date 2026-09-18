@@ -66,7 +66,7 @@ export function PipelineView({ applicants, getScore, onMove, onViewProfile, onRe
               }}
               onDrop={() => handleDrop(column.id)}
               className={cn(
-                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-slate-50 py-4 text-gray-400 transition-colors hover:bg-slate-100",
+                "flex w-14 shrink-0 flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white py-4 text-gray-400 transition-colors hover:bg-slate-100",
                 dragOverColumn === column.id && "border-foreground bg-muted text-muted-foreground",
               )}
               aria-label="Expand Rejected column"
@@ -92,7 +92,7 @@ export function PipelineView({ applicants, getScore, onMove, onViewProfile, onRe
             onDragLeave={() => setDragOverColumn((c) => (c === column.id ? null : c))}
             onDrop={() => handleDrop(column.id)}
             className={cn(
-              "flex min-w-64 flex-1 flex-col rounded-lg border bg-slate-50 transition-colors",
+              "flex min-w-64 flex-1 flex-col rounded-lg border bg-white transition-colors",
               isRejected ? "border-gray-200 opacity-80" : "border-gray-200",
               dragOverColumn === column.id && "border-foreground bg-muted",
             )}

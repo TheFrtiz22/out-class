@@ -31,7 +31,7 @@ export function WorkspaceQuestionCard({
         <p className="text-sm font-semibold leading-snug text-foreground">{question.prompt}</p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3">
+        <div className="space-y-2 rounded-md border border-slate-200 bg-white p-3">
           <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>Score</span>
             <span className="text-sm font-bold text-muted-foreground">

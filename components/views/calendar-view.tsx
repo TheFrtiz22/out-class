@@ -135,7 +135,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
   }
 
   return (
-    <div className="-m-4 grid gap-6 bg-slate-50 p-4 sm:-m-6 sm:p-6 lg:grid-cols-[70%_minmax(0,1fr)]">
+    <div className="-m-4 grid gap-6 bg-white p-4 sm:-m-6 sm:p-6 lg:grid-cols-[70%_minmax(0,1fr)]">
       {/* Left panel: master calendar, 70% width */}
       <Card className="border-gray-200 bg-white shadow-none">
         <CardHeader className="gap-3 border-b border-gray-200">
@@ -166,7 +166,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               type="single"
               value={calendarView}
               onValueChange={(value) => value && setCalendarView(value as ViewMode)}
-              className="gap-0 rounded-lg border border-gray-200 bg-slate-50 p-0.5"
+              className="gap-0 rounded-lg border border-gray-200 bg-white p-0.5"
             >
               <ToggleGroupItem
                 value="day"
@@ -220,7 +220,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   const dayEvents = day ? eventsByDay[day] ?? [] : []
                   const isToday = day === TODAY
                   return (
-                    <div key={i} className={cn("flex min-h-24 flex-col gap-1 bg-white p-1.5", !day && "bg-slate-50")}>
+                    <div key={i} className={cn("flex min-h-24 flex-col gap-1 bg-white p-1.5", !day && "bg-white")}>
                       {day && (
                         <>
                           <span
@@ -412,7 +412,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                     isDueSoon ? "border-foreground bg-orange-50" : "border-gray-200 bg-white",
                   )}
                 >
-                  <div className="flex flex-col items-center justify-center rounded-md border border-gray-200 bg-slate-50 px-2.5 py-1 text-center">
+                  <div className="flex flex-col items-center justify-center rounded-md border border-gray-200 bg-white px-2.5 py-1 text-center">
                     <span className="text-[10px] font-medium uppercase text-slate-500">Sep</span>
                     <span className="text-base font-semibold leading-none text-foreground">{e.day}</span>
                   </div>

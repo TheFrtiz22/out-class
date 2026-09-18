@@ -101,7 +101,7 @@ export function InterviewWorkspaceView() {
       <div className="flex min-h-0 flex-1">
         {/* Left Panel — Applicant Context (minimizable) */}
         {leftOpen && (
-          <div className="flex w-[34%] min-w-[280px] max-w-sm shrink-0 flex-col border-r border-slate-200 bg-slate-50">
+          <div className="flex w-[34%] min-w-[280px] max-w-sm shrink-0 flex-col border-r border-slate-200 bg-white">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-3 py-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Applicant Context</span>
               <Button
@@ -213,7 +213,7 @@ export function InterviewWorkspaceView() {
           <button
             type="button"
             onClick={() => setLeftOpen(true)}
-            className="flex w-6 shrink-0 items-center justify-center border-r border-slate-200 bg-slate-50 hover:bg-slate-100"
+            className="flex w-6 shrink-0 items-center justify-center border-r border-slate-200 bg-white hover:bg-slate-100"
             aria-label="Expand applicant context panel"
           >
             <ChevronRight className="size-4 text-slate-500" />
@@ -226,7 +226,7 @@ export function InterviewWorkspaceView() {
             <p className="text-sm font-semibold text-foreground">{activeRound.label}</p>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50/50 p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-white p-4">
             <div className="space-y-4">
               {activeRound.questions.map((question, index) => (
                 <WorkspaceQuestionCard

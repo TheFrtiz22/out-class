@@ -52,7 +52,7 @@ export function MemberPortalDialog({
             </h3>
             <div className="space-y-2">
               {meetings.map((m) => (
-                <div key={m.id} className="rounded-lg border border-gray-200 bg-slate-50 p-3">
+                <div key={m.id} className="rounded-lg border border-gray-200 bg-white p-3">
                   <p className="text-sm font-medium text-gray-900">{m.title}</p>
                   <p className="mt-0.5 text-xs text-gray-500">{m.recurrenceLabel ?? `${m.date} at ${m.time} — ${m.location}`}</p>
                   {m.zoomLink && (
@@ -123,7 +123,7 @@ export function MemberPortalDialog({
             </div>
           </section>
 
-          <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-500">
+          <p className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500">
             This content is visible strictly to verified active members of {membership.clubName}.
           </p>
         </div>

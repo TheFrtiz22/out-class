@@ -11,13 +11,13 @@
   --card-foreground: #171717;
   --popover: #ffffff;
   --popover-foreground: #171717;
-  --primary: #c9470a;
+  --primary: #f26935;
   --primary-foreground: #ffffff;
   --secondary: #f5f5f4;
   --secondary-foreground: #404040;
-  --muted: #f7f7f6;
-  --muted-foreground: #686868;
-  --accent: #f0f0ee;
+  --muted: #fafafa;
+  --muted-foreground: #737373;
+  --accent: #fafafa;
   --accent-foreground: #262626;
   --destructive: #a44248;
   --destructive-foreground: #ffffff;
@@ -31,12 +31,12 @@
   --chart-3: #b2a082;
   --chart-4: #9990b0;
   --chart-5: #262626;
-  --radius: 0.75rem;
-  --sidebar: #fcfcfb;
-  --sidebar-foreground: #686868;
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #737373;
   --sidebar-primary: #171717;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0f0ee;
+  --sidebar-accent: #fafafa;
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
   --sidebar-ring: #737373;
@@ -97,16 +97,26 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white font-sans text-neutral-900;
   }
 }
 
-/* Editorial typography is scoped so the marketing page keeps its own hierarchy. */
 @layer base {
-  .dashboard-layout h1, .dashboard-layout h2,
-  [data-slot="dialog-title"], [data-slot="sheet-title"] {
+  h1, h2,
+  [data-slot="card-title"], [data-slot="dialog-title"], [data-slot="sheet-title"] {
     font-family: var(--font-editorial), Georgia, serif;
     font-weight: 500;
     letter-spacing: -0.025em;
+  }
+
+  p, li, td, th, label, input, textarea, select, button, a {
+    font-family: var(--font-geist-sans), Arial, sans-serif;
+  }
+}
+
+/* The product is intentionally flat: depth comes from rules and spacing. */
+@layer utilities {
+  .dashboard-layout [class*="shadow-"] {
+    box-shadow: none !important;
   }
 }

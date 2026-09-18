@@ -81,7 +81,7 @@ export function InterviewerAvailabilityView() {
 
   return (
     <div
-      className="flex flex-col gap-6 bg-slate-50 pb-24"
+      className="flex flex-col gap-6 bg-white pb-24"
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >

@@ -751,7 +751,7 @@ export function LeaderDashboardView() {
 
                             <div className={cn("flex-1 pb-2", stage.locked && "opacity-60")}>
                               {stage.locked ? (
-                                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3.5">
+                                <div className="rounded-lg border border-dashed border-gray-200 bg-white p-3.5">
                                   <div className="flex items-center gap-2">
                                     <Lock className="size-3.5 text-gray-400" />
                                     <p className="text-sm font-semibold text-gray-500">{stage.title}</p>
@@ -778,7 +778,7 @@ export function LeaderDashboardView() {
                                   {stage.notes.length > 0 ? (
                                     <div className="mt-2.5 space-y-2">
                                       {stage.notes.map((n, idx) => (
-                                        <div key={idx} className="flex gap-2 rounded-md bg-gray-50 p-2">
+                                        <div key={idx} className="flex gap-2 rounded-md bg-white p-2">
                                           <Avatar className="size-6 shrink-0">
                                             <AvatarFallback className="text-[10px]">{n.initials}</AvatarFallback>
                                           </Avatar>

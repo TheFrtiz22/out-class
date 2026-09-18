@@ -101,7 +101,7 @@ export function BroadcastMessagesView() {
   }
 
   return (
-    <div className="flex flex-col gap-6 bg-slate-50 pb-6 text-foreground">
+    <div className="flex flex-col gap-6 bg-white pb-6 text-foreground">
       {/* Composer */}
       <Card className="bg-white shadow-none">
         <CardHeader>
@@ -205,7 +205,7 @@ export function BroadcastMessagesView() {
           </div>
 
           {/* Location override toggle */}
-          <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
                 <MapPinned className="size-4 text-muted-foreground" />

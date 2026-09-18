@@ -97,7 +97,7 @@ export function ClubProfileView({
             {club.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] font-medium text-foreground/80"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-foreground/80"
               >
                 {tag}
               </span>

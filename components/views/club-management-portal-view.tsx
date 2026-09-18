@@ -54,7 +54,7 @@ export function ClubManagementPortalView() {
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white lg:flex-row">
-      <aside className="shrink-0 border-b border-gray-200 bg-gray-50 p-3 lg:w-64 lg:border-b-0 lg:border-r">
+      <aside className="shrink-0 border-b border-gray-200 bg-white p-3 lg:w-64 lg:border-b-0 lg:border-r">
         <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
@@ -138,7 +138,7 @@ function PublicPageDetailsPanel() {
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
               className={cn(
-                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 text-gray-400 transition-colors hover:border-gray-400",
+                "group relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-white text-gray-400 transition-colors hover:border-gray-400",
                 isDragging && "border-solid bg-orange-50",
               )}
               style={isDragging ? { borderColor: ORANGE, color: ORANGE } : undefined}
@@ -465,7 +465,7 @@ function MemberDirectoryPanel() {
               <p className="truncate text-xs text-gray-500">{m.email}</p>
             </div>
             <span
-              className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600"
+              className="shrink-0 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
             >
               {m.role}
             </span>

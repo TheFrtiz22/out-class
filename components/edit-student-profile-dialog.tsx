@@ -39,7 +39,7 @@ export function EditStudentProfileDialog({ trigger }: { trigger?: React.ReactNod
           <DialogTitle className="text-lg font-bold text-[#051B3D]">Edit Student Profile</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50 px-6 py-6">
+        <div className="flex-1 overflow-y-auto bg-white px-6 py-6">
           <div className="space-y-8">
             {/* Section 1 — Core Identity */}
             <section className="space-y-5">
@@ -47,13 +47,13 @@ export function EditStudentProfileDialog({ trigger }: { trigger?: React.ReactNod
 
               <div className="flex items-center gap-5">
                 <div className="relative">
-                  <Avatar className="size-24 border-4 border-white shadow-md">
+                  <Avatar className="size-24 border-4 border-white shadow-none">
                     <AvatarFallback className="bg-[#051B3D] text-2xl font-semibold text-white">JK</AvatarFallback>
                   </Avatar>
                   <button
                     type="button"
                     aria-label="Upload photo"
-                    className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-2 border-white bg-[#FF5900] text-white shadow-sm transition-colors hover:bg-[#e65000]"
+                    className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-2 border-white bg-[#FF5900] text-white shadow-none transition-colors hover:bg-[#e65000]"
                   >
                     <Camera className="size-4" />
                   </button>

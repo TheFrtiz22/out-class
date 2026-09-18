@@ -65,7 +65,7 @@ export function InboxView() {
   }
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-10rem)] flex-col gap-6 bg-slate-50 lg:flex-row">
+    <div className="flex h-full min-h-[calc(100vh-10rem)] flex-col gap-6 bg-white lg:flex-row">
       {/* Left Panel — Message Feed */}
       <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[35%]">
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-none">
@@ -82,7 +82,7 @@ export function InboxView() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search messages"
-              className="border-slate-200 bg-slate-50 pl-9 text-sm placeholder:text-slate-400"
+              className="border-slate-200 bg-white pl-9 text-sm placeholder:text-slate-400"
             />
           </div>
 
@@ -251,7 +251,7 @@ export function InboxView() {
               )}
 
               {selected.cta && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-foreground">Action requested: {selected.cta}</p>
                     <Button
@@ -285,7 +285,7 @@ export function InboxView() {
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
                   placeholder={`Reply to ${selected.club}...`}
-                  className="min-h-10 resize-none border-slate-200 bg-slate-50 text-sm"
+                  className="min-h-10 resize-none border-slate-200 bg-white text-sm"
                   rows={1}
                 />
                 <Button

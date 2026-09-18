@@ -206,7 +206,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
                 <p className="text-sm font-medium text-foreground">{activeTab.fileLabel}</p>
                 <label
                   htmlFor="pitch-deck-upload"
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-slate-50 px-6 py-10 text-center transition-colors hover:border-border hover:bg-orange-50/40"
+                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-white px-6 py-10 text-center transition-colors hover:border-border hover:bg-orange-50/40"
                 >
                   <UploadCloud className="size-6 text-gray-400" />
                   <p className="text-sm text-gray-500">

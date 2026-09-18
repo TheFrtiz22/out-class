@@ -96,7 +96,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
         <div className="hidden items-center gap-3 sm:flex">
           {SHORTCUTS.map((s) => (
             <span key={s.label} className="flex items-center gap-1.5 text-xs text-gray-500">
-              <kbd className="rounded border border-gray-300 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground">
+              <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground">
                 {s.key}
               </kbd>
               {s.label}
@@ -109,7 +109,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
       {candidate ? (
         <div className="flex flex-1 overflow-hidden">
           {/* Left panel — The Application (70%) */}
-          <div className="w-[70%] overflow-y-auto bg-white p-6 shadow-[inset_-1px_0_0_0_rgba(0,0,0,0.04)]">
+          <div className="w-[70%] overflow-y-auto border-r border-neutral-200 bg-white p-6 shadow-none">
             <div className="mx-auto max-w-2xl space-y-6">
               {/* Base profile header */}
               <div className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-none">
@@ -124,7 +124,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                     {candidate.year} · {candidate.major} · GPA {candidate.gpa}
                   </p>
                 </div>
-                <div className="shrink-0 rounded-md bg-slate-50 px-3 py-1.5 text-center">
+                <div className="shrink-0 rounded-md bg-white px-3 py-1.5 text-center">
                   <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">SAT</p>
                   <p className="font-mono text-sm font-semibold text-foreground">{candidate.satScore}</p>
                 </div>
@@ -151,7 +151,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                     {candidate.links.map((link) => (
                       <span
                         key={link.url}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-slate-50 px-2.5 py-1 text-xs text-gray-500"
+                        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs text-gray-500"
                       >
                         <LinkIcon className="size-3" />
                         {link.label}
@@ -165,7 +165,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-foreground">Resume</h3>
                 <div className="rounded-lg border border-gray-200 bg-white shadow-none">
-                  <div className="flex items-center gap-2 border-b border-gray-200 bg-slate-50 px-3 py-2">
+                  <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
                     <FileText className="size-4 text-muted-foreground" />
                     <span className="text-xs font-medium text-foreground">{candidate.resumeFileName}</span>
                     <span className="ml-auto rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
@@ -176,7 +176,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                     {[100, 92, 96, 60, 88, 84, 70, 90, 95, 55].map((width, i) => (
                       <div
                         key={i}
-                        className={cn("h-2 rounded-full bg-gray-100", i === 3 || i === 9 ? "bg-gray-50" : "")}
+                        className={cn("h-2 rounded-full bg-gray-100", i === 3 || i === 9 ? "bg-white" : "")}
                         style={{ width: `${width}%` }}
                       />
                     ))}
@@ -187,7 +187,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
           </div>
 
           {/* Right panel — The Decision Console (30%) */}
-          <div className="flex w-[30%] flex-col gap-4 overflow-y-auto bg-slate-50 p-4">
+          <div className="flex w-[30%] flex-col gap-4 overflow-y-auto bg-white p-4">
             <div className="space-y-1.5">
               <Label htmlFor="speed-review-notes" className="text-xs font-medium text-foreground">
                 Quick Notes

@@ -38,6 +38,8 @@ import {
   type ViewId,
 } from "@/lib/views"
 import { currentStudent } from "@/lib/data"
+import { editorialUi } from "@/lib/design-system"
+import { cn } from "@/lib/utils"
 
 export interface DashboardLayoutProps {
   children: ReactNode
@@ -52,8 +54,8 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
   const meta = viewTitles[view]
   const navItems = appMode === "admin" ? adminNav : studentNav
   return (
-      <SidebarProvider className="dashboard-layout">
-        <Sidebar>
+      <SidebarProvider className={cn("dashboard-layout", editorialUi.app)}>
+        <Sidebar className={editorialUi.sidebar}>
           <SidebarHeader>
             <button type="button" aria-label="OutClass home" className="flex items-center gap-2 px-2 py-4" onClick={() => onNavigate("landing")}>
               <OutClassLogo variant="mark" className="group-data-[collapsible=icon]:block hidden" />
@@ -96,7 +98,11 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
                         onClick={() => onNavigate(item.id)}
                         tooltip={item.title}
                         aria-current={view === item.id ? "page" : undefined}
-                        className="h-11 rounded-xl px-3 text-muted-foreground data-[active=true]:bg-neutral-100 data-[active=true]:text-foreground data-[active=true]:font-semibold"
+                        className={cn(
+                          "h-11 rounded-r-lg rounded-l-none px-3",
+                          editorialUi.sidebarLink,
+                          "data-[active=true]:border-neutral-900 data-[active=true]:bg-white data-[active=true]:font-semibold data-[active=true]:text-neutral-900",
+                        )}
                       >
                         <item.icon />
                         <span>{item.title}</span>
@@ -127,12 +133,12 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
         </Sidebar>
 
         <SidebarInset>
-          <header className="flex min-h-24 shrink-0 items-center gap-4 border-b border-border bg-white px-5 py-5 sm:px-8">
+          <header className="flex min-h-24 shrink-0 items-center gap-4 border-b border-neutral-200 bg-white px-5 py-5 sm:px-8">
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-6" />
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-2xl font-medium tracking-tight sm:text-3xl">{meta.title}</h1>
-              <p className="text-xs leading-relaxed text-muted-foreground">{meta.subtitle}</p>
+              <h1 className={cn(editorialUi.title, "text-2xl sm:text-3xl")}>{meta.title}</h1>
+              <p className={cn(editorialUi.secondaryText, "text-xs leading-relaxed")}>{meta.subtitle}</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -152,7 +158,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
             </div>
           </header>
 
-          <main className="mx-auto w-full max-w-[1440px] flex-1 p-5 sm:p-8 lg:p-10">
+          <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white p-5 sm:p-8 lg:p-10">
             {children}
           </main>
         </SidebarInset>

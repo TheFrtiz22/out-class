@@ -208,7 +208,7 @@ export function InterviewPipelineBuilderView() {
 
                   <div className="space-y-2">
                     {activeRound.questions.length === 0 && (
-                      <p className="rounded-md border border-dashed border-gray-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-400">
+                      <p className="rounded-md border border-dashed border-gray-200 bg-white px-3 py-4 text-center text-sm text-slate-400">
                         No questions yet. Add the first one below.
                       </p>
                     )}
