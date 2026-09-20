@@ -106,7 +106,7 @@ export function ApplicationBuilderView() {
     <div className="space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Application Question Customizer — Fall 2026 Cycle</CardTitle>
+          <CardTitle className="text-base font-sans tracking-tight font-semibold">Application Question Customizer — Fall 2026 Cycle</CardTitle>
           <CardDescription>Build the custom questions applicants answer beyond their base OutClass profile.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">

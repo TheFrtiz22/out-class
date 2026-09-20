@@ -167,7 +167,7 @@ export function ScreeningDashboardView() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-base font-semibold tracking-tight">
+          <h1 className="text-base font-semibold tracking-tight font-sans">
             Virginia Consulting Group <span className="text-muted-foreground">— Candidate Pipeline</span>
           </h1>
           <p className="text-xs text-muted-foreground">Fall 2026 recruitment · high-volume screening</p>

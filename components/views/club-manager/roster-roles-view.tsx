@@ -96,7 +96,7 @@ export function RosterRolesView() {
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div>
-          <CardTitle className="text-base">Member Roster & Permissions</CardTitle>
+          <CardTitle className="text-base font-sans tracking-tight font-semibold">Member Roster & Permissions</CardTitle>
           <CardDescription>
             Control who can see applicant essays, scores, and evaluation data across {members.length} members.
           </CardDescription>

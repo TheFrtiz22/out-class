@@ -115,7 +115,7 @@ function PublicPageDetailsPanel() {
     <div className="flex flex-col">
       <div className="flex-1 space-y-6 p-6">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: NAVY }}>
+          <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
             Public Page Details
           </h2>
           <p className="text-sm text-gray-500">
@@ -285,7 +285,7 @@ function ExecutiveRosterPanel() {
     <div className="p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold" style={{ color: NAVY }}>
+          <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
             Executive Roster
           </h2>
           <p className="text-sm text-gray-500">Manage your club's executive team and their titles.</p>
@@ -430,7 +430,7 @@ function MemberDirectoryPanel() {
   return (
     <div className="p-6">
       <div>
-        <h2 className="text-base font-semibold" style={{ color: NAVY }}>
+        <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
           Member Directory
         </h2>
         <p className="text-sm text-gray-500">Browse every member currently on your club's roster.</p>

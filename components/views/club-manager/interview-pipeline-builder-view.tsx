@@ -81,7 +81,7 @@ export function InterviewPipelineBuilderView() {
   return (
     <div className="bg-white">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold text-foreground">Interview Pipeline Configuration</h2>
+        <h2 className="text-xl font-semibold text-foreground font-sans tracking-tight">Interview Pipeline Configuration</h2>
         <p className="mt-1 text-sm text-slate-500">
           Define the rounds, questions, and timing your applicants move through.
         </p>
@@ -156,7 +156,7 @@ export function InterviewPipelineBuilderView() {
               <div className="space-y-6">
                 {/* Round Settings */}
                 <section className="space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground">Round Settings</h3>
+                  <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Round Settings</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label htmlFor="round-name" className="text-xs text-slate-500">
@@ -198,7 +198,7 @@ export function InterviewPipelineBuilderView() {
                 {/* Question Builder */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground font-sans tracking-tight">
                       <ListChecks className="size-4" /> Question Builder
                     </h3>
                     <span className="text-xs text-slate-400">
@@ -253,7 +253,7 @@ export function InterviewPipelineBuilderView() {
 
                 {/* Scoring Configuration */}
                 <section className="space-y-3">
-                  <h3 className="text-sm font-semibold text-foreground">Scoring Configuration</h3>
+                  <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Scoring Configuration</h3>
                   <div className="max-w-xs space-y-1.5">
                     <Label htmlFor="scoring-metric" className="text-xs text-slate-500">
                       Scoring Metric for This Round

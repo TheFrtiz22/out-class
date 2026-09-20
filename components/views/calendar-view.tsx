@@ -1,453 +1,126 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useMemo, useState } from "react"
+import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useApplicationState } from "@/lib/application-state"
-import type { ClubEvent, EventType } from "@/lib/data"
+import { dateKey, dateFromKey, eventStart, calendarFile } from "@/lib/calendar"
+import { StudentBookingPreview } from "@/components/views/scheduler/student-booking-preview"
+import { cn } from "@/lib/utils"
+import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-const WEEKDAYS_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-const MONTH_LABEL = "September 2026"
-// September 2026 starts on a Tuesday (index 2), 30 days.
-const START_OFFSET = 2
-const DAYS_IN_MONTH = 30
-const TODAY = 16
-
-// Time axis for Day/Week views: 6 AM to midnight, 48px per hour.
-const TIME_START = 6
-const TIME_END = 24
-const HOUR_HEIGHT = 48
-const AXIS_HEIGHT = (TIME_END - TIME_START) * HOUR_HEIGHT
-
-type FilterId = "all" | "deadline" | "info" | "interview"
-type ViewMode = "day" | "week" | "month"
-
-const FILTERS: { id: FilterId; label: string }[] = [
-  { id: "all", label: "All Events" },
-  { id: "deadline", label: "App Deadlines" },
-  { id: "info", label: "Info Sessions" },
-  { id: "interview", label: "My Interviews" },
-]
-
-function matchesFilter(type: EventType, filter: FilterId) {
-  if (filter === "all") return true
-  if (filter === "deadline") return type === "Deadline"
-  if (filter === "interview") return type === "Interview"
-  return type === "Interest Meeting" || type === "Coffee Chat"
-}
-
-const CHIP_STYLE: Record<EventType, string> = {
-  Deadline: "bg-primary text-white",
-  "Interest Meeting": "bg-slate-200 text-foreground",
-  "Coffee Chat": "bg-slate-200 text-foreground",
-  Interview: "bg-foreground text-white",
-}
-
-const BLOCK_STYLE: Record<EventType, string> = {
-  Deadline: "bg-primary text-white",
-  "Interest Meeting": "bg-gray-100 text-foreground",
-  "Coffee Chat": "bg-gray-100 text-foreground",
-  Interview: "bg-foreground text-white",
-}
-
-function weekdayIndex(day: number) {
-  return (day - 1 + START_OFFSET) % 7
-}
-
-function weekStartOf(day: number) {
-  return day - weekdayIndex(day)
-}
-
-function parseTimeToHour(time: string) {
-  const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i)
-  if (!match) return TIME_START
-  let hour = Number.parseInt(match[1], 10)
-  const minute = Number.parseInt(match[2], 10)
-  const period = match[3].toUpperCase()
-  if (period === "PM" && hour !== 12) hour += 12
-  if (period === "AM" && hour === 12) hour = 0
-  return hour + minute / 60
-}
-
-function clampDay(day: number) {
-  return Math.min(DAYS_IN_MONTH, Math.max(1, day))
-}
+const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const eventStyle = { Deadline: "bg-orange-50 text-orange-800", Interview: "bg-blue-50 text-blue-900", "Interest Meeting": "bg-neutral-100 text-neutral-700", "Coffee Chat": "bg-purple-50 text-purple-800" }
 
 export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
-  const { events } = useApplicationState()
-  const [filter, setFilter] = useState<FilterId>("all")
-  const [calendarView, setCalendarView] = useState<ViewMode>("month")
-  const [selectedDay, setSelectedDay] = useState(TODAY)
-
-  const clubList = useMemo(() => {
-    const seen = new Map<string, string>()
-    for (const e of events) {
-      if (!seen.has(e.club)) seen.set(e.club, e.color)
-    }
-    return Array.from(seen, ([name, color]) => ({ name, color }))
-  }, [events])
-
-  const [subscribed, setSubscribed] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(clubList.map((c) => [c.name, true])),
-  )
-
-  const visibleEvents = events.filter((e) => matchesFilter(e.type, filter) && subscribed[e.club] !== false)
-
-  const eventsByDay = visibleEvents.reduce<Record<number, ClubEvent[]>>((acc, e) => {
-    ;(acc[e.day] ??= []).push(e)
-    return acc
-  }, {})
-
-  const cells: (number | null)[] = [
-    ...Array.from({ length: START_OFFSET }, () => null),
-    ...Array.from({ length: DAYS_IN_MONTH }, (_, i) => i + 1),
-  ]
-  while (cells.length % 7 !== 0) cells.push(null)
-
-  const weekStart = weekStartOf(selectedDay)
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const day = weekStart + i
-    return day >= 1 && day <= DAYS_IN_MONTH ? day : null
+  const { events, trackedApps, notifications, focusApplication, focusEventId, focusEvent, focusNotification, respondToEvent, scheduleBlocks, cancelInterview, setCalendarYear } = useApplicationState()
+  const [date, setDate] = useState(() => dateKey(new Date()))
+  const [view, setView] = useState<"month" | "week" | "day">("month")
+  const [filter, setFilter] = useState("all")
+  const [query, setQuery] = useState("")
+  const [hiddenClubs, setHiddenClubs] = useState<Set<string>>(new Set())
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [booking, setBooking] = useState(false)
+  const [bookingDate, setBookingDate] = useState("")
+  const now = new Date()
+  const today = dateKey(now)
+  useEffect(() => {
+    if (!focusEventId) return
+    const event = events.find((item) => item.id === focusEventId)
+    if (event) { setDate(event.date); setSelectedId(event.id); focusEvent(null) }
+  }, [events, focusEventId, focusEvent])
+  const clubs = useMemo(() => [...new Set(events.map((event) => event.club))].sort(), [events])
+  const visible = useMemo(() => events.filter((event) => !hiddenClubs.has(event.club) && (filter === "all" || event.type === filter) && `${event.title} ${event.club} ${event.location ?? ""}`.toLowerCase().includes(query.trim().toLowerCase())).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime()), [events, filter, query, hiddenClubs])
+  const cursor = dateFromKey(date)
+  useEffect(() => setCalendarYear(Number(date.slice(0, 4))), [date, setCalendarYear])
+  const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1)
+  const gridStart = new Date(first); gridStart.setDate(1 - first.getDay())
+  const weekStart = new Date(cursor); weekStart.setDate(cursor.getDate() - cursor.getDay())
+  const days = Array.from({ length: view === "month" ? Math.ceil((first.getDay() + new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0).getDate()) / 7) * 7 : view === "week" ? 7 : 1 }, (_, index) => {
+    const day = new Date(view === "month" ? gridStart : view === "week" ? weekStart : cursor); day.setDate(day.getDate() + index); return day
   })
-
-  const headerLabel = useMemo(() => {
-    if (calendarView === "month") return MONTH_LABEL
-    if (calendarView === "week") {
-      const start = Math.max(weekStart, 1)
-      const end = Math.min(weekStart + 6, DAYS_IN_MONTH)
-      return `Sep ${start} – ${end}, 2026`
-    }
-    return `${WEEKDAYS_FULL[weekdayIndex(selectedDay)]}, Sep ${selectedDay}`
-  }, [calendarView, selectedDay, weekStart])
-
-  const approachingNext = [...visibleEvents].sort((a, b) => a.day - b.day).slice(0, 5)
-
-  function handleStep(direction: -1 | 1) {
-    const amount = calendarView === "day" ? 1 : calendarView === "week" ? 7 : DAYS_IN_MONTH
-    setSelectedDay((d) => clampDay(d + direction * amount))
+  const selected = events.find((event) => event.id === selectedId)
+  const application = trackedApps.find((app) => app.clubId === selected?.clubId)
+  const linkedNotifications = notifications.filter((notification) => notification.eventId === selectedId)
+  const upcoming = visible.filter((event) => eventStart(event) >= now && event.response !== "declined").slice(0, 6)
+  const bookingDates = [...new Set(scheduleBlocks.filter((block) => block.date >= today).map((block) => block.date))].sort()
+  const activeBookingDate = bookingDates.includes(bookingDate) ? bookingDate : bookingDates[0] ?? ""
+  function step(direction: number) {
+    const next = new Date(cursor)
+    if (view === "month") { next.setDate(1); next.setMonth(next.getMonth() + direction) } else next.setDate(next.getDate() + direction * (view === "week" ? 7 : 1))
+    setDate(dateKey(next))
   }
-
+  function open(event: ClubEvent) { setSelectedId(event.id); setDate(event.date) }
+  function exportEvent(event: ClubEvent) {
+    const url = URL.createObjectURL(new Blob([calendarFile(event)], { type: "text/calendar;charset=utf-8" }))
+    const anchor = document.createElement("a"); anchor.href = url; anchor.download = "outclass-event.ics"; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
   return (
-    <div className="-m-4 grid gap-6 bg-white p-4 sm:-m-6 sm:p-6 lg:grid-cols-[70%_minmax(0,1fr)]">
-      {/* Left panel: master calendar, 70% width */}
-      <Card className="border-gray-200 bg-white shadow-none">
-        <CardHeader className="gap-3 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-lg text-foreground">My Calendar</CardTitle>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8 border-gray-200"
-                aria-label="Previous"
-                onClick={() => handleStep(-1)}
-              >
-                <ChevronLeft className="size-4 text-foreground" />
-              </Button>
-              <span className="w-44 text-center text-sm font-medium text-foreground">{headerLabel}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-8 border-gray-200"
-                aria-label="Next"
-                onClick={() => handleStep(1)}
-              >
-                <ChevronRight className="size-4 text-foreground" />
-              </Button>
-            </div>
-            <ToggleGroup
-              type="single"
-              value={calendarView}
-              onValueChange={(value) => value && setCalendarView(value as ViewMode)}
-              className="gap-0 rounded-lg border border-gray-200 bg-white p-0.5"
-            >
-              <ToggleGroupItem
-                value="day"
-                className="h-7 rounded-md px-3 text-xs text-foreground data-[state=on]:bg-foreground data-[state=on]:text-white"
-              >
-                Day
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="week"
-                className="h-7 rounded-md px-3 text-xs text-foreground data-[state=on]:bg-foreground data-[state=on]:text-white"
-              >
-                Week
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="month"
-                className="h-7 rounded-md px-3 text-xs text-foreground data-[state=on]:bg-foreground data-[state=on]:text-white"
-              >
-                Month
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                  filter === f.id
-                    ? "border-foreground bg-primary text-white"
-                    : "border-gray-200 bg-white text-foreground hover:bg-slate-50",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </CardHeader>
-
-        <CardContent className="pt-4">
-          {calendarView === "month" && (
-            <>
-              <div className="grid grid-cols-7 pb-2 text-center text-xs font-medium text-slate-500">
-                {WEEKDAYS.map((d) => (
-                  <div key={d}>{d}</div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border border-gray-200 bg-gray-200">
-                {cells.map((day, i) => {
-                  const dayEvents = day ? eventsByDay[day] ?? [] : []
-                  const isToday = day === TODAY
-                  return (
-                    <div key={i} className={cn("flex min-h-24 flex-col gap-1 bg-white p-1.5", !day && "bg-white")}>
-                      {day && (
-                        <>
-                          <span
-                            className={cn(
-                              "inline-flex size-6 items-center justify-center rounded-full text-xs font-medium",
-                              isToday ? "bg-primary text-white" : "text-foreground",
-                            )}
-                          >
-                            {day}
-                          </span>
-                          <div className="flex flex-col gap-1">
-                            {dayEvents.map((e) => (
-                              <span
-                                key={e.id}
-                                className={cn(
-                                  "truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight",
-                                  CHIP_STYLE[e.type],
-                                )}
-                                title={`${e.time} — ${e.title}`}
-                              >
-                                {e.time.replace(" ", "")} · {e.title}
-                              </span>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-
-          {calendarView === "week" && (
-            <div className="overflow-x-auto">
-              <div className="min-w-[640px]">
-                <div className="grid grid-cols-[56px_repeat(7,1fr)] border-b border-gray-200 pb-2 text-center text-xs font-medium text-slate-500">
-                  <div />
-                  {weekDays.map((day, i) => (
-                    <div key={i} className={cn(day === TODAY && "font-semibold text-muted-foreground")}>
-                      <div>{WEEKDAYS[i]}</div>
-                      {day && <div className="text-[11px] text-slate-400">{day}</div>}
-                    </div>
-                  ))}
-                </div>
-                <div className="relative grid grid-cols-[56px_repeat(7,1fr)]" style={{ height: AXIS_HEIGHT }}>
-                  {/* Time axis */}
-                  <div className="relative border-r border-gray-100">
-                    {Array.from({ length: TIME_END - TIME_START }, (_, i) => TIME_START + i).map((hour) => (
-                      <div
-                        key={hour}
-                        className="absolute right-2 -translate-y-1/2 text-[10px] text-slate-400"
-                        style={{ top: (hour - TIME_START) * HOUR_HEIGHT }}
-                      >
-                        {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Day columns */}
-                  {weekDays.map((day, colIndex) => (
-                    <div key={colIndex} className="relative border-l border-gray-100">
-                      {Array.from({ length: TIME_END - TIME_START }, (_, i) => i).map((i) => (
-                        <div
-                          key={i}
-                          className="absolute w-full border-t border-gray-100"
-                          style={{ top: i * HOUR_HEIGHT }}
-                        />
-                      ))}
-                      {day &&
-                        (eventsByDay[day] ?? []).map((e) => {
-                          const hour = parseTimeToHour(e.time)
-                          return (
-                            <div
-                              key={e.id}
-                              className={cn(
-                                "absolute inset-x-0.5 overflow-hidden rounded px-1.5 py-1 text-[10px] font-medium leading-tight shadow-none",
-                                BLOCK_STYLE[e.type],
-                              )}
-                              style={{ top: (hour - TIME_START) * HOUR_HEIGHT, height: 44 }}
-                              title={`${e.time} — ${e.title}`}
-                            >
-                              <div className="truncate">{e.title}</div>
-                              <div className="truncate opacity-80">{e.time}</div>
-                            </div>
-                          )
-                        })}
-                      {day === TODAY && (
-                        <div className="pointer-events-none absolute inset-0 bg-orange-50/40" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {calendarView === "day" && (
-            <div className="overflow-x-auto">
-              <div className="min-w-[420px]">
-                <div className="grid grid-cols-[56px_1fr] relative" style={{ height: AXIS_HEIGHT }}>
-                  <div className="relative border-r border-gray-100">
-                    {Array.from({ length: TIME_END - TIME_START }, (_, i) => TIME_START + i).map((hour) => (
-                      <div
-                        key={hour}
-                        className="absolute right-2 -translate-y-1/2 text-[10px] text-slate-400"
-                        style={{ top: (hour - TIME_START) * HOUR_HEIGHT }}
-                      >
-                        {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="relative">
-                    {Array.from({ length: TIME_END - TIME_START }, (_, i) => i).map((i) => (
-                      <div key={i} className="absolute w-full border-t border-gray-100" style={{ top: i * HOUR_HEIGHT }} />
-                    ))}
-                    {(eventsByDay[selectedDay] ?? []).length === 0 && (
-                      <p className="pt-6 text-center text-sm text-slate-400">No events on this day.</p>
-                    )}
-                    {(eventsByDay[selectedDay] ?? []).map((e) => {
-                      const hour = parseTimeToHour(e.time)
-                      return (
-                        <div
-                          key={e.id}
-                          className={cn(
-                            "absolute inset-x-2 overflow-hidden rounded-md px-3 py-2 text-xs font-medium leading-tight shadow-none",
-                            BLOCK_STYLE[e.type],
-                          )}
-                          style={{ top: (hour - TIME_START) * HOUR_HEIGHT, height: 52 }}
-                          title={`${e.time} — ${e.title}`}
-                        >
-                          <div className="truncate">{e.title}</div>
-                          <div className="truncate opacity-80">
-                            {e.club} · {e.time}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Right panel: subscriptions + urgent deadlines, 30% width */}
-      <div className="flex min-w-0 flex-col gap-4">
-        <Card className="border-gray-200 bg-white shadow-none">
-          <CardHeader>
-            <CardTitle className="text-base text-foreground">Subscribed Clubs</CardTitle>
-            <p className="text-sm text-slate-500">Toggle a club to show or hide its events.</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {clubList.map((club) => (
-              <div key={club.name} className="flex items-center gap-2.5">
-                <Checkbox
-                  id={`club-${club.name}`}
-                  checked={subscribed[club.name] !== false}
-                  onCheckedChange={(checked) => setSubscribed((prev) => ({ ...prev, [club.name]: checked === true }))}
-                  className="border-gray-300 data-[state=checked]:border-foreground data-[state=checked]:bg-primary"
-                />
-                <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: club.color }} />
-                <Label htmlFor={`club-${club.name}`} className="min-w-0 flex-1 truncate text-sm text-foreground">
-                  {club.name}
-                </Label>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="flex-1 border-gray-200 bg-white shadow-none">
-          <CardHeader>
-            <CardTitle className="text-base text-foreground">Approaching Next</CardTitle>
-            <p className="text-sm text-slate-500">Your next events, in order.</p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {approachingNext.length === 0 && (
-              <p className="py-6 text-center text-sm text-slate-500">No upcoming events match your filters.</p>
-            )}
-            {approachingNext.map((e) => {
-              const daysAway = e.day - TODAY
-              const isDueSoon = e.type === "Deadline" && daysAway >= 0 && daysAway <= 2
-              const isDeadlineOrInterview = e.type === "Deadline" || e.type === "Interview"
-              return (
-                <div
-                  key={e.id}
-                  className={cn(
-                    "flex gap-3 rounded-lg border p-3",
-                    isDueSoon ? "border-foreground bg-orange-50" : "border-gray-200 bg-white",
-                  )}
-                >
-                  <div className="flex flex-col items-center justify-center rounded-md border border-gray-200 bg-white px-2.5 py-1 text-center">
-                    <span className="text-[10px] font-medium uppercase text-slate-500">Sep</span>
-                    <span className="text-base font-semibold leading-none text-foreground">{e.day}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="truncate text-sm font-medium text-foreground">{e.title}</p>
-                      {isDueSoon && (
-                        <span className="shrink-0 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          Due Soon
-                        </span>
-                      )}
-                    </div>
-                    <p className="truncate text-xs text-slate-500">
-                      {e.club} · {e.time}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant={isDeadlineOrInterview ? "default" : "outline"}
-                      className={cn(
-                        "mt-2 h-7 text-xs",
-                        isDeadlineOrInterview
-                          ? "bg-primary text-white hover:bg-primary/90"
-                          : "border-gray-200 text-foreground",
-                      )}
-                      onClick={() => isDeadlineOrInterview && onNavigate?.("tracker")}
-                    >
-                      {isDeadlineOrInterview ? "View Application" : "RSVP"}
-                    </Button>
-                  </div>
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
+    <div className="space-y-5">
+      <p className="text-xs text-neutral-500">Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="outline" size="icon" aria-label="Previous period" onClick={() => step(-1)}><ChevronLeft className="size-4" /></Button>
+        <h2 className="min-w-44 text-lg font-semibold">{cursor.toLocaleDateString("en-US", view === "day" ? { month: "long", day: "numeric", year: "numeric" } : { month: "long", year: "numeric" })}</h2>
+        <Button variant="outline" size="icon" aria-label="Next period" onClick={() => step(1)}><ChevronRight className="size-4" /></Button>
+        <Button variant="outline" onClick={() => setDate(today)}>Today</Button>
+        <div className="flex rounded-lg border p-1">{(["month", "week", "day"] as const).map((mode) => <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)} className={cn("rounded px-3 py-1 text-sm capitalize", view === mode && "bg-neutral-900 text-white")}>{mode}</button>)}</div>
+        <Button className="sm:ml-auto" onClick={() => setBooking(true)}>Book / change interview</Button>
       </div>
+      <div className="flex flex-wrap gap-3">
+        <Input aria-label="Search calendar" placeholder="Search events, clubs, or locations" value={query} onChange={(event) => setQuery(event.target.value)} className="max-w-sm" />
+        <select aria-label="Filter event type" value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-md border bg-white px-3 text-sm"><option value="all">All event types</option>{Object.keys(eventStyle).map((type) => <option key={type}>{type}</option>)}</select>
+        <Input type="date" aria-label="Go to date" value={date} onChange={(event) => event.target.value && setDate(event.target.value)} className="w-auto" />
+      </div>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+          {view === "month" ? <div className="min-w-[650px]">
+            <div className="grid grid-cols-7 border-b bg-neutral-50">{weekdays.map((day) => <div key={day} className="p-3 text-center text-xs text-neutral-500">{day}</div>)}</div>
+            <div className="grid grid-cols-7">{days.map((day) => {
+              const key = dateKey(day), dayEvents = visible.filter((event) => event.date === key)
+              return <div key={key} className={cn("min-h-32 space-y-1 border-b border-r border-neutral-100 p-2", day.getMonth() !== cursor.getMonth() && "bg-neutral-50 text-neutral-400")}>
+                <button type="button" aria-label={`Show events on ${key}`} onClick={() => { setDate(key); setView("day") }} className={cn("mb-1 flex size-7 items-center justify-center rounded-full text-xs hover:ring-1 hover:ring-neutral-300", key === today && "bg-primary text-white")}>{day.getDate()}</button>
+                {dayEvents.slice(0, 3).map((event) => <button key={event.id} type="button" onClick={() => open(event)} title={`${event.time} · ${event.title}`} className={cn("block w-full rounded p-1.5 text-left text-[11px] leading-snug hover:ring-1 hover:ring-neutral-300", eventStyle[event.type], event.response === "declined" && "opacity-50")}><span className="block font-semibold">{event.time}</span><span className="line-clamp-2">{event.title}</span></button>)}
+                {dayEvents.length > 3 && <button type="button" onClick={() => { setDate(key); setView("day") }} className="text-xs underline">+{dayEvents.length - 3} more</button>}
+              </div>
+            })}</div>
+          </div> : <div className="divide-y">{days.map((day) => {
+            const key = dateKey(day), dayEvents = visible.filter((event) => event.date === key)
+            return <section key={key} className="p-5"><h3 className="mb-3 text-sm font-semibold">{day.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}{key === today && " · Today"}</h3>
+              {dayEvents.length ? <div className="space-y-2">{dayEvents.map((event) => <button key={event.id} type="button" onClick={() => open(event)} className={cn("flex w-full flex-wrap items-center gap-3 rounded-lg p-3 text-left text-sm hover:ring-1 hover:ring-neutral-300", eventStyle[event.type])}><span className="w-24 font-medium">{event.time}</span><span className="flex-1"><strong className="block">{event.title}</strong><span className="text-xs">{event.club}{event.location && ` · ${event.location}`}</span></span><span className="text-xs">{event.response ?? event.type}</span></button>)}</div> : <p className="text-sm text-neutral-500">No events match your filters for this day.</p>}
+            </section>
+          })}</div>}
+        </div>
+        <aside className="space-y-5">
+          <section className="rounded-xl border p-5"><h3 className="mb-3 font-semibold">Club calendars</h3><div className="space-y-3">{clubs.map((club) => <label key={club} className="flex items-center gap-2 text-sm"><Checkbox checked={!hiddenClubs.has(club)} onCheckedChange={() => setHiddenClubs((previous) => { const next = new Set(previous); next.has(club) ? next.delete(club) : next.add(club); return next })} />{club}</label>)}</div></section>
+          <section className="rounded-xl border p-5"><h3 className="mb-3 font-semibold">Up next</h3><div className="space-y-2">{upcoming.map((event) => <button type="button" key={event.id} onClick={() => open(event)} className="w-full rounded-lg border p-3 text-left hover:bg-neutral-50"><p className="text-xs text-neutral-500">{dateFromKey(event.date).toLocaleDateString("en-US", {month:"short",day:"numeric"})} · {event.time}</p><p className="mt-1 text-sm font-medium">{event.title}</p></button>)}{!upcoming.length && <p className="text-sm text-neutral-500">No upcoming events match your filters.</p>}</div></section>
+        </aside>
+      </div>
+      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelectedId(null)}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">{selected && <>
+        <DialogHeader><DialogTitle>{selected.title}</DialogTitle><DialogDescription>{selected.club} · {selected.type}</DialogDescription></DialogHeader>
+        <p className="flex items-center gap-2 text-sm"><CalendarDays className="size-4" />{dateFromKey(selected.date).toLocaleDateString("en-US", {weekday:"long",month:"long",day:"numeric",year:"numeric"})} · {selected.time}</p>
+        <p className="flex items-center gap-2 text-sm"><MapPin className="size-4" />{selected.location ?? (selected.type === "Deadline" ? "Online application" : "Location not announced")}</p>
+        {application && <p className="text-xs text-neutral-500">Application status: {application.status}</p>}
+        <p className="text-sm leading-6 text-neutral-600">{selected.description ?? (selected.type === "Deadline" ? "Open your application to review your progress and next steps before this deadline." : "Review this club event and manage your attendance below.")}</p>
+        {selected.response && <p role="status" className="text-sm font-medium">{selected.response === "declined" ? "Attendance cancelled" : selected.response === "confirmed" ? "Interview confirmed" : "You're going"}</p>}
+        <div className="flex flex-wrap gap-2">
+          {selected.type !== "Deadline" && !selected.bookingSlotId && eventStart(selected) >= now && <Button onClick={() => respondToEvent(selected.id, selected.type === "Interview" ? "confirmed" : "going")} disabled={selected.response === "going" || selected.response === "confirmed"}>{selected.type === "Interview" ? "Confirm interview" : "RSVP · Going"}</Button>}
+          {(selected.response === "going" || selected.response === "confirmed") && !selected.bookingSlotId && <Button variant="outline" onClick={() => respondToEvent(selected.id, "declined")}>Cancel attendance</Button>}
+          {selected.bookingSlotId && <Button variant="outline" onClick={() => { cancelInterview(); setSelectedId(null) }}>Cancel booking</Button>}
+          {selected.bookingSlotId && <Button onClick={() => { setSelectedId(null); setBooking(true) }}>Change interview time</Button>}
+          {application && <Button variant="outline" onClick={() => { focusApplication(application.clubId); onNavigate?.("tracker") }}>View application</Button>}
+          {linkedNotifications.length > 0 && <Button variant="outline" onClick={() => { focusNotification(linkedNotifications[0].id); onNavigate?.("inbox") }}>View notification</Button>}
+          <Button variant="outline" onClick={() => exportEvent(selected)}><Download className="size-4" />Export event</Button>
+          {selected.location && <Button variant="outline" asChild><a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selected.location)}`} target="_blank" rel="noopener noreferrer">Open map</a></Button>}
+          {selected.meetingUrl && /^https:\/\//i.test(selected.meetingUrl) && <Button variant="outline" asChild><a href={selected.meetingUrl} target="_blank" rel="noopener noreferrer">Join online</a></Button>}
+        </div>
+      </>}</DialogContent></Dialog>
+      <Dialog open={booking} onOpenChange={setBooking}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>Virginia Venture Fund interview</DialogTitle><DialogDescription>Available times from the club's interview scheduler. Booking another slot replaces your previous reservation.</DialogDescription></DialogHeader>
+        {bookingDates.length ? <><select aria-label="Interview date" className="rounded border p-2" value={activeBookingDate} onChange={(event) => setBookingDate(event.target.value)}>{bookingDates.map((day) => <option key={day}>{day}</option>)}</select><StudentBookingPreview key={activeBookingDate} blocks={scheduleBlocks.filter((block) => block.date === activeBookingDate)} date={activeBookingDate} /></> : <p className="text-sm text-neutral-500">No future interview slots have been published.</p>}
+      </DialogContent></Dialog>
     </div>
   )
 }

@@ -119,7 +119,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-lg font-semibold text-foreground">{candidate.name}</h2>
+                  <h2 className="truncate text-lg font-semibold text-foreground font-sans tracking-tight">{candidate.name}</h2>
                   <p className="truncate text-sm text-gray-500">
                     {candidate.year} · {candidate.major} · GPA {candidate.gpa}
                   </p>
@@ -132,7 +132,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
               {/* Essays */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">Essay Responses</h3>
+                <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Essay Responses</h3>
                 {candidate.essays.map((essay, i) => (
                   <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 shadow-none">
                     <p className="text-xs font-medium text-gray-500">{essay.question}</p>
@@ -146,7 +146,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
               {candidate.links.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">Links</h3>
+                  <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Links</h3>
                   <div className="flex flex-wrap gap-2">
                     {candidate.links.map((link) => (
                       <span
@@ -163,7 +163,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
               {/* Simulated resume / PDF embed */}
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground">Resume</h3>
+                <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Resume</h3>
                 <div className="rounded-lg border border-gray-200 bg-white shadow-none">
                   <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
                     <FileText className="size-4 text-muted-foreground" />
@@ -262,7 +262,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
             <div className="flex size-14 items-center justify-center rounded-full bg-secondary">
               <PartyPopper className="size-6 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground">Queue complete</h2>
+            <h2 className="text-lg font-semibold text-foreground font-sans tracking-tight">Queue complete</h2>
             <p className="max-w-sm text-sm text-gray-500">
               You&apos;ve reviewed every candidate in this Speed Review queue. Decisions have been synced to the CRM.
             </p>

@@ -44,8 +44,8 @@ export const adminClubName = "Virginia Venture Fund"
 /** Standard student navigation, shown when appMode === "student". */
 export const studentNav: NavItem[] = [
   { id: "landing", title: "Landing Page", icon: Globe },
-  { id: "student-dashboard", title: "My Dashboard", icon: Home },
-  { id: "student-profile", title: "My Profile", icon: UserRound },
+  { id: "student-dashboard", title: "Dashboard", icon: Home },
+  { id: "student-profile", title: "Profile", icon: UserRound },
   { id: "discover", title: "Discover", icon: Compass },
   { id: "tracker", title: "Application Tracker", icon: ClipboardList },
   { id: "inbox", title: "Inbox", icon: Bell },
@@ -73,7 +73,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
   {
     label: "Student",
     items: [
-      { id: "student-dashboard", title: "My Dashboard", icon: Home },
+      { id: "student-dashboard", title: "Dashboard", icon: Home },
       { id: "discover", title: "Discover", icon: Compass },
       { id: "tracker", title: "Application Tracker", icon: ClipboardList },
       { id: "inbox", title: "Inbox", icon: Bell },
@@ -96,9 +96,9 @@ export const navSections: { label: string; items: NavItem[] }[] = [
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
-  "student-dashboard": { title: "My Dashboard", subtitle: "Track your profile and active applications." },
-  "student-profile": { title: "My Profile", subtitle: "Your identity and club memberships at a glance." },
-  inbox: { title: "Inbox & Updates", subtitle: "Application updates and interview requests." },
+  "student-dashboard": { title: "Dashboard", subtitle: "Track your profile and active applications." },
+  "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
+  inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   discover: { title: "Discover", subtitle: "Personalized club recommendations, curated for you." },
   tracker: { title: "Application Tracker", subtitle: "Every deadline, essay, and decision in one place." },
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },

@@ -1,7 +1,9 @@
 "use client"
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useMemo, useState, useEffect, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
+  managedEvents as seedManagedEvents, scheduleLocations, currentStudent, clubs, studentMemberships,
+  type ManagedEvent,
   trackedApplications as seedTrackedApplications,
   notifications as seedNotifications,
   events as seedEvents,
@@ -9,6 +11,9 @@ import {
   type Notification,
   type ClubEvent,
 } from "@/lib/data"
+
+import { dateKey, dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar"
+import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
 
 /**
  * Single source of truth for "did the student apply to this club".
@@ -20,11 +25,13 @@ import {
 type ClubRef = {
   id: string
   name: string
+  logoUrl?: string | null
   logoText: string
   color: string
 }
 
 type ApplicationStateValue = {
+  hydrated: boolean
   trackedApps: TrackedApplication[]
   notifications: Notification[]
   events: ClubEvent[]
@@ -32,22 +39,68 @@ type ApplicationStateValue = {
   isApplied: (clubId: string) => boolean
   applyToClub: (club: ClubRef) => void
   markNotificationRead: (id: string) => void
+  setNotificationsRead: (ids: string[], read: boolean) => void
+  deleteNotifications: (ids: string[]) => void
+  restoreNotifications: (items: Notification[]) => void
   /** clubId of the application the Dashboard wants the Tracker to open, if any. */
   focusApplicationClubId: string | null
   focusApplication: (clubId: string) => void
   clearApplicationFocus: () => void
+  focusEventId: string | null
+  focusEvent: (id: string | null) => void
+  focusNotificationId: string | null
+  focusNotification: (id: string | null) => void
+  respondToEvent: (id: string, response: "going" | "confirmed" | "declined") => void
+  managedEvents: ManagedEvent[]
+  setManagedEvents: Dispatch<SetStateAction<ManagedEvent[]>>
+  scheduleBlocks: ScheduleBlock[]
+  setScheduleBlocks: Dispatch<SetStateAction<ScheduleBlock[]>>
+  bookInterview: (blockId: string, slotId: string) => string | null
+  submitApplication: (id: string) => void
+  calendarYear: number
+  setCalendarYear: (year: number) => void
+  cancelInterview: () => void
+  notifyEventChange: (event: ManagedEvent, cancelled?: boolean) => void
 }
 
 const ApplicationStateContext = createContext<ApplicationStateValue | null>(null)
 
-// Fallback placement for the auto-generated deadline reminder when a club
-// doesn't have a real deadline day yet — near the end of the visible month.
-const DEFAULT_DEADLINE_DAY = 27
+// Persist the demo across navigation and reloads on this browser only.
+const STORAGE_KEY = "outclass-platform-v2"
 
 export function ApplicationStateProvider({ children }: { children: ReactNode }) {
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(seedTrackedApplications)
   const [notifications, setNotifications] = useState<Notification[]>(seedNotifications)
-  const [events, setEvents] = useState<ClubEvent[]>(seedEvents)
+  const [baseEvents, setEvents] = useState<ClubEvent[]>([...seedEvents,
+    { id: "deadline-mii", clubId: "mii", date: "2026-09-19", day: 19, title: "McIntire Application Due", club: "McIntire Investment Institute", color: "#b45309", type: "Deadline", time: "11:59 PM" },
+    { id: "deadline-vvf", clubId: "vvf", date: "2026-09-21", day: 21, title: "Virginia Venture Fund Application Due", club: "Virginia Venture Fund", color: "#051B3D", type: "Deadline", time: "11:59 PM" },
+    { id: "vvf-location-update", clubId: "vvf", date: "2026-09-18", day: 18, title: "Virginia Venture Fund Info Session", club: "Virginia Venture Fund", color: "#051B3D", type: "Interest Meeting", time: "6:30 PM", location: "Rouss Hall 120", description: "Location updated from Minor Hall." },
+  ])
+  const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>(seedManagedEvents)
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>(() => scheduleLocations.map((location) => ({
+    id: location.id, date: "2026-09-25", locationName: location.location, mapUrl: buildMapUrl("", location.location),
+    slots: location.slots.map(({ students, ...slot }) => ({ ...slot, candidates: [...students], bookedCount: students.length })),
+  })))
+  const [responses, setResponses] = useState<Record<string, ClubEvent["response"]>>({})
+  const [focusEventId, focusEvent] = useState<string | null>(null)
+  const [focusNotificationId, focusNotification] = useState<string | null>(null)
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
+  const [hydrated, setHydrated] = useState(false)
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")
+      if (saved && Array.isArray(saved.trackedApps) && Array.isArray(saved.notifications) && Array.isArray(saved.baseEvents) && Array.isArray(saved.managedEvents) && Array.isArray(saved.scheduleBlocks)) {
+        setTrackedApps(saved.trackedApps); setNotifications(saved.notifications); setEvents(saved.baseEvents)
+        setManagedEvents(saved.managedEvents); setScheduleBlocks(saved.scheduleBlocks); setResponses(saved.responses ?? {})
+      }
+    } catch { /* Keep the sample data if browser storage is unavailable. */ }
+    setHydrated(true)
+  }, [])
+  useEffect(() => {
+    if (!hydrated) return
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses })) } catch { /* State remains usable for this session. */ }
+  }, [hydrated, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
+  const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
   const focusApplication = useCallback((clubId: string) => {
@@ -75,6 +128,7 @@ export function ApplicationStateProvider({ children }: { children: ReactNode }) 
           clubId: club.id,
           clubName: club.name,
           logoText: club.logoText,
+          logoUrl: club.logoUrl,
           color: club.color,
           status: "Drafting",
           questionsCompleted: 0,
@@ -90,32 +144,24 @@ export function ApplicationStateProvider({ children }: { children: ReactNode }) 
           type: "Announcement",
           urgent: false,
           club: club.name,
+          clubId: club.id,
           color: club.color,
           logoText: club.logoText,
+          logoUrl: club.logoUrl,
           senderName: "Recruitment Team",
           senderTitle: `${club.name} — Recruitment`,
-          title: `${club.name} has received your application`,
-          preview: "Your OutClass profile, resume, and responses were submitted successfully.",
-          body: ["Your OutClass profile, resume, and responses were submitted successfully."],
+          title: `${club.name} application started`,
+          preview: "Your draft is ready. Complete and submit it from Application Tracker.",
+          body: ["Your draft is ready. Complete and submit it from Application Tracker."],
           timestamp: "Just now",
           fullDate: "Just now",
+          createdAt: new Date(timestamp).toISOString(),
           read: false,
         },
         ...prev,
       ])
 
-      setEvents((prev) => [
-        ...prev,
-        {
-          id: `e-${timestamp}`,
-          day: DEFAULT_DEADLINE_DAY,
-          title: `${club.name} Application Due`,
-          club: club.name,
-          color: club.color,
-          type: "Deadline",
-          time: "11:59 PM",
-        },
-      ])
+
     },
     [appliedClubIds],
   )
@@ -124,30 +170,123 @@ export function ApplicationStateProvider({ children }: { children: ReactNode }) 
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
   }, [])
 
+  const setNotificationsRead = useCallback((ids: string[], read: boolean) => {
+    const targets = new Set(ids)
+    setNotifications((prev) => prev.map((item) => targets.has(item.id) ? { ...item, read } : item))
+  }, [])
+
+  const deleteNotifications = useCallback((ids: string[]) => {
+    const targets = new Set(ids)
+    setNotifications((prev) => prev.filter((item) => !targets.has(item.id)))
+  }, [])
+
+  const restoreNotifications = useCallback((items: Notification[]) => {
+    setNotifications((prev) => [...prev, ...items.filter((item) => !prev.some((existing) => existing.id === item.id))])
+  }, [])
+
+  const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
+    setResponses((previous) => ({ ...previous, [id]: response }))
+    const event = events.find((item) => item.id === id)
+    const managed = managedEvents.find((item) => id.startsWith(`managed-${item.id}-`))
+    if (!event && !managed) return
+    const title = event?.title ?? managed!.title
+    const clubId = event?.clubId ?? managed!.clubId
+    const club = clubs.find((item) => item.id === clubId)
+    const body = `${title}: ${response === "declined" ? "attendance cancelled" : response === "confirmed" ? "interview confirmed" : "RSVP confirmed"}.`
+    setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
+  }, [events, managedEvents])
+
+  const bookInterview = useCallback((blockId: string, slotId: string): string | null => {
+    const block = scheduleBlocks.find((item) => item.id === blockId)
+    const slot = block?.slots.find((item) => item.id === slotId)
+    if (!block || !slot) return "This interview slot is no longer available."
+    const alreadyBooked = slot.candidates.some((candidate) => candidate.email === currentStudent.email)
+    if (!alreadyBooked && slot.bookedCount >= slot.capacity) return "This slot is full. Choose another time."
+    const start = dateFromKey(block.date)
+    start.setHours(0, timeMinutes(slot.time), 0, 0)
+    if (start <= new Date()) return "Choose a future interview time."
+    setScheduleBlocks((previous) => previous.map((entry) => ({ ...entry, slots: entry.slots.map((entrySlot) => {
+      const candidates = entrySlot.candidates.filter((candidate) => candidate.email !== currentStudent.email)
+      if (entry.id === blockId && entrySlot.id === slotId) candidates.push({ name: currentStudent.name, email: currentStudent.email, initials: currentStudent.initials })
+      return { ...entrySlot, candidates, bookedCount: candidates.length }
+    }) })))
+    const id = "interview-vvf-current"
+    setEvents((previous) => [...previous.filter((event) => event.id !== id), { id, date: block.date, day: Number(block.date.slice(-2)), clubId: "vvf", club: "Virginia Venture Fund", color: "#051B3D", type: "Interview", title: "Virginia Venture Fund · Round 1 interview", time: slot.time, location: block.locationName, bookingSlotId: slotId, description: "Your reserved interview slot. To change it, choose another available time.", response: "confirmed" }])
+    setResponses((previous) => ({ ...previous, [id]: "confirmed" }))
+    setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, status: "1st Round Interview", nextDeadline: `${block.date} at ${slot.time}` } : app))
+    const body = `Your interview is booked for ${block.date} at ${slot.time}, ${block.locationName}.`
+    setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview booking", title: "Interview booking confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
+    return null
+  }, [scheduleBlocks])
+
+  const cancelInterview = useCallback(() => {
+    setScheduleBlocks((previous) => previous.map((block) => ({ ...block, slots: block.slots.map((slot) => {
+      const candidates = slot.candidates.filter((candidate) => candidate.email !== currentStudent.email)
+      return { ...slot, candidates, bookedCount: candidates.length }
+    }) })))
+    setEvents((previous) => previous.filter((event) => event.id !== "interview-vvf-current"))
+    setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, nextDeadline: "Choose a new interview time" } : app))
+    setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview booking cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
+  }, [])
+
+  const notifyEventChange = useCallback((event: ManagedEvent, cancelled = false) => {
+    if (event.scope === "Members Only" && !studentMemberships.some((membership) => membership.clubId === event.clubId)) return
+    const club = clubs.find((item) => item.id === event.clubId)
+    const body = cancelled ? `${event.title} has been cancelled.` : `${event.title} · ${event.date} at ${event.time}. Location: ${event.location}.`
+    const eventId = !cancelled && !event.recurring ? `managed-${event.id}-${event.date}` : undefined
+    setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
+  }, [])
+
+  const submitApplication = useCallback((id: string) => {
+    const app = trackedApps.find((item) => item.id === id)
+    if (!app || app.status !== "Drafting") return
+    setTrackedApps((previous) => previous.map((app) => app.id === id ? { ...app, status: "Submitted", questionsCompleted: app.questionsTotal } : app))
+    const body = `Your application to ${app.clubName} has been submitted.`
+    setNotifications((previous) => [{ id: `submission-${id}`, clubId: app.clubId, type: "Announcement", urgent: false, club: app.clubName, color: app.color, logoText: app.logoText, senderName: "OutClass", senderTitle: "Application update", title: "Application submitted", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `submission-${id}`)])
+  }, [trackedApps])
+
+  const calendarEvents = useMemo(() => {
+    const now = new Date()
+    const meetings = managedOccurrences(managedEvents, new Date(Math.min(now.getFullYear(), calendarYear) - 1, 0, 1), new Date(Math.max(now.getFullYear(), calendarYear) + 1, 11, 31), new Set(studentMemberships.map((membership) => membership.clubId)))
+    return [...events, ...meetings.map((event) => ({ ...event, club: clubs.find((club) => club.id === event.clubId)?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.club, response: responses[event.id] }))]
+  }, [events, managedEvents, responses, calendarYear])
+
   const value = useMemo(
     () => ({
+      hydrated,
       trackedApps,
       notifications,
-      events,
+      events: calendarEvents,
       appliedClubIds,
       isApplied,
       applyToClub,
       markNotificationRead,
+      setNotificationsRead,
+      deleteNotifications,
+      restoreNotifications,
       focusApplicationClubId,
       focusApplication,
       clearApplicationFocus,
+      focusEventId, focusEvent, focusNotificationId, focusNotification, respondToEvent,
+      managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     }),
     [
+      hydrated,
       trackedApps,
       notifications,
-      events,
+      calendarEvents,
       appliedClubIds,
       isApplied,
       applyToClub,
       markNotificationRead,
+      setNotificationsRead,
+      deleteNotifications,
+      restoreNotifications,
       focusApplicationClubId,
       focusApplication,
       clearApplicationFocus,
+      focusEventId, focusEvent, focusNotificationId, focusNotification, respondToEvent,
+      managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     ],
   )
 

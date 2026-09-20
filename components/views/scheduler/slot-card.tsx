@@ -5,24 +5,24 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import type { ScheduleSlot } from "@/lib/data"
+import type { SchedulerSlot } from "@/lib/scheduler"
 
 export function SlotCard({
   slot,
   onLaunch,
 }: {
-  slot: ScheduleSlot
+  slot: SchedulerSlot
   onLaunch: () => void
 }) {
-  const bookedCount = slot.students.length
+  const bookedCount = slot.bookedCount
   const isFull = bookedCount >= slot.capacity
   const isEmpty = bookedCount === 0
 
   return (
     <div
       className={cn(
-        "group relative flex min-h-[180px] flex-col justify-between rounded-xl border border-border p-4",
-        isEmpty ? "bg-white" : "bg-status-booked",
+        "group relative flex min-h-[180px] flex-col justify-between rounded-none border border-border p-4",
+        "bg-white",
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -31,7 +31,7 @@ export function SlotCard({
           variant={isFull ? "default" : "outline"}
           className={cn("font-normal", isFull && "bg-status-booked text-status-booked-foreground")}
         >
-          {isEmpty ? "Open Slot" : `${bookedCount}/${slot.capacity} Booked`}
+          {`${bookedCount}/${slot.capacity} Booked`}
         </Badge>
       </div>
 
@@ -39,7 +39,7 @@ export function SlotCard({
         <p className="text-xs text-muted-foreground">No candidates booked yet</p>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {slot.students.map((student) => (
+          {slot.candidates.map((student) => (
             <div key={student.email} className="flex items-center gap-2">
               <Avatar className="size-6">
                 <AvatarFallback className="text-[10px] font-medium">{student.initials}</AvatarFallback>

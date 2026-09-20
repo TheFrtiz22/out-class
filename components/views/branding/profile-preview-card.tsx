@@ -1,5 +1,6 @@
 "use client"
 
+import { ClubLogo } from "@/components/club-logo"
 import { Globe, Instagram, Linkedin, Mail, Trophy, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import type { ClubBrandingProfile } from "@/lib/data"
@@ -44,21 +45,7 @@ export function ProfilePreviewCard({ profile }: { profile: ClubBrandingProfile }
         )}
         {/* Logo overlapping banner */}
         <div className="absolute -bottom-8 left-5 flex size-16 items-center justify-center overflow-hidden rounded-full border-4 border-card bg-card shadow-none">
-          {profile.logoUrl ? (
-            <img
-              src={profile.logoUrl || "/placeholder.svg"}
-              alt=""
-              className="size-full object-cover"
-              crossOrigin="anonymous"
-            />
-          ) : (
-            <div
-              className="flex size-full items-center justify-center text-sm font-semibold"
-              style={{ backgroundColor: accent, color: textOnAccent }}
-            >
-              {initials}
-            </div>
-          )}
+          <ClubLogo logoUrl={profile.logoUrl} text={initials} color={accent} className="size-full rounded-full text-sm" />
         </div>
       </div>
 

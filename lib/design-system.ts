@@ -11,7 +11,7 @@ export const editorialUi = {
   sidebarLinkActive:
     "border-l-2 border-neutral-900 bg-neutral-50 font-semibold text-neutral-900",
   surface: "border border-neutral-200 bg-white shadow-none",
-  title: "font-display font-medium tracking-tight text-neutral-900",
+  title: "font-sans font-semibold tracking-tight text-neutral-900",
   secondaryText: "font-sans text-neutral-500",
   primaryAction:
     "border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90",

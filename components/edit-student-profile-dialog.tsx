@@ -36,14 +36,14 @@ export function EditStudentProfileDialog({ trigger }: { trigger?: React.ReactNod
         className="flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden bg-white p-0 sm:max-w-2xl"
       >
         <DialogHeader className="shrink-0 border-b border-gray-200 px-6 py-4">
-          <DialogTitle className="text-lg font-bold text-[#051B3D]">Edit Student Profile</DialogTitle>
+          <DialogTitle className="text-lg font-bold text-[#051B3D] font-sans tracking-tight">Edit Student Profile</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto bg-white px-6 py-6">
           <div className="space-y-8">
             {/* Section 1 — Core Identity */}
             <section className="space-y-5">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D]">Core Identity</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D] font-sans tracking-tight">Core Identity</h3>
 
               <div className="flex items-center gap-5">
                 <div className="relative">
@@ -101,7 +101,7 @@ export function EditStudentProfileDialog({ trigger }: { trigger?: React.ReactNod
 
             {/* Section 2 — Academics & Stats */}
             <section className="space-y-5">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D]">Academics &amp; Stats</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D] font-sans tracking-tight">Academics &amp; Stats</h3>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -151,7 +151,7 @@ export function EditStudentProfileDialog({ trigger }: { trigger?: React.ReactNod
 
             {/* Section 3 — Professional Details */}
             <section className="space-y-5">
-              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D]">Professional Details</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wide text-[#051B3D] font-sans tracking-tight">Professional Details</h3>
 
               <div className="space-y-1.5">
                 <Label htmlFor="linkedin" className="text-xs text-gray-500">

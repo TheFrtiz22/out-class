@@ -31,11 +31,15 @@ const adminViewIds: ViewId[] = [
   "broadcast-messages",
 ]
 
-export function AppShell() {
-  const [view, setView] = useState<ViewId>("landing")
-  const [appMode, setAppMode] = useState<AppMode>("student")
+export function AppShell({ initialView = "landing", embedded = false }: { initialView?: ViewId; embedded?: boolean }) {
+  const [view, setView] = useState<ViewId>(initialView)
+  const [appMode, setAppMode] = useState<AppMode>(adminViewIds.includes(initialView) ? "admin" : "student")
+  function navigate(next: ViewId) { setView(embedded && next === "landing" ? initialView : next) }
 
   function handleEnter(next: ViewId) {
+    if (!adminViewIds.includes(next)) {
+      try { sessionStorage.setItem("outclass-demo-student", "true") } catch { /* Demo remains usable without session storage. */ }
+    }
     setAppMode(adminViewIds.includes(next) ? "admin" : "student")
     setView(next)
   }
@@ -49,35 +53,30 @@ export function AppShell() {
     return (
       <LandingPageView
         onNavigateToApp={(role) => {
-          if (role === "leader") {
-            setAppMode("admin")
-            setView("leader-dashboard")
-          } else {
-            setAppMode("student")
-            setView("student-dashboard")
-          }
+          setAppMode(role === "leader" ? "admin" : "student")
+          setView("auth")
         }}
       />
     )
   }
 
   if (view === "auth") {
-    return <AuthView onEnter={handleEnter} />
+    return <AuthView onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} />
   }
 
 
   return (
     <ApplicationStateProvider>
-      <DashboardLayout view={view} appMode={appMode} onNavigate={setView} onModeChange={switchMode}>
-            {view === "student-dashboard" && <StudentDashboardView onNavigate={setView} />}
+      <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
+            {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}
-            {view === "inbox" && <InboxView />}
-            {view === "discover" && <DiscoverView onNavigate={setView} />}
-            {view === "tracker" && <ApplicationTrackerView onNavigate={setView} />}
-            {view === "calendar" && <CalendarView onNavigate={setView} />}
+            {view === "inbox" && <InboxView onNavigate={navigate} />}
+            {view === "discover" && <DiscoverView onNavigate={navigate} />}
+            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} />}
+            {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
-            {view === "interview-scheduler" && <InterviewSchedulerView onNavigate={setView} />}
+            {view === "interview-scheduler" && <InterviewSchedulerView onNavigate={navigate} />}
             {view === "interview-workspace" && <InterviewWorkspaceView />}
             {view === "broadcast-messages" && <BroadcastMessagesView />}
             {view === "club-manager" && <ClubManagerView />}

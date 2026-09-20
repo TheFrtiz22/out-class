@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ClubLogo } from "@/components/club-logo"
-import { agendaDocuments, managedEvents, memberAnnouncements, type StudentMembership } from "@/lib/data"
+import { useApplicationState } from "@/lib/application-state"
+import { agendaDocuments, memberAnnouncements, type StudentMembership } from "@/lib/data"
 
 const NAVY = "#051B3D"
 const ORANGE = "#FF5900"
@@ -22,6 +23,7 @@ export function MemberPortalDialog({
 }) {
   if (!membership) return null
 
+  const { managedEvents } = useApplicationState()
   const meetings = managedEvents.filter((e) => e.clubId === membership.clubId && e.scope === "Members Only")
   const agendas = agendaDocuments.filter((a) => a.clubId === membership.clubId)
   const announcements = memberAnnouncements.filter((a) => a.clubId === membership.clubId)
@@ -35,9 +37,9 @@ export function MemberPortalDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto bg-white text-gray-900 sm:max-w-xl">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <ClubLogo text={membership.logoText} color={membership.color} size="lg" />
+            <ClubLogo clubId={membership.clubId} logoUrl={membership.logoUrl} text={membership.logoText} color={membership.color} size="lg" />
             <div className="min-w-0">
-              <DialogTitle className="truncate" style={{ color: NAVY }}>
+              <DialogTitle className="truncate font-sans tracking-tight font-semibold" style={{ color: NAVY }}>
                 {membership.clubName}
               </DialogTitle>
               <DialogDescription className="text-gray-500">Member Portal · My Club Hub</DialogDescription>
@@ -47,7 +49,7 @@ export function MemberPortalDialog({
 
         <div className="space-y-6 pt-2">
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: NAVY }}>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
               <CalendarClock className="size-4" /> Member Meeting Schedule
             </h3>
             <div className="space-y-2">
@@ -73,7 +75,7 @@ export function MemberPortalDialog({
           </section>
 
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: NAVY }}>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
               <Download className="size-4" /> Agenda Downloads
             </h3>
             <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -106,7 +108,7 @@ export function MemberPortalDialog({
           </section>
 
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: NAVY }}>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
               <Megaphone className="size-4" /> Internal Announcements
             </h3>
             <div className="space-y-2">

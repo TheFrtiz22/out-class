@@ -6,6 +6,7 @@ export type Club = {
   id: string
   name: string
   tagline: string
+  logoUrl?: string | null
   logoText: string
   color: string
   acceptanceRate: string
@@ -106,6 +107,7 @@ export type Application = {
   id: string
   clubId: string
   clubName: string
+  logoUrl?: string | null
   logoText: string
   color: string
   stage: Stage
@@ -195,6 +197,7 @@ export const currentStudent = {
 export type StudentMembership = {
   clubId: string
   clubName: string
+  logoUrl?: string | null
   logoText: string
   color: string
   role: "Member" | "Executive"
@@ -243,6 +246,16 @@ export const experienceItems: ExperienceItem[] = [
 export type EventType = "Deadline" | "Interest Meeting" | "Coffee Chat" | "Interview"
 
 export type ClubEvent = {
+  date: string
+  clubId?: string
+  location?: string
+  description?: string
+  durationMinutes?: number
+  meetingUrl?: string
+  managedEventId?: string
+  bookingSlotId?: string
+  response?: "going" | "confirmed" | "declined"
+
   id: string
   day: number
   title: string
@@ -254,12 +267,12 @@ export type ClubEvent = {
 
 // Events for the current month grid (day = date in month)
 export const events: ClubEvent[] = [
-  { id: "e1", day: 3, title: "Helix Interest Meeting", club: "Helix Product Society", color: "#7c3aed", type: "Interest Meeting", time: "6:00 PM" },
-  { id: "e2", day: 9, title: "Helix Application Due", club: "Helix Product Society", color: "#7c3aed", type: "Deadline", time: "11:59 PM" },
-  { id: "e3", day: 11, title: "Vanguard Coffee Chat", club: "Vanguard Consulting", color: "#0891b2", type: "Coffee Chat", time: "2:30 PM" },
-  { id: "e4", day: 16, title: "Meridian Round 2 Interview", club: "Meridian Capital", color: "#2563eb", type: "Interview", time: "3:00 PM" },
-  { id: "e5", day: 18, title: "Quantum Offer Deadline", club: "Quantum Trading Club", color: "#db2777", type: "Deadline", time: "5:00 PM" },
-  { id: "e6", day: 24, title: "Vanguard Case Workshop", club: "Vanguard Consulting", color: "#0891b2", type: "Interest Meeting", time: "7:00 PM" },
+  { id: "e1", clubId: "helix", date: "2026-09-03", day: 3, title: "Helix Interest Meeting", club: "Helix Product Society", color: "#7c3aed", type: "Interest Meeting", time: "6:00 PM" },
+  { id: "e2", clubId: "helix", date: "2026-09-24", day: 24, title: "Helix Application Due", club: "Helix Product Society", color: "#7c3aed", type: "Deadline", time: "11:59 PM" },
+  { id: "e3", clubId: "vanguard", date: "2026-09-23", day: 23, title: "Vanguard Coffee Chat", club: "Vanguard Consulting Collective", color: "#0891b2", type: "Coffee Chat", time: "2:30 PM" },
+  { id: "e4", clubId: "meridian", date: "2026-09-25", day: 25, title: "Meridian Round 2 Interview", club: "Meridian Capital Group", color: "#2563eb", type: "Interview", time: "3:00 PM" },
+  { id: "e5", clubId: "quantum", date: "2026-09-20", day: 20, title: "Quantum Offer Deadline", club: "Quantum Trading Club", color: "#db2777", type: "Deadline", time: "5:00 PM" },
+  { id: "e6", clubId: "vanguard", date: "2026-09-24", day: 24, title: "Vanguard Case Workshop", club: "Vanguard Consulting Collective", color: "#0891b2", type: "Interest Meeting", time: "7:00 PM" },
 ]
 
 export type CoffeeChatRequest = {
@@ -295,12 +308,15 @@ export const coffeeChatRequests: CoffeeChatRequest[] = [
 
 export type Applicant = {
   id: string
+  headshotUrl?: string
+  resumeHighlight?: string
+  interviewScores?: { round: string; score: number; maxScore: number }[]
   name: string
   email: string
   initials: string
   major: string
   year: string
-  status: "Applied" | "Round 1" | "Round 2" | "Accepted" | "Rejected"
+  status: string
   score: number
   gpa: string
   satScore: number
@@ -941,11 +957,15 @@ export const scheduleLocations: ScheduleLocationBlock[] = [
 export type NotificationType = "Announcement" | "Interview Invite"
 
 export type Notification = {
+  eventId?: string
+  createdAt?: string
+  clubId?: string
   id: string
   type: NotificationType
   urgent: boolean
   club: string
   color: string
+  logoUrl?: string | null
   logoText: string
   senderName: string
   senderTitle: string
@@ -965,6 +985,7 @@ export type Notification = {
 export const notifications: Notification[] = [
   {
     id: "n-1",
+    eventId: "vvf-location-update",
     type: "Announcement",
     urgent: true,
     club: "Virginia Venture Fund",
@@ -981,6 +1002,7 @@ export const notifications: Notification[] = [
     ],
     timestamp: "12m ago",
     fullDate: "Sep 18, 2026 · 4:12 PM",
+    createdAt: "2026-09-18T16:12:00-04:00",
     read: false,
     locationChange: {
       oldLocation: "Minor Hall",
@@ -989,9 +1011,11 @@ export const notifications: Notification[] = [
   },
   {
     id: "n-2",
+    eventId: "e4",
     type: "Interview Invite",
     urgent: false,
     club: "Meridian Capital Group",
+    clubId: "meridian",
     color: "#2563eb",
     logoText: "MC",
     senderName: "Priya Nadar",
@@ -1005,11 +1029,13 @@ export const notifications: Notification[] = [
     ],
     timestamp: "2h ago",
     fullDate: "Sep 18, 2026 · 2:04 PM",
+    createdAt: "2026-09-18T14:04:00-04:00",
     read: false,
     cta: "Confirm Interview Time",
   },
   {
     id: "n-3",
+    eventId: "deadline-mii",
     type: "Announcement",
     urgent: true,
     club: "McIntire Investment Institute",
@@ -1025,13 +1051,16 @@ export const notifications: Notification[] = [
     ],
     timestamp: "38m ago",
     fullDate: "Sep 18, 2026 · 3:46 PM",
+    createdAt: "2026-09-18T15:46:00-04:00",
     read: false,
   },
   {
     id: "n-4",
+    eventId: "e3",
     type: "Interview Invite",
     urgent: false,
     club: "Vanguard Consulting Collective",
+    clubId: "vanguard",
     color: "#0891b2",
     logoText: "VC",
     senderName: "Sophie Tran",
@@ -1044,6 +1073,7 @@ export const notifications: Notification[] = [
     ],
     timestamp: "5h ago",
     fullDate: "Sep 18, 2026 · 11:20 AM",
+    createdAt: "2026-09-18T11:20:00-04:00",
     read: true,
   },
   {
@@ -1051,6 +1081,7 @@ export const notifications: Notification[] = [
     type: "Announcement",
     urgent: false,
     club: "Portico Impact Fund",
+    clubId: "portico",
     color: "#15803d",
     logoText: "PIF",
     senderName: "Recruitment Team",
@@ -1063,13 +1094,16 @@ export const notifications: Notification[] = [
     ],
     timestamp: "5h ago",
     fullDate: "Sep 18, 2026 · 11:02 AM",
+    createdAt: "2026-09-18T11:02:00-04:00",
     read: true,
   },
   {
     id: "n-6",
+    eventId: "e5",
     type: "Announcement",
     urgent: false,
     club: "Quantum Trading Club",
+    clubId: "quantum",
     color: "#db2777",
     logoText: "QT",
     senderName: "Ravi Menon",
@@ -1082,6 +1116,7 @@ export const notifications: Notification[] = [
     ],
     timestamp: "1d ago",
     fullDate: "Sep 17, 2026 · 5:40 PM",
+    createdAt: "2026-09-17T17:40:00-04:00",
     read: true,
     cta: "Respond to Offer",
   },
@@ -1090,6 +1125,7 @@ export const notifications: Notification[] = [
     type: "Announcement",
     urgent: false,
     club: "Helix Product Society",
+    clubId: "helix",
     color: "#7c3aed",
     logoText: "HX",
     senderName: "Recruitment Team",
@@ -1102,6 +1138,7 @@ export const notifications: Notification[] = [
     ],
     timestamp: "2d ago",
     fullDate: "Sep 16, 2026 · 9:15 AM",
+    createdAt: "2026-09-16T09:15:00-04:00",
     read: true,
   },
 ]
@@ -1113,6 +1150,7 @@ export type TimeCommitment = "1-3" | "3-5" | "5+"
 export type DiscoverClub = {
   id: string
   name: string
+  logoUrl?: string | null
   logoText: string
   color: string
   category: ClubCategory
@@ -1262,6 +1300,7 @@ export type TrackedApplication = {
   id: string
   clubId: string
   clubName: string
+  logoUrl?: string | null
   logoText: string
   color: string
   status: TrackerStatus
@@ -1338,6 +1377,7 @@ export type EssayPrompt = {
   id: string
   clubId: string
   clubName: string
+  logoUrl?: string | null
   logoText: string
   color: string
   promptGroup: string
@@ -1444,6 +1484,7 @@ export const essayPrompts: EssayPrompt[] = [
 export type DecisionRecord = {
   id: string
   clubName: string
+  logoUrl?: string | null
   logoText: string
   color: string
   cycle: string
@@ -1701,7 +1742,7 @@ export const managedEvents: ManagedEvent[] = [
     clubId: "vvf",
     title: "Fall Info Session #1",
     scope: "Public",
-    date: "Thu, Sep 25",
+    date: "2026-09-25",
     time: "6:00 PM",
     location: "Rouss & Robertson Hall, Room 130",
     zoomLink: "https://uva.zoom.us/j/8827301",
@@ -1711,7 +1752,7 @@ export const managedEvents: ManagedEvent[] = [
     clubId: "vvf",
     title: "Fall Info Session #2",
     scope: "Public",
-    date: "Tue, Sep 30",
+    date: "2026-09-30",
     time: "7:30 PM",
     location: "Darden School, Classroom 40",
   },
@@ -1743,7 +1784,7 @@ export const managedEvents: ManagedEvent[] = [
     clubId: "meridian",
     title: "Info Session: Spring Recruiting Preview",
     scope: "Public",
-    date: "Mon, Oct 6",
+    date: "2026-10-06",
     time: "6:30 PM",
     location: "Newcomb Hall Ballroom",
     zoomLink: "https://uva.zoom.us/j/2210594",
@@ -1764,7 +1805,7 @@ export const managedEvents: ManagedEvent[] = [
     clubId: "helix",
     title: "Info Session: What We Look For",
     scope: "Public",
-    date: "Wed, Oct 1",
+    date: "2026-10-01",
     time: "7:00 PM",
     location: "Rice Hall Atrium",
   },

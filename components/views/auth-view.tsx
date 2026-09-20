@@ -1,191 +1,101 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowRight, Check, GraduationCap, ShieldCheck } from "lucide-react"
+import { useState, type FormEvent } from "react"
+import { ArrowLeft, ArrowRight, Check, Mail, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OutClassLogo } from "@/components/outclass-logo"
+import { isUvaEmail } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 
-const FEATURE_BULLETS = ["Ditch the Google Forms", "Track every round", "Verified student network"]
+export function AuthView({ onEnter, onBack, initialRole = "student" }: {
+  onEnter: (view: ViewId) => void
+  onBack: () => void
+  initialRole?: "student" | "leader"
+}) {
+  const [email, setEmail] = useState("")
+  const [code, setCode] = useState("")
+  const [step, setStep] = useState<"email" | "verify">("email")
+  const [error, setError] = useState("")
+  const [notice, setNotice] = useState("")
 
-export function AuthView({ onEnter }: { onEnter: (view: ViewId) => void }) {
-  const [role, setRole] = useState<"student" | "leader">("student")
+  function requestCode(event: FormEvent) {
+    event.preventDefault()
+    if (!isUvaEmail(email)) {
+      setError("Use your University of Virginia email ending in @virginia.edu.")
+      return
+    }
+    setEmail(email.trim().toLowerCase())
+    setError("")
+    setStep("verify")
+    setNotice("This is a preview. No email has been sent; email verification will be available once connected.")
+  }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    onEnter(role === "student" ? "student-dashboard" : "leader-dashboard")
+  function verifyCode(event: FormEvent) {
+    event.preventDefault()
+    setError("Email verification isn't connected yet. Codes cannot be verified in this preview.")
   }
 
   return (
-    <div className="grid min-h-svh overflow-hidden md:grid-cols-2">
-      {/* Left — the pitch (dark theme) */}
-      <div className="relative flex flex-col justify-between overflow-hidden bg-[#051B3D] px-8 py-10 sm:px-12 sm:py-12 md:min-h-svh">
-        {/* Subtle navy gradient depth */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          aria-hidden="true"
-          style={{
-            background: "radial-gradient(75% 60% at 20% 10%, rgba(255,89,0,0.10), transparent)",
-          }}
-        />
-
-        <div className="relative">
-          <OutClassLogo variant="dark" className="h-9 w-auto" />
-        </div>
-
-        <div className="relative">
-          <h1 className="text-balance text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl">
-            One profile. Every selective club.
-          </h1>
-          <p className="mt-5 max-w-md text-pretty text-base leading-relaxed text-[#94A3B8]">
-            The centralized recruitment pipeline built specifically for selective college clubs.
-          </p>
-
-          <ul className="mt-8 space-y-3">
-            {FEATURE_BULLETS.map((point) => (
-              <li key={point} className="flex items-start gap-3 text-sm text-white/80">
-                <span className="mt-0.5 flex size-5 flex-none items-center justify-center rounded-full bg-[#FF5900]/15">
-                  <Check className="size-3.5 text-[#FF5900]" strokeWidth={3} />
-                </span>
-                <span className="text-pretty leading-relaxed">{point}</span>
-              </li>
-            ))}
+    <div className="grid min-h-svh bg-white font-sans text-neutral-900 lg:grid-cols-[1fr_1fr]">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#051B3D] p-12 text-white lg:flex xl:p-16">
+        <OutClassLogo variant="dark" className="h-10 w-auto self-start" />
+        <div className="relative z-10 max-w-lg py-16">
+          <span className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/80"><ShieldCheck className="size-4 text-orange-400" />Built for the UVA community</span>
+          <h1 className="text-5xl font-semibold leading-[1.12] tracking-tight xl:text-6xl">Your next chapter<br />starts here.</h1>
+          <p className="mt-6 max-w-sm text-base leading-7 text-slate-300">One profile. Every opportunity. Find your people and take your next step at UVA.</p>
+          <ul className="mt-10 space-y-4 text-sm text-slate-200">
+            {["Apply to clubs with one profile", "Keep every deadline in one place", "Get updates that keep you moving"].map((text) => <li key={text} className="flex items-center gap-3"><Check className="size-4 text-orange-400" />{text}</li>)}
           </ul>
         </div>
-
-        <p className="relative text-xs text-white/40">Built for selective clubs at the University of Virginia.</p>
-      </div>
-
-      {/* Right — the login gateway (light theme) */}
-      <div className="flex items-center justify-center bg-white px-6 py-12 sm:px-12">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 flex items-center gap-2 md:hidden">
-            <OutClassLogo variant="light" className="h-8 w-auto" />
-          </div>
-
-          <h2 className="text-2xl font-semibold tracking-tight text-[#051B3D]">Welcome back</h2>
-          <p className="mt-1.5 text-sm text-slate-500">Sign in with your UVA email to continue.</p>
-
-          <Tabs value={role} onValueChange={(v) => setRole(v as "student" | "leader")} className="mt-8">
-            <TabsList className="grid w-full grid-cols-2 rounded-none border-b border-slate-200 bg-transparent p-0">
-              <TabsTrigger
-                value="student"
-                className="rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 text-sm font-medium text-slate-500 shadow-none data-[state=active]:border-[#FF5900] data-[state=active]:bg-transparent data-[state=active]:text-[#051B3D] data-[state=active]:shadow-none"
-              >
-                <GraduationCap className="size-4" />
-                Student Login
-              </TabsTrigger>
-              <TabsTrigger
-                value="leader"
-                className="rounded-none border-b-2 border-transparent bg-transparent px-2 pb-3 text-sm font-medium text-slate-500 shadow-none data-[state=active]:border-[#FF5900] data-[state=active]:bg-transparent data-[state=active]:text-[#051B3D] data-[state=active]:shadow-none"
-              >
-                <ShieldCheck className="size-4" />
-                Club Leader Login
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="student" className="mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="student-email" className="text-[#051B3D]">
-                    Email
-                  </Label>
-                  <Input
-                    id="student-email"
-                    type="email"
-                    required
-                    placeholder="computingID@virginia.edu"
-                    defaultValue="jav4bt@virginia.edu"
-                    className="border-slate-200 focus-visible:border-[#FF5900] focus-visible:ring-[#FF5900]/40"
-                  />
-                  <p className="text-xs text-slate-500">Access requires a verified @virginia.edu address.</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="student-password" className="text-[#051B3D]">
-                      Password
-                    </Label>
-                    <button type="button" className="text-xs font-medium text-slate-500 hover:text-[#FF5900]">
-                      Forgot?
-                    </button>
-                  </div>
-                  <Input
-                    id="student-password"
-                    type="password"
-                    required
-                    defaultValue="demo-password"
-                    className="border-slate-200 focus-visible:border-[#FF5900] focus-visible:ring-[#FF5900]/40"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#FF5900] text-white hover:bg-[#051B3D]"
-                >
-                  Sign In
-                  <ArrowRight className="size-4" />
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="leader" className="mt-6">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="leader-email" className="text-[#051B3D]">
-                    Email
-                  </Label>
-                  <Input
-                    id="leader-email"
-                    type="email"
-                    required
-                    placeholder="computingID@virginia.edu"
-                    defaultValue="pn8xk@virginia.edu"
-                    className="border-slate-200 focus-visible:border-[#FF5900] focus-visible:ring-[#FF5900]/40"
-                  />
-                  <p className="text-xs text-slate-500">Access requires a verified @virginia.edu address.</p>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="leader-password" className="text-[#051B3D]">
-                      Password
-                    </Label>
-                    <button type="button" className="text-xs font-medium text-slate-500 hover:text-[#FF5900]">
-                      Forgot?
-                    </button>
-                  </div>
-                  <Input
-                    id="leader-password"
-                    type="password"
-                    required
-                    defaultValue="demo-password"
-                    className="border-slate-200 focus-visible:border-[#FF5900] focus-visible:ring-[#FF5900]/40"
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-[#FF5900] text-white hover:bg-[#051B3D]"
-                >
-                  Sign In
-                  <ArrowRight className="size-4" />
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-
-          <p className="mt-8 text-center text-sm text-slate-500">
-            New here?{" "}
-            <button type="button" className="font-medium text-[#FF5900] hover:underline">
-              Create your OutClass profile
-            </button>
-          </p>
+        <p className="text-xs text-slate-400">Built at UVA. Made for your next chapter.</p>
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-64 -right-64 size-[600px] rounded-full border border-white/10" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-48 -right-48 size-[470px] rounded-full border border-white/10" />
+      </aside>
+      <main className="flex min-h-svh flex-col px-6 py-7 sm:px-12 lg:px-16">
+        <div className="flex items-center justify-between gap-4">
+          <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900"><ArrowLeft className="size-4" />Back to home</button>
+          <OutClassLogo variant="light" className="h-7 w-auto lg:hidden" />
         </div>
-      </div>
+        <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-14">
+          <div className="mb-6 flex size-12 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50">{step === "email" ? <ShieldCheck className="size-6 text-[#051B3D]" /> : <Mail className="size-6 text-[#051B3D]" />}</div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">{step === "email" ? "Welcome to OutClass" : "Verify your email"}</p>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
+          <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Use your UVA email to log in or create an account. No password to remember." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
+          {step === "email" ? (
+            <form noValidate onSubmit={requestCode} className="mt-8 space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="uva-email">UVA email address</Label>
+                <Input id="uva-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => { setEmail(event.target.value); setError("") }} aria-invalid={!!error} aria-describedby={error ? "email-hint auth-error" : "email-hint"} placeholder="computingid@virginia.edu" className="h-12" />
+                <p id="email-hint" className="text-xs text-neutral-500">Only @virginia.edu email addresses are supported.</p>
+              </div>
+              {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
+              <Button type="submit" className="h-12 w-full">Continue with email<ArrowRight className="size-4" /></Button>
+              <p className="text-center text-xs leading-5 text-neutral-500">Email verification is coming soon. This preview doesn't send email or create an account.</p>
+            </form>
+          ) : (
+            <form onSubmit={verifyCode} className="mt-7 space-y-5">
+              <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">{notice}</div>
+              <div className="space-y-2">
+                <Label htmlFor="verification-code">Verification code</Label>
+                <Input key="code" id="verification-code" autoFocus inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "").slice(0, 6)); setError("") }} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em]" />
+              </div>
+              {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
+              <Button type="submit" disabled={code.length !== 6} className="h-12 w-full">Verify and log in<ArrowRight className="size-4" /></Button>
+              <div className="flex flex-wrap justify-between gap-3 text-xs">
+                <button type="button" onClick={() => setNotice("Email delivery isn't connected yet, so no new code was sent.")} className="font-medium text-neutral-600 hover:text-neutral-900">Resend code</button>
+                <button type="button" onClick={() => { setStep("email"); setCode(""); setError(""); setNotice("") }} className="font-medium text-neutral-600 hover:text-neutral-900">Use a different email</button>
+              </div>
+            </form>
+          )}
+          <div className="mt-9 border-t border-neutral-200 pt-6 text-center">
+            <p className="text-xs text-neutral-500">Just looking around?</p>
+            <button type="button" onClick={() => onEnter(initialRole === "leader" ? "leader-dashboard" : "student-dashboard")} className="mt-2 text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900">Explore the demo</button>
+          </div>
+        </div>
+        <p className="text-center text-xs text-neutral-400">For University of Virginia students and club leaders.</p>
+      </main>
     </div>
   )
 }

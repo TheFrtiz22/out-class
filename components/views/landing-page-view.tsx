@@ -1,97 +1,41 @@
 "use client"
 
+import { ClubLogo } from "@/components/club-logo"
+import { LiveProductPreview } from "@/components/live-product-preview"
 import { useState } from "react"
-import { ArrowRight, ArrowUpRight, Check, ChevronDown, LayoutDashboard, Compass, FileText, CalendarDays, Settings, Bell, MoreHorizontal, Plus, GraduationCap, Layers, CheckCircle2, Users, MessageSquare, X, Menu, Sparkles, ShieldCheck, Star } from "lucide-react"
-import { editorialUi } from "@/lib/design-system"
-import { cn } from "@/lib/utils"
+import { ArrowRight, ArrowUpRight, Check, LayoutDashboard, FileText, CalendarDays, GraduationCap, Layers, CheckCircle2, Users, MessageSquare, X, Menu } from "lucide-react"
 import "./landing.css"
 
 interface LandingPageViewProps { onNavigateToApp: (role?: "student" | "leader") => void }
-const clubs = [
-  { initials: "180", name: "180 Degrees Consulting", type: "Consulting", color: "green", status: "Interview", date: "Sep 24, 2026" },
-  { initials: "M", name: "McIntire Investment Institute", type: "Finance & investing", color: "blue", status: "In review", date: "Sep 21, 2026" },
-  { initials: "V", name: "Virginia Venture Fund", type: "Venture capital", color: "purple", status: "Submitted", date: "Sep 20, 2026" },
-]
-function Brand({ light = false }: { light?: boolean }) { return <span className={`oc-brand ${light ? "light" : ""}`}><span className="oc-mark"><Layers size={21} strokeWidth={2.5}/></span>outclass<span className="brand-period">.</span></span> }
-function Dashboard({ leader, onOpen }: { leader: boolean; onOpen: () => void }) {
-  const navItems = [
-    [LayoutDashboard, "Overview"],
-    [Compass, leader ? "Applicants" : "Discover clubs"],
-    [FileText, leader ? "Applications" : "My applications"],
-    [CalendarDays, "Interviews"],
-  ] as const
-
+function Brand({ light = false, mark = false }: { light?: boolean; mark?: boolean }) {
   return (
-    <div className={cn("product-window", editorialUi.surface, editorialUi.app)}>
-      <aside className={cn("product-sidebar", editorialUi.sidebar)}>
-        <Brand />
-        <div className="workspace-label">{leader ? "EXECUTIVE" : "STUDENT"}</div>
-        {navItems.map(([Icon, label], index) => (
-          <div
-            key={label}
-            className={cn(
-              "side-item",
-              index === 0 ? editorialUi.sidebarLinkActive : editorialUi.sidebarLink,
-            )}
-          >
-            <Icon />
-            {label}
-            {index === 2 && <span>3</span>}
-          </div>
-        ))}
-        <div className="sidebar-bottom">
-          <div className={cn("side-item", editorialUi.sidebarLink)}><Settings />Settings</div>
-          <div className="sidebar-person">
-            <span className="avatar">AJ</span>
-            <div>Alex Johnson<small>alex.johnson@virginia.edu</small></div>
-            <ChevronDown size={13} />
-          </div>
-        </div>
-      </aside>
-
-      <div className="product-main bg-white">
-        <div className="product-top border-neutral-200 bg-white">
-          <span>Workspace <span className="slash">/</span> <b>Overview</b></span>
-          <div><span className="semester">Fall 2026</span><Bell size={15}/><span className="avatar small">AJ</span></div>
-        </div>
-        <div className="product-content bg-white">
-          <div className="welcome">
-            <div>
-              <h3 className={editorialUi.title}>{leader ? "Your next great class starts here." : "Your next chapter starts here, Alex."} <span>✦</span></h3>
-              <p className={editorialUi.secondaryText}>{leader ? "A clear view of your entire recruitment pipeline." : "Big ambitions. One application. Let’s find your people."}</p>
-            </div>
-            <button onClick={onOpen} className={cn("mini-primary", editorialUi.primaryAction)}>{leader ? "View applicants" : "Explore clubs"}<Plus size={12}/></button>
-          </div>
-          <div className="stats">
-            {[[FileText, leader ? "248" : "03", "Applications", "All in one place"], [Users, leader ? "64" : "02", "In review", "Good things take time"], [CalendarDays, leader ? "32" : "01", "Upcoming interviews", "You’re one step closer"]].map(([Icon, num, title, subtitle], i) => {
-              const StatIcon = Icon as typeof FileText
-              return <div className={cn("stat", editorialUi.surface)} key={i}><div><span>{title as string}</span><StatIcon size={15}/></div><strong>{num as string}</strong><small><span className={`stat-dot dot-${i}`}/>{subtitle as string}</small></div>
-            })}
-          </div>
-          <div className={cn("applications", editorialUi.surface)}>
-            <div className="applications-title"><h4 className={editorialUi.title}>{leader ? "Club applications overview" : "My applications"}<span>3</span></h4><button onClick={onOpen}>View all<ArrowUpRight size={12}/></button></div>
-            <div className="table-head"><span>CLUB NAME</span><span>STATUS</span><span>LAST UPDATED</span><span/></div>
-            {clubs.map(club => <div className="application-row" key={club.name}><div className="club-cell"><span className={`club-symbol ${club.color}`}>{club.initials}</span><div><b>{club.name}</b><small>{club.type}</small></div></div><span className={`status ${club.status.replace(" ", "-").toLowerCase()}`}><i/>{club.status}</span><span className="date">{club.date}</span><MoreHorizontal size={16}/></div>)}
-          </div>
-          <div className={cn("profile-reminder", editorialUi.surface)}><span className="reminder-icon"><Sparkles size={16}/></span><div><b>A little more you. A lot more opportunity.</b><small>Complete your profile to put your best foot forward.</small></div><button onClick={onOpen}>Finish profile<ArrowRight size={13}/></button></div>
-        </div>
-      </div>
-    </div>
+    <span className={`oc-brand ${light ? "light" : ""} ${mark ? "oc-brand-icon" : ""}`}>
+      <img
+        src={mark ? "/outclass-brand-mark.png" : light ? "/outclass-wordmark-dark.png" : "/outclass-wordmark-light.png"}
+        alt="OutClass"
+        width={mark ? 1254 : light ? 789 : 921}
+        height={mark ? 1254 : light ? 316 : 271}
+        className="oc-brand-image"
+      />
+    </span>
   )
+}
+function Dashboard({ leader }: { leader: boolean }) {
+  return <LiveProductPreview view={leader ? "leader-dashboard" : "student-dashboard"} label={leader ? "Applicant CRM preview" : "Student dashboard preview"} />
 }
 export function LandingPageView({ onNavigateToApp }: LandingPageViewProps) {
   const [leader, setLeader] = useState(false)
   const [menu, setMenu] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
   return <div className="oc-landing"><header className="oc-header"><a href="#" aria-label="OutClass home"><Brand/></a><nav className={menu ? "open" : ""}><a href="#students" onClick={() => setMenu(false)}>Students</a><a href="#clubs" onClick={() => setMenu(false)}>Clubs</a><a href="#pricing" onClick={() => setMenu(false)}>Pricing</a></nav><div className="nav-actions"><button className="nav-cta" onClick={() => onNavigateToApp("student")}>Sign In / Apply<ArrowUpRight size={15}/></button><button className="mobile-menu" aria-label="Toggle navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button></div></header>
-  <main><section className="oc-hero"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-copy"><div className="eyebrow-pill"><span/>BUILT FOR YOUR NEXT CHAPTER<ArrowUpRight size={12}/></div><h1>A Common App for<br/><span>club recruitment.</span></h1><p>One profile, one place to apply to every<br className="desktop-break"/> selective club on campus.</p><div className="hero-actions"><button className="oc-button orange" onClick={() => onNavigateToApp("student")}>Create Student Profile<ArrowRight size={17}/></button><a className="oc-button outline" href="#clubs">For Club Leaders<ArrowUpRight size={17}/></a></div><div className="hero-notes"><span><Check size={13}/>Free for students</span><span><Check size={13}/>Built at UVA, for UVA</span></div></div><div className="dashboard-stage"><div className="preview-tabs" role="tablist" aria-label="Dashboard preview"><button role="tab" aria-selected={!leader} onClick={() => setLeader(false)} className={!leader ? "active" : ""}><GraduationCap size={14}/>For students</button><button role="tab" aria-selected={leader} onClick={() => setLeader(true)} className={leader ? "active" : ""}><Users size={14}/>For club leaders</button></div><Dashboard leader={leader} onOpen={() => onNavigateToApp(leader ? "leader" : "student")}/><div className="floating-note"><span><CheckCircle2 size={20}/></span><div>Less busywork. More belonging.<small>Your campus, connected.</small></div></div></div></section>
-  <section className="trust-strip"><p>TRUSTED BY TOP CLUBS AT UVA</p><div className="club-logos"><span className="consulting-logo">180<span>DEGREES<br/>CONSULTING</span></span><span className="mcintire-logo"><span>Ⅿ</span>McIntire<small>INVESTMENT INSTITUTE</small></span><span className="venture-logo">V<span>VIRGINIA<br/>VENTURE FUND</span></span><span className="commerce-logo"><GraduationCap/>COMM<span>COMMERCE COUNCIL</span></span><span className="enactus-logo">enactus<span>at the University of Virginia</span></span></div></section>
+  <main><section className="oc-hero"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-copy"><div className="eyebrow-pill"><span/>BUILT FOR YOUR NEXT CHAPTER<ArrowUpRight size={12}/></div><h1>A Common App for<br/><span>club recruitment.</span></h1><p>One profile, one place to apply to every<br className="desktop-break"/> selective club on campus.</p><div className="hero-actions"><button className="oc-button orange" onClick={() => onNavigateToApp("student")}>Create Student Profile<ArrowRight size={17}/></button><a className="oc-button outline" href="#clubs">For Club Leaders<ArrowUpRight size={17}/></a></div><div className="hero-notes"><span><Check size={13}/>Free for students</span><span><Check size={13}/>Built at UVA, for UVA</span></div></div><div className="dashboard-stage"><div className="preview-tabs" role="tablist" aria-label="Dashboard preview"><button role="tab" aria-selected={!leader} onClick={() => setLeader(false)} className={!leader ? "active" : ""}><GraduationCap size={14}/>For students</button><button role="tab" aria-selected={leader} onClick={() => setLeader(true)} className={leader ? "active" : ""}><Users size={14}/>For club leaders</button></div><Dashboard leader={leader}/><div className="floating-note"><span><CheckCircle2 size={20}/></span><div>Less busywork. More belonging.<small>Your campus, connected.</small></div></div></div></section>
+  <section className="trust-strip"><p>TRUSTED BY TOP CLUBS AT UVA</p><div className="club-logos"><ClubLogo clubId="180-degrees" logoUrl="/logos/180-degrees-globe.png" text="180" alt="180 Degrees Consulting" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="consulting-logo">180<span>DEGREES<br/>CONSULTING</span></span>} /><ClubLogo clubId="mii" logoUrl="/logos/mii.webp" text="MII" alt="McIntire Investment Institute" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="mcintire-logo"><span>Ⅿ</span>McIntire<small>INVESTMENT INSTITUTE</small></span>} /><ClubLogo clubId="vvf" logoUrl="/logos/vvf.webp" text="VVF" alt="Virginia Venture Fund" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="venture-logo">V<span>VIRGINIA<br/>VENTURE FUND</span></span>} /><ClubLogo clubId="commerce-council" text="CC" alt="Commerce Council" color="#273c6f" className="h-12 w-36 rounded-md hidden lg:block" fallback={<span className="commerce-logo"><GraduationCap/>COMM<span>COMMERCE COUNCIL</span></span>} /><ClubLogo clubId="enactus" logoUrl="/logos/enactus-wordmark.png" text="E" alt="Enactus" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="enactus-logo">enactus<span>at the University of Virginia</span></span>} /></div></section>
   <section className="problem-section section-wrap" id="about"><div className="section-heading"><span className="section-kicker">A SMARTER WAY IN</span><h2>Great opportunities.<br/>Less of the runaround.</h2><p>Recruitment should be about finding the right fit.<br/>Not finding the right spreadsheet.</p></div><div className="bento"><div className="old-way"><span className="card-label">THE OLD WAY</span><h3>Too many tabs.<br/>Too little clarity.</h3><div className="scattered-tools"><span className="tool forms"><FileText/>Google Forms</span><span className="tool sheets"><LayoutDashboard/>Spreadsheets</span><span className="tool calendar"><CalendarDays/>Calendly</span><span className="tool email"><MessageSquare/>“Any updates?”</span></div><p>Repeated applications. Lost emails.<br/>A process that works against you.</p></div><div className="new-way"><span className="card-label"><span/>THE OUTCLASS WAY</span><h3>One home for<br/>your next opportunity.</h3><div className="connected-tools"><span><FileText/></span><i/><Brand light/><i/><span><Users/></span></div><div className="new-benefits"><span><CheckCircle2/>One unified profile</span><span><CheckCircle2/>Every application, together</span><span><CheckCircle2/>Clear updates at every step</span></div></div></div></section>
-  <section className="features section-wrap"><article className="feature-row" id="students"><div className="feature-copy"><span className="feature-icon"><GraduationCap/></span><span className="section-kicker">FOR THE AMBITIOUS STUDENT</span><h2>Build once.<br/>Apply anywhere.</h2><p>You’re more than another Google Form. Bring your experience, accolades, and ambitions together in one profile that goes wherever you do.</p><ul><li><Check/>Your resume, photo, and story in one place</li><li><Check/>Apply to your favorite clubs in minutes</li><li><Check/>Stay on top of every next step</li></ul><button className="text-link" onClick={() => onNavigateToApp("student")}>Make your first impression count<ArrowRight size={16}/></button></div><div className="feature-art profile-art"><div className={cn("profile-card", editorialUi.surface)}><div className="profile-cover"><span>YOUR POTENTIAL. ALL IN ONE PLACE.</span></div><span className="profile-avatar">AJ</span><div className="profile-card-content"><span className="verified"><ShieldCheck size={12}/>UVA VERIFIED</span><h3>Alex Johnson</h3><p>University of Virginia · Class of 2028</p><div className="profile-tags"><span>Commerce</span><span>Consulting</span><span>Social impact</span></div><div className="profile-bio">Curious thinker. Community builder.<br/>Ready to make an impact.</div><div className="resume"><FileText size={19}/><span>Alex_Johnson_Resume.pdf<small>Ready to share with your next club</small></span><CheckCircle2 size={17}/></div></div></div><div className="profile-complete"><CheckCircle2 size={16}/>Profile complete. Possibilities open.</div></div></article>
-  <article className="feature-row reverse" id="clubs"><div className="feature-copy"><span className="feature-icon"><Layers/></span><span className="section-kicker">FOR FORWARD-THINKING CLUBS</span><h2>End-to-end<br/>club dashboard.</h2><p>Build a great class, without the administrative marathon. Give your entire team one clear view of every applicant, every score, and every round.</p><ul><li><Check/>Review applications side by side</li><li><Check/>Create consistent, custom scoring rubrics</li><li><Check/>Move your pipeline forward, together</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>Meet your recruitment command center<ArrowRight size={16}/></button></div><div className="feature-art pipeline-art"><div className={cn("pipeline-card", editorialUi.surface)}><div className="mini-heading"><b>Fall recruitment</b><span className="live-dot">Live</span></div><div className="pipeline-count"><strong>248</strong><span>applicants. One clear picture.</span></div><div className="kanban">{["In review", "Interview", "Accepted"].map((label, i) => <div className="kanban-column" key={label}><h4><i style={{background: ["#a9acc6", "#f17842", "#49a685"][i]}}/>{label}<span>{[64,32,18][i]}</span></h4>{[0,1].map(n => <div className={cn("candidate", editorialUi.surface)} key={n}><span className={`candidate-avatar c-${i+n}`}>{["AJ","SL","MK","JR"][i+n]}</span><b>{["Alex Johnson","Sarah Lee","Maya Kim","James Reed"][i+n]}</b><small>{["Commerce · 2028","Economics · 2027"][n]}</small><span className="candidate-score"><Star size={10}/> {(4.6 + n / 10).toFixed(1)} <span>/ 5.0</span></span></div>)}</div>)}</div></div></div></article>
-  <article className="feature-row"><div className="feature-copy"><span className="feature-icon"><MessageSquare/></span><span className="section-kicker">BETTER CONVERSATIONS. BETTER DECISIONS.</span><h2>Live interview<br/>workspace.</h2><p>Be present in the conversation. Score candidates, take notes, and stay aligned with your fellow interviewers, all in real time.</p><ul><li><Check/>Shared notes that keep everyone in sync</li><li><Check/>Structured rubrics for thoughtful decisions</li><li><Check/>Less back-and-forth after the interview</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>See the bigger picture<ArrowRight size={16}/></button></div><div className="feature-art interview-art"><div className={cn("interview-card", editorialUi.surface)}><div className="mini-heading"><b>Interview workspace</b><span className="live-dot">Live session</span></div><div className="interview-person"><span className="avatar">AJ</span><div><h4>Alex Johnson</h4><small>Round 2 · Behavioral interview</small></div><span className="session-time">12:48</span></div><div className="rubric"><span>EVALUATION RUBRIC</span>{["Communication","Critical thinking","Culture & contribution"].map((v,i) => <div key={v}><b>{v}</b><div>{[1,2,3,4,5].map(n => <span key={n} className={n <= (i === 1 ? 4 : 5) ? "filled" : ""}>{n}</span>)}</div></div>)}</div><div className="shared-note"><span>SHARED NOTES <span>● Sarah is editing</span></span><p>Thoughtful approach to problem-solving. Strong interest in creating an impact on campus.<i/></p></div><div className="saved"><Check size={12}/>All changes saved <span>2 interviewers connected</span></div></div></div></article></section>
+  <section className="features section-wrap"><article className="feature-row" id="students"><div className="feature-copy"><span className="feature-brand"><Brand mark/></span><span className="section-kicker">FOR THE AMBITIOUS STUDENT</span><h2>Build once.<br/>Apply anywhere.</h2><p>You’re more than another Google Form. Bring your experience, accolades, and ambitions together in one profile that goes wherever you do.</p><ul><li><Check/>Your resume, photo, and story in one place</li><li><Check/>Apply to your favorite clubs in minutes</li><li><Check/>Stay on top of every next step</li></ul><button className="text-link" onClick={() => onNavigateToApp("student")}>Make your first impression count<ArrowRight size={16}/></button></div><div className="feature-art live-feature-art"><LiveProductPreview view="student-profile" label="Profile preview" /></div></article>
+  <article className="feature-row reverse" id="clubs"><div className="feature-copy"><span className="feature-icon"><Layers/></span><span className="section-kicker">FOR FORWARD-THINKING CLUBS</span><h2>End-to-end<br/>club dashboard.</h2><p>Build a great class, without the administrative marathon. Give your entire team one clear view of every applicant, every score, and every round.</p><ul><li><Check/>Review applications side by side</li><li><Check/>Create consistent, custom scoring rubrics</li><li><Check/>Move your pipeline forward, together</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>Meet your recruitment command center<ArrowRight size={16}/></button></div><div className="feature-art live-feature-art"><LiveProductPreview view="leader-dashboard" label="Applicant CRM preview" /></div></article>
+  <article className="feature-row"><div className="feature-copy"><span className="feature-icon"><MessageSquare/></span><span className="section-kicker">BETTER CONVERSATIONS. BETTER DECISIONS.</span><h2>Live interview<br/>workspace.</h2><p>Be present in the conversation. Score candidates, take notes, and stay aligned with your fellow interviewers, all in real time.</p><ul><li><Check/>Shared notes that keep everyone in sync</li><li><Check/>Structured rubrics for thoughtful decisions</li><li><Check/>Less back-and-forth after the interview</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>See the bigger picture<ArrowRight size={16}/></button></div><div className="feature-art live-feature-art"><LiveProductPreview view="interview-workspace" label="Interview workspace preview" /></div></article></section>
   <section className="pricing-strip section-wrap" id="pricing"><div><span className="section-kicker">BIG OPPORTUNITIES. SMALL BARRIERS.</span><h2>Free for students.<br/>Ready for your club.</h2></div><p>Your next chapter shouldn’t come with a price tag.<br/>Students join free. Clubs can explore the UVA pilot.</p><button className="oc-button outline" onClick={() => onNavigateToApp("leader")}>Explore the pilot<ArrowUpRight size={16}/></button></section>
-  <section className="bottom-cta"><div className="cta-decoration"/><span className="section-kicker">YOUR NEXT GREAT CLASS STARTS HERE</span><h2>Stop running recruitment<br/>on spreadsheets.</h2><p>Upgrade your club’s pipeline today.</p><button className="oc-button orange" onClick={() => onNavigateToApp("leader")}>Join the Pilot<ArrowRight size={17}/></button><small>Built with ambition. Built for belonging. Built at UVA.</small></section></main>
+  <section className="bottom-cta"><div className="cta-decoration"/><div className="cta-brand"><Brand light/></div><span className="section-kicker">YOUR NEXT GREAT CLASS STARTS HERE</span><h2>Stop running recruitment<br/>on spreadsheets.</h2><p>Upgrade your club’s pipeline today.</p><button className="oc-button orange" onClick={() => onNavigateToApp("leader")}>Join the Pilot<ArrowRight size={17}/></button><small>Built with ambition. Built for belonging. Built at UVA.</small></section></main>
   <footer className="oc-footer"><div><Brand/><p>A better way to find your people.</p></div><nav><a href="#about">About</a>{["Contact","Privacy","Terms"].map(label => <button key={label} onClick={() => setInfo(label)}>{label}</button>)}</nav><span>© {new Date().getFullYear()} OutClass</span></footer>
   {info && <div className="info-backdrop" onClick={() => setInfo(null)}><section className="info-dialog" role="dialog" aria-modal="true" aria-label={info} onClick={e => e.stopPropagation()}><button className="dialog-close" aria-label="Close dialog" autoFocus onClick={() => setInfo(null)}><X/></button><Brand/><h2>{info}</h2><p>{info === "Contact" ? "Interested in bringing OutClass to your club? Explore the club workspace to see how the UVA pilot can work for your team." : `${info} information for the live service will be available before launch. This preview lets you explore the OutClass experience using demonstration data.`}</p><button className="oc-button orange" onClick={() => info === "Contact" ? onNavigateToApp("leader") : setInfo(null)}>{info === "Contact" ? "Explore club workspace" : "Got it"}<ArrowRight size={16}/></button></section></div>}
   </div>

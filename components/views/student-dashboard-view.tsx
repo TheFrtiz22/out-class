@@ -1,195 +1,117 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowUpRight, Clock, Compass, Sparkles, X } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ClubLogo } from "@/components/club-logo"
-import { StatusBadge } from "@/components/status-badge"
-import { ApplicationStatusStepper } from "@/components/application-status-stepper"
-import { applications, type Application } from "@/lib/data"
+import { applications as seedApplications, currentStudent, type Application } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
+import { eventStart } from "@/lib/calendar"
 import type { ViewId } from "@/lib/views"
 
+const primaryButton = "bg-[#ea580c] font-semibold text-white shadow-none hover:bg-[#c2410c]"
+
+function applicationStatus(app: Application) {
+  if (app.outcome) return { label: app.outcome, style: app.outcome === "Accepted" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800" }
+  if (app.stage === "Round 1" || app.stage === "Round 2") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
+  if (app.stage === "Decision") return { label: "Awaiting decision", style: "bg-sky-50 text-sky-800" }
+  return { label: "In review", style: "bg-amber-50 text-amber-800" }
+}
+
 export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
-  const [showNotification, setShowNotification] = useState(true)
-  const { focusApplication } = useApplicationState()
-
-  const draftApplications = applications.filter((a) => a.stage === "Draft")
-  const submittedApplications = applications.filter((a) => a.stage !== "Draft")
-  const hasNoActivity = draftApplications.length === 0 && submittedApplications.length === 0
-
-  // Routes to the Application Tracker and opens the canvas for this specific
-  // application (matched by clubId), so "Continue" lands on the right draft.
-  const handleContinueApplication = (app: Application) => {
-    focusApplication(app.clubId)
-    onNavigate("tracker")
-  }
-
-  const handleViewApplication = (app: Application) => {
+  const { focusApplication, trackedApps, events, focusEvent } = useApplicationState()
+  const applications: Application[] = trackedApps.map((app) => {
+    const seed = seedApplications.find((item) => item.clubId === app.clubId)
+    const deadline = events.find((event) => event.clubId === app.clubId && event.type === "Deadline")
+    return { ...seed, id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
+      stage: app.status === "Drafting" ? "Draft" : app.status === "1st Round Interview" ? "Round 1" : "Applied",
+      essaysTotal: app.questionsTotal, essaysWritten: app.questionsCompleted,
+      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—" }
+  })
+  const upcomingInterviews = events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
+  const drafts = applications.filter((app) => app.stage === "Draft")
+  const submitted = applications.filter((app) => app.stage !== "Draft")
+  const metrics = [
+    { label: "Applications", count: submitted.length, description: "Submitted applications", icon: FileText },
+    { label: "In review", count: submitted.filter((app) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
+    { label: "Upcoming interviews", count: upcomingInterviews.length, description: "Applications in interview rounds", icon: CalendarDays },
+  ]
+  function openApplication(app: Application) {
     focusApplication(app.clubId)
     onNavigate("tracker")
   }
 
   return (
-    <div className="space-y-8">
-      {/* Top Alert Banner — full width */}
-      {showNotification && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted p-4 shadow-none">
-          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-            <Sparkles className="size-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status update</p>
-            <p className="text-sm leading-snug text-foreground">
-              You have been invited to a <span className="font-semibold">First Round Interview</span> for Virginia
-              Venture Fund.
-            </p>
-          </div>
-          <button
-            type="button"
-            aria-label="Dismiss notification"
-            onClick={() => setShowNotification(false)}
-            className="shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100"
-          >
-            <X className="size-4" />
-          </button>
+    <div className="space-y-8 font-sans text-neutral-900">
+      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">Your next chapter starts here, {currentStudent.name.split(" ")[0]}.</h1>
+          <p className="mt-3 text-sm leading-relaxed text-neutral-500 sm:text-base">Big ambitions. One application. Let&apos;s find your people.</p>
         </div>
-      )}
+        <Button onClick={() => onNavigate("discover")} className={`${primaryButton} shrink-0 self-start sm:self-auto`}>Explore clubs <Plus className="size-4" /></Button>
+      </section>
 
-      {hasNoActivity ? (
-        <Card className="border-gray-200 bg-white">
-          <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-foreground/5">
-              <Compass className="size-8 text-foreground" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold text-foreground">No active applications yet</h3>
-              <p className="mx-auto max-w-sm text-sm text-gray-500">
-                Explore clubs on campus and start an application to see your progress and status here.
-              </p>
-            </div>
-            <Button className="bg-primary text-white hover:bg-primary/90" onClick={() => onNavigate("discover")}>
-              Discover Clubs
-              <ArrowUpRight className="size-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Section 1 — Drafts in Progress (grid) */}
-          {draftApplications.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">Drafts in Progress</h2>
-                  <p className="text-sm text-gray-500">
-                    {draftApplications.length} application{draftApplications.length === 1 ? "" : "s"} in progress
-                  </p>
+      <section aria-label="Application overview" className="grid gap-4 sm:grid-cols-3">
+        {metrics.map(({ label, count, description, icon: Icon }) => (
+          <div key={label} className="rounded-xl border border-neutral-200 bg-white p-6">
+            <div className="flex items-center justify-between gap-3 text-sm font-medium text-neutral-600">{label}<Icon className="size-4 text-neutral-400" aria-hidden="true" /></div>
+            <p className="mt-5 text-4xl font-semibold tracking-tight tabular-nums">{String(count).padStart(2, "0")}</p>
+            <p className="mt-2 text-xs text-neutral-500">{description}</p>
+          </div>
+        ))}
+      </section>
+
+      {upcomingInterviews.length > 0 && <section className="space-y-3" aria-label="Upcoming interviews">
+        <h2 className="text-xl font-semibold">Upcoming interviews</h2>
+        {upcomingInterviews.slice(0, 3).map((event) => <button key={event.id} type="button" className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border p-4 text-left hover:bg-neutral-50" onClick={() => { focusEvent(event.id); onNavigate("calendar") }}><span className="font-medium">{event.title}</span><span className="text-sm text-neutral-500">{event.date} · {event.time}</span></button>)}
+      </section>}
+
+      <section aria-labelledby="drafts-heading" className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div><h2 id="drafts-heading" className="text-xl font-semibold tracking-tight">Drafts in Progress</h2><p className="mt-1 text-sm text-neutral-500">Pick up where you left off.</p></div>
+          <Button variant="ghost" onClick={() => onNavigate("discover")}>Browse clubs <ArrowUpRight className="size-4" /></Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {drafts.map((app) => {
+            const total = app.essaysTotal ?? 0
+            const completed = Math.min(total, Math.max(0, app.essaysWritten ?? 0))
+            const percent = total > 0 ? Math.floor(completed / total * 100) : 0
+            return (
+              <article key={app.id} className="flex flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5">
+                <div className="flex items-center gap-3">
+                  <ClubLogo clubId={app.clubId} logoUrl={app.logoUrl ?? (app.clubId === "vvf" ? "/logos/vvf.webp" : undefined)} text={app.logoText} color={app.color} />
+                  <div className="min-w-0"><h3 className="text-sm font-semibold tracking-tight">{app.clubName}</h3>{app.deadline && <p className="mt-1 text-xs font-medium text-red-600">{app.deadline}</p>}</div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onNavigate("discover")}
-                  className="border-gray-300 bg-white text-foreground hover:bg-gray-50"
-                >
-                  Browse
-                  <ArrowUpRight className="size-4" />
-                </Button>
-              </div>
+                <div className="mt-auto space-y-2">
+                  <Progress value={percent} aria-label={`${app.clubName} completion`} className="h-2 bg-neutral-100 [&_[data-slot=progress-indicator]]:bg-[#ea580c]" />
+                  <p className="text-xs text-neutral-500">{percent}% Complete · {completed} of {total} essays written</p>
+                </div>
+                <Button className={`${primaryButton} w-full`} onClick={() => openApplication(app)}>Continue Application</Button>
+              </article>
+            )
+          })}
+        </div>
+        {drafts.length === 0 && <p className="rounded-xl border border-neutral-200 p-6 text-sm text-neutral-500">No drafts in progress. Explore clubs to start an application.</p>}
+      </section>
 
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {draftApplications.map((app) => {
-                  const percent = Math.floor(((app.essaysWritten ?? 0) / (app.essaysTotal ?? 1)) * 100)
-                  return (
-                    <Card key={app.id} className="border-gray-200 bg-white">
-                      <CardHeader className="flex-row items-center gap-3 space-y-0">
-                        <ClubLogo text={app.logoText} color={app.color} />
-                        <div className="min-w-0 flex-1">
-                          <CardTitle className="truncate text-sm text-foreground">{app.clubName}</CardTitle>
-                          <p className="text-xs font-medium text-red-600">{app.deadline}</p>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="space-y-1.5">
-                          <Progress value={percent} className="h-2" />
-                          <p className="text-xs text-gray-500">
-                            {percent}% Complete • {app.essaysWritten} of {app.essaysTotal} essays written
-                          </p>
-                        </div>
-                        <Button
-                          className="w-full bg-primary text-white hover:bg-primary/90"
-                          onClick={() => handleContinueApplication(app)}
-                        >
-                          Continue Application
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Section 2 — Submitted Applications (full-width list) */}
-          {submittedApplications.length > 0 && (
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-base font-semibold tracking-tight text-foreground">Submitted Applications</h2>
-                <p className="text-sm text-gray-500">
-                  {submittedApplications.length} application{submittedApplications.length === 1 ? "" : "s"} under
-                  review
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {submittedApplications.map((app) => (
-                  <Card
-                    key={app.id}
-                    className="border-gray-200 bg-white transition-colors hover:border-foreground/30"
-                  >
-                    <CardContent className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:gap-6">
-                      {/* Left — logo & name */}
-                      <div className="flex items-center gap-3 lg:w-56 lg:shrink-0">
-                        <ClubLogo text={app.logoText} color={app.color} />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{app.clubName}</p>
-                          <p className="text-xs text-gray-500">Submitted {app.submitted}</p>
-                        </div>
-                      </div>
-
-                      {/* Middle — stepper */}
-                      <div className="min-w-0 flex-1">
-                        <ApplicationStatusStepper app={app} />
-                      </div>
-
-                      {/* Right — next step & action */}
-                      <div className="flex flex-col items-start gap-2 lg:w-64 lg:shrink-0 lg:items-end">
-                        <StatusBadge status={app.stage} />
-                        <div className="flex items-center gap-2 text-xs text-gray-600 lg:justify-end lg:text-right">
-                          <Clock className="size-3.5 shrink-0 text-muted-foreground" />
-                          <span>
-                            <span className="font-medium text-foreground">Next:</span> {app.nextStep}
-                          </span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full border-gray-300 bg-white text-gray-600 hover:bg-gray-50 lg:w-auto"
-                          onClick={() => handleViewApplication(app)}
-                        >
-                          View Application
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      <section aria-labelledby="applications-heading" className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4">
+          <h2 id="applications-heading" className="text-xl font-semibold tracking-tight">My applications <span className="ml-2 text-sm font-medium text-neutral-400">{submitted.length}</span></h2>
+          <Button variant="ghost" size="sm" onClick={() => onNavigate("tracker")}>View all <ArrowUpRight className="size-4" /></Button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[540px] text-left text-sm">
+            <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500"><tr><th scope="col" className="px-5 py-3 font-medium">Club Name</th><th scope="col" className="px-5 py-3 font-medium">Status</th><th scope="col" className="px-5 py-3 font-medium">Last Updated</th></tr></thead>
+            <tbody className="divide-y divide-neutral-100">
+              {submitted.map((app) => {
+                const status = applicationStatus(app)
+                return <tr key={app.id} className="hover:bg-neutral-50"><td className="px-5 py-4"><button onClick={() => openApplication(app)} className="flex items-center gap-3 text-left font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-orange-600" aria-label={`View application to ${app.clubName}`}><ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} text={app.logoText} color={app.color} size="sm" />{app.clubName}</button></td><td className="px-5 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${status.style}`}>{status.label}</span></td><td className="px-5 py-4 text-neutral-500"><span title="Submission date; no later update recorded">{app.submitted}</span></td></tr>
+              })}
+              {submitted.length === 0 && <tr><td colSpan={3} className="p-8 text-center text-neutral-500">Your submitted applications will appear here.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   )
 }

@@ -31,7 +31,7 @@ export function UnifiedStudentProfileView() {
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 space-y-1.5">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{currentStudent.name}</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground font-sans">{currentStudent.name}</h2>
             <p className="text-sm text-gray-600">{currentStudent.major}</p>
             <Badge variant="secondary" className="gap-1 border-gray-200 bg-gray-100 font-normal text-gray-700">
               <GraduationCap className="size-3" />
@@ -43,7 +43,7 @@ export function UnifiedStudentProfileView() {
 
       {/* Campus Involvement */}
       <div className="space-y-3">
-        <h3 className="font-display text-2xl font-medium text-foreground">My Clubs</h3>
+        <h3 className="font-sans text-2xl font-semibold text-foreground tracking-tight">My Clubs</h3>
         <p className="text-sm text-gray-500">Click a club to open its Member Portal.</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {studentMemberships.map((membership) => (
@@ -61,7 +61,7 @@ export function UnifiedStudentProfileView() {
               className="cursor-pointer border-gray-200 bg-white shadow-none transition-colors hover:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5900]"
             >
               <CardContent className="flex items-center gap-3 p-4">
-                <ClubLogo text={membership.logoText} color={membership.color} size="lg" />
+                <ClubLogo clubId={membership.clubId} logoUrl={membership.logoUrl} text={membership.logoText} color={membership.color} size="lg" />
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <p className="truncate text-sm font-semibold text-foreground">{membership.clubName}</p>
                   {membership.role === "Executive" ? (

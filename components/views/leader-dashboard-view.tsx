@@ -1,7 +1,12 @@
 "use client"
 
+import { LeadsTable } from "@/components/qr/leads-table"
+import { LiveVotingLauncher } from "@/components/live-voting/live-voting-launcher"
+import { useAttendance, eventsAttended } from "@/lib/attendance"
+import { useApplicationState } from "@/lib/application-state"
+import { currentStudent, experienceItems } from "@/lib/data"
 import { useMemo, useState } from "react"
-import { Search, SlidersHorizontal, Play, ChevronLeft, ChevronRight, FileText, LinkIcon, Check, Lock, ArrowUpRight, Zap, LayoutGrid, Rows3, X, Mail } from "lucide-react"
+import { ChevronUp, ChevronDown, Search, SlidersHorizontal, Play, ChevronLeft, ChevronRight, FileText, LinkIcon, Check, Lock, ArrowUpRight, Zap, LayoutGrid, Rows3, X, Mail } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,6 +28,18 @@ import { SpeedReviewMode } from "@/components/views/leader-dashboard/speed-revie
 import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
 import { applicants as seedApplicants, type Applicant, workspaceRounds } from "@/lib/data"
 
+import { averageApplicantScore, nextApplicantSort, sortApplicants, type ApplicantSortKey, type SortConfig } from "@/lib/applicant-sorting"
+
+const SORT_COLUMNS: { key: ApplicantSortKey; label: string; className?: string }[] = [
+  { key: "name", label: "Applicant" },
+  { key: "year", label: "Year", className: "w-24" },
+  { key: "major", label: "Major", className: "w-40" },
+  { key: "gpa", label: "GPA", className: "w-20" },
+  { key: "satScore", label: "SAT", className: "w-20" },
+  { key: "status", label: "Status", className: "w-28" },
+  { key: "score", label: "Avg Score", className: "w-28 pr-4 text-right" },
+]
+
 const STAGES = ["All Stages", "Applied", "Round 1", "Round 2", "Rejected", "Accepted"] as const
 
 const SCORING_CRITERIA = [
@@ -32,6 +49,9 @@ const SCORING_CRITERIA = [
 ] as const
 
 export function LeaderDashboardView() {
+  const attendance = useAttendance()
+  const { isApplied } = useApplicationState()
+  const [pipeline, setPipeline] = useState<"applicants" | "leads">("applicants")
   const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants)
   const [viewMode, setViewMode] = useState<"table" | "pipeline">("table")
   const [stage, setStage] = useState<(typeof STAGES)[number]>("All Stages")
@@ -43,7 +63,8 @@ export function LeaderDashboardView() {
   const [minGpa, setMinGpa] = useState("")
   const [appliedMinSat, setAppliedMinSat] = useState<number | null>(null)
   const [appliedMinGpa, setAppliedMinGpa] = useState<number | null>(null)
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: "ascending" })
   const [scores, setScores] = useState<Record<string, Record<string, number>>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [speedReviewQueue, setSpeedReviewQueue] = useState<Applicant[] | null>(null)
@@ -76,15 +97,17 @@ export function LeaderDashboardView() {
     })
   }, [applicants, query, majors, years, appliedMinSat, appliedMinGpa])
 
-  const navList = viewMode === "pipeline" ? pipelineFiltered : filtered
-  const active = activeIndex !== null ? navList[activeIndex] : null
+  const sortedApplicants = useMemo(() => sortApplicants(filtered, sortConfig, scores), [filtered, sortConfig, scores])
+  const navList = viewMode === "pipeline" ? pipelineFiltered : sortedApplicants
+  const activeIndex = navList.findIndex((applicant) => applicant.id === activeId)
+  const active = applicants.find((applicant) => applicant.id === activeId) ?? null
+
+  function requestSort(key: ApplicantSortKey) {
+    setSortConfig((previous) => nextApplicantSort(previous, key))
+  }
 
   function averageScore(applicantId: string, fallback: number) {
-    const s = scores[applicantId]
-    if (!s) return fallback
-    const values = Object.values(s)
-    if (values.length === 0) return fallback
-    return values.reduce((a, b) => a + b, 0) / values.length
+    return averageApplicantScore(applicantId, fallback, scores)
   }
 
   function setCriterionScore(applicantId: string, criterion: string, value: number) {
@@ -200,7 +223,7 @@ export function LeaderDashboardView() {
 
   function openProfileFromPipeline(id: string) {
     const idx = pipelineFiltered.findIndex((a) => a.id === id)
-    if (idx !== -1) setActiveIndex(idx)
+    if (idx !== -1) setActiveId(id)
   }
 
   function rejectFromPipeline(id: string) {
@@ -247,10 +270,18 @@ export function LeaderDashboardView() {
     toast.success(`Bulk message drafted for ${count} candidate${count === 1 ? "" : "s"}`)
   }
 
+  const applicantIds = new Set(applicants.map(applicant => applicant.email.toLowerCase()))
+  if (isApplied("vvf")) applicantIds.add(currentStudent.email)
+
   const activeFilterCount = majors.size + years.size + (appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-2" role="group" aria-label="CRM pipeline">
+        <Button variant="outline" aria-pressed={pipeline === "applicants"} className={cn("shadow-none", pipeline === "applicants" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("applicants")}>Active Applicants</Button>
+        <Button variant="outline" aria-pressed={pipeline === "leads"} className={cn("shadow-none", pipeline === "leads" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("leads")}>Interested Leads</Button>
+      </div>
+      {pipeline === "leads" ? <LeadsTable attendance={attendance} applicantIds={applicantIds} clubId="vvf" /> : <>
       {/* Filter command bar */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2.5">
         <div className="relative w-full sm:w-64">
@@ -402,6 +433,11 @@ export function LeaderDashboardView() {
           </Button>
         </div>
 
+        <LiveVotingLauncher applicants={(viewMode === "pipeline" ? pipelineFiltered : sortedApplicants).map(applicant => ({
+          ...applicant,
+          cumulativeScore: averageScore(applicant.id, applicant.score),
+          resumeHighlight: applicant.resumeHighlight ?? (applicant.email === currentStudent.email && experienceItems[0] ? `${experienceItems[0].title} — ${experienceItems[0].subtitle}` : undefined),
+        }))} />
         <Button
           size="sm"
           className="h-8 bg-primary text-xs text-white hover:bg-primary/90"
@@ -434,7 +470,7 @@ export function LeaderDashboardView() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 [&_th]:h-12 [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
+                <TableRow className="bg-white [&_th]:h-12 [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
                   <TableHead className="w-10 pl-4">
                     <Checkbox
                       checked={filtered.length > 0 && selected.size === filtered.length}
@@ -442,20 +478,27 @@ export function LeaderDashboardView() {
                       aria-label="Select all"
                     />
                   </TableHead>
-                  <TableHead>Applicant</TableHead>
-                  <TableHead className="w-24">Year</TableHead>
-                  <TableHead className="w-40">Major</TableHead>
-                  <TableHead className="w-20">GPA</TableHead>
-                  <TableHead className="w-20">SAT</TableHead>
-                  <TableHead className="w-28">Status</TableHead>
-                  <TableHead className="w-24 pr-4 text-right">Avg Score</TableHead>
+                  {SORT_COLUMNS.map((column) => (
+                    <TableHead key={column.key} scope="col" className={column.className}
+                      aria-sort={sortConfig.key === column.key ? sortConfig.direction : "none"}>
+                      <button type="button" onClick={() => requestSort(column.key)}
+                        aria-label={`Sort by ${column.label} ${sortConfig.key === column.key && sortConfig.direction === "descending" ? "ascending" : "descending"}`}
+                        className={cn("flex min-h-10 w-full cursor-pointer select-none items-center gap-1 whitespace-nowrap rounded px-1 text-left text-[11px] font-medium uppercase tracking-wide transition-colors hover:bg-neutral-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-neutral-900")}>
+                        {column.label}
+                        <span className="inline-flex size-3 shrink-0" aria-hidden="true">
+                          {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />)}
+                        </span>
+                      </button>
+                    </TableHead>
+                  ))}
+                  <TableHead>Events Attended</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((a, i) => (
+                {sortedApplicants.map((a) => (
                   <TableRow
                     key={a.id}
-                    onClick={() => setActiveIndex(i)}
+                    onClick={() => setActiveId(a.id)}
                     data-state={selected.has(a.id) ? "selected" : undefined}
                     className="cursor-pointer text-xs transition-colors hover:bg-slate-50 [&_td]:h-16 [&_td]:py-4"
                   >
@@ -482,11 +525,12 @@ export function LeaderDashboardView() {
                     <TableCell className="pr-4 text-right font-sans font-medium">
                       {averageScore(a.id, a.score) > 0 ? averageScore(a.id, a.score).toFixed(1) : "—"}
                     </TableCell>
+                    <TableCell className="tabular-nums">{eventsAttended(attendance, "vvf", a.email.toLowerCase())}</TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
                       No applicants match these filters.
                     </TableCell>
                   </TableRow>
@@ -548,7 +592,7 @@ export function LeaderDashboardView() {
       )}
 
       {/* Side profile drawer */}
-      <Sheet open={activeIndex !== null} onOpenChange={(o) => !o && setActiveIndex(null)}>
+      <Sheet open={activeId !== null} onOpenChange={(o) => !o && setActiveId(null)}>
         <SheetContent className="w-full gap-0 overflow-hidden p-0 sm:max-w-[45vw]">
           {active && (
             <div className="flex h-full flex-col">
@@ -572,8 +616,8 @@ export function LeaderDashboardView() {
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  disabled={activeIndex === 0}
-                  onClick={() => setActiveIndex((i) => (i !== null ? Math.max(0, i - 1) : i))}
+                  disabled={activeIndex <= 0}
+                  onClick={() => setActiveId(navList[activeIndex - 1]?.id ?? activeId)}
                   aria-label="Previous candidate"
                 >
                   <ChevronLeft className="size-4" />
@@ -582,8 +626,8 @@ export function LeaderDashboardView() {
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  disabled={activeIndex === filtered.length - 1}
-                  onClick={() => setActiveIndex((i) => (i !== null ? Math.min(filtered.length - 1, i + 1) : i))}
+                  disabled={activeIndex < 0 || activeIndex >= navList.length - 1}
+                  onClick={() => setActiveId(navList[activeIndex + 1]?.id ?? activeId)}
                   aria-label="Next candidate"
                 >
                   <ChevronRight className="size-4" />
@@ -615,7 +659,7 @@ export function LeaderDashboardView() {
                 </div>
 
                 <TabsContent value="application" className="flex-1 space-y-4 overflow-y-auto p-4">
-                  <h3 className="text-sm font-semibold">Essays</h3>
+                  <h3 className="text-sm font-semibold font-sans tracking-tight">Essays</h3>
                   {active.essays.map((essay, i) => (
                     <div key={i} className="rounded-lg border p-3">
                       <p className="text-xs font-medium text-muted-foreground">{essay.question}</p>
@@ -625,7 +669,7 @@ export function LeaderDashboardView() {
 
                   {active.links.length > 0 && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold">Links</h3>
+                      <h3 className="mb-2 text-sm font-semibold font-sans tracking-tight">Links</h3>
                       <div className="flex flex-wrap gap-2">
                         {active.links.map((link) => (
                           <span
@@ -641,7 +685,7 @@ export function LeaderDashboardView() {
                   )}
 
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold">Resume</h3>
+                    <h3 className="mb-2 text-sm font-semibold font-sans tracking-tight">Resume</h3>
                     <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border bg-muted/30 text-muted-foreground">
                       <FileText className="size-8" />
                       <p className="text-xs font-medium">{active.resumeFileName}</p>
@@ -652,7 +696,7 @@ export function LeaderDashboardView() {
 
                 <TabsContent value="rubric" className="flex-1 space-y-6 overflow-y-auto p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold">Screening rubric</h3>
+                    <h3 className="text-sm font-semibold font-sans tracking-tight">Screening rubric</h3>
                     <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                       {averageScore(active.id, active.score).toFixed(1)} avg
                     </span>
@@ -829,6 +873,7 @@ export function LeaderDashboardView() {
           onDecide={handleSpeedReviewDecide}
         />
       )}
+      </>}
     </div>
   )
 }

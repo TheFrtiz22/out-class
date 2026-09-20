@@ -105,7 +105,7 @@ export function BroadcastMessagesView() {
       {/* Composer */}
       <Card className="bg-white shadow-none">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-foreground">
+          <CardTitle className="flex items-center gap-2 text-foreground font-sans tracking-tight font-semibold">
             <Megaphone className="size-4 text-muted-foreground" />
             Send Broadcast
           </CardTitle>
@@ -272,7 +272,7 @@ export function BroadcastMessagesView() {
       {/* History */}
       <Card className="bg-white shadow-none">
         <CardHeader>
-          <CardTitle className="text-foreground">Sent Announcements History</CardTitle>
+          <CardTitle className="text-foreground font-sans tracking-tight font-semibold">Sent Announcements History</CardTitle>
           <CardDescription>Past broadcasts sent to your subscribers, applicants, and members.</CardDescription>
         </CardHeader>
         <CardContent>

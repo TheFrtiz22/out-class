@@ -1,27 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { GraduationCap, ShieldCheck } from "lucide-react"
 import { OutClassLogo } from "@/components/outclass-logo"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import {
   Select,
   SelectContent,
@@ -53,115 +33,36 @@ export interface DashboardLayoutProps {
 export function DashboardLayout({ children, view, appMode, onNavigate, onModeChange }: DashboardLayoutProps) {
   const meta = viewTitles[view]
   const navItems = appMode === "admin" ? adminNav : studentNav
+
   return (
-      <SidebarProvider className={cn("dashboard-layout", editorialUi.app)}>
-        <Sidebar className={editorialUi.sidebar}>
-          <SidebarHeader>
-            <button type="button" aria-label="OutClass home" className="flex items-center gap-2 px-2 py-4" onClick={() => onNavigate("landing")}>
-              <OutClassLogo variant="mark" className="group-data-[collapsible=icon]:block hidden" />
-              <OutClassLogo
-                variant="light"
-                className="h-10 w-auto group-data-[collapsible=icon]:hidden"
-              />
-            </button>
-
-            <div className="px-2 pb-1 group-data-[collapsible=icon]:hidden">
-              <Select value={appMode} onValueChange={(value) => onModeChange(value as AppMode)}>
-                <SelectTrigger
-                  aria-label="Switch application view"
-                  className="w-full border-border bg-white text-foreground shadow-none [&>svg]:text-muted-foreground"
-                >
-                  {appMode === "admin" ? (
-                    <ShieldCheck className="size-4 text-muted-foreground" />
-                  ) : (
-                    <GraduationCap className="size-4 text-muted-foreground" />
-                  )}
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student View</SelectItem>
-                  <SelectItem value="admin">{`Admin View: ${adminClubName}`}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </SidebarHeader>
-
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>{appMode === "admin" ? "Executive" : "Student"}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton
-                        isActive={view === item.id}
-                        onClick={() => onNavigate(item.id)}
-                        tooltip={item.title}
-                        aria-current={view === item.id ? "page" : undefined}
-                        className={cn(
-                          "h-11 rounded-r-lg rounded-l-none px-3",
-                          editorialUi.sidebarLink,
-                          "data-[active=true]:border-neutral-900 data-[active=true]:bg-white data-[active=true]:font-semibold data-[active=true]:text-neutral-900",
-                        )}
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-
-          <SidebarFooter>
-            <div className="flex items-center gap-2 rounded-lg border bg-card p-2">
-              <Avatar className="size-8">
-                <AvatarFallback className="bg-secondary text-xs font-medium text-secondary-foreground">
-                  {currentStudent.initials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid min-w-0 flex-1 leading-tight">
-                <span className="truncate text-sm font-medium text-foreground">
-                  {currentStudent.name}
-                </span>
-                <span className="text-xs leading-relaxed text-muted-foreground">{currentStudent.email}</span>
-              </div>
-            </div>
-          </SidebarFooter>
-          <SidebarRail />
-        </Sidebar>
-
-        <SidebarInset>
-          <header className="flex min-h-24 shrink-0 items-center gap-4 border-b border-neutral-200 bg-white px-5 py-5 sm:px-8">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-6" />
-            <div className="min-w-0 flex-1">
-              <h1 className={cn(editorialUi.title, "text-2xl sm:text-3xl")}>{meta.title}</h1>
-              <p className={cn(editorialUi.secondaryText, "text-xs leading-relaxed")}>{meta.subtitle}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className="hidden rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-muted lg:inline-flex"
-                onClick={() => onNavigate("landing")}
-              >
-                Back to Landing Page
-              </button>
-              <Badge
-                variant="outline"
-                className="hidden gap-1.5 font-normal text-muted-foreground sm:inline-flex"
-              >
-                <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
-                {appMode === "admin" ? "Admin" : "Student"} view
-              </Badge>
-            </div>
-          </header>
-
-          <main className="mx-auto w-full max-w-[1440px] flex-1 bg-white p-5 sm:p-8 lg:p-10">
-            {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+    <div className={cn("dashboard-layout min-h-screen", editorialUi.app)}>
+      <header className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-5 px-5 py-4 sm:px-8">
+          <button type="button" aria-label="OutClass home" onClick={() => onNavigate("landing")}><OutClassLogo variant="light" className="h-9 w-auto" /></button>
+          <nav aria-label={appMode === "admin" ? "Admin navigation" : "Student navigation"} className="order-last flex w-full min-w-0 gap-1 overflow-x-auto lg:order-none lg:w-auto lg:flex-1">
+            {navItems.filter((item) => item.id !== "landing").map((item) => <button key={item.id} type="button" onClick={() => onNavigate(item.id)} aria-current={view === item.id ? "page" : undefined} className={cn("shrink-0 rounded-md px-3 py-2 text-sm transition-colors hover:bg-neutral-50", view === item.id ? "bg-neutral-100 font-semibold text-neutral-900" : "text-neutral-500")}>{item.title}</button>)}
+          </nav>
+          <div className="ml-auto flex items-center gap-3">
+            <Select value={appMode} onValueChange={(value) => onModeChange(value as AppMode)}>
+              <SelectTrigger aria-label="Switch application view" className="w-[140px] shadow-none"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="student">Student View</SelectItem><SelectItem value="admin">{`Admin View: ${adminClubName}`}</SelectItem></SelectContent>
+            </Select>
+            <button type="button" aria-label="Open profile" onClick={() => {
+              if (appMode !== "student") onModeChange("student")
+              onNavigate("student-profile")
+            }} className="flex size-9 items-center justify-center rounded-full border border-neutral-200 text-xs font-semibold">{currentStudent.initials}</button>
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-[1440px] px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
+        {view !== "student-dashboard" && (
+          <div className="mb-8">
+            <h1 className={cn(editorialUi.title, "text-2xl sm:text-3xl")}>{meta.title}</h1>
+            <p className={cn(editorialUi.secondaryText, "mt-2 text-sm leading-relaxed")}>{meta.subtitle}</p>
+          </div>
+        )}
+        {children}
+      </main>
+    </div>
   )
 }

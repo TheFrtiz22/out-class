@@ -1,5 +1,6 @@
 "use client"
 
+import { EventQrDashboard } from "@/components/qr/event-qr-dashboard"
 import { useState } from "react"
 import { toast } from "sonner"
 import { CalendarPlus, Globe, MapPin, Pencil, Trash2, Users, Video } from "lucide-react"
@@ -18,7 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { managedEvents, type EventScope, type ManagedEvent } from "@/lib/data"
+import { type EventScope, type ManagedEvent } from "@/lib/data"
+
+import { useApplicationState } from "@/lib/application-state"
 
 const NAVY = "#051B3D"
 const ORANGE = "#FF5900"
@@ -38,7 +41,8 @@ type FormState = {
 const emptyForm: FormState = { title: "", scope: "Public", date: "", time: "", location: "", zoomLink: "" }
 
 export function EventsMeetingsView() {
-  const [events, setEvents] = useState<ManagedEvent[]>(managedEvents.filter((e) => e.clubId === ADMIN_CLUB_ID))
+  const { managedEvents, setManagedEvents: setEvents, notifyEventChange } = useApplicationState()
+  const events = managedEvents.filter((event) => event.clubId === ADMIN_CLUB_ID)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [cancelTarget, setCancelTarget] = useState<ManagedEvent | null>(null)
@@ -71,12 +75,20 @@ export function EventsMeetingsView() {
       return
     }
 
+    const recurring = /^Every (Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)$/.test(form.date)
+    const parsedDate = new Date(`${form.date}T12:00:00`)
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(form.date) && Number.isFinite(parsedDate.getTime()) && parsedDate.getDate() === Number(form.date.slice(-2)) && parsedDate.getMonth() + 1 === Number(form.date.slice(5, 7))
+    if (!recurring && !validDate) { toast.error("Use a date like 2026-09-25 or a weekly day like Every Tuesday."); return }
+    if (!/^(?:[01]?\d|2[0-3]):[0-5]\d(?:\s*(?:AM|PM))?$/i.test(form.time)) { toast.error("Enter a time such as 6:30 PM or 18:30."); return }
+    if (form.zoomLink && !/^https:\/\//i.test(form.zoomLink)) { toast.error("Use a secure https:// meeting link."); return }
     if (editingId) {
       setEvents((prev) =>
         prev.map((ev) =>
           ev.id === editingId
             ? {
                 ...ev,
+                recurring,
+                recurrenceLabel: recurring ? `${form.date} at ${form.time} — ${form.location}` : undefined,
                 title: form.title,
                 scope: form.scope,
                 date: form.date,
@@ -87,10 +99,12 @@ export function EventsMeetingsView() {
             : ev,
         ),
       )
+      notifyEventChange({ id: editingId, clubId: ADMIN_CLUB_ID, ...form, recurring })
       toast.success("Event updated", { description: `${form.title} has been updated.` })
     } else {
       const newEvent: ManagedEvent = {
-        id: `ev-${Date.now()}`,
+        id: `ev-${crypto.randomUUID()}`,
+        recurring,
         clubId: ADMIN_CLUB_ID,
         title: form.title,
         scope: form.scope,
@@ -100,6 +114,7 @@ export function EventsMeetingsView() {
         zoomLink: form.zoomLink || undefined,
       }
       setEvents((prev) => [newEvent, ...prev])
+      notifyEventChange(newEvent)
       toast.success("Event scheduled", { description: `${form.title} was added to your roster.` })
     }
     resetForm()
@@ -108,6 +123,7 @@ export function EventsMeetingsView() {
   function confirmCancel() {
     if (!cancelTarget) return
     setEvents((prev) => prev.filter((ev) => ev.id !== cancelTarget.id))
+    notifyEventChange(cancelTarget, true)
     toast.success("Event cancelled", { description: `${cancelTarget.title} has been removed.` })
     setCancelTarget(null)
   }
@@ -116,7 +132,7 @@ export function EventsMeetingsView() {
     <div className="space-y-6">
       <Card className="border-gray-200 bg-white shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold" style={{ color: NAVY }}>
+          <CardTitle className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
             {editingId ? "Edit Event" : "Event Creator"}
           </CardTitle>
           <CardDescription>Schedule a public info session or an internal members-only meeting.</CardDescription>
@@ -191,7 +207,7 @@ export function EventsMeetingsView() {
                   id="event-date"
                   value={form.date}
                   onChange={(e) => set("date", e.target.value)}
-                  placeholder={'"Thu, Sep 25" or "Every Tuesday"'}
+                  placeholder={'"2026-09-25" or "Every Tuesday"'}
                   className="border-gray-200 bg-white text-gray-900"
                 />
               </div>
@@ -254,10 +270,11 @@ export function EventsMeetingsView() {
           </form>
         </CardContent>
       </Card>
+      <EventQrDashboard clubId={ADMIN_CLUB_ID} />
 
       <div className="space-y-3">
         <div>
-          <h3 className="text-base font-semibold" style={{ color: NAVY }}>
+          <h3 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
             Active Events Roster
           </h3>
           <p className="text-sm text-gray-500">Every upcoming session and meeting currently scheduled.</p>

@@ -229,7 +229,7 @@ export function InterviewRoomPanelMatrixView() {
   return (
     <div className="bg-white">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold text-foreground">Interview Room &amp; Panel Matrix</h2>
+        <h2 className="text-xl font-semibold text-foreground font-sans tracking-tight">Interview Room &amp; Panel Matrix</h2>
         <p className="mt-1 text-sm text-slate-500">
           Build interview rooms, staff each panel, and schedule candidates for this time slot.
         </p>
@@ -459,7 +459,7 @@ export function InterviewRoomPanelMatrixView() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Applicant View</DialogTitle>
+            <DialogTitle className="text-foreground font-sans tracking-tight font-semibold">Applicant View</DialogTitle>
             <DialogDescription>This is the minimal, scrubbed version the student sees.</DialogDescription>
           </DialogHeader>
           <div className="rounded-md border border-gray-200 bg-white p-4">

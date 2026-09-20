@@ -4,8 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Compass, UploadCloud, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import { trackedApplications } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
 import type { ViewId } from "@/lib/views"
 
@@ -20,21 +18,21 @@ type DraftTab = {
   fileLabel: string
 }
 
-const draftTabs: DraftTab[] = trackedApplications
-  .filter((app) => app.status !== "Decision Pending")
-  .map((app) => ({
-    id: app.id,
-    clubId: app.clubId,
-    clubName: app.clubName,
-    deadline: "Sept 20 at 11:59 PM",
-    question: `Why do you want to join ${app.clubName}?`,
-    fileLabel: "Upload your stock pitch deck.",
-  }))
-
 export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
-  const { focusApplicationClubId, clearApplicationFocus } = useApplicationState()
+  const { trackedApps, events, focusApplicationClubId, clearApplicationFocus, submitApplication, focusEvent } = useApplicationState()
+  const draftTabs: DraftTab[] = trackedApps.map((app) => {
+    const deadline = events.find((event) => event.clubId === app.clubId && event.type === "Deadline")
+    return { id: app.id, clubId: app.clubId, clubName: app.clubName, deadline: deadline ? `${deadline.date} at ${deadline.time}` : "Not announced", question: `Why do you want to join ${app.clubName}?`, fileLabel: "Upload your supporting document." }
+  })
   const [openTabs, setOpenTabs] = useState<DraftTab[]>(draftTabs)
   const [activeId, setActiveId] = useState<string | null>(draftTabs[0]?.id ?? null)
+
+  useEffect(() => {
+    setOpenTabs((previous) => {
+      const missing = draftTabs.filter((tab) => !previous.some((existing) => existing.id === tab.id))
+      return missing.length ? [...previous, ...missing] : previous
+    })
+  }, [trackedApps])
 
   // When the Dashboard's "Continue"/"View Application" buttons hand off a
   // specific club, open that club's canvas instead of whatever was active.
@@ -44,7 +42,11 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
     if (matchingTab) {
       setActiveId(matchingTab.id)
     }
-    clearApplicationFocus()
+    if (matchingTab) clearApplicationFocus()
+    else {
+      const source = draftTabs.find((tab) => tab.clubId === focusApplicationClubId)
+      if (source) { setOpenTabs((previous) => [...previous, source]); setActiveId(source.id); clearApplicationFocus() }
+    }
   }, [focusApplicationClubId, openTabs, clearApplicationFocus])
   const [answer, setAnswer] = useState(
     "I want the discipline of managing real capital alongside people who argue about theses in good faith. ".slice(
@@ -56,11 +58,9 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
 
   const activeTab = useMemo(() => openTabs.find((tab) => tab.id === activeId) ?? null, [openTabs, activeId])
 
-  // Mocked real-time validation: the progress bar fills as the essay grows toward the character limit.
-  const completionPercent = Math.min(100, Math.round((answer.length / CHAR_LIMIT) * 100))
-
   function handleSubmit(id: string) {
     setSubmittedIds((prev) => new Set(prev).add(id))
+    submitApplication(id)
   }
 
   function closeTab(id: string) {
@@ -76,7 +76,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
   if (openTabs.length === 0 || !activeTab) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">My Application Workspace</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground font-sans">My Application Workspace</h1>
         <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-white text-center">
           <div className="flex size-14 items-center justify-center rounded-full bg-slate-100">
             <Compass className="size-6 text-muted-foreground" />
@@ -93,7 +93,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight text-foreground">My Application Workspace</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-foreground font-sans">My Application Workspace</h1>
 
       {/* Google Docs-style tab bar */}
       <div className="flex items-end gap-1 overflow-x-auto border-b border-border">
@@ -136,15 +136,20 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
         })}
       </div>
 
+      {events.filter((event) => event.clubId === activeTab.clubId && event.type === "Interview").map((event) => (
+        <Button key={event.id} variant="outline" className="mb-3" onClick={() => { focusEvent(event.id); onNavigate?.("calendar") }}>
+          View interview · {event.date} at {event.time}
+        </Button>
+      ))}
       {/* Active application canvas */}
       <div className="rounded-b-xl rounded-tr-xl border border-gray-200 bg-white">
-        {submittedIds.has(activeTab.id) ? (
+        {(submittedIds.has(activeTab.id) || trackedApps.find((app) => app.id === activeTab.id)?.status !== "Drafting") ? (
           <div className="flex min-h-[420px] flex-col items-center justify-center gap-5 p-8 text-center">
             <div className="flex size-16 items-center justify-center rounded-full bg-success/10">
               <CheckCircle2 className="size-9 text-success" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-foreground">Application Submitted to {activeTab.clubName}!</h2>
+              <h2 className="text-xl font-bold text-foreground font-sans tracking-tight">Application Submitted to {activeTab.clubName}!</h2>
               <p className="text-sm text-gray-500">
                 We&apos;ve notified the club&apos;s leadership. You&apos;ll be updated here as your status changes.
               </p>
@@ -163,15 +168,11 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
               {/* Top info bar */}
               <div className="space-y-3 border-b border-gray-200 pb-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-red-600">Deadline: {activeTab.deadline}</p>
+                  <p className="text-sm font-medium text-red-600">Deadline: {draftTabs.find((tab) => tab.id === activeTab.id)?.deadline ?? activeTab.deadline}</p>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500">
                     <CheckCircle2 className="size-3.5 text-success" />
                     Auto-Saved at 3:42 PM
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Progress value={completionPercent} className="h-2" />
-                  <p className="text-xs text-gray-500">{completionPercent}% Complete</p>
                 </div>
               </div>
 

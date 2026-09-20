@@ -156,7 +156,7 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
           <div className="rounded-2xl border border-border bg-white p-6 shadow-none">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="size-5 text-muted-foreground" />
-              <h2 className="text-base font-semibold text-foreground">Recommended for You</h2>
+              <h2 className="text-base font-semibold text-foreground font-sans tracking-tight">Recommended for You</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {recommendedClubs.map((club) => (
@@ -166,9 +166,9 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
                   onClick={() => setSelectedClub(club)}
                   className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-slate-50"
                 >
-                  <ClubLogo text={club.logoText} color={club.color} size="lg" />
+                  <ClubLogo clubId={club.id} logoUrl={club.logoUrl} text={club.logoText} color={club.color} size="lg" />
                   <div className="min-w-0">
-                    <h3 className="font-display text-lg font-medium leading-tight text-foreground">{club.name}</h3>
+                    <h3 className="font-sans text-lg font-semibold leading-tight text-foreground tracking-tight">{club.name}</h3>
                     <Badge variant="secondary" className="mt-1.5 text-[10px] font-medium">
                       {club.category}
                     </Badge>
@@ -380,9 +380,9 @@ function ClubCard({
       </Tooltip>
 
       <CardHeader className="flex flex-row items-center gap-3 pb-0">
-        <ClubLogo text={club.logoText} color={club.color} size="lg" />
+        <ClubLogo clubId={club.id} logoUrl={club.logoUrl} text={club.logoText} color={club.color} size="lg" />
         <div className="min-w-0">
-          <h3 className="font-display text-xl font-medium leading-tight tracking-tight text-foreground">{club.name}</h3>
+          <h3 className="font-sans text-xl font-semibold leading-tight tracking-tight text-foreground">{club.name}</h3>
           <Badge variant="secondary" className="mt-1.5 text-[10px] font-medium">
             {club.category}
           </Badge>
@@ -406,7 +406,7 @@ function ClubCard({
           disabled={applied}
           className="flex-1 bg-primary text-white hover:bg-primary/90 disabled:opacity-60"
           onClick={() =>
-            applyToClub({ id: club.id, name: club.name, logoText: club.logoText, color: club.color })
+            applyToClub({ id: club.id, name: club.name, logoText: club.logoText, logoUrl: club.logoUrl, color: club.color })
           }
         >
           {applied ? "Applied" : "Apply Now"}

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { ClubLogo } from "@/components/club-logo"
-import { clubs, managedEvents, type DiscoverClub } from "@/lib/data"
+import { clubs, type DiscoverClub } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
 import type { ViewId } from "@/lib/views"
 
@@ -26,15 +26,19 @@ export function ClubProfileView({
   onBack: () => void
   onNavigate: (view: ViewId) => void
 }) {
-  const { isApplied, applyToClub } = useApplicationState()
+  const { isApplied, applyToClub, managedEvents, events, respondToEvent, focusEvent, focusApplication } = useApplicationState()
   const [subscribed, setSubscribed] = useState(false)
   const applied = isApplied(club.id)
 
   const roster = clubs.find((c) => c.id === club.id)
   const infoSessions = managedEvents.filter((e) => e.clubId === club.id && e.scope === "Public")
 
-  function rsvp(title: string) {
-    toast.success("You're on the list", { description: `${title} has been synced to your calendar.` })
+  function rsvp(id: string) {
+    const event = events.filter((event) => event.managedEventId === id && new Date(`${event.date}T23:59:59`) >= new Date()).sort((a,b) => a.date.localeCompare(b.date))[0]
+    if (!event) { toast.info("No upcoming date is available for this event."); return }
+    respondToEvent(event.id, "going")
+    focusEvent(event.id)
+    onNavigate("calendar")
   }
 
   function subscribe() {
@@ -45,8 +49,9 @@ export function ClubProfileView({
   function startApplication(e: React.FormEvent) {
     e.preventDefault()
     if (!applied) {
-      applyToClub({ id: club.id, name: club.name, logoText: club.logoText, color: club.color })
+      applyToClub({ id: club.id, name: club.name, logoText: club.logoText, logoUrl: club.logoUrl, color: club.color })
     }
+    focusApplication(club.id)
     onNavigate("tracker")
   }
 
@@ -64,13 +69,13 @@ export function ClubProfileView({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">
               <ClubLogo
-                text={club.logoText}
+                clubId={club.id} logoUrl={club.logoUrl} text={club.logoText}
                 color="#051B3D"
                 size="2xl"
                 className="-mt-14 shrink-0 rounded-xl border-4 border-white font-bold shadow-none sm:-mt-16"
               />
               <div className="pt-3">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{club.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-sans">{club.name}</h1>
                 <Badge variant="secondary" className="mt-1.5 text-[10px] font-medium">
                   {club.category}
                 </Badge>
@@ -136,7 +141,7 @@ export function ClubProfileView({
               <Separator className="my-5" />
               <div className="flex items-center gap-2">
                 <Sparkles className="size-4 text-foreground" />
-                <h3 className="text-sm font-medium">Why students apply</h3>
+                <h3 className="text-sm font-semibold font-sans tracking-tight">Why students apply</h3>
               </div>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {["Real-world responsibility", "Mentorship from upperclassmen", "Recruiting pipeline", "Selective, tight-knit community"].map(
@@ -181,7 +186,7 @@ export function ClubProfileView({
           <Card>
             <CardContent className="pt-6">
               <div className="mb-4">
-                <h3 className="text-sm font-semibold text-foreground">Info Sessions & Key Dates</h3>
+                <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Info Sessions & Key Dates</h3>
                 <p className="text-sm text-muted-foreground">
                   Upcoming public sessions where you can learn more about {club.name} before applying.
                 </p>
@@ -212,7 +217,7 @@ export function ClubProfileView({
                       <Button
                         size="sm"
                         className="w-full gap-1.5 bg-primary text-white hover:bg-primary/90"
-                        onClick={() => rsvp(session.title)}
+                        onClick={() => rsvp(session.id)}
                       >
                         <Check className="size-4" />
                         RSVP / Sync to Calendar

@@ -49,7 +49,7 @@ export function StudentProfileCard() {
 
             <div className="min-w-0 flex-1 space-y-2 pt-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight">{currentStudent.name}</h2>
+                <h2 className="text-lg font-semibold tracking-tight font-sans">{currentStudent.name}</h2>
                 <Badge variant="secondary" className="gap-1 font-normal">
                   <GraduationCap className="size-3" />
                   {currentStudent.classYear}
@@ -87,7 +87,7 @@ export function StudentProfileCard() {
 
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-tight">Experience & Accolades</h3>
+              <h3 className="text-sm font-semibold tracking-tight font-sans">Experience & Accolades</h3>
               <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
                 <Plus className="size-3.5" />
                 Add item
@@ -127,7 +127,7 @@ export function StudentProfileCard() {
           <Separator />
 
           <div className="space-y-1.5">
-            <h3 className="text-sm font-semibold tracking-tight">Resume</h3>
+            <h3 className="text-sm font-semibold tracking-tight font-sans">Resume</h3>
             <div className="flex items-center gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-foreground">
                 <FileText className="size-4" />
