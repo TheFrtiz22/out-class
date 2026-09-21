@@ -5,11 +5,11 @@ import { cookies } from "next/headers"
 
 export default async function Page() {
   const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-  const { data: { session } } = await supabase.auth.getSession()
+  const supabase = await createClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
 
   let initialData = null
-  if (session) {
+  if (user) {
     try {
       initialData = await getStudentDashboardData()
     } catch (e) {
@@ -17,5 +17,5 @@ export default async function Page() {
     }
   }
 
-  return <AppShell initialSession={session} initialData={initialData} />
+  return <AppShell initialSession={user} initialData={initialData} />
 }
