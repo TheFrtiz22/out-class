@@ -26,23 +26,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PopulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
+  const fetchUser = React.useCallback(async () => {
     try {
       const res = await fetch('/api/users/me');
       if (res.ok) {
         const data: PopulatedUser = await res.json();
         setUser(data);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error("Failed to fetch user", error);
+      setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [fetchUser]);
 
   const mutateUser = (newUser: PopulatedUser) => {
     setUser(newUser);

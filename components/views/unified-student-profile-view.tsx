@@ -8,21 +8,31 @@ import { EditStudentProfileDialog } from "@/components/edit-student-profile-dial
 import { Button } from "@/components/ui/button"
 import { MemberPortalDialog } from "@/components/views/member-portal-dialog"
 import { currentStudent, studentMemberships as mockStudentMemberships } from "@/lib/data"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
+
+export type ProfileMembership = {
+  clubId: string;
+  clubName: string;
+  logoText: string;
+  color: string;
+  role: string;
+  title?: string;
+  logoUrl?: string | null;
+};
 
 export function UnifiedStudentProfileView() {
   const { user } = useAuth()
   
-  const studentMemberships = user?.memberships ? user.memberships.map((m: any) => ({
+  const studentMemberships: ProfileMembership[] = user?.memberships ? user.memberships.map((m: ExtendedMembership) => ({
     clubId: m.clubId,
     clubName: m.club.name,
     logoText: m.club.name.substring(0, 2),
     color: m.club.color || "#000",
     role: m.role === 'PRESIDENT' || m.role === 'RECRUITMENT_LEAD' ? "Executive" : "Member",
-    title: m.title
+    title: m.title || undefined,
   })) : mockStudentMemberships
 
-  const [selectedMembership, setSelectedMembership] = useState<any>(null)
+  const [selectedMembership, setSelectedMembership] = useState<ProfileMembership | null>(null)
 
   const profileName = user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : currentStudent.name
   const profileInitials = user?.profile ? `${user.profile.firstName[0]}${user.profile.lastName[0]}` : currentStudent.initials

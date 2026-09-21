@@ -61,7 +61,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
                   <DropdownMenuItem onClick={() => onModeChange("student")}>
                     Student View
                   </DropdownMenuItem>
-                  {user.adminRoles.map((role) => (
+                  {user?.adminRoles?.map((role) => (
                     <DropdownMenuItem key={role.clubId} onClick={() => onModeChange("admin")}>
                       Admin View: {role.club.name}
                     </DropdownMenuItem>

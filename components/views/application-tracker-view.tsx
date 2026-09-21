@@ -22,10 +22,11 @@ type DraftTab = {
 
 export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
   const { trackedApps, events, focusApplicationClubId, clearApplicationFocus, submitApplication, focusEvent } = useApplicationState()
-  const draftTabs: DraftTab[] = trackedApps.map((app) => {
+  const draftTabs: DraftTab[] = useMemo(() => trackedApps.map((app) => {
     const deadline = events.find((event) => event.clubId === app.clubId && event.type === "Deadline")
     return { id: app.id, clubId: app.clubId, clubName: app.clubName, deadline: deadline ? `${deadline.date} at ${deadline.time}` : "Not announced", question: `Why do you want to join ${app.clubName}?`, fileLabel: "Upload your supporting document." }
-  })
+  }), [trackedApps, events])
+  
   const [openTabs, setOpenTabs] = useState<DraftTab[]>(draftTabs)
   const [activeId, setActiveId] = useState<string | null>(draftTabs[0]?.id ?? null)
 
@@ -34,7 +35,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
       const missing = draftTabs.filter((tab) => !previous.some((existing) => existing.id === tab.id))
       return missing.length ? [...previous, ...missing] : previous
     })
-  }, [trackedApps])
+  }, [draftTabs])
 
   // When the Dashboard's "Continue"/"View Application" buttons hand off a
   // specific club, open that club's canvas instead of whatever was active.

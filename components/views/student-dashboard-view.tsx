@@ -4,15 +4,32 @@ import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ClubLogo } from "@/components/club-logo"
-import { applications as seedApplications, currentStudent, type Application } from "@/lib/data"
+import { applications as seedApplications, currentStudent, type Application as DataApplication, type TrackedApplication, type ClubEvent } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
 import { eventStart } from "@/lib/calendar"
 import type { ViewId } from "@/lib/views"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth, type ExtendedApplication } from "@/contexts/auth-context"
 
 const primaryButton = "bg-[#ea580c] font-semibold text-white shadow-none hover:bg-[#c2410c]"
 
-function applicationStatus(app: any) {
+export type DashboardApp = {
+  id: string;
+  clubId: string;
+  clubName: string;
+  logoText: string;
+  color: string;
+  stage: string;
+  essaysTotal?: number;
+  essaysWritten?: number;
+  deadline?: string;
+  submitted: string;
+  status?: string;
+  outcome?: string;
+  nextStep?: string;
+  logoUrl?: string | null;
+};
+
+function applicationStatus(app: { status?: string; outcome?: string; stage?: string }) {
   if (app.status === "ACCEPTED") return { label: "Accepted", style: "bg-emerald-50 text-emerald-800" }
   if (app.status === "REJECTED") return { label: "Rejected", style: "bg-red-50 text-red-800" }
   if (app.status === "INTERVIEWING") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
@@ -24,7 +41,7 @@ function applicationStatus(app: any) {
   return { label: app.status || "In review", style: "bg-amber-50 text-amber-800" }
 }
 
-function ApplicationProgressCell({ app }: { app: any }) {
+function ApplicationProgressCell({ app }: { app: { status?: string; outcome?: string; stage?: string } }) {
   const fallback = applicationStatus(app)
   const label = fallback.label
   return <td className="px-5 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${fallback.style}`}>{label}</span></td>
@@ -35,7 +52,7 @@ export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId
   const { user } = useAuth()
   
   // Fallback to mock data if not logged in (demo mode)
-  const applications = user?.applications ? user.applications.map((app: any) => ({
+  const applications: DashboardApp[] = user?.applications ? user.applications.map((app: ExtendedApplication) => ({
     id: app.id,
     clubId: app.clubId,
     clubName: app.club.name,
@@ -47,27 +64,30 @@ export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId
     deadline: "Deadline not announced",
     submitted: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—",
     status: app.status
-  })) : trackedApps.map((app: any) => {
-    const seed = seedApplications.find((item: any) => item.clubId === app.clubId)
-    const deadline = events.find((event: any) => event.clubId === app.clubId && event.type === "Deadline")
-    return { ...seed, id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
+  })) : trackedApps.map((app: TrackedApplication) => {
+    const seed = seedApplications.find((item: DataApplication) => item.clubId === app.clubId)
+    const deadline = events.find((event: ClubEvent) => event.clubId === app.clubId && event.type === "Deadline")
+    return { 
+      id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
       stage: app.status === "Drafting" ? "Draft" : app.status === "1st Round Interview" ? "Round 1" : "Applied",
       essaysTotal: app.questionsTotal, essaysWritten: app.questionsCompleted,
-      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—" }
+      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—",
+      status: app.status, outcome: seed?.outcome, logoUrl: seed?.logoUrl
+    }
   })
 
   const upcomingInterviews = user?.applications 
     ? [] // Real interview bookings would be mapped here in the future
     : events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
   
-  const drafts = applications.filter((app: any) => app.stage === "Draft")
-  const submitted = applications.filter((app: any) => app.stage !== "Draft")
+  const drafts = applications.filter((app: DashboardApp) => app.stage === "Draft")
+  const submitted = applications.filter((app: DashboardApp) => app.stage !== "Draft")
   const metrics = [
     { label: "Applications", count: submitted.length, description: "Submitted applications", icon: FileText },
-    { label: "In review", count: user?.applications ? submitted.filter((app: any) => app.status === "IN_REVIEW").length : submitted.filter((app: any) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
+    { label: "In review", count: user?.applications ? submitted.filter((app: DashboardApp) => app.status === "IN_REVIEW").length : submitted.filter((app: DashboardApp) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
     { label: "Upcoming interviews", count: upcomingInterviews.length, description: "Applications in interview rounds", icon: CalendarDays },
   ]
-  function openApplication(app: any) {
+  function openApplication(app: DashboardApp) {
     focusApplication(app.clubId)
     onNavigate("tracker")
   }
