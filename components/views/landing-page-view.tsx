@@ -7,11 +7,13 @@ import { ArrowRight, ArrowUpRight, Check, LayoutDashboard, FileText, CalendarDay
 import "./landing.css"
 
 interface LandingPageViewProps { onNavigateToApp: (role?: "student" | "leader") => void }
+import Image from "next/image"
+
 function Brand({ light = false, mark = false }: { light?: boolean; mark?: boolean }) {
   return (
     <span className={`oc-brand ${light ? "light" : ""} ${mark ? "oc-brand-icon" : ""}`}>
-      <img
-        src={mark ? "/outclass-brand-mark.png" : light ? "/outclass-wordmark-dark.png" : "/outclass-wordmark-light.png"}
+      <Image
+        src={mark ? "/outclass-mark.png" : light ? "/outclass-wordmark-dark.png" : "/outclass-wordmark-light.png"}
         alt="OutClass"
         width={mark ? 1254 : light ? 789 : 921}
         height={mark ? 1254 : light ? 316 : 271}
