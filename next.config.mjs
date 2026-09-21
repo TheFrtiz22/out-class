@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  basePath: "/out-class",
   // Keep production checks from overwriting the running development server's files.
   distDir: process.env.OUTCLASS_PUBLISH_BUILD
     ? ".next-publish"
