@@ -43,8 +43,8 @@ export function InterviewWorkspaceView() {
     [],
   )
 
-  const scoredValues = activeRound?.questions
-    ?.map((question) => scores[question.id])
+  const scoredValues = (activeRound?.questions ?? [])
+    .map((question) => scores[question.id])
     .filter((value): value is number => typeof value === "number" && value > 0)
   const aggregate = scoredValues.length > 0 ? scoredValues.reduce((a, b) => a + b, 0) / scoredValues.length : 0
 

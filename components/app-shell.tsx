@@ -68,12 +68,15 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   }
 
   if (view === "auth") {
-    return <AuthView onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} />
+    return <AuthView onCreateAccount={() => setView("student-onboarding")} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} />
   }
 
   if (view === "student-onboarding") {
     return (
       <StudentOnboardingWizard
+        initialUser={initialSession}
+        onBack={() => setView("landing")}
+        onSignIn={() => setView("auth")}
         onComplete={() => {
           // Reload so the Server Component layout picks up the new session and fetches fresh data
           window.location.href = "/"

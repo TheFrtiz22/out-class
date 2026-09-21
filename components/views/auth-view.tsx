@@ -10,12 +10,15 @@ import { isUvaEmail } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 
-export function AuthView({ onEnter, onBack, initialRole = "student" }: {
+export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student" }: {
   onEnter: (view: ViewId) => void
   onBack: () => void
+  onCreateAccount?: () => void
   initialRole?: "student" | "leader"
 }) {
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "verify">("email")
   const [error, setError] = useState("")
@@ -23,29 +26,30 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
 
   const supabase = createClient()
 
-  async function requestCode(event: FormEvent) {
+  async function signIn(event: FormEvent) {
     event.preventDefault()
-    if (!isUvaEmail(email)) {
-      setError("Use your University of Virginia email ending in @virginia.edu.")
-      return
-    }
-    setEmail(email.trim().toLowerCase())
+    if (!isUvaEmail(email)) { setError("Use your UVA email ending in @virginia.edu."); return }
+    setLoading(true)
     setError("")
-    
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        shouldCreateUser: true
-      }
-    })
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
+      if (error) { setError(error.message); return }
+      window.location.href = "/"
+    } catch { setError("Unable to sign in. Please try again.") }
+    finally { setLoading(false) }
+  }
 
-    if (signInError) {
-      setError(signInError.message)
-      return
-    }
-
-    setStep("verify")
-    setNotice(`We sent a 6-digit code to ${email}.`)
+  async function requestCode() {
+    if (!isUvaEmail(email)) { setError("Enter your UVA email first."); return }
+    setLoading(true)
+    setError("")
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } })
+      if (error) { setError(error.message); return }
+      setStep("verify")
+      setNotice(`We sent a verification code to ${email}.`)
+    } catch { setError("Unable to send a code. Try signing in with your password.") }
+    finally { setLoading(false) }
   }
 
   async function verifyCode(event: FormEvent) {
@@ -92,17 +96,18 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
           <div className="mb-6 flex size-12 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50">{step === "email" ? <ShieldCheck className="size-6 text-[#051B3D]" /> : <Mail className="size-6 text-[#051B3D]" />}</div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">{step === "email" ? "Welcome to OutClass" : "Verify your email"}</p>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
-          <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Use your UVA email to log in or create an account. No password to remember." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
+          <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Sign in with the UVA email and password you used to create your account." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
           {step === "email" ? (
-            <form noValidate onSubmit={requestCode} className="mt-8 space-y-5">
+            <form noValidate onSubmit={signIn} className="mt-8 space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="uva-email">UVA email address</Label>
                 <Input id="uva-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => { setEmail(event.target.value); setError("") }} aria-invalid={!!error} aria-describedby={error ? "email-hint auth-error" : "email-hint"} placeholder="computingid@virginia.edu" className="h-12" />
                 <p id="email-hint" className="text-xs text-neutral-500">Only @virginia.edu email addresses are supported.</p>
               </div>
+              <div className="space-y-2"><Label htmlFor="login-password">Password</Label><Input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} className="h-12" /></div>
               {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" className="h-12 w-full">Continue with email<ArrowRight className="size-4" /></Button>
-              <p className="text-center text-xs leading-5 text-neutral-500">A secure 6-digit verification code will be sent to your email.</p>
+              <Button type="submit" disabled={loading || !password} className="h-12 w-full">{loading ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
+              <button type="button" disabled={loading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead (requires email delivery)</button>
             </form>
           ) : (
             <form onSubmit={verifyCode} className="mt-7 space-y-5">
@@ -114,11 +119,12 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
               {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
               <Button type="submit" disabled={code.length !== 6} className="h-12 w-full">Verify and log in<ArrowRight className="size-4" /></Button>
               <div className="flex flex-wrap justify-between gap-3 text-xs">
-                <button type="button" onClick={() => setNotice("Email delivery isn't connected yet, so no new code was sent.")} className="font-medium text-neutral-600 hover:text-neutral-900">Resend code</button>
+                <button type="button" onClick={requestCode} disabled={loading} className="font-medium text-neutral-600 hover:text-neutral-900">Resend code</button>
                 <button type="button" onClick={() => { setStep("email"); setCode(""); setError(""); setNotice("") }} className="font-medium text-neutral-600 hover:text-neutral-900">Use a different email</button>
               </div>
             </form>
           )}
+          {onCreateAccount && <p className="mt-6 text-center text-sm text-neutral-600">New to OutClass? <button onClick={onCreateAccount} className="font-semibold text-primary underline">Create a student account</button></p>}
           <div className="mt-9 border-t border-neutral-200 pt-6 text-center">
             <p className="text-xs text-neutral-500">Just looking around?</p>
             <button type="button" onClick={() => onEnter(initialRole === "leader" ? "leader-dashboard" : "student-dashboard")} className="mt-2 text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900">Explore the demo</button>

@@ -40,6 +40,8 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   
   // Validate input
   const parsed = profileSchema.parse(data);
+  // Identity comes from the authenticated account, never a client-supplied ID.
+  parsed.computingId = user.email.split("@")[0];
 
   // Update or create the profile
   const profile = await prisma.studentProfile.upsert({

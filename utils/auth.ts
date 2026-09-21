@@ -1,3 +1,4 @@
+import { isUvaEmail } from "@/lib/auth";
 import { createClient } from "./supabase/server";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
@@ -13,13 +14,15 @@ export async function requireAuth() {
   
   const { data: { user }, error } = await supabase.auth.getUser();
   
-  if (error || !user) {
+  if (error || !user || !user.email || !isUvaEmail(user.email)) {
     redirect("/"); // Redirect to login page
   }
 
   // Fetch the Prisma user to get global roles
-  const prismaUser = await prisma.user.findUnique({
+  const prismaUser = await prisma.user.upsert({
     where: { id: user.id },
+    update: {},
+    create: { id: user.id, email: user.email!, role: "STUDENT" },
   });
 
   if (!prismaUser) {

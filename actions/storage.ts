@@ -15,7 +15,7 @@ export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
   const parsed = uploadSchema.parse(data);
 
   const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient(cookieStore);
 
   // Generate a unique file path tied to the user to prevent overwrites/collisions
   // Format: [userId]/[timestamp]-[filename]

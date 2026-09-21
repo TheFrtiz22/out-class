@@ -4,21 +4,25 @@ import { z } from "zod"
 
 export const accountBasicsSchema = z.object({
   firstName: z
-    .string()
+    .string().trim()
     .min(1, "First name is required")
     .max(50, "First name is too long"),
   lastName: z
-    .string()
+    .string().trim()
     .min(1, "Last name is required")
     .max(50, "Last name is too long"),
   email: z
-    .string()
+    .string().trim().toLowerCase()
     .min(1, "Email is required")
     .email("Enter a valid email address")
     .refine(
       (v) => /^[a-z0-9]+(?:[._+-][a-z0-9]+)*@virginia\.edu$/i.test(v.trim()),
       "Only @virginia.edu email addresses are accepted"
     ),
+})
+
+export const registrationSchema = accountBasicsSchema.extend({
+  password: z.string().min(8, "Use at least 8 characters").max(72, "Use at most 72 characters"),
 })
 
 export type AccountBasicsData = z.infer<typeof accountBasicsSchema>
@@ -57,7 +61,7 @@ export const academicProfileSchema = z.object({
     .refine(
       (v) => {
         if (!v || v === "") return true
-        const n = parseFloat(v)
+        const n = Number(v)
         return !isNaN(n) && n >= 0 && n <= 4.0
       },
       "GPA must be between 0.0 and 4.0"
@@ -68,8 +72,8 @@ export const academicProfileSchema = z.object({
     .refine(
       (v) => {
         if (!v || v === "") return true
-        const n = parseInt(v, 10)
-        return !isNaN(n) && n >= 400 && n <= 1600
+        const n = Number(v)
+        return Number.isInteger(n) && n >= 400 && n <= 1600
       },
       "SAT score must be between 400 and 1600"
     ),
@@ -80,6 +84,12 @@ export type AcademicProfileData = z.infer<typeof academicProfileSchema>
 // ─── Step 4: Experience & Assets ──────────────────────────────────────────────
 
 export const experienceAssetsSchema = z.object({
+  bio: z.string().trim().max(2000).optional(),
+  experiences: z.array(z.object({
+    title: z.string().trim().min(1, "Add a role or title").max(120),
+    subtitle: z.string().trim().min(1, "Add an organization").max(120),
+    period: z.string().trim().min(1, "Add a date or period").max(100),
+  })).max(20).optional(),
   linkedinUrl: z
     .string()
     .optional()
@@ -88,7 +98,7 @@ export const experienceAssetsSchema = z.object({
         if (!v || v === "") return true
         try {
           const url = new URL(v)
-          return url.hostname.endsWith("linkedin.com")
+          return url.protocol === "https:" && (url.hostname === "linkedin.com" || url.hostname.endsWith(".linkedin.com"))
         } catch {
           return false
         }

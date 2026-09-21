@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, type DragEvent } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   ArrowRight,
@@ -34,10 +34,13 @@ import {
 } from "@/components/ui/input-otp"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
+import { registerStudent } from "@/actions/onboarding"
+import { Textarea } from "@/components/ui/textarea"
 import { upsertStudentProfile } from "@/actions/profile"
 import { getSignedUploadUrl } from "@/actions/storage"
 import {
   accountBasicsSchema,
+  registrationSchema,
   otpVerifySchema,
   academicProfileSchema,
   experienceAssetsSchema,
@@ -193,13 +196,19 @@ function ResumeDropZone({
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
 export function StudentOnboardingWizard({
-  onComplete,
+  onComplete, embedded = false, initialUser, onBack, onSignIn,
 }: {
   onComplete: () => void
+  embedded?: boolean
+  initialUser?: { email?: string; user_metadata?: Record<string, any> } | null
+  onBack?: () => void
+  onSignIn?: () => void
 }) {
   const [step, setStep] = useState(1)
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [codeSent, setCodeSent] = useState(false)
+  const [accountCreated, setAccountCreated] = useState(!!initialUser)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
 
   // Accumulated wizard data persisted across step changes
@@ -214,31 +223,34 @@ export function StudentOnboardingWizard({
 
   // ── Step 1: Account Basics ────────────────────────────────────────────────
 
-  const step1Form = useForm<AccountBasicsData>({
-    resolver: zodResolver(accountBasicsSchema),
-    defaultValues: { firstName: "", lastName: "", email: "" },
+  const step1Form = useForm<AccountBasicsData & { password?: string }>({
+    resolver: zodResolver(initialUser ? accountBasicsSchema : registrationSchema),
+    defaultValues: { firstName: initialUser?.user_metadata?.first_name ?? "", lastName: initialUser?.user_metadata?.last_name ?? "", email: initialUser?.email ?? "", password: "" },
   })
 
-  async function onStep1Submit(data: AccountBasicsData) {
+  function onStep1Submit(data: AccountBasicsData) {
     setGlobalError("")
+    wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
+    setStep(accountCreated ? 3 : 2)
+  }
+
+  async function createAccount(skipVerification: boolean) {
+    if (loading) return
     setLoading(true)
+    setGlobalError("")
     try {
-      const email = data.email.trim().toLowerCase()
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { shouldCreateUser: true },
-      })
-      if (error) {
-        setGlobalError(error.message)
-        return
+      const result = await registerStudent(step1Form.getValues(), skipVerification)
+      if (result.error) { setGlobalError(result.error); return }
+      if (result.authenticated) {
+        setAccountCreated(true)
+        step1Form.setValue("password", "")
+        setStep(3)
+      } else {
+        setCodeSent(true)
       }
-      wizardData.current.accountBasics = { ...data, email }
-      setStep(2)
-    } catch (err: any) {
-      setGlobalError(err?.message ?? "Something went wrong")
-    } finally {
-      setLoading(false)
-    }
+    } catch {
+      setGlobalError("Unable to create your account. Please try again.")
+    } finally { setLoading(false) }
   }
 
   // ── Step 2: OTP Verification ──────────────────────────────────────────────
@@ -262,6 +274,8 @@ export function StudentOnboardingWizard({
         setGlobalError(error.message)
         return
       }
+      setAccountCreated(true)
+      step1Form.setValue("password", "")
       setStep(3)
     } catch (err: any) {
       setGlobalError(err?.message ?? "Something went wrong")
@@ -271,13 +285,13 @@ export function StudentOnboardingWizard({
   }
 
   async function resendCode() {
-    if (!wizardData.current.accountBasics) return
+    setLoading(true)
     setGlobalError("")
-    const { error } = await supabase.auth.signInWithOtp({
-      email: wizardData.current.accountBasics.email,
-      options: { shouldCreateUser: true },
-    })
-    if (error) setGlobalError(error.message)
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email: wizardData.current.accountBasics!.email })
+      if (error) setGlobalError(error.message)
+    } catch { setGlobalError("Unable to resend the code. Please try again.") }
+    finally { setLoading(false) }
   }
 
   // ── Step 3: Academic Profile ──────────────────────────────────────────────
@@ -296,8 +310,10 @@ export function StudentOnboardingWizard({
 
   const step4Form = useForm<ExperienceAssetsData>({
     resolver: zodResolver(experienceAssetsSchema),
-    defaultValues: { linkedinUrl: "" },
+    defaultValues: { linkedinUrl: "", bio: "", experiences: [] },
   })
+
+  const experienceFields = useFieldArray({ control: step4Form.control, name: "experiences" })
 
   const handleResumeFile = useCallback((f: File) => {
     if (f.size > MAX_RESUME_SIZE) {
@@ -314,31 +330,20 @@ export function StudentOnboardingWizard({
 
   async function uploadResume(): Promise<string | null> {
     if (!resumeFile) return null
-    try {
-      const { signedUrl, publicUrl } = await getSignedUploadUrl({
-        fileName: resumeFile.name,
-        bucket: "resumes",
-      })
-      await fetch(signedUrl, {
-        method: "PUT",
-        body: resumeFile,
-        headers: { "Content-Type": "application/pdf" },
-      })
-      return publicUrl
-    } catch {
-      // Storage upload failed — continue without the resume
-      return null
-    }
+    const { signedUrl, publicUrl } = await getSignedUploadUrl({ fileName: resumeFile.name, bucket: "resumes" })
+    const response = await fetch(signedUrl, { method: "PUT", body: resumeFile, headers: { "Content-Type": "application/pdf" } })
+    if (!response.ok) throw new Error("Resume upload failed. Retry or remove the file to continue without it.")
+    return publicUrl
   }
 
-  async function onStep4Submit(data: ExperienceAssetsData) {
+  async function onStep4Submit(data: ExperienceAssetsData, skipAssets = false) {
     setGlobalError("")
     setLoading(true)
     try {
       wizardData.current.experience = data
 
       // Upload resume if one was attached
-      const resumeUrl = await uploadResume()
+      const resumeUrl = skipAssets ? null : await uploadResume()
       wizardData.current.resumeUrl = resumeUrl
 
       // Derive computingId from email (part before @virginia.edu)
@@ -358,6 +363,8 @@ export function StudentOnboardingWizard({
           ? parseInt(academic!.satScore, 10)
           : undefined,
         linkedinUrl: data.linkedinUrl || "",
+        bio: data.bio,
+        experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
       })
 
@@ -372,14 +379,15 @@ export function StudentOnboardingWizard({
 
   async function onSkipStep4() {
     // Submit with whatever data exists (no LinkedIn, no resume)
-    await onStep4Submit({ linkedinUrl: "" })
+    await onStep4Submit({ linkedinUrl: "" }, true)
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-neutral-50 px-4 py-10 font-sans">
-      <div className="w-full max-w-[480px]">
+    <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-neutral-50 px-4 py-10 font-sans"}>
+      <div className="mx-auto w-full max-w-[480px]">
+        {onBack && <Button variant="ghost" onClick={onBack} disabled={loading} className="mb-4"><ArrowLeft className="size-4" />Back to home</Button>}
         {/* Logo */}
         <div className="mb-6 flex justify-center">
           <OutClassLogo variant="light" className="h-8 w-auto" />
@@ -391,7 +399,7 @@ export function StudentOnboardingWizard({
 
           {/* Global error */}
           {globalError && (
-            <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div role="alert" className="mb-5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
               {globalError}
             </div>
           )}
@@ -449,6 +457,7 @@ export function StudentOnboardingWizard({
                   <Label htmlFor="email">UVA email address</Label>
                   <Input
                     id="email"
+                    readOnly={accountCreated}
                     type="email"
                     autoComplete="email"
                     autoCapitalize="none"
@@ -467,6 +476,12 @@ export function StudentOnboardingWizard({
                   )}
                 </div>
 
+                {!initialUser && <div className="space-y-1.5">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
+                  <p className="text-xs text-neutral-500">At least 8 characters. Use this password to sign in again.</p>
+                  {step1Form.formState.errors.password && <p className="text-xs text-red-600">{step1Form.formState.errors.password.message}</p>}
+                </div>}
                 <Button
                   type="submit"
                   disabled={loading}
@@ -490,17 +505,23 @@ export function StudentOnboardingWizard({
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
-                  Check your inbox
+                  {codeSent ? "Check your inbox" : "Email verification"}
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
-                  Enter the 6-digit code we sent to{" "}
+                  {codeSent ? "Enter the verification code sent to " : "Create your account for "}
                   <strong className="break-all font-medium text-neutral-900">
                     {wizardData.current.accountBasics?.email}
                   </strong>
                 </p>
               </div>
 
-              <form
+              {!codeSent && <div className="space-y-3">
+                <p className="text-sm leading-6 text-neutral-500">Email delivery isn’t connected yet. Skip verification for now and sign in with your password.</p>
+                <Button className="w-full" disabled={loading} onClick={() => createAccount(true)}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Skip verification & create account"}</Button>
+                <Button variant="outline" className="w-full" disabled={loading} onClick={() => createAccount(false)}>Send verification email</Button>
+                <Button variant="ghost" className="w-full" disabled={loading} onClick={() => { setStep(1); setGlobalError("") }}>Edit account details</Button>
+              </div>}
+              {codeSent && <form
                 onSubmit={step2Form.handleSubmit(onStep2Submit)}
                 className="space-y-5"
               >
@@ -550,6 +571,7 @@ export function StudentOnboardingWizard({
                   <button
                     type="button"
                     onClick={resendCode}
+                    disabled={loading}
                     className="font-medium text-neutral-600 hover:text-neutral-900"
                   >
                     Resend code
@@ -566,7 +588,7 @@ export function StudentOnboardingWizard({
                     Use a different email
                   </button>
                 </div>
-              </form>
+              </form>}
             </>
           )}
 
@@ -657,7 +679,7 @@ export function StudentOnboardingWizard({
 
                   <div className="space-y-1.5">
                     <Label htmlFor="satScore">
-                      SAT / ACT{" "}
+                      SAT score{" "}
                       <span className="font-normal text-neutral-400">
                         (optional)
                       </span>
@@ -703,9 +725,24 @@ export function StudentOnboardingWizard({
               </div>
 
               <form
-                onSubmit={step4Form.handleSubmit(onStep4Submit)}
+                onSubmit={step4Form.handleSubmit((data) => onStep4Submit(data))}
                 className="space-y-5"
               >
+                <div className="space-y-1.5">
+                  <Label htmlFor="bio">About you (optional)</Label>
+                  <Textarea id="bio" maxLength={2000} placeholder="Your interests, goals, and what you bring to a club" {...step4Form.register("bio")} />
+                </div>
+                <div className="space-y-3">
+                  <Label>Experience (optional)</Label>
+                  {experienceFields.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-lg border p-3">
+                    <Input aria-label={`Experience ${index + 1} role`} placeholder="Role or title" {...step4Form.register(`experiences.${index}.title`)} />
+                    <Input aria-label={`Experience ${index + 1} organization`} placeholder="Club, employer, or organization" {...step4Form.register(`experiences.${index}.subtitle`)} />
+                    <Input aria-label={`Experience ${index + 1} dates`} placeholder="e.g. 2025–present" {...step4Form.register(`experiences.${index}.period`)} />
+                    {step4Form.formState.errors.experiences?.[index] && <p className="text-xs text-red-600">Add a title, organization, and dates, or remove this experience.</p>}
+                    <Button type="button" variant="ghost" onClick={() => experienceFields.remove(index)}>Remove experience</Button>
+                  </div>)}
+                  <Button type="button" variant="outline" disabled={experienceFields.fields.length >= 20} onClick={() => experienceFields.append({ title: "", subtitle: "", period: "" })}>Add experience</Button>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="linkedinUrl">
                     LinkedIn profile{" "}
@@ -771,6 +808,8 @@ export function StudentOnboardingWizard({
           )}
         </div>
 
+        {step === 4 && <Button variant="ghost" disabled={loading} onClick={() => setStep(3)} className="mt-3"><ArrowLeft className="size-4" />Back to academics</Button>}
+        {onSignIn && <p className="mt-5 text-center text-sm text-neutral-600">Already have an account? <button type="button" disabled={loading} onClick={onSignIn} className="font-semibold text-primary underline">Sign in</button></p>}
         {/* Footer */}
         <p className="mt-5 text-center text-xs text-neutral-400">
           For University of Virginia students and club leaders.
