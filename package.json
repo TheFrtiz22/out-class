@@ -10,7 +10,7 @@
     "dev": "next dev",
     "lint": "eslint .",
     "start": "next start",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
