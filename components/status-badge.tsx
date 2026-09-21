@@ -12,21 +12,30 @@ const styles: Record<string, string> = {
   Rejected: "bg-status-rejected text-status-rejected-foreground border-transparent",
 }
 
+const labels: Record<string, string> = {
+  DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review",
+  INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted",
+}
+styles.Drafting = styles.Applied
+styles.Submitted = styles.Applied
+styles.Waitlisted = styles["In Review"]
+
 const dotStatuses = new Set(["Round 1", "Round 2", "Interviewing"])
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
+  const label = labels[status] ?? status
   return (
     <Badge
       className={cn(
         "gap-1.5 font-medium",
-        dotStatuses.has(status) &&
+        dotStatuses.has(label) &&
           "before:size-1.5 before:shrink-0 before:rounded-full before:content-['']",
-        styles[status] ?? styles.Applied,
+        styles[label] ?? styles.Applied,
         className,
       )}
       variant="outline"
     >
-      {status}
+      {label}
     </Badge>
   )
 }

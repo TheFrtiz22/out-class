@@ -4,17 +4,17 @@
  * mockups from drifting into a separate design system.
  */
 export const editorialUi = {
-  app: "bg-white font-sans text-neutral-900",
-  sidebar: "border-r border-neutral-200 bg-white text-neutral-500",
+  app: "bg-background font-sans text-foreground",
+  sidebar: "border-r border-border bg-card text-muted-foreground",
   sidebarLink:
-    "border-l-2 border-transparent text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900",
+    "border-l-2 border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
   sidebarLinkActive:
-    "border-l-2 border-neutral-900 bg-neutral-50 font-semibold text-neutral-900",
-  surface: "border border-neutral-200 bg-white shadow-none",
-  title: "font-sans font-semibold tracking-tight text-neutral-900",
-  secondaryText: "font-sans text-neutral-500",
+    "border-l-2 border-primary bg-muted font-semibold text-foreground",
+  surface: "border border-border bg-card shadow-none",
+  title: "font-sans font-semibold tracking-tight text-foreground",
+  secondaryText: "font-sans text-muted-foreground",
   primaryAction:
     "border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90",
   secondaryAction:
-    "border border-neutral-300 bg-white font-medium text-neutral-900 shadow-none hover:bg-neutral-50",
+    "border border-input bg-card font-medium text-foreground shadow-none hover:bg-muted",
 } as const

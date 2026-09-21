@@ -1,0 +1,61 @@
+/* Readable final layout is the SSR/no-JS/reduced-motion baseline. */
+.oc-motion-section, .oc-motion-story { position: relative; }
+.oc-motion-stat { display: grid; gap: .4rem; }
+.oc-motion-stat > :last-child { color: var(--muted-foreground); font-size: .875rem; }
+
+/* A shared rail and changing surface tone join chapters without extra cards. */
+.oc-landing[data-scroll-motion] .onboarding-section {
+  position: relative;
+  margin-top: -1px;
+  border-top: 1px solid var(--border);
+  padding-top: 56px;
+}
+.oc-landing[data-scroll-motion] .trust-strip { border-block: 1px solid var(--border); background: var(--background); }
+.oc-landing[data-scroll-motion] .problem-section { padding-top: 64px; padding-bottom: 48px; }
+.oc-landing[data-scroll-motion] .features { padding-top: 0; padding-bottom: 32px; }
+.oc-landing[data-scroll-motion] .oc-motion-story { border-top: 1px solid var(--border); padding-block: 48px; }
+.oc-landing[data-scroll-motion] .oc-motion-story::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--brand-orange);
+}
+.oc-landing[data-scroll-motion] .oc-motion-story .feature-art { background: var(--background); border-radius: var(--oc-radius-xl); }
+.oc-landing[data-scroll-motion] .pricing-strip { background: var(--card); }
+.oc-landing[data-scroll-motion] .bottom-cta { border-top: 1px solid var(--border); }
+
+@media (min-width: 1100px) and (min-height: 800px) and (prefers-reduced-motion: no-preference) {
+  .oc-landing[data-scroll-motion] .oc-motion-story.feature-row,
+  .oc-landing[data-scroll-motion] .oc-motion-story.feature-row.reverse {
+    display: grid;
+    grid-template-columns: minmax(260px, .75fr) minmax(0, 1.4fr);
+    align-items: start;
+    gap: 48px;
+  }
+  .oc-landing[data-scroll-motion] .oc-motion-story > .feature-copy { position: sticky; top: 40px; max-width: 420px; }
+  .oc-landing[data-scroll-motion] .oc-motion-story .feature-copy h2 { font-size: clamp(28px, 2.7vw, 38px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .oc-motion-depth { animation: oc-depth-progress linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  }
+}
+@keyframes oc-depth-progress {
+  from { transform: translateY(8px) scale(.994); }
+  to { transform: none; }
+}
+@media (max-width: 767px) {
+  .oc-landing[data-scroll-motion] .onboarding-section { padding-top: 32px; }
+  .oc-landing[data-scroll-motion] .problem-section { padding-top: 40px; padding-bottom: 28px; }
+  .oc-landing[data-scroll-motion] .oc-motion-story { padding-block: 32px; }
+  .oc-motion-depth { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-motion-depth { animation: none; transform: none; }
+  .oc-landing[data-scroll-motion] .oc-motion-story > .feature-copy { position: static; }
+}
+
+[data-scroll-motion] [data-motion="context"] { display: inline-block; }

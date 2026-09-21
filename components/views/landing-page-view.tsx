@@ -1,49 +1,48 @@
 "use client"
 
-import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
-import { ClubLogo } from "@/components/club-logo"
-import { LiveProductPreview } from "@/components/live-product-preview"
 import { useState } from "react"
-import { ArrowRight, ArrowUpRight, Check, LayoutDashboard, FileText, CalendarDays, GraduationCap, Layers, CheckCircle2, Users, MessageSquare, X, Menu } from "lucide-react"
+import { ArrowRight, Menu, X } from "lucide-react"
+import { OutClassLogo } from "@/components/outclass-logo"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { ScrollMotion, SectionReveal, TextReveal } from "@/components/motion/scroll-motion"
+import { LandingHero } from "@/components/landing/landing-hero"
+import { ProductStories } from "@/components/landing/product-stories"
+import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
 import "./landing.css"
 
-interface LandingPageViewProps { onNavigateToApp: (role?: "student" | "leader") => void }
-import Image from "next/image"
+interface LandingPageViewProps {
+  onNavigateToApp: (role?: "student" | "leader") => void
+  campusName?: string
+}
 
-function Brand({ light = false, mark = false }: { light?: boolean; mark?: boolean }) {
-  return (
-    <span className={`oc-brand ${light ? "light" : ""} ${mark ? "oc-brand-icon" : ""}`}>
-      <Image
-        src={mark ? "/outclass-mark.png" : light ? "/outclass-wordmark-dark.png" : "/outclass-wordmark-light.png"}
-        alt="OutClass"
-        width={mark ? 1254 : light ? 789 : 921}
-        height={mark ? 1254 : light ? 316 : 271}
-        className="oc-brand-image"
-      />
-    </span>
-  )
-}
-function Dashboard({ leader }: { leader: boolean }) {
-  return <LiveProductPreview view={leader ? "leader-dashboard" : "student-dashboard"} label={leader ? "Applicant CRM preview" : "Student dashboard preview"} />
-}
-export function LandingPageView({ onNavigateToApp }: LandingPageViewProps) {
-  const [leader, setLeader] = useState(false)
+export function LandingPageView({ onNavigateToApp, campusName = "University of Virginia" }: LandingPageViewProps) {
   const [menu, setMenu] = useState(false)
+  const [signup, setSignup] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
-  return <div className="oc-landing"><header className="oc-header"><a href="#" aria-label="OutClass home"><Brand/></a><nav className={menu ? "open" : ""}><a href="#students" onClick={() => setMenu(false)}>Students</a><a href="#clubs" onClick={() => setMenu(false)}>Clubs</a><a href="#pricing" onClick={() => setMenu(false)}>Pricing</a><a href="#create-account" onClick={() => setMenu(false)}>Create account</a></nav><div className="nav-actions"><button className="nav-cta" onClick={() => onNavigateToApp("student")}>Sign In<ArrowUpRight size={15}/></button><button className="mobile-menu" aria-label="Toggle navigation" aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <X/> : <Menu/>}</button></div></header>
-  <main><section className="oc-hero"><div className="hero-orbit orbit-one"/><div className="hero-orbit orbit-two"/><div className="hero-copy"><div className="eyebrow-pill"><span/>BUILT FOR YOUR NEXT CHAPTER<ArrowUpRight size={12}/></div><h1>A Common App for<br/><span>club recruitment.</span></h1><p>One profile, one place to apply to every<br className="desktop-break"/> selective club on campus.</p><div className="hero-actions"><a className="oc-button orange" href="#create-account">Create Student Profile<ArrowRight size={17}/></a><a className="oc-button outline" href="#clubs">For Club Leaders<ArrowUpRight size={17}/></a></div><div className="hero-notes"><span><Check size={13}/>Free for students</span><span><Check size={13}/>Built at UVA, for UVA</span></div></div><div className="dashboard-stage"><div className="preview-tabs" role="tablist" aria-label="Dashboard preview"><button role="tab" aria-selected={!leader} onClick={() => setLeader(false)} className={!leader ? "active" : ""}><GraduationCap size={14}/>For students</button><button role="tab" aria-selected={leader} onClick={() => setLeader(true)} className={leader ? "active" : ""}><Users size={14}/>For club leaders</button></div><Dashboard leader={leader}/><div className="floating-note"><span><CheckCircle2 size={20}/></span><div>Less busywork. More belonging.<small>Your campus, connected.</small></div></div></div></section>
-  <section id="create-account" className="onboarding-section section-wrap">
-    <div className="onboarding-copy"><span className="section-kicker">YOUR NEXT CHAPTER STARTS HERE</span><h2>One profile.<br/>Every opportunity.</h2><p>Create your student account and build a profile you can use across club applications.</p><ul><li><CheckCircle2/>Your own account and secure sign-in</li><li><GraduationCap/>Academics, interests, and experience</li><li><FileText/>An optional resume and LinkedIn profile</li></ul><p className="onboarding-note">Free for UVA students. You can skip email verification while email delivery is being set up.</p></div>
-    <StudentOnboardingWizard embedded onComplete={() => { window.location.href = "/" }} onSignIn={() => onNavigateToApp("student")} />
-  </section>
-  <section className="trust-strip"><p>TRUSTED BY TOP CLUBS AT UVA</p><div className="club-logos"><ClubLogo clubId="180-degrees" logoUrl="/logos/180-degrees-globe.png" text="180" alt="180 Degrees Consulting" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="consulting-logo">180<span>DEGREES<br/>CONSULTING</span></span>} /><ClubLogo clubId="mii" logoUrl="/logos/mii.webp" text="MII" alt="McIntire Investment Institute" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="mcintire-logo"><span>Ⅿ</span>McIntire<small>INVESTMENT INSTITUTE</small></span>} /><ClubLogo clubId="vvf" logoUrl="/logos/vvf.webp" text="VVF" alt="Virginia Venture Fund" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="venture-logo">V<span>VIRGINIA<br/>VENTURE FUND</span></span>} /><ClubLogo clubId="commerce-council" text="CC" alt="Commerce Council" color="#273c6f" className="h-12 w-36 rounded-md hidden lg:block" fallback={<span className="commerce-logo"><GraduationCap/>COMM<span>COMMERCE COUNCIL</span></span>} /><ClubLogo clubId="enactus" logoUrl="/logos/enactus-wordmark.png" text="E" alt="Enactus" color="#273c6f" className="h-14 w-36 rounded-md border-0" fallback={<span className="enactus-logo">enactus<span>at the University of Virginia</span></span>} /></div></section>
-  <section className="problem-section section-wrap" id="about"><div className="section-heading"><span className="section-kicker">A SMARTER WAY IN</span><h2>Great opportunities.<br/>Less of the runaround.</h2><p>Recruitment should be about finding the right fit.<br/>Not finding the right spreadsheet.</p></div><div className="bento"><div className="old-way"><span className="card-label">THE OLD WAY</span><h3>Too many tabs.<br/>Too little clarity.</h3><div className="scattered-tools"><span className="tool forms"><FileText/>Google Forms</span><span className="tool sheets"><LayoutDashboard/>Spreadsheets</span><span className="tool calendar"><CalendarDays/>Calendly</span><span className="tool email"><MessageSquare/>“Any updates?”</span></div><p>Repeated applications. Lost emails.<br/>A process that works against you.</p></div><div className="new-way"><span className="card-label"><span/>THE OUTCLASS WAY</span><h3>One home for<br/>your next opportunity.</h3><div className="connected-tools"><span><FileText/></span><i/><Brand light/><i/><span><Users/></span></div><div className="new-benefits"><span><CheckCircle2/>One unified profile</span><span><CheckCircle2/>Every application, together</span><span><CheckCircle2/>Clear updates at every step</span></div></div></div></section>
-  <section className="features section-wrap"><article className="feature-row" id="students"><div className="feature-copy"><span className="feature-brand"><Brand mark/></span><span className="section-kicker">FOR THE AMBITIOUS STUDENT</span><h2>Build once.<br/>Apply anywhere.</h2><p>You’re more than another Google Form. Bring your experience, accolades, and ambitions together in one profile that goes wherever you do.</p><ul><li><Check/>Your resume, photo, and story in one place</li><li><Check/>Apply to your favorite clubs in minutes</li><li><Check/>Stay on top of every next step</li></ul><a className="text-link" href="#create-account">Create your student profile<ArrowRight size={16}/></a></div><div className="feature-art live-feature-art"><LiveProductPreview view="student-profile" label="Profile preview" /></div></article>
-  <article className="feature-row reverse" id="clubs"><div className="feature-copy"><span className="feature-icon"><Layers/></span><span className="section-kicker">FOR FORWARD-THINKING CLUBS</span><h2>End-to-end<br/>club dashboard.</h2><p>Build a great class, without the administrative marathon. Give your entire team one clear view of every applicant, every score, and every round.</p><ul><li><Check/>Review applications side by side</li><li><Check/>Create consistent, custom scoring rubrics</li><li><Check/>Move your pipeline forward, together</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>Meet your recruitment command center<ArrowRight size={16}/></button></div><div className="feature-art live-feature-art"><LiveProductPreview view="leader-dashboard" label="Applicant CRM preview" /></div></article>
-  <article className="feature-row"><div className="feature-copy"><span className="feature-icon"><MessageSquare/></span><span className="section-kicker">BETTER CONVERSATIONS. BETTER DECISIONS.</span><h2>Live interview<br/>workspace.</h2><p>Be present in the conversation. Score candidates, take notes, and stay aligned with your fellow interviewers, all in real time.</p><ul><li><Check/>Shared notes that keep everyone in sync</li><li><Check/>Structured rubrics for thoughtful decisions</li><li><Check/>Less back-and-forth after the interview</li></ul><button className="text-link" onClick={() => onNavigateToApp("leader")}>See the bigger picture<ArrowRight size={16}/></button></div><div className="feature-art live-feature-art"><LiveProductPreview view="interview-workspace" label="Interview workspace preview" /></div></article></section>
-  <section className="pricing-strip section-wrap" id="pricing"><div><span className="section-kicker">BIG OPPORTUNITIES. SMALL BARRIERS.</span><h2>Free for students.<br/>Ready for your club.</h2></div><p>Your next chapter shouldn’t come with a price tag.<br/>Students join free. Clubs can explore the UVA pilot.</p><button className="oc-button outline" onClick={() => onNavigateToApp("leader")}>Explore the pilot<ArrowUpRight size={16}/></button></section>
-  <section className="bottom-cta"><div className="cta-decoration"/><div className="cta-brand"><Brand light/></div><span className="section-kicker">YOUR NEXT GREAT CLASS STARTS HERE</span><h2>Stop running recruitment<br/>on spreadsheets.</h2><p>Upgrade your club’s pipeline today.</p><button className="oc-button orange" onClick={() => onNavigateToApp("leader")}>Join the Pilot<ArrowRight size={17}/></button><small>Built with ambition. Built for belonging. Built at UVA.</small></section></main>
-  <footer className="oc-footer"><div><Brand/><p>A better way to find your people.</p></div><nav><a href="#about">About</a>{["Contact","Privacy","Terms"].map(label => <button key={label} onClick={() => setInfo(label)}>{label}</button>)}</nav><span>© {new Date().getFullYear()} OutClass</span></footer>
-  {info && <div className="info-backdrop" onClick={() => setInfo(null)}><section className="info-dialog" role="dialog" aria-modal="true" aria-label={info} onClick={e => e.stopPropagation()}><button className="dialog-close" aria-label="Close dialog" autoFocus onClick={() => setInfo(null)}><X/></button><Brand/><h2>{info}</h2><p>{info === "Contact" ? "Interested in bringing OutClass to your club? Explore the club workspace to see how the UVA pilot can work for your team." : `${info} information for the live service will be available before launch. This preview lets you explore the OutClass experience using demonstration data.`}</p><button className="oc-button orange" onClick={() => info === "Contact" ? onNavigateToApp("leader") : setInfo(null)}>{info === "Contact" ? "Explore club workspace" : "Got it"}<ArrowRight size={16}/></button></section></div>}
-  </div>
+  return <ScrollMotion className="oc-landing" id="top">
+    <header className="oc-header oc-hero-header">
+      <a href="#top" aria-label="OutClass home"><OutClassLogo className="h-10 w-auto" /></a>
+      <nav id="public-navigation" aria-label="Public navigation" className={menu ? "open" : ""}>
+        <a href="#students" onClick={() => setMenu(false)}>For students</a>
+        <a href="#clubs" onClick={() => setMenu(false)}>For clubs</a>
+        <a href="#create-account" onClick={() => setMenu(false)}>Get started</a>
+      </nav>
+      <div className="nav-actions"><button type="button" className="nav-cta" onClick={() => onNavigateToApp("student")}>Sign in</button><button type="button" className="mobile-menu" aria-label={menu ? "Close navigation" : "Open navigation"} aria-expanded={menu} aria-controls="public-navigation" onClick={() => setMenu(!menu)}>{menu ? <X /> : <Menu />}</button></div>
+    </header>
+    <main>
+      <LandingHero campusName={campusName} />
+      <ProductStories onLeaderEnter={() => onNavigateToApp("leader")} />
+      <SectionReveal id="create-account" className="oc-final-invitation" aria-labelledby="invitation-title">
+        <p data-motion="context" className="oc-story-eyebrow">Beginning at {campusName}</p>
+        <TextReveal asChild><h2 id="invitation-title">Your next chapter starts here.</h2></TextReveal>
+        <p data-motion="body">One profile. A little more possibility.</p>
+        <Button size="lg" onClick={() => setSignup(true)}>Create your profile<ArrowRight aria-hidden="true" size={16} /></Button>
+        <p id="pricing" className="oc-invitation-note">Free for students. Clubs join the campus pilot individually.</p>
+      </SectionReveal>
+    </main>
+    <footer className="oc-public-footer"><div><a href="#top" aria-label="OutClass home"><OutClassLogo className="h-8 w-auto" /></a><p>Find your people. Make your mark.</p></div><nav aria-label="Footer navigation"><a href="#about">How it works</a>{["Contact", "Privacy", "Terms"].map(label => <button type="button" key={label} onClick={() => setInfo(label)}>{label}</button>)}</nav><small>© {new Date().getFullYear()} OutClass</small></footer>
+    <Dialog open={signup} onOpenChange={setSignup}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle>Create your student profile</DialogTitle><DialogDescription>Begin with your UVA account.</DialogDescription></DialogHeader><StudentOnboardingWizard embedded onComplete={() => { window.location.href = "/" }} onSignIn={() => { setSignup(false); onNavigateToApp("student") }} /></DialogContent></Dialog>
+    <Dialog open={!!info} onOpenChange={open => { if (!open) setInfo(null) }}><DialogContent><DialogHeader><DialogTitle>{info}</DialogTitle><DialogDescription>{info === "Contact" ? "Interested in bringing OutClass to your club? Explore the club workspace to learn about the campus pilot." : `${info ?? "Service"} information will be published before launch. The product examples on this page use illustrative data.`}</DialogDescription></DialogHeader><Button onClick={() => { if (info === "Contact") onNavigateToApp("leader"); setInfo(null) }}>{info === "Contact" ? "Explore club workspace" : "Close"}</Button></DialogContent></Dialog>
+  </ScrollMotion>
 }

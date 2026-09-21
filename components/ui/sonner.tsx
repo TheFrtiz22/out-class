@@ -1,18 +1,35 @@
 'use client'
 
-import { Toaster as Sonner, ToasterProps } from 'sonner'
+import type { CSSProperties } from 'react'
+import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ style, ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="light"
+      richColors
       className="toaster group"
       style={
         {
           '--normal-bg': 'var(--popover)',
           '--normal-text': 'var(--popover-foreground)',
           '--normal-border': 'var(--border)',
-        } as React.CSSProperties
+          '--success-bg': 'var(--success-subtle)',
+          '--success-text': 'var(--success)',
+          '--success-border': 'var(--border)',
+          '--error-bg': 'var(--error-subtle)',
+          '--error-text': 'var(--destructive)',
+          '--error-border': 'var(--border)',
+          '--warning-bg': 'var(--warning-subtle)',
+          '--warning-text': 'var(--warning)',
+          '--warning-border': 'var(--border)',
+          '--info-bg': 'var(--info-subtle)',
+          '--info-text': 'var(--info)',
+          '--info-border': 'var(--border)',
+          '--border-radius': 'var(--oc-radius-lg)',
+          zIndex: 'var(--oc-z-toast)',
+          ...style,
+        } as CSSProperties
       }
       {...props}
     />

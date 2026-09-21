@@ -44,23 +44,20 @@ export const adminClubName = "Virginia Venture Fund"
 
 /** Standard student navigation, shown when appMode === "student". */
 export const studentNav: NavItem[] = [
-  { id: "landing", title: "Landing Page", icon: Globe },
-  { id: "student-dashboard", title: "Dashboard", icon: Home },
-  { id: "student-profile", title: "Profile", icon: UserRound },
+  { id: "student-dashboard", title: "Home", icon: Home },
   { id: "discover", title: "Discover", icon: Compass },
-  { id: "tracker", title: "Application Tracker", icon: ClipboardList },
-  { id: "inbox", title: "Inbox", icon: Bell },
+  { id: "tracker", title: "Applications", icon: ClipboardList },
   { id: "calendar", title: "Calendar", icon: CalendarDays },
+  { id: "student-profile", title: "Profile", icon: UserRound },
 ]
 
-/** Executive navigation, shown when appMode === "admin". */
+/** Same visual structure, with task-oriented labels for club leaders. */
 export const adminNav: NavItem[] = [
-  { id: "landing", title: "Landing Page", icon: Globe },
-  { id: "leader-dashboard", title: "Applicant CRM", icon: Table2 },
-  { id: "interview-scheduler", title: "Interview Scheduler", icon: CalendarClock },
-  { id: "interview-workspace", title: "Live Workspace", icon: MessageSquareText },
-  { id: "broadcast-messages", title: "Broadcast & Messages", icon: Megaphone },
-  { id: "club-manager", title: "Club Settings", icon: Settings2 },
+  { id: "leader-dashboard", title: "Applicants", icon: Table2 },
+  { id: "interview-scheduler", title: "Interviews", icon: CalendarClock },
+  { id: "interview-workspace", title: "Interview workspace", icon: MessageSquareText },
+  { id: "broadcast-messages", title: "Messages", icon: Megaphone },
+  { id: "club-manager", title: "Club settings", icon: Settings2 },
 ]
 
 export const navSections: { label: string; items: NavItem[] }[] = [

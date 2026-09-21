@@ -224,7 +224,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
             </div>
 
             {/* Sticky action footer */}
-            <div className="sticky bottom-0 flex items-center justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-white/95 p-4 backdrop-blur">
+            <div className="sticky bottom-[var(--shell-bottom-inset,0px)] flex items-center justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-white/95 p-4 backdrop-blur">
               <Button variant="ghost" className="text-gray-600 hover:bg-gray-100 hover:text-foreground">
                 Save Draft
               </Button>
