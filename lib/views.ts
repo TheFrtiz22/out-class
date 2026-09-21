@@ -87,7 +87,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
       { id: "screening-dashboard", title: "Screening & Auto-Filter", icon: ShieldAlert },
       { id: "interview-scheduler", title: "Interview Scheduler", icon: CalendarClock },
       { id: "interview-workspace", title: "Interview Workspace", icon: MessageSquareText },
-      { id: "club-manager", title: "Club Manager", icon: Users2 },
+      { id: "club-manager", title: "Club Settings", icon: Users2 },
       { id: "club-management-portal", title: "Management Portal", icon: Settings2 },
     ],
   },
@@ -104,7 +104,7 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },
   "leader-dashboard": { title: "Applicant CRM", subtitle: "Review, score, and advance your applicants." },
   "club-manager": {
-    title: "Club Manager",
+    title: "Club Settings",
     subtitle: "Manage roster permissions, application questions, and your public profile.",
   },
   "club-management-portal": {

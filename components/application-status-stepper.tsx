@@ -1,68 +1,35 @@
+"use client"
+
 import { Check, X } from "lucide-react"
-import type { Application } from "@/lib/data"
+import { currentStudent, type Application } from "@/lib/data"
+import { useClubCustomization } from "@/lib/club-customization"
 import { cn } from "@/lib/utils"
 
-const STEPS = ["Applied", "1st Round", "2nd Round", "Decision"] as const
+/** Recruitment stage IDs stay stable when the club changes their labels or order. */
+export function ApplicationStatusStepper({ app }: { app: Pick<Application, "clubId" | "stage" | "outcome"> }) {
+  const { state, applicants } = useClubCustomization(app.clubId)
+  const applicant = app.clubId === "vvf" ? applicants.find(candidate => candidate.email.toLowerCase() === currentStudent.email.toLowerCase()) : undefined
+  const status = app.stage === "Draft" ? "Draft" : applicant?.status ?? app.outcome ?? app.stage
+  const rejected = status === "Rejected"
+  const accepted = status === "Accepted"
+  const steps = [...state.stages, { id: "Decision", name: accepted ? "Accepted" : rejected ? "Rejected" : "Decision" }]
+  const stageIndex = accepted || rejected || status === "Decision" ? steps.length - 1 : steps.findIndex(step => step.id === status)
 
-export function ApplicationStatusStepper({ app }: { app: Application }) {
-  const stageIndex = { Draft: -1, Applied: 0, "Round 1": 1, "Round 2": 2, Decision: 3 }[app.stage]
-  const rejected = app.stage === "Decision" && app.outcome === "Rejected"
-  const accepted = app.stage === "Decision" && app.outcome === "Accepted"
-
-  return (
-    <ol className="flex items-center">
-      {STEPS.map((step, i) => {
-        const isFinal = i === STEPS.length - 1
-        const done = i < stageIndex
-        const active = i === stageIndex && !isFinal
-        const label = isFinal ? (accepted ? "Accepted" : rejected ? "Rejected" : "Decision") : step
-
-        return (
-          <li key={step} className="flex flex-1 items-center last:flex-none">
-            <div className="flex flex-col items-center gap-1.5">
-              <span
-                className={cn(
-                  "flex size-6 items-center justify-center rounded-full border text-xs font-semibold",
-                  done && "border-neutral-400 bg-foreground text-background",
-                  active && "border-neutral-400 bg-secondary text-foreground",
-                  accepted && isFinal && "border-success bg-success text-white",
-                  rejected && isFinal && "border-destructive bg-destructive text-destructive-foreground",
-                  !done && !active && !accepted && !rejected && "border-border bg-background text-muted-foreground",
-                )}
-              >
-                {done ? (
-                  <Check className="size-3.5" />
-                ) : accepted && isFinal ? (
-                  <Check className="size-3.5" />
-                ) : rejected && isFinal ? (
-                  <X className="size-3.5" />
-                ) : (
-                  i + 1
-                )}
-              </span>
-              <span
-                className={cn(
-                  "text-[11px] font-medium whitespace-nowrap",
-                  active && "text-foreground",
-                  accepted && isFinal && "text-success",
-                  rejected && isFinal && "text-destructive",
-                  !active && !(accepted && isFinal) && !(rejected && isFinal) && "text-muted-foreground",
-                )}
-              >
-                {label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={cn(
-                  "mx-1 h-0.5 flex-1 rounded-full",
-                  i < stageIndex ? "bg-foreground" : "bg-border",
-                )}
-              />
-            )}
-          </li>
-        )
+  return <div className="overflow-x-auto py-2">
+    <ol aria-label="Recruitment progress" className="flex min-w-max items-start gap-2 font-sans">
+      {steps.map((step, index) => {
+        const done = index < stageIndex
+        const active = index === stageIndex
+        return <li key={step.id} aria-current={active ? "step" : undefined} className="flex min-w-24 flex-1 items-center gap-2">
+          <div className="flex max-w-40 flex-col items-center gap-2 text-center">
+            <span className={cn("flex size-7 items-center justify-center rounded-full border text-xs font-semibold", active ? "border-neutral-900 bg-neutral-900 text-white" : done ? "border-neutral-300 bg-neutral-100 text-neutral-900" : "border-neutral-200 bg-white text-neutral-400")}>
+              {active && rejected ? <X className="size-3.5" /> : done || (active && accepted) ? <Check className="size-3.5" /> : index + 1}
+            </span>
+            <span className={cn("max-w-36 break-words text-xs", active ? "font-semibold text-neutral-900" : "text-neutral-500")}>{step.name}</span>
+          </div>
+          {index < steps.length - 1 && <div aria-hidden="true" className={cn("mb-6 h-px min-w-4 flex-1", done ? "bg-neutral-600" : "bg-neutral-200")} />}
+        </li>
       })}
     </ol>
-  )
+  </div>
 }

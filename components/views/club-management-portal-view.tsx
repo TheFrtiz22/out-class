@@ -101,7 +101,7 @@ function PublicPageDetailsPanel() {
     set("logoUrl", URL.createObjectURL(file))
   }
 
-  function handleDrop(e: DragEvent<HTMLDivElement>) {
+  function handleDrop(e: DragEvent<HTMLButtonElement>) {
     e.preventDefault()
     setIsDragging(false)
     handleFiles(e.dataTransfer.files)

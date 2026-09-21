@@ -1,5 +1,7 @@
 "use client"
 
+import { ApplicationStatusStepper } from "@/components/application-status-stepper"
+
 import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2, Compass, UploadCloud, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -153,6 +155,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
               <p className="text-sm text-gray-500">
                 We&apos;ve notified the club&apos;s leadership. You&apos;ll be updated here as your status changes.
               </p>
+              <ApplicationStatusStepper app={{ clubId: activeTab.clubId, stage: "Applied" }} />
             </div>
             <Button
               size="lg"

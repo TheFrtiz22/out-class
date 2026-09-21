@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useClubCustomization } from "@/lib/club-customization"
 import { ArrowLeft, Bell, Calendar, Check, Info, MapPin, Send, Sparkles, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,12 +22,23 @@ export function ClubProfileView({
   club,
   onBack,
   onNavigate,
+  preview = false,
 }: {
+  preview?: boolean
   club: DiscoverClub
   onBack: () => void
   onNavigate: (view: ViewId) => void
 }) {
   const { isApplied, applyToClub, managedEvents, events, respondToEvent, focusEvent, focusApplication } = useApplicationState()
+  const { state, configured, ready } = useClubCustomization(club.id)
+  const customized = club.id === "vvf" || configured
+  const profile = state.profile
+  const displayName = customized ? profile.name : club.name
+  const accent = customized ? profile.accent : club.color
+  const channels = accent.slice(1).match(/.{2}/g)?.map(value => parseInt(value, 16) / 255) ?? [0, 0, 0]
+  const linear = channels.map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+  const textOnAccent = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2] > 0.179 ? "#000000" : "#FFFFFF"
+  const showDirectory = !customized || profile.showDirectory
   const [subscribed, setSubscribed] = useState(false)
   const applied = isApplied(club.id)
 
@@ -48,6 +60,7 @@ export function ClubProfileView({
 
   function startApplication(e: React.FormEvent) {
     e.preventDefault()
+    if (preview) return
     if (!applied) {
       applyToClub({ id: club.id, name: club.name, logoText: club.logoText, logoUrl: club.logoUrl, color: club.color })
     }
@@ -55,9 +68,11 @@ export function ClubProfileView({
     onNavigate("tracker")
   }
 
+  if (!ready) return <p role="status" className="p-6 text-sm text-neutral-500">Loading club profile…</p>
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={onBack}>
+    <div className="mx-auto max-w-4xl space-y-6 font-sans">
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground" onClick={onBack} disabled={preview}>
         <ArrowLeft className="size-4" />
         Back to Discover
       </Button>
@@ -65,24 +80,26 @@ export function ClubProfileView({
       {/* Cover banner + overlapping logo */}
       <div>
         <div className="h-32 w-full rounded-t-xl bg-foreground sm:h-40" aria-hidden="true" />
-        <div className="rounded-b-xl border border-t-0 border-gray-200 bg-white px-4 pb-5 sm:px-6">
+        <div className="rounded-b-xl border border-t-0 border-neutral-200 bg-white px-4 pb-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-end gap-4">
               <ClubLogo
-                clubId={club.id} logoUrl={club.logoUrl} text={club.logoText}
-                color="#051B3D"
+                clubId={club.id} logoUrl={club.logoUrl} text={customized ? displayName.split(/\s+/).filter(Boolean).map(word => word[0]).slice(0, 3).join("") : club.logoText}
+                color={accent}
+                fallback={customized ? <div role="img" aria-label={displayName} className="-mt-14 flex size-28 shrink-0 items-center justify-center rounded-xl border-4 border-white text-3xl font-bold sm:-mt-16 sm:size-32" style={{ backgroundColor: accent, color: textOnAccent }}>{displayName.split(/\s+/).filter(Boolean).map(word => word[0]).slice(0, 3).join("")}</div> : undefined}
                 size="2xl"
                 className="-mt-14 shrink-0 rounded-xl border-4 border-white font-bold shadow-none sm:-mt-16"
               />
               <div className="pt-3">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-sans">{club.name}</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-sans">{displayName}</h1>
+                {customized && <p className="mt-2 text-sm text-neutral-500">{profile.tagline}</p>}
                 <Badge variant="secondary" className="mt-1.5 text-[10px] font-medium">
                   {club.category}
                 </Badge>
               </div>
             </div>
 
-            <Button className="gap-1.5 bg-primary text-white hover:bg-primary/90" disabled={subscribed} onClick={subscribe}>
+            <Button className="gap-1.5 bg-primary text-white hover:bg-primary/90" disabled={preview || subscribed} onClick={subscribe}>
               {subscribed ? (
                 <>
                   <Check className="size-4" />
@@ -102,7 +119,7 @@ export function ClubProfileView({
             {club.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-foreground/80"
+                className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-[11px] font-medium text-foreground/80"
               >
                 {tag}
               </span>
@@ -111,25 +128,20 @@ export function ClubProfileView({
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Hidden sections are omitted entirely, including their labels. */}
+      <div className="flex flex-wrap gap-3">
         {[
-          { label: "Acceptance Rate", value: "8%" },
-          { label: "AUM", value: "$2.4M" },
-          { label: "Top Placements", value: "Goldman, Blackstone" },
-        ].map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-gray-200 bg-white p-4">
-            <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-            <p className="mt-1 text-lg font-bold text-foreground">{stat.value}</p>
-          </div>
-        ))}
+          ...(!customized || profile.showAcceptance ? [{ label: "Acceptance Rate", value: customized ? profile.acceptance : `${club.acceptanceRate}%` }] : []),
+          ...(!customized || profile.showAum ? [{ label: "AUM", value: customized ? profile.aum : club.aumValue == null ? "Not listed" : `$${club.aumValue.toLocaleString()}` }] : []),
+          ...(customized && profile.showPlacements ? [{ label: "Notable Alumni / Placements", value: profile.placements || "Not yet listed" }] : []),
+        ].map(stat => <div key={stat.label} className="min-w-36 flex-1 rounded-xl border border-neutral-200 bg-white p-4"><p className="text-xs font-medium text-neutral-500">{stat.label}</p><p className="mt-1 whitespace-pre-wrap break-words text-lg font-semibold">{stat.value || "Not yet listed"}</p></div>)}
       </div>
 
       {/* Body tabs */}
       <Tabs defaultValue="about" className="gap-6">
         <TabsList>
           <TabsTrigger value="about">About</TabsTrigger>
-          <TabsTrigger value="members">Members</TabsTrigger>
+          {showDirectory && <TabsTrigger value="members">Members</TabsTrigger>}
           <TabsTrigger value="sessions">Info Sessions</TabsTrigger>
           <TabsTrigger value="apply">Apply</TabsTrigger>
         </TabsList>
@@ -137,7 +149,7 @@ export function ClubProfileView({
         <TabsContent value="about">
           <Card>
             <CardContent className="pt-6">
-              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">{club.pitch}</p>
+              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">{customized ? profile.about : club.pitch}</p>
               <Separator className="my-5" />
               <div className="flex items-center gap-2">
                 <Sparkles className="size-4 text-foreground" />
@@ -156,13 +168,13 @@ export function ClubProfileView({
           </Card>
         </TabsContent>
 
-        <TabsContent value="members">
+        {showDirectory && <TabsContent value="members">
           <Card>
             <CardContent className="pt-6">
               {roster ? (
                 <div className="grid gap-4 sm:grid-cols-2">
                   {roster.exec.map((person) => (
-                    <div key={person.name} className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
+                    <div key={person.name} className="flex items-center gap-3 rounded-xl border bg-muted/20 p-3">
                       <Avatar className="size-9">
                         <AvatarFallback className="bg-muted text-xs font-medium">{person.initials}</AvatarFallback>
                       </Avatar>
@@ -180,7 +192,7 @@ export function ClubProfileView({
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent>}
 
         <TabsContent value="sessions">
           <Card>
@@ -196,7 +208,7 @@ export function ClubProfileView({
                   {infoSessions.map((session) => (
                     <div
                       key={session.id}
-                      className="flex flex-col justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4"
+                      className="flex flex-col justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4"
                     >
                       <div className="space-y-2">
                         <p className="text-sm font-semibold text-foreground">{session.title}</p>
@@ -217,7 +229,7 @@ export function ClubProfileView({
                       <Button
                         size="sm"
                         className="w-full gap-1.5 bg-primary text-white hover:bg-primary/90"
-                        onClick={() => rsvp(session.id)}
+                        onClick={() => rsvp(session.id)} disabled={preview}
                       >
                         <Check className="size-4" />
                         RSVP / Sync to Calendar
@@ -237,7 +249,7 @@ export function ClubProfileView({
         <TabsContent value="apply">
           <Card>
             <CardContent className="space-y-5 pt-6">
-              <div className="flex items-start gap-3 rounded-lg border border-primary/20 bg-muted p-3">
+              <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-muted p-3">
                 <Info className="mt-0.5 size-4 shrink-0 text-foreground" />
                 <p className="text-sm text-foreground/90">
                   Your OutClass profile and resume will be automatically attached to this application.
@@ -245,13 +257,13 @@ export function ClubProfileView({
               </div>
 
               {applied ? (
-                <div className="flex flex-col items-center gap-2 rounded-lg border bg-muted/30 py-10 text-center">
+                <div className="flex flex-col items-center gap-2 rounded-xl border bg-muted/30 py-10 text-center">
                   <div className="flex size-10 items-center justify-center rounded-full bg-secondary">
                     <Check className="size-5 text-foreground" />
                   </div>
                   <p className="text-sm font-medium">You&apos;ve already started this application</p>
                   <p className="text-sm text-muted-foreground">Track its progress in your Application Tracker.</p>
-                  <Button className="mt-2" onClick={() => onNavigate("tracker")}>
+                  <Button className="mt-2 shadow-none" disabled={preview} style={{ backgroundColor: accent, color: textOnAccent }} onClick={() => onNavigate("tracker")}>
                     Go to Application Tracker
                   </Button>
                 </div>
@@ -267,7 +279,7 @@ export function ClubProfileView({
                     <Textarea id="pitch" required rows={8} placeholder="Keep it specific and evidence-based…" />
                   </div>
 
-                  <Button type="submit" className="w-full gap-1.5 sm:w-auto">
+                  <Button type="submit" disabled={preview} style={{ backgroundColor: accent, color: textOnAccent }} className="w-full gap-1.5 shadow-none sm:w-auto">
                     <Send className="size-4" />
                     Start Application
                   </Button>

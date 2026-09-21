@@ -28,3 +28,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dependencies
+node_modules/
+
+# Environment variables / Secret API Keys
+.env
+.env.local
+
+# Build outputs
+dist/
+build/

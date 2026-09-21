@@ -5,8 +5,10 @@ import { LiveVotingLauncher } from "@/components/live-voting/live-voting-launche
 import { useAttendance, eventsAttended } from "@/lib/attendance"
 import { useApplicationState } from "@/lib/application-state"
 import { currentStudent, experienceItems } from "@/lib/data"
-import { useMemo, useState } from "react"
-import { ChevronUp, ChevronDown, Search, SlidersHorizontal, Play, ChevronLeft, ChevronRight, FileText, LinkIcon, Check, Lock, ArrowUpRight, Zap, LayoutGrid, Rows3, X, Mail } from "lucide-react"
+import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react"
+import { CRMViewManager } from "@/components/customization/crm-view-manager"
+import { crmColumns, emptyFilters, matchesCRMFilters, useClubCustomization, type CRMFilters, type ColumnId } from "@/lib/club-customization"
+import { ChevronUp, ChevronDown, Search, SlidersHorizontal, Play, ChevronLeft, ChevronRight, FileText, LinkIcon, Check, Lock, ArrowUpRight, Zap, X, Mail } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -26,7 +28,7 @@ import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/status-badge"
 import { SpeedReviewMode } from "@/components/views/leader-dashboard/speed-review-mode"
 import { PipelineView } from "@/components/views/leader-dashboard/pipeline-view"
-import { applicants as seedApplicants, type Applicant, workspaceRounds } from "@/lib/data"
+import { type Applicant, workspaceRounds } from "@/lib/data"
 
 import { averageApplicantScore, nextApplicantSort, sortApplicants, type ApplicantSortKey, type SortConfig } from "@/lib/applicant-sorting"
 
@@ -40,7 +42,6 @@ const SORT_COLUMNS: { key: ApplicantSortKey; label: string; className?: string }
   { key: "score", label: "Avg Score", className: "w-28 pr-4 text-right" },
 ]
 
-const STAGES = ["All Stages", "Applied", "Round 1", "Round 2", "Rejected", "Accepted"] as const
 
 const SCORING_CRITERIA = [
   { id: "culture", label: "Culture" },
@@ -52,17 +53,24 @@ export function LeaderDashboardView() {
   const attendance = useAttendance()
   const { isApplied } = useApplicationState()
   const [pipeline, setPipeline] = useState<"applicants" | "leads">("applicants")
-  const [applicants, setApplicants] = useState<Applicant[]>(seedApplicants)
-  const [viewMode, setViewMode] = useState<"table" | "pipeline">("table")
-  const [stage, setStage] = useState<(typeof STAGES)[number]>("All Stages")
-  const [query, setQuery] = useState("")
+  const { state: customization, update, stages, stageName, applicants, setApplicants, ready } = useClubCustomization()
+  const viewMode = customization.crm.layout
+  const { query, stage, minGpa: appliedMinGpa, minSat: appliedMinSat } = customization.crm.filters
+  const majors = useMemo(() => new Set(customization.crm.filters.majors), [customization.crm.filters.majors])
+  const years = useMemo(() => new Set(customization.crm.filters.years), [customization.crm.filters.years])
+  const visible = (id: ColumnId) => !customization.crm.hidden.includes(id)
+  const STAGES = ["All Stages", ...stages.map(s => s.id)]
+  function setFilter<K extends keyof CRMFilters>(key: K, value: CRMFilters[K]) {
+    update(p => ({ ...p, crm: { ...p.crm, filters: { ...p.crm.filters, [key]: value } } }))
+  }
+  const setStage = (value: string) => setFilter("stage", value)
+  const setQuery = (value: string) => setFilter("query", value)
+  const setMajors: Dispatch<SetStateAction<Set<string>>> = value => setFilter("majors", [...(typeof value === "function" ? value(majors) : value)])
+  const setYears: Dispatch<SetStateAction<Set<string>>> = value => setFilter("years", [...(typeof value === "function" ? value(years) : value)])
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [majors, setMajors] = useState<Set<string>>(new Set())
-  const [years, setYears] = useState<Set<string>>(new Set())
   const [minSat, setMinSat] = useState("")
   const [minGpa, setMinGpa] = useState("")
-  const [appliedMinSat, setAppliedMinSat] = useState<number | null>(null)
-  const [appliedMinGpa, setAppliedMinGpa] = useState<number | null>(null)
+  useEffect(() => { setMinSat(appliedMinSat?.toString() ?? ""); setMinGpa(appliedMinGpa?.toString() ?? "") }, [appliedMinSat, appliedMinGpa])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: "ascending" })
   const [scores, setScores] = useState<Record<string, Record<string, number>>>({})
@@ -72,32 +80,13 @@ export function LeaderDashboardView() {
   const allMajors = useMemo(() => Array.from(new Set(applicants.map((a) => a.major))), [applicants])
   const allYears = useMemo(() => Array.from(new Set(applicants.map((a) => a.year))), [applicants])
 
-  const filtered = useMemo(() => {
-    return applicants.filter((a) => {
-      const matchStage = stage === "All Stages" || a.status === stage
-      const matchQuery =
-        a.name.toLowerCase().includes(query.toLowerCase()) || a.email.toLowerCase().includes(query.toLowerCase())
-      const matchMajor = majors.size === 0 || majors.has(a.major)
-      const matchYear = years.size === 0 || years.has(a.year)
-      const matchSat = appliedMinSat === null || a.satScore > appliedMinSat
-      const matchGpa = appliedMinGpa === null || Number(a.gpa) > appliedMinGpa
-      return matchStage && matchQuery && matchMajor && matchYear && matchSat && matchGpa
-    })
-  }, [applicants, stage, query, majors, years, appliedMinSat, appliedMinGpa])
+  const filtered = useMemo(() => applicants.filter(applicant => matchesCRMFilters(applicant, customization.crm.filters)), [applicants, customization.crm.filters])
 
-  const pipelineFiltered = useMemo(() => {
-    return applicants.filter((a) => {
-      const matchQuery =
-        a.name.toLowerCase().includes(query.toLowerCase()) || a.email.toLowerCase().includes(query.toLowerCase())
-      const matchMajor = majors.size === 0 || majors.has(a.major)
-      const matchYear = years.size === 0 || years.has(a.year)
-      const matchSat = appliedMinSat === null || a.satScore > appliedMinSat
-      const matchGpa = appliedMinGpa === null || Number(a.gpa) > appliedMinGpa
-      return matchQuery && matchMajor && matchYear && matchSat && matchGpa
-    })
-  }, [applicants, query, majors, years, appliedMinSat, appliedMinGpa])
+  const pipelineFiltered = filtered
 
-  const sortedApplicants = useMemo(() => sortApplicants(filtered, sortConfig, scores), [filtered, sortConfig, scores])
+  const sortedApplicants = useMemo(() => sortConfig.key === "status"
+    ? [...filtered].sort((a, b) => (sortConfig.direction === "ascending" ? 1 : -1) * stageName(a.status).localeCompare(stageName(b.status)))
+    : sortApplicants(filtered, sortConfig, scores), [filtered, sortConfig, scores, customization.stages])
   const navList = viewMode === "pipeline" ? pipelineFiltered : sortedApplicants
   const activeIndex = navList.findIndex((applicant) => applicant.id === activeId)
   const active = applicants.find((applicant) => applicant.id === activeId) ?? null
@@ -126,11 +115,12 @@ export function LeaderDashboardView() {
     return { score, notes: comments }
   }
 
-  const STAGE_SEQUENCE: Applicant["status"][] = ["Applied", "Round 1", "Round 2", "Accepted"]
+  const STAGE_SEQUENCE = [...customization.stages.map(s => s.id), "Accepted"]
 
   function reachedStage(status: Applicant["status"], stage: Applicant["status"]) {
-    if (status === "Rejected") return STAGE_SEQUENCE.indexOf(stage) <= STAGE_SEQUENCE.indexOf("Round 2")
-    return STAGE_SEQUENCE.indexOf(status) >= STAGE_SEQUENCE.indexOf(stage)
+    if (status === "Rejected") return false
+    const targetIndex = STAGE_SEQUENCE.indexOf(stage)
+    return targetIndex >= 0 && STAGE_SEQUENCE.indexOf(status) >= targetIndex
   }
 
   function promoteToNextRound() {
@@ -139,7 +129,7 @@ export function LeaderDashboardView() {
     if (currentIdx === -1 || currentIdx === STAGE_SEQUENCE.length - 1) return
     const next = STAGE_SEQUENCE[currentIdx + 1]
     setApplicants((prev) => prev.map((a) => (a.id === active.id ? { ...a, status: next } : a)))
-    toast.success(`${active.name} promoted — ${next} unlocked in the Scheduler`)
+    toast.success(`${active.name} moved to ${stageName(next)}`)
   }
 
   function toggleSet(setter: typeof setMajors, value: string) {
@@ -159,12 +149,16 @@ export function LeaderDashboardView() {
   }
 
   function toggleAll() {
-    setSelected((prev) => (prev.size === filtered.length ? new Set() : new Set(filtered.map((a) => a.id))))
+    setSelected((prev) => (filtered.every(a => prev.has(a.id)) ? new Set() : new Set(filtered.map((a) => a.id))))
   }
 
   function applyAdvancedFilters() {
-    setAppliedMinSat(minSat.trim() === "" ? null : Number(minSat))
-    setAppliedMinGpa(minGpa.trim() === "" ? null : Number(minGpa))
+    const sat = minSat.trim() === "" ? null : Number(minSat)
+    const gpa = minGpa.trim() === "" ? null : Number(minGpa)
+    if ((sat !== null && (!Number.isFinite(sat) || sat < 0 || sat > 1600)) || (gpa !== null && (!Number.isFinite(gpa) || gpa < 0 || gpa > 4))) {
+      toast.error("Enter a GPA from 0 to 4 and SAT score from 0 to 1600."); return
+    }
+    update(p => ({ ...p, crm: { ...p.crm, filters: { ...p.crm.filters, minSat: sat, minGpa: gpa } } }))
   }
 
   function runAutoReject() {
@@ -173,7 +167,7 @@ export function LeaderDashboardView() {
     let count = 0
     setApplicants((prev) =>
       prev.map((a) => {
-        if (a.status === "Applied" && (a.satScore < lowSat || Number(a.gpa) < lowGpa)) {
+        if (a.status === customization.stages[0].id && (a.satScore < lowSat || Number(a.gpa) < lowGpa)) {
           count += 1
           return { ...a, status: "Rejected" as const }
         }
@@ -184,7 +178,7 @@ export function LeaderDashboardView() {
   }
 
   function openSpeedReview() {
-    const queue = applicants.filter((a) => a.status === "Applied")
+    const queue = applicants.filter((a) => a.status === customization.stages[0].id)
     setSpeedReviewQueue(queue)
   }
 
@@ -192,8 +186,10 @@ export function LeaderDashboardView() {
     const candidate = applicants.find((a) => a.id === id)
     if (!candidate) return
     if (decision === "advance") {
-      setApplicants((prev) => prev.map((a) => (a.id === id ? { ...a, status: "Round 1" } : a)))
-      toast.success(`${candidate.name} advanced to Round 1`)
+      const next = STAGE_SEQUENCE[STAGE_SEQUENCE.indexOf(candidate.status) + 1]
+      if (!next || candidate.status === "Rejected") return
+      setApplicants((prev) => prev.map((a) => (a.id === id ? { ...a, status: next } : a)))
+      toast.success(`${candidate.name} advanced to ${stageName(next)}`)
     } else if (decision === "reject") {
       setApplicants((prev) => prev.map((a) => (a.id === id ? { ...a, status: "Rejected" } : a)))
       toast.success(`${candidate.name} rejected`)
@@ -207,18 +203,11 @@ export function LeaderDashboardView() {
     toast.success(`Score saved for ${active.name}`)
   }
 
-  function moveToNextRound() {
-    if (!active) return
-    const next: Applicant["status"] = active.status === "Applied" ? "Round 1" : active.status === "Round 1" ? "Round 2" : "Accepted"
-    setApplicants((prev) => prev.map((a) => (a.id === active.id ? { ...a, status: next } : a)))
-    toast.success(`${active.name} moved to ${next}`)
-  }
-
   function movePipelineCandidate(id: string, status: Applicant["status"]) {
     const candidate = applicants.find((a) => a.id === id)
-    if (!candidate || candidate.status === status) return
+    if (!candidate || candidate.status === status || !stages.some(s => s.id === status)) return
     setApplicants((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
-    toast.success(`${candidate.name} moved to ${status}`)
+    toast.success(`${candidate.name} moved to ${stageName(status)}`)
   }
 
   function openProfileFromPipeline(id: string) {
@@ -273,17 +262,19 @@ export function LeaderDashboardView() {
   const applicantIds = new Set(applicants.map(applicant => applicant.email.toLowerCase()))
   if (isApplied("vvf")) applicantIds.add(currentStudent.email)
 
-  const activeFilterCount = majors.size + years.size + (appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)
+  const activeFilterCount = (query ? 1 : 0) + (stage !== "All Stages" ? 1 : 0) + majors.size + years.size + (appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       <div className="flex gap-2" role="group" aria-label="CRM pipeline">
         <Button variant="outline" aria-pressed={pipeline === "applicants"} className={cn("shadow-none", pipeline === "applicants" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("applicants")}>Active Applicants</Button>
         <Button variant="outline" aria-pressed={pipeline === "leads"} className={cn("shadow-none", pipeline === "leads" && "bg-black text-white hover:bg-neutral-800 hover:text-white")} onClick={() => setPipeline("leads")}>Interested Leads</Button>
       </div>
       {pipeline === "leads" ? <LeadsTable attendance={attendance} applicantIds={applicantIds} clubId="vvf" /> : <>
+      <CRMViewManager />
+      <fieldset disabled={!ready} className="min-w-0 space-y-4">
       {/* Filter command bar */}
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-card p-2.5">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white p-2.5">
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -298,10 +289,10 @@ export function LeaderDashboardView() {
           <SelectTrigger className="h-8 w-36 text-xs" size="sm">
             <SelectValue placeholder="Stage" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl border-neutral-200 bg-white shadow-none">
             {STAGES.map((s) => (
               <SelectItem key={s} value={s} className="text-xs">
-                {s}
+                {stageName(s)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -318,7 +309,7 @@ export function LeaderDashboardView() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-56 p-3">
+          <PopoverContent align="start" className="w-56 rounded-xl border-neutral-200 bg-white p-3 shadow-none">
             <div className="space-y-3">
               <div>
                 <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Major</p>
@@ -358,11 +349,12 @@ export function LeaderDashboardView() {
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent align="start" className="w-64 space-y-3 p-3">
+          <PopoverContent align="start" className="w-64 space-y-3 rounded-xl border-neutral-200 bg-white p-3 shadow-none">
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">SAT Score greater than</Label>
+              <Label htmlFor="crm-min-sat" className="text-xs font-medium">SAT Score greater than</Label>
               <Input
                 type="number"
+                id="crm-min-sat" min={0} max={1600}
                 value={minSat}
                 onChange={(e) => setMinSat(e.target.value)}
                 placeholder="e.g. 1450"
@@ -370,10 +362,11 @@ export function LeaderDashboardView() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">GPA greater than</Label>
+              <Label htmlFor="crm-min-gpa" className="text-xs font-medium">GPA greater than</Label>
               <Input
                 type="number"
                 step="0.01"
+                id="crm-min-gpa" min={0} max={4}
                 value={minGpa}
                 onChange={(e) => setMinGpa(e.target.value)}
                 placeholder="e.g. 3.7"
@@ -392,46 +385,14 @@ export function LeaderDashboardView() {
             size="sm"
             className="h-8 text-xs text-muted-foreground"
             onClick={() => {
-              setMajors(new Set())
-              setYears(new Set())
+              update(p => ({ ...p, crm: { ...p.crm, filters: emptyFilters } }))
               setMinSat("")
               setMinGpa("")
-              setAppliedMinSat(null)
-              setAppliedMinGpa(null)
             }}
           >
             Clear filters
           </Button>
         )}
-
-        <div className="ml-auto flex items-center gap-1 rounded-md border bg-muted/30 p-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("table")}
-            className={cn(
-              "h-7 gap-1.5 text-xs",
-              viewMode === "table"
-                ? "bg-foreground text-white hover:bg-foreground/90 hover:text-white"
-                : "text-muted-foreground hover:bg-transparent",
-            )}
-          >
-            <Rows3 className="size-3.5" /> Table View
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode("pipeline")}
-            className={cn(
-              "h-7 gap-1.5 text-xs",
-              viewMode === "pipeline"
-                ? "bg-foreground text-white hover:bg-foreground/90 hover:text-white"
-                : "text-muted-foreground hover:bg-transparent",
-            )}
-          >
-            <LayoutGrid className="size-3.5" /> Pipeline View
-          </Button>
-        </div>
 
         <LiveVotingLauncher applicants={(viewMode === "pipeline" ? pipelineFiltered : sortedApplicants).map(applicant => ({
           ...applicant,
@@ -454,6 +415,7 @@ export function LeaderDashboardView() {
       {/* CRM pipeline (kanban) view */}
       {viewMode === "pipeline" && (
         <PipelineView
+          columns={stages.map(s => ({ id: s.id, title: s.name }))}
           applicants={pipelineFiltered}
           getScore={averageScore}
           onMove={movePipelineCandidate}
@@ -465,20 +427,20 @@ export function LeaderDashboardView() {
 
       {/* CRM data table */}
       {viewMode === "table" && (
-      <Card className="overflow-hidden py-0">
+      <Card className="overflow-hidden rounded-xl border-neutral-200 bg-white py-0 shadow-none">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
+            {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-neutral-500">All columns are hidden. Open View Settings to show columns.</p> : <Table>
               <TableHeader>
                 <TableRow className="bg-white [&_th]:h-12 [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
-                  <TableHead className="w-10 pl-4">
+                  {visible("selection") && <TableHead className="w-10 pl-4">
                     <Checkbox
-                      checked={filtered.length > 0 && selected.size === filtered.length}
+                      checked={filtered.length > 0 && filtered.every(a => selected.has(a.id))}
                       onCheckedChange={toggleAll}
                       aria-label="Select all"
                     />
-                  </TableHead>
-                  {SORT_COLUMNS.map((column) => (
+                  </TableHead>}
+                  {SORT_COLUMNS.filter(column => visible(column.key)).map((column) => (
                     <TableHead key={column.key} scope="col" className={column.className}
                       aria-sort={sortConfig.key === column.key ? sortConfig.direction : "none"}>
                       <button type="button" onClick={() => requestSort(column.key)}
@@ -491,7 +453,7 @@ export function LeaderDashboardView() {
                       </button>
                     </TableHead>
                   ))}
-                  <TableHead>Events Attended</TableHead>
+                  {visible("events") && <TableHead>Events Attended</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -500,12 +462,12 @@ export function LeaderDashboardView() {
                     key={a.id}
                     onClick={() => setActiveId(a.id)}
                     data-state={selected.has(a.id) ? "selected" : undefined}
-                    className="cursor-pointer text-xs transition-colors hover:bg-slate-50 [&_td]:h-16 [&_td]:py-4"
+                    className="cursor-pointer text-xs transition-colors hover:bg-neutral-50 [&_td]:h-16 [&_td]:py-4"
                   >
-                    <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                    {visible("selection") && <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selected.has(a.id)} onCheckedChange={() => toggleRow(a.id)} aria-label={`Select ${a.name}`} />
-                    </TableCell>
-                    <TableCell>
+                    </TableCell>}
+                    {visible("name") && <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="size-6">
                           <AvatarFallback className="bg-muted text-[10px] font-medium">{a.initials}</AvatarFallback>
@@ -514,33 +476,35 @@ export function LeaderDashboardView() {
                           <p className="truncate font-medium">{a.name}</p>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{a.year}</TableCell>
-                    <TableCell className="truncate text-muted-foreground">{a.major}</TableCell>
-                    <TableCell className="font-sans tabular-nums">{a.gpa}</TableCell>
-                    <TableCell className="font-sans tabular-nums">{a.satScore}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={a.status} />
-                    </TableCell>
-                    <TableCell className="pr-4 text-right font-sans font-medium">
+                    </TableCell>}
+                    {visible("year") && <TableCell className="text-muted-foreground">{a.year}</TableCell>}
+                    {visible("major") && <TableCell className="truncate text-muted-foreground">{a.major}</TableCell>}
+                    {visible("gpa") && <TableCell className="font-sans tabular-nums">{a.gpa}</TableCell>}
+                    {visible("satScore") && <TableCell className="font-sans tabular-nums">{a.satScore}</TableCell>}
+                    {visible("status") && <TableCell>
+                      <select aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => movePipelineCandidate(a.id, event.target.value)} className="max-w-44 rounded-md border border-neutral-200 bg-white p-1.5 text-xs">{stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+                    </TableCell>}
+                    {visible("score") && <TableCell className="pr-4 text-right font-sans font-medium">
                       {averageScore(a.id, a.score) > 0 ? averageScore(a.id, a.score).toFixed(1) : "—"}
-                    </TableCell>
-                    <TableCell className="tabular-nums">{eventsAttended(attendance, "vvf", a.email.toLowerCase())}</TableCell>
+                    </TableCell>}
+                    {visible("events") && <TableCell className="tabular-nums">{eventsAttended(attendance, "vvf", a.email.toLowerCase())}</TableCell>}
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={Math.max(1, crmColumns.filter(column => visible(column.id)).length)} className="py-10 text-center text-sm text-muted-foreground">
                       No applicants match these filters.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
-            </Table>
+            </Table>}
           </div>
         </CardContent>
       </Card>
       )}
+
+      </fieldset>
 
       {/* Floating bulk action bar */}
       {selected.size > 0 && (
@@ -607,7 +571,7 @@ export function LeaderDashboardView() {
                       {active.major} · {active.year}
                     </p>
                   </div>
-                  <StatusBadge status={active.status} />
+                  <StatusBadge status={stageName(active.status)} />
                 </div>
               </SheetHeader>
 
@@ -739,39 +703,18 @@ export function LeaderDashboardView() {
 
                 <TabsContent value="history" className="flex-1 overflow-y-auto p-4">
                   {(() => {
-                    const round1 = roundAggregate("round-1")
-                    const round2 = roundAggregate("round-2")
-                    const stages = [
-                      {
-                        key: "application",
-                        title: "Application Review",
-                        subtitle: "Initial screener pass",
-                        locked: false,
-                        score: averageScore(active.id, active.score),
+                    const stages = customization.stages.map((stage, index) => {
+                      const round = stage.id === "Round 1" ? roundAggregate("round-1") : stage.id === "Round 2" ? roundAggregate("round-2") : null
+                      return {
+                        key: stage.id,
+                        title: stage.name,
+                        subtitle: index === 0 ? "Initial screener review" : "Recruitment evaluation",
+                        locked: !reachedStage(active.status, stage.id),
+                        score: round?.score ?? (index === 0 ? averageScore(active.id, active.score) : null),
                         scoreLabel: "/5",
-                        notes: notes[active.id]
-                          ? [{ interviewer: "Screener", initials: "SC", note: notes[active.id] }]
-                          : [{ interviewer: "Screener", initials: "SC", note: "Strong essays and consistent academic record. Recommended to advance to interviews." }],
-                      },
-                      {
-                        key: "round-1",
-                        title: "Round 1 Interview",
-                        subtitle: "Behavioral · aggregated panel scores",
-                        locked: !reachedStage(active.status, "Round 1"),
-                        score: round1.score,
-                        scoreLabel: "/5",
-                        notes: round1.notes,
-                      },
-                      {
-                        key: "round-2",
-                        title: "Round 2 Case",
-                        subtitle: "Technical / Case · aggregated panel scores",
-                        locked: !reachedStage(active.status, "Round 2"),
-                        score: round2.score,
-                        scoreLabel: "/5",
-                        notes: round2.notes,
-                      },
-                    ]
+                        notes: round?.notes ?? (index === 0 && notes[active.id] ? [{ interviewer: "Screener", initials: "SC", note: notes[active.id] }] : []),
+                      }
+                    })
 
                     return (
                       <div className="relative space-y-6 pl-2">

@@ -2,6 +2,8 @@
 
 import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useClubCustomization } from "@/lib/club-customization"
+import { ApplicationStatusStepper } from "@/components/application-status-stepper"
 import { Progress } from "@/components/ui/progress"
 import { ClubLogo } from "@/components/club-logo"
 import { applications as seedApplications, currentStudent, type Application } from "@/lib/data"
@@ -16,6 +18,14 @@ function applicationStatus(app: Application) {
   if (app.stage === "Round 1" || app.stage === "Round 2") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
   if (app.stage === "Decision") return { label: "Awaiting decision", style: "bg-sky-50 text-sky-800" }
   return { label: "In review", style: "bg-amber-50 text-amber-800" }
+}
+
+function ApplicationProgressCell({ app }: { app: Application }) {
+  const { applicants, stageName } = useClubCustomization(app.clubId)
+  const applicant = app.clubId === "vvf" ? applicants.find(candidate => candidate.email.toLowerCase() === currentStudent.email.toLowerCase()) : undefined
+  const fallback = applicationStatus(app)
+  const label = applicant ? stageName(applicant.status) : fallback.label
+  return <td className="px-5 py-4"><span className="inline-flex whitespace-nowrap rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-800">{label}</span><ApplicationStatusStepper app={app} /></td>
 }
 
 export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
@@ -104,8 +114,7 @@ export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId
             <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500"><tr><th scope="col" className="px-5 py-3 font-medium">Club Name</th><th scope="col" className="px-5 py-3 font-medium">Status</th><th scope="col" className="px-5 py-3 font-medium">Last Updated</th></tr></thead>
             <tbody className="divide-y divide-neutral-100">
               {submitted.map((app) => {
-                const status = applicationStatus(app)
-                return <tr key={app.id} className="hover:bg-neutral-50"><td className="px-5 py-4"><button onClick={() => openApplication(app)} className="flex items-center gap-3 text-left font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-orange-600" aria-label={`View application to ${app.clubName}`}><ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} text={app.logoText} color={app.color} size="sm" />{app.clubName}</button></td><td className="px-5 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${status.style}`}>{status.label}</span></td><td className="px-5 py-4 text-neutral-500"><span title="Submission date; no later update recorded">{app.submitted}</span></td></tr>
+                return <tr key={app.id} className="hover:bg-neutral-50"><td className="px-5 py-4"><button onClick={() => openApplication(app)} className="flex items-center gap-3 text-left font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-orange-600" aria-label={`View application to ${app.clubName}`}><ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} text={app.logoText} color={app.color} size="sm" />{app.clubName}</button></td><ApplicationProgressCell app={app} /><td className="px-5 py-4 text-neutral-500"><span title="Submission date; no later update recorded">{app.submitted}</span></td></tr>
               })}
               {submitted.length === 0 && <tr><td colSpan={3} className="p-8 text-center text-neutral-500">Your submitted applications will appear here.</td></tr>}
             </tbody>

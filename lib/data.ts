@@ -1528,7 +1528,7 @@ export const decisionHistory: DecisionRecord[] = [
   },
 ]
 
-export type ClubCategory =
+export type BrandingClubCategory =
   | "Finance & Investing"
   | "Consulting"
   | "Tech & Engineering"
@@ -1536,7 +1536,7 @@ export type ClubCategory =
   | "Pre-Professional / Greek"
   | "Sports & Recreation"
 
-export const clubCategories: ClubCategory[] = [
+export const clubCategories: BrandingClubCategory[] = [
   "Finance & Investing",
   "Consulting",
   "Tech & Engineering",
@@ -1558,7 +1558,7 @@ export type Accolade = { id: string; text: string }
 export type ClubBrandingProfile = {
   name: string
   tagline: string
-  category: ClubCategory
+  category: BrandingClubCategory
   logoUrl: string | null
   bannerUrl: string | null
   accentColor: string

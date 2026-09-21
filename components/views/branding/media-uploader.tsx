@@ -23,7 +23,7 @@ export function MediaUploader({ value, onChange, label, helpText, shape }: Media
     onChange(url)
   }
 
-  function handleDrop(e: DragEvent<HTMLDivElement>) {
+  function handleDrop(e: DragEvent<HTMLButtonElement>) {
     e.preventDefault()
     setIsDragging(false)
     handleFiles(e.dataTransfer.files)
