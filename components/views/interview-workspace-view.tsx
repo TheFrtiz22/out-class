@@ -43,8 +43,8 @@ export function InterviewWorkspaceView() {
     [],
   )
 
-  const scoredValues = activeRound.questions
-    .map((question) => scores[question.id])
+  const scoredValues = activeRound?.questions
+    ?.map((question) => scores[question.id])
     .filter((value): value is number => typeof value === "number" && value > 0)
   const aggregate = scoredValues.length > 0 ? scoredValues.reduce((a, b) => a + b, 0) / scoredValues.length : 0
 
@@ -75,7 +75,7 @@ export function InterviewWorkspaceView() {
             </p>
           </div>
           <Badge className="ml-2 shrink-0 border-none bg-foreground font-medium text-white">
-            Active: {activeRound.label.replace(": ", " ")}
+            Active: {activeRound?.label?.replace(": ", " ") ?? "None"}
           </Badge>
         </div>
 
@@ -223,23 +223,29 @@ export function InterviewWorkspaceView() {
         {/* Right Panel — Evaluation for the active round only */}
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <div className="shrink-0 border-b border-slate-200 bg-white px-4 py-2.5">
-            <p className="text-sm font-semibold text-foreground">{activeRound.label}</p>
+            <p className="text-sm font-semibold text-foreground">{activeRound?.label ?? "No Active Round"}</p>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-white p-4">
             <div className="space-y-4">
-              {activeRound.questions.map((question, index) => (
-                <WorkspaceQuestionCard
-                  key={question.id}
-                  question={question}
-                  index={index}
-                  scale={SCALE}
-                  score={scores[question.id] ?? 0}
-                  note={notes[question.id] ?? ""}
-                  onScoreChange={(value) => setScores((prev) => ({ ...prev, [question.id]: value }))}
-                  onNoteChange={(value) => setNotes((prev) => ({ ...prev, [question.id]: value }))}
-                />
-              ))}
+              {!activeRound ? (
+                <div className="flex items-center justify-center h-32">
+                  <p className="text-sm text-slate-500">Loading interview questions...</p>
+                </div>
+              ) : (
+                (activeRound?.questions ?? []).map((question, index) => (
+                  <WorkspaceQuestionCard
+                    key={question.id}
+                    question={question}
+                    index={index}
+                    scale={SCALE}
+                    score={scores[question.id] ?? 0}
+                    note={notes[question.id] ?? ""}
+                    onScoreChange={(value) => setScores((prev) => ({ ...prev, [question.id]: value }))}
+                    onNoteChange={(value) => setNotes((prev) => ({ ...prev, [question.id]: value }))}
+                  />
+                ))
+              )}
             </div>
           </div>
 
