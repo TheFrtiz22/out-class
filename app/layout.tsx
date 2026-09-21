@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import { AuthProvider } from "@/contexts/auth-context"
 
 export default async function RootLayout({
   children,
@@ -26,17 +27,20 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
-  const { data: { user } } = await supabase.auth.getUser()
+  await supabase.auth.getUser()
 
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <ClubCustomizationProvider>
-          {children}
-        </ClubCustomizationProvider>
+        <AuthProvider>
+          <ClubCustomizationProvider>
+            {children}
+          </ClubCustomizationProvider>
+        </AuthProvider>
         <Toaster />
         <Analytics />
       </body>
     </html>
   )
 }
+
