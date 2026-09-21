@@ -188,9 +188,11 @@ export function InterviewRoomPanelMatrixView() {
   function autoFillRooms() {
     setRooms((prev) => {
       const usedInterviewerIds = new Set(
-        prev.flatMap((r) => r.interviewers.filter(Boolean).map((i) => i!.id)),
+        prev.flatMap((r) => r.interviewers.flatMap((i) => i ? [i.id] : []))
       )
-      const usedCandidateIds = new Set(prev.filter((r) => r.candidate).map((r) => r.candidate!.id))
+      const usedCandidateIds = new Set(
+        prev.flatMap((r) => r.candidate ? [r.candidate.id] : [])
+      )
       const availableInterviewers = interviewerPool.filter((i) => !usedInterviewerIds.has(i.id))
       const availableCandidates = candidateQueue.filter((c) => !usedCandidateIds.has(c.id))
 

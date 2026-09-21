@@ -31,8 +31,8 @@ const adminViewIds: ViewId[] = [
   "broadcast-messages",
 ]
 
-export function AppShell({ initialView = "landing", embedded = false }: { initialView?: ViewId; embedded?: boolean }) {
-  const [view, setView] = useState<ViewId>(initialView)
+export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData = null }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any }) {
+  const [view, setView] = useState<ViewId>(initialSession ? "student-dashboard" : initialView)
   const [appMode, setAppMode] = useState<AppMode>(adminViewIds.includes(initialView) ? "admin" : "student")
   function navigate(next: ViewId) { setView(embedded && next === "landing" ? initialView : next) }
 
@@ -66,7 +66,7 @@ export function AppShell({ initialView = "landing", embedded = false }: { initia
 
 
   return (
-    <ApplicationStateProvider>
+    <ApplicationStateProvider initialData={initialData}>
       <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
             {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}

@@ -16,15 +16,24 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default function RootLayout({
+import { createClient } from "@/utils/supabase/server"
+import { cookies } from "next/headers"
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+  const { data: { session } } = await supabase.auth.getSession()
+
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <ClubCustomizationProvider>{children}</ClubCustomizationProvider>
+        <ClubCustomizationProvider>
+          {children}
+        </ClubCustomizationProvider>
         <Toaster />
         <Analytics />
       </body>

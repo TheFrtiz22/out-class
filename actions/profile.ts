@@ -1,0 +1,88 @@
+"use server";
+
+import { prisma } from "@/utils/prisma";
+import { requireAuth } from "@/utils/auth";
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
+
+const profileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  computingId: z.string().min(1, "Computing ID is required"),
+  major: z.string().min(1, "Major is required"),
+  gradYear: z.number().int().min(2020).max(2030),
+  gpa: z.number().min(0).max(4.0).optional(),
+  satScore: z.number().min(400).max(1600).optional(),
+  linkedinUrl: z.string().url().optional().or(z.literal("")),
+  bio: z.string().optional(),
+  resumeUrl: z.string().url().optional(),
+  headshotUrl: z.string().url().optional(),
+  experiences: z.array(z.object({
+    title: z.string(),
+    subtitle: z.string(),
+    period: z.string()
+  })).optional()
+});
+
+export async function getStudentProfile() {
+  const { user } = await requireAuth();
+
+  const profile = await prisma.studentProfile.findUnique({
+    where: { userId: user.id },
+    include: { experiences: true }
+  });
+
+  return { profile };
+}
+
+export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) {
+  const { user } = await requireAuth();
+  
+  // Validate input
+  const parsed = profileSchema.parse(data);
+
+  // Update or create the profile
+  const profile = await prisma.studentProfile.upsert({
+    where: { userId: user.id },
+    update: {
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      computingId: parsed.computingId,
+      major: parsed.major,
+      gradYear: parsed.gradYear,
+      gpa: parsed.gpa,
+      satScore: parsed.satScore,
+      linkedinUrl: parsed.linkedinUrl || null,
+      bio: parsed.bio || null,
+      resumeUrl: parsed.resumeUrl || null,
+      headshotUrl: parsed.headshotUrl || null,
+      experiences: {
+        deleteMany: {}, // Clear existing
+        create: parsed.experiences || [],
+      }
+    },
+    create: {
+      userId: user.id,
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      computingId: parsed.computingId,
+      major: parsed.major,
+      gradYear: parsed.gradYear,
+      gpa: parsed.gpa,
+      satScore: parsed.satScore,
+      linkedinUrl: parsed.linkedinUrl || null,
+      bio: parsed.bio || null,
+      resumeUrl: parsed.resumeUrl || null,
+      headshotUrl: parsed.headshotUrl || null,
+      experiences: {
+        create: parsed.experiences || [],
+      }
+    }
+  });
+
+  revalidatePath("/student-dashboard");
+  revalidatePath("/profile");
+
+  return { success: true, profile };
+}
+

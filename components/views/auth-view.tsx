@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { isUvaEmail } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
+import { createClient } from "@/utils/supabase/client"
 
 export function AuthView({ onEnter, onBack, initialRole = "student" }: {
   onEnter: (view: ViewId) => void
@@ -20,7 +21,9 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
 
-  function requestCode(event: FormEvent) {
+  const supabase = createClient()
+
+  async function requestCode(event: FormEvent) {
     event.preventDefault()
     if (!isUvaEmail(email)) {
       setError("Use your University of Virginia email ending in @virginia.edu.")
@@ -28,13 +31,40 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
     }
     setEmail(email.trim().toLowerCase())
     setError("")
+    
+    const { error: signInError } = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        shouldCreateUser: true
+      }
+    })
+
+    if (signInError) {
+      setError(signInError.message)
+      return
+    }
+
     setStep("verify")
-    setNotice("This is a preview. No email has been sent; email verification will be available once connected.")
+    setNotice(`We sent a 6-digit code to ${email}.`)
   }
 
-  function verifyCode(event: FormEvent) {
+  async function verifyCode(event: FormEvent) {
     event.preventDefault()
-    setError("Email verification isn't connected yet. Codes cannot be verified in this preview.")
+    setError("")
+    
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code,
+      type: "email"
+    })
+
+    if (verifyError) {
+      setError(verifyError.message)
+      return
+    }
+
+    // Refresh the page so the Server Component layout picks up the new session cookie and fetches the data
+    window.location.reload()
   }
 
   return (
@@ -72,7 +102,7 @@ export function AuthView({ onEnter, onBack, initialRole = "student" }: {
               </div>
               {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
               <Button type="submit" className="h-12 w-full">Continue with email<ArrowRight className="size-4" /></Button>
-              <p className="text-center text-xs leading-5 text-neutral-500">Email verification is coming soon. This preview doesn't send email or create an account.</p>
+              <p className="text-center text-xs leading-5 text-neutral-500">A secure 6-digit verification code will be sent to your email.</p>
             </form>
           ) : (
             <form onSubmit={verifyCode} className="mt-7 space-y-5">

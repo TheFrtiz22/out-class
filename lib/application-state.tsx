@@ -68,19 +68,40 @@ const ApplicationStateContext = createContext<ApplicationStateValue | null>(null
 // Persist the demo across navigation and reloads on this browser only.
 const STORAGE_KEY = "outclass-platform-v2"
 
-export function ApplicationStateProvider({ children }: { children: ReactNode }) {
-  const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(seedTrackedApplications)
-  const [notifications, setNotifications] = useState<Notification[]>(seedNotifications)
-  const [baseEvents, setEvents] = useState<ClubEvent[]>([...seedEvents,
-    { id: "deadline-mii", clubId: "mii", date: "2026-09-19", day: 19, title: "McIntire Application Due", club: "McIntire Investment Institute", color: "#b45309", type: "Deadline", time: "11:59 PM" },
-    { id: "deadline-vvf", clubId: "vvf", date: "2026-09-21", day: 21, title: "Virginia Venture Fund Application Due", club: "Virginia Venture Fund", color: "#051B3D", type: "Deadline", time: "11:59 PM" },
-    { id: "vvf-location-update", clubId: "vvf", date: "2026-09-18", day: 18, title: "Virginia Venture Fund Info Session", club: "Virginia Venture Fund", color: "#051B3D", type: "Interest Meeting", time: "6:30 PM", location: "Rouss Hall 120", description: "Location updated from Minor Hall." },
-  ])
-  const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>(seedManagedEvents)
-  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>(() => scheduleLocations.map((location) => ({
-    id: location.id, date: "2026-09-25", locationName: location.location, mapUrl: buildMapUrl("", location.location),
-    slots: location.slots.map(({ students, ...slot }) => ({ ...slot, candidates: [...students], bookedCount: students.length })),
-  })))
+export function ApplicationStateProvider({ children, initialData }: { children: ReactNode, initialData?: any }) {
+  // Map Prisma database models back to the UI's TrackedApplication structure
+  const serverApps = initialData?.applications?.map((app: any) => ({
+    id: app.id,
+    clubId: app.clubId,
+    clubName: app.club?.name || app.clubId,
+    logoText: app.club?.logoText || "OC",
+    logoUrl: app.club?.logoUrl,
+    color: app.club?.color || "#051B3D",
+    status: app.status === "DRAFTING" ? "Drafting" : (app.status === "SUBMITTED" ? "Submitted" : app.round?.name || "In Review"),
+    questionsCompleted: app.answers?.length || 0,
+    questionsTotal: 3, // placeholder
+    nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "Under review",
+    dueInHours: 0
+  })) || []
+
+  const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(serverApps)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  
+  const serverEvents = initialData?.attendances?.map((att: any) => ({
+    id: att.id,
+    clubId: att.event.clubId,
+    date: att.event.date.toISOString().split('T')[0],
+    day: new Date(att.event.date).getDate(),
+    title: att.event.title,
+    club: att.event.club?.name || att.event.clubId,
+    color: "#051B3D",
+    type: "Interest Meeting",
+    time: "Checked In"
+  })) || []
+
+  const [baseEvents, setEvents] = useState<ClubEvent[]>(serverEvents)
+  const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>([])
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([])
   const [responses, setResponses] = useState<Record<string, ClubEvent["response"]>>({})
   const [focusEventId, focusEvent] = useState<string | null>(null)
   const [focusNotificationId, focusNotification] = useState<string | null>(null)
@@ -189,8 +210,8 @@ export function ApplicationStateProvider({ children }: { children: ReactNode }) 
     const event = events.find((item) => item.id === id)
     const managed = managedEvents.find((item) => id.startsWith(`managed-${item.id}-`))
     if (!event && !managed) return
-    const title = event?.title ?? managed!.title
-    const clubId = event?.clubId ?? managed!.clubId
+    const title = event?.title ?? managed?.title ?? "Club event"
+    const clubId = event?.clubId ?? managed?.clubId ?? ""
     const club = clubs.find((item) => item.id === clubId)
     const body = `${title}: ${response === "declined" ? "attendance cancelled" : response === "confirmed" ? "interview confirmed" : "RSVP confirmed"}.`
     setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])

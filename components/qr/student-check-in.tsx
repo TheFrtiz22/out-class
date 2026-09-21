@@ -31,11 +31,14 @@ export function StudentCheckIn() {
     setReady(true)
   }, [])
   const event = managedEvents.find(item => item.id === eventId && item.scope === "Public" && !item.recurring)
+  const safeEventId = event?.id
   useEffect(() => {
-    if (!hydrated || !event || !student) return
+    if (!hydrated || !safeEventId || !student) return
+    const currentEvent = managedEvents.find(item => item.id === safeEventId && item.scope === "Public" && !item.recurring)
+    if (!currentEvent?.clubId) return
     setStatus("saving")
-    try { recordDemoAttendance(student, event.clubId!, event.id); setStatus("success") } catch { setStatus("error") }
-  }, [hydrated, event, student, attempt])
+    try { recordDemoAttendance(student, currentEvent.clubId, currentEvent.id); setStatus("success") } catch { setStatus("error") }
+  }, [hydrated, safeEventId, student, attempt, managedEvents])
   if (auth && event) return <AuthView initialRole="student" onBack={() => setAuth(false)} onEnter={() => {
     try { sessionStorage.setItem("outclass-demo-student", "true") } catch { /* Check-in can still run. */ }
     setStudent({ ...currentStudent, id: currentStudent.email }); setAuth(false)
@@ -43,7 +46,7 @@ export function StudentCheckIn() {
   return <main className="flex min-h-svh items-center justify-center bg-neutral-50 px-5 py-10 font-sans text-black">
     <section className="w-full max-w-md space-y-6 rounded-2xl border border-neutral-200 bg-white p-7 shadow-none">
       <p className="text-sm font-semibold tracking-tight">OutClass</p>
-      {!ready || !hydrated ? <p role="status">Loading event…</p> : !event ? <><h1 className="text-2xl font-semibold">Check-in unavailable</h1><p className="text-sm text-neutral-500">This event may have been removed or isn’t available in this browser. Ask the club leader for a current link.</p><a href="/" className="text-sm underline">Back to OutClass</a></> : status === "success" ? <CheckInSuccess eventName={event.title} clubId={event.clubId!} /> : <>
+      {!ready || !hydrated ? <p role="status">Loading event…</p> : !event ? <><h1 className="text-2xl font-semibold">Check-in unavailable</h1><p className="text-sm text-neutral-500">This event may have been removed or isn’t available in this browser. Ask the club leader for a current link.</p><a href="/" className="text-sm underline">Back to OutClass</a></> : status === "success" ? <CheckInSuccess eventName={event.title} clubId={event.clubId ?? ""} /> : <>
         <CalendarDays className="size-8" /><h1 className="text-2xl font-semibold">Check in to {event.title}</h1>
         <p className="text-sm text-neutral-500">{event.date} · {event.time}<br />{event.location}</p>
         {status === "error" ? <><p role="alert" className="text-sm text-red-700">Your check-in could not be saved. Enable browser storage and try again.</p><Button onClick={() => setAttempt(value => value + 1)}>Retry check-in</Button></> : student ? <p role="status">Saving your attendance…</p> : <><p className="text-sm leading-6 text-neutral-500">Sign in or create your OutClass profile to confirm attendance and share your interest with the club. This does not start an application.</p><Button className="w-full bg-black text-white" onClick={() => setAuth(true)}>Sign in or create profile</Button></>}
