@@ -20,6 +20,7 @@ import {
 export type ViewId =
   | "landing"
   | "auth"
+  | "student-onboarding"
   | "student-dashboard"
   | "student-profile"
   | "inbox"
@@ -68,6 +69,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "landing", title: "Landing Page", icon: Globe },
       { id: "auth", title: "Login & Sign Up", icon: LogIn },
+      { id: "student-onboarding", title: "Student Onboarding", icon: UserRound },
     ],
   },
   {
@@ -96,6 +98,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
+  "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },
   "student-dashboard": { title: "Dashboard", subtitle: "Track your profile and active applications." },
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },

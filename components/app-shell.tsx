@@ -20,6 +20,7 @@ import { ScreeningDashboardView } from "@/components/views/screening-dashboard-v
 import { InterviewSchedulerView } from "@/components/views/interview-scheduler-view"
 import { InterviewWorkspaceView } from "@/components/views/interview-workspace-view"
 import { BroadcastMessagesView } from "@/components/views/club-manager/broadcast-messages-view"
+import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
@@ -31,8 +32,14 @@ const adminViewIds: ViewId[] = [
   "broadcast-messages",
 ]
 
-export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData = null }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any }) {
-  const [view, setView] = useState<ViewId>(initialSession ? "student-dashboard" : initialView)
+export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+  const [view, setView] = useState<ViewId>(
+    initialSession
+      ? hasProfile
+        ? "student-dashboard"
+        : "student-onboarding"
+      : initialView
+  )
   const [appMode, setAppMode] = useState<AppMode>(adminViewIds.includes(initialView) ? "admin" : "student")
   function navigate(next: ViewId) { setView(embedded && next === "landing" ? initialView : next) }
 
@@ -62,6 +69,17 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
 
   if (view === "auth") {
     return <AuthView onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} />
+  }
+
+  if (view === "student-onboarding") {
+    return (
+      <StudentOnboardingWizard
+        onComplete={() => {
+          // Reload so the Server Component layout picks up the new session and fetches fresh data
+          window.location.href = "/"
+        }}
+      />
+    )
   }
 
 
