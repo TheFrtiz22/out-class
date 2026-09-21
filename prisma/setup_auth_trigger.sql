@@ -13,7 +13,8 @@ BEGIN
     NEW.email, 
     'STUDENT', 
     NEW.created_at
-  );
+  )
+  ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id;
 
   RETURN NEW;
 END;
