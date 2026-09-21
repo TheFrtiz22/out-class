@@ -3,14 +3,14 @@
 import type { ReactNode } from "react"
 import { OutClassLogo } from "@/components/outclass-logo"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { ChevronDown, ShieldCheck } from "lucide-react"
 import {
-  adminClubName,
   adminNav,
   studentNav,
   viewTitles,
@@ -20,6 +20,8 @@ import {
 import { currentStudent } from "@/lib/data"
 import { editorialUi } from "@/lib/design-system"
 import { cn } from "@/lib/utils"
+
+import { useAuth } from "@/contexts/auth-context"
 
 export interface DashboardLayoutProps {
   children: ReactNode
@@ -33,6 +35,8 @@ export interface DashboardLayoutProps {
 export function DashboardLayout({ children, view, appMode, onNavigate, onModeChange }: DashboardLayoutProps) {
   const meta = viewTitles[view]
   const navItems = appMode === "admin" ? adminNav : studentNav
+  const { user } = useAuth()
+  const hasAdminAccess = user && user.adminRoles.length > 0
 
   return (
     <div className={cn("dashboard-layout min-h-screen", editorialUi.app)}>
@@ -43,10 +47,28 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
             {navItems.filter((item) => item.id !== "landing").map((item) => <button key={item.id} type="button" onClick={() => onNavigate(item.id)} aria-current={view === item.id ? "page" : undefined} className={cn("shrink-0 rounded-md px-3 py-2 text-sm transition-colors hover:bg-neutral-50", view === item.id ? "bg-neutral-100 font-semibold text-neutral-900" : "text-neutral-500")}>{item.title}</button>)}
           </nav>
           <div className="ml-auto flex items-center gap-3">
-            <Select value={appMode} onValueChange={(value) => onModeChange(value as AppMode)}>
-              <SelectTrigger aria-label="Switch application view" className="w-[140px] shadow-none"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="student">Student View</SelectItem><SelectItem value="admin">{`Admin View: ${adminClubName}`}</SelectItem></SelectContent>
-            </Select>
+            {hasAdminAccess && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-[180px] justify-between shadow-none font-normal h-9 px-3">
+                    <span className="flex items-center gap-2 truncate">
+                      {appMode === "admin" ? <><ShieldCheck className="w-4 h-4 text-orange-500" /> Admin View</> : "Student View"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[180px]">
+                  <DropdownMenuItem onClick={() => onModeChange("student")}>
+                    Student View
+                  </DropdownMenuItem>
+                  {user.adminRoles.map((role) => (
+                    <DropdownMenuItem key={role.clubId} onClick={() => onModeChange("admin")}>
+                      Admin View: {role.club.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <button type="button" aria-label="Open profile" onClick={() => {
               if (appMode !== "student") onModeChange("student")
               onNavigate("student-profile")

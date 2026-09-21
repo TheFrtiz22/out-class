@@ -2,43 +2,54 @@
 
 import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useClubCustomization } from "@/lib/club-customization"
-import { ApplicationStatusStepper } from "@/components/application-status-stepper"
 import { Progress } from "@/components/ui/progress"
 import { ClubLogo } from "@/components/club-logo"
-import { applications as seedApplications, currentStudent, type Application } from "@/lib/data"
+import { currentStudent } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
 import { eventStart } from "@/lib/calendar"
 import type { ViewId } from "@/lib/views"
+import { useAuth } from "@/contexts/auth-context"
 
 const primaryButton = "bg-[#ea580c] font-semibold text-white shadow-none hover:bg-[#c2410c]"
 
-function applicationStatus(app: Application) {
-  if (app.outcome) return { label: app.outcome, style: app.outcome === "Accepted" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800" }
-  if (app.stage === "Round 1" || app.stage === "Round 2") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
-  if (app.stage === "Decision") return { label: "Awaiting decision", style: "bg-sky-50 text-sky-800" }
-  return { label: "In review", style: "bg-amber-50 text-amber-800" }
+function applicationStatus(app: any) {
+  if (app.status === "ACCEPTED") return { label: "Accepted", style: "bg-emerald-50 text-emerald-800" }
+  if (app.status === "REJECTED") return { label: "Rejected", style: "bg-red-50 text-red-800" }
+  if (app.status === "INTERVIEWING") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
+  if (app.status === "IN_REVIEW") return { label: "In review", style: "bg-amber-50 text-amber-800" }
+  if (app.status === "WAITLISTED") return { label: "Waitlisted", style: "bg-sky-50 text-sky-800" }
+  return { label: app.status || "Applied", style: "bg-neutral-100 text-neutral-800" }
 }
 
-function ApplicationProgressCell({ app }: { app: Application }) {
-  const { applicants, stageName } = useClubCustomization(app.clubId)
-  const applicant = app.clubId === "vvf" ? applicants.find(candidate => candidate.email.toLowerCase() === currentStudent.email.toLowerCase()) : undefined
+function ApplicationProgressCell({ app }: { app: any }) {
   const fallback = applicationStatus(app)
-  const label = applicant ? stageName(applicant.status) : fallback.label
-  return <td className="px-5 py-4"><span className="inline-flex whitespace-nowrap rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-800">{label}</span><ApplicationStatusStepper app={app} /></td>
+  const label = fallback.label
+  return <td className="px-5 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${fallback.style}`}>{label}</span></td>
 }
 
 export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
-  const { focusApplication, trackedApps, events, focusEvent } = useApplicationState()
-  const applications: Application[] = trackedApps.map((app) => {
-    const seed = seedApplications.find((item) => item.clubId === app.clubId)
-    const deadline = events.find((event) => event.clubId === app.clubId && event.type === "Deadline")
-    return { ...seed, id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
-      stage: app.status === "Drafting" ? "Draft" : app.status === "1st Round Interview" ? "Round 1" : "Applied",
-      essaysTotal: app.questionsTotal, essaysWritten: app.questionsCompleted,
-      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—" }
-  })
+  const { focusApplication, events, focusEvent } = useApplicationState()
+  const { user } = useAuth()
+  
+  // Map Prisma applications to dashboard UI format
+  const applications = user?.applications.map((app) => {
+    return {
+      id: app.id,
+      clubId: app.clubId,
+      clubName: app.club.name,
+      logoText: app.club.name.substring(0, 2),
+      color: app.club.color || "#000",
+      stage: app.status === "DRAFTING" ? "Draft" : "Applied",
+      essaysTotal: 100, // Placeholder until deep questions mapping is implemented
+      essaysWritten: app.status === "DRAFTING" ? 50 : 100, 
+      deadline: "Deadline not announced",
+      submitted: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—",
+      status: app.status
+    }
+  }) || []
+
   const upcomingInterviews = events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
+  
   const drafts = applications.filter((app) => app.stage === "Draft")
   const submitted = applications.filter((app) => app.stage !== "Draft")
   const metrics = [
@@ -46,7 +57,7 @@ export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId
     { label: "In review", count: submitted.filter((app) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
     { label: "Upcoming interviews", count: upcomingInterviews.length, description: "Applications in interview rounds", icon: CalendarDays },
   ]
-  function openApplication(app: Application) {
+  function openApplication(app: any) {
     focusApplication(app.clubId)
     onNavigate("tracker")
   }

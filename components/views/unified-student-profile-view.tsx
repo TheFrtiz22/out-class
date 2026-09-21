@@ -7,10 +7,22 @@ import { ClubLogo } from "@/components/club-logo"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
 import { Button } from "@/components/ui/button"
 import { MemberPortalDialog } from "@/components/views/member-portal-dialog"
-import { currentStudent, studentMemberships, type StudentMembership } from "@/lib/data"
+import { currentStudent } from "@/lib/data"
+import { useAuth } from "@/contexts/auth-context"
 
 export function UnifiedStudentProfileView() {
-  const [selectedMembership, setSelectedMembership] = useState<StudentMembership | null>(null)
+  const { user } = useAuth()
+  
+  const studentMemberships = user?.memberships.map(m => ({
+    clubId: m.clubId,
+    clubName: m.club.name,
+    logoText: m.club.name.substring(0, 2),
+    color: m.club.color || "#000",
+    role: m.role === 'PRESIDENT' || m.role === 'RECRUITMENT_LEAD' ? "Executive" : "Member",
+    title: m.title
+  })) || []
+
+  const [selectedMembership, setSelectedMembership] = useState<any>(null)
 
   return (
     <div className="min-h-full space-y-6">
