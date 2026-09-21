@@ -4,7 +4,7 @@ import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ClubLogo } from "@/components/club-logo"
-import { currentStudent } from "@/lib/data"
+import { applications as seedApplications, currentStudent, type Application } from "@/lib/data"
 import { useApplicationState } from "@/lib/application-state"
 import { eventStart } from "@/lib/calendar"
 import type { ViewId } from "@/lib/views"
@@ -18,7 +18,10 @@ function applicationStatus(app: any) {
   if (app.status === "INTERVIEWING") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
   if (app.status === "IN_REVIEW") return { label: "In review", style: "bg-amber-50 text-amber-800" }
   if (app.status === "WAITLISTED") return { label: "Waitlisted", style: "bg-sky-50 text-sky-800" }
-  return { label: app.status || "Applied", style: "bg-neutral-100 text-neutral-800" }
+  if (app.outcome) return { label: app.outcome, style: app.outcome === "Accepted" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800" }
+  if (app.stage === "Round 1" || app.stage === "Round 2") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
+  if (app.stage === "Decision") return { label: "Awaiting decision", style: "bg-sky-50 text-sky-800" }
+  return { label: app.status || "In review", style: "bg-amber-50 text-amber-800" }
 }
 
 function ApplicationProgressCell({ app }: { app: any }) {
@@ -28,33 +31,40 @@ function ApplicationProgressCell({ app }: { app: any }) {
 }
 
 export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
-  const { focusApplication, events, focusEvent } = useApplicationState()
+  const { focusApplication, events, focusEvent, trackedApps } = useApplicationState()
   const { user } = useAuth()
   
-  // Map Prisma applications to dashboard UI format
-  const applications = user?.applications.map((app) => {
-    return {
-      id: app.id,
-      clubId: app.clubId,
-      clubName: app.club.name,
-      logoText: app.club.name.substring(0, 2),
-      color: app.club.color || "#000",
-      stage: app.status === "DRAFTING" ? "Draft" : "Applied",
-      essaysTotal: 100, // Placeholder until deep questions mapping is implemented
-      essaysWritten: app.status === "DRAFTING" ? 50 : 100, 
-      deadline: "Deadline not announced",
-      submitted: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—",
-      status: app.status
-    }
-  }) || []
+  // Fallback to mock data if not logged in (demo mode)
+  const applications = user?.applications ? user.applications.map((app: any) => ({
+    id: app.id,
+    clubId: app.clubId,
+    clubName: app.club.name,
+    logoText: app.club.name.substring(0, 2),
+    color: app.club.color || "#000",
+    stage: app.status === "DRAFTING" ? "Draft" : "Applied",
+    essaysTotal: 100, 
+    essaysWritten: app.status === "DRAFTING" ? 50 : 100, 
+    deadline: "Deadline not announced",
+    submitted: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—",
+    status: app.status
+  })) : trackedApps.map((app: any) => {
+    const seed = seedApplications.find((item: any) => item.clubId === app.clubId)
+    const deadline = events.find((event: any) => event.clubId === app.clubId && event.type === "Deadline")
+    return { ...seed, id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
+      stage: app.status === "Drafting" ? "Draft" : app.status === "1st Round Interview" ? "Round 1" : "Applied",
+      essaysTotal: app.questionsTotal, essaysWritten: app.questionsCompleted,
+      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—" }
+  })
 
-  const upcomingInterviews = events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
+  const upcomingInterviews = user?.applications 
+    ? [] // Real interview bookings would be mapped here in the future
+    : events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
   
-  const drafts = applications.filter((app) => app.stage === "Draft")
-  const submitted = applications.filter((app) => app.stage !== "Draft")
+  const drafts = applications.filter((app: any) => app.stage === "Draft")
+  const submitted = applications.filter((app: any) => app.stage !== "Draft")
   const metrics = [
     { label: "Applications", count: submitted.length, description: "Submitted applications", icon: FileText },
-    { label: "In review", count: submitted.filter((app) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
+    { label: "In review", count: user?.applications ? submitted.filter((app: any) => app.status === "IN_REVIEW").length : submitted.filter((app: any) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
     { label: "Upcoming interviews", count: upcomingInterviews.length, description: "Applications in interview rounds", icon: CalendarDays },
   ]
   function openApplication(app: any) {
@@ -62,11 +72,13 @@ export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId
     onNavigate("tracker")
   }
 
+  const firstName = user?.profile?.firstName || currentStudent.name.split(" ")[0]
+
   return (
     <div className="space-y-8 font-sans text-neutral-900">
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
         <div>
-          <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">Your next chapter starts here, {currentStudent.name.split(" ")[0]}.</h1>
+          <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">Your next chapter starts here, {firstName}.</h1>
           <p className="mt-3 text-sm leading-relaxed text-neutral-500 sm:text-base">Big ambitions. One application. Let&apos;s find your people.</p>
         </div>
         <Button onClick={() => onNavigate("discover")} className={`${primaryButton} shrink-0 self-start sm:self-auto`}>Explore clubs <Plus className="size-4" /></Button>
