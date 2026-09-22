@@ -151,7 +151,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                   {microsoftLoading ? (
                     <><Loader2 className="size-4 animate-spin" />Redirecting…</>
                   ) : (
-                    <><MicrosoftIcon className="size-5" />Continue with UVA</>
+                    <><MicrosoftIcon className="size-5" />Sign in with NetBadge</>
                   )}
                 </Button>
               </div>
