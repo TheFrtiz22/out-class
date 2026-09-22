@@ -35,6 +35,7 @@ type ClubRef = {
 
 type ApplicationStateValue = {
   hydrated: boolean
+  syncApplications: (apps: TrackedApplication[]) => void
   trackedApps: TrackedApplication[]
   notifications: Notification[]
   events: ClubEvent[]
@@ -80,9 +81,9 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     logoText: app.club?.logoText || "OC",
     logoUrl: app.club?.logoUrl,
     color: app.club?.color || "#051B3D",
-    status: app.status === "DRAFTING" ? "Drafting" : (app.status === "SUBMITTED" ? "Submitted" : app.round?.name || "In Review"),
+    status: ({ DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted" } as Record<string, string>)[app.status] || app.round?.name || "In Review",
     questionsCompleted: app.answers?.length || 0,
-    questionsTotal: 3, // placeholder
+    questionsTotal: app.club?._count?.questions ?? 0,
     nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "Under review",
     dueInHours: 0
   })) || []
@@ -147,9 +148,9 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
           color: club.color,
           status: club.applicationStatus ?? "Drafting",
           questionsCompleted: 0,
-          questionsTotal: 3,
-          nextDeadline: "Application opens",
-          dueInHours: 336,
+          questionsTotal: 0,
+          nextDeadline: "Deadline not provided",
+          dueInHours: 0,
         },
       ])
 
@@ -270,6 +271,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const value = useMemo(
     () => ({
       hydrated,
+      syncApplications: setTrackedApps,
       trackedApps,
       notifications,
       events: calendarEvents,

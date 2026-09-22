@@ -43,7 +43,7 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
       title: att.event.title,
       club: att.event.club?.name || att.event.clubId,
       color: "#142d4e",
-      type: "Interest Meeting",
+      type: "Other",
       location: att.event.location,
       description: att.event.description || undefined,
     }))

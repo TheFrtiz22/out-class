@@ -4,10 +4,13 @@ import { recruitmentStage } from "@/lib/club-directory"
 import "./club-discovery.css"
 export function RecruitmentTimeline({ status }: { status: string }) {
   const current = recruitmentStage(status)
+  const label = status === status.toUpperCase()
+    ? status.replaceAll("_", " ").toLowerCase().replace(/^./, character => character.toUpperCase())
+    : status
   return (
     <div className="oc-recruitment-timeline">
       <p>
-        Your application <strong>{status.replaceAll("_", " ")}</strong>
+        Your application <strong>{label}</strong>
       </p>
       <ol aria-label="Application recruitment timeline">
         {["Applied", "Review", "Interview", "Decision"].map((label, index) => (

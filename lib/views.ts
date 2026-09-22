@@ -100,7 +100,7 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   discover: { title: "Discover", subtitle: "Explore clubs and find your next opportunity." },
-  tracker: { title: "Application Tracker", subtitle: "Every deadline, essay, and decision in one place." },
+  tracker: { title: "Application Tracker", subtitle: "Your drafts, submissions, and decisions in one place." },
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },
   "leader-dashboard": { title: "Applicant CRM", subtitle: "Review, score, and advance your applicants." },
   "club-manager": {

@@ -80,6 +80,7 @@ test('verification remains required when skipping is disabled in both app and Su
 test('profile saving derives identity from session and persists experience', async () => {
   let saved
   const { upsertStudentProfile } = load('actions/profile.ts', {
+    '@/lib/student-profile': load('lib/student-profile.ts'),
     '@/utils/prisma': { prisma: { studentProfile: { upsert: async data => { saved = data; return { id: 'profile' } } } } },
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-user', email: 'actual@virginia.edu' } }) },
     'next/cache': { revalidatePath() {} },

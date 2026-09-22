@@ -1,5 +1,7 @@
 "use client"
 
+import { useAuth } from "@/contexts/auth-context"
+import { LiveLeaderWorkspace } from "@/components/views/leader-dashboard/live-leader-workspace"
 import { LeadsTable } from "@/components/qr/leads-table"
 import { LiveVotingLauncher } from "@/components/live-voting/live-voting-launcher"
 import { useAttendance, eventsAttended } from "@/lib/attendance"
@@ -22,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/status-badge"
@@ -50,6 +52,13 @@ const SCORING_CRITERIA = [
 ] as const
 
 export function LeaderDashboardView() {
+  const { user, loading } = useAuth()
+  if (loading) return <p role="status">Loading recruitment workspace…</p>
+  if (user) return <LiveLeaderWorkspace />
+  return <div className="space-y-5"><p className="border-b border-border pb-4 text-sm text-muted-foreground">Local preview · changes in these tools do not update real applicants.</p><LocalLeaderDashboardView /></div>
+}
+
+function LocalLeaderDashboardView() {
   const attendance = useAttendance()
   const { isApplied } = useApplicationState()
   const [pipeline, setPipeline] = useState<"applicants" | "leads">("applicants")
@@ -461,6 +470,9 @@ export function LeaderDashboardView() {
                   <TableRow
                     key={a.id}
                     onClick={() => setActiveId(a.id)}
+                    tabIndex={0}
+                    aria-label={`Open applicant ${a.name}`}
+                    onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setActiveId(a.id) } }}
                     data-state={selected.has(a.id) ? "selected" : undefined}
                     className="cursor-pointer text-xs transition-colors hover:bg-neutral-50 [&_td]:h-16 [&_td]:py-4"
                   >
@@ -566,10 +578,8 @@ export function LeaderDashboardView() {
                     <AvatarFallback className="bg-secondary font-medium text-foreground">{active.initials}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{active.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {active.major} · {active.year}
-                    </p>
+                    <SheetTitle className="truncate text-sm font-semibold">{active.name}</SheetTitle>
+                    <SheetDescription className="truncate text-xs text-muted-foreground">{active.major} · {active.year}</SheetDescription>
                   </div>
                   <StatusBadge status={stageName(active.status)} />
                 </div>

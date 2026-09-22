@@ -72,7 +72,7 @@ export type ExperienceItem = {
 
 export const experienceItems: ExperienceItem[]  = []
 
-export type EventType = "Deadline" | "Interest Meeting" | "Coffee Chat" | "Interview"
+export type EventType = "Deadline" | "Interest Meeting" | "Coffee Chat" | "Interview" | "Other"
 
 export type ClubEvent = {
   /** Persisted booking/attendance: changes require a server action. */
@@ -380,7 +380,7 @@ export const rubricCriteria = [
   { id: "case", label: "Case Study", hint: "Reasoning quality on the prompt" },
 ] as const
 
-export type TrackerStatus = "Drafting" | "Submitted" | "1st Round Interview" | "Decision Pending"
+export type TrackerStatus = "Drafting" | "Submitted" | "In Review" | "Interviewing" | "Accepted" | "Rejected" | "Waitlisted" | "1st Round Interview" | "Decision Pending"
 
 export type TrackedApplication = {
   id: string

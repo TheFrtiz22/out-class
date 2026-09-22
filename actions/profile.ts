@@ -1,5 +1,7 @@
 "use server";
 
+import { profileSectionSchema } from "@/lib/student-profile";
+
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { z } from "zod";
@@ -88,3 +90,31 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   return { success: true, profile };
 }
 
+
+// Section updates deliberately omit unrelated fields and relations.
+// Editing education must never clear a résumé or replace experience records.
+export async function updateStudentProfileSection(input: unknown) {
+  const { user } = await requireAuth();
+  const parsed = profileSectionSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
+  const { section, ...fields } = parsed.data;
+  let data;
+  if (parsed.data.section === "experience") {
+    data = { experiences: { deleteMany: {}, create: parsed.data.experiences } };
+  } else if (parsed.data.section === "links") {
+    data = { linkedinUrl: parsed.data.linkedinUrl || null, resumeUrl: parsed.data.resumeUrl || null };
+  } else {
+    data = fields;
+  }
+  try {
+    const profile = await prisma.studentProfile.update({
+      where: { userId: user.id },
+      data: data as import("@prisma/client").Prisma.StudentProfileUpdateInput,
+      include: { experiences: true },
+    });
+    revalidatePath("/");
+    return { profile };
+  } catch {
+    return { error: "Your changes could not be saved. Please try again." };
+  }
+}

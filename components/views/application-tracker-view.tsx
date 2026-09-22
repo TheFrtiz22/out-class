@@ -1,243 +1,468 @@
 "use client"
 
-import { ApplicationStatusStepper } from "@/components/application-status-stepper"
-
-import { useEffect, useMemo, useState } from "react"
-import { CheckCircle2, Compass, UploadCloud, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { useCallback, useEffect, useState } from "react"
+import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw } from "lucide-react"
+import { getStudentApplications } from "@/actions/applications"
+import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
+import { applicationNextStep, applicationStatusLabels } from "@/lib/student-applications"
 import type { ViewId } from "@/lib/views"
+import type { TrackerStatus } from "@/lib/data"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ClubLogo } from "@/components/club-logo"
+import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
+import {
+  ApplicationForm,
+  type StudentApplication,
+} from "@/components/applications/application-form"
 
-const CHAR_LIMIT = 1000
-
-type DraftTab = {
-  id: string
-  clubId: string
-  clubName: string
-  deadline: string
-  question: string
-  fileLabel: string
+const trackerLabels: Record<string, TrackerStatus> = {
+  DRAFTING: "Drafting",
+  SUBMITTED: "Submitted",
+  IN_REVIEW: "In Review",
+  INTERVIEWING: "Interviewing",
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
+  WAITLISTED: "Waitlisted",
 }
-
+const date = (value: Date | string) =>
+  new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  })
 export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
-  const { trackedApps, events, focusApplicationClubId, clearApplicationFocus, submitApplication, focusEvent } = useApplicationState()
-  const draftTabs: DraftTab[] = useMemo(() => trackedApps.map((app) => {
-    const deadline = events.find((event) => event.clubId === app.clubId && event.type === "Deadline")
-    return { id: app.id, clubId: app.clubId, clubName: app.clubName, deadline: deadline ? `${deadline.date} at ${deadline.time}` : "Not announced", question: `Why do you want to join ${app.clubName}?`, fileLabel: "Upload your supporting document." }
-  }), [trackedApps, events])
-  
-  const [openTabs, setOpenTabs] = useState<DraftTab[]>(draftTabs)
-  const [activeId, setActiveId] = useState<string | null>(draftTabs[0]?.id ?? null)
-
-  useEffect(() => {
-    setOpenTabs((previous) => {
-      const missing = draftTabs.filter((tab) => !previous.some((existing) => existing.id === tab.id))
-      return missing.length ? [...previous, ...missing] : previous
-    })
-  }, [draftTabs])
-
-  // When the Dashboard's "Continue"/"View Application" buttons hand off a
-  // specific club, open that club's canvas instead of whatever was active.
-  useEffect(() => {
-    if (!focusApplicationClubId) return
-    const matchingTab = openTabs.find((tab) => tab.clubId === focusApplicationClubId)
-    if (matchingTab) {
-      setActiveId(matchingTab.id)
-    }
-    if (matchingTab) clearApplicationFocus()
-    else {
-      const source = draftTabs.find((tab) => tab.clubId === focusApplicationClubId)
-      if (source) { setOpenTabs((previous) => [...previous, source]); setActiveId(source.id); clearApplicationFocus() }
-    }
-  }, [focusApplicationClubId, openTabs, clearApplicationFocus])
-  const [answer, setAnswer] = useState(
-    "I want the discipline of managing real capital alongside people who argue about theses in good faith. ".slice(
-      0,
-      450,
-    ),
+  const { user, loading, refreshUser } = useAuth()
+  const { focusApplicationClubId, clearApplicationFocus, syncApplications } = useApplicationState()
+  const [applications, setApplications] = useState<StudentApplication[]>([])
+  const [pending, setPending] = useState(true)
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const [working, setWorking] = useState(false)
+  const [filter, setFilter] = useState("All")
+  const [notice, setNotice] = useState("")
+  const sync = useCallback(
+    (apps: StudentApplication[]) => {
+      syncApplications(
+        apps.map((app) => ({
+          id: app.id,
+          clubId: app.clubId,
+          clubName: app.club.name,
+          logoText: app.club.name.slice(0, 2),
+          logoUrl: app.club.logoUrl,
+          color: app.club.color || "#142d4e",
+          status: trackerLabels[app.status],
+          questionsCompleted: app.answers.filter((answer) => answer.response.trim()).length,
+          questionsTotal: app.club.questions.length,
+          nextDeadline: app.status === "DRAFTING" ? "Finish draft" : "",
+          dueInHours: 0,
+        })),
+      )
+    },
+    [syncApplications],
   )
-  const [submittedIds, setSubmittedIds] = useState<Set<string>>(new Set())
-
-  const activeTab = useMemo(() => openTabs.find((tab) => tab.id === activeId) ?? null, [openTabs, activeId])
-
-  function handleSubmit(id: string) {
-    setSubmittedIds((prev) => new Set(prev).add(id))
-    submitApplication(id)
+  useEffect(() => {
+    let active = true
+    if (loading) return
+    if (!user) {
+      setPending(false)
+      setApplications([])
+      return
+    }
+    setPending(true)
+    setError(false)
+    getStudentApplications()
+      .then((apps) => {
+        if (active) {
+          setApplications(apps)
+          sync(apps)
+        }
+      })
+      .catch(() => {
+        if (active) setError(true)
+      })
+      .finally(() => {
+        if (active) setPending(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [user?.id, loading, retry, sync])
+  useEffect(() => {
+    if (pending || !focusApplicationClubId) return
+    const app = applications.find((item) => item.clubId === focusApplicationClubId)
+    if (app) setActiveId(app.id)
+    clearApplicationFocus()
+  }, [applications, pending, focusApplicationClubId, clearApplicationFocus])
+  const app = applications.find((item) => item.id === activeId)
+  function leave(action: () => void) {
+    if (working) return
+    if (dirty && !window.confirm("Leave this application? Your unsaved changes will be lost."))
+      return
+    setDirty(false)
+    action()
   }
-
-  function closeTab(id: string) {
-    setOpenTabs((prev) => {
-      const next = prev.filter((tab) => tab.id !== id)
-      if (activeId === id) {
-        setActiveId(next[0]?.id ?? null)
-      }
-      return next
-    })
+  function saved(submitted: boolean, answers: StudentApplication["answers"]) {
+    const updated = applications.map((item) =>
+      item.id === activeId
+        ? {
+            ...item,
+            answers,
+            status: submitted ? ("SUBMITTED" as const) : item.status,
+            submittedAt: submitted ? new Date() : item.submittedAt,
+          }
+        : item,
+    )
+    setApplications(updated)
+    sync(updated)
+    setWorking(false)
+    setDirty(false)
+    setNotice(submitted ? "Your application was submitted successfully." : "Your draft is saved.")
+    void refreshUser()
   }
-
-  if (openTabs.length === 0 || !activeTab) {
+  if (pending || loading)
     return (
-      <div className="space-y-6">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground font-sans">My Application Workspace</h1>
-        <div className="flex min-h-[420px] flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-border bg-white text-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-slate-100">
-            <Compass className="size-6 text-muted-foreground" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">You have no active applications.</p>
-            <p className="text-sm text-muted-foreground">Find a club worth applying to and start a draft.</p>
-          </div>
-          <Button onClick={() => onNavigate?.("discover")}>Discover Clubs</Button>
-        </div>
+      <div aria-busy="true" className="space-y-5">
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading your applications…
+        </p>
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     )
-  }
-
-  return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight text-foreground font-sans">My Application Workspace</h1>
-
-      {/* Google Docs-style tab bar */}
-      <div className="flex items-end gap-1 overflow-x-auto border-b border-border">
-        {openTabs.map((tab) => {
-          const isActive = tab.id === activeTab.id
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveId(tab.id)}
-              className={`group relative flex shrink-0 items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "border-b-2 border-primary bg-white text-foreground"
-                  : "border-b-2 border-transparent text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-              }`}
-            >
-              <span className="max-w-40 truncate">{tab.clubName}</span>
-              {!isActive && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Withdraw draft for ${tab.clubName}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    closeTab(tab.id)
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.stopPropagation()
-                      closeTab(tab.id)
-                    }
-                  }}
-                  className="rounded-full p-0.5 text-muted-foreground/70 opacity-0 transition-opacity hover:bg-slate-200 hover:text-foreground group-hover:opacity-100"
-                >
-                  <X className="size-3.5" />
-                </span>
-              )}
-            </button>
-          )
-        })}
+  if (!user)
+    return (
+      <div className="max-w-xl space-y-4 py-10">
+        <h2 className="font-display text-3xl">A little clarity for every next step.</h2>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Sign in to view your applications and save responses to your account. Preview activity
+          does not submit an application to a club.
+        </p>
+        <Button onClick={() => onNavigate?.("auth")}>Go to sign in</Button>
       </div>
-
-      {events.filter((event) => event.clubId === activeTab.clubId && event.type === "Interview").map((event) => (
-        <Button key={event.id} variant="outline" className="mb-3" onClick={() => { focusEvent(event.id); onNavigate?.("calendar") }}>
-          View interview · {event.date} at {event.time}
+    )
+  if (error)
+    return (
+      <div className="space-y-4 py-8" role="alert">
+        <h2 className="text-xl font-semibold">Your applications couldn’t load</h2>
+        <p className="text-sm text-muted-foreground">
+          Your saved responses haven’t changed. Please try again.
+        </p>
+        <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
+          Try again
         </Button>
-      ))}
-      {/* Active application canvas */}
-      <div className="rounded-b-xl rounded-tr-xl border border-gray-200 bg-white">
-        {(submittedIds.has(activeTab.id) || trackedApps.find((app) => app.id === activeTab.id)?.status !== "Drafting") ? (
-          <div className="flex min-h-[420px] flex-col items-center justify-center gap-5 p-8 text-center">
-            <div className="flex size-16 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="size-9 text-success" />
-            </div>
-            <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-foreground font-sans tracking-tight">Application Submitted to {activeTab.clubName}!</h2>
-              <p className="text-sm text-gray-500">
-                We&apos;ve notified the club&apos;s leadership. You&apos;ll be updated here as your status changes.
+      </div>
+    )
+  if (app)
+    return (
+      <div className="mx-auto max-w-3xl space-y-7 pb-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-3"
+          disabled={working}
+          onClick={() =>
+            leave(() => {
+              setActiveId(null)
+              setNotice("")
+            })
+          }
+        >
+          <ArrowLeft className="size-4" />
+          All applications
+        </Button>
+        <header className="flex items-start gap-4">
+          <ClubLogo
+            clubId={app.clubId}
+            logoUrl={app.club.logoUrl}
+            color={app.club.color || "#142d4e"}
+            text={app.club.name.slice(0, 2)}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Your application
+            </p>
+            <h2 className="break-words font-display text-3xl tracking-tight">{app.club.name}</h2>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <Badge variant="secondary">{applicationStatusLabels[app.status]}</Badge>
+              <p className="text-xs text-muted-foreground">
+                {app.submittedAt
+                  ? `Submitted ${date(app.submittedAt)}`
+                  : "Deadline not provided on OutClass"}
               </p>
-              <ApplicationStatusStepper app={{ clubId: activeTab.clubId, stage: "Applied" }} />
             </div>
-            <Button
-              size="lg"
-              className="bg-primary text-white hover:bg-primary/90"
-              onClick={() => onNavigate?.("student-dashboard")}
-            >
-              Return to Dashboard to Track Status
-            </Button>
           </div>
+        </header>
+        <p role="status" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>
+          {notice}
+        </p>
+        {app.status === "DRAFTING" ? (
+          <ApplicationForm
+            key={app.id}
+            application={app}
+            onSaved={saved}
+            onDirty={setDirty}
+            onBusy={setWorking}
+            onProfile={() => leave(() => onNavigate?.("student-profile"))}
+          />
         ) : (
           <>
-            <div className="flex flex-col gap-4 p-6 pb-28 sm:p-8 sm:pb-28">
-              {/* Top info bar */}
-              <div className="space-y-3 border-b border-gray-200 pb-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-red-600">Deadline: {draftTabs.find((tab) => tab.id === activeTab.id)?.deadline ?? activeTab.deadline}</p>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <CheckCircle2 className="size-3.5 text-success" />
-                    Auto-Saved at 3:42 PM
+            <section
+              className={`border-y border-border py-7 ${app.status === "ACCEPTED" ? "border-success/25" : ""}`}
+              aria-label="Application update"
+            >
+              {app.status === "ACCEPTED" && (
+                <p className="mb-3 flex items-center gap-2 text-sm font-medium text-success">
+                  <Check className="size-4" />
+                  An invitation to your next chapter
+                </p>
+              )}
+              <h3 className="text-xl font-semibold">
+                {app.status === "ACCEPTED"
+                  ? `Welcome to ${app.club.name}.`
+                  : app.status === "REJECTED"
+                    ? "An update on your application"
+                    : app.status === "WAITLISTED"
+                      ? "You’re on the waitlist"
+                      : app.status === "SUBMITTED"
+                        ? "Your application is in."
+                        : "Your application is moving forward"}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                {applicationNextStep(app.status)}
+              </p>
+              {app.status === "REJECTED" && (
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  Thank you for the time and care you put into applying. You can continue exploring
+                  other communities at UVA.
+                </p>
+              )}
+              {app.status === "WAITLISTED" && (
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  No decision date has been provided on OutClass.
+                </p>
+              )}
+              <div className="mt-6">
+                <RecruitmentTimeline status={app.status} />
+              </div>
+              {app.round?.name && (
+                <p className="mt-4 text-xs text-muted-foreground">Club stage: {app.round.name}</p>
+              )}
+            </section>
+            {app.bookings.length > 0 && (
+              <section aria-label="Interview details" className="space-y-4">
+                <h3 className="text-base font-semibold">Your interviews</h3>
+                <ul className="divide-y divide-border">
+                  {app.bookings.map((booking) => (
+                    <li key={booking.id} className="flex items-start gap-3 py-4">
+                      <CalendarDays className="mt-1 size-4 shrink-0 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">{date(booking.slot.startTime)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Ends {date(booking.slot.endTime)} · {booking.slot.location}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <Button variant="outline" size="sm" onClick={() => onNavigate?.("calendar")}>
+                  Open calendar
+                </Button>
+              </section>
+            )}
+            <section className="space-y-6" aria-label="Submitted responses">
+              <div>
+                <h3 className="text-base font-semibold">Your submitted responses</h3>
+                <p className="mt-2 text-xs text-muted-foreground">Read-only after submission.</p>
+              </div>
+              {app.club.questions.map((question, index) => {
+                const response = app.answers.find(
+                  (answer) => answer.questionId === question.id,
+                )?.response
+                return (
+                  <div key={question.id} className="border-t border-border pt-5">
+                    <p className="mb-2 text-xs text-muted-foreground">Question {index + 1}</p>
+                    <h4 className="whitespace-pre-wrap text-sm font-medium leading-7">
+                      {question.prompt}
+                    </h4>
+                    {question.type === "FILE_UPLOAD" &&
+                    response &&
+                    /^https?:\/\//i.test(response) ? (
+                      <a
+                        href={response}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-block text-sm underline underline-offset-4"
+                      >
+                        Open submitted document<span className="sr-only"> (new tab)</span>
+                      </a>
+                    ) : (
+                      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
+                        {response || "No response provided."}
+                      </p>
+                    )}
                   </div>
-                </div>
-              </div>
-
-              {/* Base profile banner */}
-              <div className="flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 p-4">
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                <p className="text-sm leading-relaxed text-success">
-                  Your OutClass Base Profile (Resume, GPA, Major) is automatically attached to this submission.
-                </p>
-              </div>
-
-              {/* Question 1 — essay with character counter */}
-              <div className="space-y-2">
-                <label htmlFor="essay-answer" className="text-sm font-medium text-foreground">
-                  {activeTab.question}
-                </label>
-                <Textarea
-                  id="essay-answer"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value.slice(0, CHAR_LIMIT))}
-                  placeholder="Start writing your response…"
-                  className="min-h-40 resize-none text-sm"
-                  maxLength={CHAR_LIMIT}
-                />
-                <p className="text-right text-xs text-gray-500">
-                  {answer.length} / {CHAR_LIMIT} characters
-                </p>
-              </div>
-
-              {/* Question 2 — file dropzone */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">{activeTab.fileLabel}</p>
-                <label
-                  htmlFor="pitch-deck-upload"
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-white px-6 py-10 text-center transition-colors hover:border-border hover:bg-orange-50/40"
-                >
-                  <UploadCloud className="size-6 text-gray-400" />
-                  <p className="text-sm text-gray-500">
-                    <span className="font-medium text-muted-foreground">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">PDF, PPTX up to 25MB</p>
-                  <input id="pitch-deck-upload" type="file" className="sr-only" />
-                </label>
-              </div>
-            </div>
-
-            {/* Sticky action footer */}
-            <div className="sticky bottom-[var(--shell-bottom-inset,0px)] flex items-center justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-white/95 p-4 backdrop-blur">
-              <Button variant="ghost" className="text-gray-600 hover:bg-gray-100 hover:text-foreground">
-                Save Draft
-              </Button>
+                )
+              })}
+              {!app.club.questions.length && (
+                <p className="text-sm text-muted-foreground">No club-specific questions.</p>
+              )}
+            </section>
+            <div className="flex flex-wrap gap-3 border-t border-border pt-6">
               <Button
-                className="bg-primary text-white hover:bg-primary/90"
-                onClick={() => handleSubmit(activeTab.id)}
+                variant="outline"
+                onClick={() => {
+                  setActiveId(null)
+                  setRetry((value) => value + 1)
+                }}
               >
-                Submit Final Application
+                <RefreshCw className="size-4" />
+                Refresh status
+              </Button>
+              <Button variant="ghost" onClick={() => onNavigate?.("discover")}>
+                Explore clubs
+                <ArrowRight className="size-4" />
               </Button>
             </div>
           </>
         )}
       </div>
+    )
+  const drafts = applications.filter((item) => item.status === "DRAFTING").length
+  const decisions = applications.filter((item) =>
+    ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status),
+  ).length
+  const visible = applications
+    .filter(
+      (item) =>
+        filter === "All" ||
+        (filter === "Drafts"
+          ? item.status === "DRAFTING"
+          : filter === "Decisions"
+            ? ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)
+            : !["DRAFTING", "ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.status === "DRAFTING") - Number(a.status === "DRAFTING") ||
+        a.club.name.localeCompare(b.club.name),
+    )
+  return (
+    <div className="mx-auto max-w-5xl space-y-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-3xl tracking-tight">One step at a time.</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {applications.length
+              ? `${drafts} ${drafts === 1 ? "draft" : "drafts"} · ${applications.length - drafts - decisions} in progress · ${decisions} decisions`
+              : "Find a community you’re excited about. Start there."}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setRetry((value) => value + 1)}>
+          <RefreshCw className="size-3.5" />
+          Refresh
+        </Button>
+      </header>
+      {!!drafts && (
+        <div className="border-l-2 border-primary py-1 pl-4">
+          <p className="text-sm font-medium">Your next step: finish a draft</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Save as you go. Application deadlines haven’t been provided on OutClass; check each
+            club’s recruitment instructions.
+          </p>
+        </div>
+      )}
+      {!applications.length ? (
+        <div className="space-y-4 border-y border-border py-12">
+          <h3 className="text-lg font-semibold">No applications yet</h3>
+          <p className="max-w-lg text-sm leading-7 text-muted-foreground">
+            Your drafts, submissions, and decisions will appear here when you start an application.
+          </p>
+          <Button onClick={() => onNavigate?.("discover")}>
+            Discover clubs
+            <ArrowRight className="size-4" />
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div
+            role="group"
+            aria-label="Filter applications"
+            className="flex flex-wrap gap-2 border-b border-border pb-4"
+          >
+            {["All", "Drafts", "In progress", "Decisions"].map((label) => (
+              <Button
+                key={label}
+                size="sm"
+                variant={filter === label ? "secondary" : "ghost"}
+                aria-pressed={filter === label}
+                onClick={() => setFilter(label)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <ul className="divide-y divide-border">
+            {visible.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveId(item.id)
+                    setNotice("")
+                  }}
+                  className="group flex w-full items-start gap-4 rounded-sm py-6 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                >
+                  <ClubLogo
+                    clubId={item.clubId}
+                    logoUrl={item.club.logoUrl}
+                    color={item.club.color || "#142d4e"}
+                    text={item.club.name.slice(0, 2)}
+                    size="lg"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <h3 className="font-semibold">{item.club.name}</h3>
+                      <Badge variant="secondary">{applicationStatusLabels[item.status]}</Badge>
+                    </div>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {applicationNextStep(item.status)}
+                    </p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {item.status === "DRAFTING"
+                        ? `${item.answers.filter((answer) => answer.response.trim()).length} responses saved · Deadline not provided`
+                        : item.status === "INTERVIEWING" &&
+                            item.bookings.some(
+                              (booking) => new Date(booking.slot.startTime).getTime() > Date.now(),
+                            )
+                          ? `Interview ${date(item.bookings.find((booking) => new Date(booking.slot.startTime).getTime() > Date.now())!.slot.startTime)}`
+                          : item.submittedAt
+                            ? `Submitted ${date(item.submittedAt)}`
+                            : "Submission date not provided"}
+                    </p>
+                  </div>
+                  <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
+                  <span className="sr-only">
+                    {item.status === "DRAFTING" ? "Continue draft" : "View application"}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {!visible.length && (
+            <p role="status" className="py-8 text-sm text-muted-foreground">
+              No applications in this view.
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }

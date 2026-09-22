@@ -1,161 +1,131 @@
-"use server";
+"use server"
 
-import { prisma } from "@/utils/prisma";
-import { requireAuth } from "@/utils/auth";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { prisma } from "@/utils/prisma"
+import { requireAuth } from "@/utils/auth"
+import { revalidatePath } from "next/cache"
+import { applicationInputSchema, answerErrors } from "@/lib/student-applications"
+import type { z } from "zod"
 
-const submissionSchema = z.object({
-  clubId: z.string().uuid(),
-  answers: z.array(z.object({
-    questionId: z.string().uuid(),
-    response: z.string()
-  }))
-});
-
-export async function submitApplication(data: z.infer<typeof submissionSchema>) {
-  const { user } = await requireAuth();
-  const parsed = submissionSchema.parse(data);
-
-  // 1. Ensure the student has a profile before applying
-  const profile = await prisma.studentProfile.findUnique({
-    where: { userId: user.id }
-  });
-
-  if (!profile) {
-    throw new Error("You must complete your unified profile before applying.");
-  }
-
-  // 2. Ensure they haven't already applied
-  const existingApp = await prisma.application.findUnique({
-    where: {
-      studentId_clubId: {
-        studentId: user.id,
-        clubId: parsed.clubId
-      }
+async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
+  const { user } = await requireAuth()
+  const parsed = applicationInputSchema.parse(input)
+  const applicationId = await prisma.$transaction(async (tx) => {
+    if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {
+      throw new Error("You must complete your unified profile before applying.")
     }
-  });
-
-  if (existingApp && existingApp.status !== "DRAFTING") {
-    throw new Error("You have already submitted an application to this club.");
-  }
-
-  // 3. Find the first Pipeline Round for this club (usually "Applied")
-  const firstRound = await prisma.pipelineRound.findFirst({
-    where: { clubId: parsed.clubId },
-    orderBy: { order: 'asc' }
-  });
-
-  if (!firstRound) {
-    throw new Error("This club has not set up their application pipeline yet.");
-  }
-
-  // 4. Upsert the application (transition from DRAFTING -> SUBMITTED)
-  const application = await prisma.application.upsert({
-    where: {
-      studentId_clubId: {
-        studentId: user.id,
-        clubId: parsed.clubId
-      }
-    },
-    update: {
-      status: "SUBMITTED",
-      roundId: firstRound.id,
-      submittedAt: new Date(),
-      answers: {
-        deleteMany: {}, // Clear drafts
-        create: parsed.answers
-      }
-    },
-    create: {
-      studentId: user.id,
-      clubId: parsed.clubId,
-      status: "SUBMITTED",
-      roundId: firstRound.id,
-      submittedAt: new Date(),
-      answers: {
-        create: parsed.answers
-      }
+    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId } })
+    const errors = answerErrors(questions, parsed.answers, submit)
+    if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
+    const firstRound = await tx.pipelineRound.findFirst({
+      where: { clubId: parsed.clubId },
+      orderBy: { order: "asc" },
+    })
+    if (!firstRound) throw new Error("This club has not set up their application pipeline yet.")
+    const existing = await tx.application.findUnique({
+      where: { studentId_clubId: { studentId: user.id, clubId: parsed.clubId } },
+    })
+    const transition = submit
+      ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date() }
+      : { status: "DRAFTING" as const }
+    if (existing) {
+      // The status predicate also protects against a save racing with submission.
+      const result = await tx.application.updateMany({
+        where: { id: existing.id, studentId: user.id, status: "DRAFTING" },
+        data: transition,
+      })
+      if (result.count !== 1)
+        throw new Error(
+          "This application has already been submitted. Reload to see its current status.",
+        )
+      await tx.applicationAnswer.deleteMany({ where: { applicationId: existing.id } })
+      if (parsed.answers.length)
+        await tx.applicationAnswer.createMany({
+          data: parsed.answers.map((answer) => ({ ...answer, applicationId: existing.id })),
+        })
+      return existing.id
     }
-  });
-
-  revalidatePath("/student-dashboard");
-  revalidatePath(`/club/${parsed.clubId}`);
-
-  return { success: true, applicationId: application.id };
+    const application = await tx.application.create({
+      data: {
+        studentId: user.id,
+        clubId: parsed.clubId,
+        roundId: firstRound.id,
+        ...transition,
+        answers: { create: parsed.answers },
+      },
+    })
+    return application.id
+  })
+  revalidatePath("/")
+  revalidatePath(`/club/${parsed.clubId}`)
+  return { success: true, applicationId }
 }
 
-export async function saveApplicationDraft(data: z.infer<typeof submissionSchema>) {
-  const { user } = await requireAuth();
-  const parsed = submissionSchema.parse(data);
+export async function submitApplication(data: z.infer<typeof applicationInputSchema>) {
+  return persistApplication(data, true)
+}
+export async function saveApplicationDraft(data: z.infer<typeof applicationInputSchema>) {
+  return persistApplication(data, false)
+}
 
-  // Fetch the first round as a placeholder for drafts
-  const firstRound = await prisma.pipelineRound.findFirst({
-    where: { clubId: parsed.clubId },
-    orderBy: { order: 'asc' }
-  });
-
-  if (!firstRound) {
-    throw new Error("This club has not set up their application pipeline yet.");
-  }
-
-  const application = await prisma.application.upsert({
-    where: {
-      studentId_clubId: {
-        studentId: user.id,
-        clubId: parsed.clubId
-      }
+export async function getStudentApplications() {
+  const { user } = await requireAuth()
+  return prisma.application.findMany({
+    where: { studentId: user.id },
+    select: {
+      id: true,
+      clubId: true,
+      status: true,
+      submittedAt: true,
+      club: {
+        select: {
+          name: true,
+          logoUrl: true,
+          color: true,
+          questions: {
+            select: { id: true, prompt: true, type: true, required: true, wordLimit: true },
+            orderBy: { id: "asc" },
+          },
+        },
+      },
+      round: { select: { name: true } },
+      answers: { select: { questionId: true, response: true } },
+      bookings: {
+        select: { id: true, slot: { select: { startTime: true, endTime: true, location: true } } },
+        orderBy: { slot: { startTime: "asc" } },
+      },
     },
-    update: {
-      answers: {
-        deleteMany: {},
-        create: parsed.answers
-      }
-    },
-    create: {
-      studentId: user.id,
-      clubId: parsed.clubId,
-      status: "DRAFTING",
-      roundId: firstRound.id,
-      answers: {
-        create: parsed.answers
-      }
-    }
-  });
-
-  revalidatePath("/student-dashboard");
-  return { success: true, applicationId: application.id };
+    orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
+  })
 }
 
 export async function getStudentDashboardData() {
-  const { user } = await requireAuth();
+  const { user } = await requireAuth()
 
   const applications = await prisma.application.findMany({
     where: { studentId: user.id },
     include: {
       club: {
-        select: { name: true, logoUrl: true, color: true }
+        select: { name: true, logoUrl: true, color: true, _count: { select: { questions: true } } },
       },
       round: {
-        select: { name: true }
+        select: { name: true },
       },
       answers: true,
       bookings: {
-        include: { slot: true }
-      }
+        include: { slot: true },
+      },
     },
-    orderBy: { submittedAt: 'desc' }
-  });
+    orderBy: { submittedAt: "desc" },
+  })
 
   const attendances = await prisma.eventAttendance.findMany({
     where: { studentId: user.id },
     include: {
       event: {
-        include: { club: { select: { name: true } } }
-      }
-    }
-  });
+        include: { club: { select: { name: true } } },
+      },
+    },
+  })
 
-  return { applications, attendances };
+  return { applications, attendances }
 }
-
