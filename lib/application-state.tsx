@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, useEffect, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
-  managedEvents as seedManagedEvents, scheduleLocations, currentStudent, clubs, studentMemberships,
+  managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
   type ManagedEvent,
   trackedApplications as seedTrackedApplications,
   notifications as seedNotifications,
@@ -12,6 +12,7 @@ import {
   type ClubEvent,
 } from "@/lib/data"
 
+import { studentCalendarEvents } from "@/lib/student-calendar-data"
 import { dateKey, dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar"
 import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
 
@@ -23,6 +24,8 @@ import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
  */
 
 type ClubRef = {
+  applicationId?: string
+  applicationStatus?: TrackedApplication["status"]
   id: string
   name: string
   logoUrl?: string | null
@@ -68,7 +71,7 @@ const ApplicationStateContext = createContext<ApplicationStateValue | null>(null
 // Persist the demo across navigation and reloads on this browser only.
 const STORAGE_KEY = "outclass-platform-v2"
 
-export function ApplicationStateProvider({ children, initialData }: { children: ReactNode, initialData?: any }) {
+export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
   // Map Prisma database models back to the UI's TrackedApplication structure
   const serverApps = initialData?.applications?.map((app: any) => ({
     id: app.id,
@@ -87,17 +90,7 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(serverApps)
   const [notifications, setNotifications] = useState<Notification[]>([])
   
-  const serverEvents = initialData?.attendances?.map((att: any) => ({
-    id: att.id,
-    clubId: att.event.clubId,
-    date: att.event.date.toISOString().split('T')[0],
-    day: new Date(att.event.date).getDate(),
-    title: att.event.title,
-    club: att.event.club?.name || att.event.clubId,
-    color: "#051B3D",
-    type: "Interest Meeting",
-    time: "Checked In"
-  })) || []
+  const serverEvents = studentCalendarEvents(initialData)
 
   const [baseEvents, setEvents] = useState<ClubEvent[]>(serverEvents)
   const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>([])
@@ -108,6 +101,7 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [hydrated, setHydrated] = useState(false)
   useEffect(() => {
+    if (!persistLocalState) { setHydrated(true); return }
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")
       if (saved && Array.isArray(saved.trackedApps) && Array.isArray(saved.notifications) && Array.isArray(saved.baseEvents) && Array.isArray(saved.managedEvents) && Array.isArray(saved.scheduleBlocks)) {
@@ -116,11 +110,11 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
       }
     } catch { /* Keep the sample data if browser storage is unavailable. */ }
     setHydrated(true)
-  }, [])
+  }, [persistLocalState])
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated || !persistLocalState) return
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses })) } catch { /* State remains usable for this session. */ }
-  }, [hydrated, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
+  }, [hydrated, persistLocalState, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
@@ -145,13 +139,13 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
       setTrackedApps((prev) => [
         ...prev,
         {
-          id: `trk-${timestamp}`,
+          id: club.applicationId ?? `trk-${timestamp}`,
           clubId: club.id,
           clubName: club.name,
           logoText: club.logoText,
           logoUrl: club.logoUrl,
           color: club.color,
-          status: "Drafting",
+          status: club.applicationStatus ?? "Drafting",
           questionsCompleted: 0,
           questionsTotal: 3,
           nextDeadline: "Application opens",
@@ -171,9 +165,9 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
           logoUrl: club.logoUrl,
           senderName: "Recruitment Team",
           senderTitle: `${club.name} — Recruitment`,
-          title: `${club.name} application started`,
-          preview: "Your draft is ready. Complete and submit it from Application Tracker.",
-          body: ["Your draft is ready. Complete and submit it from Application Tracker."],
+          title: `${club.name} application ${club.applicationId ? "ready" : "started"}`,
+          preview: club.applicationId ? "Open your application from Application Tracker." : "Your draft is ready. Complete and submit it from Application Tracker.",
+          body: [club.applicationId ? "Open your application from Application Tracker." : "Your draft is ready. Complete and submit it from Application Tracker."],
           timestamp: "Just now",
           fullDate: "Just now",
           createdAt: new Date(timestamp).toISOString(),
@@ -206,6 +200,7 @@ export function ApplicationStateProvider({ children, initialData }: { children: 
   }, [])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
+    if (events.find(event => event.id === id)?.readOnly) return
     setResponses((previous) => ({ ...previous, [id]: response }))
     const event = events.find((item) => item.id === id)
     const managed = managedEvents.find((item) => id.startsWith(`managed-${item.id}-`))

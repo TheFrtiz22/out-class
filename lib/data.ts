@@ -75,6 +75,8 @@ export const experienceItems: ExperienceItem[]  = []
 export type EventType = "Deadline" | "Interest Meeting" | "Coffee Chat" | "Interview"
 
 export type ClubEvent = {
+  /** Persisted booking/attendance: changes require a server action. */
+  readOnly?: boolean
   date: string
   clubId?: string
   location?: string
@@ -361,12 +363,12 @@ export type DiscoverClub = {
   logoUrl?: string | null
   logoText: string
   color: string
-  category: ClubCategory
+  category: string
   pitch: string
   tags: string[]
-  acceptanceRate: number
+  acceptanceRate: number | null
   aumValue: number | null
-  timeCommitment: TimeCommitment
+  timeCommitment: TimeCommitment | null
   recommended?: boolean
 }
 

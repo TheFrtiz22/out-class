@@ -1,169 +1,420 @@
 "use client"
 
-import { CalendarDays, FileText, Clock3, Plus, ArrowUpRight } from "lucide-react"
+import { useEffect, useState } from "react"
+import {
+  ArrowRight,
+  CalendarDays,
+  ChevronRight,
+  Compass,
+  FileText,
+  Bell,
+  MapPin,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
-import { applications as seedApplications, currentStudent, type Application as DataApplication, type TrackedApplication, type ClubEvent } from "@/lib/data"
+import { StatusBadge } from "@/components/status-badge"
 import { useApplicationState } from "@/lib/application-state"
+import { useAuth } from "@/contexts/auth-context"
 import { eventStart } from "@/lib/calendar"
+import {
+  homeApplications,
+  nextHomeAction,
+  relevantUpdates,
+  upcomingAgenda,
+  type HomeApplication,
+  type HomeApplicationSource,
+} from "@/lib/student-home"
+import type { ClubEvent } from "@/lib/data"
 import type { ViewId } from "@/lib/views"
-import { useAuth, type ExtendedApplication } from "@/contexts/auth-context"
+import "./student-home.css"
 
-const primaryButton = "bg-[#ea580c] font-semibold text-white shadow-none hover:bg-[#c2410c]"
-
-export type DashboardApp = {
-  id: string;
-  clubId: string;
-  clubName: string;
-  logoText: string;
-  color: string;
-  stage: string;
-  essaysTotal?: number;
-  essaysWritten?: number;
-  deadline?: string;
-  submitted: string;
-  status?: string;
-  outcome?: string;
-  nextStep?: string;
-  logoUrl?: string | null;
-};
-
-function applicationStatus(app: { status?: string; outcome?: string; stage?: string }) {
-  if (app.status === "ACCEPTED") return { label: "Accepted", style: "bg-emerald-50 text-emerald-800" }
-  if (app.status === "REJECTED") return { label: "Rejected", style: "bg-red-50 text-red-800" }
-  if (app.status === "INTERVIEWING") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
-  if (app.status === "IN_REVIEW") return { label: "In review", style: "bg-amber-50 text-amber-800" }
-  if (app.status === "WAITLISTED") return { label: "Waitlisted", style: "bg-sky-50 text-sky-800" }
-  if (app.outcome) return { label: app.outcome, style: app.outcome === "Accepted" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800" }
-  if (app.stage === "Round 1" || app.stage === "Round 2") return { label: "Interview", style: "bg-violet-50 text-violet-800" }
-  if (app.stage === "Decision") return { label: "Awaiting decision", style: "bg-sky-50 text-sky-800" }
-  return { label: app.status || "In review", style: "bg-amber-50 text-amber-800" }
-}
-
-function ApplicationProgressCell({ app }: { app: { status?: string; outcome?: string; stage?: string } }) {
-  const fallback = applicationStatus(app)
-  const label = fallback.label
-  return <td className="px-5 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${fallback.style}`}>{label}</span></td>
-}
-
-export function StudentDashboardView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
-  const { focusApplication, events, focusEvent, trackedApps } = useApplicationState()
-  const { user } = useAuth()
-  
-  // Fallback to mock data if not logged in (demo mode)
-  const applications: DashboardApp[] = user?.applications ? user.applications.map((app: ExtendedApplication) => ({
-    id: app.id,
-    clubId: app.clubId,
-    clubName: app.club.name,
-    logoText: app.club.name.substring(0, 2),
-    color: app.club.color || "#000",
-    stage: app.status === "DRAFTING" ? "Draft" : "Applied",
-    essaysTotal: 100, 
-    essaysWritten: app.status === "DRAFTING" ? 50 : 100, 
-    deadline: "Deadline not announced",
-    submitted: app.submittedAt ? new Date(app.submittedAt).toLocaleDateString() : "—",
-    status: app.status
-  })) : trackedApps.map((app: TrackedApplication) => {
-    const seed = seedApplications.find((item: DataApplication) => item.clubId === app.clubId)
-    const deadline = events.find((event: ClubEvent) => event.clubId === app.clubId && event.type === "Deadline")
-    return { 
-      id: app.id, clubId: app.clubId, clubName: app.clubName, logoText: app.logoText, color: app.color,
-      stage: app.status === "Drafting" ? "Draft" : app.status === "1st Round Interview" ? "Round 1" : "Applied",
-      essaysTotal: app.questionsTotal, essaysWritten: app.questionsCompleted,
-      deadline: deadline ? `Due ${deadline.date}` : "Deadline not announced", nextStep: app.nextDeadline, submitted: seed?.submitted ?? "—",
-      status: app.status, outcome: seed?.outcome, logoUrl: seed?.logoUrl
-    }
+function when(event: ClubEvent) {
+  return eventStart(event).toLocaleString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   })
+}
+function SectionTitle({
+  id,
+  title,
+  action,
+  onClick,
+}: {
+  id: string
+  title: string
+  action: string
+  onClick: () => void
+}) {
+  return (
+    <div className="oc-home-section-title">
+      <h2 id={id}>{title}</h2>
+      <Button variant="ghost" size="sm" onClick={onClick}>
+        {action}
+        <ArrowRight size={14} aria-hidden="true" />
+      </Button>
+    </div>
+  )
+}
+function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        className="oc-home-application"
+        onClick={onOpen}
+        aria-label={`${app.draft ? "Continue" : "View"} ${app.name} application`}
+      >
+        <ClubLogo
+          clubId={app.clubId}
+          logoUrl={app.logoUrl}
+          text={app.name.slice(0, 2)}
+          color={app.color}
+        />
+        <span className="oc-home-app-copy">
+          <strong>{app.name}</strong>
+          <span>
+            {app.draft
+              ? app.deadline
+                ? `Deadline · ${when(app.deadline)}`
+                : app.responsesSaved !== undefined
+                  ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
+                  : "Pick up where you left off"
+              : app.status === "Interviewing"
+                ? "Review your interview details"
+                : app.status === "Accepted"
+                  ? "Your decision is ready"
+                  : app.status === "Rejected"
+                    ? "View your decision"
+                    : app.status === "Submitted"
+                      ? "Application submitted"
+                      : "Check your application for details"}
+          </span>
+        </span>
+        <StatusBadge status={app.status} />
+        <ChevronRight size={16} className="oc-home-row-arrow" aria-hidden="true" />
+      </button>
+    </li>
+  )
+}
+function AgendaRow({ event, onOpen }: { event: ClubEvent; onOpen: () => void }) {
+  const date = eventStart(event)
+  return (
+    <li>
+      <button
+        type="button"
+        className="oc-home-agenda-row"
+        onClick={onOpen}
+        aria-label={`${event.title}, ${when(event)}`}
+      >
+        <span className="oc-home-date" aria-hidden="true">
+          <span>{date.toLocaleDateString("en-US", { month: "short" })}</span>
+          <strong>{date.getDate()}</strong>
+        </span>
+        <span className="oc-home-agenda-copy">
+          <span className="oc-home-event-type">
+            {event.type === "Interview"
+              ? "Interview"
+              : event.type === "Coffee Chat"
+                ? "Coffee chat"
+                : "Club event"}{" "}
+            · {date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+          </span>
+          <strong>{event.title}</strong>
+          {event.location && (
+            <span>
+              <MapPin size={12} aria-hidden="true" />
+              {event.location}
+            </span>
+          )}
+        </span>
+        <ChevronRight size={15} aria-hidden="true" />
+      </button>
+    </li>
+  )
+}
 
-  const upcomingInterviews = user?.applications 
-    ? [] // Real interview bookings would be mapped here in the future
-    : events.filter((event) => event.type === "Interview" && event.response !== "declined" && eventStart(event) >= new Date()).sort((a,b) => eventStart(a).getTime() - eventStart(b).getTime())
-  
-  const drafts = applications.filter((app: DashboardApp) => app.stage === "Draft")
-  const submitted = applications.filter((app: DashboardApp) => app.stage !== "Draft")
-  const metrics = [
-    { label: "Applications", count: submitted.length, description: "Submitted applications", icon: FileText },
-    { label: "In review", count: user?.applications ? submitted.filter((app: DashboardApp) => app.status === "IN_REVIEW").length : submitted.filter((app: DashboardApp) => !app.outcome).length, description: "Awaiting a final decision", icon: Clock3 },
-    { label: "Upcoming interviews", count: upcomingInterviews.length, description: "Applications in interview rounds", icon: CalendarDays },
-  ]
-  function openApplication(app: DashboardApp) {
+export function StudentDashboardView({
+  onNavigate,
+  initialData,
+  authenticated = false,
+}: {
+  onNavigate: (view: ViewId) => void
+  initialData?: { applications: HomeApplicationSource[] } | null
+  authenticated?: boolean
+}) {
+  const {
+    focusApplication,
+    events,
+    focusEvent,
+    trackedApps,
+    notifications,
+    focusNotification,
+    hydrated,
+  } = useApplicationState()
+  const { user, loading } = useAuth()
+  const [now, setNow] = useState<Date | null>(null)
+  useEffect(() => {
+    const refresh = () => setNow(new Date())
+    refresh()
+    const timer = setInterval(refresh, 60000)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener("visibilitychange", refresh)
+    }
+  }, [])
+  const realMode = authenticated || !!user || initialData != null
+  // Real records always win, including an empty array. Never fall back to browser demo applications.
+  const realApps = user
+    ? user.applications.map((app) => ({
+        ...app,
+        answers: initialData?.applications.find((source) => source.id === app.id)?.answers,
+      }))
+    : initialData?.applications
+  const accountEvents = realMode && !authenticated && initialData == null ? [] : events
+  const accountNotifications =
+    realMode && !authenticated && initialData == null ? [] : notifications
+  const applications = homeApplications(
+    realMode ? (realApps ?? []) : null,
+    trackedApps,
+    accountEvents,
+  )
+  const unavailable = realMode && !realApps && !loading
+  const agendaUnavailable = realMode && initialData == null
+  const agenda = now ? upcomingAgenda(accountEvents, now) : []
+  const updates = relevantUpdates(accountNotifications)
+  const active = applications.filter((app) => !app.closed)
+  const interviews = agenda.filter((event) => event.type === "Interview")
+  const next = now ? nextHomeAction(applications, agenda, now) : { kind: "discover" as const }
+  function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
     onNavigate("tracker")
   }
+  function openEvent(event: ClubEvent) {
+    focusEvent(event.id)
+    onNavigate("calendar")
+  }
 
-  const firstName = user?.profile?.firstName || currentStudent.name.split(" ")[0]
+  if (loading || !hydrated || !now)
+    return (
+      <div className="oc-student-home" role="status" aria-label="Loading your recruiting season">
+        <Skeleton className="h-8 w-60" />
+        <Skeleton className="mt-5 h-4 w-48" />
+        <Skeleton className="mt-10 h-36 w-full" />
+        <Skeleton className="mt-10 h-64 w-full" />
+        <span className="sr-only">Loading your recruiting season…</span>
+      </div>
+    )
+
+  const nextTitle =
+    next.kind === "application"
+      ? `Continue your ${next.application.name} application.`
+      : next.kind === "event"
+        ? next.event.title
+        : applications.length
+          ? "A little room to explore."
+          : "Find your first opportunity."
+  const nextCopy =
+    next.kind === "application"
+      ? next.application.deadline
+        ? `Application deadline: ${when(next.application.deadline)}.`
+        : "Your draft is ready. Review your responses and pick up where you left off."
+      : next.kind === "event"
+        ? `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`
+        : applications.length
+          ? "Your applications are together below. Discover other clubs that interest you."
+          : "Explore clubs, learn what they do, and start an application when you’re ready."
+  const nextLabel =
+    next.kind === "application"
+      ? "Continue application"
+      : next.kind === "event"
+        ? "View event details"
+        : "Discover clubs"
 
   return (
-    <div className="space-y-8 font-sans text-neutral-900">
-      <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">Your next chapter starts here, {firstName}.</h1>
-          <p className="mt-3 text-sm leading-relaxed text-neutral-500 sm:text-base">Big ambitions. One application. Let&apos;s find your people.</p>
-        </div>
-        <Button onClick={() => onNavigate("discover")} className={`${primaryButton} shrink-0 self-start sm:self-auto`}>Explore clubs <Plus className="size-4" /></Button>
-      </section>
-
-      <section aria-label="Application overview" className="grid gap-4 sm:grid-cols-3">
-        {metrics.map(({ label, count, description, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-neutral-200 bg-white p-6">
-            <div className="flex items-center justify-between gap-3 text-sm font-medium text-neutral-600">{label}<Icon className="size-4 text-neutral-400" aria-hidden="true" /></div>
-            <p className="mt-5 text-4xl font-semibold tracking-tight tabular-nums">{String(count).padStart(2, "0")}</p>
-            <p className="mt-2 text-xs text-neutral-500">{description}</p>
+    <div className="oc-student-home">
+      <header className="oc-home-greeting">
+        <p className="oc-home-eyebrow">
+          Your recruiting season <span aria-hidden="true">/</span>{" "}
+          <time dateTime={now.toISOString()}>
+            {now.toLocaleDateString("en-US", { month: "long", day: "numeric" })}
+          </time>
+        </p>
+        <h1>Welcome back{user?.profile?.firstName ? `, ${user.profile.firstName}` : ""}.</h1>
+        <p>Your applications, next steps, and upcoming conversations.</p>
+      </header>
+      {unavailable ? (
+        <section className="oc-home-next" role="status">
+          <div>
+            <h2>We couldn’t load your applications.</h2>
+            <p>Try again to see the latest information for your account.</p>
           </div>
-        ))}
-      </section>
-
-      {upcomingInterviews.length > 0 && <section className="space-y-3" aria-label="Upcoming interviews">
-        <h2 className="text-xl font-semibold">Upcoming interviews</h2>
-        {upcomingInterviews.slice(0, 3).map((event) => <button key={event.id} type="button" className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border p-4 text-left hover:bg-neutral-50" onClick={() => { focusEvent(event.id); onNavigate("calendar") }}><span className="font-medium">{event.title}</span><span className="text-sm text-neutral-500">{event.date} · {event.time}</span></button>)}
-      </section>}
-
-      <section aria-labelledby="drafts-heading" className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div><h2 id="drafts-heading" className="text-xl font-semibold tracking-tight">Drafts in Progress</h2><p className="mt-1 text-sm text-neutral-500">Pick up where you left off.</p></div>
-          <Button variant="ghost" onClick={() => onNavigate("discover")}>Browse clubs <ArrowUpRight className="size-4" /></Button>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {drafts.map((app) => {
-            const total = app.essaysTotal ?? 0
-            const completed = Math.min(total, Math.max(0, app.essaysWritten ?? 0))
-            const percent = total > 0 ? Math.floor(completed / total * 100) : 0
-            return (
-              <article key={app.id} className="flex flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5">
-                <div className="flex items-center gap-3">
-                  <ClubLogo clubId={app.clubId} logoUrl={app.logoUrl ?? (app.clubId === "vvf" ? "/logos/vvf.webp" : undefined)} text={app.logoText} color={app.color} />
-                  <div className="min-w-0"><h3 className="text-sm font-semibold tracking-tight">{app.clubName}</h3>{app.deadline && <p className="mt-1 text-xs font-medium text-red-600">{app.deadline}</p>}</div>
-                </div>
-                <div className="mt-auto space-y-2">
-                  <Progress value={percent} aria-label={`${app.clubName} completion`} className="h-2 bg-neutral-100 [&_[data-slot=progress-indicator]]:bg-[#ea580c]" />
-                  <p className="text-xs text-neutral-500">{percent}% Complete · {completed} of {total} essays written</p>
-                </div>
-                <Button className={`${primaryButton} w-full`} onClick={() => openApplication(app)}>Continue Application</Button>
-              </article>
-            )
-          })}
-        </div>
-        {drafts.length === 0 && <p className="rounded-xl border border-neutral-200 p-6 text-sm text-neutral-500">No drafts in progress. Explore clubs to start an application.</p>}
-      </section>
-
-      <section aria-labelledby="applications-heading" className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        <div className="flex items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4">
-          <h2 id="applications-heading" className="text-xl font-semibold tracking-tight">My applications <span className="ml-2 text-sm font-medium text-neutral-400">{submitted.length}</span></h2>
-          <Button variant="ghost" size="sm" onClick={() => onNavigate("tracker")}>View all <ArrowUpRight className="size-4" /></Button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[540px] text-left text-sm">
-            <thead className="border-b border-neutral-200 text-xs uppercase tracking-wide text-neutral-500"><tr><th scope="col" className="px-5 py-3 font-medium">Club Name</th><th scope="col" className="px-5 py-3 font-medium">Status</th><th scope="col" className="px-5 py-3 font-medium">Last Updated</th></tr></thead>
-            <tbody className="divide-y divide-neutral-100">
-              {submitted.map((app) => {
-                return <tr key={app.id} className="hover:bg-neutral-50"><td className="px-5 py-4"><button onClick={() => openApplication(app)} className="flex items-center gap-3 text-left font-semibold hover:underline focus-visible:outline-2 focus-visible:outline-orange-600" aria-label={`View application to ${app.clubName}`}><ClubLogo clubId={app.clubId} logoUrl={app.logoUrl} text={app.logoText} color={app.color} size="sm" />{app.clubName}</button></td><ApplicationProgressCell app={app} /><td className="px-5 py-4 text-neutral-500"><span title="Submission date; no later update recorded">{app.submitted}</span></td></tr>
-              })}
-              {submitted.length === 0 && <tr><td colSpan={3} className="p-8 text-center text-neutral-500">Your submitted applications will appear here.</td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <Button onClick={() => window.location.reload()}>Try again</Button>
+        </section>
+      ) : (
+        <>
+          <div className="oc-home-summary" aria-label="Recruiting summary">
+            <button onClick={() => onNavigate("tracker")}>
+              <strong>{active.length}</strong> active{" "}
+              {active.length === 1 ? "application" : "applications"}
+            </button>
+            {!agendaUnavailable && (
+              <>
+                <span aria-hidden="true" />
+                <button onClick={() => onNavigate("calendar")}>
+                  <strong>{agenda.length}</strong> upcoming{" "}
+                  {agenda.length === 1 ? "event" : "events"}
+                </button>
+              </>
+            )}
+            {interviews.length > 0 && (
+              <>
+                <span aria-hidden="true" />
+                <button onClick={() => openEvent(interviews[0])}>
+                  <strong>{interviews.length}</strong>{" "}
+                  {interviews.length === 1 ? "interview" : "interviews"}
+                </button>
+              </>
+            )}
+          </div>
+          <section className="oc-home-next" aria-labelledby="home-next-title">
+            <div>
+              <p className="oc-home-eyebrow">
+                {next.kind === "discover" ? "Make your next move" : "Up next"}
+              </p>
+              <h2 id="home-next-title">{nextTitle}</h2>
+              <p>{nextCopy}</p>
+            </div>
+            <Button
+              onClick={() =>
+                next.kind === "application"
+                  ? openApplication(next.application)
+                  : next.kind === "event"
+                    ? openEvent(next.event)
+                    : onNavigate("discover")
+              }
+            >
+              {nextLabel}
+              <ArrowRight size={15} aria-hidden="true" />
+            </Button>
+          </section>
+        </>
+      )}
+      <div className="oc-home-columns">
+        <section className="oc-home-applications" aria-labelledby="home-applications-title">
+          <SectionTitle
+            id="home-applications-title"
+            title="Your applications"
+            action="View all"
+            onClick={() => onNavigate("tracker")}
+          />
+          {applications.length ? (
+            <ul className="oc-home-list">
+              {applications.slice(0, 5).map((app) => (
+                <ApplicationRow key={app.id} app={app} onOpen={() => openApplication(app)} />
+              ))}
+            </ul>
+          ) : (
+            <div className="oc-home-empty">
+              <FileText size={23} strokeWidth={1.5} aria-hidden="true" />
+              <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
+              <p>
+                {unavailable
+                  ? "Reload the page to try again."
+                  : "When you start an application, your progress and updates will appear here."}
+              </p>
+            </div>
+          )}
+          {applications.length > 5 && (
+            <p className="oc-home-list-note">Showing 5 of {applications.length} applications</p>
+          )}
+        </section>
+        <section className="oc-home-agenda" aria-labelledby="home-agenda-title">
+          <SectionTitle
+            id="home-agenda-title"
+            title="Coming up"
+            action="Calendar"
+            onClick={() => onNavigate("calendar")}
+          />
+          {agenda.length ? (
+            <ul className="oc-home-list">
+              {agenda.slice(0, 4).map((event) => (
+                <AgendaRow key={event.id} event={event} onOpen={() => openEvent(event)} />
+              ))}
+            </ul>
+          ) : (
+            <div className="oc-home-agenda-empty">
+              <CalendarDays size={22} strokeWidth={1.5} aria-hidden="true" />
+              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "No upcoming events"}</h3>
+              <p>
+                {agendaUnavailable
+                  ? "Reload the page to check your scheduled events."
+                  : "Your scheduled interviews and club events will appear here."}
+              </p>
+              {agendaUnavailable && (
+                <Button variant="ghost" className="mt-3" onClick={() => window.location.reload()}>
+                  Try again
+                </Button>
+              )}
+            </div>
+          )}
+        </section>
+        {updates.length > 0 && (
+          <section className="oc-home-updates" aria-labelledby="home-updates-title">
+            <SectionTitle
+              id="home-updates-title"
+              title="Updates for you"
+              action="Open inbox"
+              onClick={() => onNavigate("inbox")}
+            />
+            <ul className="oc-home-list">
+              {updates.map((update) => (
+                <li key={update.id}>
+                  <button
+                    className="oc-home-update"
+                    onClick={() => {
+                      focusNotification(update.id)
+                      onNavigate("inbox")
+                    }}
+                  >
+                    <span
+                      className="oc-home-update-indicator"
+                      data-unread={!update.read}
+                      aria-label={update.read ? "Read" : "Unread"}
+                    >
+                      <Bell size={16} aria-hidden="true" />
+                    </span>
+                    <span>
+                      <strong>{update.title}</strong>
+                      <span>{update.preview}</span>
+                      <small>
+                        {update.club}
+                        {update.createdAt && Number.isFinite(Date.parse(update.createdAt))
+                          ? ` · ${new Date(update.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+                          : ""}
+                      </small>
+                    </span>
+                    <ChevronRight size={15} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        <section className="oc-home-discovery" aria-labelledby="home-discover-title">
+          <Compass size={20} strokeWidth={1.5} aria-hidden="true" />
+          <h2 id="home-discover-title">There’s more to discover.</h2>
+          <p>Find clubs that share your interests. Take a closer look at what they’re building.</p>
+          <Button variant="ghost" onClick={() => onNavigate("discover")}>
+            Explore clubs
+            <ArrowRight size={14} aria-hidden="true" />
+          </Button>
+        </section>
+      </div>
     </div>
   )
 }

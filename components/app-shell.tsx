@@ -87,9 +87,9 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
 
 
   return (
-    <ApplicationStateProvider initialData={initialData}>
+    <ApplicationStateProvider initialData={initialData} persistLocalState={!initialSession && initialData == null}>
       <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
-            {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} />}
+            {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "discover" && <DiscoverView onNavigate={navigate} />}

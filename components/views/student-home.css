@@ -1,0 +1,475 @@
+.oc-student-home {
+  max-width: 1120px;
+  margin-inline: auto;
+  color: var(--foreground);
+  font-family: var(--oc-font-sans, var(--font-geist-sans)), sans-serif;
+}
+.oc-home-greeting h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.oc-home-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.035em;
+  color: var(--muted-foreground);
+}
+.oc-home-eyebrow > span {
+  margin-inline: 10px;
+  opacity: 0.5;
+}
+.oc-home-greeting > p:last-child {
+  font-size: 14px;
+  color: var(--muted-foreground);
+  line-height: 1.7;
+}
+.oc-home-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  margin: 20px 0 28px;
+}
+.oc-home-summary button {
+  min-height: 40px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-align: left;
+}
+.oc-home-summary strong {
+  margin-right: 5px;
+  font-size: 16px;
+  color: var(--foreground);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.oc-home-summary > span {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
+}
+.oc-home-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 26px 28px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand-orange);
+  border-radius: var(--oc-radius-md);
+  margin: 26px 0 42px;
+}
+.oc-home-next > div {
+  max-width: 630px;
+}
+.oc-home-next h2 {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.025em;
+  margin: 9px 0;
+  text-wrap: pretty;
+}
+.oc-home-next > div > p:last-child {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+.oc-home-next > button {
+  flex-shrink: 0;
+  min-height: 44px;
+  font-size: 12px;
+}
+.oc-home-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(270px, 1fr);
+  gap: 44px;
+}
+.oc-home-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.oc-home-section-title h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.oc-home-section-title button {
+  padding-inline: 6px;
+  font-size: 11px;
+  min-height: 36px;
+  color: var(--muted-foreground);
+}
+.oc-home-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.oc-home-list > li + li {
+  border-top: 1px solid var(--border);
+}
+.oc-home-application {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 0;
+  width: 100%;
+  text-align: left;
+  border-radius: 4px;
+}
+.oc-home-application > :first-child {
+  width: 36px;
+  height: 36px;
+}
+.oc-home-app-copy {
+  min-width: 0;
+}
+.oc-home-app-copy strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.oc-home-app-copy > span {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+.oc-home-application [data-slot="badge"] {
+  font-size: 10px;
+}
+.oc-home-row-arrow {
+  color: var(--muted-foreground);
+}
+.oc-home-list-note {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-top: 12px;
+}
+.oc-home-empty {
+  padding: 36px 10px 28px 0;
+}
+.oc-home-empty > svg,
+.oc-home-agenda-empty > svg {
+  color: var(--muted-foreground);
+  margin-bottom: 16px;
+}
+.oc-home-empty h3,
+.oc-home-agenda-empty h3 {
+  font-size: 14px;
+  font-weight: 500;
+}
+.oc-home-empty p,
+.oc-home-agenda-empty p {
+  max-width: 320px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+.oc-home-empty button {
+  margin-top: 20px;
+  font-size: 12px;
+  min-height: 44px;
+}
+.oc-home-agenda-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 12px;
+  align-items: start;
+  gap: 12px;
+  padding: 20px 0;
+  text-align: left;
+  border-radius: 4px;
+}
+.oc-home-date {
+  text-align: center;
+}
+.oc-home-date > span {
+  display: block;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+.oc-home-date strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.oc-home-agenda-copy strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 500;
+  margin: 4px 0 5px;
+}
+.oc-home-event-type {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.oc-home-agenda-copy > span:last-child:not(.oc-home-event-type) {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.oc-home-agenda-copy svg {
+  flex-shrink: 0;
+  align-self: center;
+}
+.oc-home-agenda-row > svg {
+  margin-top: 18px;
+  color: var(--muted-foreground);
+}
+.oc-home-agenda-empty {
+  padding-block: 28px;
+}
+.oc-home-updates {
+  margin-top: 34px;
+}
+.oc-home-update {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 14px;
+  text-align: left;
+  align-items: start;
+  gap: 12px;
+  padding: 20px 0;
+  border-radius: 4px;
+}
+.oc-home-update-indicator {
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+.oc-home-update-indicator[data-unread="true"] {
+  color: var(--brand-ink);
+}
+.oc-home-update > span:nth-child(2) > strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.oc-home-update > span:nth-child(2) > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+.oc-home-update small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.oc-home-update > svg {
+  margin-top: 5px;
+  color: var(--muted-foreground);
+}
+.oc-home-discovery {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid var(--border);
+}
+.oc-home-discovery > svg {
+  color: var(--muted-foreground);
+  margin-bottom: 13px;
+}
+.oc-home-discovery h2 {
+  font-size: 14px;
+  font-weight: 500;
+}
+.oc-home-discovery p {
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}
+.oc-home-discovery button {
+  font-size: 12px;
+  margin: 8px 0 0 -10px;
+  min-height: 44px;
+}
+.oc-student-home button {
+  cursor: pointer;
+  transition:
+    background-color 180ms,
+    color 180ms;
+}
+.oc-student-home button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+.oc-home-summary button:hover {
+  color: var(--foreground);
+}
+.oc-home-application:hover,
+.oc-home-agenda-row:hover,
+.oc-home-update:hover {
+  background: var(--card);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oc-home-next,
+  .oc-home-columns {
+    animation: oc-home-arrive 350ms var(--oc-ease-out) both;
+  }
+  .oc-home-columns {
+    animation-delay: 50ms;
+  }
+}
+@keyframes oc-home-arrive {
+  from {
+    opacity: 0.8;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 1150px) {
+  .oc-home-columns {
+    grid-template-columns: minmax(0, 1.35fr) minmax(250px, 1fr);
+    gap: 28px;
+  }
+  .oc-home-application {
+    grid-template-columns: 32px minmax(0, 1fr) 12px;
+    gap: 10px;
+  }
+  .oc-home-application [data-slot="badge"] {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .oc-home-row-arrow {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .oc-home-application > :first-child {
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (max-width: 700px) {
+  .oc-home-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .oc-home-next {
+    flex-direction: column;
+    align-items: start;
+    gap: 18px;
+    padding: 22px;
+    margin-bottom: 30px;
+  }
+  .oc-home-next h2 {
+    font-size: 18px;
+  }
+  .oc-home-next > button {
+    width: 100%;
+  }
+  .oc-home-summary {
+    gap: 0 13px;
+    margin-bottom: 20px;
+  }
+  .oc-home-summary > span {
+    display: none;
+  }
+  .oc-home-summary button {
+    font-size: 11px;
+  }
+  .oc-home-summary strong {
+    font-size: 15px;
+  }
+  .oc-home-application {
+    padding-block: 18px;
+  }
+  .oc-home-empty {
+    padding-top: 24px;
+  }
+  .oc-home-discovery {
+    margin-top: 18px;
+  }
+  .oc-home-greeting h1 {
+    font-size: 28px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-student-home button {
+    transition: none;
+  }
+  .oc-student-home [data-slot="skeleton"] {
+    animation: none;
+  }
+}
+
+/* Reading and keyboard order match: applications, agenda, updates, discovery. */
+.oc-home-columns {
+  row-gap: 32px;
+  align-items: start;
+}
+.oc-home-applications {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.oc-home-agenda {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  border-left: 1px solid var(--border);
+  padding-left: 32px;
+}
+.oc-home-updates {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0;
+  min-width: 0;
+}
+.oc-home-discovery {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 0;
+  margin-left: 32px;
+}
+@media (max-width: 1150px) {
+  .oc-home-agenda {
+    padding-left: 24px;
+  }
+  .oc-home-discovery {
+    margin-left: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .oc-home-columns > section {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .oc-home-agenda {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .oc-home-discovery {
+    margin-left: 0;
+  }
+}
