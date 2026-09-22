@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
-import { ArrowLeft, ArrowRight, Check, Mail, ShieldCheck } from "lucide-react"
+import { useState, useEffect, type FormEvent } from "react"
+import { ArrowLeft, ArrowRight, Check, Loader2, Mail, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,21 +10,61 @@ import { isUvaEmail } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 
-export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student" }: {
+/** Standard Microsoft 4-square logo — no extra dependency. */
+function MicrosoftIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" className={className} aria-hidden="true">
+      <rect x="1" y="1" width="9" height="9" fill="#f25022" />
+      <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
+      <rect x="11" y="1" width="9" height="9" fill="#7fba00" />
+      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+    </svg>
+  )
+}
+
+export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
   onEnter: (view: ViewId) => void
   onBack: () => void
   onCreateAccount?: () => void
   initialRole?: "student" | "leader"
+  /** Pre-populated error message, e.g. from an OAuth redirect error. */
+  initialError?: string
 }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [microsoftLoading, setMicrosoftLoading] = useState(false)
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "verify">("email")
-  const [error, setError] = useState("")
+  const [error, setError] = useState(initialError)
   const [notice, setNotice] = useState("")
 
+  // Sync initialError prop (may arrive after mount if AppShell reads URL params)
+  useEffect(() => {
+    if (initialError) setError(initialError)
+  }, [initialError])
+
   const supabase = createClient()
+
+  async function handleMicrosoftLogin() {
+    if (microsoftLoading) return
+    setMicrosoftLoading(true)
+    setError("")
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "azure",
+      options: {
+        scopes: "email",
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (oauthError) {
+      setError(oauthError.message)
+      setMicrosoftLoading(false)
+    }
+    // If no error, the browser is redirecting — keep loading state
+  }
 
   async function signIn(event: FormEvent) {
     event.preventDefault()
@@ -98,17 +138,44 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
           <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Sign in with the UVA email and password you used to create your account." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
           {step === "email" ? (
-            <form noValidate onSubmit={signIn} className="mt-8 space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="uva-email">UVA email address</Label>
-                <Input id="uva-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => { setEmail(event.target.value); setError("") }} aria-invalid={!!error} aria-describedby={error ? "email-hint auth-error" : "email-hint"} placeholder="computingid@virginia.edu" className="h-12" />
-                <p id="email-hint" className="text-xs text-neutral-500">Only @virginia.edu email addresses are supported.</p>
+            <>
+              {/* ── Microsoft / UVA OAuth ── */}
+              <div className="mt-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={microsoftLoading || loading}
+                  onClick={handleMicrosoftLogin}
+                  className="h-12 w-full gap-3 text-[15px] font-medium"
+                >
+                  {microsoftLoading ? (
+                    <><Loader2 className="size-4 animate-spin" />Redirecting…</>
+                  ) : (
+                    <><MicrosoftIcon className="size-5" />Continue with UVA</>
+                  )}
+                </Button>
               </div>
-              <div className="space-y-2"><Label htmlFor="login-password">Password</Label><Input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} className="h-12" /></div>
-              {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" disabled={loading || !password} className="h-12 w-full">{loading ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
-              <button type="button" disabled={loading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead (requires email delivery)</button>
-            </form>
+
+              {/* ── Divider ── */}
+              <div className="my-6 flex items-center gap-4">
+                <div className="h-px flex-1 bg-neutral-200" />
+                <span className="text-xs font-medium text-neutral-400">or</span>
+                <div className="h-px flex-1 bg-neutral-200" />
+              </div>
+
+              {/* ── Email / password form ── */}
+              <form noValidate onSubmit={signIn} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="uva-email">UVA email address</Label>
+                  <Input id="uva-email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required value={email} onChange={(event) => { setEmail(event.target.value); setError("") }} aria-invalid={!!error} aria-describedby={error ? "email-hint auth-error" : "email-hint"} placeholder="computingid@virginia.edu" className="h-12" />
+                  <p id="email-hint" className="text-xs text-neutral-500">Only @virginia.edu email addresses are supported.</p>
+                </div>
+                <div className="space-y-2"><Label htmlFor="login-password">Password</Label><Input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} className="h-12" /></div>
+                {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
+                <Button type="submit" disabled={loading || !password || microsoftLoading} className="h-12 w-full">{loading ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
+                <button type="button" disabled={loading || microsoftLoading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead (requires email delivery)</button>
+              </form>
+            </>
           ) : (
             <form onSubmit={verifyCode} className="mt-7 space-y-5">
               <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">{notice}</div>
@@ -135,3 +202,4 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     </div>
   )
 }
+

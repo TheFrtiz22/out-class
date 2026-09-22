@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
 import { ApplicationStateProvider } from "@/lib/application-state"
@@ -32,7 +32,28 @@ const adminViewIds: ViewId[] = [
   "broadcast-messages",
 ]
 
+/** Map URL error codes from OAuth / auth callback redirects to user-facing messages. */
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  "uva_only": "Please sign in using your UVA Microsoft account (@virginia.edu).",
+  "auth-code-expired": "Your sign-in link has expired. Please try again.",
+}
+
 export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+  // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
+  const [authError, setAuthError] = useState("")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const errorCode = params.get("error")
+    if (errorCode && AUTH_ERROR_MESSAGES[errorCode]) {
+      setAuthError(AUTH_ERROR_MESSAGES[errorCode])
+      // Clean the URL so the error doesn't persist on refresh
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, "", cleanUrl)
+    }
+  }, [])
+
   const [view, setView] = useState<ViewId>(
     initialSession
       ? hasProfile
@@ -42,6 +63,13 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   )
   const [appMode, setAppMode] = useState<AppMode>(adminViewIds.includes(initialView) ? "admin" : "student")
   function navigate(next: ViewId) { setView(embedded && next === "landing" ? initialView : next) }
+
+  // If an auth error was found in the URL, force the auth view so the user sees the message
+  useEffect(() => {
+    if (authError && !initialSession) {
+      setView("auth")
+    }
+  }, [authError, initialSession])
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {
@@ -68,7 +96,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   }
 
   if (view === "auth") {
-    return <AuthView onCreateAccount={() => setView("student-onboarding")} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} />
+    return <AuthView onCreateAccount={() => setView("student-onboarding")} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />
   }
 
   if (view === "student-onboarding") {
@@ -106,3 +134,4 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
     </ApplicationStateProvider>
   )
 }
+
