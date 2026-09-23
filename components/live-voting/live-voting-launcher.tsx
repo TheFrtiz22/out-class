@@ -27,7 +27,7 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
     setOpen(false)
   }
   return <>
-    <Button variant="outline" size="sm" className="h-8 text-xs shadow-none" disabled={!applicants.length} onClick={() => { setMin(String(Math.min(15, applicants.length))); setMax(String(Math.min(20, applicants.length))); setError(""); setOpen(true) }}><Radio className="size-3.5" />Live Voting</Button>
+    <Button variant="outline" size="sm" className="h-8 text-xs shadow-none" disabled={!applicants.length} onClick={() => { setMin(String(Math.min(15, applicants.length))); setMax(String(Math.min(20, applicants.length))); setError(""); setOpen(true) }}><Radio className="size-3.5" />Voting preview</Button>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="border-neutral-200 bg-white font-sans text-neutral-950 shadow-none"><DialogHeader><DialogTitle className="text-2xl tracking-tight">Set the target. Start the discussion.</DialogTitle><DialogDescription>Present {applicants.length} applicants from your current filtered pool, in the displayed order. Set your target quota and the number of voting members.</DialogDescription></DialogHeader>
       <form onSubmit={start} className="space-y-5">
         <fieldset className="grid grid-cols-2 gap-4"><legend className="mb-3 text-sm font-medium">Target quota</legend><div className="space-y-2"><Label htmlFor="voting-min">Minimum passes</Label><Input id="voting-min" type="number" min={1} max={applicants.length} step={1} required value={min} onChange={event => setMin(event.target.value)} /></div><div className="space-y-2"><Label htmlFor="voting-max">Maximum passes</Label><Input id="voting-max" type="number" min={1} max={applicants.length} step={1} required value={max} onChange={event => setMax(event.target.value)} /></div></fieldset>
@@ -37,6 +37,6 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
         <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" className="bg-black text-white hover:bg-neutral-800">Open waiting room</Button></DialogFooter>
       </form>
     </DialogContent></Dialog>
-    <Dialog open={!!session} onOpenChange={() => {}}><DialogContent showCloseButton={false} aria-describedby={undefined} className="inset-0 h-svh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-0 shadow-none sm:max-w-none" onEscapeKeyDown={event => event.preventDefault()}><DialogTitle className="sr-only">Live voting presentation</DialogTitle>{session && <ProctorPresentationView initialSession={session} onClose={() => setSession(null)} />}</DialogContent></Dialog>
+    <Dialog open={!!session} onOpenChange={() => {}}><DialogContent showCloseButton={false} aria-describedby={undefined} className="inset-0 h-svh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 p-0 shadow-none sm:max-w-none" onEscapeKeyDown={event => event.preventDefault()}><DialogTitle className="sr-only">Local voting preview</DialogTitle>{session && <ProctorPresentationView initialSession={session} onClose={() => setSession(null)} />}</DialogContent></Dialog>
   </>
 }

@@ -1,9 +1,12 @@
 "use client"
 
+import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
+import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
 import { getClubPipeline, moveApplicantRound, setApplicationStatus } from "@/actions/crm"
 import { submitEvaluation } from "@/actions/evaluations"
+import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
@@ -51,10 +54,14 @@ const average = (app: Candidate) =>
 
 export function LiveLeaderWorkspace() {
   const { user } = useAuth()
+  const { leaderFocus } = useApplicationState()
   const clubs = (user?.memberships || []).filter(
     (item) => item.role === "PRESIDENT" || item.role === "RECRUITMENT_LEAD",
   )
   const [clubId, setClubId] = useState("")
+  useEffect(() => {
+    if (leaderFocus) setClubId(leaderFocus.clubId)
+  }, [leaderFocus])
   const club = clubs.find((item) => item.clubId === clubId) || clubs[0]
   if (!club)
     return (
@@ -95,6 +102,7 @@ export function LiveLeaderWorkspace() {
 }
 
 function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
+  const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
@@ -217,6 +225,15 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   )
   const active = applicants.find((app) => app.id === activeId)
   const activeIndex = filtered.findIndex((app) => app.id === activeId)
+  useEffect(() => {
+    if (!data || loading || !leaderFocus || leaderFocus.clubId !== membership.clubId) return
+    if (leaderFocus.roundId) setRound(leaderFocus.roundId)
+    if (leaderFocus.applicantId) {
+      const target = data.applications.find((app) => app.id === leaderFocus.applicantId)
+      if (target) open(target)
+    }
+    clearLeaderFocus()
+  }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
   function open(app?: Candidate) {
     if (busy || (dirty && !window.confirm("Discard your unsaved review changes?"))) return
     setActiveId(app?.id || null)
@@ -338,12 +355,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       setDescending(false)
     }
   }
-  if (loading)
-    return (
-      <p role="status" className="py-10 text-sm text-muted-foreground">
-        Loading applicants…
-      </p>
-    )
+  if (loading) return <WorkspaceLoading label="Loading applicants…" />
   if (!data || error)
     return (
       <div role="alert" className="space-y-3">
@@ -447,6 +459,25 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           Refresh
         </Button>
       </div>
+      <BoardDecisionMode
+        applicants={filtered}
+        rounds={data.rounds}
+        clubId={membership.clubId}
+        clubName={membership.club.name}
+        canDecide={membership.role === "PRESIDENT"}
+        onDecision={(id, status) =>
+          setData((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  applications: previous.applications.map((app) =>
+                    app.id === id ? { ...app, status } : app,
+                  ),
+                }
+              : previous,
+          )
+        }
+      />
       <details className="text-sm">
         <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
           Academic filters

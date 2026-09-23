@@ -42,12 +42,12 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
   const initials = user?.profile ? `${user.profile.firstName[0] ?? ""}${user.profile.lastName[0] ?? ""}` : user?.email?.slice(0, 2).toUpperCase() ?? "OC"
   const unread = notifications.filter(item => !item.read).length
   const canSwitch = !!user?.adminRoles.length || (!loading && !user)
-  const searchItems: NavItem[] = [...items, ...(!items.some(item => item.id === "student-profile") ? [{ id: "student-profile" as const, title: "Profile", icon: UserRound }] : []), { id: "inbox", title: "Notifications", icon: Bell }]
+  const searchItems: NavItem[] = [...(leader && user && !user.adminRoles.length ? studentNav : items), ...(!items.some(item => item.id === "student-profile") ? [{ id: "student-profile" as const, title: "Profile", icon: UserRound }] : []), { id: "inbox", title: "Notifications", icon: Bell }]
 
   function navigate(next: ViewId) {
     drawerNavigated.current = mobileOpen
     setMobileOpen(false)
-    if ((next === "student-profile" || next === "inbox") && leader) onModeChange("student")
+    if ((studentNav.some(item => item.id === next) || next === "inbox") && leader) onModeChange("student")
     onNavigate(next)
   }
   function switchMode(mode: AppMode) { drawerNavigated.current = mobileOpen; setMobileOpen(false); onModeChange(mode) }
@@ -64,6 +64,16 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
     media.addEventListener("change", close)
     return () => media.removeEventListener("change", close)
   }, [])
+  useEffect(() => {
+    const shortcut = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "k") return
+      if (document.querySelector('[role="dialog"][data-state="open"]') && !searchOpen) return
+      event.preventDefault()
+      setSearchOpen(value => !value)
+    }
+    window.addEventListener("keydown", shortcut)
+    return () => window.removeEventListener("keydown", shortcut)
+  }, [searchOpen])
   async function signOut() {
     setSigningOut(true)
     try {
@@ -109,8 +119,8 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
           mainRef.current?.focus({ preventScroll: true })
         }} className="w-[min(88vw,320px)] gap-0 bg-background"><SheetTitle className="sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Navigate OutClass and manage your account.</SheetDescription>{sidebar(true)}</SheetContent></Sheet>
         <div className="flex min-w-0 flex-1 items-center gap-2 text-sm"><span className="hidden shrink-0 text-muted-foreground md:inline">{leader ? "Recruitment" : "My workspace"}</span><ChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted-foreground md:block" /><span className="truncate font-medium">{title}</span></div>
-        <Button variant="ghost" onClick={() => setSearchOpen(true)} className="hidden gap-2 text-muted-foreground sm:inline-flex"><Search aria-hidden="true" />Find a page</Button>
-        <IconButton aria-label="Find a page" onClick={() => setSearchOpen(true)} className="sm:hidden"><Search /></IconButton>
+        <Button variant="ghost" onClick={() => setSearchOpen(true)} className="hidden gap-2 text-muted-foreground sm:inline-flex"><Search aria-hidden="true" />Search <kbd className="ml-2 rounded border border-border px-1.5 py-0.5 text-[10px]">⌘ / Ctrl K</kbd></Button>
+        <IconButton aria-label="Search OutClass" onClick={() => setSearchOpen(true)} className="sm:hidden"><Search /></IconButton>
         <IconButton aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} onClick={() => navigate("inbox")} className="relative"><Bell />{unread > 0 && <span aria-hidden="true" className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
         <div className="hidden border-l border-border pl-3 sm:block">{account(true)}</div>
       </header>
@@ -122,6 +132,6 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       </main>
     </div>
     {!leader && <div className="fixed inset-x-0 bottom-0 z-[var(--oc-z-sticky)] border-t border-border bg-card px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] lg:hidden"><ShellNavigation items={studentNav} view={view} onNavigate={navigate} label="Primary mobile navigation" mobile /></div>}
-    <NavigationSearch key={appMode} open={searchOpen} onOpenChange={setSearchOpen} items={searchItems} onNavigate={navigate} />
+    <NavigationSearch leader={leader} key={`${appMode}-${user?.id || "preview"}`} open={searchOpen} onOpenChange={setSearchOpen} items={searchItems} onNavigate={navigate} />
   </div>
 }

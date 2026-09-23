@@ -1,0 +1,7 @@
+@keyframes oc-voting-resolve {
+  from { opacity: .3; transform: translateY(10px) scale(.994); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .oc-voting-candidate { animation: oc-voting-resolve 420ms cubic-bezier(.22,1,.36,1) both; }
+}

@@ -64,6 +64,9 @@ const statusUpdateSchema = z.object({
   clubId: z.string().uuid(),
   applicationId: z.string().uuid(),
   status: z.enum(["IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"]),
+  expectedStatus: z
+    .enum(["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"])
+    .optional(),
 })
 
 export async function setApplicationStatus(data: z.infer<typeof statusUpdateSchema>) {
@@ -73,7 +76,11 @@ export async function setApplicationStatus(data: z.infer<typeof statusUpdateSche
   await requireClubRole(parsed.clubId, ["PRESIDENT"])
 
   const result = await prisma.application.updateMany({
-    where: { id: parsed.applicationId, clubId: parsed.clubId, status: { not: "DRAFTING" } },
+    where: {
+      id: parsed.applicationId,
+      clubId: parsed.clubId,
+      status: parsed.expectedStatus ?? { not: "DRAFTING" },
+    },
     data: { status: parsed.status },
   })
   if (result.count !== 1) throw new Error("Application is not available for this club.")

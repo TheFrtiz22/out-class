@@ -116,7 +116,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
 
   return (
     <ApplicationStateProvider initialData={initialData} persistLocalState={!initialSession && initialData == null}>
-      <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
+      {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
             {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
@@ -126,11 +126,10 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && <InterviewSchedulerView onNavigate={navigate} />}
-            {view === "interview-workspace" && <InterviewWorkspaceView />}
             {view === "broadcast-messages" && <BroadcastMessagesView />}
             {view === "club-manager" && <ClubManagerView />}
             {view === "club-management-portal" && <ClubManagementPortalView />}
-      </DashboardLayout>
+      </DashboardLayout>}
     </ApplicationStateProvider>
   )
 }

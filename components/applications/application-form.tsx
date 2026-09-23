@@ -164,7 +164,7 @@ export function ApplicationForm({
     } else setConfirm(true)
   }
   return (
-    <div data-application-form className="space-y-7">
+    <div data-application-form data-unsaved={dirty} data-saving={busy} className="space-y-7">
       <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4 text-sm">
         <p>
           {required.length

@@ -1,6 +1,8 @@
-# Live Voting Mode
+# Local voting preview
 
-In Applicant CRM, select **Live Voting**. The session snapshots the current
+For the authenticated board-review workflow, see [voting-mode.md](voting-mode.md). Real multi-device infrastructure is separately scoped in [voting-backend.md](voting-backend.md).
+
+In the local preview CRM, select **Voting preview**. The session snapshots the current
 filtered applicant pool and its order. The setup modal validates a target range
 and voting member count. Use **Preview voting pad** for an embedded demonstration
 or **Open member tab** for the separate mobile layout at

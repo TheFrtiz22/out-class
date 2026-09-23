@@ -33,3 +33,9 @@ test('valid evaluations preserve server scoring and reviewer identity',async()=>
  assert.equal(payload.create.interviewerId,'reviewer');assert.equal(payload.create.score,8);assert.equal(payload.create.notes,'Note')
  await assert.rejects(action.submitEvaluation({clubId,applicationId,roundName:'Review',score:11}))
 })
+
+test('board decisions use the expected status and reject stale writes',async()=>{
+ const roles=[];const action=load('actions/crm.ts',{application:{updateMany:async args=>{assert.deepEqual(args.where,{id:applicationId,clubId,status:'INTERVIEWING'});return {count:0}}}},roles)
+ await assert.rejects(action.setApplicationStatus({clubId,applicationId,status:'ACCEPTED',expectedStatus:'INTERVIEWING'}),/Application/)
+ assert.deepEqual(roles[0],[clubId,['PRESIDENT']])
+})

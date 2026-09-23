@@ -33,7 +33,11 @@ type ClubRef = {
   color: string
 }
 
+type LeaderFocus = { clubId: string; applicantId?: string; roundId?: string }
 type ApplicationStateValue = {
+  leaderFocus: LeaderFocus | null
+  focusLeader: (value: LeaderFocus) => void
+  clearLeaderFocus: () => void
   hydrated: boolean
   syncApplications: (apps: TrackedApplication[]) => void
   trackedApps: TrackedApplication[]
@@ -88,6 +92,8 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     dueInHours: 0
   })) || []
 
+  const [leaderFocus, focusLeader] = useState<LeaderFocus | null>(null)
+  const clearLeaderFocus = useCallback(() => focusLeader(null), [])
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(serverApps)
   const [notifications, setNotifications] = useState<Notification[]>([])
   
@@ -271,6 +277,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const value = useMemo(
     () => ({
       hydrated,
+      leaderFocus, focusLeader, clearLeaderFocus,
       syncApplications: setTrackedApps,
       trackedApps,
       notifications,
@@ -289,6 +296,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     }),
     [
+      leaderFocus, clearLeaderFocus,
       hydrated,
       trackedApps,
       notifications,

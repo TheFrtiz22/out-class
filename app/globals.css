@@ -154,3 +154,22 @@
     --shell-bottom-inset: calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
+
+/* Restrained product interaction feedback; no layout-affecting motion. */
+@layer components {
+  [data-slot="button"]:not(:disabled):active { opacity: .88; }
+  [data-slot="command-item"], [data-slot="dropdown-menu-item"],
+  [data-slot="select-item"], [data-slot="tabs-trigger"], [data-slot="table-row"] {
+    transition: color var(--oc-duration-micro) var(--oc-ease-out), background-color var(--oc-duration-micro) var(--oc-ease-out), border-color var(--oc-duration-micro) var(--oc-ease-out);
+  }
+  .dashboard-layout a:not([data-slot="button"]) { text-underline-offset: .2em; }
+  .dashboard-layout a:not([data-slot="button"]):focus-visible,
+  .dashboard-layout select:focus-visible,
+  .dashboard-layout summary:focus-visible {
+    outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 3px;
+  }
+  [data-slot="input"], [data-slot="textarea"] { transition: border-color var(--oc-duration-micro) var(--oc-ease-out), box-shadow var(--oc-duration-micro) var(--oc-ease-out); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="button"]:not(:disabled):not([data-slot="tabs-trigger"]):active { transform: translateY(1px); }
+}
