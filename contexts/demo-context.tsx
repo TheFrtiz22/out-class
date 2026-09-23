@@ -1,8 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
-
-const STORAGE_KEY = "outclass-demo-mode"
+import { isDemoMode, DEMO_STORAGE_KEY } from "@/lib/demo-utils"
 
 interface DemoContextValue {
   /** Whether demo data is currently active. */
@@ -12,20 +11,6 @@ interface DemoContextValue {
 }
 
 const DemoContext = createContext<DemoContextValue | null>(null)
-
-/**
- * Checks whether demo mode is enabled.
- * Safe to call outside React (e.g. from lib/data.ts module scope).
- * Returns false during SSR.
- */
-export function isDemoMode(): boolean {
-  if (typeof window === "undefined") return false
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "true"
-  } catch {
-    return false
-  }
-}
 
 export function DemoDataProvider({ children }: { children: ReactNode }) {
   const [isDemoEnabled, setIsDemoEnabled] = useState(false)
@@ -39,9 +24,9 @@ export function DemoDataProvider({ children }: { children: ReactNode }) {
     try {
       const next = !isDemoMode()
       if (next) {
-        localStorage.setItem(STORAGE_KEY, "true")
+        localStorage.setItem(DEMO_STORAGE_KEY, "true")
       } else {
-        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(DEMO_STORAGE_KEY)
       }
     } catch {
       // Storage unavailable — toggle still works for this session

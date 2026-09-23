@@ -1,4 +1,4 @@
-import { isDemoMode } from "@/contexts/demo-context"
+import { isDemoMode } from "@/lib/demo-utils"
 import * as demo from "@/lib/demo-data"
 
 export type Stage = "Draft" | "Applied" | "Round 1" | "Round 2" | "Decision"
