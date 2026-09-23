@@ -2,14 +2,22 @@
 
 ## Enable access
 
-Demo Mode is available automatically on the local **development** server. Open `/preview`, then the account menu → **Demo Mode: Off — enable demo**. On mobile, open the navigation drawer to reach the account menu.
+Demo Mode uses the **same explicit opt-in and authenticated allowlist in Development, Preview, and Production**. Local development no longer bypasses authentication or configuration. Neither `NODE_ENV` nor `VERCEL_ENV` grants access.
 
-For a production deployment, configure these **server-only** environment variables:
+Configure these **server-only** variables in each intended Vercel environment (Production and Preview are separate scopes; Preview may have branch overrides):
 
-- `OUTCLASS_DEMO_ENABLED=true`
-- `OUTCLASS_DEMO_ALLOWED_EMAILS`: comma-separated presenter emails. The presenter must sign in with their actual authorized account first.
+- `OUTCLASS_DEMO_ENABLED=true` (unset/empty/`false` disables access).
+- `OUTCLASS_DEMO_ALLOWED_EMAILS`: comma-separated actual presenter UVA account emails. No wildcard, semicolon separator, trailing comma, or display-name format. Case and surrounding whitespace are normalized. Any invalid entry disables access to the whole list. Do not use `NEXT_PUBLIC_` prefixes.
 
-The toggle is hidden from other production users. Browser flags, demo roles, and localStorage cannot grant access. No environment file or secret was added to this repository. Production access cannot be exercised as a real allowlisted presenter here without the deployed authentication environment.
+Redeploy after changing Vercel variables. For local `next dev`, configure the same values in an uncommitted `.env.local` and restart, or pull the desired Vercel environment. See [Vercel environment configuration](https://vercel.com/docs/environment-variables).
+
+The existing authentication configuration must also work in that environment: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and the existing `DATABASE_URL` for ordinary account/profile flows. Configure Supabase’s allowed redirect URLs for the actual deployment origin and `/auth/callback`. Never change `NODE_ENV` to bypass access.
+
+Sign in with an allowlisted UVA account, then open the account menu → **Demo Mode: Off — enable demo**. On mobile, use the navigation drawer. The real account needs no production club-leader role to present the fictional clubs. Demo role switching never changes real memberships or credentials.
+
+The toggle is hidden from everyone else. `/api/demo` returns a safe `reason`: `available`, `disabled`, `invalid-configuration`, `sign-in-required`, or `not-allowlisted`. It never returns allowlist contents, email addresses, or credentials. Invalid configuration also emits a redacted warning in server logs. An auth verification error denies access even if a user object is returned. The OFF endpoint remains usable during authentication outages.
+
+No environment values or deployment settings were changed by this implementation. A live allowlisted login still requires your configured authentication service.
 
 Turning ON sets an HttpOnly, same-site cookie for eight hours and reloads into the isolated workspace. OFF removes that cookie and reloads the real application, preserving the actual login/session. The original local-preview browser state is not overwritten. Disabling demo access on the server removes stale demo cookies when the user returns. Other tabs receive an ON/OFF notification and reload; the presentation itself is intended for one active editing tab.
 
@@ -44,6 +52,8 @@ The normalized records are the source of truth: application answers, status, cur
 
 ## Isolation boundaries
 
+While the demo cookie is present, middleware also denies `/api/users/me` reads so a missed client fetch cannot mix the presenter’s real records into the demonstration. The cookie only denies live access; it never grants authorization. Legacy check-in/voting browser flags are local preview simulations, not demo access or production roles.
+
 `/api/demo` checks the actual server-verified email against the server allowlist, validates inputs and rejects cross-origin changes. Middleware refuses all non-GET/HEAD requests while the demo cookie is active, except the independently protected demo-mode endpoint. This also blocks accidentally missed server-action paths. The client upload adapter explains that real uploads are disabled. There is no Prisma seeding, database write, real email delivery or auth impersonation endpoint.
 
 Public club deep links redirect into the demo directory while authorized demo mode is active. The global array-swapping mechanism is removed from `lib/data.ts`; the old demo-data modules are no longer used by the new presentation. The server middleware uses the cookie only to **deny** writes; it never treats it as authentication or authorization to production data.
@@ -60,8 +70,10 @@ Public club deep links redirect into the demo directory while authorized demo mo
 
 ## Validation
 
+Configuration tests cover Production/Preview/Development with the same policy, malformed/missing variables, authenticated allowlist access, secure cookies, failed auth, cross-origin rejection, outage-safe exit, and live-account read blocking. Earlier workflow browser checks used the previous development shortcut; enabling the current local demo now requires a real allowlisted login.
+
 Unit tests cover deterministic counts and joins, unique fictional identities, club isolation, score persistence, stale decisions, blocked uploads, OFF delegation, refresh/date revival, reset, corrupt storage and failed-write rollback. Browser tests cover ON/OFF, multiple leader perspectives, refresh, reset, applicant scoring, opening the scheduled candidate, application save/submit, round advancement, board acceptance visible to the student, rescheduling/calendar coherence, and responsive widths. During the demo workflow tests, **zero production server-action requests** were observed; a direct mutation request was rejected with HTTP 403.
 
 The normal Node test suite, TypeScript, production build and available lint command are run at completion. ESLint was not installed before this change; its absence is reported rather than presented as a passing check. Live deployed allowlist/login behavior still requires configured production/staging credentials.
 
-Final results: **70/70 Node tests pass**, TypeScript passes, and the production build passes. Production browser checks also confirmed hidden/denied demo access for ordinary visitors, ignored legacy localStorage flags, cross-origin request rejection, mutation blocking, and cleanup of a revoked/unauthorized demo cookie. The available lint command still reports `eslint: command not found`.
+Configuration audit: **79/79 Node tests pass**, TypeScript passes, and the production build passes. Production browser checks also confirmed hidden/denied demo access for ordinary visitors, ignored legacy localStorage flags, cross-origin request rejection, mutation blocking, and cleanup of a revoked/unauthorized demo cookie. The available lint command still reports `eslint: command not found`.

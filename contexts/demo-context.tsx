@@ -25,7 +25,7 @@ export function DemoDataProvider({
   enabled?: boolean
   clearStaleSession?: boolean
 }) {
-  const [ready, setReady] = useState(!enabled),
+  const [ready, setReady] = useState(!enabled && !clearStaleSession),
     [state, setState] = useState<DemoState | null>(null),
     [error, setError] = useState("")
   const [epoch, setEpoch] = useState(0)
@@ -41,10 +41,11 @@ export function DemoDataProvider({
       }
     } else demoStore.stop()
     if (clearStaleSession)
-      void fetch("/api/demo", { cache: "no-store" }).catch(() =>
-        setError("Could not refresh demo access. Reload when your connection is restored."),
-      )
-    setReady(true)
+      void fetch("/api/demo", { cache: "no-store" })
+        .then(response => { if (!response.ok) throw new Error("Access refresh failed") })
+        .catch(() => setError("Could not refresh demo access. Reload when your connection is restored."))
+        .finally(() => setReady(true))
+    else setReady(true)
     const sync = (event: StorageEvent) => {
       if (event.key === "outclass.demo-mode-change") window.location.reload()
     }
@@ -61,8 +62,16 @@ export function DemoDataProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled }),
       })
-      if (!response.ok)
-        throw new Error("Demo mode could not be changed. Check your access and try again.")
+      if (!response.ok) {
+        const result = await response.json().catch(() => null)
+        const reasons: Record<string, string> = {
+          disabled: "Demo Mode is disabled for this deployment.",
+          "invalid-configuration": "Demo configuration is invalid. Check the deployment’s server environment variables.",
+          "sign-in-required": "Sign in with your authorized UVA account, then enable Demo Mode.",
+          "not-allowlisted": "This account is not on the demo presenter allowlist.",
+        }
+        throw new Error(reasons[result?.reason] || "Demo mode could not be changed. Check your access and try again.")
+      }
       if (enabled) demoStore.stop()
       try {
         localStorage.setItem("outclass.demo-mode-change", String(Date.now()))

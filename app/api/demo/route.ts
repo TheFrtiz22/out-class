@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
-import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
+import { getDemoAccess, DEMO_COOKIE } from "@/lib/demo/access"
 
 async function access() {
   const jar = await cookies()
   const client = await createClient(jar)
   const {
-    data: { user },
+    data: { user }, error,
   } = await client.auth.getUser()
-  return { allowed: canAccessDemo(user?.email), enabled: jar.get(DEMO_COOKIE)?.value === "1" }
+  return { ...getDemoAccess(error ? undefined : user?.email), enabled: jar.get(DEMO_COOKIE)?.value === "1" }
 }
 export async function GET() {
   const state = await access()
   const response = NextResponse.json(
-    { allowed: state.allowed, enabled: state.allowed && state.enabled },
+    { allowed: state.allowed, enabled: state.allowed && state.enabled, reason: state.reason },
     { headers: { "Cache-Control": "no-store" } },
   )
   if (!state.allowed) response.cookies.delete(DEMO_COOKIE)
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
   const input = await request.json().catch(() => null)
   if (typeof input?.enabled !== "boolean")
     return NextResponse.json({ error: "Invalid mode" }, { status: 400 })
-  const state = await access()
+  const state = input.enabled ? await access() : { allowed: false, reason: "disabled" as const }
   if (input.enabled && !state.allowed)
     return NextResponse.json(
-      { error: "Demo access is not enabled for this account." },
+      { error: "Demo access is not enabled for this account.", reason: state.reason },
       { status: 403 },
     )
   const response = NextResponse.json({ enabled: input.enabled })

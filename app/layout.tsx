@@ -31,8 +31,8 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
-  const { data: { user } } = await supabase.auth.getUser()
-  const demoAllowed = canAccessDemo(user?.email)
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const demoAllowed = canAccessDemo(authError ? undefined : user?.email)
   const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
 
   return (

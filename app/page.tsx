@@ -8,9 +8,9 @@ import { prisma } from "@/utils/prisma"
 export default async function Page() {
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(user?.email)) return <AppShell initialView="student-dashboard" />
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <AppShell initialView="student-dashboard" />
 
   let initialData = null
   let hasProfile = false

@@ -159,7 +159,7 @@ test("production access requires explicit switch and verified allowlisted email"
     }),
     false,
   )
-  assert.equal(canAccessDemo(undefined, { NODE_ENV: "development" }), true)
+  assert.equal(canAccessDemo(undefined, { NODE_ENV: "development" }), false)
 })
 
 test("corrupt demo storage resets safely and failed writes retain the previous state", () => {
@@ -182,4 +182,21 @@ test("corrupt demo storage resets safely and failed writes retain the previous s
   assert.equal(JSON.stringify(demoStore.get()), before)
   assert.throws(() => demoStore.reset(), /Storage full/)
   assert.equal(JSON.stringify(demoStore.get()), before)
+})
+
+ test("demo configuration fails closed consistently across all deployment environments", () => {
+  const { getDemoAccess } = harness().load("lib/demo/access.ts")
+  for (const VERCEL_ENV of [undefined, "development", "preview", "production"]) {
+    for (const NODE_ENV of ["development", "production", "test"]) {
+      const env = { VERCEL_ENV, NODE_ENV, OUTCLASS_DEMO_ENABLED: " true ", OUTCLASS_DEMO_ALLOWED_EMAILS: " Presenter@virginia.edu " }
+      assert.equal(getDemoAccess("presenter@virginia.edu", env).allowed, true)
+      assert.equal(getDemoAccess(undefined, env).reason, "sign-in-required")
+      assert.equal(getDemoAccess("other@virginia.edu", env).reason, "not-allowlisted")
+      for (const emails of [undefined, "", "*", "presenter@virginia.edu,", "presenter@virginia.edu;other@virginia.edu", "presenter@virginia.edu.evil.com"]) {
+        assert.equal(getDemoAccess("presenter@virginia.edu", { ...env, OUTCLASS_DEMO_ALLOWED_EMAILS: emails }).reason, "invalid-configuration")
+      }
+      assert.equal(getDemoAccess("presenter@virginia.edu", { ...env, OUTCLASS_DEMO_ENABLED: "yes" }).reason, "invalid-configuration")
+      for (const flag of [undefined, "", "false"]) assert.equal(getDemoAccess("presenter@virginia.edu", { ...env, OUTCLASS_DEMO_ENABLED: flag }).reason, "disabled")
+    }
+  }
 })
