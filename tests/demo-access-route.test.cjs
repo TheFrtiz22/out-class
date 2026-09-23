@@ -17,12 +17,13 @@ test('deployed demo endpoint verifies identity, issues secure cookie, and reject
     process.env.VERCEL_ENV = 'preview'
     process.env.OUTCLASS_DEMO_ENABLED = 'true'
     process.env.OUTCLASS_DEMO_ALLOWED_EMAILS = 'presenter@virginia.edu'
+    let email = "presenter@virginia.edu"
     let authError = null
     let authCalls = 0
     const api = load('app/api/demo/route.ts', {
       '@/lib/demo/access': access,
       'next/headers': { cookies: async () => ({ get: () => ({ value: '1' }) }) },
-      '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: authError } } } }) },
+      '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { email } }, error: authError } } } }) },
     })
     const request = (enabled, origin = 'https://demo.example') => new NextRequest('https://demo.example/api/demo', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ enabled }) })
     const on = await api.POST(request(true))
@@ -31,13 +32,24 @@ test('deployed demo endpoint verifies identity, issues secure cookie, and reject
     assert.match(on.headers.get('set-cookie'), /HttpOnly/)
     assert.match(on.headers.get('set-cookie'), /Secure/)
     assert.match(on.headers.get('set-cookie'), /SameSite=strict/i)
+    process.env.VERCEL_ENV = 'production'
+    assert.equal((await api.POST(request(true))).status, 200)
+    email = 'other@virginia.edu'
+    const denied = await api.POST(request(true))
+    assert.equal(denied.status, 403)
+    assert.equal((await denied.json()).reason, 'not-allowlisted')
+    email = 'presenter@virginia.edu'
     assert.equal((await api.POST(request(true, 'https://other.example'))).status, 403)
     authError = new Error('expired')
     assert.equal((await api.POST(request(true))).status, 403)
     const get = await api.GET()
+    assert.equal(get.cookies.get(access.DEMO_COOKIE).value, '')
     assert.deepEqual(await get.json(), { allowed: false, enabled: false, reason: 'sign-in-required' })
     const before = authCalls
-    assert.equal((await api.POST(request(false))).status, 200)
+    const off = await api.POST(request(false))
+    assert.equal(off.status, 200)
+    assert.equal(off.cookies.get(access.DEMO_COOKIE).value, '')
+    assert.equal(off.cookies.getAll().length, 1, 'Exit must not clear Supabase authentication cookies')
     assert.equal(authCalls, before)
   } finally {
     for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key]

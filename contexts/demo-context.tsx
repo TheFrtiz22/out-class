@@ -29,6 +29,7 @@ export function DemoDataProvider({
     [state, setState] = useState<DemoState | null>(null),
     [error, setError] = useState("")
   const [epoch, setEpoch] = useState(0)
+  const [cleanupRetry, setCleanupRetry] = useState(0)
   useEffect(() => {
     const unsubscribe = demoStore.subscribe(() =>
       setState(demoStore.active() ? demoStore.get() : null),
@@ -40,21 +41,34 @@ export function DemoDataProvider({
         setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
       }
     } else demoStore.stop()
-    if (clearStaleSession)
-      void fetch("/api/demo", { cache: "no-store" })
-        .then(response => { if (!response.ok) throw new Error("Access refresh failed") })
-        .catch(() => setError("Could not refresh demo access. Reload when your connection is restored."))
-        .finally(() => setReady(true))
-    else setReady(true)
+    let current = true
+    if (clearStaleSession) {
+      setReady(false)
+      setError("")
+      // Explicit exit clears the cookie even if auth is unavailable or access changed again.
+      void fetch("/api/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: false }),
+      })
+        .then(response => {
+          if (!response.ok) throw new Error("Access refresh failed")
+          if (current) setReady(true)
+        })
+        .catch(() => {
+          if (current) setError("Could not clear the previous demo session. Check your connection and try again.")
+        })
+    } else setReady(true)
     const sync = (event: StorageEvent) => {
       if (event.key === "outclass.demo-mode-change") window.location.reload()
     }
     window.addEventListener("storage", sync)
     return () => {
+      current = false
       unsubscribe()
       window.removeEventListener("storage", sync)
     }
-  }, [allowed, enabled, clearStaleSession])
+  }, [allowed, enabled, clearStaleSession, cleanupRetry])
   async function toggleDemo() {
     try {
       const response = await fetch("/api/demo", {
@@ -127,7 +141,7 @@ export function DemoDataProvider({
       {error && (
         <div role="alert" className="border-b bg-card p-4 text-sm">
           {error}
-          <button onClick={() => void toggleDemo()} className="ml-4 underline">
+          <button onClick={() => clearStaleSession ? setCleanupRetry(value => value + 1) : void toggleDemo()} className="ml-4 underline">
             {enabled ? "Exit demo" : "Try again"}
           </button>
         </div>
