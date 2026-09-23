@@ -105,6 +105,8 @@ export function LiveLeaderWorkspace() {
 
 function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
+  const { isDemoEnabled } = useDemoMode()
+  const { user } = useAuth()
   const [data, setData] = useState<Pipeline | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
