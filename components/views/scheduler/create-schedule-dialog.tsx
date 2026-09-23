@@ -46,7 +46,7 @@ export function CreateScheduleDialog({ selectedDate, onCreate }: { selectedDate:
           Create Schedule Block
         </Button>
       </DialogTrigger>
-      <DialogContent className="rounded-none border bg-white shadow-none sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Schedule Block</DialogTitle>
           <DialogDescription>Generate a grid of time slots for a location and date.</DialogDescription>

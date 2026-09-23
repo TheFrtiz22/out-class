@@ -173,3 +173,39 @@
 @media (prefers-reduced-motion: no-preference) {
   [data-slot="button"]:not(:disabled):not([data-slot="tabs-trigger"]):active { transform: translateY(1px); }
 }
+
+/* Responsive interaction floor: preserve zoom and keep overlays usable with the keyboard. */
+html { scroll-padding-top: 5rem; }
+[data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="alert-dialog-content"] {
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+[data-slot="sheet-content"] { max-height: 100dvh; }
+@media (max-width: 767px) {
+  [data-slot="dialog-content"], [data-slot="alert-dialog-content"] {
+    padding: 1.25rem;
+    scroll-padding-block: 3rem;
+  }
+  [data-slot="sheet-content"] {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: 16px; }
+  [data-slot="dialog-title"], [data-slot="sheet-title"] { padding-right: 2rem; line-height: 1.35; }
+  .dashboard-layout { padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); }
+}
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]), select,
+  [data-slot="button"], [data-slot="select-trigger"], [data-slot="tabs-trigger"],
+  [data-slot="dropdown-menu-item"], [data-slot="select-item"],
+  [data-slot="dialog-close"], [data-slot="sheet-content"] > button:last-child {
+    min-height: 44px;
+  }
+  [data-slot="button"][class*="size-"] { min-width: 44px; }
+}
+
+/* Toasts must not obscure the student's primary mobile destinations. */
+@media (max-width: 1023px) {
+  body:has(.dashboard-layout[data-workspace="student"]) {
+    --oc-toast-offset: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}

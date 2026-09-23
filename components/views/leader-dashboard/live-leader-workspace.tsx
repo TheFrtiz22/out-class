@@ -287,8 +287,12 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       requestAnimationFrame(() => heading.current?.focus())
     } else
       requestAnimationFrame(() => {
-        document
-          .querySelector<HTMLButtonElement>(`[data-applicant-id="${CSS.escape(activeId || "")}"]`)
+        Array.from(
+          document.querySelectorAll<HTMLButtonElement>(
+            `[data-applicant-id="${CSS.escape(activeId || "")}"]`,
+          ),
+        )
+          .find((button) => button.getClientRects().length > 0)
           ?.focus()
       })
   }
@@ -501,6 +505,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         <Button
           size="sm"
           variant="ghost"
+          className="hidden md:inline-flex"
           aria-pressed={compact}
           onClick={() => setCompact((value) => !value)}
         >
@@ -621,7 +626,81 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           </Button>
         )}
       </div>
-      <div className="min-w-0 overflow-x-auto rounded-lg border border-border bg-card">
+      <div className="space-y-3 md:hidden">
+        <label className="flex items-center justify-between gap-3 text-sm">
+          Sort applicants
+          <select
+            aria-label="Sort applicants"
+            className="min-h-11 rounded-md border border-border bg-card px-3"
+            value={sort}
+            onChange={(event) => sortBy(event.target.value)}
+          >
+            <option value="name">Name</option>
+            <option value="year">Class year</option>
+            <option value="status">Status</option>
+            <option value="score">Score</option>
+          </select>
+        </label>
+        <Button variant="ghost" size="sm" onClick={() => setDescending((value) => !value)}>
+          {descending ? "Descending ↓" : "Ascending ↑"}
+        </Button>
+        <ul className="divide-y divide-border border-y border-border">
+          {filtered.map((app) => (
+            <li key={app.id}>
+              <button
+                type="button"
+                data-applicant-id={app.id}
+                onClick={() => open(app)}
+                className="w-full space-y-3 py-5 text-left focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block break-words font-medium">{name(app)}</span>
+                    <span className="block break-all text-xs text-muted-foreground">
+                      {app.student.email}
+                    </span>
+                  </span>
+                  <Badge variant="secondary" className="shrink-0">
+                    {applicationStatusLabels[app.status]}
+                  </Badge>
+                </span>
+                <span className="block text-sm text-muted-foreground">
+                  {[
+                    app.student.studentProfile?.major,
+                    app.student.studentProfile?.gradYear &&
+                      `Class of ${app.student.studentProfile.gradYear}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "Education not provided"}
+                </span>
+                <span className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>
+                    {data.rounds.find((item) => item.id === app.roundId)?.name ||
+                      "Round not available"}
+                  </span>
+                  <span>
+                    {average(app) != null ? `Score ${average(app)?.toFixed(1)} / 10` : "Not scored"}
+                  </span>
+                  <span>
+                    {app.evaluations.length
+                      ? `${app.evaluations.length} evaluations`
+                      : "Unreviewed"}
+                  </span>
+                </span>
+                <span className="block text-xs font-medium">Review applicant →</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+        {!filtered.length && (
+          <p className="py-6 text-sm text-muted-foreground">
+            {applicants.length
+              ? "No applicants match these filters."
+              : "Submitted applications will appear here. Student drafts stay private."}
+          </p>
+        )}
+      </div>
+      <div className="hidden min-w-0 overflow-x-auto rounded-lg border border-border bg-card md:block">
         <Table>
           <TableHeader>
             <TableRow>

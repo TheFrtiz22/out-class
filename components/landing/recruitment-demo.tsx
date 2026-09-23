@@ -133,12 +133,15 @@ export function RecruitmentDemo() {
   const ref = useRef<HTMLElement>(null)
   useEffect(() => {
     const query = matchMedia("(prefers-reduced-motion: reduce)")
+    const compact = matchMedia("(max-width: 800px)")
     const motion = () => {
-      setReduced(query.matches)
-      setTick(query.matches ? 35 : 0)
+      const staticPreview = query.matches || compact.matches
+      setReduced(staticPreview)
+      setTick(staticPreview ? 35 : 0)
     }
     motion()
     query.addEventListener("change", motion)
+    compact.addEventListener("change", motion)
     let intersecting = false
     const visibility = () => setVisible(intersecting && !document.hidden)
     const observer = new IntersectionObserver(
@@ -153,6 +156,7 @@ export function RecruitmentDemo() {
     return () => {
       observer.disconnect()
       query.removeEventListener("change", motion)
+      compact.removeEventListener("change", motion)
       document.removeEventListener("visibilitychange", visibility)
     }
   }, [])

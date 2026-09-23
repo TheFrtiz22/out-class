@@ -5,18 +5,22 @@ const ts = require("typescript")
 const Module = require("node:module")
 const path = require("node:path")
 
+// Fixtures belong to the test; production intentionally starts with no applicants.
+const applicants = [
+  { id: "a1", name: "Alex Reed", email: "ar@virginia.edu", year: "Junior", major: "Economics", gpa: "3.8", satScore: 1400, status: "Applied" },
+  { id: "a2", name: "Naomi Cho", email: "nc@virginia.edu", year: "Sophomore", major: "Economics", gpa: "3.8", satScore: 1450, status: "Round 1" },
+]
 function loadTs(relative) {
   const filename = path.resolve(__dirname, relative)
   const model = new Module(filename, module)
   model.paths = Module._nodeModulePaths(path.dirname(filename))
   const standardRequire = model.require.bind(model)
-  model.require = name => name === "./data" ? loadTs("../lib/data.ts") : standardRequire(name)
+  model.require = name => name === "./data" ? { applicants } : standardRequire(name)
   const compiled = ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   model._compile(compiled, filename)
   return model.exports
 }
 const { defaultCustomization, removeStage, matchesCRMFilters, emptyFilters, customizationSchema } = loadTs("../lib/club-customization-model.ts")
-const { applicants } = loadTs("../lib/data.ts")
 
 test("GPA and class-year filters use AND and a strict greater-than comparison", () => {
   const filters = { ...emptyFilters, years: ["Sophomore"], minGpa: 3.5 }

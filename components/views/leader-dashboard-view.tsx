@@ -1,5 +1,6 @@
 "use client"
 
+import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useAuth } from "@/contexts/auth-context"
 import { LiveLeaderWorkspace } from "@/components/views/leader-dashboard/live-leader-workspace"
 import { LeadsTable } from "@/components/qr/leads-table"
@@ -53,7 +54,7 @@ const SCORING_CRITERIA = [
 
 export function LeaderDashboardView() {
   const { user, loading } = useAuth()
-  if (loading) return <p role="status">Loading recruitment workspace…</p>
+  if (loading) return <WorkspaceLoading label="Loading recruitment workspace" />
   if (user) return <LiveLeaderWorkspace />
   return <div className="space-y-5"><p className="border-b border-border pb-4 text-sm text-muted-foreground">Local preview · changes in these tools do not update real applicants.</p><LocalLeaderDashboardView /></div>
 }

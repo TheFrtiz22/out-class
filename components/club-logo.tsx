@@ -30,6 +30,7 @@ export function ClubLogo(props: ClubLogoProps) {
 
 function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fallback }: ClubLogoProps & { src: string }) {
   const [failed, setFailed] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const dimensions = cn("shrink-0 shadow-none", sizeMap[size], className)
 
   if (failed) {
@@ -47,12 +48,16 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
   }
 
   return (
-    <img
-      src={src}
-      ref={(image) => { if (image?.complete && image.naturalWidth === 0) setFailed(true) }}
-      alt={alt}
-      className={cn("border border-neutral-200 bg-white object-contain", dimensions)}
-      onError={() => setFailed(true)}
-    />
+    <span className={cn("relative inline-flex items-center justify-center overflow-hidden font-semibold text-white", dimensions)} style={{ backgroundColor: color }}>
+      <span aria-hidden="true">{text}</span>
+      <img
+        src={src}
+        ref={(image) => { if (image?.complete) { if (image.naturalWidth === 0) setFailed(true); else setLoaded(true) } }}
+        alt={alt}
+        className={cn("absolute inset-0 size-full rounded-[inherit] border border-border bg-card object-contain", loaded ? "opacity-100" : "opacity-0")}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+    </span>
   )
 }

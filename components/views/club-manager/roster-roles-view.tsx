@@ -86,7 +86,7 @@ export function RosterRolesView() {
         ...defaultPermissionsForRole(inviteRole),
       },
     ])
-    toast.success("Invite sent", { description: `${email} will receive an invite link.` })
+    toast.success("Preview member added", { description: "No invitation email was sent." })
     setInviteOpen(false)
     setInviteEmail("")
     setInviteRole("General Member")
@@ -94,7 +94,7 @@ export function RosterRolesView() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+      <CardHeader className="flex flex-col items-start justify-between sm:flex-row gap-4 space-y-0">
         <div>
           <CardTitle className="text-base font-sans tracking-tight font-semibold">Member Roster & Permissions</CardTitle>
           <CardDescription>
@@ -104,7 +104,7 @@ export function RosterRolesView() {
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
             <Button size="sm" className="shrink-0">
-              <UserPlus className="size-4" /> Invite Member via @virginia.edu
+              <UserPlus className="size-4" /> Invite UVA member
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -142,13 +142,14 @@ export function RosterRolesView() {
               <Button variant="outline" onClick={() => setInviteOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleInvite}>Send Invite</Button>
+              <Button onClick={handleInvite}>Add to preview</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <p className="mb-3 text-xs text-muted-foreground md:hidden">For detailed permission comparisons, use a larger screen. Swipe the roster horizontally to reach all controls.</p>
+        <div className="overflow-x-auto" role="region" aria-label="Member roster and permissions" tabIndex={0}>
           <Table>
             <TableHeader>
               <TableRow>

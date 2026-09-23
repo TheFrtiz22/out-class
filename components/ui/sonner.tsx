@@ -8,6 +8,8 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
     <Sonner
       theme="light"
       richColors
+      offset={{ bottom: "var(--oc-toast-offset, 24px)" }}
+      mobileOffset={{ bottom: "var(--oc-toast-offset, 24px)", left: "16px", right: "16px" }}
       className="toaster group"
       style={
         {

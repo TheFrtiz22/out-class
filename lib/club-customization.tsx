@@ -27,10 +27,11 @@ export function ClubCustomizationProvider({ children }: { children: ReactNode })
 export function useClubCustomization(clubId = "vvf") {
   const context = useContext(Context)
   if (!context) throw new Error("ClubCustomizationProvider is required")
+  const { ready, setClubs } = context
   const state = context.clubs[clubId] ?? defaultCustomization(clubId)
   function update(change: (previous: ClubCustomization) => ClubCustomization) {
-    if (!context.ready) return
-    context.setClubs(previous => ({ ...previous, [clubId]: change(previous[clubId] ?? defaultCustomization(clubId)) }))
+    if (!ready) return
+    setClubs(previous => ({ ...previous, [clubId]: change(previous[clubId] ?? defaultCustomization(clubId)) }))
   }
   const stages = [...state.stages, { id: "Accepted", name: "Accepted" }, { id: "Rejected", name: "Rejected" }]
   function stageName(id: string) { return stages.find(stage => stage.id === id)?.name ?? id }

@@ -132,6 +132,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <main id="workspace-content" ref={mainRef} tabIndex={-1} aria-label={title} className={cn("mx-auto min-w-0 max-w-[1600px] px-4 py-6 outline-none sm:px-6 lg:px-8", !leader && "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-10", leader ? "lg:py-7" : "lg:py-10")}>
         <div key={view} className="shell-content-enter" data-view={view}>
           {view !== "student-dashboard" && <div data-view-heading className="mb-7 max-w-3xl"><h1 className="text-title font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{viewTitles[view].subtitle}</p></div>}
+          {["interview-scheduler", "club-manager", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) && <p role="note" className="mb-6 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted-foreground">Local preview · these tools do not publish club changes, send messages or invitations, or update the live recruitment pipeline.</p>}
           {children}
         </div>
       </main>

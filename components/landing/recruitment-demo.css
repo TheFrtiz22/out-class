@@ -438,3 +438,8 @@
     margin-top: 14px;
   }
 }
+
+/* Phones show a compact, immediately readable snapshot rather than a looping board. */
+@media (max-width: 540px) {
+  .oc-demo-applicant:nth-child(n + 4) { display: none; }
+}

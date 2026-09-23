@@ -248,12 +248,12 @@ export function BroadcastMessagesView() {
           {/* Action bar */}
           <div className="flex flex-col items-start gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-500">
-              Sends in-app push notification &amp; email digest.
+              Preview only. No notifications or emails will be delivered.
             </p>
             <div className="flex items-center gap-3">
               {sentJustNow && (
                 <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-                  <Check className="size-3.5" /> Broadcast sent
+                  <Check className="size-3.5" /> Added to preview
                 </span>
               )}
               <Button
@@ -262,7 +262,7 @@ export function BroadcastMessagesView() {
                 className="gap-2 bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
               >
                 <Send className="size-4" />
-                Send Broadcast Now
+                Add to preview history
               </Button>
             </div>
           </div>
