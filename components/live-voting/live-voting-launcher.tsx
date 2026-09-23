@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { ProctorPresentationView } from "./proctor-presentation-view"
 import { currentStudent, rosterMembers } from "@/lib/data"
-import { useDemoMode } from "@/contexts/demo-context"
 
 export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant[] }) {
   const [open, setOpen] = useState(false)
@@ -18,7 +17,6 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
   const [members, setMembers] = useState("5")
   const [error, setError] = useState("")
   const [session, setSession] = useState<VotingSession | null>(null)
-  const { isDemoEnabled } = useDemoMode()
   function start(event: FormEvent) {
     event.preventDefault()
     const problem = validateVotingSetup(applicants.length, Number(min), Number(max), Number(members))
@@ -26,35 +24,7 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
     const pin = String(100000 + crypto.getRandomValues(new Uint32Array(1))[0] % 900000)
     const eligibleMembers = [...rosterMembers.map(member => ({ id: member.id, email: member.email, name: member.name, initials: member.initials })), { id: currentStudent.email, email: currentStudent.email, name: currentStudent.name, initials: currentStudent.initials }]
     
-    if (isDemoEnabled) {
-      // Pre-fill active voting session state with mock participants, progress, and votes
-      const mockParticipants = Array.from({ length: 18 }, (_, i) => `mock-mem-${i}`)
-      const mockVotes: Record<string, Record<string, "pass" | "no-pass">> = {}
-      if (applicants[0]) {
-        // Pre-fill votes for the first applicant to show progress
-        mockVotes[applicants[0].id] = {}
-        for (let i = 0; i < 12; i++) mockVotes[applicants[0].id][`mock-mem-${i}`] = i % 3 === 0 ? "no-pass" : "pass"
-      }
-      
-      setSession({ 
-        id: crypto.randomUUID(), 
-        pin, 
-        clubId: "vvf", 
-        eligibleMembers, 
-        participants: mockParticipants, 
-        applicants: structuredClone(applicants), 
-        quota: { min: Number(min), max: Number(max) }, 
-        memberCount: 20, 
-        activeIndex: 0, 
-        slideRevision: 0, 
-        revision: 1, 
-        status: "active", 
-        votes: mockVotes, 
-        memberIds: mockParticipants 
-      })
-    } else {
-      setSession({ id: crypto.randomUUID(), pin, clubId: "vvf", eligibleMembers, participants: [], applicants: structuredClone(applicants), quota: { min: Number(min), max: Number(max) }, memberCount: Number(members), activeIndex: 0, slideRevision: 0, revision: 0, status: "lobby", votes: {}, memberIds: [] })
-    }
+    setSession({ id: crypto.randomUUID(), pin, clubId: "vvf", eligibleMembers, participants: [], applicants: structuredClone(applicants), quota: { min: Number(min), max: Number(max) }, memberCount: Number(members), activeIndex: 0, slideRevision: 0, revision: 0, status: "lobby", votes: {}, memberIds: [] })
     setOpen(false)
   }
   return <>

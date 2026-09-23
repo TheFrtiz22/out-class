@@ -1,3 +1,4 @@
+import { isUvaEmail } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
 import { createClient } from '@/utils/supabase/server';
@@ -9,10 +10,11 @@ export async function GET() {
     const supabase = await createClient(cookieStore);
     
     const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error || !user || !user.email || !isUvaEmail(user.email)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
+      omit: { passwordHash: true },
       include: {
         studentProfile: true,
         applications: {

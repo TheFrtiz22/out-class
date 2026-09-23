@@ -51,19 +51,20 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     setMicrosoftLoading(true)
     setError("")
 
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "azure",
-      options: {
-        scopes: "email",
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    })
-
-    if (oauthError) {
-      setError(oauthError.message)
+    try {
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "azure",
+        options: {
+          scopes: "email",
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+      if (oauthError) throw oauthError
+      // Keep the pending state while the browser redirects.
+    } catch {
+      setError("Unable to start Microsoft sign-in. Please try again.")
       setMicrosoftLoading(false)
     }
-    // If no error, the browser is redirecting — keep loading state
   }
 
   async function signIn(event: FormEvent) {
@@ -94,21 +95,22 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
 
   async function verifyCode(event: FormEvent) {
     event.preventDefault()
+    if (loading) return
+    setLoading(true)
     setError("")
-    
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim().toLowerCase(),
-      token: code,
-      type: "email"
-    })
-
-    if (verifyError) {
-      setError(verifyError.message)
-      return
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: code,
+        type: "email",
+      })
+      if (verifyError) { setError(verifyError.message); return }
+      window.location.href = "/"
+    } catch {
+      setError("Unable to verify this code. Please try again.")
+    } finally {
+      setLoading(false)
     }
-
-    // Refresh the page so the Server Component layout picks up the new session cookie and fetches the data
-    window.location.reload()
   }
 
   return (

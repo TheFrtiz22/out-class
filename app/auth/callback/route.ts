@@ -6,7 +6,7 @@ import { isUvaEmail } from '@/lib/auth'
 /** Validate `next` param: must be a relative path, no protocol, no double-slash. */
 function safeNextPath(raw: string | null): string {
   const value = raw?.trim() ?? '/'
-  if (!value.startsWith('/') || value.startsWith('//') || value.includes('://')) {
+  if (!value.startsWith('/') || value.startsWith('//') || value.includes('://') || /[\\\x00-\x20]/.test(value)) {
     return '/'
   }
   return value

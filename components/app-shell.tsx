@@ -121,7 +121,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
 
 
   return (
-    <ApplicationStateProvider initialData={initialData} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
+    <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
             {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}

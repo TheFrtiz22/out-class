@@ -9,7 +9,6 @@ import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { useDemoMode } from "@/contexts/demo-context"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
@@ -57,7 +56,6 @@ const average = (app: Candidate) =>
 export function LiveLeaderWorkspace() {
   const { user } = useAuth()
   const { leaderFocus } = useApplicationState()
-  const { isDemoEnabled } = useDemoMode()
   const clubs = (user?.memberships || []).filter(
     (item) => item.role === "PRESIDENT" || item.role === "RECRUITMENT_LEAD",
   )
@@ -107,8 +105,6 @@ export function LiveLeaderWorkspace() {
 
 function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
-  const { isDemoEnabled } = useDemoMode()
-  const { user } = useAuth()
   const [data, setData] = useState<Pipeline | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
@@ -280,30 +276,13 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       if (kind === "review") {
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
-        let result
-        if (isDemoEnabled) {
-          result = {
-            success: true,
-            evaluation: {
-              id: crypto.randomUUID(),
-              applicationId: active.id,
-              clubId: membership.clubId,
-              evaluatorId: user?.id,
-              roundName: targetRound,
-              score: Number(score),
-              notes,
-              createdAt: new Date(),
-            }
-          }
-        } else {
-          result = await submitEvaluation({
-            clubId: membership.clubId,
-            applicationId: active.id,
-            roundName: targetRound,
-            score: Number(score),
-            notes,
-          })
-        }
+        const result = await submitEvaluation({
+          clubId: membership.clubId,
+          applicationId: active.id,
+          roundName,
+          score: Number(score),
+          notes,
+        })
         setData((previous) =>
           previous
             ? {

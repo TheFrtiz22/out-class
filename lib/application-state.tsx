@@ -77,7 +77,6 @@ const ApplicationStateContext = createContext<ApplicationStateValue | null>(null
 
 // Persist the demo across navigation and reloads on this browser only.
 const STORAGE_KEY = "outclass-platform-v2"
-const DEMO_STORAGE_KEY = "outclass-platform-v2-demo"
 
 export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
   const demo = useDemoMode()
@@ -133,6 +132,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   }, [hydrated, persistLocalState, activeStorageKey, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
   useEffect(() => {
     if (!demo.isDemoEnabled || !demo.state) return
+    setTrackedApps(serverApps)
     setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
     setNotifications(demoNotifications())
     setResponses(demo.state.responses)

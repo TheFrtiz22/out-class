@@ -11,7 +11,6 @@ import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/l
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
-import { useDemoMode } from "@/contexts/demo-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,9 +24,12 @@ const selectStyle =
   "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
   const { user, loading } = useAuth()
-  const { isDemoEnabled } = useDemoMode()
+  const { leaderFocus } = useApplicationState()
   const memberships = user?.memberships || []
   const [clubId, setClubId] = useState("")
+  useEffect(() => {
+    if (leaderFocus?.clubId) setClubId(leaderFocus.clubId)
+  }, [leaderFocus?.clubId])
   const membership = memberships.find((item) => item.clubId === clubId) || memberships[0]
   const [locked, setLocked] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -98,6 +100,7 @@ function InterviewSession({
   membership: ExtendedMembership
   onLock: (locked: boolean, saving?: boolean) => void
 }) {
+  const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -239,31 +242,13 @@ function InterviewSession({
     setMessage("")
     setFailed(false)
     try {
-      let result;
-      if (isDemoEnabled) {
-        // Mock successful evaluation response in demo mode
-        result = {
-          success: true,
-          evaluation: {
-            id: crypto.randomUUID(),
-            applicationId: active.id,
-            clubId: membership.clubId,
-            evaluatorId: user?.id,
-            roundName: round.name,
-            score: Number(score),
-            notes,
-            createdAt: new Date(),
-          }
-        }
-      } else {
-        result = await submitEvaluation({
-          clubId: membership.clubId,
-          applicationId: active.id,
-          roundName: round.name,
-          score: Number(score),
-          notes,
-        })
-      }
+      const result = await submitEvaluation({
+        clubId: membership.clubId,
+        applicationId: active.id,
+        roundName: round.name,
+        score: Number(score),
+        notes,
+      })
       setData((previous) =>
         previous
           ? {

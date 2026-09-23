@@ -6,7 +6,7 @@ import type { User, StudentProfile, Application, Club, ClubMember } from '@prism
 export type ExtendedApplication = Application & { club: Club };
 export type ExtendedMembership = ClubMember & { club: Club };
 
-export type PopulatedUser = User & {
+export type PopulatedUser = Omit<User, "passwordHash"> & {
   profile: StudentProfile | null;
   applications: ExtendedApplication[];
   memberships: ExtendedMembership[];

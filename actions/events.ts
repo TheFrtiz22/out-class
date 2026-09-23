@@ -39,7 +39,7 @@ export async function createEvent(data: z.infer<typeof createEventSchema>) {
 
 export async function getClubEvents(clubId: string) {
   const events = await prisma.event.findMany({
-    where: { clubId },
+    where: { clubId, isPublic: true },
     orderBy: { date: "asc" }
   });
 
@@ -56,6 +56,10 @@ export async function recordEventAttendance(eventId: string) {
 
   if (!event) {
     throw new Error("Event not found.");
+  }
+
+  if (!event.isPublic) {
+    await requireClubRole(event.clubId, ["PRESIDENT", "RECRUITMENT_LEAD", "GENERAL_MEMBER"]);
   }
 
   // Record attendance using Postgres upsert to prevent duplicates if they scan twice
@@ -86,9 +90,10 @@ export async function getEventAttendees(eventId: string, clubId: string) {
   await requireClubRole(clubId, ["PRESIDENT", "RECRUITMENT_LEAD", "GENERAL_MEMBER"]);
 
   const attendees = await prisma.eventAttendance.findMany({
-    where: { eventId },
+    where: { eventId, event: { clubId } },
     include: {
       student: {
+        omit: { passwordHash: true },
         include: { studentProfile: true }
       }
     },

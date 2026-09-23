@@ -6,7 +6,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 
 const uploadSchema = z.object({
-  fileName: z.string().min(1),
+  fileName: z.string().min(1).max(255).refine(name => !/[\\/\x00-\x1f]/.test(name) && name !== "." && name !== "..", "Use a file name without path separators."),
   bucket: z.enum(["resumes", "headshots", "club-assets"])
 });
 

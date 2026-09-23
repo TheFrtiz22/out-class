@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubRole } from "@/utils/auth";
 import { z } from "zod";
@@ -12,7 +13,7 @@ const createSlotsSchema = z.object({
     endTime: z.coerce.date(),
     location: z.string().min(1),
     capacity: z.number().int().min(1).default(1)
-  }))
+  }).refine(slot => slot.endTime > slot.startTime, { message: "Interview end must follow its start." })).min(1).max(200)
 });
 
 export async function createInterviewSlots(data: z.infer<typeof createSlotsSchema>) {
@@ -42,13 +43,13 @@ export async function getAvailableSlots(clubId: string) {
   const slots = await prisma.interviewSlot.findMany({
     where: { clubId, startTime: { gt: new Date() } },
     include: {
-      bookings: true // Needed to determine if the slot is full (bookings.length >= capacity)
+      _count: { select: { bookings: true } }
     },
     orderBy: { startTime: "asc" }
   });
 
   // Filter out full slots before sending to client
-  const availableSlots = slots.filter(slot => slot.bookings.length < slot.capacity);
+  const availableSlots = slots.filter(slot => slot._count.bookings < slot.capacity);
 
   return { slots: availableSlots };
 }
@@ -62,38 +63,36 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
   const { user } = await requireAuth();
   const parsed = bookSlotSchema.parse(data);
 
-  // 1. Verify the application belongs to the current user
-  const application = await prisma.application.findUnique({
-    where: { id: parsed.applicationId }
-  });
-
-  if (!application || application.studentId !== user.id) {
-    throw new Error("Unauthorized to book for this application.");
-  }
-
-  // 2. Fetch the slot to check capacity
-  const slot = await prisma.interviewSlot.findUnique({
-    where: { id: parsed.slotId },
-    include: { bookings: true }
-  });
-
-  if (!slot) {
-    throw new Error("Slot not found.");
-  }
-
-  if (slot.bookings.length >= slot.capacity) {
-    throw new Error("This interview slot is already full.");
-  }
-
-  // 3. Book the slot (atomic transaction recommended for real high-concurrency, but fine for now)
-  const booking = await prisma.interviewBooking.create({
-    data: {
-      slotId: parsed.slotId,
-      applicationId: parsed.applicationId
+  // Serializable isolation prevents concurrent requests from overbooking a slot.
+  let booking;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      booking = await prisma.$transaction(async (tx) => {
+        const application = await tx.application.findUnique({ where: { id: parsed.applicationId } });
+        if (!application || application.studentId !== user.id) {
+          throw new Error("Unauthorized to book for this application.");
+        }
+        const slot = await tx.interviewSlot.findUnique({
+          where: { id: parsed.slotId }, include: { bookings: true },
+        });
+        if (!slot || slot.clubId !== application.clubId) throw new Error("Slot not available for this application.");
+        const existing = slot.bookings.find(item => item.applicationId === application.id);
+        if (existing) return existing;
+        if (slot.startTime <= new Date()) throw new Error("This interview slot has already started.");
+        if (slot.bookings.length >= slot.capacity) throw new Error("This interview slot is already full.");
+        return tx.interviewBooking.create({ data: parsed });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      break;
+    } catch (error) {
+      if (error && typeof error === "object" && "code" in error && error.code === "P2034") {
+        if (attempt < 2) continue;
+        throw new Error("This slot changed while booking. Please refresh and try again.");
+      }
+      throw error;
     }
-  });
+  }
 
-  revalidatePath("/student-dashboard");
+  revalidatePath("/");
   revalidatePath(`/club-manager`);
 
   return { success: true, booking };

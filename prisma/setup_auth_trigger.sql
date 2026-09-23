@@ -2,7 +2,7 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- 1. Safest domain restriction: Reject at the database level
-  IF NEW.email NOT LIKE '%@virginia.edu' THEN
+  IF NEW.email IS NULL OR NEW.email !~* '^[a-z0-9]+([._+-][a-z0-9]+)*@virginia\.edu$' THEN
     RAISE EXCEPTION 'Only @virginia.edu email addresses are allowed';
   END IF;
 
@@ -14,11 +14,11 @@ BEGIN
     'STUDENT', 
     NEW.created_at
   )
-  ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id;
+  ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Drop trigger if it already exists to allow safe re-runs
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;

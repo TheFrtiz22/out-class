@@ -49,7 +49,7 @@ export async function requireClubRole(clubId: string, allowedRoles: ("PRESIDENT"
   });
 
   if (!membership || !allowedRoles.includes(membership.role)) {
-    redirect("/dashboard"); // Redirect unauthorized access to standard dashboard
+    redirect("/"); // Redirect unauthorized access to standard dashboard
   }
 
   return { user, membership };
