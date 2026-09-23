@@ -55,7 +55,7 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
         activeIndex: 0, 
         slideRevision: 0, 
         revision: 1, 
-        status: "active", 
+        status: "live", 
         votes: mockVotes, 
         memberIds: mockParticipantIds 
       })
