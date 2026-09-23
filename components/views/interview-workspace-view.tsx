@@ -95,6 +95,7 @@ function InterviewSession({
   membership: ExtendedMembership
   onLock: (locked: boolean, saving?: boolean) => void
 }) {
+  const { isDemoEnabled } = useDemoMode()
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
