@@ -9,6 +9,7 @@ import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
+import { useDemoMode } from "@/contexts/demo-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,6 +23,7 @@ const selectStyle =
   "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
   const { user, loading } = useAuth()
+  const { isDemoEnabled } = useDemoMode()
   const memberships = user?.memberships || []
   const [clubId, setClubId] = useState("")
   const membership = memberships.find((item) => item.clubId === clubId) || memberships[0]
@@ -133,6 +135,41 @@ function InterviewSession({
     let current = true
     setLoading(true)
     setLoadError(false)
+    
+    // In demo mode, intercept the real API with the mock demo-store logic
+    if (isDemoEnabled) {
+      setTimeout(() => {
+        if (!current) return
+        import("@/lib/data").then((data) => {
+          const result = {
+            rounds: data.workspaceRounds.map((r: any) => ({
+              id: r.id,
+              clubId: membership.clubId,
+              name: r.label,
+              order: 0
+            })) as any,
+            applications: data.applicants.map((a: any) => ({
+              id: a.id,
+              clubId: membership.clubId,
+              status: "INTERVIEWING",
+              roundId: data.workspaceRounds[0]?.id,
+              student: { 
+                email: a.email,
+                studentProfile: { firstName: a.name.split(" ")[0], lastName: a.name.split(" ")[1], experiences: [] } 
+              },
+              evaluations: [],
+              answers: [],
+              bookings: []
+            })) as any
+          }
+          setData(result)
+          setRoundId(data.workspaceRounds[0]?.id || "")
+          setLoading(false)
+        })
+      }, 300)
+      return
+    }
+
     getClubPipeline(membership.clubId)
       .then((result) => {
         if (current) {
@@ -144,6 +181,7 @@ function InterviewSession({
               ),
             ) || result.rounds[0]
           setRoundId(first?.id || "")
+          setLoading(false)
         }
       })
       .catch(() => {
@@ -224,13 +262,31 @@ function InterviewSession({
     setMessage("")
     setFailed(false)
     try {
-      const result = await submitEvaluation({
-        clubId: membership.clubId,
-        applicationId: active.id,
-        roundName: round.name,
-        score: Number(score),
-        notes,
-      })
+      let result;
+      if (isDemoEnabled) {
+        // Mock successful evaluation response in demo mode
+        result = {
+          success: true,
+          evaluation: {
+            id: crypto.randomUUID(),
+            applicationId: active.id,
+            clubId: membership.clubId,
+            evaluatorId: user?.id,
+            roundName: round.name,
+            score: Number(score),
+            notes,
+            createdAt: new Date(),
+          }
+        }
+      } else {
+        result = await submitEvaluation({
+          clubId: membership.clubId,
+          applicationId: active.id,
+          roundName: round.name,
+          score: Number(score),
+          notes,
+        })
+      }
       setData((previous) =>
         previous
           ? {
