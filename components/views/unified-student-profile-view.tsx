@@ -6,7 +6,7 @@ import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
   profileChecklist,
-  safeProfileUrl,
+  safeProfileUrl, resolveResumeUrl,
   type FullStudentProfile,
   type ProfileSection,
 } from "@/lib/student-profile"
@@ -177,9 +177,9 @@ export function UnifiedStudentProfileView() {
                 <ArrowUpRight className="size-3" />
               </a>
             )}
-            {safeProfileUrl(profile.resumeUrl) && (
+            {resolveResumeUrl(profile.resumeUrl) && (
               <a
-                href={safeProfileUrl(profile.resumeUrl)}
+                href={resolveResumeUrl(profile.resumeUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 underline-offset-4 hover:underline"

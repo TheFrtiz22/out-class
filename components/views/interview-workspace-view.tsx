@@ -8,7 +8,7 @@ import { getClubPipeline } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
-import { safeProfileUrl } from "@/lib/student-profile"
+import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
@@ -463,14 +463,14 @@ function InterviewSession({
                 ))}
                 <div className="flex gap-4">
                   {[
-                    ["Résumé", profile?.resumeUrl],
-                    ["LinkedIn", profile?.linkedinUrl],
+                    { label: "Résumé", url: profile?.resumeUrl, resolver: resolveResumeUrl },
+                    { label: "LinkedIn", url: profile?.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
                   ].map(
-                    ([label, url]) =>
-                      safeProfileUrl(url) && (
+                    ({ label, url, resolver }) =>
+                      resolver(url) && (
                         <a
                           key={label}
-                          href={safeProfileUrl(url)}
+                          href={resolver(url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm underline underline-offset-4"

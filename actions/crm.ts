@@ -18,7 +18,7 @@ export async function getClubPipeline(clubId: string) {
     where: { clubId, status: { not: "DRAFTING" } },
     include: {
       student: {
-        omit: { passwordHash: true },
+        
         include: { studentProfile: { include: { experiences: true } } },
       },
       evaluations: true,

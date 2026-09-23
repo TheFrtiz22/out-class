@@ -7,7 +7,7 @@ import type { AppStatus } from "@prisma/client"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import { setApplicationStatus } from "@/lib/workspace-api"
 import { boardDecisionProgress } from "@/lib/board-review"
-import { safeProfileUrl } from "@/lib/student-profile"
+import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -251,14 +251,14 @@ function DecisionPresentation({
               )}
               <div className="flex flex-wrap gap-4 text-sm">
                 {[
-                  ["View résumé", profile?.resumeUrl],
-                  ["LinkedIn", profile?.linkedinUrl],
+                  { label: "View résumé", url: profile?.resumeUrl, resolver: resolveResumeUrl },
+                  { label: "LinkedIn", url: profile?.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
                 ].map(
-                  ([label, url]) =>
-                    safeProfileUrl(url) && (
+                  ({ label, url, resolver }) =>
+                    resolver(url) && (
                       <a
                         key={label}
-                        href={safeProfileUrl(url)}
+                        href={resolver(url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline underline-offset-4"

@@ -32,16 +32,23 @@ export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
   }
 
   // Also pre-compute the public URL (or signed read URL) so the client can save it to the DB after upload
-  const { data: publicData } = supabase
-    .storage
-    .from(parsed.bucket)
-    .getPublicUrl(uniqueFilePath);
+  let publicUrl: string | null = null;
+  if (parsed.bucket !== "resumes") {
+    const { data: publicData } = supabase
+      .storage
+      .from(parsed.bucket)
+      .getPublicUrl(uniqueFilePath);
+    publicUrl = publicData.publicUrl;
+  } else {
+    // For private resumes, store the internal storage path instead of a public URL
+    publicUrl = uniqueFilePath;
+  }
 
   return {
     signedUrl: uploadData.signedUrl,
     token: uploadData.token, // Some SDK methods require this for the actual upload
     path: uniqueFilePath,
-    publicUrl: publicData.publicUrl
+    publicUrl: publicUrl
   };
 }
 

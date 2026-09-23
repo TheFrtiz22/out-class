@@ -35,12 +35,13 @@ export async function GET(request: Request) {
 
       // Ensure user exists in the public Prisma database
       const { prisma } = await import('@/utils/prisma')
+      const lowerEmail = user.email.toLowerCase()
       await prisma.user.upsert({
         where: { id: user.id },
-        update: { email: user.email },
+        update: { email: lowerEmail },
         create: {
           id: user.id,
-          email: user.email,
+          email: lowerEmail,
           role: "STUDENT",
         }
       })

@@ -12,12 +12,11 @@ datasource db {
 // ==========================================
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique // MUST be @virginia.edu
-  passwordHash  String?   // If using local auth; omitted if using OAuth exclusively
-  role          AppRole   @default(STUDENT) // Global role
-  createdAt     DateTime  @default(now())
-  
+  id        String   @id @default(uuid())
+  email     String   @unique // MUST be @virginia.edu
+  role      AppRole  @default(STUDENT) // Global role
+  createdAt DateTime @default(now())
+
   studentProfile StudentProfile?
   memberships    ClubMember[]
   applications   Application[]
@@ -30,23 +29,23 @@ enum AppRole {
 }
 
 model StudentProfile {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  firstName      String
-  lastName       String
-  computingId    String   @unique
-  major          String
-  gradYear       Int
-  gpa            Float?
-  satScore       Int?
-  linkedinUrl    String?
-  bio            String?
-  resumeUrl      String?  // S3 URL
-  headshotUrl    String?  // S3 URL
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  experiences    Experience[]
+  firstName   String
+  lastName    String
+  computingId String  @unique
+  major       String
+  gradYear    Int
+  gpa         Float?
+  satScore    Int?
+  linkedinUrl String?
+  bio         String?
+  resumeUrl   String? // S3 URL
+  headshotUrl String? // S3 URL
+
+  experiences Experience[]
 }
 
 model Experience {
@@ -63,8 +62,8 @@ model Experience {
 // ==========================================
 
 model Club {
-  id             String   @id @default(uuid())
-  slug           String   @unique
+  id             String  @id @default(uuid())
+  slug           String  @unique
   name           String
   tagline        String
   description    String
@@ -74,25 +73,26 @@ model Club {
   category       String
   acceptanceRate Float?
   aumValue       Float?
-  
+
   members        ClubMember[]
   events         Event[]
   applications   Application[]
   pipelineRounds PipelineRound[]
   questions      ApplicationQuestion[]
+  interviewSlots InterviewSlot[]
 }
 
 model ClubMember {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clubId    String
-  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  role      ClubRole @default(GENERAL_MEMBER)
-  title     String?  // e.g., "VP of Recruitment"
+  id     String   @id @default(uuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clubId String
+  club   Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  role   ClubRole @default(GENERAL_MEMBER)
+  title  String? // e.g., "VP of Recruitment"
 
   evaluations Evaluation[]
-  
+
   @@unique([userId, clubId])
 }
 
@@ -107,25 +107,25 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
-  id       String   @id @default(uuid())
-  clubId   String
-  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  name     String   // e.g., "Applied", "Round 1", "Decision"
-  order    Int
-  
+  id     String @id @default(uuid())
+  clubId String
+  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name   String // e.g., "Applied", "Round 1", "Decision"
+  order  Int
+
   applications Application[]
 }
 
 model ApplicationQuestion {
-  id       String   @id @default(uuid())
-  clubId   String
-  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  prompt   String
-  type     QuestionType // ESSAY, FILE, MULTIPLE_CHOICE
-  required Boolean  @default(true)
+  id        String       @id @default(uuid())
+  clubId    String
+  club      Club         @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  prompt    String
+  type      QuestionType // ESSAY, FILE, MULTIPLE_CHOICE
+  required  Boolean      @default(true)
   wordLimit Int?
 
-  answers  ApplicationAnswer[]
+  answers ApplicationAnswer[]
 }
 
 enum QuestionType {
@@ -135,21 +135,20 @@ enum QuestionType {
 }
 
 model Application {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   studentId String
-  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student   User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   clubId    String
-  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  
+  club      Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   roundId   String
   round     PipelineRound @relation(fields: [roundId], references: [id])
   status    AppStatus     @default(DRAFTING)
-  
+
   submittedAt DateTime?
 
-  answers      ApplicationAnswer[]
-  evaluations  Evaluation[]
-  bookings     InterviewBooking[]
+  answers     ApplicationAnswer[]
+  evaluations Evaluation[]
+  bookings    InterviewBooking[]
 
   @@unique([studentId, clubId])
 }
@@ -170,7 +169,7 @@ model ApplicationAnswer {
   application   Application         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   questionId    String
   question      ApplicationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  response      String              // Text or S3 URL for files
+  response      String // Text or S3 URL for files
 
   @@unique([applicationId, questionId])
 }
@@ -181,11 +180,11 @@ model Evaluation {
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   interviewerId String
   interviewer   ClubMember  @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
-  
-  round         String      // e.g., "Round 1"
-  score         Float
-  notes         String?
-  createdAt     DateTime    @default(now())
+
+  round     String // e.g., "Round 1"
+  score     Float
+  notes     String?
+  createdAt DateTime @default(now())
 
   @@unique([applicationId, interviewerId, round])
 }
@@ -208,11 +207,11 @@ model Event {
 }
 
 model EventAttendance {
-  id        String   @id @default(uuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  studentId String
-  student   User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   checkedInAt DateTime @default(now())
 
   @@unique([eventId, studentId])
@@ -225,21 +224,21 @@ model EventAttendance {
 model InterviewSlot {
   id        String   @id @default(uuid())
   clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
   startTime DateTime
   endTime   DateTime
   location  String
   capacity  Int      @default(1)
 
-  bookings  InterviewBooking[]
+  bookings InterviewBooking[]
 }
 
 model InterviewBooking {
-  id            String         @id @default(uuid())
+  id            String        @id @default(uuid())
   slotId        String
-  slot          InterviewSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  slot          InterviewSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
   applicationId String
-  application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@unique([slotId, applicationId])
 }
-

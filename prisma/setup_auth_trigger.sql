@@ -2,7 +2,14 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   -- 1. Safest domain restriction: Reject at the database level
-  IF NEW.email IS NULL OR NEW.email !~* '^[a-z0-9]+([._+-][a-z0-9]+)*@virginia\.edu$' THEN
+  -- Normalize email before check
+  IF NEW.email IS NULL THEN
+    RAISE EXCEPTION 'Email is required';
+  END IF;
+
+  NEW.email := lower(trim(NEW.email));
+
+  IF NEW.email !~* '^[a-z0-9]+([._+-][a-z0-9]+)*@virginia\.edu$' THEN
     RAISE EXCEPTION 'Only @virginia.edu email addresses are allowed';
   END IF;
 
@@ -11,7 +18,7 @@ BEGIN
   VALUES (
     NEW.id::text, 
     NEW.email, 
-    'STUDENT', 
+    'STUDENT'::public."AppRole", 
     NEW.created_at
   )
   ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
@@ -27,4 +34,3 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
 BEFORE INSERT ON auth.users
 FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-

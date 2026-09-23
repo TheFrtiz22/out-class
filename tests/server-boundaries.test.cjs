@@ -15,7 +15,7 @@ function load(file, prisma, role = async () => ({})) {
 test('event reads filter private events and attendees by the authorized club', async () => {
   const api = load('actions/events.ts', {
     event: { findMany: async ({ where }) => { assert.deepEqual(where, { clubId, isPublic: true }); return [] } },
-    eventAttendance: { findMany: async ({ where, include }) => { assert.deepEqual(where, { eventId: 'foreign-event', event: { clubId } }); assert.equal(include.student.omit.passwordHash, true); return [] } },
+    eventAttendance: { findMany: async ({ where, include }) => { assert.deepEqual(where, { eventId: 'foreign-event', event: { clubId } }); return [] } },
   })
   await api.getClubEvents(clubId)
   assert.deepEqual(await api.getEventAttendees('foreign-event', clubId), { attendees: [] })

@@ -9,7 +9,7 @@ import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { safeProfileUrl } from "@/lib/student-profile"
+import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -838,14 +838,14 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                     ))}
                     <div className="flex gap-4 text-sm">
                       {[
-                        ["Résumé", active.student.studentProfile.resumeUrl],
-                        ["LinkedIn", active.student.studentProfile.linkedinUrl],
+                        { label: "Résumé", url: active.student.studentProfile.resumeUrl, resolver: resolveResumeUrl },
+                        { label: "LinkedIn", url: active.student.studentProfile.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
                       ].map(
-                        ([label, url]) =>
-                          safeProfileUrl(url) && (
+                        ({ label, url, resolver }) =>
+                          resolver(url) && (
                             <a
                               key={label}
-                              href={safeProfileUrl(url)}
+                              href={resolver(url)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="underline underline-offset-4"

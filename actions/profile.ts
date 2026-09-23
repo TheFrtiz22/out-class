@@ -1,6 +1,6 @@
 "use server";
 
-import { profileSectionSchema } from "@/lib/student-profile";
+import { profileSectionSchema, storagePathSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -17,7 +17,7 @@ const profileSchema = z.object({
   satScore: z.number().min(400).max(1600).optional(),
   linkedinUrl: z.string().url().optional().or(z.literal("")),
   bio: z.string().optional(),
-  resumeUrl: z.string().url().optional(),
+  resumeUrl: storagePathSchema.optional(),
   headshotUrl: z.string().url().optional(),
   experiences: z.array(z.object({
     title: z.string(),
@@ -44,6 +44,10 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   const parsed = profileSchema.parse(data);
   // Identity comes from the authenticated account, never a client-supplied ID.
   parsed.computingId = user.email.split("@")[0];
+
+  if (parsed.resumeUrl && !parsed.resumeUrl.startsWith(`${user.id}/`)) {
+    throw new Error("You can only save your own resume.");
+  }
 
   // Update or create the profile
   const profile = await prisma.studentProfile.upsert({
@@ -102,6 +106,9 @@ export async function updateStudentProfileSection(input: unknown) {
   if (parsed.data.section === "experience") {
     data = { experiences: { deleteMany: {}, create: parsed.data.experiences } };
   } else if (parsed.data.section === "links") {
+    if (parsed.data.resumeUrl && !parsed.data.resumeUrl.startsWith(`${user.id}/`)) {
+      return { error: "You can only save your own resume." };
+    }
     data = { linkedinUrl: parsed.data.linkedinUrl || null, resumeUrl: parsed.data.resumeUrl || null };
   } else {
     data = fields;

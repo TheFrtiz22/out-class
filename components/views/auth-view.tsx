@@ -138,7 +138,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
           <div className="mb-6 flex size-12 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50">{step === "email" ? <ShieldCheck className="size-6 text-[#051B3D]" /> : <Mail className="size-6 text-[#051B3D]" />}</div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">{step === "email" ? "Welcome to OutClass" : "Verify your email"}</p>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
-          <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Sign in with the UVA email and password you used to create your account." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
+          <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Sign in using your UVA Microsoft account or email." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
           {step === "email" ? (
             <>
               {/* ── Microsoft / UVA OAuth ── */}
@@ -153,7 +153,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                   {microsoftLoading ? (
                     <><Loader2 className="size-4 animate-spin" />Redirecting…</>
                   ) : (
-                    <><MicrosoftIcon className="size-5" />Sign in with NetBadge</>
+                    <><MicrosoftIcon className="size-5" />Continue with UVA</>
                   )}
                 </Button>
               </div>

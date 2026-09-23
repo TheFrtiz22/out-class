@@ -93,7 +93,7 @@ export async function getEventAttendees(eventId: string, clubId: string) {
     where: { eventId, event: { clubId } },
     include: {
       student: {
-        omit: { passwordHash: true },
+        
         include: { studentProfile: true }
       }
     },
