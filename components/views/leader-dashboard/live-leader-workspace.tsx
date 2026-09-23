@@ -317,9 +317,8 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             evaluation: {
               id: crypto.randomUUID(),
               applicationId: active.id,
-              clubId: membership.clubId,
-              evaluatorId: user?.id,
-              roundName: targetRound,
+              interviewerId: membership.id,
+              round: data?.rounds.find(item => item.id === targetRound)?.name || roundName,
               score: Number(score),
               notes,
               createdAt: new Date(),

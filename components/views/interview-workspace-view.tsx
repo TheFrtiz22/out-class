@@ -272,9 +272,8 @@ function InterviewSession({
           evaluation: {
             id: crypto.randomUUID(),
             applicationId: active.id,
-            clubId: membership.clubId,
-            evaluatorId: user?.id,
-            roundName: round.name,
+            interviewerId: membership.id,
+            round: round.name,
             score: Number(score),
             notes,
             createdAt: new Date(),
