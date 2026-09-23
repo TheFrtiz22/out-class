@@ -1,3 +1,4 @@
+import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { AppShell } from "@/components/app-shell"
 import { getStudentDashboardData } from "@/actions/applications"
 import { createClient } from "@/utils/supabase/server"
@@ -8,6 +9,8 @@ export default async function Page() {
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
   const { data: { user } } = await supabase.auth.getUser()
+
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(user?.email)) return <AppShell initialView="student-dashboard" />
 
   let initialData = null
   let hasProfile = false

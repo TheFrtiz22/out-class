@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
-import { getClubDirectory } from "@/actions/club-directory"
+import { getClubDirectory } from "@/lib/workspace-api"
 import { filterDirectory, emptyDirectoryFilters, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
+import { demoStore, demoDirectory } from "@/lib/demo/store"
 import { useDemoMode } from "@/contexts/demo-context"
 import "@/components/clubs/club-discovery.css"
 
@@ -19,7 +20,7 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
   const [error, setError] = useState("")
   const [retry, setRetry] = useState(0)
   const [filters, setFilters] = useState(emptyDirectoryFilters)
-  const [selected, setSelected] = useState<DirectoryClub | null>(null)
+  const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const { isDemoEnabled } = useDemoMode()
@@ -31,15 +32,7 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
       .then((result) => {
         if (!active) return
         
-        let fetchedClubs = result.clubs || []
-        // In demo mode, merge in the local demo clubs, avoiding duplicates by ID
-        if (isDemoEnabled) {
-          const dbIds = new Set(fetchedClubs.map(c => c.id))
-          const mergedDemo = discoverClubs.filter(c => !dbIds.has(c.id))
-          fetchedClubs = [...fetchedClubs, ...mergedDemo]
-        }
-        
-        setClubs(fetchedClubs)
+        setClubs(result.clubs || [])
         setError(result.error || "")
         setLoading(false)
       })

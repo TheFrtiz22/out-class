@@ -1,65 +1,142 @@
 "use client"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { demoStore } from "@/lib/demo/store"
+import type { DemoState } from "@/lib/demo/seed"
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
-import { isDemoMode, DEMO_STORAGE_KEY } from "@/lib/demo-utils"
-import { applyDemoData } from "@/lib/data"
-
-interface DemoContextValue {
-  /** Whether demo data is currently active. */
+type DemoContextValue = {
   isDemoEnabled: boolean
-  /** Toggle demo mode on/off. Flushes state and remounts data without hard reload. */
-  toggleDemo: () => void
+  allowed: boolean
+  ready: boolean
+  state: DemoState | null
+  toggleDemo: () => Promise<void>
+  resetDemo: () => void
+  viewAs: (role: "student" | "leader", clubId?: string) => void
+  error: string
 }
-
-const DemoContext = createContext<DemoContextValue | null>(null)
-
-export function DemoDataProvider({ children }: { children: ReactNode }) {
-  const [isDemoEnabled, setIsDemoEnabled] = useState(false)
-  const [appKey, setAppKey] = useState(0)
-  const router = useRouter()
-
-  // Hydrate from localStorage on mount
+const Context = createContext<DemoContextValue | null>(null)
+export function DemoDataProvider({
+  children,
+  allowed = false,
+  enabled = false,
+  clearStaleSession = false,
+}: {
+  children: ReactNode
+  allowed?: boolean
+  enabled?: boolean
+  clearStaleSession?: boolean
+}) {
+  const [ready, setReady] = useState(!enabled),
+    [state, setState] = useState<DemoState | null>(null),
+    [error, setError] = useState("")
+  const [epoch, setEpoch] = useState(0)
   useEffect(() => {
-    setIsDemoEnabled(isDemoMode())
-  }, [])
-
-  const toggleDemo = useCallback(() => {
-    try {
-      const next = !isDemoEnabled
-      if (next) {
-        localStorage.setItem(DEMO_STORAGE_KEY, "true")
-      } else {
-        localStorage.removeItem(DEMO_STORAGE_KEY)
+    const unsubscribe = demoStore.subscribe(() =>
+      setState(demoStore.active() ? demoStore.get() : null),
+    )
+    if (enabled && allowed) {
+      try {
+        demoStore.start()
+      } catch {
+        setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
       }
-      
-      // Update the module-level data arrays in place
-      applyDemoData(next)
-      
-      setIsDemoEnabled(next)
-      
-      // Force all client components to unmount and remount with fresh state
-      setAppKey(Date.now())
-      
-      // Re-fetch Server Components to ensure server data matches
-      router.refresh()
-    } catch {
-      // Storage unavailable
+    } else demoStore.stop()
+    if (clearStaleSession)
+      void fetch("/api/demo", { cache: "no-store" }).catch(() =>
+        setError("Could not refresh demo access. Reload when your connection is restored."),
+      )
+    setReady(true)
+    const sync = (event: StorageEvent) => {
+      if (event.key === "outclass.demo-mode-change") window.location.reload()
     }
-  }, [isDemoEnabled, router])
+    window.addEventListener("storage", sync)
+    return () => {
+      unsubscribe()
+      window.removeEventListener("storage", sync)
+    }
+  }, [allowed, enabled, clearStaleSession])
+  async function toggleDemo() {
+    try {
+      const response = await fetch("/api/demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enabled }),
+      })
+      if (!response.ok)
+        throw new Error("Demo mode could not be changed. Check your access and try again.")
+      if (enabled) demoStore.stop()
+      try {
+        localStorage.setItem("outclass.demo-mode-change", String(Date.now()))
+      } catch {
+        /* Exit still succeeds when storage is unavailable. */
+      }
+      window.location.assign("/")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Please try again.")
+    }
+  }
+  function viewAs(role: "student" | "leader", clubId = state?.clubs[0].id) {
+    if (!clubId) return
+    try {
+      demoStore.mutate((s) => {
+        if (!s.clubs.some((c) => c.id === clubId)) throw new Error("Unknown demo club")
+        s.perspective = { role, clubId }
+      })
+      const url = new URL(window.location.href)
+      url.searchParams.delete("demoClub")
+      window.history.replaceState({}, "", url)
+      setEpoch((v) => v + 1)
+    } catch {
+      setError("Could not save the demo perspective. Check available browser storage.")
+    }
+  }
+  function resetDemo() {
+    try {
+      localStorage.removeItem("outclass.demo.customization.v1")
+      demoStore.reset()
+      const url = new URL(window.location.href)
+      url.searchParams.delete("demoClub")
+      window.history.replaceState({}, "", url)
+      setEpoch((v) => v + 1)
+    } catch {
+      setError("Could not reset the demo. Check available browser storage.")
+    }
+  }
 
   return (
-    <DemoContext.Provider value={{ isDemoEnabled, toggleDemo }}>
-      <div key={appKey} style={{ display: 'contents' }}>
-        {children}
-      </div>
-    </DemoContext.Provider>
+    <Context.Provider
+      value={{
+        allowed,
+        ready,
+        isDemoEnabled: enabled && allowed,
+        state,
+        error,
+        toggleDemo,
+        viewAs,
+        resetDemo,
+      }}
+    >
+      {error && (
+        <div role="alert" className="border-b bg-card p-4 text-sm">
+          {error}
+          <button onClick={() => void toggleDemo()} className="ml-4 underline">
+            {enabled ? "Exit demo" : "Try again"}
+          </button>
+        </div>
+      )}
+      {ready && (!enabled || state) ? (
+        <div key={epoch} style={{ display: "contents" }}>
+          {children}
+        </div>
+      ) : (
+        <p role="status" className="p-8 text-sm">
+          Preparing the OutClass demo…
+        </p>
+      )}
+    </Context.Provider>
   )
 }
-
 export function useDemoMode() {
-  const ctx = useContext(DemoContext)
-  if (!ctx) throw new Error("useDemoMode must be used within a DemoDataProvider")
-  return ctx
+  const value = useContext(Context)
+  if (!value) throw new Error("DemoDataProvider is required")
+  return value
 }
-

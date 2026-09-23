@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode, type FormEvent } from "react"
 import { Plus, Trash2 } from "lucide-react"
-import { getStudentProfile, updateStudentProfileSection } from "@/actions/profile"
-import { getSignedUploadUrl } from "@/actions/storage"
+import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
+import { getSignedUploadUrl } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import { type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {

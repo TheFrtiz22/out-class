@@ -1,5 +1,7 @@
 "use client"
 
+import { useDemoMode } from "@/contexts/demo-context"
+import { demoStore, demoDashboard, demoNotifications, demoDeadlines } from "@/lib/demo/store"
 import { createContext, useCallback, useContext, useMemo, useState, useEffect, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
   managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
@@ -78,6 +80,8 @@ const STORAGE_KEY = "outclass-platform-v2"
 const DEMO_STORAGE_KEY = "outclass-platform-v2-demo"
 
 export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
+  const demo = useDemoMode()
+  if (demo.isDemoEnabled) { initialData = demoDashboard(); persistLocalState = false }
   // Map Prisma database models back to the UI's TrackedApplication structure
   const serverApps = initialData?.applications?.map((app: any) => ({
     id: app.id,
@@ -109,9 +113,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [hydrated, setHydrated] = useState(false)
 
-  // Use a different storage key if we initialized with demo data to prevent overwriting user's preview state
-  const isDemo = trackedApps === seedTrackedApplications && seedTrackedApplications.length > 0
-  const activeStorageKey = isDemo ? DEMO_STORAGE_KEY : STORAGE_KEY
+  const activeStorageKey = STORAGE_KEY
 
   useEffect(() => {
     if (!persistLocalState) { setHydrated(true); return }
@@ -129,6 +131,12 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     if (!hydrated || !persistLocalState) return
     try { localStorage.setItem(activeStorageKey, JSON.stringify({ trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses })) } catch { /* State remains usable for this session. */ }
   }, [hydrated, persistLocalState, activeStorageKey, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
+  useEffect(() => {
+    if (!demo.isDemoEnabled || !demo.state) return
+    setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
+    setNotifications(demoNotifications())
+    setResponses(demo.state.responses)
+  }, [demo.state, demo.isDemoEnabled])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
@@ -196,24 +204,29 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   )
 
   const markNotificationRead = useCallback((id: string) => {
+    if (demoStore.active()) { demoStore.mutate(s => { if (!s.readNotifications.includes(id)) s.readNotifications.push(id) }); return }
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
   }, [])
 
   const setNotificationsRead = useCallback((ids: string[], read: boolean) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return }
     const targets = new Set(ids)
     setNotifications((prev) => prev.map((item) => targets.has(item.id) ? { ...item, read } : item))
   }, [])
 
   const deleteNotifications = useCallback((ids: string[]) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return }
     const targets = new Set(ids)
     setNotifications((prev) => prev.filter((item) => !targets.has(item.id)))
   }, [])
 
   const restoreNotifications = useCallback((items: Notification[]) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return }
     setNotifications((prev) => [...prev, ...items.filter((item) => !prev.some((existing) => existing.id === item.id))])
   }, [])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.responses[id] = response }); return }
     if (events.find(event => event.id === id)?.readOnly) return
     setResponses((previous) => ({ ...previous, [id]: response }))
     const event = events.find((item) => item.id === id)

@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation"
+import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
+import { redirect, notFound } from "next/navigation"
 import { publicClubs } from "@/lib/public-clubs"
 import { PublicClubPage } from "@/components/qr/public-club-page"
 import { getPublicClub } from "@/actions/club-directory"
@@ -7,6 +8,12 @@ import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 export default async function ClubPage({ params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params
+  const jar = await cookies()
+  if (jar.get(DEMO_COOKIE)?.value === "1") {
+    const client = await createClient(jar)
+    const { data: { user } } = await client.auth.getUser()
+    if (canAccessDemo(user?.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
+  }
   const result = await getPublicClub(clubId)
   const sample = publicClubs.find((club) => club.id === clubId)
   const club = result.club || (sample ? { ...sample, source: "preview" as const } : null)

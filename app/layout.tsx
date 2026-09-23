@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { AuthProvider } from "@/contexts/auth-context"
+import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { DemoDataProvider } from "@/contexts/demo-context"
 
 export default async function RootLayout({
@@ -30,12 +31,14 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+  const demoAllowed = canAccessDemo(user?.email)
+  const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
 
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <DemoDataProvider>
+        <DemoDataProvider allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
           <AuthProvider>
             <ClubCustomizationProvider>
               {children}

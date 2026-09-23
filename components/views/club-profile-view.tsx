@@ -9,8 +9,9 @@ import { SubscribeButton } from "@/components/clubs/subscribe-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
 import { useApplicationState } from "@/lib/application-state"
+import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
-import { startClubApplication } from "@/actions/club-directory"
+import { startClubApplication } from "@/lib/workspace-api"
 import { clubs } from "@/lib/data"
 import { eventStart } from "@/lib/calendar"
 import type { DirectoryClub } from "@/lib/club-directory"
@@ -28,6 +29,8 @@ export function ClubProfileView({
   onNavigate: (view: ViewId) => void
   preview?: boolean
 }) {
+  const demo = useDemoMode()
+  const sampleDeadline = demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === club.id)?.deadline : null
   const { state, configured, ready } = useClubCustomization(club.id)
   const { trackedApps, applyToClub, events, respondToEvent, focusEvent, focusApplication } =
     useApplicationState()
@@ -216,7 +219,7 @@ export function ClubProfileView({
           <p className="oc-club-eyebrow">Your next step</p>
           <h2 id="club-recruitment">Recruitment</h2>
           <p>
-            {deadline
+            {sampleDeadline ? `Sample application deadline: ${sampleDeadline.toLocaleString()}` : deadline
               ? `Application deadline: ${deadline.date} · ${deadline.time}`
               : "Recruitment dates have not been published."}
           </p>

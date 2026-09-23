@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw } from "lucide-react"
-import { getStudentApplications } from "@/actions/applications"
+import { getStudentApplications } from "@/lib/workspace-api"
+import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
 import { applicationNextStep, applicationStatusLabels } from "@/lib/student-applications"
@@ -36,6 +37,8 @@ const date = (value: Date | string) =>
     minute: "2-digit",
   })
 export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
+  const demo = useDemoMode()
+  const demoDeadline = (clubId: string) => demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId)?.deadline : undefined
   const { user, loading, refreshUser } = useAuth()
   const { focusApplicationClubId, clearApplicationFocus, syncApplications } = useApplicationState()
   const [applications, setApplications] = useState<StudentApplication[]>([])
@@ -195,7 +198,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
               <p className="text-xs text-muted-foreground">
                 {app.submittedAt
                   ? `Submitted ${date(app.submittedAt)}`
-                  : "Deadline not provided on OutClass"}
+                  : demoDeadline(app.clubId) ? `Sample deadline ${date(demoDeadline(app.clubId)!)}` : "Deadline not provided on OutClass"}
               </p>
             </div>
           </div>
@@ -374,8 +377,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
         <div className="border-l-2 border-primary py-1 pl-4">
           <p className="text-sm font-medium">Your next step: finish a draft</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Save as you go. Application deadlines haven’t been provided on OutClass; check each
-            club’s recruitment instructions.
+            {demo.isDemoEnabled ? "Save as you go. Sample deadlines appear below and in Calendar; all dates are fictional." : "Save as you go. Application deadlines haven’t been provided on OutClass; check each club’s recruitment instructions."}
           </p>
         </div>
       )}
@@ -437,7 +439,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
                     </p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       {item.status === "DRAFTING"
-                        ? `${item.answers.filter((answer) => answer.response.trim()).length} responses saved · Deadline not provided`
+                        ? `${item.answers.filter((answer) => answer.response.trim()).length} responses saved · ${demoDeadline(item.clubId) ? `Sample deadline ${date(demoDeadline(item.clubId)!)}` : "Deadline not provided"}`
                         : item.status === "INTERVIEWING" &&
                             item.bookings.some(
                               (booking) => new Date(booking.slot.startTime).getTime() > Date.now(),

@@ -1,14 +1,16 @@
 "use client"
 
+import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react"
-import { getClubPipeline } from "@/actions/crm"
-import { submitEvaluation } from "@/actions/evaluations"
+import { getClubPipeline } from "@/lib/workspace-api"
+import { submitEvaluation } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
+import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -65,6 +67,7 @@ export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
           </select>
         )}
       </header>
+      <DemoInterviewGuide />
       <div className="mx-auto max-w-[1500px] px-5 py-6 sm:px-8">
         {loading ? (
           <p role="status">Loading interview workspace…</p>
@@ -95,8 +98,6 @@ function InterviewSession({
   membership: ExtendedMembership
   onLock: (locked: boolean, saving?: boolean) => void
 }) {
-  const { isDemoEnabled } = useDemoMode()
-  const { user } = useAuth()
   const [data, setData] = useState<Pipeline | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -139,44 +140,12 @@ function InterviewSession({
     setLoadError(false)
     
     // In demo mode, intercept the real API with the mock demo-store logic
-    if (isDemoEnabled) {
-      setTimeout(() => {
-        if (!current) return
-        import("@/lib/data").then((data) => {
-          const result = {
-            rounds: data.workspaceRounds.map((r: any) => ({
-              id: r.id,
-              clubId: membership.clubId,
-              name: r.label,
-              order: 0
-            })) as any,
-            applications: data.applicants.map((a: any) => ({
-              id: a.id,
-              clubId: membership.clubId,
-              status: "INTERVIEWING",
-              roundId: data.workspaceRounds[0]?.id,
-              student: { 
-                email: a.email,
-                studentProfile: { firstName: a.name.split(" ")[0], lastName: a.name.split(" ")[1], experiences: [] } 
-              },
-              evaluations: [],
-              answers: [],
-              bookings: []
-            })) as any
-          }
-          setData(result)
-          setRoundId(data.workspaceRounds[0]?.id || "")
-          setLoading(false)
-        })
-      }, 300)
-      return
-    }
-
     getClubPipeline(membership.clubId)
       .then((result) => {
         if (current) {
           setData(result)
-          const first =
+          const focused = result.applications.find(a => a.id === leaderFocus?.applicantId)
+          const first = result.rounds.find(r => r.id === focused?.roundId) ||
             result.rounds.find((item) =>
               result.applications.some(
                 (app) => app.roundId === item.id && app.status === "INTERVIEWING",
@@ -235,6 +204,12 @@ function InterviewSession({
     window.addEventListener("keydown", shortcut)
     return () => window.removeEventListener("keydown", shortcut)
   }, [active?.id, busy])
+  useEffect(() => {
+    if (leaderFocus?.clubId === membership.clubId && leaderFocus.applicantId && queue.some(a => a.id === leaderFocus.applicantId)) {
+      choose(leaderFocus.applicantId, true)
+      clearLeaderFocus()
+    }
+  }, [data, roundId, leaderFocus, membership.clubId, clearLeaderFocus])
   function choose(id: string, discard = false) {
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
@@ -272,8 +247,9 @@ function InterviewSession({
           evaluation: {
             id: crypto.randomUUID(),
             applicationId: active.id,
-            interviewerId: membership.id,
-            round: round.name,
+            clubId: membership.clubId,
+            evaluatorId: user?.id,
+            roundName: round.name,
             score: Number(score),
             notes,
             createdAt: new Date(),

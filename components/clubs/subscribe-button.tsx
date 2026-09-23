@@ -1,5 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
+import { useDemoMode } from "@/contexts/demo-context"
+import { demoStore } from "@/lib/demo/store"
 import { Bell, Check } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -10,6 +12,7 @@ export function SubscribeButton({
   clubId: string
   disabled?: boolean
 }) {
+  const demo = useDemoMode()
   const { user, loading } = useAuth()
   const key = `outclass.club-subscriptions.${user?.id || "preview"}`
   const [subscribed, setSubscribed] = useState(false)
@@ -17,6 +20,7 @@ export function SubscribeButton({
   const [error, setError] = useState(false)
   useEffect(() => {
     const read = () => {
+      if (demo.isDemoEnabled) { setSubscribed(demo.state?.subscriptions.includes(clubId) || false); setReady(true); return }
       try {
         const ids = JSON.parse(localStorage.getItem(key) || "[]")
         setSubscribed(Array.isArray(ids) && ids.includes(clubId))
@@ -32,8 +36,9 @@ export function SubscribeButton({
       window.removeEventListener("outclass-subscriptions", read)
       window.removeEventListener("storage", read)
     }
-  }, [key, clubId])
+  }, [key, clubId, demo.state, demo.isDemoEnabled])
   function toggle() {
+    if (demoStore.active()) { demoStore.mutate(s => { s.subscriptions = subscribed ? s.subscriptions.filter(id => id !== clubId) : [...s.subscriptions, clubId] }); return }
     try {
       const saved = JSON.parse(localStorage.getItem(key) || "[]")
       const ids = new Set<string>(Array.isArray(saved) ? saved : [])

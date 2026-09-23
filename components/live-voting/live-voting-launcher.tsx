@@ -28,14 +28,7 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
     
     if (isDemoEnabled) {
       // Pre-fill active voting session state with mock participants, progress, and votes
-      const mockParticipantIds = Array.from({ length: 18 }, (_, i) => `mock-mem-${i}`)
-      const mockParticipants = mockParticipantIds.map((id, i) => ({
-        id,
-        email: `${id}@example.com`,
-        name: `Mock Member ${i}`,
-        initials: `M${i}`,
-        connections: { "mock-conn": Date.now() }
-      }))
+      const mockParticipants = Array.from({ length: 18 }, (_, i) => `mock-mem-${i}`)
       const mockVotes: Record<string, Record<string, "pass" | "no-pass">> = {}
       if (applicants[0]) {
         // Pre-fill votes for the first applicant to show progress
@@ -55,9 +48,9 @@ export function LiveVotingLauncher({ applicants }: { applicants: VotingApplicant
         activeIndex: 0, 
         slideRevision: 0, 
         revision: 1, 
-        status: "live", 
+        status: "active", 
         votes: mockVotes, 
-        memberIds: mockParticipantIds 
+        memberIds: mockParticipants 
       })
     } else {
       setSession({ id: crypto.randomUUID(), pin, clubId: "vvf", eligibleMembers, participants: [], applicants: structuredClone(applicants), quota: { min: Number(min), max: Number(max) }, memberCount: Number(members), activeIndex: 0, slideRevision: 0, revision: 0, status: "lobby", votes: {}, memberIds: [] })

@@ -1,5 +1,8 @@
 "use client"
 
+import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
+import { useDemoMode } from "@/contexts/demo-context"
+import { demoDashboard } from "@/lib/demo/store"
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
@@ -38,7 +41,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
-export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+  const demo = useDemoMode()
+  const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
   const [authError, setAuthError] = useState("")
 
@@ -55,14 +60,14 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    initialSession
+    demo.isDemoEnabled ? (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demoClub") ? "discover" : demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
         ? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
-  const [appMode, setAppMode] = useState<AppMode>(adminViewIds.includes(initialView) ? "admin" : "student")
-  function navigate(next: ViewId) { setView(embedded && next === "landing" ? initialView : next) }
+  const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
+  function navigate(next: ViewId) { if (demo.isDemoEnabled && ["landing", "auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
 
   // If an auth error was found in the URL, force the auth view so the user sees the message
   useEffect(() => {
@@ -80,6 +85,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   }
 
   function switchMode(mode: AppMode) {
+    if (demo.isDemoEnabled) { demo.viewAs(mode === "admin" ? "leader" : "student"); return }
     setAppMode(mode)
     setView(mode === "admin" ? "leader-dashboard" : "student-dashboard")
   }
@@ -115,7 +121,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
 
 
   return (
-    <ApplicationStateProvider initialData={initialData} persistLocalState={!initialSession && initialData == null}>
+    <ApplicationStateProvider initialData={initialData} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
             {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}
@@ -125,9 +131,9 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
             {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}
-            {view === "interview-scheduler" && <InterviewSchedulerView onNavigate={navigate} />}
+            {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}
             {view === "broadcast-messages" && <BroadcastMessagesView />}
-            {view === "club-manager" && <ClubManagerView />}
+            {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubManagerView />)}
             {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
     </ApplicationStateProvider>

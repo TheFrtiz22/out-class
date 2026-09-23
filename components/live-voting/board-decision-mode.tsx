@@ -1,10 +1,11 @@
 "use client"
 
+import { DemoRoundTarget } from "@/components/demo-workspace"
 import { useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, Presentation, X } from "lucide-react"
 import type { AppStatus } from "@prisma/client"
-import type { getClubPipeline } from "@/actions/crm"
-import { setApplicationStatus } from "@/actions/crm"
+import type { getClubPipeline } from "@/lib/workspace-api"
+import { setApplicationStatus } from "@/lib/workspace-api"
 import { boardDecisionProgress } from "@/lib/board-review"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
@@ -183,6 +184,7 @@ function DecisionPresentation({
         </Button>
       </header>
       <div className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-5 py-6 sm:px-10 sm:py-8">
+        <DemoRoundTarget />
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>
             Candidate {index + 1} of {pool.length} · Current filtered selection

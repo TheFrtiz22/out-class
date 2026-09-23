@@ -14,6 +14,7 @@ import { NavigationSearch } from "@/components/shell/navigation-search"
 import { adminNav, studentNav, viewTitles, type AppMode, type ViewId, type NavItem } from "@/lib/views"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
+import { DemoMenuItems } from "@/components/demo-controls"
 import { useDemoMode } from "@/contexts/demo-context"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/lib/utils"
@@ -45,9 +46,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
   const canSwitch = !!user?.adminRoles.length || (!loading && !user)
   const searchItems: NavItem[] = [...(leader && user && !user.adminRoles.length ? studentNav : items), ...(!items.some(item => item.id === "student-profile") ? [{ id: "student-profile" as const, title: "Profile", icon: UserRound }] : []), { id: "inbox", title: "Notifications", icon: Bell }]
 
-  const { isDemoEnabled, toggleDemo } = useDemoMode()
-  // Show demo toggle if in preview mode, development environment, or if demo is already enabled
-  const showDemoToggle = !user || isDemoEnabled || process.env.NODE_ENV === "development"
+  const { isDemoEnabled } = useDemoMode()
 
   function navigate(next: ViewId) {
     drawerNavigated.current = mobileOpen
@@ -93,11 +92,12 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
         <Avatar className="size-8"><AvatarFallback>{initials}</AvatarFallback></Avatar>
         {!compact && <><span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{name}</span><span className="block text-xs text-muted-foreground">{user ? "Your account" : loading ? "Please wait" : "Preview workspace"}</span></span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground" /></>}
       </button>
-    </DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56">
+    </DropdownMenuTrigger><DropdownMenuContent align="end" className="w-72">
+      <DemoMenuItems />
       <DropdownMenuItem onSelect={() => navigate("student-profile")}><UserRound className="size-4" />Your profile</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => navigate("landing")}><Home className="size-4" />OutClass home</DropdownMenuItem>
       {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode(leader ? "student" : "admin")}><ShieldCheck className="size-4" />{leader ? "Student workspace" : "Club-leader workspace"}</DropdownMenuItem></>}
-      {user && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
+      {user && !isDemoEnabled && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
     </DropdownMenuContent></DropdownMenu>
   }
   function sidebar(mobile = false) {
@@ -123,7 +123,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
           drawerNavigated.current = false
           mainRef.current?.focus({ preventScroll: true })
         }} className="w-[min(88vw,320px)] gap-0 bg-background"><SheetTitle className="sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Navigate OutClass and manage your account.</SheetDescription>{sidebar(true)}</SheetContent></Sheet>
-        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm"><span className="hidden shrink-0 text-muted-foreground md:inline">{leader ? "Recruitment" : "My workspace"}</span><ChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted-foreground md:block" /><span className="truncate font-medium">{title}</span>{showDemoToggle && <button onClick={toggleDemo} className="ml-3 inline-flex items-center rounded bg-white px-2 py-1 text-xs font-medium text-neutral-600 border border-neutral-200 hover:bg-neutral-50 focus:outline-none transition-colors">⚡ Demo Mode: {isDemoEnabled ? "ON" : "OFF"}</button>}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm"><span className="hidden shrink-0 text-muted-foreground md:inline">{leader ? "Recruitment" : "My workspace"}</span><ChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted-foreground md:block" /><span className="truncate font-medium">{title}</span>{isDemoEnabled && <span className="ml-2 shrink-0 rounded border border-border px-2 py-1 text-[10px] text-muted-foreground">Demo Mode</span>}</div>
         <Button variant="ghost" onClick={() => setSearchOpen(true)} className="hidden gap-2 text-muted-foreground sm:inline-flex"><Search aria-hidden="true" />Search <kbd className="ml-2 rounded border border-border px-1.5 py-0.5 text-[10px]">⌘ / Ctrl K</kbd></Button>
         <IconButton aria-label="Search OutClass" onClick={() => setSearchOpen(true)} className="sm:hidden"><Search /></IconButton>
         <IconButton aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} onClick={() => navigate("inbox")} className="relative"><Bell />{unread > 0 && <span aria-hidden="true" className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
@@ -133,6 +133,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
         <div key={view} className="shell-content-enter" data-view={view}>
           {view !== "student-dashboard" && <div data-view-heading className="mb-7 max-w-3xl"><h1 className="text-title font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{viewTitles[view].subtitle}</p></div>}
           {["interview-scheduler", "club-manager", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) && <p role="note" className="mb-6 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted-foreground">Local preview · these tools do not publish club changes, send messages or invitations, or update the live recruitment pipeline.</p>}
+          {isDemoEnabled && <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Demo Mode · fictional people and sample club information. Changes stay in this browser; no messages are sent.</p>}
           {children}
         </div>
       </main>

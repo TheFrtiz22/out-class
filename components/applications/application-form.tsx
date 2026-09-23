@@ -6,8 +6,8 @@ import {
   saveApplicationDraft,
   submitApplication,
   type getStudentApplications,
-} from "@/actions/applications"
-import { getSignedUploadUrl } from "@/actions/storage"
+} from "@/lib/workspace-api"
+import { getSignedUploadUrl } from "@/lib/workspace-api"
 import { answerErrors, wordCount } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

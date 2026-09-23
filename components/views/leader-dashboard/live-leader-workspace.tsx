@@ -4,10 +4,11 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, moveApplicantRound, setApplicationStatus } from "@/actions/crm"
-import { submitEvaluation } from "@/actions/evaluations"
+import { getClubPipeline, moveApplicantRound, setApplicationStatus } from "@/lib/workspace-api"
+import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
+import { DemoRoundTarget } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
 import { safeProfileUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
@@ -98,6 +99,7 @@ export function LiveLeaderWorkspace() {
           </select>
         )}
       </div>
+      <DemoRoundTarget />
       <ClubWorkspace key={club.clubId} membership={club} />
     </div>
   )
@@ -138,38 +140,6 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
     setLoading(true)
     setError("")
     
-    if (isDemoEnabled) {
-      setTimeout(() => {
-        if (!current) return
-        import("@/lib/data").then((data) => {
-          const result = {
-            rounds: data.workspaceRounds.map((r: any) => ({
-              id: r.id,
-              clubId: membership.clubId,
-              name: r.label,
-              order: 0
-            })) as any,
-            applications: data.applicants.map((a: any) => ({
-              id: a.id,
-              clubId: membership.clubId,
-              status: "INTERVIEWING",
-              roundId: data.workspaceRounds[0]?.id,
-              student: { 
-                email: a.email,
-                studentProfile: { firstName: a.name.split(" ")[0], lastName: a.name.split(" ")[1], experiences: [] } 
-              },
-              evaluations: [],
-              answers: [],
-              bookings: []
-            })) as any
-          }
-          setData(result)
-          setLoading(false)
-        })
-      }, 300)
-      return () => { current = false }
-    }
-
     getClubPipeline(membership.clubId)
       .then((result) => {
         if (current) setData(result)
@@ -317,8 +287,9 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             evaluation: {
               id: crypto.randomUUID(),
               applicationId: active.id,
-              interviewerId: membership.id,
-              round: data?.rounds.find(item => item.id === targetRound)?.name || roundName,
+              clubId: membership.clubId,
+              evaluatorId: user?.id,
+              roundName: targetRound,
               score: Number(score),
               notes,
               createdAt: new Date(),

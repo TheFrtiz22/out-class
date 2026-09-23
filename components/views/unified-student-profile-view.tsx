@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
-import { getStudentProfile } from "@/actions/profile"
+import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
   profileChecklist,

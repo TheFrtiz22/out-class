@@ -1,5 +1,6 @@
 "use client"
 
+import { useDemoMode } from "@/contexts/demo-context"
 import { createContext, useContext, useEffect, useState, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import { z } from "zod"
 import { applicants as seedApplicants, type Applicant } from "@/lib/data"
@@ -10,6 +11,8 @@ export type { ColumnId, CRMFilters, PublicProfile } from "@/lib/club-customizati
 const Context = createContext<{ clubs: Record<string, ClubCustomization>; setClubs: Dispatch<SetStateAction<Record<string, ClubCustomization>>>; ready: boolean; storageError: boolean } | null>(null)
 const storageKey = "outclass.customization.v1"
 export function ClubCustomizationProvider({ children }: { children: ReactNode }) {
+  const { isDemoEnabled } = useDemoMode()
+  const storageKey = isDemoEnabled ? "outclass.demo.customization.v1" : "outclass.customization.v1"
   const [clubs, setClubs] = useState<Record<string, ClubCustomization>>({})
   const [ready, setReady] = useState(false)
   const [storageError, setStorageError] = useState(false)

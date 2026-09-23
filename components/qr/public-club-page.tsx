@@ -9,7 +9,7 @@ import { StudentOnboardingWizard } from "@/components/views/student-onboarding-w
 import { Button } from "@/components/ui/button"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
-import type { getStudentDashboardData } from "@/actions/applications"
+import type { getStudentDashboardData } from "@/lib/workspace-api"
 export function PublicClubPage({
   club,
   initialData,

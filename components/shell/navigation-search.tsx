@@ -19,9 +19,10 @@ import {
 } from "@/components/ui/command"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { demoStore } from "@/lib/demo/store"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
-import { searchWorkspace, type WorkspaceSearchResult } from "@/actions/workspace-search"
+import { searchWorkspace, type WorkspaceSearchResult } from "@/lib/workspace-api"
 import type { NavItem, ViewId } from "@/lib/views"
 
 const groups = {
@@ -103,7 +104,7 @@ export function NavigationSearch({
   function choose(item: WorkspaceSearchResult) {
     if (item.kind === "club") {
       if (document.querySelector('[data-saving="true"]')) return
-      window.location.assign(`/club/${encodeURIComponent(item.clubId)}`)
+      window.location.assign(demoStore.active() ? `/preview?demoClub=${encodeURIComponent(item.clubId)}` : `/club/${encodeURIComponent(item.clubId)}`)
       return
     }
     if (!prepare()) return
