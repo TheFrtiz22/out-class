@@ -1,41 +1,51 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
 import { requireAuth } from '@/utils/auth';
-import { cookies } from 'next/headers';
 import { prisma } from '@/utils/prisma';
-import { z } from 'zod';
+import { storagePathSchema } from '@/lib/student-profile';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const path = searchParams.get('path');
 
-  // Basic validation that path exists and looks like a uuid prefix
   if (!path) {
     return new NextResponse('Missing path', { status: 400 });
   }
-  
-  // Extract student ID (UUID is 36 chars)
-  const pathParts = path.split('/');
-  const studentId = pathParts[0];
 
-  // Validate studentId is a valid UUID to prevent path traversal like ../
-  const uuidSchema = z.string().uuid();
-  if (!uuidSchema.safeParse(studentId).success || pathParts.length < 2) {
+  // 1. USE THE SHARED STORAGE PATH VALIDATOR
+  const pathValidation = storagePathSchema.safeParse(path);
+  if (!pathValidation.success) {
     return new NextResponse('Invalid path', { status: 400 });
   }
 
+  const studentId = path.split('/')[0];
+
   try {
+    // Unauthenticated -> 401 or project's existing behavior (redirect)
     const { user } = await requireAuth();
 
-    // Authorization: A student may access their OWN resume
-    let isAuthorized = (user.id === studentId);
+    // 2. ONLY SERVE THE CURRENT SAVED RESUME
+    const profile = await prisma.studentProfile.findUnique({
+      where: { userId: studentId },
+      select: { resumeUrl: true, userId: true }
+    });
 
-    // If not their own, check if they are an authorized club member reviewing an application
-    if (!isAuthorized) {
-      // Find an application submitted by this student to a club where the requester is a member
+    if (!profile || profile.resumeUrl !== path) {
+      // Do not leak whether an unauthorized file exists
+      return new NextResponse('Not found', { status: 404 });
+    }
+
+    // 3. AUTHORIZATION ORDER
+    let isAuthorized = false;
+
+    if (user.id === profile.userId) {
+      // Owner
+      isAuthorized = true;
+    } else {
+      // Reviewer
       const hasAccess = await prisma.application.findFirst({
         where: {
-          studentId: studentId,
+          studentId: profile.userId,
           status: { not: "DRAFTING" },
           club: {
             members: {
@@ -52,16 +62,20 @@ export async function GET(request: Request) {
     }
 
     if (!isAuthorized) {
-      // Return 403 Forbidden
+      // Authenticated but unauthorized -> 403
       return new NextResponse('Forbidden', { status: 403 });
     }
 
-    // Need to bypass RLS to generate a signed URL for a file we don't own in Supabase Storage,
-    // since we already explicitly authorized it via Prisma.
-    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    // 4. SERVER SECRET HANDLING
+    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!secret) {
+      console.error('Missing Supabase server secret for resume generation');
+      return new NextResponse('Internal Server Error', { status: 500 });
+    }
+
     const adminClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SECRET_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      secret
     );
 
     const { data, error } = await adminClient.storage
@@ -69,12 +83,17 @@ export async function GET(request: Request) {
       .createSignedUrl(path, 60 * 5); // 5 minutes
 
     if (error || !data?.signedUrl) {
-      return new NextResponse('Could not generate signed URL', { status: 404 });
+      return new NextResponse('Not found', { status: 404 });
     }
 
     return NextResponse.redirect(data.signedUrl);
-  } catch (error) {
-    // requireAuth redirects, but if it throws or we catch something else
-    return new NextResponse('Unauthorized', { status: 401 });
+  } catch (error: any) {
+    // Rethrow Next.js redirects so we get the project's existing authentication behavior
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
+    console.error('Internal API error in /resumes', error);
+    // Internal configuration/database failure -> 500
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
