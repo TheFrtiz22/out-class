@@ -75,6 +75,7 @@ const ApplicationStateContext = createContext<ApplicationStateValue | null>(null
 
 // Persist the demo across navigation and reloads on this browser only.
 const STORAGE_KEY = "outclass-platform-v2"
+const DEMO_STORAGE_KEY = "outclass-platform-v2-demo"
 
 export function ApplicationStateProvider({ children, initialData, persistLocalState = initialData == null }: { children: ReactNode, initialData?: any, persistLocalState?: boolean }) {
   // Map Prisma database models back to the UI's TrackedApplication structure
@@ -94,34 +95,40 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
   const [leaderFocus, focusLeader] = useState<LeaderFocus | null>(null)
   const clearLeaderFocus = useCallback(() => focusLeader(null), [])
-  const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(serverApps)
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(initialData ? serverApps : seedTrackedApplications)
+  const [notifications, setNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
   
   const serverEvents = studentCalendarEvents(initialData)
 
-  const [baseEvents, setEvents] = useState<ClubEvent[]>(serverEvents)
-  const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>([])
+  const [baseEvents, setEvents] = useState<ClubEvent[]>(initialData ? serverEvents : seedEvents)
+  const [managedEvents, setManagedEvents] = useState<ManagedEvent[]>(initialData ? [] : seedManagedEvents)
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([])
   const [responses, setResponses] = useState<Record<string, ClubEvent["response"]>>({})
   const [focusEventId, focusEvent] = useState<string | null>(null)
   const [focusNotificationId, focusNotification] = useState<string | null>(null)
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear())
   const [hydrated, setHydrated] = useState(false)
+
+  // Use a different storage key if we initialized with demo data to prevent overwriting user's preview state
+  const isDemo = trackedApps === seedTrackedApplications && seedTrackedApplications.length > 0
+  const activeStorageKey = isDemo ? DEMO_STORAGE_KEY : STORAGE_KEY
+
   useEffect(() => {
     if (!persistLocalState) { setHydrated(true); return }
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")
+      const saved = JSON.parse(localStorage.getItem(activeStorageKey) ?? "null")
       if (saved && Array.isArray(saved.trackedApps) && Array.isArray(saved.notifications) && Array.isArray(saved.baseEvents) && Array.isArray(saved.managedEvents) && Array.isArray(saved.scheduleBlocks)) {
         setTrackedApps(saved.trackedApps); setNotifications(saved.notifications); setEvents(saved.baseEvents)
         setManagedEvents(saved.managedEvents); setScheduleBlocks(saved.scheduleBlocks); setResponses(saved.responses ?? {})
       }
     } catch { /* Keep the sample data if browser storage is unavailable. */ }
     setHydrated(true)
-  }, [persistLocalState])
+  }, [persistLocalState, activeStorageKey])
+  
   useEffect(() => {
     if (!hydrated || !persistLocalState) return
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses })) } catch { /* State remains usable for this session. */ }
-  }, [hydrated, persistLocalState, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
+    try { localStorage.setItem(activeStorageKey, JSON.stringify({ trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses })) } catch { /* State remains usable for this session. */ }
+  }, [hydrated, persistLocalState, activeStorageKey, trackedApps, notifications, baseEvents, managedEvents, scheduleBlocks, responses])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 

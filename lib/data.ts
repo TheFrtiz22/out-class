@@ -1,6 +1,20 @@
+import { isDemoMode } from "@/contexts/demo-context"
+import * as demo from "@/lib/demo-data"
+
 export type Stage = "Draft" | "Applied" | "Round 1" | "Round 2" | "Decision"
 
 export const STAGES: Stage[] = ["Applied", "Round 1", "Round 2", "Decision"]
+
+/* ── Demo data injection ──
+ * When demo mode is enabled via localStorage, the empty arrays below are
+ * replaced with factory-generated demo data. The demo-data modules import
+ * only *types* from this file (not values), so there is no circular
+ * runtime dependency.
+ *
+ * isDemoMode() returns false during SSR (no localStorage).
+ * The page reloads on toggle, so module caching is cleanly reset.
+ */
+const _demo = isDemoMode()
 
 export type Club = {
   id: string
@@ -16,8 +30,8 @@ export type Club = {
   exec: { name: string; role: string; initials: string }[]
 }
 
-export const clubs: Club[] = []
-export const featuredClub = undefined
+export const clubs: Club[] = _demo ? demo.demoClubs : []
+export const featuredClub = _demo ? demo.demoClubs[0] : undefined
 export type Application = {
   id: string
   clubId: string

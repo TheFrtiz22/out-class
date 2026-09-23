@@ -10,6 +10,7 @@ import { getClubDirectory } from "@/actions/club-directory"
 import { filterDirectory, emptyDirectoryFilters, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
+import { useDemoMode } from "@/contexts/demo-context"
 import "@/components/clubs/club-discovery.css"
 
 export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
@@ -21,13 +22,24 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
   const [selected, setSelected] = useState<DirectoryClub | null>(null)
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const { isDemoEnabled } = useDemoMode()
+
   useEffect(() => {
     let active = true
     setLoading(true)
     getClubDirectory()
       .then((result) => {
         if (!active) return
-        setClubs(result.clubs)
+        
+        let fetchedClubs = result.clubs || []
+        // In demo mode, merge in the local demo clubs, avoiding duplicates by ID
+        if (isDemoEnabled) {
+          const dbIds = new Set(fetchedClubs.map(c => c.id))
+          const mergedDemo = discoverClubs.filter(c => !dbIds.has(c.id))
+          fetchedClubs = [...fetchedClubs, ...mergedDemo]
+        }
+        
+        setClubs(fetchedClubs)
         setError(result.error || "")
         setLoading(false)
       })
@@ -40,7 +52,7 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
     return () => {
       active = false
     }
-  }, [retry])
+  }, [retry, isDemoEnabled])
   useEffect(() => {
     if (!selected && lastClub.current) {
       resultsRef.current

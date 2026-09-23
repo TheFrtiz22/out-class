@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { AuthProvider } from "@/contexts/auth-context"
+import { DemoDataProvider } from "@/contexts/demo-context"
 
 export default async function RootLayout({
   children,
@@ -32,13 +33,15 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <AuthProvider>
-          <ClubCustomizationProvider>
-            {children}
-          </ClubCustomizationProvider>
-        </AuthProvider>
-        <Toaster />
-        <Analytics />
+        <DemoDataProvider>
+          <AuthProvider>
+            <ClubCustomizationProvider>
+              {children}
+            </ClubCustomizationProvider>
+          </AuthProvider>
+          <Toaster />
+          <Analytics />
+        </DemoDataProvider>
       </body>
     </html>
   )
