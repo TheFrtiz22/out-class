@@ -46,8 +46,8 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
   const searchItems: NavItem[] = [...(leader && user && !user.adminRoles.length ? studentNav : items), ...(!items.some(item => item.id === "student-profile") ? [{ id: "student-profile" as const, title: "Profile", icon: UserRound }] : []), { id: "inbox", title: "Notifications", icon: Bell }]
 
   const { isDemoEnabled, toggleDemo } = useDemoMode()
-  // Show demo toggle if in preview mode (no user) or development environment
-  const showDemoToggle = !user || process.env.NODE_ENV === "development"
+  // Show demo toggle if in preview mode, development environment, or if demo is already enabled
+  const showDemoToggle = !user || isDemoEnabled || process.env.NODE_ENV === "development"
 
   function navigate(next: ViewId) {
     drawerNavigated.current = mobileOpen
@@ -97,7 +97,6 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <DropdownMenuItem onSelect={() => navigate("student-profile")}><UserRound className="size-4" />Your profile</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => navigate("landing")}><Home className="size-4" />OutClass home</DropdownMenuItem>
       {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode(leader ? "student" : "admin")}><ShieldCheck className="size-4" />{leader ? "Student workspace" : "Club-leader workspace"}</DropdownMenuItem></>}
-      {showDemoToggle && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={toggleDemo}><Database className="size-4" />{isDemoEnabled ? "Disable demo data" : "Populate demo data"}</DropdownMenuItem></>}
       {user && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
     </DropdownMenuContent></DropdownMenu>
   }
@@ -124,7 +123,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
           drawerNavigated.current = false
           mainRef.current?.focus({ preventScroll: true })
         }} className="w-[min(88vw,320px)] gap-0 bg-background"><SheetTitle className="sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Navigate OutClass and manage your account.</SheetDescription>{sidebar(true)}</SheetContent></Sheet>
-        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm"><span className="hidden shrink-0 text-muted-foreground md:inline">{leader ? "Recruitment" : "My workspace"}</span><ChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted-foreground md:block" /><span className="truncate font-medium">{title}</span>{isDemoEnabled && <span className="ml-2 inline-flex items-center rounded-full bg-[var(--brand-subtle)] px-2 py-0.5 text-xs font-medium text-[var(--brand-orange)] ring-1 ring-inset ring-[var(--brand-orange)]/30">Demo Data</span>}</div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm"><span className="hidden shrink-0 text-muted-foreground md:inline">{leader ? "Recruitment" : "My workspace"}</span><ChevronRight aria-hidden="true" className="hidden size-3.5 shrink-0 text-muted-foreground md:block" /><span className="truncate font-medium">{title}</span>{showDemoToggle && <button onClick={toggleDemo} className="ml-3 inline-flex items-center rounded bg-white px-2 py-1 text-xs font-medium text-neutral-600 border border-neutral-200 hover:bg-neutral-50 focus:outline-none transition-colors">⚡ Demo Mode: {isDemoEnabled ? "ON" : "OFF"}</button>}</div>
         <Button variant="ghost" onClick={() => setSearchOpen(true)} className="hidden gap-2 text-muted-foreground sm:inline-flex"><Search aria-hidden="true" />Search <kbd className="ml-2 rounded border border-border px-1.5 py-0.5 text-[10px]">⌘ / Ctrl K</kbd></Button>
         <IconButton aria-label="Search OutClass" onClick={() => setSearchOpen(true)} className="sm:hidden"><Search /></IconButton>
         <IconButton aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} onClick={() => navigate("inbox")} className="relative"><Bell />{unread > 0 && <span aria-hidden="true" className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>

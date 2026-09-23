@@ -22,11 +22,47 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+import { useDemoMode } from "@/contexts/demo-context";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PopulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const { isDemoEnabled } = useDemoMode();
 
   const fetchUser = React.useCallback(async () => {
+    if (isDemoEnabled) {
+      setUser({
+        id: "demo-user-id",
+        email: "demo.leader@virginia.edu",
+        role: "STUDENT",
+        profile: {
+          id: "demo-profile-id",
+          userId: "demo-user-id",
+          firstName: "Jordan",
+          lastName: "Avery",
+          major: "Economics & Computer Science",
+          classYear: "Class of 2028",
+          linkedin: "linkedin.com/in/jordanavery",
+          bio: "Demo user with admin access.",
+        },
+        applications: [],
+        memberships: [],
+        adminRoles: [{
+          id: "demo-admin-role",
+          userId: "demo-user-id",
+          clubId: "vvf",
+          role: "ADMIN",
+          title: "Recruitment Chair",
+          club: {
+            id: "vvf",
+            name: "Virginia Venture Fund",
+          }
+        }]
+      } as unknown as PopulatedUser);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/users/me');
       if (res.ok) {
@@ -41,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isDemoEnabled]);
 
   useEffect(() => {
     fetchUser();

@@ -30,8 +30,8 @@ export type Club = {
   exec: { name: string; role: string; initials: string }[]
 }
 
-export const clubs: Club[] = _demo ? demo.demoClubs : []
-export const featuredClub = _demo ? demo.demoClubs[0] : undefined
+export const clubs: Club[] = []
+export let featuredClub: Club | undefined = undefined;
 export type Application = {
   id: string
   clubId: string
@@ -706,3 +706,40 @@ export const memberAnnouncements: MemberAnnouncement[] = [
     date: "Sep 10",
   },
 ]
+
+function replaceArray<T>(target: T[], source: T[]) {
+  target.length = 0;
+  if (source) target.push(...source);
+}
+
+function replaceObject<T extends object>(target: T, source: T) {
+  Object.keys(target).forEach((key) => delete (target as any)[key]);
+  Object.assign(target, source);
+}
+
+export function applyDemoData(isDemo: boolean) {
+  replaceArray(clubs, isDemo ? demo.demoClubs : []);
+  featuredClub = isDemo ? demo.demoClubs[0] : undefined;
+  replaceArray(studentMemberships, isDemo ? demo.demoStudentMemberships : []);
+  replaceArray(experienceItems, isDemo ? demo.demoExperienceItems : []);
+  replaceArray(events, isDemo ? demo.demoEvents : []);
+  replaceArray(coffeeChatRequests, isDemo ? demo.demoCoffeeChatRequests : []);
+  replaceArray(applicants, isDemo ? demo.demoMergedApplicants : []);
+  replaceArray(screeningApplicants, isDemo ? demo.demoScreeningApplicants : []);
+  replaceArray(interviewQuestions, isDemo ? demo.demoInterviewQuestions : []);
+  replaceArray(workspaceRounds, isDemo ? demo.demoWorkspaceRounds : []);
+  replaceArray(rosterMembers, isDemo ? demo.demoClubRosters["vvf"] ?? [] : []);
+  replaceArray(clubExecutives, isDemo ? demo.demoClubExecutives["vvf"] ?? [] : []);
+  replaceArray(initialBuilderQuestions, isDemo ? demo.demoClubQuestions["vvf"] ?? [] : []);
+  replaceArray(notifications, isDemo ? demo.demoNotifications : []);
+  replaceArray(discoverClubs, isDemo ? demo.demoDiscoverClubs : []);
+  replaceArray(trackedApplications, isDemo ? demo.demoTrackedApplications : []);
+  replaceArray(essayPrompts, isDemo ? demo.demoEssayPrompts : []);
+  replaceArray(decisionHistory, isDemo ? demo.demoDecisionHistory : []);
+  
+  if (isDemo && demo.demoInterviewCandidate) replaceObject(interviewCandidate, demo.demoInterviewCandidate);
+  if (isDemo && demo.demoNextInQueue) replaceObject(nextCandidateInQueue, demo.demoNextInQueue);
+}
+
+// Initial populate
+applyDemoData(_demo);
