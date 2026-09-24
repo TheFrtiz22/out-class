@@ -12,15 +12,20 @@ datasource db {
 // ==========================================
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique // MUST be @virginia.edu
-  role      AppRole  @default(STUDENT) // Global role
-  createdAt DateTime @default(now())
-
+  id            String    @id @default(uuid())
+  email         String    @unique // MUST be @virginia.edu
+  passwordHash  String?   // If using local auth; omitted if using OAuth exclusively
+  role          AppRole   @default(STUDENT) // Global role
+  createdAt     DateTime  @default(now())
+  
   studentProfile StudentProfile?
   memberships    ClubMember[]
   applications   Application[]
   attendances    EventAttendance[]
+  platformAdmin PlatformAdmin?
+  clubInvitations ClubInvitation[]
+  clubClaims ClubClaim[]
+  assignedTasks ClubTask[]
 }
 
 enum AppRole {
@@ -29,21 +34,21 @@ enum AppRole {
 }
 
 model StudentProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  firstName   String
-  lastName    String
-  computingId String  @unique
-  major       String
-  gradYear    Int
-  gpa         Float?
-  satScore    Int?
-  linkedinUrl String?
-  bio         String?
-  resumeUrl   String? // S3 URL
-  headshotUrl String? // S3 URL
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName      String
+  lastName       String
+  computingId    String   @unique
+  major          String
+  gradYear       Int
+  gpa            Float?
+  satScore       Int?
+  linkedinUrl    String?
+  bio            String?
+  resumeUrl      String?  // S3 URL
+  headshotUrl    String?  // S3 URL
 
   experiences Experience[]
 }
@@ -62,8 +67,8 @@ model Experience {
 // ==========================================
 
 model Club {
-  id             String  @id @default(uuid())
-  slug           String  @unique
+  id             String   @id @default(uuid())
+  slug           String   @unique
   name           String
   tagline        String
   description    String
@@ -79,17 +84,16 @@ model Club {
   applications   Application[]
   pipelineRounds PipelineRound[]
   questions      ApplicationQuestion[]
-  interviewSlots InterviewSlot[]
 }
 
 model ClubMember {
-  id     String   @id @default(uuid())
-  userId String
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clubId String
-  club   Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  role   ClubRole @default(GENERAL_MEMBER)
-  title  String? // e.g., "VP of Recruitment"
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  role      ClubRole @default(GENERAL_MEMBER)
+  title     String?  // e.g., "VP of Recruitment"
 
   evaluations Evaluation[]
 
@@ -107,12 +111,12 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
-  id     String @id @default(uuid())
-  clubId String
-  club   Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  name   String // e.g., "Applied", "Round 1", "Decision"
-  order  Int
-
+  id       String   @id @default(uuid())
+  clubId   String
+  club     Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name     String   // e.g., "Applied", "Round 1", "Decision"
+  order    Int
+  
   applications Application[]
 }
 
@@ -135,7 +139,7 @@ enum QuestionType {
 }
 
 model Application {
-  id        String        @id @default(uuid())
+  id        String   @id @default(uuid())
   studentId String
   student   User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   clubId    String
@@ -242,3 +246,4 @@ model InterviewBooking {
 
   @@unique([slotId, applicationId])
 }
+

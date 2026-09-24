@@ -19,11 +19,13 @@ export function DemoDataProvider({
   allowed = false,
   enabled = false,
   clearStaleSession = false,
+  template,
 }: {
   children: ReactNode
   allowed?: boolean
   enabled?: boolean
   clearStaleSession?: boolean
+  template?: DemoState
 }) {
   const [ready, setReady] = useState(!enabled && !clearStaleSession),
     [state, setState] = useState<DemoState | null>(null),
@@ -36,7 +38,7 @@ export function DemoDataProvider({
     )
     if (enabled && allowed) {
       try {
-        demoStore.start()
+        demoStore.start(template)
       } catch {
         setError("Demo storage is unavailable. Allow browser storage or turn Demo Mode off.")
       }
@@ -68,7 +70,7 @@ export function DemoDataProvider({
       unsubscribe()
       window.removeEventListener("storage", sync)
     }
-  }, [allowed, enabled, clearStaleSession, cleanupRetry])
+  }, [allowed, enabled, clearStaleSession, cleanupRetry, template])
   async function toggleDemo() {
     try {
       const response = await fetch("/api/demo", {
@@ -101,7 +103,7 @@ export function DemoDataProvider({
     if (!clubId) return
     try {
       demoStore.mutate((s) => {
-        if (!s.clubs.some((c) => c.id === clubId)) throw new Error("Unknown demo club")
+        if (clubId !== s.clubs[0].id) throw new Error("Demo management is limited to MII.")
         s.perspective = { role, clubId }
       })
       const url = new URL(window.location.href)

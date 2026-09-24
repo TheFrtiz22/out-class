@@ -103,3 +103,17 @@ export const demoSnapshotSchema = z
     )
       ctx.addIssue({ code: "custom", message: "Invalid demo relationships" })
   })
+
+/** JSON content stored by platform admins uses the same validation as browser snapshots. */
+export function readDemoTemplate(value: unknown) {
+  const revived = JSON.parse(JSON.stringify(value), (_, item) =>
+    typeof item === "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(item) ? new Date(item) : item,
+  )
+  if (!demoSnapshotSchema.safeParse(revived).success) throw new Error("Invalid demo template.")
+  const seed = revived as import("./seed").DemoState
+  const manager = seed.memberships.find(member => member.clubId === seed.clubs[0].id && member.role === "PRESIDENT")
+  if (seed.clubs[0].name !== "MII" || !manager) throw new Error("The demo must retain its MII workspace.")
+  manager.userId = seed.students[0].id
+  seed.perspective = { role: "student", clubId: seed.clubs[0].id }
+  return seed
+}

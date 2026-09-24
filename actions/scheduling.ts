@@ -2,7 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/utils/prisma";
-import { requireAuth, requireClubRole } from "@/utils/auth";
+import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -20,7 +20,7 @@ export async function createInterviewSlots(data: z.infer<typeof createSlotsSchem
   const parsed = createSlotsSchema.parse(data);
 
   // Must be an admin to define interview blocks
-  await requireClubRole(parsed.clubId, ["PRESIDENT", "RECRUITMENT_LEAD"]);
+  await requireClubPermission(parsed.clubId, ["interviews.manage"]);
 
   const slots = await prisma.interviewSlot.createMany({
     data: parsed.slots.map(s => ({

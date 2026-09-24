@@ -1,5 +1,6 @@
 "use client";
 
+import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { User, StudentProfile, Application, Club, ClubMember } from '@prisma/client';
 
@@ -18,6 +19,8 @@ interface AuthContextType {
   loading: boolean;
   mutateUser: (newUser: PopulatedUser) => void;
   refreshUser: () => Promise<void>;
+  activeClubId: string;
+  selectClub: (clubId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +31,8 @@ import { useDemoMode } from "@/contexts/demo-context";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<PopulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const { isDemoEnabled, state } = useDemoMode();
+  const { isDemoEnabled, state, viewAs } = useDemoMode();
+  const [selectedClubId, setSelectedClubId] = useState("");
 
   const fetchUser = React.useCallback(async () => {
 
@@ -56,8 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser);
   };
 
+  const identity = isDemoEnabled && state ? demoUser() as unknown as PopulatedUser : user;
+  const workspaces = identity?.memberships.filter(hasWorkspace) || [];
+  const activeClubId = workspaces.find(m => m.clubId === (isDemoEnabled ? state?.perspective.clubId : selectedClubId))?.clubId || workspaces[0]?.clubId || "";
+  const selectClub = (clubId: string) => {
+    if (!workspaces.some(m => m.clubId === clubId)) return;
+    if (isDemoEnabled) viewAs("leader", clubId);
+    else setSelectedClubId(clubId);
+  };
   return (
-    <AuthContext.Provider value={{ user: isDemoEnabled && state ? demoUser() as unknown as PopulatedUser : user, loading: isDemoEnabled ? !state : loading, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+    <AuthContext.Provider value={{ user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : loading, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

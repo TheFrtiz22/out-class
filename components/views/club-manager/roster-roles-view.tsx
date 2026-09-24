@@ -131,7 +131,7 @@ export function RosterRolesView() {
                   <SelectContent>
                     {ROLES.map((r) => (
                       <SelectItem key={r} value={r}>
-                        {r}
+                        {r.replace("President / Super Admin", "President (local preview)")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -179,7 +179,7 @@ export function RosterRolesView() {
                       <div className="flex flex-col gap-1.5">
                         <Badge variant={roleBadgeVariant(m.role)} className="w-fit">
                           {isPresident && <ShieldCheck className="size-3" />}
-                          {m.role}
+                          {m.role.replace("President / Super Admin", "President (local preview)")}
                         </Badge>
                         <Select value={m.role} onValueChange={(v: MemberRole) => handleRoleChange(m.id, v)}>
                           <SelectTrigger className="h-7 w-[210px] text-xs" aria-label="Change role">
@@ -188,7 +188,7 @@ export function RosterRolesView() {
                           <SelectContent>
                             {ROLES.map((r) => (
                               <SelectItem key={r} value={r} className="text-xs">
-                                {r}
+                                {r.replace("President / Super Admin", "President (local preview)")}
                               </SelectItem>
                             ))}
                           </SelectContent>

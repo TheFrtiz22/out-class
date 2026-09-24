@@ -1,4 +1,6 @@
 "use client"
+import { TestScoreDetail } from "@/components/test-score-detail"
+import { hasPermission } from "@/lib/permissions"
 
 import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
@@ -23,14 +25,15 @@ type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 const selectStyle =
   "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
-  const { user, loading } = useAuth()
+  const { user, loading, activeClubId, selectClub } = useAuth()
   const { leaderFocus } = useApplicationState()
-  const memberships = user?.memberships || []
-  const [clubId, setClubId] = useState("")
+  const memberships = (user?.memberships || []).filter(m => hasPermission(m, "applications.review"))
+  const clubId = activeClubId
+  const setClubId = selectClub
   useEffect(() => {
     if (leaderFocus?.clubId) setClubId(leaderFocus.clubId)
   }, [leaderFocus?.clubId])
-  const membership = memberships.find((item) => item.clubId === clubId) || memberships[0]
+  const membership = memberships.find((item) => item.clubId === clubId) || (!clubId ? memberships[0] : undefined)
   const [locked, setLocked] = useState(false)
   const [saving, setSaving] = useState(false)
   const handleLock = useCallback((value: boolean, pending = false) => {
@@ -445,12 +448,14 @@ function InterviewSession({
             >
               <section className="space-y-3 border-t border-border pt-5">
                 <h2 className="text-sm font-semibold">Profile at a glance</h2>
-                {profile?.bio && (
+                <TestScoreDetail profile={profile} />
+              {profile?.bio && (
                   <p className="whitespace-pre-wrap text-sm leading-7">{profile.bio}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   {active.student.email}
                   {profile?.gpa != null && ` · GPA ${profile.gpa}`}
+                  {profile?.actScore != null && ` · ACT ${profile.actScore}`}
                   {profile?.satScore != null && ` · SAT ${profile.satScore}`}
                 </p>
                 {profile?.experiences.map((item) => (

@@ -200,3 +200,23 @@ test("corrupt demo storage resets safely and failed writes retain the previous s
     }
   }
 })
+
+test("demo workspace switching preserves one identity and grants leadership only at MII", async () => {
+  const h = harness(), { demoStore, demoUser } = h.load("lib/demo/store.ts"), api = h.load("lib/workspace-api.ts")
+  demoStore.start()
+  const student = demoUser(), s = demoStore.get()
+  assert.equal(student.id, s.students[0].id)
+  assert.equal(student.adminRoles.length, 1)
+  assert.equal(student.adminRoles[0].clubId, s.clubs[0].id)
+  demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[0].id } })
+  assert.equal(demoUser().id, student.id)
+  await api.getClubPipeline(s.clubs[0].id)
+  demoStore.mutate(state => { state.perspective = { role: "leader", clubId: state.clubs[1].id } })
+  await assert.rejects(api.getClubPipeline(s.clubs[1].id), /perspective/)
+  const foreign = s.applications.find(a => a.clubId === s.clubs[1].id && a.status !== "DRAFTING")
+  await assert.rejects(api.setApplicationStatus({clubId: foreign.clubId, applicationId: foreign.id, status: "ACCEPTED"}), /perspective/)
+  demoStore.stop(); demoStore.start()
+  assert.equal(demoStore.get().perspective.role, "student")
+  assert.equal(demoUser().id, student.id)
+  assert.equal(h.calls(), 0)
+})

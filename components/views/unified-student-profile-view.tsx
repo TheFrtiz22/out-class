@@ -1,4 +1,5 @@
 "use client"
+import { hasWorkspace } from "@/lib/permissions"
 
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
@@ -62,7 +63,7 @@ export function UnifiedStudentProfileView() {
     logoUrl: membership.club.logoUrl,
     color: membership.club.color || "#051B3D",
     role:
-      membership.role === "PRESIDENT" || membership.role === "RECRUITMENT_LEAD"
+      hasWorkspace(membership)
         ? "Executive"
         : "Member",
     title: membership.title || undefined,
@@ -215,7 +216,7 @@ export function UnifiedStudentProfileView() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{profile.major}</p>
-              {(profile.gpa != null || profile.satScore != null) && (
+              {(profile.gpa != null || profile.satScore != null || profile.actScore != null) && (
                 <dl className="mt-4 flex flex-wrap gap-6 text-sm">
                   {profile.gpa != null && (
                     <div className="flex gap-2">
@@ -223,6 +224,8 @@ export function UnifiedStudentProfileView() {
                       <dd>{profile.gpa.toFixed(2)} / 4.00</dd>
                     </div>
                   )}
+                  {(["actEnglish", "actMath", "actReading", "actScience"] as const).map(key => profile[key] != null && <div key={key}><dt className="text-muted-foreground">ACT {key.slice(3)}</dt><dd>{profile[key]}</dd></div>)}
+                  {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
                   {profile.satScore != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">SAT</dt>

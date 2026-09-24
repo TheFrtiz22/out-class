@@ -1,3 +1,4 @@
+import { actShape } from "@/lib/test-scores"
 import { z } from "zod"
 import type { Experience, StudentProfile } from "@prisma/client"
 
@@ -37,6 +38,7 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
   }),
   z.object({
     section: z.literal("education"),
+    ...actShape,
     major: z.string().trim().min(1).max(200),
     gradYear: z.number().int().min(2020).max(2030),
     gpa: z.number().min(0).max(4).nullable(),

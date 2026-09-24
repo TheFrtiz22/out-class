@@ -66,6 +66,7 @@ export const academicProfileSchema = z.object({
       },
       "GPA must be between 0.0 and 4.0"
     ),
+  actScore: z.string().optional().refine(v => !v || (Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 36), "ACT composite must be between 1 and 36"),
   satScore: z
     .string()
     .optional()

@@ -111,6 +111,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       major: majors[i % majors.length],
       gradYear: year + 1 + (i % 4),
       gpa: i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),
+      actScore: i % 3 ? 24 + (i % 13) : null,
+      actEnglish: null as number | null, actMath: null as number | null, actReading: null as number | null, actScience: null as number | null,
       satScore: i % 4 ? 1250 + (i % 16) * 20 : null,
       bio:
         i % 9 === 8
@@ -132,6 +134,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     id: uid(4, i),
     slug,
     name,
+    testRequirement: "OPTIONAL" as string,
     category,
     theme,
     logoText: name
@@ -198,13 +201,13 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       ...(i % 3 ? ["Round 2"] : []),
       "Interview",
       "Final Decision",
-    ].map((name, order) => ({ id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
+    ].map((name, order) => ({ anonymousReview: false, id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
   }))
   const memberships = clubs.flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
       id: uid(7, c * 30 + m),
       clubId: club.id,
-      userId: students[(c * 7 + m + 120) % 200].id,
+      userId: c === 0 && m === 0 ? students[0].id : students[(c * 7 + m + 120) % 200].id,
       role:
         m === 0
           ? ("PRESIDENT" as const)
@@ -250,6 +253,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
         clubId: club.id,
         roundId: round.id,
         status,
+        anonymousReviewText: null as string | null,
         submittedAt: status === "DRAFTING" ? null : at(-8 + (a % 5)),
         answers: club.questions.slice(0, status === "DRAFTING" ? 1 : 3).map((q, j) => ({
           id: `${id}-answer-${j}`,

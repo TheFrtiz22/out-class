@@ -1,4 +1,5 @@
 "use client"
+import { testRequirementLabels } from "@/lib/test-scores"
 
 import { useEffect, useState, type FormEvent } from "react"
 import { Check, FileText } from "lucide-react"
@@ -179,6 +180,7 @@ export function ApplicationForm({
         <FileText className="mt-1 size-4 shrink-0 text-muted-foreground" />
         <div>
           <p>Your shared profile gives the club your academic and experience details.</p>
+          <p>{testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Scores are taken from your profile; SAT and ACT are never converted.</p>
           <Button variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>
             Review your profile
           </Button>

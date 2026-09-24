@@ -2,6 +2,9 @@
 
 import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
+import { safeReturnPath } from "@/lib/auth"
+import { useAuth } from "@/contexts/auth-context"
+import { ClubWorkspaceSettings } from "@/components/club-workspace-settings"
 import { demoDashboard } from "@/lib/demo/store"
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -43,6 +46,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 
 export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
   const demo = useDemoMode()
+  const { selectClub, user } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
   const [authError, setAuthError] = useState("")
@@ -84,10 +88,11 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
     setView(next)
   }
 
-  function switchMode(mode: AppMode) {
-    if (demo.isDemoEnabled) { demo.viewAs(mode === "admin" ? "leader" : "student"); return }
+  function switchMode(mode: AppMode, clubId?: string) {
+    if (demo.isDemoEnabled) { demo.viewAs(mode === "admin" ? "leader" : "student", clubId); return }
+    if (clubId) selectClub(clubId)
     setAppMode(mode)
-    setView(mode === "admin" ? "leader-dashboard" : "student-dashboard")
+    setView(mode === "admin" ? (user?.memberships.some(m => m.clubId === clubId && (m.isOwner || m.permissions.includes("applicants.identify") || m.permissions.includes("applications.review"))) ? "leader-dashboard" : "club-manager") : "student-dashboard")
   }
 
   if (view === "landing") {
@@ -113,7 +118,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
         onSignIn={() => setView("auth")}
         onComplete={() => {
           // Reload so the Server Component layout picks up the new session and fetches fresh data
-          window.location.href = "/"
+          window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
         }}
       />
     )
@@ -133,7 +138,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
             {view === "screening-dashboard" && <ScreeningDashboardView />}
             {view === "interview-scheduler" && (demo.isDemoEnabled ? <DemoInterviewSchedule onNavigate={navigate} /> : <InterviewSchedulerView onNavigate={navigate} />)}
             {view === "broadcast-messages" && <BroadcastMessagesView />}
-            {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubManagerView />)}
+            {view === "club-manager" && (demo.isDemoEnabled ? <DemoClubSettings /> : <ClubWorkspaceSettings />)}
             {view === "club-management-portal" && <ClubManagementPortalView />}
       </DashboardLayout>}
     </ApplicationStateProvider>

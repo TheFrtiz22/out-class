@@ -1,4 +1,8 @@
 "use client"
+import { TestScoreDetail } from "@/components/test-score-detail"
+import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings"
+import { RevealApplicant } from "@/components/reveal-applicant"
+import { hasPermission } from "@/lib/permissions"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -54,22 +58,23 @@ const average = (app: Candidate) =>
     : null
 
 export function LiveLeaderWorkspace() {
-  const { user } = useAuth()
+  const { user, activeClubId, selectClub } = useAuth()
   const { leaderFocus } = useApplicationState()
   const clubs = (user?.memberships || []).filter(
-    (item) => item.role === "PRESIDENT" || item.role === "RECRUITMENT_LEAD",
+    (item) => (hasPermission(item, "applicants.identify") || hasPermission(item, "applications.review")),
   )
-  const [clubId, setClubId] = useState("")
+  const clubId = activeClubId
+  const setClubId = selectClub
   useEffect(() => {
     if (leaderFocus) setClubId(leaderFocus.clubId)
   }, [leaderFocus])
-  const club = clubs.find((item) => item.clubId === clubId) || clubs[0]
+  const club = clubs.find((item) => item.clubId === clubId) || (!clubId ? clubs[0] : undefined)
   if (!club)
     return (
       <div className="space-y-3 py-10">
         <h2 className="text-xl font-semibold">No recruitment workspace assigned</h2>
         <p className="text-sm text-muted-foreground">
-          A president or recruitment-lead role is required to open a club’s workspace.
+          Your club manager can grant applicant access. Use Club settings for your other workspace capabilities.
         </p>
       </div>
     )
@@ -117,6 +122,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const [year, setYear] = useState("")
   const [gpa, setGpa] = useState("")
   const [sat, setSat] = useState("")
+  const [act, setAct] = useState("")
   const [compact, setCompact] = useState(true)
   const [sort, setSort] = useState("name")
   const [descending, setDescending] = useState(false)
@@ -189,6 +195,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             (!major || profile?.major === major) &&
             (!year || String(profile?.gradYear) === year) &&
             (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
+            (!act || (profile?.actScore != null && profile.actScore > Number(act))) &&
             (!sat || (profile?.satScore != null && profile.satScore > Number(sat))) &&
             (!review ||
               (review === "unreviewed"
@@ -220,6 +227,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       year,
       gpa,
       sat,
+      act,
       review,
       sort,
       descending,
@@ -309,16 +317,9 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           applicationId: active.id,
           newRoundId: targetRound,
         })
-        setData((previous) =>
-          previous
-            ? {
-                ...previous,
-                applications: previous.applications.map((app) =>
-                  app.id === active.id ? { ...app, roundId: targetRound } : app,
-                ),
-              }
-            : previous,
-        )
+        setData(null)
+        setActiveId(null)
+        setRevision(v => v + 1)
         const mine = active.evaluations.find(
           (item) =>
             item.interviewerId === membership.id &&
@@ -467,12 +468,13 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           Refresh
         </Button>
       </div>
+      {data && hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify") && <RecruitmentReviewSettings clubId={membership.clubId} rounds={data.rounds} onChanged={() => { setData(null); setActiveId(null); setRevision(v => v + 1) }} />}
       <BoardDecisionMode
         applicants={filtered}
         rounds={data.rounds}
         clubId={membership.clubId}
         clubName={membership.club.name}
-        canDecide={membership.role === "PRESIDENT"}
+        canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
         onDecision={(id, status) =>
           setData((previous) =>
             previous
@@ -553,12 +555,13 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             />
           </div>
         </div>
+          <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
       </details>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
           {filtered.length} of {applicants.length} applicants · scores out of 10
         </p>
-        {(query || round || status || review || major || year || gpa || sat) && (
+        {(query || round || status || review || major || year || gpa || sat || act) && (
           <Button
             variant="ghost"
             size="sm"
@@ -570,7 +573,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
               setMajor("")
               setYear("")
               setGpa("")
-              setSat("")
+              setSat(""); setAct("")
             }}
           >
             Clear filters
@@ -781,6 +784,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                 >
                   {name(active)}
                 </SheetTitle>
+                {active.studentId.startsWith("anonymous-") && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={active.id} clubId={membership.clubId} applicationId={active.id} />}
                 <SheetDescription>
                   {active.student.studentProfile?.major || "Academic profile not provided"} ·{" "}
                   {active.student.email}
@@ -825,9 +829,11 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                       Class of {active.student.studentProfile.gradYear}
                       {active.student.studentProfile.gpa != null &&
                         ` · GPA ${active.student.studentProfile.gpa}`}
+                      {active.student.studentProfile.actScore != null && ` · ACT ${active.student.studentProfile.actScore}`}
                       {active.student.studentProfile.satScore != null &&
                         ` · SAT ${active.student.studentProfile.satScore}`}
                     </p>
+                    <TestScoreDetail profile={active.student.studentProfile} />
                     {active.student.studentProfile.experiences.map((item) => (
                       <div key={item.id} className="text-sm">
                         <p className="font-medium">{item.title}</p>
@@ -935,7 +941,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                     onChange={(event) => setNotes(event.target.value)}
                   />
                   <div className="flex items-center gap-3">
-                    <Button disabled={busy} type="submit">
+                    <Button disabled={busy || !hasPermission(membership, "applications.review")} type="submit">
                       {busy ? "Saving…" : "Save evaluation"}
                     </Button>
                     <span className="text-xs text-muted-foreground">
@@ -963,7 +969,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   </select>
                   <Button
                     variant="outline"
-                    disabled={busy || dirty || targetRound === active.roundId}
+                    disabled={busy || dirty || targetRound === active.roundId || !hasPermission(membership, "recruitment.manage") || !hasPermission(membership, "applicants.identify")}
                     onClick={() => void mutate("round")}
                   >
                     Move round
@@ -973,7 +979,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   Moving rounds does not change the student-visible application status. Save your
                   review before moving.
                 </p>
-                {membership.role === "PRESIDENT" ? (
+                {hasPermission(membership, "decisions.manage") ? (
                   <div className="flex flex-wrap gap-2">
                     {(["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"] as const)
                       .filter((value) => value !== active.status)
@@ -991,7 +997,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Only the club president can change application status or issue decisions.
+                    Decision-management permission is required to change application status or issue decisions.
                   </p>
                 )}
               </section>

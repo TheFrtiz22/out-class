@@ -1,8 +1,10 @@
+import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
 export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
 let enabled = false
+let template: DemoState | undefined
 const listeners = new Set<() => void>()
 export const demoStore = {
   active: () => enabled,
@@ -16,7 +18,8 @@ export const demoStore = {
       listeners.delete(listener)
     }
   },
-  start: () => {
+  start: (seed?: DemoState) => {
+    template = seed
     let saved: DemoState | null = null
     try {
       const raw = localStorage.getItem(DEMO_KEY)
@@ -27,7 +30,21 @@ export const demoStore = {
     } catch {
       /* Reset damaged browser data. */
     }
-    state = demoSnapshotSchema.safeParse(saved).success ? saved! : createDemoSeed()
+    state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
+    for (const application of state!.applications) application.anonymousReviewText ??= null
+    for (const club of state!.clubs) {
+      club.testRequirement ??= "OPTIONAL"
+      for (const round of club.rounds) round.anonymousReview ??= false
+    }
+    for (const student of state!.students) {
+      student.profile.actScore ??= null
+      student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
+    }
+    // Upgrade saved presentations without resetting applications or evaluations.
+    const mii = state!.clubs[0]
+    const manager = state!.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
+    if (manager) manager.userId = state!.students[0].id
+    if (state!.perspective.clubId !== mii.id) state!.perspective = { role: "student", clubId: mii.id }
     enabled = true
     demoStore.save()
   },
@@ -55,7 +72,7 @@ export const demoStore = {
   },
   reset: () => {
     const previous = demoStore.get()
-    state = createDemoSeed(previous.anchor)
+    state = template ? structuredClone(template) : createDemoSeed(previous.anchor)
     try {
       demoStore.save()
     } catch (error) {
@@ -66,7 +83,8 @@ export const demoStore = {
 }
 export function demoMember() {
   const s = demoStore.get()
-  return s.memberships.find((m) => m.clubId === s.perspective.clubId && m.role === "PRESIDENT")!
+  if (s.perspective.clubId !== s.clubs[0].id) throw new Error("Demo management is limited to MII.")
+  return s.memberships.find((m) => m.clubId === s.clubs[0].id && m.userId === s.students[0].id)!
 }
 function presentProfile(profile: DemoState["students"][number]["profile"]) {
   return {
@@ -78,21 +96,17 @@ function presentProfile(profile: DemoState["students"][number]["profile"]) {
   }
 }
 export function demoUser() {
-  const s = demoStore.get(),
-    person = s.students.find(
-      (p) => p.id === (s.perspective.role === "student" ? s.students[0].id : demoMember().userId),
-    )!
-  const memberships =
-    s.perspective.role === "leader"
-      ? [{ ...demoMember(), club: s.clubs.find((c) => c.id === s.perspective.clubId)! }]
-      : s.memberships
-          .filter((m) => m.userId === person.id)
-          .map((m) => ({ ...m, club: s.clubs.find((c) => c.id === m.clubId)! }))
+  const s = demoStore.get(), person = s.students[0]
+  const memberships = s.memberships.filter(m => m.userId === person.id).map(m => ({
+    ...m, club: s.clubs.find(c => c.id === m.clubId)!,
+    isOwner: m.clubId === s.clubs[0].id,
+    permissions: m.clubId === s.clubs[0].id ? [...clubPermissions] : [],
+  }))
   return {
     ...person,
     profile: presentProfile(person.profile),
     memberships,
-    adminRoles: memberships.filter((m) => m.role !== "GENERAL_MEMBER"),
+    adminRoles: memberships.filter(hasWorkspace),
     applications: studentApplications(person.id),
   }
 }

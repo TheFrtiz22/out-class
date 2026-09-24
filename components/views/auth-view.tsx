@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
-import { isUvaEmail } from "@/lib/auth"
+import { isUvaEmail, safeReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 
@@ -56,7 +56,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         provider: "azure",
         options: {
           scopes: "email",
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeReturnPath(new URLSearchParams(window.location.search).get("next")))}`,
         },
       })
       if (oauthError) throw oauthError
@@ -75,7 +75,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
       if (error) { setError(error.message); return }
-      window.location.href = "/"
+      window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch { setError("Unable to sign in. Please try again.") }
     finally { setLoading(false) }
   }
@@ -105,7 +105,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         type: "email",
       })
       if (verifyError) { setError(verifyError.message); return }
-      window.location.href = "/"
+      window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch {
       setError("Unable to verify this code. Please try again.")
     } finally {

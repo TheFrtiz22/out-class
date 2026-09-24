@@ -298,7 +298,7 @@ export function StudentOnboardingWizard({
 
   const step3Form = useForm<AcademicProfileData>({
     resolver: zodResolver(academicProfileSchema),
-    defaultValues: { gradYear: "", major: "", gpa: "", satScore: "" },
+    defaultValues: { gradYear: "", major: "", gpa: "", satScore: "", actScore: "" },
   })
 
   function onStep3Submit(data: AcademicProfileData) {
@@ -359,6 +359,7 @@ export function StudentOnboardingWizard({
         major: academic!.major,
         gradYear: parseInt(academic!.gradYear, 10),
         gpa: academic!.gpa ? parseFloat(academic!.gpa) : undefined,
+        actScore: academic!.actScore ? Number(academic!.actScore) : undefined,
         satScore: academic!.satScore
           ? parseInt(academic!.satScore, 10)
           : undefined,
@@ -678,6 +679,9 @@ export function StudentOnboardingWizard({
                   </div>
 
                   <div className="space-y-1.5">
+                    <Label htmlFor="actScore">ACT composite (optional)</Label>
+                    <Input id="actScore" type="number" min={1} max={36} step={1} {...step3Form.register("actScore")} />
+                    {step3Form.formState.errors.actScore && <p role="alert" className="text-xs text-red-600">{step3Form.formState.errors.actScore.message}</p>}
                     <Label htmlFor="satScore">
                       SAT score{" "}
                       <span className="font-normal text-neutral-400">

@@ -23,16 +23,16 @@ Turning ON sets an HttpOnly, same-site cookie for eight hours and reloads into t
 
 ## Presenting
 
-The account menu exposes **View As · Sample Student**, **View As · Club Leader** (all 20 clubs), and **Reset Demo**. Perspective changes remount view-local state but retain the shared demo records. Reset reconstructs the same season using its stored date anchor, clears demo customizations, and returns to the sample student. Dates are relative to the first initialization date; reset preserves that date for deterministic presentations. To start a later season with a new anchor, remove only `outclass.presentation.v1` from this browser while demo is off.
+The account workspace switcher exposes **Personal / Student** and **MII — Club workspace** for the same fictional student. The demo menu exposes **Reset Demo**. Demo leadership is limited to MII; other clubs remain available for discovery and applications. Perspective changes remount view-local state but retain the shared demo records. Reset reconstructs the same season using its stored date anchor, clears demo customizations, and returns to the sample student. Dates are relative to the first initialization date; reset preserves that date for deterministic presentations. To start a later season with a new anchor, remove only `outclass.presentation.v1` from this browser while demo is off.
 
 Suggested walkthrough:
 
 1. Student Home: priorities, mixed application states, meetings, deadlines and updates.
 2. Discover: sample curated selection and 20 club profiles, questions, dates and subscriptions.
 3. Applications: finish the AIF draft, save it, then submit it.
-4. View As AIF leader: find Jordan Avery, review responses, score or advance the round.
+4. Switch to MII’s club workspace: find an applicant, review responses, score or advance the round.
 5. Voting mode: record an accepted/not-selected decision, then switch to student to see the outcome.
-6. View As MII leader → Interviews: release/reassign a slot, open its candidate in Interview Mode, save notes and an overall 1–10 evaluation.
+6. MII club workspace → Interviews: release/reassign a slot, open its candidate in Interview Mode, save notes and an overall 1–10 evaluation.
 7. Student Calendar and Applications show the same scheduled slot. Club Settings shows the fictional member directory, question set, rounds and sample offer target.
 8. Reset Demo and repeat without affecting real records.
 
@@ -77,3 +77,5 @@ Unit tests cover deterministic counts and joins, unique fictional identities, cl
 The normal Node test suite, TypeScript, production build and available lint command are run at completion. ESLint was not installed before this change; its absence is reported rather than presented as a passing check. Live deployed allowlist/login behavior still requires configured production/staging credentials.
 
 Configuration audit: **79/79 Node tests pass**, TypeScript passes, and the production build passes. Production browser checks also confirmed hidden/denied demo access for ordinary visitors, ignored legacy localStorage flags, cross-origin request rejection, mutation blocking, and cleanup of a revoked/unauthorized demo cookie. The available lint command still reports `eslint: command not found`.
+
+See [authorization architecture](authorization.md) for membership capabilities, platform administration, safe migration rollout, and demo identity compatibility.

@@ -1,4 +1,5 @@
 "use client"
+import { TestScoreDetail } from "@/components/test-score-detail"
 
 import { DemoRoundTarget } from "@/components/demo-workspace"
 import { useRef, useState } from "react"
@@ -233,6 +234,7 @@ function DecisionPresentation({
           <div className="grid gap-8 border-y border-border py-7 md:grid-cols-[minmax(0,1.25fr)_minmax(0,.75fr)]">
             <section className="min-w-0 space-y-4">
               <h3 className="text-sm font-semibold">Profile & experience</h3>
+              <TestScoreDetail profile={profile} />
               {profile?.bio && (
                 <p className="whitespace-pre-wrap break-words text-sm leading-7">{profile.bio}</p>
               )}
@@ -272,7 +274,8 @@ function DecisionPresentation({
               <p className="text-xs text-muted-foreground">
                 {profile?.gpa != null && `GPA ${profile.gpa} / 4.0`}
                 {profile?.gpa != null && profile?.satScore != null && " · "}
-                {profile?.satScore != null && `SAT ${profile.satScore}`}
+                {profile?.actScore != null && ` · ACT ${profile.actScore}`}
+                  {profile?.satScore != null && `SAT ${profile.satScore}`}
               </p>
               {profile && profile.experiences.length > 3 && (
                 <details className="text-sm">
@@ -376,7 +379,7 @@ function DecisionPresentation({
             </div>
           ) : (
             <p className="max-w-sm text-center text-sm text-muted-foreground">
-              Presentation only. The club president records final decisions.
+              Presentation only. Decision-management permission is required to record final decisions.
             </p>
           )}
           <Button

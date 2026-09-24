@@ -1,6 +1,6 @@
 "use server";
 
-import { profileSectionSchema, storagePathSchema } from "@/lib/student-profile";
+import { profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -8,13 +8,14 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 const profileSchema = z.object({
+  ...actShape,
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   computingId: z.string().min(1, "Computing ID is required"),
   major: z.string().min(1, "Major is required"),
   gradYear: z.number().int().min(2020).max(2030),
   gpa: z.number().min(0).max(4.0).optional(),
-  satScore: z.number().min(400).max(1600).optional(),
+  satScore: z.number().int().min(400).max(1600).optional(),
   linkedinUrl: z.string().url().optional().or(z.literal("")),
   bio: z.string().optional(),
   resumeUrl: storagePathSchema.optional(),
@@ -60,6 +61,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       gradYear: parsed.gradYear,
       gpa: parsed.gpa,
       satScore: parsed.satScore,
+      actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
       bio: parsed.bio || null,
       resumeUrl: parsed.resumeUrl || null,
@@ -78,6 +80,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       gradYear: parsed.gradYear,
       gpa: parsed.gpa,
       satScore: parsed.satScore,
+      actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
       bio: parsed.bio || null,
       resumeUrl: parsed.resumeUrl || null,

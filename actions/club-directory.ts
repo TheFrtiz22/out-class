@@ -5,6 +5,10 @@ import type { DirectoryClub } from "@/lib/club-directory"
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
+  testRequirement: true,
+  claimedAt: true,
+  campusKey: true,
+  directorySource: true,
   id: true,
   name: true,
   tagline: true,
@@ -25,6 +29,10 @@ const publicFields = {
 } as const
 function present(club: Awaited<ReturnType<typeof readClubs>>[number]): DirectoryClub {
   return {
+    testRequirement: club.testRequirement,
+    claimed: !!club.claimedAt,
+    campusKey: club.campusKey,
+    directorySource: club.directorySource,
     id: club.id,
     name: club.name,
     logoText: club.name

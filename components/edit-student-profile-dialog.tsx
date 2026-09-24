@@ -73,6 +73,7 @@ export function EditStudentProfileDialog({
                 gradYear: draft.gradYear,
                 gpa: draft.gpa,
                 satScore: draft.satScore,
+                actScore: draft.actScore, actEnglish: draft.actEnglish, actMath: draft.actMath, actReading: draft.actReading, actScience: draft.actScience,
               }
             : section === "experience"
               ? { section, experiences: draft.experiences }
@@ -214,6 +215,11 @@ export function EditStudentProfileDialog({
                       [
                         ["gpa", "GPA (optional)", 0, 4, ".01"],
                         ["satScore", "SAT (optional)", 400, 1600, "1"],
+                        ["actScore", "ACT composite (optional)", 1, 36, "1"],
+                        ["actEnglish", "ACT English (optional)", 1, 36, "1"],
+                        ["actMath", "ACT Math (optional)", 1, 36, "1"],
+                        ["actReading", "ACT Reading (optional)", 1, 36, "1"],
+                        ["actScience", "ACT Science (optional)", 1, 36, "1"],
                       ] as const
                     ).map(([key, label, min, max, step]) => (
                       <div key={key} className="space-y-2">

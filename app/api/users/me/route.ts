@@ -1,3 +1,4 @@
+import { hasWorkspace } from "@/lib/permissions";
 import { isUvaEmail } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/utils/prisma';
@@ -30,11 +31,12 @@ export async function GET() {
       }
     });
 
+    if (userData?.disabledAt) return NextResponse.json({ error: "Account unavailable" }, { status: 403 });
     if (!userData) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Filter memberships to determine where the user holds leadership permissions
     const adminRoles = userData.memberships.filter(
-      (m) => m.role === 'PRESIDENT' || m.role === 'RECRUITMENT_LEAD'
+      hasWorkspace
     );
 
     return NextResponse.json({

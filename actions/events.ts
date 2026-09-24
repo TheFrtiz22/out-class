@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/utils/prisma";
-import { requireAuth, requireClubRole } from "@/utils/auth";
+import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -18,7 +18,7 @@ export async function createEvent(data: z.infer<typeof createEventSchema>) {
   const parsed = createEventSchema.parse(data);
 
   // Must be at least a Recruitment Lead to create official events
-  await requireClubRole(parsed.clubId, ["PRESIDENT", "RECRUITMENT_LEAD"]);
+  await requireClubPermission(parsed.clubId, ["meetings.manage"]);
 
   const event = await prisma.event.create({
     data: {
@@ -59,7 +59,7 @@ export async function recordEventAttendance(eventId: string) {
   }
 
   if (!event.isPublic) {
-    await requireClubRole(event.clubId, ["PRESIDENT", "RECRUITMENT_LEAD", "GENERAL_MEMBER"]);
+    await requireClubPermission(event.clubId, []);
   }
 
   // Record attendance using Postgres upsert to prevent duplicates if they scan twice
@@ -87,10 +87,10 @@ export async function recordEventAttendance(eventId: string) {
 
 export async function getEventAttendees(eventId: string, clubId: string) {
   // Only club admins can see the attendee list (leads)
-  await requireClubRole(clubId, ["PRESIDENT", "RECRUITMENT_LEAD", "GENERAL_MEMBER"]);
+  await requireClubPermission(clubId, ["meetings.attendance"]);
 
   const attendees = await prisma.eventAttendance.findMany({
-    where: { eventId, event: { clubId } },
+    where: { eventId, event: { clubId }, student: { applications: { none: { clubId, round: { anonymousReview: true }, status: { not: "DRAFTING" } } } } },
     include: {
       student: {
         

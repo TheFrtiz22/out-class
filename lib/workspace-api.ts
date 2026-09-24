@@ -1,5 +1,7 @@
 "use client"
 // The sole client data boundary: demo operations never invoke a server action.
+import { anonymousApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
+import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
 import * as apps from "@/actions/applications"
 import * as crm from "@/actions/crm"
 import * as evaluation from "@/actions/evaluations"
@@ -28,7 +30,7 @@ function adapt<F extends (...args: never[]) => Promise<unknown>>(
 }
 function scopedApplication(clubId: string, id: string) {
   const s = demoStore.get()
-  if (s.perspective.role !== "leader" || s.perspective.clubId !== clubId)
+  if (s.perspective.role !== "leader" || s.perspective.clubId !== clubId || clubId !== s.clubs[0].id)
     throw new Error("Choose this club's leader perspective first.")
   const app = s.applications.find(
     (a) => a.id === id && a.clubId === clubId && a.status !== "DRAFTING",
@@ -48,13 +50,13 @@ export const getPublicClub = adapt(directory.getPublicClub, (id) => ({
 }))
 export const getClubPipeline = adapt(crm.getClubPipeline, (clubId) => {
   const s = demoStore.get()
-  if (s.perspective.role !== "leader" || clubId !== s.perspective.clubId)
+  if (s.perspective.role !== "leader" || clubId !== s.perspective.clubId || clubId !== s.clubs[0].id)
     throw new Error("Choose a club leader perspective.")
   return {
     rounds: s.clubs.find((c) => c.id === clubId)!.rounds,
     applications: s.applications
       .filter((a) => a.clubId === clubId && a.status !== "DRAFTING")
-      .map((a) => joinedApplication(a.id)),
+      .map((a) => { const app = joinedApplication(a.id); return s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication) : app }),
   }
 })
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
@@ -126,6 +128,7 @@ export const startClubApplication = adapt(directory.startClubApplication, (clubI
       studentId: next.students[0].id,
       roundId: club.rounds[0].id,
       status: "DRAFTING",
+      anonymousReviewText: null,
       submittedAt: null,
       answers: [],
       evaluations: [],
@@ -139,6 +142,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
     club = s.clubs.find((c) => c.id === parsed.clubId)
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
+  if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
   const errors = answerErrors(club.questions, parsed.answers, submit)
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
   const { applicationId } = await startClubApplication(parsed.clubId)
@@ -210,9 +214,9 @@ export const searchWorkspace = adapt(search.searchWorkspace, (query, leader = fa
       detail: a.status,
     }))
   const applicants =
-    leader && s.perspective.role === "leader"
+    leader && s.perspective.role === "leader" && s.perspective.clubId === s.clubs[0].id
       ? s.applications
-          .filter((a) => a.clubId === s.perspective.clubId && a.status !== "DRAFTING")
+          .filter((a) => a.clubId === s.perspective.clubId && a.status !== "DRAFTING" && !s.clubs.find(c => c.id === a.clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview)
           .map((a) => {
             const student = s.students.find((p) => p.id === a.studentId)!
             return {
@@ -227,4 +231,24 @@ export const searchWorkspace = adapt(search.searchWorkspace, (query, leader = fa
           .slice(0, 8)
       : []
   return [...clubs, ...applications, ...applicants]
+})
+
+export const setRoundAnonymousReview = adapt(crm.setRoundAnonymousReview, (clubId, roundId, enabled) => {
+  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
+  return demoStore.mutate(s => { const round = s.clubs[0].rounds.find(r => r.id === roundId); if (!round) throw new Error("Round unavailable."); round.anonymousReview = enabled; return { success: true } })
+})
+export const setClubTestRequirement = adapt(crm.setClubTestRequirement, (clubId, requirement) => {
+  demoMember(); if (clubId !== demoStore.get().clubs[0].id || !testRequirements.includes(requirement as typeof testRequirements[number])) throw new Error("Invalid requirement.")
+  return demoStore.mutate(s => { s.clubs[0].testRequirement = requirement; return { success: true } })
+})
+export const revealApplicantIdentity = adapt(crm.revealApplicantIdentity, (clubId, applicationId, reason) => {
+  scopedApplication(clubId, applicationId); if (reason.trim().length < 10) throw new Error("Add a reason.")
+  return joinedApplication(applicationId)
+})
+
+export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, (clubId, applicationId, content, confirmed) => {
+  scopedApplication(clubId, applicationId); if (!confirmed || content.length > 20000) throw new Error("Review and confirm the content first.")
+  const app = joinedApplication(applicationId)
+  validateAnonymousText(content, app.student)
+  return demoStore.mutate(s => { s.applications.find(a => a.id === applicationId)!.anonymousReviewText = content.trim() || null; return { success: true } })
 })

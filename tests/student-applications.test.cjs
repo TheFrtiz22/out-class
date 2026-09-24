@@ -5,17 +5,18 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
   return mod.exports
 }
 const helpers = load('lib/student-applications.ts')
 const clubId = '00000000-0000-4000-8000-000000000001'
 const questionId = '00000000-0000-4000-8000-000000000002'
 const question = { id: questionId, prompt: 'Why this club?', type: 'ESSAY', required: true, wordLimit: 3 }
-function setup({ status = 'DRAFTING', profile = true, questions = [question] } = {}) {
+function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL' } = {}) {
   const calls = []
   const tx = {
-    studentProfile: { findUnique: async () => profile ? { id: 'profile' } : null },
+    club: { findUnique: async () => ({ testRequirement }) },
+    studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
     application: {
@@ -79,4 +80,13 @@ test('submission transitions once to the first round and saves exact answers', a
   assert.equal(update.data.roundId, 'first-round')
   assert.ok(update.data.submittedAt instanceof Date)
   assert.deepEqual(calls.find(([name]) => name === 'answers')[1].data, [{ applicationId: 'app', questionId, response: 'My answer' }])
+})
+
+test('submission enforces club SAT/ACT policy; drafts remain available without required scores', async () => {
+  const input = { clubId, answers: [{ questionId, response: 'My answer' }] }
+  await setup({testRequirement:'SAT_OR_ACT',profile:{actScore:32}}).submitApplication(input)
+  await setup({testRequirement:'SAT_OR_ACT',profile:{satScore:1500}}).submitApplication(input)
+  await assert.rejects(setup({testRequirement:'BOTH',profile:{actScore:32}}).submitApplication(input), /SAT\/ACT requirement/)
+  await setup({testRequirement:'BOTH',profile:{actScore:32,satScore:1500}}).submitApplication(input)
+  await setup({testRequirement:'BOTH'}).saveApplicationDraft(input)
 })

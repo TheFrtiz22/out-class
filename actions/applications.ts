@@ -1,5 +1,6 @@
 "use server"
 
+import { meetsTestRequirement } from "@/lib/test-scores"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
@@ -12,6 +13,11 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const applicationId = await prisma.$transaction(async (tx) => {
     if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {
       throw new Error("You must complete your unified profile before applying.")
+    }
+    if (submit) {
+      const club = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { testRequirement: true } })
+      const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
+      if (!club || !meetsTestRequirement(club.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId } })
     const errors = answerErrors(questions, parsed.answers, submit)
@@ -78,6 +84,7 @@ export async function getStudentApplications() {
       submittedAt: true,
       club: {
         select: {
+          testRequirement: true,
           name: true,
           logoUrl: true,
           color: true,

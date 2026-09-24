@@ -8,14 +8,14 @@ const slotId = '00000000-0000-4000-8000-000000000003'
 function load(file, prisma, role = async () => ({})) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }), requireClubRole: role }, 'next/cache': { revalidatePath() {} } }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports)
+  const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }), requireClubPermission: role }, 'next/cache': { revalidatePath() {} } }
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
   return mod.exports
 }
 test('event reads filter private events and attendees by the authorized club', async () => {
   const api = load('actions/events.ts', {
     event: { findMany: async ({ where }) => { assert.deepEqual(where, { clubId, isPublic: true }); return [] } },
-    eventAttendance: { findMany: async ({ where, include }) => { assert.deepEqual(where, { eventId: 'foreign-event', event: { clubId } }); return [] } },
+    eventAttendance: { findMany: async ({ where, include }) => { assert.deepEqual(where, { eventId: 'foreign-event', event: { clubId } }); assert.equal(include.student.omit.passwordHash, true); return [] } },
   })
   await api.getClubEvents(clubId)
   assert.deepEqual(await api.getEventAttendees('foreign-event', clubId), { attendees: [] })

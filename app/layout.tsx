@@ -22,6 +22,8 @@ import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { AuthProvider } from "@/contexts/auth-context"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
+import { prisma } from "@/utils/prisma"
+import { readDemoTemplate } from "@/lib/demo/validate"
 import { DemoDataProvider } from "@/contexts/demo-context"
 
 export default async function RootLayout({
@@ -34,11 +36,18 @@ export default async function RootLayout({
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   const demoAllowed = canAccessDemo(authError ? undefined : user?.email)
   const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
+  let template
+  if (demoEnabled) {
+    try {
+      const content = await prisma.platformContent.findUnique({ where: { key: "demo.seed" } })
+      if (content) template = readDemoTemplate(content.value)
+    } catch { /* Demo stays available with its bundled fictional dataset. */ }
+  }
 
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        <DemoDataProvider allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
+        <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
           <AuthProvider>
             <ClubCustomizationProvider>
               {children}

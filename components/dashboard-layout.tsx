@@ -1,4 +1,5 @@
 "use client"
+import { hasPermission } from "@/lib/permissions"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Bell, ChevronDown, ChevronRight, Home, LogOut, Menu, Search, ShieldCheck, UserRound, Database } from "lucide-react"
@@ -24,12 +25,12 @@ export interface DashboardLayoutProps {
   view: ViewId
   appMode: AppMode
   onNavigate: (view: ViewId) => void
-  onModeChange: (mode: AppMode) => void
+  onModeChange: (mode: AppMode, clubId?: string) => void
 }
 
 /** Navigation is presentational; existing view IDs and provider ownership stay intact. */
 export function DashboardLayout({ children, view, appMode, onNavigate, onModeChange }: DashboardLayoutProps) {
-  const { user, loading } = useAuth()
+  const { user, loading, activeClubId } = useAuth()
   const { notifications } = useApplicationState()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -38,12 +39,19 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
   const previousView = useRef(view)
   const drawerNavigated = useRef(false)
   const leader = appMode === "admin"
-  const items = leader ? adminNav : studentNav
+  const membership = user?.memberships.find(m => m.clubId === activeClubId)
+  const items = leader ? adminNav.filter(item => {
+    if (item.id === "leader-dashboard") return (hasPermission(membership, "applicants.identify") || hasPermission(membership, "applications.review"))
+    if (item.id === "interview-workspace") return (hasPermission(membership, "applicants.identify") || hasPermission(membership, "applications.review")) && hasPermission(membership, "applications.review")
+    if (item.id === "interview-scheduler") return hasPermission(membership, "interviews.manage")
+    if (item.id === "broadcast-messages") return hasPermission(membership, "meetings.manage")
+    return true
+  }) : studentNav
   const title = [...studentNav, ...adminNav].find(item => item.id === view)?.title ?? viewTitles[view].title
   const name = user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.email ?? (loading ? "Loading account…" : "Explore OutClass")
   const initials = user?.profile ? `${user.profile.firstName[0] ?? ""}${user.profile.lastName[0] ?? ""}` : user?.email?.slice(0, 2).toUpperCase() ?? "OC"
   const unread = notifications.filter(item => !item.read).length
-  const canSwitch = !!user?.adminRoles.length || (!loading && !user)
+  const canSwitch = !!user?.adminRoles.length
   const searchItems: NavItem[] = [...(leader && user && !user.adminRoles.length ? studentNav : items), ...(!items.some(item => item.id === "student-profile") ? [{ id: "student-profile" as const, title: "Profile", icon: UserRound }] : []), { id: "inbox", title: "Notifications", icon: Bell }]
 
   const { isDemoEnabled } = useDemoMode()
@@ -54,7 +62,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
     if ((studentNav.some(item => item.id === next) || next === "inbox") && leader) onModeChange("student")
     onNavigate(next)
   }
-  function switchMode(mode: AppMode) { drawerNavigated.current = mobileOpen; setMobileOpen(false); onModeChange(mode) }
+  function switchMode(mode: AppMode, clubId?: string) { drawerNavigated.current = mobileOpen; setMobileOpen(false); onModeChange(mode, clubId) }
   useEffect(() => {
     document.title = `${title} · OutClass`
     if (previousView.current === view) return
@@ -96,7 +104,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <DemoMenuItems />
       <DropdownMenuItem onSelect={() => navigate("student-profile")}><UserRound className="size-4" />Your profile</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => navigate("landing")}><Home className="size-4" />OutClass home</DropdownMenuItem>
-      {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode(leader ? "student" : "admin")}><ShieldCheck className="size-4" />{leader ? "Student workspace" : "Club-leader workspace"}</DropdownMenuItem></>}
+      {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode("student")}><UserRound className="size-4" />{name} — Personal / Student</DropdownMenuItem>{user?.adminRoles.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchMode("admin", member.clubId)}><ShieldCheck className="size-4" />{member.club.name} — Club workspace</DropdownMenuItem>)}</>}
       {user && !isDemoEnabled && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
     </DropdownMenuContent></DropdownMenu>
   }
@@ -132,7 +140,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <main id="workspace-content" ref={mainRef} tabIndex={-1} aria-label={title} className={cn("mx-auto min-w-0 max-w-[1600px] px-4 py-6 outline-none sm:px-6 lg:px-8", !leader && "pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-10", leader ? "lg:py-7" : "lg:py-10")}>
         <div key={view} className="shell-content-enter" data-view={view}>
           {view !== "student-dashboard" && <div data-view-heading className="mb-7 max-w-3xl"><h1 className="text-title font-semibold tracking-tight">{title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{viewTitles[view].subtitle}</p></div>}
-          {["interview-scheduler", "club-manager", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) && <p role="note" className="mb-6 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted-foreground">Local preview · these tools do not publish club changes, send messages or invitations, or update the live recruitment pipeline.</p>}
+          {["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) && <p role="note" className="mb-6 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted-foreground">Local preview · these tools do not publish club changes, send messages or invitations, or update the live recruitment pipeline.</p>}
           {isDemoEnabled && <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Demo Mode · fictional people and sample club information. Changes stay in this browser; no messages are sent.</p>}
           {children}
         </div>

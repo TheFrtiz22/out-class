@@ -1,3 +1,5 @@
+import { hasPermission, type ClubPermission } from "@/lib/permissions";
+import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
 import { createClient } from "./supabase/server";
 import { cookies } from "next/headers";
@@ -10,6 +12,7 @@ import { redirect } from "next/navigation";
  */
 export async function requireAuth() {
   const cookieStore = await cookies();
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new Error("Live data is unavailable in Demo Mode.");
   const supabase = await createClient(cookieStore);
   
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -21,11 +24,11 @@ export async function requireAuth() {
   // Fetch the Prisma user to get global roles
   const prismaUser = await prisma.user.upsert({
     where: { id: user.id },
-    update: {},
+    update: { email: user.email },
     create: { id: user.id, email: user.email!, role: "STUDENT" },
   });
 
-  if (!prismaUser) {
+  if (!prismaUser || prismaUser.disabledAt) {
     // Edge case: Trigger failed or user was deleted from Prisma but not Supabase
     redirect("/");
   }
@@ -33,25 +36,15 @@ export async function requireAuth() {
   return { supabaseUser: user, user: prismaUser };
 }
 
-/**
- * Ensures a user has a specific role (or higher) in a given club.
- */
-export async function requireClubRole(clubId: string, allowedRoles: ("PRESIDENT" | "RECRUITMENT_LEAD" | "GENERAL_MEMBER")[]) {
+/** Every sensitive club operation checks the current database membership. */
+export async function requireClubPermission(clubId: string, permissions: ClubPermission[]) {
   const { user } = await requireAuth();
-
-  const membership = await prisma.clubMember.findUnique({
-    where: {
-      userId_clubId: {
-        userId: user.id,
-        clubId: clubId,
-      }
-    }
-  });
-
-  if (!membership || !allowedRoles.includes(membership.role)) {
-    redirect("/"); // Redirect unauthorized access to standard dashboard
+  const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
+  if (!membership || !permissions.every(permission => hasPermission(membership, permission))) {
+    throw new Error("You do not have permission for this club action.");
   }
-
   return { user, membership };
 }
-
+export async function requireClubMembership(clubId: string) {
+  return requireClubPermission(clubId, []);
+}

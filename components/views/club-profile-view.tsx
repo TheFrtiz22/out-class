@@ -159,6 +159,14 @@ export function ClubProfileView({
         <ArrowLeft size={15} />
         Back to clubs
       </Button>
+      {real && !demo.isDemoEnabled && (
+        <div className="my-4 flex flex-wrap items-center gap-3 border-y py-4 text-sm">
+          <span>{club.claimed ? "Club-managed profile" : "Unclaimed · Basic information provided by OutClass"}</span>
+          {club.directorySource && <a className="underline" href={club.directorySource} target="_blank" rel="noreferrer">Directory source</a>}
+          {!club.claimed && <a className="font-medium underline" href={`/club-claims/${club.id}`}>Claim this club</a>}
+        </div>
+      )}
+      {real && club.testRequirement && <p className="my-3 text-sm">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores are provided through your student profile.</p>}
       {!real && (
         <p className="oc-club-preview-note">
           {preview ? "Club profile preview" : "Sample club profile"} ·{" "}

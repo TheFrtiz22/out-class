@@ -24,7 +24,7 @@ test('a client requesting leader search gains no private results without authori
  const {calls,searchWorkspace}=setup();await searchWorkspace('Alex',true)
  assert.equal(calls.filter(([name])=>name==='applications').length,1)
  assert.equal(calls.some(([name])=>name==='rounds'),false)
- assert.deepEqual(calls[0][1].where,{userId:'student',role:{in:['PRESIDENT','RECRUITMENT_LEAD']}})
+ assert.deepEqual(calls[0][1].where,{userId:'student',OR:[{isOwner:true},{permissions:{has:'applicants.identify'}}]})
 })
 test('applicant and round queries use only server-derived leader clubs and exclude drafts',async()=>{
  const {calls,searchWorkspace}=setup([{clubId:'authorized-club'}]);await searchWorkspace('Alex',true)
