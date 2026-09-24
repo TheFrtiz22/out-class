@@ -47,10 +47,12 @@ export async function GET(request: Request) {
         where: {
           studentId: profile.userId,
           status: { not: "DRAFTING" },
+          round: { anonymousReview: false },
           club: {
             members: {
               some: {
-                userId: user.id
+                userId: user.id,
+                OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }]
               }
             }
           }

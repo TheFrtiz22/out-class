@@ -1,4 +1,6 @@
 "use client"
+import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
+import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { TestScoreDetail } from "@/components/test-score-detail"
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings"
 import { RevealApplicant } from "@/components/reveal-applicant"
@@ -469,6 +471,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         </Button>
       </div>
       {data && hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify") && <RecruitmentReviewSettings clubId={membership.clubId} rounds={data.rounds} onChanged={() => { setData(null); setActiveId(null); setRevision(v => v + 1) }} />}
+      {data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
       <BoardDecisionMode
         applicants={filtered}
         rounds={data.rounds}
@@ -833,6 +836,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                       {active.student.studentProfile.satScore != null &&
                         ` · SAT ${active.student.studentProfile.satScore}`}
                     </p>
+                    <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                     <TestScoreDetail profile={active.student.studentProfile} />
                     {active.student.studentProfile.experiences.map((item) => (
                       <div key={item.id} className="text-sm">

@@ -1,4 +1,7 @@
 "use client"
+import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
+import { InterviewKitSession } from "@/components/interview-kit-session"
+import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { TestScoreDetail } from "@/components/test-score-detail"
 import { hasPermission } from "@/lib/permissions"
 
@@ -7,7 +10,6 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react"
 import { getClubPipeline } from "@/lib/workspace-api"
-import { submitEvaluation } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
 import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
@@ -110,9 +112,6 @@ function InterviewSession({
   const [retry, setRetry] = useState(0)
   const [roundId, setRoundId] = useState("")
   const [activeId, setActiveId] = useState("")
-  const [score, setScore] = useState("")
-  const [notes, setNotes] = useState("")
-  const [baseline, setBaseline] = useState('["",""]')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   const [failed, setFailed] = useState(false)
@@ -134,7 +133,9 @@ function InterviewSession({
     })
   const active = queue.find((app) => app.id === activeId)
   const index = queue.findIndex((app) => app.id === activeId)
-  const dirty = !!active && JSON.stringify([score, notes]) !== baseline
+  const [kitDirty, setKitDirty] = useState(false)
+  const handleKitState = useCallback((changed: boolean, pending: boolean) => { setKitDirty(changed); setBusy(pending) }, [])
+  const dirty = kitDirty
   const progress = interviewProgress(queue, membership.id, round?.name || "")
   useEffect(() => {
     onLock(dirty || busy, busy)
@@ -174,9 +175,6 @@ function InterviewSession({
   useEffect(() => {
     if (!data) return
     setActiveId("")
-    setScore("")
-    setNotes("")
-    setBaseline('["",""]')
     setMessage("")
     setRunning(false)
     setSeconds(0)
@@ -219,84 +217,13 @@ function InterviewSession({
   function choose(id: string, discard = false) {
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
-    const app = queue.find((item) => item.id === id)
-    const mine = app && reviewerEvaluation(app.evaluations, membership.id, round?.name || "")
-    const value = mine ? String(mine.score) : ""
     setActiveId(id)
-    setScore(value)
-    setNotes(mine?.notes || "")
-    setBaseline(JSON.stringify([value, mine?.notes || ""]))
     setMessage("")
     setFailed(false)
     setRunning(false)
     setSeconds(0)
     carried.current = 0
     requestAnimationFrame(() => heading.current?.focus())
-  }
-  async function save(next: boolean) {
-    if (!active || !round || busy) return
-    if (!score || !Number.isFinite(Number(score)) || Number(score) < 1 || Number(score) > 10) {
-      setFailed(true)
-      setMessage("Choose a score from 1 to 10 before saving.")
-      document.getElementById("interview-score")?.focus()
-      return
-    }
-    setBusy(true)
-    setMessage("")
-    setFailed(false)
-    try {
-      const result = await submitEvaluation({
-        clubId: membership.clubId,
-        applicationId: active.id,
-        roundName: round.name,
-        score: Number(score),
-        notes,
-      })
-      setData((previous) =>
-        previous
-          ? {
-              ...previous,
-              applications: previous.applications.map((app) =>
-                app.id === active.id
-                  ? {
-                      ...app,
-                      evaluations: [
-                        ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
-                        result.evaluation,
-                      ],
-                    }
-                  : app,
-              ),
-            }
-          : previous,
-      )
-      setBaseline(JSON.stringify([score, notes]))
-      setRunning(false)
-      carried.current = seconds
-      if (next && queue[index + 1]) {
-        const upcoming = queue[index + 1],
-          mine = reviewerEvaluation(upcoming.evaluations, membership.id, round.name),
-          value = mine ? String(mine.score) : ""
-        setActiveId(upcoming.id)
-        setScore(value)
-        setNotes(mine?.notes || "")
-        setBaseline(JSON.stringify([value, mine?.notes || ""]))
-        setSeconds(0)
-        carried.current = 0
-        setMessage("Evaluation saved. The next candidate is ready.")
-        requestAnimationFrame(() => heading.current?.focus())
-      } else
-        setMessage(
-          next
-            ? "Evaluation saved. You’ve reached the end of this round’s list."
-            : "Evaluation saved to the recruitment workspace.",
-        )
-    } catch {
-      setFailed(true)
-      setMessage("Your evaluation could not be saved. Your notes are still here. Please try again.")
-    } finally {
-      setBusy(false)
-    }
   }
   if (loading) return <WorkspaceLoading label="Loading authorized candidates…" rows={3} />
   if (loadError || !data)
@@ -314,6 +241,7 @@ function InterviewSession({
     active && reviewerEvaluation(active.evaluations, membership.id, round?.name || "")
   return (
     <div className="space-y-6">
+      {hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-2">
@@ -448,6 +376,7 @@ function InterviewSession({
             >
               <section className="space-y-3 border-t border-border pt-5">
                 <h2 className="text-sm font-semibold">Profile at a glance</h2>
+                <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                 <TestScoreDetail profile={profile} />
               {profile?.bio && (
                   <p className="whitespace-pre-wrap text-sm leading-7">{profile.bio}</p>
@@ -534,126 +463,14 @@ function InterviewSession({
                 )}
               </section>
             </div>
-            <form
-              id="interview-evaluation"
-              ref={form}
-              onSubmit={(event) => {
-                event.preventDefault()
-                void save(false)
-              }}
-              className="min-w-0 space-y-5 border-t border-border pt-5 lg:sticky lg:top-6"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold">Your evaluation</h2>
-                <Badge variant="secondary">
-                  {busy
-                    ? "Saving…"
-                    : dirty
-                      ? "Unsaved changes"
-                      : savedReview
-                        ? "Saved"
-                        : "Not evaluated"}
-                </Badge>
-              </div>
-              <p className="text-xs leading-6 text-muted-foreground">
-                Record an overall score and supporting notes for {round?.name}. This workspace uses
-                one overall score with supporting notes.
-              </p>
-              <fieldset disabled={busy} className="min-w-0 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="interview-score">Overall score · 1–10</Label>
-                  <Input
-                    id="interview-score"
-                    type="number"
-                    required
-                    min={1}
-                    max={10}
-                    step="any"
-                    value={score}
-                    onChange={(event) => setScore(event.target.value)}
-                    className="w-28"
-                  />
-                  <div
-                    className="flex flex-wrap gap-1.5"
-                    role="group"
-                    aria-label="Quick score selection"
-                  >
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => (
-                      <Button
-                        type="button"
-                        key={value}
-                        size="sm"
-                        variant={Number(score) === value ? "secondary" : "outline"}
-                        aria-pressed={Number(score) === value}
-                        aria-label={`Score ${value} out of 10`}
-                        onClick={() => setScore(String(value))}
-                        className="size-9 p-0"
-                      >
-                        {value}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="interview-notes">Interview notes</Label>
-                  <Textarea
-                    id="interview-notes"
-                    rows={10}
-                    className="min-h-52 text-base leading-7"
-                    placeholder="Capture specific observations and evidence for your score."
-                    value={notes}
-                    onChange={(event) => setNotes(event.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Shared with authorized club reviewers. Saved when you submit your evaluation.
-                  </p>
-                </div>
-              </fieldset>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button type="submit" disabled={busy}>
-                  <Check className="size-4" />
-                  Save evaluation
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void save(true)}
-                >
-                  Save & {index < queue.length - 1 ? "next candidate" : "finish"}
-                  <ArrowRight className="size-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                ⌘ / Ctrl + Enter saves without advancing. Saving does not change the candidate’s
-                round or decision.
-              </p>
-              <div className="flex items-center justify-between border-t border-border pt-4">
-                <Button
-                  variant="ghost"
-                  type="button"
-                  size="sm"
-                  disabled={busy || index <= 0}
-                  onClick={() => choose(queue[index - 1].id)}
-                >
-                  <ArrowLeft className="size-3.5" />
-                  Previous
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  Candidate {index + 1} of {queue.length}
-                </span>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  size="sm"
-                  disabled={busy || index >= queue.length - 1}
-                  onClick={() => choose(queue[index + 1].id)}
-                >
-                  Next
-                  <ArrowRight className="size-3.5" />
-                </Button>
-              </div>
-            </form>
+            <div className="min-w-0 space-y-5">
+              {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onComplete={(evaluation, next) => {
+                setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, evaluations: [...app.evaluations.filter(e => e.id !== evaluation.id), evaluation] } : app) } : previous)
+                setRunning(false); setKitDirty(false)
+                if(next && queue[index+1]) { setActiveId(queue[index+1].id); setSeconds(0); carried.current=0 }
+              }} />}
+              <div className="flex items-center justify-between border-t pt-4"><Button type="button" variant="ghost" disabled={busy || index<=0} onClick={()=>choose(queue[index-1].id)}>Previous candidate</Button><span className="text-xs">{index+1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index>=queue.length-1} onClick={()=>choose(queue[index+1].id)}>Next candidate</Button></div>
+            </div>
           </div>
         </div>
       )}

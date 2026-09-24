@@ -126,7 +126,7 @@ export async function getStudentDashboardData() {
   })
 
   const attendances = await prisma.eventAttendance.findMany({
-    where: { studentId: user.id },
+    where: { studentId: user.id, event: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id } } } }] } },
     include: {
       event: {
         include: { club: { select: { name: true } } },
@@ -134,5 +134,6 @@ export async function getStudentDashboardData() {
     },
   })
 
-  return { applications, attendances }
+  const meetings = await prisma.meeting.findMany({ where: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
+  return { applications, attendances, meetings }
 }

@@ -9,22 +9,16 @@ function load(file, prisma, role = async () => ({})) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }), requireClubPermission: role }, 'next/cache': { revalidatePath() {} } }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") || name === "@/actions/meetings" ? load(name.replace("@/", "")+".ts", prisma, role) : require(name), mod, mod.exports)
   return mod.exports
 }
-test('event reads filter private events and attendees by the authorized club', async () => {
-  const api = load('actions/events.ts', {
-    event: { findMany: async ({ where }) => { assert.deepEqual(where, { clubId, isPublic: true }); return [] } },
-    eventAttendance: { findMany: async ({ where, include }) => { assert.deepEqual(where, { eventId: 'foreign-event', event: { clubId } }); assert.equal(include.student.omit.passwordHash, true); return [] } },
-  })
-  await api.getClubEvents(clubId)
-  assert.deepEqual(await api.getEventAttendees('foreign-event', clubId), { attendees: [] })
+test('legacy event reads expose public recruitment metadata only', async () => {
+  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,isPublic:true,audience:'RECRUITMENT'});assert.equal(select.resources,undefined);return []}}})
+  assert.deepEqual(await api.getClubEvents(clubId),{events:[]})
 })
-test('private event attendance requires membership before writing', async () => {
-  let wrote = false
-  const api = load('actions/events.ts', { event: { findUnique: async () => ({ clubId, isPublic: false }) }, eventAttendance: { upsert: async () => { wrote = true } } }, async () => { throw new Error('Forbidden') })
-  await assert.rejects(api.recordEventAttendance('private'), /Forbidden/)
-  assert.equal(wrote, false)
+test('legacy static attendance endpoints fail closed without a current token',async()=>{
+  const api=load('actions/events.ts',{})
+  await assert.rejects(api.recordEventAttendance('old-id'),/current meeting QR code/)
 })
 function bookingApi(overrides = {}) {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), capacity: 1, bookings: [], ...overrides }

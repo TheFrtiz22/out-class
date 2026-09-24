@@ -3,6 +3,7 @@ import { dateKey } from "@/lib/calendar"
 
 type Timestamp = Date | string
 type CalendarSource = {
+  meetings?: { id: string; clubId: string; date: Timestamp; title: string; location: string; description?: string | null; audience: string; club: { name: string } }[]
   applications?: {
     clubId: string
     club: { name: string; color?: string | null }
@@ -14,6 +15,7 @@ type CalendarSource = {
   attendances?: {
     id: string
     event: {
+      id?: string
       clubId: string
       date: Timestamp
       title: string
@@ -34,7 +36,7 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
     }
   }
   const attendances: ClubEvent[] = (source?.attendances || [])
-    .filter((att) => Number.isFinite(new Date(att.event.date).getTime()))
+    .filter((att) => Number.isFinite(new Date(att.event.date).getTime()) && !source?.meetings?.some(m => m.id === att.event.id))
     .map((att) => ({
       id: att.id,
       readOnly: true,
@@ -68,5 +70,6 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
         response: "confirmed" as const,
       })),
   )
-  return [...attendances, ...interviews]
+  const meetings: ClubEvent[] = (source?.meetings || []).map(m => ({ id: `meeting-${m.id}`, readOnly: true, clubId: m.clubId, ...at(m.date), title: m.title, club: m.club.name, color: "#142d4e", type: m.audience === "RECRUITMENT" ? "Interest Meeting" : "Other", location: m.location, description: m.description || undefined }))
+  return [...meetings, ...attendances, ...interviews]
 }

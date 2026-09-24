@@ -1,3 +1,4 @@
+import { sampleInterviewKit } from "@/lib/interview-kits"
 import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
@@ -31,10 +32,13 @@ export const demoStore = {
       /* Reset damaged browser data. */
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
+    state!.interviews ??= []
+    if(!state!.meetings){const additions=createDemoSeed(state!.anchor);state!.meetings=additions.meetings;state!.meetingAttendances=additions.meetingAttendances}
+    state!.meetingTokens ??= []
     for (const application of state!.applications) application.anonymousReviewText ??= null
     for (const club of state!.clubs) {
       club.testRequirement ??= "OPTIONAL"
-      for (const round of club.rounds) round.anonymousReview ??= false
+      for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
     }
     for (const student of state!.students) {
       student.profile.actScore ??= null
@@ -138,21 +142,9 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
 export function demoDashboard() {
   const s = demoStore.get()
   return {
+    meetings: s.meetings.filter(m => m.audience === "RECRUITMENT" || s.memberships.some(member => member.clubId === m.clubId && member.userId === demoUser().id)),
     applications: studentApplications(),
-    attendances: s.clubs
-      .filter((c) => s.subscriptions.includes(c.id))
-      .map((club, i) => ({
-        id: `event-${club.id}`,
-        event: {
-          id: `event-${club.id}`,
-          clubId: club.id,
-          club,
-          date: new Date(new Date(`${s.anchor}T21:00:00Z`).getTime() + (i + 1) * 86400000),
-          title: `${club.name} · sample ${i === 1 ? "coffee chat" : "information session"}`,
-          location: "Newcomb Hall · sample location",
-          description: "Fictional event for the OutClass presentation.",
-        },
-      })),
+    attendances: s.meetingAttendances.filter(a=>a.studentId===s.students[0].id).flatMap(a=>{const event=s.meetings.find(m=>m.id===a.eventId);return event&&(event.audience==="RECRUITMENT"||s.memberships.some(m=>m.clubId===event.clubId&&m.userId===s.students[0].id))?[{...a,event}]:[]}),
   }
 }
 export function demoNotifications() {

@@ -1,4 +1,6 @@
 "use client"
+import { MeetingList } from "@/components/meeting-workspace"
+import { ClubInterviewKitSettings } from "@/components/interview-kit-editor"
 import { ClubManagerView } from "@/components/views/club-manager-view"
 import { useEffect, useState } from "react"
 import { getClubMembers, addClubMember, removeClubMember } from "@/actions/club-access"
@@ -60,7 +62,9 @@ export function ClubWorkspaceSettings() {
   }
   return (
     <div className="max-w-3xl space-y-8" key={member.id}>
+      {hasPermission(member, "interviews.manage") && <ClubInterviewKitSettings clubId={activeClubId} />}
       <h1 className="font-display text-3xl">{member.club.name}</h1>
+      <MeetingList key={activeClubId} clubId={activeClubId} />
       {hasPermission(member, "leaders.manage") && (
         <a className="inline-block underline" href={`/club-access/${member.clubId}`}>
           Manage workspace access and invitations

@@ -157,6 +157,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           <h2 className="font-display text-3xl tracking-tight">Make room for what’s next.</h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
+            <a href="/meetings" className="ml-2 underline">Club agendas and recaps</a>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.
@@ -528,6 +529,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             <>
               <DialogHeader>
                 <DialogTitle>{selected.title}</DialogTitle>
+                {selected.id.startsWith("meeting-") && <a className="text-sm underline" href={`/meetings/${selected.id.slice(8)}`}>Agenda, resources, and recap</a>}
                 <DialogDescription>
                   {selected.club} · {selected.type}
                 </DialogDescription>

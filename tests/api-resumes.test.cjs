@@ -6,7 +6,7 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
   return mod.exports
 }
 
@@ -25,32 +25,32 @@ function setupApi({ authUserId, mockHasAccess, dbProfile, redirectError, noSecre
   }
 
   let createdSignedUrl = false;
-  
+
   const api = load('app/api/resumes/route.ts', {
     '@/lib/student-profile': helpers,
     '@supabase/supabase-js': { createClient: () => ({ storage: { from: () => ({ createSignedUrl: () => { createdSignedUrl = true; return { data: { signedUrl: 'https://supabase/signed' } } } }) } }) },
-    '@/utils/auth': { 
-      requireAuth: async () => { 
+    '@/utils/auth': {
+      requireAuth: async () => {
         if (redirectError) {
           const err = new Error('Redirect')
           err.digest = 'NEXT_REDIRECT;/'
           throw err
         }
         if (!authUserId) throw new Error('Unauthenticated DB error')
-        return { user: { id: authUserId } } 
-      } 
+        return { user: { id: authUserId } }
+      }
     },
-    '@/utils/prisma': { 
-      prisma: { 
+    '@/utils/prisma': {
+      prisma: {
         studentProfile: { findUnique: async () => dbProfile },
-        application: { findFirst: async () => mockHasAccess } 
-      } 
+        application: { findFirst: async ({where}) => { assert.deepEqual(where.round, {anonymousReview:false}); assert.deepEqual(where.club.members.some.OR,[{isOwner:true},{permissions:{has:"applicants.identify"}}]); return mockHasAccess } }
+      }
     },
-    'next/server': { 
-      NextResponse: class { 
-        constructor(body, init) { this.body = body; this.status = init?.status || 200 } 
-        static redirect(url) { return { status: 302, url } } 
-      } 
+    'next/server': {
+      NextResponse: class {
+        constructor(body, init) { this.body = body; this.status = init?.status || 200 }
+        static redirect(url) { return { status: 302, url } }
+      }
     }
   })
   return { api, getCreatedSignedUrl: () => createdSignedUrl }

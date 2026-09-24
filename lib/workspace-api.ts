@@ -2,6 +2,10 @@
 // The sole client data boundary: demo operations never invoke a server action.
 import { anonymousApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
+import * as interviewKits from "@/actions/interview-kits"
+import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes } from "@/lib/interview-kits"
+import * as meetingsApi from "@/actions/meetings"
+import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
 import * as apps from "@/actions/applications"
 import * as crm from "@/actions/crm"
 import * as evaluation from "@/actions/evaluations"
@@ -251,4 +255,98 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
   const app = joinedApplication(applicationId)
   validateAnonymousText(content, app.student)
   return demoStore.mutate(s => { s.applications.find(a => a.id === applicationId)!.anonymousReviewText = content.trim() || null; return { success: true } })
+})
+
+export const getInterviewKit = adapt(interviewKits.getInterviewKit, (clubId, roundId) => {
+  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
+  const round = demoStore.get().clubs[0].rounds.find(r => r.id === roundId)
+  if (!round) throw new Error("Round unavailable.")
+  return { questions: round.interviewKit, version: round.kitVersion }
+})
+export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, (clubId, roundId, version, questions) => {
+  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
+  return demoStore.mutate(s => { const round = s.clubs[0].rounds.find(r => r.id === roundId); if (!round || round.kitVersion !== version) throw new Error("Kit changed. Reload before editing."); round.interviewKit = kitSchema.parse(questions); round.kitVersion++; return { questions: round.interviewKit, version: round.kitVersion } })
+})
+export const openInterviewSession = adapt(interviewKits.openInterviewSession, input => {
+  const app = scopedApplication(input.clubId, input.applicationId), member = demoMember()
+  if (app.roundId !== input.roundId) throw new Error("Applicant round changed.")
+  return demoStore.mutate(s => {
+    const round = s.clubs[0].rounds.find(r => r.id === input.roundId)!
+    let record = s.interviews.find(r => r.applicationId === app.id && r.interviewerId === member.id && r.roundId === round.id)
+    if (!record) { record = { id: crypto.randomUUID(), ...input, interviewerId: member.id, anonymousReview: round.anonymousReview, revision: 0, questions: structuredClone(round.interviewKit), draft: structuredClone(emptyInterviewDraft), completedAt: null }; s.interviews.push(record) }
+    if (record.anonymousReview !== round.anonymousReview) throw new Error("Interview privacy settings changed.")
+    return record
+  })
+})
+export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, input => {
+  const app = scopedApplication(input.clubId, input.applicationId), member = demoMember()
+  return demoStore.mutate(s => {
+    const round = s.clubs[0].rounds.find(r => r.id === input.roundId)
+    const record = s.interviews.find(r => r.applicationId === app.id && r.interviewerId === member.id && r.roundId === input.roundId)
+    if (!round || app.roundId !== round.id || !record || record.completedAt || record.revision !== input.revision || record.anonymousReview !== round.anonymousReview) throw new Error("Interview changed. Reload before saving.")
+    const draft = interviewDraftSchema.parse(input.draft); validateQuestionNotes(record.questions, draft)
+    if (input.complete && draft.score === null) throw new Error("Choose an overall score.")
+    record.draft = draft; record.revision++; record.completedAt = input.complete ? new Date().toISOString() : null
+    let evaluation = null
+    if (input.complete) {
+      const target = s.applications.find(a => a.id === app.id)!
+      const old = target.evaluations.find(e => e.interviewerId === member.id && e.round === round.name)
+      evaluation = { id: old?.id || crypto.randomUUID(), applicationId: app.id, interviewerId: member.id, round: round.name, score: draft.score!, notes: draft.overallReview, createdAt: old?.createdAt || new Date() }
+      target.evaluations = [...target.evaluations.filter(e => e.id !== evaluation!.id), evaluation]
+    }
+    return { session: record, evaluation: evaluation && round.anonymousReview ? { ...evaluation, notes: null, createdAt: new Date(0) } : evaluation }
+  })
+})
+export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, clubId => {
+  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
+  return demoStore.get().clubs[0].rounds.map(r => ({ id: r.id, name: r.name }))
+})
+
+function demoMeetingAccess(id: string) {
+  const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)
+  if(!meeting || !canReadMeeting(meeting,membership?{}:null))throw new Error("Meeting unavailable or access denied.")
+  return meeting
+}
+function demoMeetingManager(clubId:string){demoMember();if(clubId!==demoStore.get().clubs[0].id)throw new Error("Access denied.")}
+export const listMeetings = adapt(meetingsApi.listMeetings, clubId => {
+  const s=demoStore.get(),user=demoUser()
+  return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime())
+})
+export const getMeeting=adapt(meetingsApi.getMeeting, id=>demoMeetingAccess(id))
+export const saveMeeting=adapt(meetingsApi.saveMeeting, input=>{
+  const data=meetingInputSchema.parse(input);demoMeetingManager(data.clubId)
+  return demoStore.mutate(s=>{
+    const old=data.id?s.meetings.find(m=>m.id===data.id&&m.clubId===data.clubId):undefined
+    if(data.id&&(!old||old.revision!==data.revision))throw new Error("Meeting changed. Reload before editing.")
+    const value={...data,id:old?.id||crypto.randomUUID(),revision:old?old.revision+1:0,isPublic:data.audience==="RECRUITMENT",club:{name:s.clubs[0].name}}
+    if(old)Object.assign(old,value);else s.meetings.push(value)
+    s.meetingTokens=s.meetingTokens.filter(t=>t.meetingId!==value.id)
+    return value
+  })
+})
+export const issueMeetingCheckIn=adapt(meetingsApi.issueMeetingCheckIn,(clubId,meetingId)=>{
+  demoMeetingManager(clubId);const meeting=demoMeetingAccess(meetingId);if(meeting.clubId!==clubId)throw new Error("Meeting unavailable.")
+  const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(n=>n.toString(16).padStart(2,"0")).join(""), expiresAt=new Date(Date.now()+TOKEN_LIFETIME_MS).toISOString()
+  return demoStore.mutate(s=>{s.meetingTokens=s.meetingTokens.filter(t=>new Date(t.expiresAt).getTime()>Date.now());s.meetingTokens.push({meetingId,token,expiresAt,issuedBy:demoUser().id});return{token,expiresAt}})
+})
+export const closeMeetingCheckIn=adapt(meetingsApi.closeMeetingCheckIn,(clubId,meetingId)=>{
+  demoMeetingManager(clubId);if(demoMeetingAccess(meetingId).clubId!==clubId)throw new Error("Meeting unavailable.")
+  return demoStore.mutate(s=>{s.meetingTokens=s.meetingTokens.filter(t=>t.meetingId!==meetingId);return{success:true}})
+})
+export const checkInMeeting=adapt(meetingsApi.checkInMeeting,(meetingId,token)=>{
+  demoMeetingAccess(meetingId)
+  return demoStore.mutate(s=>{
+    if(!s.meetingTokens.some(t=>t.meetingId===meetingId&&t.token===token&&new Date(t.expiresAt).getTime()>Date.now()))throw new Error("This code has expired or was closed. Scan the current QR code.")
+    const studentId=demoUser().id,existing=s.meetingAttendances.find(a=>a.eventId===meetingId&&a.studentId===studentId)
+    if(existing)return{status:"already-checked-in",checkedInAt:existing.checkedInAt.toISOString()}
+    const attendance={id:crypto.randomUUID(),eventId:meetingId,studentId,checkedInAt:new Date()};s.meetingAttendances.push(attendance);return{status:"checked-in",checkedInAt:attendance.checkedInAt.toISOString()}
+  })
+})
+export const meetingAttendance=adapt(meetingsApi.meetingAttendance,(clubId,meetingId)=>{
+  demoMeetingManager(clubId);if(demoMeetingAccess(meetingId).clubId!==clubId)throw new Error("Meeting unavailable.")
+  const s=demoStore.get();return s.meetingAttendances.filter(a=>a.eventId===meetingId).map(a=>{const student=s.students.find(p=>p.id===a.studentId)!;const anonymous=s.applications.some(app=>app.studentId===student.id&&app.clubId===clubId&&s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===app.roundId)?.anonymousReview);return{id:a.id,checkedInAt:a.checkedInAt.toISOString(),name:anonymous?"Anonymous applicant":`${student.profile.firstName} ${student.profile.lastName}`,email:anonymous?null:student.email}})
+})
+export const recruitmentAttendanceSummary=adapt(meetingsApi.recruitmentAttendanceSummary,(clubId,applicationId)=>{
+  const app=scopedApplication(clubId,applicationId),s=demoStore.get(),held=s.meetings.filter(m=>m.clubId===clubId&&m.audience==="RECRUITMENT"&&m.date<=new Date())
+  return{held:held.length,attended:s.meetingAttendances.filter(a=>a.studentId===app.studentId&&held.some(m=>m.id===a.eventId)).length}
 })

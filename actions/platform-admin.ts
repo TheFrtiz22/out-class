@@ -78,7 +78,7 @@ export async function readPlatformResource(input: PlatformResource, page = 0) {
         orderBy: { id: "asc" },
       });
     case "meetings":
-      return prisma.event.findMany({
+      return prisma.meeting.findMany({
         take: 100,
         skip,
         orderBy: { date: "desc" },
@@ -375,15 +375,17 @@ export async function changePlatformResource(input: unknown, reason: string) {
         break;
       }
       case "meeting": {
-        const { kind, id, ...fields } = data;
+        const { kind, id, ...values } = data;
+        const fields = { ...values, audience: values.isPublic ? "RECRUITMENT" : "MEMBERS" };
         if (
           id &&
-          !(await tx.event.findFirst({ where: { id, clubId: data.clubId } }))
+          !(await tx.meeting.findFirst({ where: { id, clubId: data.clubId } }))
         )
           throw new Error("Meeting unavailable.");
         const record = id
-          ? await tx.event.update({ where: { id }, data: fields })
-          : await tx.event.create({ data: fields });
+          ? await tx.meeting.update({ where: { id }, data: { ...fields, revision: { increment: 1 } } })
+          : await tx.meeting.create({ data: fields });
+        if(id) await tx.meetingCheckInToken.deleteMany({ where: { meetingId: id } });
         targetId = record.id;
         break;
       }

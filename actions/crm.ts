@@ -36,7 +36,7 @@ export async function getClubPipeline(clubId: string) {
     include: {
       round: true,
       student: {
-        
+        omit: { passwordHash: true },
         include: { studentProfile: { include: { experiences: true } } },
       },
       evaluations: true,

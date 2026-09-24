@@ -289,10 +289,11 @@ export async function removeClubMember(clubId: string, memberId: string) {
     if (
       target.isOwner ||
       target.permissions.length ||
-      (await tx.evaluation.count({ where: { interviewerId: target.id } }))
+      (await tx.evaluation.count({ where: { interviewerId: target.id } })) ||
+      (await tx.interviewRecord.count({ where: { interviewerId: target.id } }))
     )
       throw new Error(
-        "Revoke leadership access first. Memberships with evaluation history must be retained.",
+        "Revoke leadership access first. Memberships with evaluation or interview history must be retained.",
       );
     await tx.clubMember.delete({ where: { id: target.id } });
     await tx.auditLog.create({

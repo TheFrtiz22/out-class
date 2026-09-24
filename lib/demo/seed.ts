@@ -1,3 +1,4 @@
+import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
 import type { AppStatus as ApplicationStatus } from "@prisma/client"
 
@@ -201,7 +202,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       ...(i % 3 ? ["Round 2"] : []),
       "Interview",
       "Final Decision",
-    ].map((name, order) => ({ anonymousReview: false, id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
+    ].map((name, order) => ({ interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: false, id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
   }))
   const memberships = clubs.flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
@@ -300,7 +301,35 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       }
     }),
   )
+  const interviews: (InterviewSessionData & { applicationId: string; interviewerId: string; roundId: string; clubId: string; anonymousReview: boolean })[] = clubs.flatMap(club => {
+    const round = club.rounds.find(r => r.name === "Interview")!
+    const interviewer = memberships.find(m => m.clubId === club.id && m.role === "PRESIDENT")!
+    return applications.filter(a => a.clubId === club.id && a.roundId === round.id).slice(0, 2).map((app, i) => {
+      const draft = { questionNotes: sampleInterviewKit().map((q, n) => ({ questionId: q.id, notes: ["Supported the thesis with a concrete example and acknowledged uncertainty.", "Explained the disagreement thoughtfully and took responsibility for follow-through.", "Interested in weekly research and learning from peer feedback."][n] })), additionalQuestions: [{ id: uid(15, clubs.indexOf(club) * 2 + i), question: "What evidence would make you abandon your original idea?", notes: "Would revisit the thesis if the key assumptions stopped holding." }], overallReview: "Fictional interview: thoughtful reasoning, clear communication, and practical curiosity.", score: 8 }
+      const priorEvaluation = app.evaluations.find(e => e.interviewerId === interviewer.id && e.round === round.name)
+      if (priorEvaluation) { draft.score = priorEvaluation.score; draft.overallReview = priorEvaluation.notes || draft.overallReview }
+      const completedAt = i === 0 ? at(-1).toISOString() : null
+      if (completedAt && !app.evaluations.some(e => e.interviewerId === interviewer.id && e.round === round.name)) app.evaluations.push({ id: uid(16, clubs.indexOf(club)), applicationId: app.id, interviewerId: interviewer.id, round: round.name, score: 8, notes: draft.overallReview, createdAt: at(-1) })
+      return { id: uid(14, clubs.indexOf(club) * 2 + i), applicationId: app.id, interviewerId: interviewer.id, roundId: round.id, clubId: club.id, anonymousReview: false, revision: 1, questions: sampleInterviewKit(), draft, completedAt }
+    })
+  })
+  for (const record of interviews.filter(record => record.completedAt)) {
+    for (const slot of slots.filter(slot => slot.applicationId === record.applicationId)) {
+      slot.startTime = at(-1, 14); slot.endTime = at(-1, 14, 50)
+    }
+  }
+  const meetings = clubs.flatMap((club,c) => Array.from({length:5},(_,i)=>({
+    id: uid(17,c*10+i), clubId:club.id, club:{name:club.name}, title: `${club.name} · sample ${i<3?"interest meeting":"member meeting"} ${i+1}`,
+    description: "Fictional meeting for the OutClass demonstration.", date:at(i<2?-7+i*3:i===2?0:i===3?-2:5,12), endDate:at(i<2?-7+i*3:i===2?0:i===3?-2:5,13) as Date | null,
+    location:"Newcomb Hall · sample room", audience:i<3?"RECRUITMENT":"MEMBERS", isPublic:i<3,
+    agenda:"Introductions\nDiscussion and practical examples\nQuestions and next steps", recap:i===0||i===1||i===3?"Sample recap: discussed the agenda, shared resources, and outlined next steps.":"",
+    resources:[{id:uid(18,c*10+i),label:"UVA campus resources (sample link)",kind:"LINK" as "LINK" | "FILE" | "SLIDES",url:"https://www.virginia.edu"}],revision:0,
+  })))
+  const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
+  const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
   return {
+    meetings, meetingAttendances, meetingTokens,
+    interviews,
     version: 1 as const,
     anchor,
     perspective: { role: "student" as "student" | "leader", clubId: clubs[0].id },

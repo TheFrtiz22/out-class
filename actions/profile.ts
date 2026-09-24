@@ -1,6 +1,7 @@
 "use server";
 
-import { profileSectionSchema } from "@/lib/student-profile";
+import { actShape } from "@/lib/test-scores";
+import { storagePathSchema, profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";

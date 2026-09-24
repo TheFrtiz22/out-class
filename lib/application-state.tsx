@@ -133,7 +133,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   useEffect(() => {
     if (!demo.isDemoEnabled || !demo.state) return
     setTrackedApps(serverApps)
-    setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
+    setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" && !event.id.startsWith("meeting-") ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
     setNotifications(demoNotifications())
     setResponses(demo.state.responses)
   }, [demo.state, demo.isDemoEnabled])

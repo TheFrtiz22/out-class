@@ -1,105 +1,51 @@
 "use server";
-
 import { prisma } from "@/utils/prisma";
-import { requireAuth, requireClubPermission } from "@/utils/auth";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
-
-const createEventSchema = z.object({
-  clubId: z.string().uuid(),
-  title: z.string().min(1),
-  date: z.coerce.date(),
-  location: z.string().min(1),
-  description: z.string().optional(),
-  isPublic: z.boolean().default(true)
-});
-
-export async function createEvent(data: z.infer<typeof createEventSchema>) {
-  const parsed = createEventSchema.parse(data);
-
-  // Must be at least a Recruitment Lead to create official events
-  await requireClubPermission(parsed.clubId, ["meetings.manage"]);
-
-  const event = await prisma.event.create({
-    data: {
-      clubId: parsed.clubId,
-      title: parsed.title,
-      date: parsed.date,
-      location: parsed.location,
-      description: parsed.description,
-      isPublic: parsed.isPublic
-    }
-  });
-
-  revalidatePath(`/club/${parsed.clubId}`);
-  revalidatePath(`/club-manager`);
-
-  return { success: true, event };
+import {
+  saveMeeting,
+  checkInMeeting,
+  meetingAttendance,
+} from "@/actions/meetings";
+// Compatibility adapters: recruitment and member meetings share one persisted model.
+export async function createEvent(data: {
+  clubId: string;
+  title: string;
+  date: Date;
+  location: string;
+  description?: string;
+  isPublic?: boolean;
+}) {
+  return {
+    event: await saveMeeting({
+      ...data,
+      audience: data.isPublic === false ? "MEMBERS" : "RECRUITMENT",
+    }),
+    success: true,
+  };
 }
-
 export async function getClubEvents(clubId: string) {
-  const events = await prisma.event.findMany({
-    where: { clubId, isPublic: true },
-    orderBy: { date: "asc" }
-  });
-
-  return { events };
+  return {
+    events: await prisma.meeting.findMany({
+      where: { clubId, isPublic: true, audience: "RECRUITMENT" },
+      select: {
+        id: true,
+        clubId: true,
+        title: true,
+        description: true,
+        date: true,
+        location: true,
+        isPublic: true,
+      },
+      orderBy: { date: "asc" },
+    }),
+  };
 }
-
-export async function recordEventAttendance(eventId: string) {
-  const { user } = await requireAuth();
-
-  // Make sure the event exists
-  const event = await prisma.event.findUnique({
-    where: { id: eventId }
-  });
-
-  if (!event) {
-    throw new Error("Event not found.");
-  }
-
-  if (!event.isPublic) {
-    await requireClubPermission(event.clubId, []);
-  }
-
-  // Record attendance using Postgres upsert to prevent duplicates if they scan twice
-  const attendance = await prisma.eventAttendance.upsert({
-    where: {
-      eventId_studentId: {
-        eventId,
-        studentId: user.id
-      }
-    },
-    update: {
-      checkedInAt: new Date()
-    },
-    create: {
-      eventId,
-      studentId: user.id
-    }
-  });
-
-  revalidatePath("/student-dashboard");
-  revalidatePath(`/club-manager`);
-
-  return { success: true, attendance };
+export async function recordEventAttendance(eventId: string, token?: string) {
+  if (!token)
+    throw new Error(
+      "A current meeting QR code is required. Static attendance links are no longer accepted.",
+    );
+  return checkInMeeting(eventId, token);
 }
-
 export async function getEventAttendees(eventId: string, clubId: string) {
-  // Only club admins can see the attendee list (leads)
-  await requireClubPermission(clubId, ["meetings.attendance"]);
-
-  const attendees = await prisma.eventAttendance.findMany({
-    where: { eventId, event: { clubId }, student: { applications: { none: { clubId, round: { anonymousReview: true }, status: { not: "DRAFTING" } } } } },
-    include: {
-      student: {
-        
-        include: { studentProfile: true }
-      }
-    },
-    orderBy: { checkedInAt: "desc" }
-  });
-
-  return { attendees };
+  return { attendees: await meetingAttendance(clubId, eventId) };
 }
-
