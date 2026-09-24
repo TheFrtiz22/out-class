@@ -1,3 +1,4 @@
+import { seedTasks } from "./task-seed"
 import { sampleInterviewKit } from "@/lib/interview-kits"
 import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
@@ -7,6 +8,16 @@ let state: DemoState | null = null
 let enabled = false
 let template: DemoState | undefined
 const listeners = new Set<() => void>()
+function ensureSemesterWork(value: DemoState) {
+  for (const [index, member] of value.memberships.entries()) {
+    member.groups ??= index % 2 ? ["Market research"] : ["Equity research", "Presentations"]
+    if (member.cohort === undefined) member.cohort = index % 3 ? "Fall 2026" : "Spring 2026"
+  }
+  value.tasks ??= seedTasks(value.clubs[0].id, value.memberships.filter(m=>m.clubId===value.clubs[0].id).map(m=>{
+    const user=value.students.find(u=>u.id===m.userId)!
+    return {...m,user:{id:user.id,email:user.email,studentProfile:{firstName:user.profile.firstName,lastName:user.profile.lastName,gradYear:user.profile.gradYear}}}
+  }),value.anchor)
+}
 export const demoStore = {
   active: () => enabled,
   get: () => {
@@ -49,6 +60,7 @@ export const demoStore = {
     const manager = state!.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
     if (manager) manager.userId = state!.students[0].id
     if (state!.perspective.clubId !== mii.id) state!.perspective = { role: "student", clubId: mii.id }
+    ensureSemesterWork(state!)
     enabled = true
     demoStore.save()
   },
@@ -77,6 +89,7 @@ export const demoStore = {
   reset: () => {
     const previous = demoStore.get()
     state = template ? structuredClone(template) : createDemoSeed(previous.anchor)
+    ensureSemesterWork(state)
     try {
       demoStore.save()
     } catch (error) {

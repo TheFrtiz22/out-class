@@ -105,6 +105,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <DropdownMenuItem onSelect={() => navigate("student-profile")}><UserRound className="size-4" />Your profile</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => navigate("landing")}><Home className="size-4" />OutClass home</DropdownMenuItem>
       {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode("student")}><UserRound className="size-4" />{name} — Personal / Student</DropdownMenuItem>{user?.adminRoles.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchMode("admin", member.clubId)}><ShieldCheck className="size-4" />{member.club.name} — Club workspace</DropdownMenuItem>)}</>}
+      {!!user?.memberships.length && <><DropdownMenuSeparator />{user.memberships.map(member=><DropdownMenuItem key={`work-${member.id}`} asChild><a href={`/club/${member.clubId}/tasks`}>{member.club.name} — Semester work</a></DropdownMenuItem>)}</>}
       {user && !isDemoEnabled && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
     </DropdownMenuContent></DropdownMenu>
   }

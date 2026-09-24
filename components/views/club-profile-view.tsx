@@ -167,6 +167,7 @@ export function ClubProfileView({
         </div>
       )}
       {real && <a className="my-3 block text-sm underline" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps</a>}
+      {user?.memberships.some(m=>m.clubId===club.id) && <a className="my-3 block text-sm underline" href={`/club/${club.id}/tasks`}>Member workspace · Tasks & projects</a>}
       {real && club.testRequirement && <p className="my-3 text-sm">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores are provided through your student profile.</p>}
       {!real && (
         <p className="oc-club-preview-note">

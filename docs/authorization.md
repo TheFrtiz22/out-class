@@ -16,7 +16,7 @@ Supabase Auth owns the login. `User.id` remains the Supabase user ID. Every acco
 | `members.manage` | List/add ordinary members; remove only ordinary members without review history |
 | `meetings.manage` | Create official meetings/events |
 | `meetings.attendance` | Read attendance identities within that club |
-| `tasks.manage` | Read/create/update club tasks |
+| `tasks.manage` | Create/edit club tasks and projects; see assignment progress; review submissions. Members independently access their own assigned work. |
 | `recruitment.manage` | Move an applicant between that club's rounds |
 | `applications.review` | Save a reviewer’s evaluation |
 | `applicants.identify` | Read identified applicant records, answers, evaluations and pipeline/search results |
@@ -112,3 +112,5 @@ The demo always uses the same fictional student identity, regardless of workspac
 - Management tools may require both an operational capability and identity access where existing data cannot be safely anonymized.
 
 To repeat the isolated PostgreSQL check, make `@electric-sql/pglite` available in an external test environment and run `NODE_PATH=/path/to/test/node_modules node tests/authorization-migration.cjs`. The application has no new PGlite runtime dependency.
+
+Semester work and private-file deployment are documented in [tasks.md](tasks.md). Membership group/cohort labels require `members.manage`; those labels never grant authorization.

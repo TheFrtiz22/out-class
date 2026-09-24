@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { getClubMembers, addClubMember, removeClubMember } from "@/actions/club-access"
 import { useAuth } from "@/contexts/auth-context"
 import { hasPermission } from "@/lib/permissions"
-import { updateClubSettings, getClubTasks, saveClubTask } from "@/actions/club-workspace"
+import { updateClubSettings } from "@/actions/club-workspace"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 export function ClubWorkspaceSettings() {
@@ -28,24 +28,7 @@ export function ClubWorkspaceSettings() {
       current = false
     }
   }, [activeClubId, member?.permissions])
-  const [message, setMessage] = useState(""),
-    [busy, setBusy] = useState(false),
-    [tasks, setTasks] = useState<Awaited<ReturnType<typeof getClubTasks>>>([])
-  useEffect(() => {
-    let current = true
-    setTasks([])
-    if (hasPermission(member, "tasks.manage"))
-      void getClubTasks(activeClubId)
-        .then((data) => {
-          if (current) setTasks(data)
-        })
-        .catch(() => {
-          if (current) setMessage("Could not load tasks.")
-        })
-    return () => {
-      current = false
-    }
-  }, [activeClubId, member?.permissions])
+  const [message, setMessage] = useState(""), [busy, setBusy] = useState(false)
   if (!member) return <p>No club workspace assigned.</p>
   async function run(fn: () => Promise<unknown>) {
     setBusy(true)
@@ -106,45 +89,7 @@ export function ClubWorkspaceSettings() {
           <Button disabled={busy}>Save club profile</Button>
         </form>
       )}
-      {hasPermission(member, "tasks.manage") && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Tasks</h2>
-          <form
-            className="flex gap-3"
-            onSubmit={(e) => {
-              e.preventDefault()
-              const title = String(new FormData(e.currentTarget).get("title"))
-              void run(async () => {
-                await saveClubTask({ clubId: member.clubId, title, status: "OPEN" })
-                setTasks(await getClubTasks(member.clubId))
-              })
-            }}
-          >
-            <Input aria-label="New task" name="title" required />
-            <Button disabled={busy}>Add task</Button>
-          </form>
-          {tasks.map((task) => (
-            <div className="flex items-center justify-between gap-3 border-b py-3" key={task.id}>
-              <span>{task.title}</span>
-              <Button
-                variant="outline"
-                disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    await saveClubTask({
-                      ...task,
-                      status: task.status === "DONE" ? "OPEN" : "DONE",
-                    })
-                    setTasks(await getClubTasks(member.clubId))
-                  })
-                }
-              >
-                {task.status === "DONE" ? "Reopen" : "Complete"}
-              </Button>
-            </div>
-          ))}
-        </section>
-      )}
+      <a className="inline-block text-sm underline underline-offset-4" href={`/club/${member.clubId}/tasks`}>Tasks & semester projects</a>
       {hasPermission(member, "members.manage") && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Members</h2>

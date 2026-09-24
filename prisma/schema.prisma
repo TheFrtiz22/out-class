@@ -27,6 +27,7 @@ model User {
   clubInvitations ClubInvitation[]
   clubClaims      ClubClaim[]
   assignedTasks   ClubTask[]
+  taskSubmissions TaskAssignment[]
 }
 
 enum AppRole {
@@ -101,6 +102,9 @@ model Club {
 }
 
 model ClubMember {
+  groups           String[]          @default([])
+  cohort           String?
+  taskAssignments  TaskAssignment[]
   isOwner          Boolean           @default(false)
   permissions      String[]          @default([])
   interviewRecords InterviewRecord[]
@@ -350,16 +354,25 @@ model ClubClaim {
 }
 
 model ClubTask {
-  id          String    @id @default(uuid())
-  club        Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  assignee    User?     @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
-  clubId      String
-  title       String
-  description String    @default("")
-  assigneeId  String?
-  status      String    @default("OPEN")
-  dueAt       DateTime?
-  createdAt   DateTime  @default(now())
+  kind         String           @default("TASK")
+  projectId    String?
+  project      ClubTask?        @relation("ProjectTasks", fields: [projectId], references: [id], onDelete: SetNull)
+  tasks        ClubTask[]       @relation("ProjectTasks")
+  resources    Json             @default("[]")
+  requirements String[]         @default([])
+  audience     Json             @default("{}")
+  revision     Int              @default(0)
+  assignments  TaskAssignment[]
+  id           String           @id @default(uuid())
+  club         Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  assignee     User?            @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  clubId       String
+  title        String
+  description  String           @default("")
+  assigneeId   String?
+  status       String           @default("OPEN")
+  dueAt        DateTime?
+  createdAt    DateTime         @default(now())
 
   @@index([clubId, status])
 }
@@ -381,4 +394,41 @@ model MeetingCheckInToken {
   createdAt DateTime @default(now())
 
   @@index([meetingId, expiresAt])
+}
+
+model TaskAssignment {
+  id          String      @id @default(uuid())
+  taskId      String
+  task        ClubTask    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  memberId    String?
+  member      ClubMember? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  userId      String
+  recipient   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedAt  DateTime    @default(now())
+  viewedAt    DateTime?
+  text        String      @default("")
+  link        String      @default("")
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  feedback    String      @default("")
+  revision    Int         @default(0)
+  files       TaskFile[]
+
+  @@unique([taskId, memberId])
+  @@index([memberId])
+}
+
+model TaskFile {
+  id           String         @id @default(uuid())
+  assignmentId String
+  assignment   TaskAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  name         String
+  path         String         @unique
+  size         Int
+  mime         String
+  submitted    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+
+  @@index([assignmentId])
 }

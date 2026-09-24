@@ -1,3 +1,4 @@
+import { seedTasks } from "./task-seed"
 import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
 import type { AppStatus as ApplicationStatus } from "@prisma/client"
@@ -207,6 +208,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   const memberships = clubs.flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
       id: uid(7, c * 30 + m),
+      groups: m % 2 === 0 ? ["Equity research", "Presentations"] : ["Market research"],
+      cohort: m < 6 ? "Fall 2026" : "Spring 2026" as string | null,
       clubId: club.id,
       userId: c === 0 && m === 0 ? students[0].id : students[(c * 7 + m + 120) % 200].id,
       role:
@@ -328,6 +331,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
   return {
+    tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
     interviews,
     version: 1 as const,

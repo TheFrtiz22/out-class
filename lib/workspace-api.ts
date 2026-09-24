@@ -1,4 +1,6 @@
 "use client"
+import * as tasksApi from "@/actions/tasks"
+import * as demoTasks from "@/lib/demo/tasks"
 // The sole client data boundary: demo operations never invoke a server action.
 import { anonymousApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
@@ -350,3 +352,13 @@ export const recruitmentAttendanceSummary=adapt(meetingsApi.recruitmentAttendanc
   const app=scopedApplication(clubId,applicationId),s=demoStore.get(),held=s.meetings.filter(m=>m.clubId===clubId&&m.audience==="RECRUITMENT"&&m.date<=new Date())
   return{held:held.length,attended:s.meetingAttendances.filter(a=>a.studentId===app.studentId&&held.some(m=>m.id===a.eventId)).length}
 })
+
+// Semester work follows the same isolated demo boundary as recruitment.
+export const getTaskWorkspace = adapt(tasksApi.getTaskWorkspace, demoTasks.getTaskWorkspace)
+export const saveTask = adapt(tasksApi.saveTask, demoTasks.saveTask)
+export const updateTaskMember = adapt(tasksApi.updateTaskMember, demoTasks.updateTaskMember)
+export const viewTask = adapt(tasksApi.viewTask, demoTasks.viewTask)
+export const submitTask = adapt(tasksApi.submitTask, demoTasks.submitTask)
+export const reviewTask = adapt(tasksApi.reviewTask, demoTasks.reviewTask)
+export const uploadTaskFile = adapt(tasksApi.uploadTaskFile, () => { throw new Error("Demo files stay fictional. Use a text or link submission; no files are uploaded.") })
+export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, () => { throw new Error("This fictional demo file is not downloadable.") })
