@@ -69,7 +69,7 @@ export function DemoClubSettings() {
           {club.description}
         </p>
       </div>
-      <a className="inline-block text-sm underline underline-offset-4" href={`/club/${club.id}/tasks`}>Tasks & semester projects</a>
+      <a className="inline-block text-sm underline underline-offset-4" href={`/club/${club.id}/workspace`}>Open club workspace</a>
       <DemoRoundTarget />
       <section>
         <h3 className="mb-4 text-lg font-semibold">Application questions</h3>

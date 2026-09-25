@@ -8,7 +8,7 @@ function load(file, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   new Function("require", "module", "exports", code)(
-    (name) => (name in mocks ? mocks[name] : require(name)),
+    (name) => (name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2)+".ts") : require(name)),
     mod,
     mod.exports,
   )
@@ -49,7 +49,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
         },
       }),
     },
-    "next/headers": { cookies: async () => ({ get: () => (demo ? { value: "1" } : undefined) }) },
+    "next/headers": { cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
     "./prisma": {
       prisma: {
         user: { upsert: async () => ({ id: "actor", role: "CLUB_ADMIN" }) },
@@ -88,7 +88,7 @@ test("platform access requires independent server allowlist, database grant, and
         },
       }),
     },
-    "next/headers": { cookies: async () => ({}) },
+    "next/headers": { cookies: async () => ({ has: () => false }) },
   })
   try {
     delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS

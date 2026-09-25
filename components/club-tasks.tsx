@@ -51,7 +51,15 @@ const localDate = (date: Date | null) => {
 function resources(task: Task) {
   return taskInputSchema.shape.resources.safeParse(task.resources).data ?? [];
 }
-export function ClubTasks({ clubId }: { clubId: string }) {
+export function ClubTasks({
+  clubId,
+  embedded = false,
+  initialScope = "mine",
+}: {
+  clubId: string;
+  embedded?: boolean;
+  initialScope?: string;
+}) {
   const { user, loading } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
@@ -60,7 +68,7 @@ export function ClubTasks({ clubId }: { clubId: string }) {
     [busy, setBusy] = useState(false),
     [refresh, setRefresh] = useState(0),
     [loaded, setLoaded] = useState(false),
-    [scope, setScope] = useState("mine"),
+    [scope, setScope] = useState(initialScope),
     [filter, setFilter] = useState("open"),
     [query, setQuery] = useState("");
   useEffect(() => {
@@ -137,34 +145,44 @@ export function ClubTasks({ clubId }: { clubId: string }) {
     ) ?? [];
   return (
     <div className="space-y-7">
-      <nav
-        aria-label="Club workspace"
-        className="flex flex-wrap gap-x-5 gap-y-3 text-sm"
-      >
-        <Link className="underline underline-offset-4" href="/">
-          OutClass
-        </Link>
-        <Link className="underline underline-offset-4" href={`/club/${clubId}`}>
-          Club profile
-        </Link>
-        <Link
-          className="underline underline-offset-4"
-          href={`/meetings?clubId=${clubId}`}
+      {!embedded && (
+        <nav
+          aria-label="Club workspace"
+          className="flex flex-wrap gap-x-5 gap-y-3 text-sm"
         >
-          Meetings
-        </Link>
-        <span aria-current="page">Tasks</span>
-      </nav>
-      <header className="space-y-2 border-b pb-6">
-        <p className="text-sm text-muted-foreground">
-          {membership?.club.name ?? "Club workspace"}
-        </p>
-        <h1 className="font-display text-3xl sm:text-4xl">Semester work</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-          Projects, weekly assignments, and the next thing to do. Your club work
-          stays here.
-        </p>
-      </header>
+          <Link
+            className="underline underline-offset-4"
+            href={`/club/${clubId}/workspace`}
+          >
+            Club workspace
+          </Link>
+          <Link
+            className="underline underline-offset-4"
+            href={`/club/${clubId}`}
+          >
+            Club profile
+          </Link>
+          <Link
+            className="underline underline-offset-4"
+            href={`/meetings?clubId=${clubId}`}
+          >
+            Meetings
+          </Link>
+          <span aria-current="page">Tasks</span>
+        </nav>
+      )}
+      {!embedded && (
+        <header className="space-y-2 border-b pb-6">
+          <p className="text-sm text-muted-foreground">
+            {membership?.club.name ?? "Club workspace"}
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl">Semester work</h1>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+            Projects, weekly assignments, and the next thing to do. Your club
+            work stays here.
+          </p>
+        </header>
+      )}
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Fictional demo work, saved on this device. File uploads are disabled

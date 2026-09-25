@@ -5,7 +5,7 @@ const ts = require('typescript')
 const clubId = '00000000-0000-4000-8000-000000000001'
 function load(file, mocks) {
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith("@/lib/") ? load(n.slice(2)+".ts", {}) : require(n), mod, mod.exports)
   return mod.exports
 }
 test('claim requests reject managed clubs, reuse pending requests, and audit new requests', async () => {

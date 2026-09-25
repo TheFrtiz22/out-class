@@ -275,3 +275,11 @@ test("semester tasks preserve one demo identity, target real demo memberships, a
 test("saved demo seasons upgrade tasks without resetting recruiting state",()=>{
  const h=harness(),{demoStore,DEMO_KEY}=h.load('lib/demo/store.ts');demoStore.start();const saved=JSON.parse(localStorage.getItem(DEMO_KEY));delete saved.tasks;for(const m of saved.memberships){delete m.groups;delete m.cohort}saved.applications[0].status='WAITLISTED';localStorage.setItem(DEMO_KEY,JSON.stringify(saved));demoStore.stop();demoStore.start();assert.equal(demoStore.get().applications[0].status,'WAITLISTED');assert.equal(demoStore.get().tasks.length,4);assert.ok(demoStore.get().memberships.every(m=>Array.isArray(m.groups)));assert.ok(demoStore.get().tasks[1].assignments.some(a=>a.userId===demoStore.get().students[0].id))
 })
+
+test("club workspace overview uses persisted demo activity and excludes unrelated clubs without server calls",async()=>{
+ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const s=demoStore.get(),id=s.clubs[0].id;
+ const overview=await api.getClubWorkspaceOverview(id);assert.equal(overview.club.name,'MII');assert.equal(overview.membership.isOwner,true);assert.ok(overview.work.length);assert.ok(overview.awaitingReview>0);assert.ok(overview.recruitment.length);
+ await assert.rejects(api.getClubWorkspaceOverview(s.clubs[1].id),/unavailable/);await assert.rejects(api.getWorkspaceRounds(s.clubs[1].id),/limited to MII/);
+ const task=s.tasks.find(t=>t.kind==='TASK'&&t.assignments.some(a=>a.memberId===overview.membership.id&&!a.submittedAt)),assignment=task.assignments.find(a=>a.memberId===overview.membership.id);
+ await api.submitTask({assignmentId:assignment.id,revision:assignment.revision,text:'Fictional finished work',link:'',fileIds:[]});const after=await api.getClubWorkspaceOverview(id);assert.ok(!after.work.some(w=>w.id===assignment.id));assert.equal(after.awaitingReview,overview.awaitingReview+1);assert.equal(h.calls(),0)
+});

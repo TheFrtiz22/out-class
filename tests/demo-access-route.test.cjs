@@ -22,6 +22,7 @@ test('deployed demo endpoint verifies identity, issues secure cookie, and reject
     let authCalls = 0
     const api = load('app/api/demo/route.ts', {
       '@/lib/demo/access': access,
+    '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
       'next/headers': { cookies: async () => ({ get: () => ({ value: '1' }) }) },
       '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { email } }, error: authError } } } }) },
     })
@@ -60,6 +61,7 @@ test('demo cookie blocks live identity reads and mutations without granting a se
   let live = 0
   const { middleware } = load('middleware.ts', {
     '@/lib/demo/access': access,
+    '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
     '@/utils/supabase/middleware': { createClient: async () => { live++; return new Response('ordinary') } },
   })
   for (const [path, method] of [['/api/users/me', 'GET'], ['/', 'POST']]) {

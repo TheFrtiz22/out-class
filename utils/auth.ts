@@ -1,3 +1,4 @@
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
@@ -10,8 +11,9 @@ import { redirect } from "next/navigation";
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
  * Redirects to /auth (or home) if not authenticated.
  */
-export async function requireAuth() {
+export async function requireAuth(options: { allowPlatformView?: boolean } = {}) {
   const cookieStore = await cookies();
+  if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) throw new Error("Exit read-only administrator view before using normal account actions.");
   if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new Error("Live data is unavailable in Demo Mode.");
   const supabase = await createClient(cookieStore);
   

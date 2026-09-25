@@ -13,7 +13,7 @@ export default async function PlatformPage() {
         Personal workspace
       </a>
       <h1 className="font-display text-3xl">OutClass platform administration</h1>
-      <p>Privileged operations are audited. Viewing a user does not impersonate their session.</p>
+      <p className="text-sm text-muted-foreground">Protected platform controls. Changes require a reason and confirmation; every operation is audited.</p>
       <a className="block underline" href="/platform/claims">Review club claims</a>
       <PlatformConsole />
     </main>

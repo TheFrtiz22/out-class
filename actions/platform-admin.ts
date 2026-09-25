@@ -1,105 +1,345 @@
 "use server";
 import { z } from "zod";
+import {
+  platformResources,
+  platformFiltersSchema,
+  platformStatuses,
+  type PlatformFilters,
+  applicationStates,
+} from "@/lib/platform-console";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { readDemoTemplate } from "@/lib/demo/validate";
 import { clubPermissions } from "@/lib/permissions";
 
-const resources = z.enum([
-  "users",
-  "clubs",
-  "claims",
-  "memberships",
-  "rounds",
-  "questions",
-  "interviews",
-  "applications",
-  "meetings",
-  "tasks",
-  "content",
-  "audit",
-]);
+const resources = z.enum(platformResources);
 export type PlatformResource = z.infer<typeof resources>;
-export async function readPlatformResource(input: PlatformResource, page = 0) {
-  const actor = await requirePlatformAdmin();
-  const resource = resources.parse(input);
-  const skip = z.number().int().min(0).max(100000).parse(page) * 100;
+export async function readPlatformResource(
+  input: PlatformResource,
+  page = 0,
+  filters: PlatformFilters = {},
+) {
+  const actor = await requirePlatformAdmin(),
+    resource = resources.parse(input),
+    f = platformFiltersSchema.parse(filters);
+  const skip = z.number().int().min(0).max(10000).parse(page) * 100;
+  if (f.status && !platformStatuses[resource]?.includes(f.status))
+    throw new Error("Choose a valid status for this resource.");
+  if (
+    f.permission &&
+    !clubPermissions.includes(f.permission as (typeof clubPermissions)[number])
+  )
+    throw new Error("Unknown permission.");
+  const text = { contains: f.query, mode: "insensitive" as const },
+    club = f.clubId ? { clubId: f.clubId } : {},
+    dates =
+      f.from || f.to
+        ? {
+            ...(f.from ? { gte: new Date(f.from) } : {}),
+            ...(f.to ? { lte: new Date(f.to) } : {}),
+          }
+        : undefined;
+  const paging = { take: 100, skip };
   await prisma.auditLog.create({
-    data: { actorId: actor.id, action: "platform.read", targetId: resource },
+    data: {
+      actorId: actor.id,
+      action: "platform.read",
+      targetId: resource,
+      details: { page, filters: f },
+    },
   });
   switch (resource) {
     case "users":
       return prisma.user.findMany({
-        take: 100,
-        skip,
-        orderBy: { createdAt: "desc" },
+        ...paging,
+        where: {
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { email: text },
+                  { studentProfile: { firstName: text } },
+                  { studentProfile: { lastName: text } },
+                ],
+              }
+            : {}),
+          ...(f.userId ? { id: f.userId } : {}),
+          ...(f.status
+            ? { disabledAt: f.status === "ACTIVE" ? null : { not: null } }
+            : {}),
+          ...(dates ? { createdAt: dates } : {}),
+        },
         select: { id: true, email: true, disabledAt: true, createdAt: true },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "clubs":
       return prisma.club.findMany({
-        take: 100,
-        skip,
-        orderBy: { name: "asc" },
+        ...paging,
+        where: {
+          ...(f.clubId ? { id: f.clubId } : {}),
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { name: text },
+                  { slug: text },
+                  { category: text },
+                ],
+              }
+            : {}),
+          ...(f.status
+            ? { claimedAt: f.status === "CLAIMED" ? { not: null } : null }
+            : {}),
+        },
+        orderBy: [{ name: "asc" }, { id: "asc" }],
       });
     case "claims":
       return prisma.clubClaim.findMany({
-        take: 100,
-        skip,
-        orderBy: { createdAt: "desc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(f.userId ? { userId: f.userId } : {}),
+          ...(f.status ? { status: f.status } : {}),
+          ...(dates ? { createdAt: dates } : {}),
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { explanation: text },
+                  { club: { name: text } },
+                  { user: { email: text } },
+                ],
+              }
+            : {}),
+        },
+        include: {
+          club: { select: { name: true } },
+          user: { select: { email: true } },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "memberships":
       return prisma.clubMember.findMany({
-        take: 100,
-        skip,
+        ...paging,
+        where: {
+          ...club,
+          ...(f.userId ? { userId: f.userId } : {}),
+          ...(f.permission
+            ? {
+                OR: [{ isOwner: true }, { permissions: { has: f.permission } }],
+              }
+            : {}),
+          ...(f.query
+            ? {
+                AND: [
+                  {
+                    OR: [
+                      { id: text },
+                      { club: { name: text } },
+                      { user: { email: text } },
+                    ],
+                  },
+                ],
+              }
+            : {}),
+        },
+        include: {
+          club: { select: { name: true } },
+          user: { select: { email: true } },
+        },
         orderBy: { id: "asc" },
       });
     case "rounds":
       return prisma.pipelineRound.findMany({
-        take: 100,
-        skip,
-        orderBy: { id: "asc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(f.query
+            ? { OR: [{ id: text }, { name: text }, { club: { name: text } }] }
+            : {}),
+        },
+        orderBy: [{ clubId: "asc" }, { order: "asc" }, { id: "asc" }],
       });
     case "questions":
       return prisma.applicationQuestion.findMany({
-        take: 100,
-        skip,
+        ...paging,
+        where: {
+          ...club,
+          ...(f.query ? { OR: [{ id: text }, { prompt: text }] } : {}),
+        },
         orderBy: { id: "asc" },
       });
     case "interviews":
       return prisma.interviewSlot.findMany({
-        take: 100,
-        skip,
-        orderBy: { startTime: "desc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(dates ? { startTime: dates } : {}),
+          ...(f.query ? { OR: [{ id: text }, { location: text }] } : {}),
+        },
+        orderBy: [{ startTime: "desc" }, { id: "asc" }],
       });
     case "applications":
       return prisma.application.findMany({
-        take: 100,
-        skip,
+        ...paging,
+        where: {
+          ...club,
+          ...(f.userId ? { studentId: f.userId } : {}),
+          ...(f.status
+            ? { status: z.enum(applicationStates).parse(f.status) }
+            : {}),
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { club: { name: text } },
+                  { student: { email: text } },
+                ],
+              }
+            : {}),
+        },
+        include: {
+          club: { select: { name: true } },
+          student: { select: { email: true } },
+          round: { select: { name: true } },
+        },
         orderBy: { id: "asc" },
       });
     case "meetings":
       return prisma.meeting.findMany({
-        take: 100,
-        skip,
-        orderBy: { date: "desc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(f.status ? { audience: f.status } : {}),
+          ...(dates ? { date: dates } : {}),
+          ...(f.query
+            ? { OR: [{ id: text }, { title: text }, { location: text }] }
+            : {}),
+        },
+        orderBy: [{ date: "desc" }, { id: "asc" }],
       });
     case "tasks":
       return prisma.clubTask.findMany({
-        take: 100,
-        skip,
-        orderBy: { createdAt: "desc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(f.status ? { status: f.status } : {}),
+          ...(dates ? { createdAt: dates } : {}),
+          ...(f.query
+            ? { OR: [{ id: text }, { title: text }, { description: text }] }
+            : {}),
+        },
+        include: { _count: { select: { assignments: true } } },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      });
+    case "submissions":
+      return prisma.taskAssignment.findMany({
+        ...paging,
+        where: {
+          ...(f.clubId ? { task: { clubId: f.clubId } } : {}),
+          ...(f.userId ? { userId: f.userId } : {}),
+          ...(f.status === "ASSIGNED"
+            ? { submittedAt: null, reviewedAt: null }
+            : f.status === "SUBMITTED"
+              ? { submittedAt: { not: null }, reviewedAt: null }
+              : f.status === "REVIEWED"
+                ? { reviewedAt: { not: null } }
+                : {}),
+          ...(dates ? { assignedAt: dates } : {}),
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { task: { title: text } },
+                  { recipient: { email: text } },
+                ],
+              }
+            : {}),
+        },
+        include: {
+          task: { select: { title: true, clubId: true } },
+          recipient: { select: { email: true } },
+          files: {
+            where: { submitted: true },
+            select: { id: true, name: true, size: true },
+          },
+        },
+        orderBy: [{ assignedAt: "desc" }, { id: "asc" }],
       });
     case "content":
       return prisma.platformContent.findMany({
-        take: 100,
-        skip,
+        ...paging,
+        where: {
+          ...(f.query ? { key: text } : {}),
+          ...(dates ? { updatedAt: dates } : {}),
+        },
         orderBy: { key: "asc" },
+      });
+    case "view-sessions":
+      return prisma.platformViewSession.findMany({
+        ...paging,
+        where: {
+          ...club,
+          ...(f.userId
+            ? { OR: [{ actorId: f.userId }, { targetUserId: f.userId }] }
+            : {}),
+          ...(f.query
+            ? {
+                AND: [
+                  {
+                    OR: [
+                      { actorId: text },
+                      { targetUserId: text },
+                      { reason: text },
+                    ],
+                  },
+                ],
+              }
+            : {}),
+          ...(dates ? { createdAt: dates } : {}),
+          ...(f.status === "ACTIVE"
+            ? { endedAt: null, expiresAt: { gt: new Date() } }
+            : f.status === "ENDED"
+              ? { endedAt: { not: null } }
+              : f.status === "EXPIRED"
+                ? { endedAt: null, expiresAt: { lte: new Date() } }
+                : {}),
+        },
+        select: {
+          id: true,
+          actorId: true,
+          targetUserId: true,
+          clubId: true,
+          reason: true,
+          createdAt: true,
+          expiresAt: true,
+          endedAt: true,
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
     case "audit":
       return prisma.auditLog.findMany({
-        take: 100,
-        skip,
-        orderBy: { createdAt: "desc" },
+        ...paging,
+        where: {
+          ...club,
+          ...(f.userId ? { actorId: f.userId } : {}),
+          ...(f.action
+            ? { action: { contains: f.action, mode: "insensitive" } }
+            : {}),
+          ...(dates ? { createdAt: dates } : {}),
+          ...(f.query
+            ? {
+                OR: [
+                  { id: text },
+                  { action: text },
+                  { actorId: text },
+                  { targetId: text },
+                  { reason: text },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       });
   }
 }
@@ -107,6 +347,7 @@ export async function readPlatformResource(input: PlatformResource, page = 0) {
 const id = z.string().uuid();
 const operations = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("user"), id, disabled: z.boolean() }),
+  z.object({ kind: z.literal("view-session"), id }),
   z.object({
     kind: z.literal("club"),
     id: id.optional(),
@@ -131,6 +372,7 @@ const operations = z.discriminatedUnion("kind", [
     clubId: id,
     name: z.string().min(1).max(100),
     order: z.number().int().min(0),
+    anonymousReview: z.boolean().optional(),
   }),
   z.object({
     kind: z.literal("question"),
@@ -184,6 +426,7 @@ const operations = z.discriminatedUnion("kind", [
     title: z.string().min(1).max(200),
     description: z.string().max(10000),
     status: z.enum(["OPEN", "IN_PROGRESS", "DONE"]),
+    dueAt: z.coerce.date().nullable().optional(),
   }),
   z.object({
     kind: z.literal("content"),
@@ -195,12 +438,68 @@ export async function changePlatformResource(input: unknown, reason: string) {
   const actor = await requirePlatformAdmin();
   const data = operations.parse(input);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
+  if (data.kind === "content" && JSON.stringify(data.value).length > 4_000_000)
+    throw new Error("Content exceeds the 4 MB limit.");
   return prisma.$transaction(async (tx) => {
     let targetId = "";
+    let auditedClubId = "clubId" in data ? data.clubId : undefined;
     switch (data.kind) {
+      case "view-session": {
+        const session = await tx.platformViewSession.findUnique({
+          where: { id: data.id },
+        });
+        if (!session) throw new Error("View session unavailable.");
+        const ended = await tx.platformViewSession.updateMany({
+          where: { id: session.id, endedAt: null },
+          data: { endedAt: new Date() },
+        });
+        if (!ended.count) throw new Error("View session already ended.");
+        await tx.auditLog.create({
+          data: {
+            actorId: actor.id,
+            action: "platform.view-as.end",
+            targetId: session.targetUserId,
+            clubId: session.clubId,
+            reason: justification,
+            details: { sessionId: session.id, terminatedByAdmin: true },
+          },
+        });
+        targetId = session.id;
+        auditedClubId = session.clubId ?? undefined;
+        break;
+      }
       case "user": {
         if (data.id === actor.id && data.disabled)
           throw new Error("You cannot suspend your own administrator account.");
+        if (
+          data.disabled &&
+          (await tx.platformAdmin.findUnique({ where: { userId: data.id } }))
+        )
+          throw new Error(
+            "Administrator suspension requires revoking the protected grant first.",
+          );
+        if (data.disabled) {
+          const owned = await tx.clubMember.findMany({
+            where: { userId: data.id, isOwner: true },
+            select: { clubId: true },
+          });
+          for (const membership of owned) {
+            await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${membership.clubId} FOR UPDATE`;
+            if (
+              !(await tx.clubMember.count({
+                where: {
+                  clubId: membership.clubId,
+                  isOwner: true,
+                  userId: { not: data.id },
+                  user: { disabledAt: null },
+                },
+              }))
+            )
+              throw new Error(
+                "Assign another active club owner before suspending this account.",
+              );
+          }
+        }
         await tx.user.update({
           where: { id: data.id },
           data: { disabledAt: data.disabled ? new Date() : null },
@@ -220,6 +519,7 @@ export async function changePlatformResource(input: unknown, reason: string) {
         const claim = await tx.clubClaim.findUnique({ where: { id: data.id } });
         if (!claim || claim.status !== "PENDING")
           throw new Error("Claim is no longer pending.");
+        auditedClubId = claim.clubId;
         await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${claim.clubId} FOR UPDATE`;
         if (data.approved) {
           const club = await tx.club.findUnique({
@@ -376,16 +676,23 @@ export async function changePlatformResource(input: unknown, reason: string) {
       }
       case "meeting": {
         const { kind, id, ...values } = data;
-        const fields = { ...values, audience: values.isPublic ? "RECRUITMENT" : "MEMBERS" };
+        const fields = {
+          ...values,
+          audience: values.isPublic ? "RECRUITMENT" : "MEMBERS",
+        };
         if (
           id &&
           !(await tx.meeting.findFirst({ where: { id, clubId: data.clubId } }))
         )
           throw new Error("Meeting unavailable.");
         const record = id
-          ? await tx.meeting.update({ where: { id }, data: { ...fields, revision: { increment: 1 } } })
+          ? await tx.meeting.update({
+              where: { id },
+              data: { ...fields, revision: { increment: 1 } },
+            })
           : await tx.meeting.create({ data: fields });
-        if(id) await tx.meetingCheckInToken.deleteMany({ where: { meetingId: id } });
+        if (id)
+          await tx.meetingCheckInToken.deleteMany({ where: { meetingId: id } });
         targetId = record.id;
         break;
       }
@@ -397,7 +704,10 @@ export async function changePlatformResource(input: unknown, reason: string) {
         )
           throw new Error("Task unavailable.");
         const record = id
-          ? await tx.clubTask.update({ where: { id }, data: fields })
+          ? await tx.clubTask.update({
+              where: { id },
+              data: { ...fields, revision: { increment: 1 } },
+            })
           : await tx.clubTask.create({ data: fields });
         targetId = record.id;
         break;
@@ -420,7 +730,15 @@ export async function changePlatformResource(input: unknown, reason: string) {
         action: `platform.${data.kind}.change`,
         targetId,
         reason: justification,
-        details: JSON.parse(JSON.stringify(data)),
+        clubId: auditedClubId,
+        details:
+          data.kind === "content"
+            ? {
+                kind: data.kind,
+                key: data.key,
+                bytes: JSON.stringify(data.value).length,
+              }
+            : JSON.parse(JSON.stringify(data)),
       },
     });
     return { success: true, targetId };
@@ -450,4 +768,80 @@ export async function inspectPlatformUser(userId: string, reason: string) {
       attendances: true,
     },
   });
+}
+
+/** Expanded records are fetched only after an explicit, audited inspection. */
+export async function inspectPlatformRecord(
+  resource: PlatformResource,
+  recordId: string,
+) {
+  const actor = await requirePlatformAdmin();
+  resources.parse(resource);
+  id.parse(recordId);
+  await prisma.auditLog.create({
+    data: {
+      actorId: actor.id,
+      action: "platform.record.inspect",
+      targetId: recordId,
+      details: { resource },
+    },
+  });
+  if (resource === "users")
+    return prisma.user.findUnique({
+      where: { id: recordId },
+      select: {
+        id: true,
+        email: true,
+        disabledAt: true,
+        createdAt: true,
+        studentProfile: { include: { experiences: true } },
+        memberships: { include: { club: { select: { name: true } } } },
+      },
+    });
+  if (resource === "applications")
+    return prisma.application.findUnique({
+      where: { id: recordId },
+      include: {
+        answers: { include: { question: true } },
+        evaluations: true,
+        interviewRecords: true,
+        round: true,
+        club: { select: { name: true } },
+        student: {
+          select: {
+            email: true,
+            studentProfile: { include: { experiences: true } },
+          },
+        },
+      },
+    });
+  if (resource === "meetings")
+    return prisma.meeting.findUnique({
+      where: { id: recordId },
+      include: {
+        attendances: {
+          select: {
+            id: true,
+            checkedInAt: true,
+            student: { select: { email: true } },
+          },
+        },
+      },
+    });
+  if (resource === "tasks")
+    return prisma.clubTask.findUnique({
+      where: { id: recordId },
+      include: {
+        assignments: {
+          include: {
+            recipient: { select: { email: true } },
+            files: {
+              where: { submitted: true },
+              select: { id: true, name: true, size: true },
+            },
+          },
+        },
+      },
+    });
+  throw new Error("Expanded inspection is unavailable for this resource.");
 }

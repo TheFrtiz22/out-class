@@ -1,4 +1,7 @@
 "use client"
+import Link from "next/link"
+import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
+import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { hasPermission } from "@/lib/permissions"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
@@ -104,14 +107,14 @@ export function DashboardLayout({ children, view, appMode, onNavigate, onModeCha
       <DemoMenuItems />
       <DropdownMenuItem onSelect={() => navigate("student-profile")}><UserRound className="size-4" />Your profile</DropdownMenuItem>
       <DropdownMenuItem onSelect={() => navigate("landing")}><Home className="size-4" />OutClass home</DropdownMenuItem>
-      {canSwitch && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => switchMode("student")}><UserRound className="size-4" />{name} — Personal / Student</DropdownMenuItem>{user?.adminRoles.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchMode("admin", member.clubId)}><ShieldCheck className="size-4" />{member.club.name} — Club workspace</DropdownMenuItem>)}</>}
-      {!!user?.memberships.length && <><DropdownMenuSeparator />{user.memberships.map(member=><DropdownMenuItem key={`work-${member.id}`} asChild><a href={`/club/${member.clubId}/tasks`}>{member.club.name} — Semester work</a></DropdownMenuItem>)}</>}
+      {!!user?.memberships.length && <><DropdownMenuSeparator />{user.memberships.map(member=><DropdownMenuItem key={member.id} asChild><Link href={clubWorkspaceHref(member.clubId)}>{member.club.name} — Club workspace</Link></DropdownMenuItem>)}</>}
       {user && !isDemoEnabled && <><DropdownMenuSeparator /><DropdownMenuItem disabled={signingOut} onSelect={() => { void signOut() }}><LogOut className="size-4" />{signingOut ? "Signing out…" : "Sign out"}</DropdownMenuItem></>}
     </DropdownMenuContent></DropdownMenu>
   }
   function sidebar(mobile = false) {
     return <div className="flex h-full min-h-0 flex-col">
       <div className="px-5 pb-7 pt-7"><button type="button" aria-label="OutClass home" onClick={() => navigate("landing")} className="rounded-sm"><OutClassLogo variant="light" className="h-10 w-auto" /></button><p className="mt-4 text-xs text-muted-foreground">University of Virginia</p></div>
+      {!!user?.memberships.length && <div className="px-5 pb-5"><ClubWorkspaceSwitcher clubId={leader ? activeClubId : ""}/></div>}
       <div className="mx-5 border-t border-border" />
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
         <p className="mb-3 px-3 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{leader ? "Club-leader workspace" : "Your workspace"}</p>

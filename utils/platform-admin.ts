@@ -1,11 +1,12 @@
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { requireAuth } from "@/utils/auth"
 import { prisma } from "@/utils/prisma"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 
 /** Independent of profile fields, global legacy roles, club ownership, and demo roles. */
-export async function requirePlatformAdmin() {
-  const { user } = await requireAuth()
+export async function requirePlatformAdmin(options: { allowViewAs?: boolean } = {}) {
+  const { user } = await requireAuth({ allowPlatformView: true })
   const allowed = (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "")
     .split(",")
     .map((value) => value.trim())
@@ -17,5 +18,6 @@ export async function requirePlatformAdmin() {
   const { data, error } = await client.auth.mfa.getAuthenticatorAssuranceLevel()
   if (error || data?.currentLevel !== "aal2")
     throw new Error("Verify your authenticator to enter platform administration.")
+  if (!options.allowViewAs && (await cookies()).has(PLATFORM_VIEW_COOKIE)) throw new Error("Exit read-only view before performing administrator operations.")
   return user
 }

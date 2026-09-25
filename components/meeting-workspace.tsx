@@ -22,11 +22,11 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-export function MeetingList({ clubId }: { clubId?: string }) {
+export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" }: { clubId?: string; embedded?: boolean; initialAudience?: string }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [audience, setAudience] = useState("ALL"),
+    [audience, setAudience] = useState(initialAudience),
     [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let current = true;
@@ -53,9 +53,9 @@ export function MeetingList({ clubId }: { clubId?: string }) {
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Club meetings</h2>
-        <a className="text-sm underline" href="/meetings">
+        {!embedded && <a className="text-sm underline" href="/meetings">
           All available meetings
-        </a>
+        </a>}
       </div>
       <p className="text-sm text-muted-foreground">
         Recruitment meetings and member meetings share one place for agendas,
@@ -93,9 +93,9 @@ export function MeetingList({ clubId }: { clubId?: string }) {
           </Button>
         </div>
       )}
-      {!loading && !error && !meetings.length && (
+      {!loading && !error && !meetings.some(m => audience === "ALL" || m.audience === audience) && (
         <p className="py-6 text-sm text-muted-foreground">
-          No meetings are available yet.
+          No meetings are available for this audience yet.
         </p>
       )}
       <ul className="divide-y">

@@ -1,4 +1,6 @@
 "use client"
+import { useRouter } from "next/navigation"
+import { clubWorkspaceHref } from "@/lib/club-workspace"
 
 import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -46,6 +48,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 
 export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
   const demo = useDemoMode()
+  const router = useRouter()
+  const wantsStudent = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("workspace") === "student"
   const { selectClub, user } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
@@ -64,13 +68,13 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    demo.isDemoEnabled ? (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demoClub") ? "discover" : demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    demo.isDemoEnabled ? (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demoClub") ? "discover" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
         ? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
-  const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
+  const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
   function navigate(next: ViewId) { if (demo.isDemoEnabled && ["landing", "auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
 
   // If an auth error was found in the URL, force the auth view so the user sees the message
@@ -88,7 +92,13 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
     setView(next)
   }
 
+    useEffect(() => {
+    if (demo.isDemoEnabled && wantsStudent && demo.state?.perspective.role !== "student") demo.viewAs("student")
+    else if (demo.isDemoEnabled && !wantsStudent && view === "leader-dashboard" && demo.state?.perspective.role === "leader") router.replace(clubWorkspaceHref(demo.state.perspective.clubId))
+  }, [demo.isDemoEnabled, demo.state?.perspective.role, wantsStudent, view])
+
   function switchMode(mode: AppMode, clubId?: string) {
+    if (mode === "admin" && clubId) { router.push(clubWorkspaceHref(clubId)); return }
     if (demo.isDemoEnabled) { demo.viewAs(mode === "admin" ? "leader" : "student", clubId); return }
     if (clubId) selectClub(clubId)
     setAppMode(mode)

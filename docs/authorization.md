@@ -54,7 +54,7 @@ The user must already exist. Set the same UUID in the server allowlist and redep
 
 The console provides paginated records and strictly validated, reason-required operations for users (suspension), clubs, ownership claims, memberships/capabilities, recruitment rounds/questions/interview slots, applications, meetings, tasks, and platform/example content. It deliberately does not expose arbitrary SQL, password hashes, auth tokens, destructive bulk deletion, or arbitrary model updates. Round names cannot be changed because historical evaluations reference names.
 
-Read-only user inspection is the safe view-as implementation: it audits actor, target and reason, then returns an authorized snapshot. It **never** creates another user's token or changes the current identity. Writable impersonation is not enabled.
+Read-only user inspection is the safe view-as implementation: explicit, expiring sessions audit start/end and inspected records, retain the original admin identity, and show a persistent exit banner. Writes are blocked while the session marker exists, including after expiry. It **never** creates another user's token or changes the current identity. Writable impersonation is not enabled. See [platform administration](platform-admin.md) for session migration, safeguards, configuration, and deployment checks.
 
 Operation examples (substitute actual IDs):
 

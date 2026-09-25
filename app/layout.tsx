@@ -1,3 +1,6 @@
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
+import { platformViewSession } from "@/utils/platform-view-as"
+import { PlatformViewBanner } from "@/components/platform-view-banner"
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
@@ -32,6 +35,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const cookieStore = await cookies()
+  const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
   const supabase = await createClient(cookieStore)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   const demoAllowed = canAccessDemo(authError ? undefined : user?.email)
@@ -47,6 +51,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
+        {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={viewSession ? `User ${viewSession.targetUserId}${viewSession.clubId ? ` · Club ${viewSession.clubId}` : ""}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
           <AuthProvider>
             <ClubCustomizationProvider>

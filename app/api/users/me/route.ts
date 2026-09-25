@@ -15,6 +15,7 @@ export async function GET() {
 
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
+      omit: { passwordHash: true },
       
       include: {
         studentProfile: true,

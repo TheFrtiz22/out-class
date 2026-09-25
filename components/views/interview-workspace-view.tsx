@@ -26,14 +26,14 @@ import "./interview/interview-mode.css"
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 const selectStyle =
   "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
-export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
+export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
   const { user, loading, activeClubId, selectClub } = useAuth()
   const { leaderFocus } = useApplicationState()
   const memberships = (user?.memberships || []).filter(m => hasPermission(m, "applications.review"))
   const clubId = activeClubId
   const setClubId = selectClub
   useEffect(() => {
-    if (leaderFocus?.clubId) setClubId(leaderFocus.clubId)
+    if (leaderFocus?.clubId && (!scoped || leaderFocus.clubId === activeClubId)) setClubId(leaderFocus.clubId)
   }, [leaderFocus?.clubId])
   const membership = memberships.find((item) => item.clubId === clubId) || (!clubId ? memberships[0] : undefined)
   const [locked, setLocked] = useState(false)
@@ -58,7 +58,7 @@ export function InterviewWorkspaceView({ onExit }: { onExit?: () => void }) {
           <span className="hidden h-5 border-l border-border sm:block" />
           <p className="text-sm font-semibold">Interview mode</p>
         </div>
-        {membership && (
+        {membership && !scoped && (
           <select
             aria-label="Interview club"
             disabled={locked}

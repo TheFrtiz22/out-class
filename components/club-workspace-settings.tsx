@@ -9,14 +9,14 @@ import { hasPermission } from "@/lib/permissions"
 import { updateClubSettings } from "@/actions/club-workspace"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-export function ClubWorkspaceSettings() {
+export function ClubWorkspaceSettings({ section = "legacy" }: { section?: "legacy" | "members" | "settings" }) {
   const { user, activeClubId, refreshUser } = useAuth()
   const member = user?.memberships.find((m) => m.clubId === activeClubId)
   const [members, setMembers] = useState<Awaited<ReturnType<typeof getClubMembers>>>([])
   useEffect(() => {
     let current = true
     setMembers([])
-    if (hasPermission(member, "members.manage"))
+    if (section !== "settings" && hasPermission(member, "members.manage"))
       void getClubMembers(activeClubId)
         .then((data) => {
           if (current) setMembers(data)
@@ -27,7 +27,7 @@ export function ClubWorkspaceSettings() {
     return () => {
       current = false
     }
-  }, [activeClubId, member?.permissions])
+  }, [activeClubId, member?.permissions, section])
   const [message, setMessage] = useState(""), [busy, setBusy] = useState(false)
   if (!member) return <p>No club workspace assigned.</p>
   async function run(fn: () => Promise<unknown>) {
@@ -45,15 +45,15 @@ export function ClubWorkspaceSettings() {
   }
   return (
     <div className="max-w-3xl space-y-8" key={member.id}>
-      {hasPermission(member, "interviews.manage") && <ClubInterviewKitSettings clubId={activeClubId} />}
-      <h1 className="font-display text-3xl">{member.club.name}</h1>
-      <MeetingList key={activeClubId} clubId={activeClubId} />
-      {hasPermission(member, "leaders.manage") && (
+      {section === "legacy" && hasPermission(member, "interviews.manage") && <ClubInterviewKitSettings clubId={activeClubId} />}
+      {section === "legacy" && <h1 className="font-display text-3xl">{member.club.name}</h1>}
+      {section === "legacy" && <MeetingList key={activeClubId} clubId={activeClubId} />}
+      {section !== "settings" && hasPermission(member, "leaders.manage") && (
         <a className="inline-block underline" href={`/club-access/${member.clubId}`}>
           Manage workspace access and invitations
         </a>
       )}
-      {hasPermission(member, "club.settings") && (
+      {section !== "members" && hasPermission(member, "club.settings") && (
         <form
           className="space-y-4"
           key={member.id}
@@ -89,8 +89,8 @@ export function ClubWorkspaceSettings() {
           <Button disabled={busy}>Save club profile</Button>
         </form>
       )}
-      <a className="inline-block text-sm underline underline-offset-4" href={`/club/${member.clubId}/tasks`}>Tasks & semester projects</a>
-      {hasPermission(member, "members.manage") && (
+      {section === "legacy" && <a className="inline-block text-sm underline underline-offset-4" href={`/club/${member.clubId}/workspace?section=tasks`}>Tasks & semester projects</a>}
+      {section !== "settings" && hasPermission(member, "members.manage") && (
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">Members</h2>
           <form
@@ -131,14 +131,14 @@ export function ClubWorkspaceSettings() {
           ))}
         </section>
       )}
-      <details className="border-t pt-5">
+      {section === "legacy" && <details className="border-t pt-5">
         <summary className="cursor-pointer text-sm">Existing local preview tools</summary>
         <p className="my-4 text-sm text-muted-foreground">
           These existing builders use browser-only sample state. They do not publish club changes,
           invitations, or permissions. Workspace permissions are managed above.
         </p>
         <ClubManagerView />
-      </details>
+      </details>}
       <p role="status">{message}</p>
     </div>
   )

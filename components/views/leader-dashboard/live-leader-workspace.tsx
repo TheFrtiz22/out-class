@@ -59,7 +59,7 @@ const average = (app: Candidate) =>
     ? app.evaluations.reduce((total, item) => total + item.score, 0) / app.evaluations.length
     : null
 
-export function LiveLeaderWorkspace() {
+export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
   const { user, activeClubId, selectClub } = useAuth()
   const { leaderFocus } = useApplicationState()
   const clubs = (user?.memberships || []).filter(
@@ -68,7 +68,7 @@ export function LiveLeaderWorkspace() {
   const clubId = activeClubId
   const setClubId = selectClub
   useEffect(() => {
-    if (leaderFocus) setClubId(leaderFocus.clubId)
+    if (leaderFocus && (!scoped || leaderFocus.clubId === activeClubId)) setClubId(leaderFocus.clubId)
   }, [leaderFocus])
   const club = clubs.find((item) => item.clubId === clubId) || (!clubId ? clubs[0] : undefined)
   if (!club)
@@ -89,7 +89,7 @@ export function LiveLeaderWorkspace() {
           </p>
           <h2 className="mt-2 font-display text-3xl">{club.club.name}</h2>
         </div>
-        {clubs.length > 1 && (
+        {!scoped && clubs.length > 1 && (
           <select
             aria-label="Recruiting club"
             className={selectStyle}

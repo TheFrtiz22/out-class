@@ -432,3 +432,17 @@ model TaskFile {
 
   @@index([assignmentId])
 }
+
+model PlatformViewSession {
+  id           String    @id @default(uuid())
+  tokenHash    String    @unique
+  actorId      String
+  targetUserId String
+  clubId       String?
+  reason       String
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  endedAt      DateTime?
+
+  @@index([actorId, endedAt])
+}
