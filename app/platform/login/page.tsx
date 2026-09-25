@@ -4,6 +4,7 @@ import { useState } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 export default function PlatformLogin() {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -114,6 +115,7 @@ export default function PlatformLogin() {
         )}
         <Button disabled={busy}>{factor ? "Verify and enter" : "Continue securely"}</Button>
       </form>
+      {!factor && <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Forgot password?</Link>}
       <p role="alert">{message}</p>
     </main>
   )

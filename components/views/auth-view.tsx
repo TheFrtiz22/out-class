@@ -9,6 +9,7 @@ import { OutClassLogo } from "@/components/outclass-logo"
 import { isUvaEmail, safeReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
+import Link from "next/link"
 
 /** Standard Microsoft 4-square logo — no extra dependency. */
 function MicrosoftIcon({ className }: { className?: string }) {
@@ -173,6 +174,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                   <p id="email-hint" className="text-xs text-neutral-500">Only @virginia.edu email addresses are supported.</p>
                 </div>
                 <div className="space-y-2"><Label htmlFor="login-password">Password</Label><Input id="login-password" type="password" autoComplete="current-password" required value={password} onChange={event => setPassword(event.target.value)} className="h-12" /></div>
+                <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Forgot password?</Link>
                 {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
                 <Button type="submit" disabled={loading || !password || microsoftLoading} className="h-12 w-full">{loading ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
                 <button type="button" disabled={loading || microsoftLoading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead (requires email delivery)</button>
@@ -204,4 +206,3 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     </div>
   )
 }
-
