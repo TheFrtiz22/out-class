@@ -35,9 +35,9 @@ export default function PlatformLogin() {
     )
   return (
     <main className="mx-auto max-w-md space-y-6 p-8">
-      <a href="/" className="underline">
+      <Link href="/" className="underline">
         Back to OutClass
-      </a>
+      </Link>
       <h1 className="font-display text-3xl">Platform administrator sign-in</h1>
       <p>
         Requires a provisioned platform grant, server allowlist, and authenticator verification.

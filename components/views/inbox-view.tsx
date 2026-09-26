@@ -491,7 +491,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 )}
               </div>
               <p className="border-t border-neutral-200 px-6 py-4 text-xs text-neutral-500">
-                Club notifications are read-only. Replies aren't available here.
+                Club notifications are read-only. Replies aren&#39;t available here.
               </p>
             </>
           )}

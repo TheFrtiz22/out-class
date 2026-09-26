@@ -527,7 +527,7 @@ function TaskEditor({
         </fieldset>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Projects collect related tasks. Managers mark each member's project
+          Projects collect related tasks. Managers mark each member&#39;s project
           complete; submissions belong to individual tasks.
         </p>
       )}
@@ -549,7 +549,7 @@ function TaskEditor({
           </label>
           <p className="text-xs text-muted-foreground">
             Anyone matching any selected group is included once. New members
-            won't be added to existing assignments automatically.
+            won&#39;t be added to existing assignments automatically.
           </p>
           {!everyone && (
             <div className="grid gap-5 sm:grid-cols-2">

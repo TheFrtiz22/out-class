@@ -15,7 +15,7 @@ const helpers = load('lib/student-profile.ts')
 const MY_UUID = '123e4567-e89b-12d3-a456-426614174000';
 const OTHER_UUID = '00000000-0000-0000-0000-000000000000';
 
-function setupApi({ authUserId, mockHasAccess, dbProfile, redirectError, noSecret = false }) {
+function setupApi({ authUserId, mockHasAccess, dbProfile, redirectError, noSecret = false, publicBucket = false }) {
   if (noSecret) {
     delete process.env.SUPABASE_SECRET_KEY
     delete process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -28,7 +28,7 @@ function setupApi({ authUserId, mockHasAccess, dbProfile, redirectError, noSecre
 
   const api = load('app/api/resumes/route.ts', {
     '@/lib/student-profile': helpers,
-    '@supabase/supabase-js': { createClient: () => ({ storage: { from: () => ({ createSignedUrl: () => { createdSignedUrl = true; return { data: { signedUrl: 'https://supabase/signed' } } } }) } }) },
+    '@supabase/supabase-js': { createClient: () => ({ storage: { getBucket: async () => ({ data: { public: publicBucket } }), from: () => ({ createSignedUrl: () => { createdSignedUrl = true; return { data: { signedUrl: 'https://supabase/signed' } } } }) } }) },
     '@/utils/auth': {
       requireAuth: async () => {
         if (redirectError) {
@@ -149,3 +149,11 @@ test('API missing server secret does not become 401', async () => {
   const res = await api.GET({ url: `http://localhost/api/resumes?path=${reqPath}` })
   assert.equal(res.status, 500)
 })
+
+ test('resume signing fails closed for a public bucket',async()=>{
+  const reqPath=`${MY_UUID}/current.pdf`
+  const {api,getCreatedSignedUrl}=setupApi({authUserId:MY_UUID,dbProfile:{userId:MY_UUID,resumeUrl:reqPath},publicBucket:true})
+  const res=await api.GET({url:`http://localhost/api/resumes?path=${reqPath}`})
+  assert.equal(res.status,503)
+  assert.equal(getCreatedSignedUrl(),false)
+ })

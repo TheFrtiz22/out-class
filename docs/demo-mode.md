@@ -38,7 +38,7 @@ Suggested walkthrough:
 
 ## Data and architecture
 
-- `lib/demo/seed.ts`: deterministic canonical graph: **20 clubs, 200 fictional students, 40–80 applications per club (1,168 total), 12–23 members per club, six or five rounds, 12 interview slots per club**. Includes draft/submitted/review/interview/final decisions, prior-round evaluations, notes, varied profile completeness, question/answer sets and category-specific interview guides.
+- `lib/demo/seed.ts`: deterministic canonical graph: **20 clubs (17 claimed and three unclaimed), 200 fictional students, 40–80 applications and 12–23 members per claimed club, six or five rounds, and 12 interview slots per claimed club**. Includes draft/submitted/review/interview/final decisions, prior-round evaluations, notes, varied profile completeness, question/answer sets and category-specific interview guides.
 - Club names come from the requested list. Descriptions, statistics, targets, schedules, questions, experiences and people are explicitly sample data. No real student records or photos are used. Fictional identities use `@demo.invalid` addresses; they are not real sign-in credentials.
 - `lib/demo/assets.ts` creates safe SVG monograms; existing OutClass branding is unchanged. `/demo/sample-resume.txt` is an explicitly fictional local résumé placeholder. No scraped/hotlinked imagery or fabricated LinkedIn identities.
 - `lib/demo/store.ts`: normalized browser store, joined projections, isolated `outclass.presentation.v1` persistence, rollback on failed saves, reset, notifications, deadlines and subscriptions.
@@ -79,3 +79,18 @@ The normal Node test suite, TypeScript, production build and available lint comm
 Configuration audit: **79/79 Node tests pass**, TypeScript passes, and the production build passes. Production browser checks also confirmed hidden/denied demo access for ordinary visitors, ignored legacy localStorage flags, cross-origin request rejection, mutation blocking, and cleanup of a revoked/unauthorized demo cookie. The available lint command still reports `eslint: command not found`.
 
 See [authorization architecture](authorization.md) for membership capabilities, platform administration, safe migration rollout, and demo identity compatibility.
+
+## Expanded canonical season (September 2026)
+
+New presentations and **Reset Demo** load the expanded fixtures. Existing saved presentations retain edits until reset. Reset preserves the season anchor and returns to Student, clearing the selected workspace URL and customizations.
+
+- Jordan Avery remains a STUDENT, owns only MII's workspace, and is a general member of TAMID alongside an accepted TAMID application. The real workspace switcher provides Student ↔ MII Leader; no platform administrator is granted.
+- MII, GMG, and AIF are labeled fictional early-adopter examples. VCG, Common Cents, and Mergers & Acquisitions are unclaimed directory examples without members, meetings, or applications; application creation is blocked for them.
+- Club requirements cover SAT, ACT, both, either, and optional. Jordan has both scores. Review rounds start anonymous with manager-reviewed sample content; Interview rounds retain identified kits, drafts, completed notes, additional questions, overall reviews and scores.
+- Each claimed club has two historical interest meetings, an interest meeting on the anchor date, a historical member meeting and an upcoming member meeting. Jordan's historical MII interest attendance feeds the same meeting roster, student history and applicant attendance summary. Public directory events now use the canonical meeting records, so edits propagate there too.
+- MII has an in-progress semester project and weekly/group/cohort tasks, including overdue, submitted and reviewed assignments. Link-required work and fictional file attachments supplement written responses. File downloads resolve only to the bundled sample text document; uploads remain disabled. Membership edits update task member labels while preserving the assigned recipient set.
+- Voting mode continues to use the implemented board-decision workflow. Decisions update applications and student notifications; this does not invent a persisted ballot service.
+
+Regression workflows exercise attendance check-in across all three projections, public meeting creation, anonymous pipeline projections, member edits, task submission/review, safe document downloads, interview completion, decision propagation, refresh and byte-for-byte canonical reset. Saved-graph validation also rejects cross-club slots, rounds, interview sessions, mismatched task recipients and duplicate attendance.
+
+Validation for this expansion: **158/158 Node tests pass**, TypeScript passes, and the production build passes. `npm run lint` remains blocked by the existing missing ESLint dependency. Workflows were exercised through the shared workspace adapters; an authenticated browser walkthrough was not performed in this run.

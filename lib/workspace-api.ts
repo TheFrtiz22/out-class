@@ -24,6 +24,7 @@ import {
   studentApplications,
   demoDirectory,
   demoDashboard,
+  presentDemoMeeting,
 } from "@/lib/demo/store"
 import { applicationInputSchema, answerErrors } from "@/lib/student-applications"
 import { profileSectionSchema } from "@/lib/student-profile"
@@ -127,6 +128,7 @@ export const startClubApplication = adapt(directory.startClubApplication, (clubI
   if (old) return { applicationId: old.id }
   const club = s.clubs.find((c) => c.id === clubId)
   if (!club) throw new Error("Club unavailable.")
+  if (!club.claimed) throw new Error("Applications are not available for this unclaimed club.")
   return demoStore.mutate((next) => {
     const id = crypto.randomUUID()
     next.applications.push({
@@ -308,12 +310,12 @@ export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, clubId
 function demoMeetingAccess(id: string) {
   const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)
   if(!meeting || !canReadMeeting(meeting,membership?{}:null))throw new Error("Meeting unavailable or access denied.")
-  return meeting
+  return presentDemoMeeting(meeting)
 }
 function demoMeetingManager(clubId:string){demoMember();if(clubId!==demoStore.get().clubs[0].id)throw new Error("Access denied.")}
 export const listMeetings = adapt(meetingsApi.listMeetings, clubId => {
   const s=demoStore.get(),user=demoUser()
-  return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime())
+  return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime()).map(presentDemoMeeting)
 })
 export const getMeeting=adapt(meetingsApi.getMeeting, id=>demoMeetingAccess(id))
 export const saveMeeting=adapt(meetingsApi.saveMeeting, input=>{
@@ -362,7 +364,14 @@ export const viewTask = adapt(tasksApi.viewTask, demoTasks.viewTask)
 export const submitTask = adapt(tasksApi.submitTask, demoTasks.submitTask)
 export const reviewTask = adapt(tasksApi.reviewTask, demoTasks.reviewTask)
 export const uploadTaskFile = adapt(tasksApi.uploadTaskFile, () => { throw new Error("Demo files stay fictional. Use a text or link submission; no files are uploaded.") })
-export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, () => { throw new Error("This fictional demo file is not downloadable.") })
+export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, id => {
+  const s = demoStore.get()
+  const task = s.tasks.find(t => t.assignments.some(a => a.files.some(f => f.id === id)))
+  if (!task) throw new Error("File unavailable.")
+  const workspace = demoTasks.getTaskWorkspace(task.clubId)
+  if (!workspace.tasks.some(t => t.assignments.some(a => a.files.some(f => f.id === id)))) throw new Error("File unavailable.")
+  return { url: "/demo/sample-research.txt" }
+})
 
 export const getClubWorkspaceOverview = adapt(clubOverview.getClubWorkspaceOverview, (clubId) => {
  const s=demoStore.get(),user=demoUser(),membership=user.memberships.find(m=>m.clubId===clubId),club=s.clubs.find(c=>c.id===clubId)

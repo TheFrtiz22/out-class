@@ -63,9 +63,9 @@ test("deterministic season: unique fictional people, club/application/slot/revie
   assert.ok(s.students.every((p) => p.email.endsWith("@demo.invalid")))
   for (const club of s.clubs) {
     const apps = s.applications.filter((a) => a.clubId === club.id)
-    assert.ok(apps.length >= 30 && apps.length <= 100)
+    assert.ok(club.claimed ? apps.length >= 30 && apps.length <= 100 : apps.length === 0)
     assert.equal(new Set(apps.map((a) => a.studentId)).size, apps.length)
-    assert.ok(s.memberships.filter((m) => m.clubId === club.id).length >= 10)
+    assert.ok(club.claimed ? s.memberships.filter((m) => m.clubId === club.id).length >= 10 : !s.memberships.some(m => m.clubId === club.id))
     for (const a of apps) {
       assert.ok(club.rounds.some((r) => r.id === a.roundId))
       for (const ans of a.answers) assert.ok(club.questions.some((q) => q.id === ans.questionId))
@@ -283,3 +283,94 @@ test("club workspace overview uses persisted demo activity and excludes unrelate
  const task=s.tasks.find(t=>t.kind==='TASK'&&t.assignments.some(a=>a.memberId===overview.membership.id&&!a.submittedAt)),assignment=task.assignments.find(a=>a.memberId===overview.membership.id);
  await api.submitTask({assignmentId:assignment.id,revision:assignment.revision,text:'Fictional finished work',link:'',fileIds:[]});const after=await api.getClubWorkspaceOverview(id);assert.ok(!after.work.some(w=>w.id===assignment.id));assert.equal(after.awaitingReview,overview.awaitingReview+1);assert.equal(h.calls(),0)
 });
+
+test("canonical expansion covers club ownership, requirements, privacy, safe files, and student membership", async () => {
+  const h = harness(), { demoStore, demoUser, demoDirectory } = h.load('lib/demo/store.ts'), api = h.load('lib/workspace-api.ts')
+  demoStore.start()
+  const s = demoStore.get(), user = demoUser(), directory = demoDirectory()
+  assert.equal(user.role, 'STUDENT')
+  assert.equal(user.platformRole, undefined)
+  assert.deepEqual(user.adminRoles.map(m => m.clubId), [s.clubs[0].id])
+  assert.ok(user.memberships.some(m => m.clubId !== s.clubs[0].id && !m.isOwner && !m.permissions.length && m.role === 'GENERAL_MEMBER'))
+  assert.deepEqual(new Set(s.clubs.map(c => c.testRequirement)), new Set(['SAT', 'ACT', 'BOTH', 'OPTIONAL', 'SAT_OR_ACT']))
+  assert.ok(directory.some(c => c.claimed && c.earlyAdopter))
+  const unclaimed = directory.find(c => !c.claimed)
+  assert.equal(unclaimed.applicationAvailable, false)
+  assert.equal(unclaimed.publicEvents.length, 0)
+  await assert.rejects(api.startClubApplication(unclaimed.id), /unclaimed/)
+  demoStore.mutate(s => { s.perspective.role = 'leader' })
+  const pipeline = await api.getClubPipeline(s.clubs[0].id)
+  const anonymous = pipeline.applications.find(a => a.studentId.startsWith('anonymous-'))
+  assert.ok(anonymous)
+  assert.equal(anonymous.student.email, '')
+  assert.equal(anonymous.answers.length, 0)
+  assert.match(anonymous.student.studentProfile.bio, /Manager-reviewed/)
+  const task = s.tasks.find(t => t.assignments.some(a => a.files.length))
+  const file = task.assignments.find(a => a.files.length).files[0]
+  assert.deepEqual(await api.downloadTaskFile(file.id), {url:'/demo/sample-research.txt'})
+  await assert.rejects(api.downloadTaskFile('missing'), /unavailable/)
+  const meeting = (await api.listMeetings(s.clubs[0].id)).find(m => m.resources.some(r => r.kind === 'FILE'))
+  assert.ok(h.load('lib/meetings.ts').resourceSchema.array().safeParse(meeting.resources).success)
+  assert.equal(h.calls(), 0)
+})
+
+test("attendance, meeting edits, member targeting and decisions propagate; reset restores every record", async () => {
+  const h = harness(), {demoStore, demoDashboard, demoDirectory, demoNotifications} = h.load('lib/demo/store.ts'), api = h.load('lib/workspace-api.ts')
+  demoStore.start()
+  const canonical = JSON.stringify(demoStore.get()), s = demoStore.get(), club = s.clubs[0]
+  const application = s.applications.find(a => a.clubId === club.id && a.studentId === s.students[0].id)
+  const historic = s.meetings.find(m => m.clubId === club.id && s.meetingAttendances.some(a => a.eventId === m.id && a.studentId === s.students[0].id) && m.audience === 'RECRUITMENT')
+  assert.ok(historic)
+  demoStore.mutate(s => {s.perspective.role = 'leader'})
+  assert.ok((await api.meetingAttendance(club.id, historic.id)).some(a => a.email === s.students[0].email))
+  assert.ok(demoDashboard().attendances.some(a => a.eventId === historic.id))
+  const before = await api.recruitmentAttendanceSummary(club.id, application.id)
+  const created = await api.saveMeeting({clubId:club.id,title:'Sample follow-up',date:new Date(Date.now()-60000),location:'Sample room',audience:'RECRUITMENT',agenda:'Discuss the thesis'})
+  const token = await api.issueMeetingCheckIn(club.id, created.id)
+  demoStore.mutate(s => {s.perspective.role = 'student'})
+  await api.checkInMeeting(created.id, token.token)
+  assert.ok(demoDashboard().attendances.some(a => a.eventId === created.id))
+  assert.ok(demoDirectory().find(c => c.id === club.id).publicEvents.some(e => e.id === created.id))
+  demoStore.mutate(s => {s.perspective.role = 'leader'})
+  assert.equal((await api.meetingAttendance(club.id, created.id)).length, 1)
+  assert.equal((await api.recruitmentAttendanceSummary(club.id, application.id)).attended, before.attended+1)
+  await api.saveMeeting({...created,title:'Sample follow-up revised',revision:created.revision})
+  assert.equal((await api.getMeeting(created.id)).title,'Sample follow-up revised')
+  assert.equal(demoDirectory().find(c=>c.id===club.id).publicEvents.find(e=>e.id===created.id).title,'Sample follow-up revised')
+  const workspace = await api.getTaskWorkspace(club.id)
+  const linkTask=workspace.tasks.find(t=>t.requirements.includes('LINK'))
+  const own=linkTask.assignments.find(a=>a.userId===s.students[0].id)
+  await assert.rejects(api.submitTask({assignmentId:own.id,revision:own.revision,text:'Sample thesis',link:'',fileIds:[]}),/link is required/)
+  await api.submitTask({assignmentId:own.id,revision:own.revision,text:'Sample thesis',link:'https://www.virginia.edu',fileIds:[]})
+  await api.reviewTask({assignmentId:own.id,revision:own.revision+1,feedback:'Evidence checked',reopen:false})
+  demoStore.mutate(s=>{s.perspective.role='student'})
+  const reviewed=(await api.getTaskWorkspace(club.id)).tasks.find(t=>t.id===linkTask.id).assignments.find(a=>a.id===own.id)
+  assert.equal(reviewed.feedback,'Evidence checked')
+  assert.ok(reviewed.reviewedAt)
+  demoStore.mutate(s=>{s.perspective.role='leader'})
+  await api.updateTaskMember({clubId:club.id,memberId:workspace.memberId,groups:['Demo team'],cohort:'Demo cohort'})
+  const updated = await api.getTaskWorkspace(club.id)
+  assert.deepEqual(updated.tasks[0].assignments.find(a=>a.memberId===workspace.memberId).member.groups,['Demo team'])
+  await api.setApplicationStatus({clubId:club.id,applicationId:application.id,status:'ACCEPTED',expectedStatus:application.status})
+  assert.equal((await api.getStudentApplications()).find(a=>a.id===application.id).status,'ACCEPTED')
+  assert.ok(demoNotifications().some(n=>n.applicationId===application.id&&n.title.includes('decision')))
+  demoStore.stop(); demoStore.start()
+  assert.ok(demoDashboard().attendances.some(a=>a.eventId===created.id))
+  demoStore.reset()
+  assert.equal(JSON.stringify(demoStore.get()),canonical)
+  assert.equal(h.calls(),0)
+})
+
+test("saved graph validation rejects cross-club records and duplicate attendance", () => {
+  const h=harness(),{createDemoSeed}=h.load('lib/demo/seed.ts'),{demoSnapshotSchema}=h.load('lib/demo/validate.ts')
+  const s=createDemoSeed('2026-09-25')
+  assert.equal(demoSnapshotSchema.safeParse(s).success,true)
+  for (const corrupt of [
+    s=>{s.students[0].role="SUPER_ADMIN"},
+    s=>{s.meetingAttendances.push({...s.meetingAttendances[0],id:'duplicate'})},
+    s=>{s.tasks[0].assignments[0].userId=s.students[50].id},
+    s=>{s.slots[0].clubId=s.clubs[1].id},
+    s=>{s.applications[0].roundId=s.clubs[1].rounds[0].id},
+    s=>{s.interviews[0].clubId=s.clubs[1].id},
+  ]) {const bad=structuredClone(s);corrupt(bad);assert.equal(demoSnapshotSchema.safeParse(bad).success,false)}
+})

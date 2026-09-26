@@ -6,7 +6,7 @@ const nextConfig = {
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   experimental: { serverActions: { bodySizeLimit: "4mb" } },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
     ignoreBuildErrors: false,

@@ -113,9 +113,9 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       major: majors[i % majors.length],
       gradYear: year + 1 + (i % 4),
       gpa: i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),
-      actScore: i % 3 ? 24 + (i % 13) : null,
+      actScore: i === 0 ? 33 : i % 3 ? 24 + (i % 13) : null,
       actEnglish: null as number | null, actMath: null as number | null, actReading: null as number | null, actScience: null as number | null,
-      satScore: i % 4 ? 1250 + (i % 16) * 20 : null,
+      satScore: i === 0 ? 1480 : i % 4 ? 1250 + (i % 16) * 20 : null,
       bio:
         i % 9 === 8
           ? null
@@ -136,7 +136,9 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     id: uid(4, i),
     slug,
     name,
-    testRequirement: "OPTIONAL" as string,
+    testRequirement: ["BOTH", "SAT", "ACT", "SAT_OR_ACT", "OPTIONAL"][i % 5],
+    claimed: i < 17,
+    earlyAdopter: i < 3,
     category,
     theme,
     logoText: name
@@ -203,15 +205,15 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       ...(i % 3 ? ["Round 2"] : []),
       "Interview",
       "Final Decision",
-    ].map((name, order) => ({ interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: false, id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
+    ].map((name, order) => ({ interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: name === "Review", id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
   }))
-  const memberships = clubs.flatMap((club, c) =>
+  const memberships = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
       id: uid(7, c * 30 + m),
       groups: m % 2 === 0 ? ["Equity research", "Presentations"] : ["Market research"],
       cohort: m < 6 ? "Fall 2026" : "Spring 2026" as string | null,
       clubId: club.id,
-      userId: c === 0 && m === 0 ? students[0].id : students[(c * 7 + m + 120) % 200].id,
+      userId: c === 0 && m === 0 ? students[0].id : c === 4 && m === 4 ? students[0].id : students[1 + ((c * 7 + m + 120) % 199)].id,
       role:
         m === 0
           ? ("PRESIDENT" as const)
@@ -220,7 +222,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
             : ("GENERAL_MEMBER" as const),
     })),
   )
-  const applications = clubs.flatMap((club, c) =>
+  const applications = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 40 + (c % 6) * 8 }, (_, a) => {
       const student = students[a === 0 && c < 8 ? 0 : 1 + ((a + c * 3) % 119)]
       const stages = [
@@ -257,7 +259,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
         clubId: club.id,
         roundId: round.id,
         status,
-        anonymousReviewText: null as string | null,
+        anonymousReviewText: round.anonymousReview ? "Manager-reviewed sample: compared alternative approaches, tested assumptions against evidence, and revised a team recommendation." : null as string | null,
         submittedAt: status === "DRAFTING" ? null : at(-8 + (a % 5)),
         answers: club.questions.slice(0, status === "DRAFTING" ? 1 : 3).map((q, j) => ({
           id: `${id}-answer-${j}`,
@@ -282,7 +284,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       }
     }),
   )
-  const slots = clubs.flatMap((club, c) =>
+  const slots = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 12 }, (_, i) => {
       const candidate = applications.filter(
         (a) => a.clubId === club.id && a.status === "INTERVIEWING",
@@ -304,7 +306,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       }
     }),
   )
-  const interviews: (InterviewSessionData & { applicationId: string; interviewerId: string; roundId: string; clubId: string; anonymousReview: boolean })[] = clubs.flatMap(club => {
+  const interviews: (InterviewSessionData & { applicationId: string; interviewerId: string; roundId: string; clubId: string; anonymousReview: boolean })[] = clubs.filter(club => club.claimed).flatMap(club => {
     const round = club.rounds.find(r => r.name === "Interview")!
     const interviewer = memberships.find(m => m.clubId === club.id && m.role === "PRESIDENT")!
     return applications.filter(a => a.clubId === club.id && a.roundId === round.id).slice(0, 2).map((app, i) => {
@@ -321,12 +323,12 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       slot.startTime = at(-1, 14); slot.endTime = at(-1, 14, 50)
     }
   }
-  const meetings = clubs.flatMap((club,c) => Array.from({length:5},(_,i)=>({
+  const meetings = clubs.filter(club => club.claimed).flatMap((club,c) => Array.from({length:5},(_,i)=>({
     id: uid(17,c*10+i), clubId:club.id, club:{name:club.name}, title: `${club.name} · sample ${i<3?"interest meeting":"member meeting"} ${i+1}`,
     description: "Fictional meeting for the OutClass demonstration.", date:at(i<2?-7+i*3:i===2?0:i===3?-2:5,12), endDate:at(i<2?-7+i*3:i===2?0:i===3?-2:5,13) as Date | null,
     location:"Newcomb Hall · sample room", audience:i<3?"RECRUITMENT":"MEMBERS", isPublic:i<3,
     agenda:"Introductions\nDiscussion and practical examples\nQuestions and next steps", recap:i===0||i===1||i===3?"Sample recap: discussed the agenda, shared resources, and outlined next steps.":"",
-    resources:[{id:uid(18,c*10+i),label:"UVA campus resources (sample link)",kind:"LINK" as "LINK" | "FILE" | "SLIDES",url:"https://www.virginia.edu"}],revision:0,
+    resources:[{id:uid(18,c*10+i),label:i % 2 ? "Sample meeting handout" : "UVA campus resources (sample link)",kind:(i % 2 ? "FILE" : "LINK") as "LINK" | "FILE" | "SLIDES",url:i % 2 ? "/demo/sample-meeting.txt" : "https://www.virginia.edu"}],revision:0,
   })))
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []

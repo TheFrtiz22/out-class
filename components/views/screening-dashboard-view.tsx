@@ -378,7 +378,7 @@ export function ScreeningDashboardView() {
                   onChange={(e) => setSatThreshold(e.target.value)}
                   className="h-8 w-24 text-xs"
                 />
-                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag "Low SAT"</span>
+                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag &quot;Low SAT&quot;</span>
               </div>
             </div>
 
@@ -405,7 +405,7 @@ export function ScreeningDashboardView() {
                   onChange={(e) => setGpaThreshold(e.target.value)}
                   className="h-8 w-24 text-xs"
                 />
-                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag "Low GPA"</span>
+                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag &quot;Low GPA&quot;</span>
               </div>
             </div>
 

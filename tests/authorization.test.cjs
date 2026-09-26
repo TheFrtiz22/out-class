@@ -106,11 +106,11 @@ test("platform access requires independent server allowlist, database grant, and
     else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = saved
   }
 })
-function accessHarness(actor, target, invitation) {
+function accessHarness(actor, target, invitation, options = {}) {
   let writes = 0,
     logs = 0
   const tx = {
-    user: { findUnique: async () => ({ email: "target@virginia.edu" }) },
+    user: { findUnique: async () => ({ email: "target@virginia.edu", disabledAt: options.disabledInviter ? new Date() : null }) },
     $queryRaw: async () => [],
     clubMember: {
       findUnique: async () => actor,
@@ -147,7 +147,7 @@ function accessHarness(actor, target, invitation) {
     api: load("actions/club-access.ts", {
       "@/utils/prisma": { prisma: { $transaction: async (fn) => fn(tx) } },
       "@/utils/auth": {
-        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu" } }),
+        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu" }, supabaseUser: { email_confirmed_at: options.unverified ? null : "2026-09-25", app_metadata: { email_verification_skipped: !!options.skippedVerification } } }),
       },
       "@/lib/permissions": permissions,
       "@/lib/auth": authPolicy,
@@ -234,3 +234,18 @@ test("every platform action checks its guard before reading or mutating data", a
   await assert.rejects(api.changePlatformResource({}, "legitimate reason"), /Denied/)
   await assert.rejects(api.inspectPlatformUser("user", "legitimate reason"), /Denied/)
 })
+
+ test("suspended inviters and unverified recipient emails cannot grant access", async () => {
+  const invite={id:inviteId,clubId,email:"actor@virginia.edu",invitedBy:"owner",expiresAt:new Date(Date.now()+100000),permissions:["tasks.manage"]}
+  for(const options of [{disabledInviter:true},{unverified:true},{skippedVerification:true}]) {
+    const h=accessHarness({isOwner:true,permissions:[]},null,invite,options)
+    await assert.rejects(h.api.acceptClubInvitation(inviteId), /no longer|Verify/)
+    assert.equal(h.writes(),0)
+  }
+ })
+
+ test("ownership cannot be transferred to a suspended account", async () => {
+   const h=accessHarness({isOwner:true,permissions:[]},{id:memberId,userId:"target",isOwner:false,permissions:[]},null,{disabledInviter:true})
+   await assert.rejects(h.api.updateClubAccess({clubId,memberId,isOwner:true,permissions:[]}),/active account/)
+   assert.equal(h.writes(),0)
+ })

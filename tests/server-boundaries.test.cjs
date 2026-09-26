@@ -20,10 +20,10 @@ test('legacy static attendance endpoints fail closed without a current token',as
   const api=load('actions/events.ts',{})
   await assert.rejects(api.recordEventAttendance('old-id'),/current meeting QR code/)
 })
-function bookingApi(overrides = {}) {
+function bookingApi(overrides = {}, status = "INTERVIEWING") {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), capacity: 1, bookings: [], ...overrides }
   let writes = 0
-  const tx = { application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
+  const tx = { application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
   return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'Serializable'); return fn(tx) } }), writes: () => writes }
 }
 test('booking rejects foreign clubs, past slots, and full slots without writes', async () => {
@@ -49,4 +49,12 @@ test('available slots expose counts without leaking applicant identifiers', asyn
 test('interview blocks reject reversed dates before writing', async () => {
   const api = load('actions/scheduling.ts', {})
   await assert.rejects(api.createInterviewSlots({ clubId, slots: [{ startTime: new Date(2000), endTime: new Date(1000), location: 'Hall', capacity: 1 }] }))
+})
+
+test('draft, submitted and decided applicants cannot reserve interview capacity', async () => {
+  for (const status of ['DRAFTING','SUBMITTED','IN_REVIEW','ACCEPTED','REJECTED','WAITLISTED']) {
+    const h=bookingApi({},status)
+    await assert.rejects(h.api.bookInterviewSlot({slotId,applicationId}), /interview invitation/)
+    assert.equal(h.writes(),0)
+  }
 })

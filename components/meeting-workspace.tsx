@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -31,6 +32,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" 
   useEffect(() => {
     let current = true;
     setLoading(true);
+    setMeetings([]);
     setError("");
     listMeetings(clubId)
       .then((value) => {
@@ -53,9 +55,9 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" 
     <section className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Club meetings</h2>
-        {!embedded && <a className="text-sm underline" href="/meetings">
+        {!embedded && <Link className="text-sm underline" href="/meetings">
           All available meetings
-        </a>}
+        </Link>}
       </div>
       <p className="text-sm text-muted-foreground">
         Recruitment meetings and member meetings share one place for agendas,
@@ -443,6 +445,8 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
     [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let current = true;
+    setRows([]);
+    setError("");
     meetingAttendance(meeting.clubId, meeting.id)
       .then((value) => {
         if (current) setRows(value);
@@ -453,7 +457,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
     return () => {
       current = false;
     };
-  }, [meeting.id, refresh]);
+  }, [meeting.clubId, meeting.id, refresh]);
   useEffect(() => {
     if (!open) return;
     let current = true;
@@ -479,7 +483,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       clearInterval(timer);
       clearInterval(clock);
     };
-  }, [open, meeting.id]);
+  }, [open, meeting.clubId, meeting.id]);
   const valid = code && new Date(code.expiresAt).getTime() > now;
   return (
     <section className="space-y-4 border-t pt-5">

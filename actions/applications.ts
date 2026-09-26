@@ -110,6 +110,7 @@ export async function getStudentDashboardData() {
 
   const applications = await prisma.application.findMany({
     where: { studentId: user.id },
+    omit: { anonymousReviewText: true },
     include: {
       club: {
         select: { name: true, logoUrl: true, color: true, _count: { select: { questions: true } } },

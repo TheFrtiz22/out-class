@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { InvitationResponse } from "@/components/invitation-response";
 import { prisma } from "@/utils/prisma";
 import { createClient } from "@/utils/supabase/server";
@@ -35,9 +36,9 @@ export default async function Invitation({
           This link may have expired or already been answered. Sign in with the
           invited UVA account, or ask the club manager for a new invitation.
         </p>
-        <a className="underline" href="/">
+        <Link className="underline" href="/">
           Return to OutClass
-        </a>
+        </Link>
       </main>
     );
   return (

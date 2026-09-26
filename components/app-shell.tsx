@@ -1,5 +1,5 @@
 "use client"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 
 import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
@@ -49,7 +49,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
   const demo = useDemoMode()
   const router = useRouter()
-  const wantsStudent = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("workspace") === "student"
+  const searchParams = useSearchParams()
+  const wantsStudent = searchParams.get("workspace") === "student"
   const { selectClub, user } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
@@ -68,7 +69,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    demo.isDemoEnabled ? (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demoClub") ? "discover" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    demo.isDemoEnabled ? (searchParams.has("demoClub") ? "discover" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
         ? "student-dashboard"
         : "student-onboarding"

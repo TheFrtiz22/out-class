@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAuth } from "@/utils/auth";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
@@ -28,9 +29,9 @@ export default async function Page({
   });
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-5 py-12">
-      <a className="underline" href="/">
+      <Link className="underline" href="/">
         Back to OutClass
-      </a>
+      </Link>
       <h1 className="font-display text-3xl">Claim {club.name}</h1>
       <p>
         Keep your student identity. Once an OutClass administrator approves your

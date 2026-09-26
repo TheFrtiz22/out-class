@@ -435,7 +435,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
 });
 test("normal account API explicitly omits password hashes", async () => {
   const api = load("app/api/users/me/route.ts", {
-    "next/headers": { cookies: async () => ({}) },
+    "next/headers": { cookies: async () => ({get:()=>undefined,has:()=>false}) },
     "@/utils/supabase/server": {
       createClient: async () => ({
         auth: {
@@ -450,6 +450,7 @@ test("normal account API explicitly omits password hashes", async () => {
         user: {
           findUnique: async (query) => {
             assert.deepEqual(query.omit, { passwordHash: true });
+            assert.deepEqual(query.include.applications.omit, { anonymousReviewText: true });
             return {
               id: actor,
               email: "admin@virginia.edu",

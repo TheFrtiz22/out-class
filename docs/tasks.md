@@ -28,7 +28,7 @@ Resources are labeled external http(s) links; a manager can link an externally h
 
 ## Demo
 
-Demo uses the same workspace adapter and never invokes task server actions or real storage. The demo identity is a student and an MII manager only. Fictional MII semester research, weekly market briefs, groups/cohorts, submissions, reviewed work, and overdue work persist in the existing local demo snapshot. Older snapshots gain tasks without resetting recruiting activity. Members retain one identity. Demo file uploads/downloads fail explicitly; use fictional text/link submissions. Reset restores the bundled examples.
+Demo uses the same workspace adapter and never invokes task server actions or real storage. The demo identity is a student and an MII manager only. Fictional MII semester research, weekly market briefs, groups/cohorts, submissions, reviewed work, and overdue work persist in the existing local demo snapshot. Older snapshots gain tasks without resetting recruiting activity. Members retain one identity. Demo uploads remain disabled; seeded file-style submissions download safe bundled sample text files. Fictional text/link submissions remain editable. Reset restores the bundled examples.
 
 ## Validation
 

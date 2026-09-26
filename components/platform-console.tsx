@@ -794,7 +794,7 @@ function ViewAsForm({
       <h3 className="text-lg font-semibold">Start read-only view-as</h3>
       <p className="break-all text-sm">User: {userId}</p>
       <p className="text-sm text-muted-foreground">
-        Retains your admin login. The target's permissions determine the support
+        Retains your admin login. The target&#39;s permissions determine the support
         snapshot. No writes, target tokens, or delegated privileges.
       </p>
       <label className="block text-sm">

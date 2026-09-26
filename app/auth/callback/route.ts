@@ -46,15 +46,8 @@ export async function GET(request: Request) {
         }
       })
 
-      const forwardedHost = request.headers.get('x-forwarded-host') 
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+      // The request origin is the redirect authority; never trust a caller-supplied forwarded host.
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 

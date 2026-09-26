@@ -569,6 +569,8 @@ export async function changePlatformResource(input: unknown, reason: string) {
       }
       case "membership": {
         await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${data.clubId} FOR UPDATE`;
+        const targetAccount = await tx.user.findUnique({ where: { id: data.userId }, select: { disabledAt: true } });
+        if (!targetAccount || (targetAccount.disabledAt && (data.isOwner || data.permissions.length))) throw new Error("Granting access requires an active account.");
         const where = {
           userId_clubId: { userId: data.userId, clubId: data.clubId },
         };
@@ -577,7 +579,7 @@ export async function changePlatformResource(input: unknown, reason: string) {
           old?.isOwner &&
           !data.isOwner &&
           (await tx.clubMember.count({
-            where: { clubId: data.clubId, isOwner: true },
+            where: { clubId: data.clubId, isOwner: true, user: { disabledAt: null } },
           })) <= 1
         )
           throw new Error("Assign another owner first.");

@@ -182,7 +182,7 @@ export function ClubWorkspace({
                     {!allowed ? (
                       <div className="space-y-3">
                         <h2 className="text-xl font-semibold">
-                          This section isn't available with your current access.
+                          This section isn&#39;t available with your current access.
                         </h2>
                         <Link
                           href={clubWorkspaceHref(clubId)}

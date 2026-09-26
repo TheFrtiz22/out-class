@@ -78,6 +78,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
         if (!slot || slot.clubId !== application.clubId) throw new Error("Slot not available for this application.");
         const existing = slot.bookings.find(item => item.applicationId === application.id);
         if (existing) return existing;
+        if (application.status !== "INTERVIEWING") throw new Error("An interview invitation is required before booking.");
         if (slot.startTime <= new Date()) throw new Error("This interview slot has already started.");
         if (slot.bookings.length >= slot.capacity) throw new Error("This interview slot is already full.");
         return tx.interviewBooking.create({ data: parsed });

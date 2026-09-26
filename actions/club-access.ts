@@ -76,7 +76,8 @@ export async function inviteClubManager(
 
 export async function acceptClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
-  const { user } = await requireAuth();
+  const { user, supabaseUser } = await requireAuth();
+  if (!supabaseUser.email_confirmed_at || supabaseUser.app_metadata?.email_verification_skipped === true) throw new Error("Verify your UVA email before accepting an invitation.");
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
@@ -99,7 +100,9 @@ export async function acceptClubInvitation(invitationId: string) {
         },
       },
     });
+    const inviterAccount = await tx.user.findUnique({ where: { id: invitation.invitedBy }, select: { disabledAt: true } });
     if (
+      !inviterAccount || inviterAccount.disabledAt ||
       !hasPermission(inviter, "leaders.manage") ||
       invitation.permissions.some(
         (p) => !hasPermission(inviter, p as (typeof clubPermissions)[number]),
@@ -171,11 +174,13 @@ export async function updateClubAccess(input: {
         ))
     )
       throw new Error("Only an owner can change higher-authority access.");
+    const targetAccount = await tx.user.findUnique({ where: { id: target.userId }, select: { disabledAt: true } });
+    if (data.isOwner && (!targetAccount || targetAccount.disabledAt)) throw new Error("Ownership requires an active account.");
     if (
       target.isOwner &&
       !data.isOwner &&
       (await tx.clubMember.count({
-        where: { clubId: data.clubId, isOwner: true },
+        where: { clubId: data.clubId, isOwner: true, user: { disabledAt: null } },
       })) <= 1
     )
       throw new Error("Assign another owner before removing the last owner.");
@@ -217,8 +222,11 @@ export async function revokeClubInvitation(
   clubId: string,
   invitationId: string,
 ) {
-  const { user } = await requireClubPermission(clubId, ["leaders.manage"]);
+  const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
+    if (!hasPermission(actor, "leaders.manage")) throw new Error("Access denied.");
     const result = await tx.clubInvitation.updateMany({
       where: { id: invitationId, clubId, acceptedAt: null },
       data: { revokedAt: new Date() },
@@ -295,6 +303,8 @@ export async function removeClubMember(clubId: string, memberId: string) {
       throw new Error(
         "Revoke leadership access first. Memberships with evaluation or interview history must be retained.",
       );
+    const person = await tx.user.findUnique({ where: { id: target.userId }, select: { email: true } });
+    if (person) await tx.clubInvitation.updateMany({ where: { clubId, email: person.email.toLowerCase(), acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
     await tx.clubMember.delete({ where: { id: target.id } });
     await tx.auditLog.create({
       data: {
