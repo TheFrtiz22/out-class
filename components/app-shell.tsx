@@ -46,7 +46,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
-export function AppShell({ initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
   const demo = useDemoMode()
   const router = useRouter()
   const wantsStudent = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("workspace") === "student"
@@ -108,6 +108,7 @@ export function AppShell({ initialView = "landing", embedded = false, initialSes
   if (view === "landing") {
     return (
       <LandingPageView
+        launchClubs={launchClubs}
         onNavigateToApp={(role) => {
           setAppMode(role === "leader" ? "admin" : "student")
           setView("auth")

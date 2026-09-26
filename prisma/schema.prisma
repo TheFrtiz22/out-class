@@ -74,6 +74,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  marketingApprovedAt DateTime? // Explicit consent to appear as a launch participant.
   interviewSlots  InterviewSlot[]
   campusKey       String           @default("uva")
   directorySource String?

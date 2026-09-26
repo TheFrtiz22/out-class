@@ -1,3 +1,4 @@
+import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { AppShell } from "@/components/app-shell"
@@ -32,5 +33,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
     hasProfile = !!profile
   }
 
-  return <AppShell initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
+  const launchClubs = !user ? await getLaunchClubs() : []
+  return <AppShell launchClubs={launchClubs} initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
 }
