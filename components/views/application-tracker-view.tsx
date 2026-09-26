@@ -36,8 +36,9 @@ const date = (value: Date | string) =>
     hour: "numeric",
     minute: "2-digit",
   })
-export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
+export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNavigate?: (view: ViewId) => void; scope?: "all" | "interviews" | "decisions" }) {
   const demo = useDemoMode()
+  useEffect(() => { setActiveId(null); setFilter("All") }, [scope])
   const demoDeadline = (clubId: string) => demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId)?.deadline : undefined
   const { user, loading, refreshUser } = useAuth()
   const { focusApplicationClubId, clearApplicationFocus, syncApplications } = useApplicationState()
@@ -343,6 +344,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
     ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status),
   ).length
   const visible = applications
+    .filter(item => scope === "all" || (scope === "interviews" ? item.status === "INTERVIEWING" || item.bookings.length > 0 : ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)))
     .filter(
       (item) =>
         filter === "All" ||
@@ -361,9 +363,9 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
     <div className="mx-auto max-w-5xl space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl tracking-tight">One step at a time.</h2>
+          <h2 className="font-display text-3xl tracking-tight">{scope === "all" ? "One step at a time." : scope === "interviews" ? "Prepare for your conversations." : "Your application outcomes."}</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {applications.length
+            {scope !== "all" ? `${visible.length} ${scope === "interviews" ? "applications with interview activity" : "decisions available"}` : applications.length
               ? `${drafts} ${drafts === 1 ? "draft" : "drafts"} · ${applications.length - drafts - decisions} in progress · ${decisions} decisions`
               : "Find a community you’re excited about. Start there."}
           </p>
@@ -373,7 +375,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
           Refresh
         </Button>
       </header>
-      {!!drafts && (
+      {scope === "all" && !!drafts && (
         <div className="border-l-2 border-primary py-1 pl-4">
           <p className="text-sm font-medium">Your next step: finish a draft</p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -394,7 +396,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
         </div>
       ) : (
         <>
-          <div
+          {scope === "all" && <div
             role="group"
             aria-label="Filter applications"
             className="flex flex-wrap gap-2 border-b border-border pb-4"
@@ -410,7 +412,7 @@ export function ApplicationTrackerView({ onNavigate }: { onNavigate?: (view: Vie
                 {label}
               </Button>
             ))}
-          </div>
+          </div>}
           <ul className="divide-y divide-border">
             {visible.map((item) => (
               <li key={item.id}>

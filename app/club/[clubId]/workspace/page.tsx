@@ -4,16 +4,17 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ section?: string; taskView?: string }>;
+  searchParams: Promise<{ section?: string; taskView?: string; tool?: string }>;
 }) {
   const { clubId } = await params,
-    { section, taskView } = await searchParams;
+    { section, taskView, tool } = await searchParams;
   return (
     <ClubWorkspace
       key={clubId}
       clubId={clubId}
       section={section ?? "overview"}
       taskView={taskView}
+      tool={tool}
     />
   );
 }

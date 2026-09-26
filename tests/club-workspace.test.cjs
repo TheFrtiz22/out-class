@@ -172,3 +172,24 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
     anonymousReview: true,
   });
 });
+
+test("product modes preserve scoped URLs and limit manager destinations by capability", () => {
+  const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
+  const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
+  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members"]);
+  assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
+  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
+  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "rounds", "rules"]);
+  const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");
+  assert.ok(owner.find(item => item.id === "rules").preview);
+  assert.ok(owner.find(item => item.id === "rounds").quiet);
+  for (const item of owner) {
+    const url = new URL(item.href, "https://outclass.test");
+    assert.equal(url.pathname, `/club/${clubId}/workspace`);
+    assert.equal(url.searchParams.get("section"), "recruitment");
+    assert.equal(url.searchParams.get("tool"), item.id);
+  }
+  assert.equal(personalMode("interviews"), "applications");
+  assert.equal(personalMode("tasks"), "clubs");
+  assert.equal(personalMode("categories"), "explore");
+});

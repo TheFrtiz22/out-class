@@ -55,9 +55,11 @@ export function ClubTasks({
   clubId,
   embedded = false,
   initialScope = "mine",
+  personalOnly = false,
 }: {
   clubId: string;
   embedded?: boolean;
+  personalOnly?: boolean;
   initialScope?: string;
 }) {
   const { user, loading } = useAuth(),
@@ -109,7 +111,7 @@ export function ClubTasks({
       setBusy(false);
     }
   }
-  const manager = workspace?.manage && scope === "team";
+  const manager = !personalOnly && workspace?.manage && scope === "team";
   const tasks =
     workspace?.tasks.filter(
       (t) =>
@@ -213,7 +215,7 @@ export function ClubTasks({
         workspace && (
           <>
             <div className="flex flex-wrap items-end gap-4">
-              {workspace.manage && (
+              {!personalOnly && workspace.manage && (
                 <label className="text-sm">
                   View
                   <select

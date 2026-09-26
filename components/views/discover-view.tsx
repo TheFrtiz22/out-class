@@ -14,7 +14,7 @@ import { demoStore, demoDirectory } from "@/lib/demo/store"
 import { useDemoMode } from "@/contexts/demo-context"
 import "@/components/clubs/club-discovery.css"
 
-export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
+export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigate: (view: ViewId) => void; categoriesOnly?: boolean }) {
   const [clubs, setClubs] = useState<DirectoryClub[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -53,6 +53,8 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
         ?.focus({ preventScroll: true })
     }
   }, [selected])
+  const previousCategoryMode = useRef(categoriesOnly)
+  useEffect(() => { if (previousCategoryMode.current !== categoriesOnly) { setSelected(null); setFilters(emptyDirectoryFilters); previousCategoryMode.current = categoriesOnly } }, [categoriesOnly])
   const categories = useMemo(
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],
@@ -76,7 +78,7 @@ export function DiscoverView({ onNavigate }: { onNavigate: (view: ViewId) => voi
   return (
     <div className="oc-discovery" ref={resultsRef}>
       <p className="oc-directory-intro">
-        Find a club by name, or follow your interests somewhere new.
+        {categoriesOnly ? "Choose an interest to browse the club directory by category." : "Find a club by name, or follow your interests somewhere new."}
       </p>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />

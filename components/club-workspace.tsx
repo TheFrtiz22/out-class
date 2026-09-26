@@ -1,22 +1,24 @@
 "use client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ProductShell } from "@/components/shell/product-shell";
+import { managerNavigation } from "@/lib/product-navigation";
+import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view";
+import { BroadcastMessagesView } from "@/components/views/club-manager/broadcast-messages-view";
+import type { ViewId } from "@/lib/views";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { hasPermission, hasWorkspace } from "@/lib/permissions";
 import {
-  clubSectionLabels,
   clubWorkspaceHref,
-  clubWorkspaceSections,
   recruitmentTools,
-  type ClubSection,
 } from "@/lib/club-workspace";
 import {
   getClubWorkspaceOverview,
   getWorkspaceRounds,
 } from "@/lib/workspace-api";
-import { ApplicationStateProvider } from "@/lib/application-state";
-import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher";
+import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
 import { ClubWorkspaceSettings } from "@/components/club-workspace-settings";
 import { ClubTasks } from "@/components/club-tasks";
 import { MeetingList } from "@/components/meeting-workspace";
@@ -26,7 +28,6 @@ import { ClubInterviewKitSettings } from "@/components/interview-kit-editor";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { InterviewSchedulerView } from "@/components/views/interview-scheduler-view";
 import { DemoInterviewSchedule } from "@/components/demo-workspace";
-import { OutClassLogo } from "@/components/outclass-logo";
 import { Button } from "@/components/ui/button";
 import { demoStore } from "@/lib/demo/store";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
@@ -42,11 +43,14 @@ export function ClubWorkspace({
   clubId,
   section,
   taskView,
+  tool,
 }: {
   clubId: string;
   section: string;
   taskView?: string;
+  tool?: string;
 }) {
+  const router = useRouter();
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
@@ -91,164 +95,53 @@ export function ClubWorkspace({
     needsSelection,
     membership?.id,
   ]);
-  const sections = clubWorkspaceSections(data?.membership),
-    allowed = sections.includes(section as ClubSection);
-  return (
-    <ApplicationStateProvider
-      initialData={{ applications: [], attendances: [] }}
-      persistLocalState={false}
-    >
-      {interviewMode &&
-      data &&
-      hasPermission(data.membership, "applications.review") ? (
-        <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} />
-      ) : (
-        <div className="min-h-svh bg-background">
-          <header className="border-b bg-card">
-            <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4 px-5 py-4 sm:px-8">
-              <Link href="/" aria-label="OutClass home">
-                <OutClassLogo variant="light" className="h-9 w-auto" />
-              </Link>
-              <div className="w-full max-w-sm sm:w-80">
-                <ClubWorkspaceSwitcher clubId={clubId} />
-              </div>
-            </div>
-          </header>
-          <main className="mx-auto max-w-[1500px] px-5 py-7 sm:px-8 sm:py-10">
-            {loading || needsSelection ? (
-              <p role="status">Opening club workspace…</p>
-            ) : !membership ? (
-              <div className="space-y-4 py-12">
-                <h1 className="font-display text-3xl">
-                  Club workspace unavailable
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Sign in with a current club membership to access this
-                  workspace.
-                </p>
-                <Link className="underline" href="/">
-                  Return to OutClass
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                      {hasWorkspace(membership)
-                        ? "Club workspace"
-                        : "Member workspace"}
-                    </p>
-                    <h1 className="mt-2 font-display text-3xl sm:text-4xl">
-                      {data?.club.name ?? membership.club.name}
-                    </h1>
-                  </div>
-                  <Link
-                    className="text-sm underline underline-offset-4"
-                    href={`/club/${clubId}`}
-                  >
-                    Public club profile ↗
-                  </Link>
-                </div>
-                {error ? (
-                  <div role="alert" className="space-y-3 border-y py-6">
-                    <p>{error}</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setRetry((n) => n + 1)}
-                    >
-                      Retry
-                    </Button>
-                  </div>
-                ) : !data ? (
-                  <p role="status">Loading club activity…</p>
-                ) : (
-                  <>
-                    <nav
-                      aria-label="Club sections"
-                      className="mb-8 flex flex-wrap gap-x-5 gap-y-1 border-b"
-                    >
-                      {sections.map((item) => (
-                        <Link
-                          key={item}
-                          href={clubWorkspaceHref(clubId, item)}
-                          aria-current={section === item ? "page" : undefined}
-                          className={`min-h-11 border-b-2 px-1 py-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring ${section === item ? "border-foreground font-semibold text-foreground" : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"}`}
-                        >
-                          {clubSectionLabels[item]}
-                        </Link>
-                      ))}
-                    </nav>
-                    {!allowed ? (
-                      <div className="space-y-3">
-                        <h2 className="text-xl font-semibold">
-                          This section isn&#39;t available with your current access.
-                        </h2>
-                        <Link
-                          href={clubWorkspaceHref(clubId)}
-                          className="underline"
-                        >
-                          Go to overview
-                        </Link>
-                      </div>
-                    ) : (
-                      <section
-                        key={section}
-                        className="shell-content-enter"
-                        aria-label={clubSectionLabels[section as ClubSection]}
-                      >
-                        {section === "overview" && (
-                          <WorkspaceOverview data={data} />
-                        )}
-                        {section === "tasks" && (
-                          <ClubTasks
-                            clubId={clubId}
-                            embedded
-                            initialScope={taskView === "team" ? "team" : "mine"}
-                          />
-                        )}
-                        {section === "meetings" && (
-                          <MeetingList
-                            clubId={clubId}
-                            embedded
-                            initialAudience={
-                              hasPermission(data.membership, "meetings.manage")
-                                ? "ALL"
-                                : "MEMBERS"
-                            }
-                          />
-                        )}
-                        {section === "members" &&
-                          (demo.isDemoEnabled ? (
-                            <DemoMembers clubId={clubId} />
-                          ) : (
-                            <ClubWorkspaceSettings section="members" />
-                          ))}
-                        {section === "settings" &&
-                          (demo.isDemoEnabled ? (
-                            <DemoProfile clubId={clubId} />
-                          ) : (
-                            <ClubWorkspaceSettings section="settings" />
-                          ))}
-                        {section === "recruitment" && (
-                          <RecruitmentWorkspace
-                            clubId={clubId}
-                            member={data.membership}
-                            onInterview={() => setInterviewMode(true)}
-                          />
-                        )}
-                      </section>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </main>
-        </div>
-      )}
-    </ApplicationStateProvider>
-  );
+  const current = data?.club.id === clubId ? data : null;
+  const manager = !!membership && hasWorkspace(membership);
+  const mode = section === "recruitment" ? "recruiting" : "club";
+  const active = mode === "recruiting" ? tool || "applicants" : section;
+  const nav = manager ? managerNavigation(current?.membership ?? membership, clubId, mode) : [
+    { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId) },
+    { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
+    { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
+  ];
+  const allowed = mode === "recruiting" ? manager && recruitmentTools(membership!).length > 0 && nav.some(n => n.id === active) : nav.some(n => n.id === active);
+  function navigate(view: ViewId) {
+    if (view === "interview-workspace") { setInterviewMode(true); return }
+    if (["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages"].includes(view)) {
+      router.push(view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `/club/${clubId}/workspace?section=announcements` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`); return;
+    }
+    router.push(view === "landing" ? "/" : `/?workspace=student&view=${view}`);
+  }
+  return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
+    <RecruitmentFocus />
+    {interviewMode && current && hasPermission(current.membership, "applications.review") ? <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} /> :
+      <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
+        modes={manager ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }, { id: "club", label: "Club", href: clubWorkspaceHref(clubId) }] : [{ id: "explore", label: "Explore", href: "/?workspace=student&view=discover" }, { id: "applications", label: "Applications", href: "/?workspace=student&view=tracker" }, { id: "clubs", label: "My Clubs", href: "/?workspace=student&view=my-clubs" }]}
+        items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
+        {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="font-display text-3xl">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">{membership.club.name}</p><h1 className="font-display text-3xl sm:text-4xl">{nav.find(n => n.id === active)?.label || "Workspace"}</h1></div><Link className="text-sm text-muted-foreground underline underline-offset-4" href={`/club/${clubId}`}>Public club profile ↗</Link></div>
+          {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
+            {section === "overview" && <WorkspaceOverview data={current} />}
+            {section === "tasks" && <ClubTasks clubId={clubId} embedded initialScope={taskView === "team" ? "team" : "mine"} />}
+            {section === "meetings" && <MeetingList clubId={clubId} embedded initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
+            {section === "members" && (demo.isDemoEnabled ? <DemoMembers clubId={clubId} /> : <ClubWorkspaceSettings section="members" />)}
+            {section === "settings" && (demo.isDemoEnabled ? <DemoProfile clubId={clubId} /> : <ClubWorkspaceSettings section="settings" />)}
+            {section === "announcements" && <><PreviewNotice /><BroadcastMessagesView /></>}
+            {section === "recruitment" && (active === "overview" ? <div className="max-w-3xl"><p className="mb-6 text-muted-foreground">Review applications, prepare interviews, and record decisions.</p><ul className="divide-y border-y">{nav.filter(n => n.id !== "overview").map(n => <li key={n.id}><Link className="flex min-h-14 items-center justify-between py-4 text-sm" href={n.href!}>{n.label}<span className="text-muted-foreground">{n.preview ? "Local preview · " : ""}→</span></Link></li>)}</ul></div> : active === "rounds" ? <RoundSettings clubId={clubId} /> : active === "rules" ? <><PreviewNotice /><ScreeningDashboardView /></> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{hasPermission(current.membership, "interviews.manage") && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review candidates and record outcomes. Voting mode opens the existing board decision workflow; changes do not send email." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace scoped /></>)}
+          </section>}
+        </>}
+      </ProductShell>}
+  </ApplicationStateProvider>;
 }
+function PreviewNotice() { return <p role="note" className="mb-6 border-l-2 border-brand-orange pl-4 text-sm text-muted-foreground">Local preview · sample data only. These controls do not update live applicants, publish announcements, or send messages.</p> }
+function RecruitmentFocus() {
+  const params = useSearchParams(), { focusLeader } = useApplicationState();
+  const { activeClubId } = useAuth();
+  const applicantId = params.get("applicantId"), roundId = params.get("roundId");
+  useEffect(() => { if (activeClubId && (applicantId || roundId)) focusLeader({ clubId: activeClubId, ...(applicantId ? { applicantId } : {}), ...(roundId ? { roundId } : {}) }) }, [activeClubId, applicantId, roundId, focusLeader]);
+  return null;
+}
+
 function WorkspaceOverview({ data }: { data: Overview }) {
   const { club, meeting, work, awaitingReview, recruitment } = data;
   const inReview =
@@ -371,19 +264,21 @@ function RecruitmentWorkspace({
   clubId,
   member,
   onInterview,
+  initialTool,
 }: {
   clubId: string;
   member: Overview["membership"];
   onInterview: () => void;
+  initialTool?: "kits";
 }) {
   const demo = useDemoMode(),
     tools = recruitmentTools(member),
-    [tool, setTool] = useState(tools[0]?.id ?? "applicants");
+    [tool, setTool] = useState(initialTool ?? tools[0]?.id ?? "applicants");
   const active = tools.find((t) => t.id === tool)?.id ?? tools[0]?.id;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className={initialTool ? "hidden" : "flex flex-wrap items-end justify-between gap-4"}>
         <div>
           <h2 className="font-display text-2xl">Recruitment</h2>
           <p className="mt-2 text-sm text-muted-foreground">

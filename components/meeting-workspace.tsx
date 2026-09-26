@@ -23,7 +23,7 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" }: { clubId?: string; embedded?: boolean; initialAudience?: string }) {
+export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -63,7 +63,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" 
         Recruitment meetings and member meetings share one place for agendas,
         resources, and recaps—including meetings you missed.
       </p>
-      {clubId && hasPermission(member, "meetings.manage") && (
+      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && (
         <details className="border-y py-4">
           <summary className="cursor-pointer font-medium">
             Create a meeting

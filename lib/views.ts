@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 
 export type ViewId =
+  | "my-clubs"
   | "landing"
   | "auth"
   | "student-onboarding"
@@ -93,6 +94,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
 ]
 
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
+  "my-clubs": { title: "My Clubs", subtitle: "Your communities, meetings, and assignments." },
   landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
   "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },

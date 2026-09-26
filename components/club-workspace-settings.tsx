@@ -131,7 +131,7 @@ export function ClubWorkspaceSettings({ section = "legacy" }: { section?: "legac
           ))}
         </section>
       )}
-      {section === "legacy" && <details className="border-t pt-5">
+      {section !== "members" && hasPermission(member, "club.settings") && <details className="border-t pt-5">
         <summary className="cursor-pointer text-sm">Existing local preview tools</summary>
         <p className="my-4 text-sm text-muted-foreground">
           These existing builders use browser-only sample state. They do not publish club changes,

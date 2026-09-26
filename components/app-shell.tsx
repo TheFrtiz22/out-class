@@ -2,6 +2,8 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 
+import { PersonalClubs } from "@/components/personal-clubs"
+import type { PersonalSection } from "@/lib/product-navigation"
 import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
 import { safeReturnPath } from "@/lib/auth"
@@ -50,6 +52,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const demo = useDemoMode()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [personalSection, setPersonalSection] = useState<PersonalSection>("discover")
   const wantsStudent = searchParams.get("workspace") === "student"
   const { selectClub, user } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
@@ -76,7 +79,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       : initialView
   )
   const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
-  function navigate(next: ViewId) { if (demo.isDemoEnabled && ["landing", "auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
+  function navigate(next: ViewId) { if (next === "tracker") setPersonalSection("applications"); if (next === "calendar") setPersonalSection("calendar"); if (next === "discover") setPersonalSection("discover"); if (next === "my-clubs") setPersonalSection("clubs"); if (demo.isDemoEnabled && ["landing", "auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
 
   // If an auth error was found in the URL, force the auth view so the user sees the message
   useEffect(() => {
@@ -84,6 +87,14 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       setView("auth")
     }
   }, [authError, initialSession])
+
+  useEffect(() => {
+    const requested = searchParams.get("view")
+    if (["inbox", "student-profile", "discover", "my-clubs", "calendar", "tracker"].includes(requested || "")) {
+      setView(requested as ViewId)
+      setPersonalSection(requested === "tracker" ? "applications" : requested === "my-clubs" ? "clubs" : requested === "calendar" ? "calendar" : "discover")
+    }
+  }, [searchParams])
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {
@@ -139,12 +150,13 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
   return (
     <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
-      {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode}>
+      {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
             {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
-            {view === "discover" && <DiscoverView onNavigate={navigate} />}
-            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} />}
+            {view === "my-clubs" && <PersonalClubs section={personalSection} />}
+            {view === "discover" && <DiscoverView onNavigate={navigate} categoriesOnly={personalSection === "categories"} />}
+            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} scope={personalSection === "interviews" ? "interviews" : personalSection === "decisions" ? "decisions" : "all"} />}
             {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}

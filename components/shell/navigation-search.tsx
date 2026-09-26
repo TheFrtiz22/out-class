@@ -38,11 +38,13 @@ export function NavigationSearch({
   items,
   onNavigate,
   leader = false,
+  clubId,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   items: NavItem[]
   onNavigate: (view: ViewId) => void
+  clubId?: string
   leader?: boolean
 }) {
   const { user } = useAuth()
@@ -108,6 +110,14 @@ export function NavigationSearch({
       return
     }
     if (!prepare()) return
+    if (clubId && (item.kind === "applicant" || item.kind === "round")) {
+      window.location.assign(`/club/${encodeURIComponent(item.clubId)}/workspace?section=recruitment&tool=applicants&${item.kind === "applicant" ? "applicantId" : "roundId"}=${encodeURIComponent(item.id)}`)
+      return
+    }
+    if (item.kind === "application" && clubId) {
+      window.location.assign(`/?workspace=student&view=tracker&applicationClubId=${encodeURIComponent(item.clubId)}`)
+      return
+    }
     if (item.kind === "application") {
       focusApplication(item.clubId)
       onNavigate("tracker")
