@@ -1,11 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw } from "lucide-react"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { useApplicationState } from "@/lib/application-state"
+import { applicationInScope, relevantInterview } from "@/lib/application-presentation"
+import "@/components/applications/application-tracker.css"
 import { applicationNextStep, applicationStatusLabels } from "@/lib/student-applications"
 import type { ViewId } from "@/lib/views"
 import type { TrackerStatus } from "@/lib/data"
@@ -38,7 +40,7 @@ const date = (value: Date | string) =>
   })
 export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNavigate?: (view: ViewId) => void; scope?: "all" | "interviews" | "decisions" }) {
   const demo = useDemoMode()
-  useEffect(() => { setActiveId(null); setFilter("All") }, [scope])
+  useEffect(() => { setActiveId(null); setFilter("All"); setDirty(false) }, [scope])
   const demoDeadline = (clubId: string) => demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId)?.deadline : undefined
   const { user, loading, refreshUser } = useAuth()
   const { focusApplicationClubId, clearApplicationFocus, syncApplications } = useApplicationState()
@@ -51,6 +53,13 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   const [working, setWorking] = useState(false)
   const [filter, setFilter] = useState("All")
   const [notice, setNotice] = useState("")
+  const content = useRef<HTMLDivElement>(null)
+  const lastOpened = useRef<string | null>(null)
+  useEffect(() => {
+    if (activeId) content.current?.querySelector<HTMLElement>("h1")?.focus()
+    else if (lastOpened.current) content.current?.querySelector<HTMLButtonElement>(`[data-application-id="${CSS.escape(lastOpened.current)}"]`)?.focus({ preventScroll: true })
+  }, [activeId, pending])
+
   const sync = useCallback(
     (apps: StudentApplication[]) => {
       syncApplications(
@@ -165,7 +174,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     )
   if (app)
     return (
-      <div className="mx-auto max-w-3xl space-y-7 pb-8">
+      <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-7 pb-8">
         <Button
           variant="ghost"
           size="sm"
@@ -179,7 +188,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           }
         >
           <ArrowLeft className="size-4" />
-          All applications
+          {scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}
         </Button>
         <header className="flex items-start gap-4">
           <ClubLogo
@@ -193,7 +202,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Your application
             </p>
-            <h2 className="break-words font-display text-3xl tracking-tight">{app.club.name}</h2>
+            <h1 tabIndex={-1} className="break-words font-display text-3xl tracking-tight outline-none">{app.club.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Badge variant="secondary">{applicationStatusLabels[app.status]}</Badge>
               <p className="text-xs text-muted-foreground">
@@ -228,9 +237,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                   An invitation to your next chapter
                 </p>
               )}
-              <h3 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold">
                 {app.status === "ACCEPTED"
-                  ? `Welcome to ${app.club.name}.`
+                  ? `You’ve been accepted to ${app.club.name}.`
                   : app.status === "REJECTED"
                     ? "An update on your application"
                     : app.status === "WAITLISTED"
@@ -238,10 +247,12 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                       : app.status === "SUBMITTED"
                         ? "Your application is in."
                         : "Your application is moving forward"}
-              </h3>
+              </h2>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
                 {applicationNextStep(app.status)}
               </p>
+              {app.status === "ACCEPTED" && <p className="mt-2 text-sm leading-7 text-muted-foreground">Acceptance does not automatically add you as a club member. Follow the club’s instructions for joining.</p>}
+              {app.status === "INTERVIEWING" && !app.bookings.length && <p className="mt-2 text-sm leading-7 text-muted-foreground">No interview booking is recorded on OutClass yet. Check the club’s instructions for scheduling.</p>}
               {app.status === "REJECTED" && (
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                   Thank you for the time and care you put into applying. You can continue exploring
@@ -254,7 +265,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 </p>
               )}
               <div className="mt-6">
-                <RecruitmentTimeline status={app.status} />
+                <RecruitmentTimeline status={app.status} compact />
               </div>
               {app.round?.name && (
                 <p className="mt-4 text-xs text-muted-foreground">Club stage: {app.round.name}</p>
@@ -262,7 +273,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             </section>
             {app.bookings.length > 0 && (
               <section aria-label="Interview details" className="space-y-4">
-                <h3 className="text-base font-semibold">Your interviews</h3>
+                <h2 className="text-base font-semibold">Your interviews</h2>
                 <ul className="divide-y divide-border">
                   {app.bookings.map((booking) => (
                     <li key={booking.id} className="flex items-start gap-3 py-4">
@@ -283,7 +294,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             )}
             <section className="space-y-6" aria-label="Submitted responses">
               <div>
-                <h3 className="text-base font-semibold">Your submitted responses</h3>
+                <h2 className="text-base font-semibold">Your submitted responses</h2>
                 <p className="mt-2 text-xs text-muted-foreground">Read-only after submission.</p>
               </div>
               {app.club.questions.map((question, index) => {
@@ -293,9 +304,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 return (
                   <div key={question.id} className="border-t border-border pt-5">
                     <p className="mb-2 text-xs text-muted-foreground">Question {index + 1}</p>
-                    <h4 className="whitespace-pre-wrap text-sm font-medium leading-7">
+                    <h3 className="whitespace-pre-wrap text-sm font-medium leading-7">
                       {question.prompt}
-                    </h4>
+                    </h3>
                     {question.type === "FILE_UPLOAD" &&
                     response &&
                     /^https?:\/\//i.test(response) ? (
@@ -339,12 +350,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         )}
       </div>
     )
-  const drafts = applications.filter((item) => item.status === "DRAFTING").length
-  const decisions = applications.filter((item) =>
-    ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status),
-  ).length
   const visible = applications
-    .filter(item => scope === "all" || (scope === "interviews" ? item.status === "INTERVIEWING" || item.bookings.length > 0 : ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)))
+    .filter(item => applicationInScope(item, scope))
     .filter(
       (item) =>
         filter === "All" ||
@@ -360,29 +367,19 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         a.club.name.localeCompare(b.club.name),
     )
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-7">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-3xl tracking-tight">{scope === "all" ? "One step at a time." : scope === "interviews" ? "Prepare for your conversations." : "Your application outcomes."}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {scope !== "all" ? `${visible.length} ${scope === "interviews" ? "applications with interview activity" : "decisions available"}` : applications.length
-              ? `${drafts} ${drafts === 1 ? "draft" : "drafts"} · ${applications.length - drafts - decisions} in progress · ${decisions} decisions`
-              : "Find a community you’re excited about. Start there."}
+          <p className="mb-3 text-xs tracking-widest uppercase text-muted-foreground">Your next chapter</p>
+          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}</h1>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
+            {scope === "all" ? "Pick up a draft, follow your progress, or see what comes next." : scope === "interviews" ? "Your interview-stage applications and recorded bookings, in one place." : "Updates from your clubs. Open an application to read the details and next steps."}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setRetry((value) => value + 1)}>
-          <RefreshCw className="size-3.5" />
-          Refresh
+        <Button variant="ghost" size="sm" onClick={() => setRetry((value) => value + 1)}>
+          <RefreshCw className="size-3.5" />Refresh
         </Button>
       </header>
-      {scope === "all" && !!drafts && (
-        <div className="border-l-2 border-primary py-1 pl-4">
-          <p className="text-sm font-medium">Your next step: finish a draft</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {demo.isDemoEnabled ? "Save as you go. Sample deadlines appear below and in Calendar; all dates are fictional." : "Save as you go. Application deadlines haven’t been provided on OutClass; check each club’s recruitment instructions."}
-          </p>
-        </div>
-      )}
       {!applications.length ? (
         <div className="space-y-4 border-y border-border py-12">
           <h3 className="text-lg font-semibold">No applications yet</h3>
@@ -413,56 +410,30 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
               </Button>
             ))}
           </div>}
-          <ul className="divide-y divide-border">
-            {visible.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveId(item.id)
-                    setNotice("")
-                  }}
-                  className="group flex w-full items-start gap-4 rounded-sm py-6 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                >
-                  <ClubLogo
-                    clubId={item.clubId}
-                    logoUrl={item.club.logoUrl}
-                    color={item.club.color || "#142d4e"}
-                    text={item.club.name.slice(0, 2)}
-                    size="lg"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                      <h3 className="font-semibold">{item.club.name}</h3>
-                      <Badge variant="secondary">{applicationStatusLabels[item.status]}</Badge>
-                    </div>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {applicationNextStep(item.status)}
-                    </p>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      {item.status === "DRAFTING"
-                        ? `${item.answers.filter((answer) => answer.response.trim()).length} responses saved · ${demoDeadline(item.clubId) ? `Sample deadline ${date(demoDeadline(item.clubId)!)}` : "Deadline not provided"}`
-                        : item.status === "INTERVIEWING" &&
-                            item.bookings.some(
-                              (booking) => new Date(booking.slot.startTime).getTime() > Date.now(),
-                            )
-                          ? `Interview ${date(item.bookings.find((booking) => new Date(booking.slot.startTime).getTime() > Date.now())!.slot.startTime)}`
-                          : item.submittedAt
-                            ? `Submitted ${date(item.submittedAt)}`
-                            : "Submission date not provided"}
-                    </p>
+          <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
+          <ul className="oc-application-list">
+            {visible.map(item => {
+              const interview = relevantInterview(item.bookings)
+              const nextStep = item.status === "DRAFTING" ? "Continue your draft. Your application has not been submitted."
+                : scope === "interviews" && interview ? `${interview.past ? "Last interview" : "Interview"} · ${date(interview.booking.slot.startTime)} · ${interview.booking.slot.location || "Location not provided"}`
+                : item.status === "INTERVIEWING" ? interview && !interview.past ? `Interview · ${date(interview.booking.slot.startTime)}` : "No upcoming interview booking recorded. Check the club’s instructions."
+                : applicationNextStep(item.status)
+              return <li key={item.id}><article className="oc-application-row">
+                <div className="oc-application-identity">
+                  <ClubLogo clubId={item.clubId} logoUrl={item.club.logoUrl} color={item.club.color || "#142d4e"} text={item.club.name.slice(0, 2)} size="lg" />
+                  <div className="min-w-0"><h2><button data-application-id={item.id} onClick={() => { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }}>{item.club.name}<span className="sr-only"> · {item.status === "DRAFTING" ? "Continue draft" : "View application"}</span></button></h2>
+                    <p className="oc-application-round">{item.status === "DRAFTING" ? "Draft · not yet applied" : item.round?.name ? `Club round: ${item.round.name}` : "Club round not provided"}</p>
                   </div>
-                  <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:group-hover:translate-x-1" />
-                  <span className="sr-only">
-                    {item.status === "DRAFTING" ? "Continue draft" : "View application"}
-                  </span>
-                </button>
-              </li>
-            ))}
+                  <Badge variant="secondary" className="oc-application-status">{applicationStatusLabels[item.status]}</Badge>
+                </div>
+                <div className="oc-application-progress"><RecruitmentTimeline status={item.status} compact /></div>
+                <div className="oc-application-next"><p>{nextStep}</p><span aria-hidden="true">{item.status === "DRAFTING" ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>
+              </article></li>
+            })}
           </ul>
           {!visible.length && (
             <p role="status" className="py-8 text-sm text-muted-foreground">
-              No applications in this view.
+              {scope === "interviews" ? "No interview-stage applications or bookings yet. Recorded interview information will appear here." : scope === "decisions" ? "No decisions yet. Acceptance, waitlist, and other outcomes will appear here when recorded." : "No applications match this filter."}
             </p>
           )}
         </>

@@ -2,16 +2,16 @@
 import { Check } from "lucide-react"
 import { recruitmentStage } from "@/lib/club-directory"
 import "./club-discovery.css"
-export function RecruitmentTimeline({ status }: { status: string }) {
+export function RecruitmentTimeline({ status, compact = false }: { status: string; compact?: boolean }) {
   const current = recruitmentStage(status)
   const label = status === status.toUpperCase()
     ? status.replaceAll("_", " ").toLowerCase().replace(/^./, character => character.toUpperCase())
     : status
   return (
-    <div className="oc-recruitment-timeline">
-      <p>
+    <div className={`oc-recruitment-timeline${compact ? " oc-recruitment-timeline-compact" : ""}`}>
+      {!compact && <p>
         Your application <strong>{label}</strong>
-      </p>
+      </p>}
       <ol aria-label="Application recruitment timeline">
         {["Applied", "Review", "Interview", "Decision"].map((label, index) => (
           <li
