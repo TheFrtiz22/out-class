@@ -5,7 +5,7 @@ import { MemberOverview } from "@/components/member-overview";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation } from "@/lib/product-navigation";
 import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view";
-import { BroadcastMessagesView } from "@/components/views/club-manager/broadcast-messages-view";
+import { ClubAnnouncements } from "@/components/club-announcements";
 import type { ViewId } from "@/lib/views";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import {
 } from "@/lib/workspace-api";
 import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
 import { ClubMembers } from "@/components/club-members";
-import { ClubWorkspaceSettings } from "@/components/club-workspace-settings";
+import { ClubProfileSettings } from "@/components/club-profile-settings";
 import { ClubTasks } from "@/components/club-tasks";
 import { MeetingList } from "@/components/meeting-workspace";
 import { LiveLeaderWorkspace } from "@/components/views/leader-dashboard/live-leader-workspace";
@@ -33,7 +33,6 @@ import { InterviewSchedulerView } from "@/components/views/interview-scheduler-v
 import { DemoInterviewSchedule } from "@/components/demo-workspace";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { demoStore } from "@/lib/demo/store";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 export function ClubWorkspace({
   clubId,
@@ -127,8 +126,8 @@ export function ClubWorkspace({
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "team" ? "team" : "mine"} />}
             {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
             {section === "members" && <ClubMembers key={clubId} clubId={clubId} />}
-            {section === "settings" && (demo.isDemoEnabled ? <DemoProfile clubId={clubId} /> : <ClubWorkspaceSettings section="settings" />)}
-            {section === "announcements" && <><PreviewNotice /><BroadcastMessagesView /></>}
+            {section === "settings" && <ClubProfileSettings key={clubId} clubId={clubId} onSaved={() => setRetry(n => n + 1)} />}
+            {section === "announcements" && <ClubAnnouncements key={clubId} />}
             {section === "recruitment" && (active === "overview" ? <div className="max-w-3xl"><p className="mb-6 text-muted-foreground">Review applications, prepare interviews, and record decisions.</p><ul className="divide-y border-y">{nav.filter(n => n.id !== "overview" && !n.quiet).map(n => <li key={n.id}><Link className="flex min-h-14 items-center justify-between py-4 text-sm" href={n.href!}>{n.label}<span className="text-muted-foreground">{n.preview ? "Local preview · " : ""}→</span></Link></li>)}</ul></div> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{hasPermission(current.membership, "interviews.manage") && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review applications and record decisions. Changes are saved to the application; no automatic email is sent." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped decisionsOnly={active === "decisions"} /></>)}
           </section>}
         </>}
@@ -143,7 +142,6 @@ export function ClubWorkspace({
       </ProductShell>}
   </ApplicationStateProvider>;
 }
-function PreviewNotice() { return <p role="note" className="mb-6 border-l-2 border-brand-orange pl-4 text-sm text-muted-foreground">Local preview · sample data only. These controls do not update live applicants, publish announcements, or send messages.</p> }
 function RecruitmentFocus() {
   const params = useSearchParams(), { focusLeader } = useApplicationState();
   const { activeClubId } = useAuth();
@@ -280,46 +278,5 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
         onChanged={() => { setRounds(null); setRevision((n) => n + 1); onChanged?.() }}
       />
     </div>
-  );
-}
-function DemoProfile({ clubId }: { clubId: string }) {
-  const demo = useDemoMode(),
-    club = demo.state!.clubs.find((c) => c.id === clubId)!,
-    [saved, setSaved] = useState(false);
-  return (
-    <form
-      className="max-w-2xl space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const form = new FormData(e.currentTarget);
-        demoStore.mutate((s) => {
-          if (clubId !== s.clubs[0].id)
-            throw new Error("Demo management is limited to MII.");
-          const c = s.clubs[0];
-          c.description = String(form.get("description"));
-        });
-        setSaved(true);
-      }}
-    >
-      <h2 className="font-display text-2xl">Club profile</h2>
-      <p className="text-sm text-muted-foreground">
-        Sample changes stay on this device.
-      </p>
-      <label className="block text-sm">
-        Description
-        <textarea
-          name="description"
-          className="mt-1 min-h-40 w-full rounded border bg-card p-3"
-          maxLength={10000}
-          defaultValue={club.description}
-        />
-      </label>
-      <Button>Save demo profile</Button>
-      {saved && (
-        <p role="status" className="text-sm">
-          Saved on this device.
-        </p>
-      )}
-    </form>
   );
 }
