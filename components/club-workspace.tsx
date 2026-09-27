@@ -21,6 +21,7 @@ import {
   getWorkspaceRounds,
 } from "@/lib/workspace-api";
 import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
+import { ClubMembers } from "@/components/club-members";
 import { ClubWorkspaceSettings } from "@/components/club-workspace-settings";
 import { ClubTasks } from "@/components/club-tasks";
 import { MeetingList } from "@/components/meeting-workspace";
@@ -125,7 +126,7 @@ export function ClubWorkspace({
             {section === "overview" && (manager ? <ManagerOverview data={current} /> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "team" ? "team" : "mine"} />}
             {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
-            {section === "members" && (demo.isDemoEnabled ? <DemoMembers clubId={clubId} /> : <ClubWorkspaceSettings section="members" />)}
+            {section === "members" && <ClubMembers key={clubId} clubId={clubId} />}
             {section === "settings" && (demo.isDemoEnabled ? <DemoProfile clubId={clubId} /> : <ClubWorkspaceSettings section="settings" />)}
             {section === "announcements" && <><PreviewNotice /><BroadcastMessagesView /></>}
             {section === "recruitment" && (active === "overview" ? <div className="max-w-3xl"><p className="mb-6 text-muted-foreground">Review applications, prepare interviews, and record decisions.</p><ul className="divide-y border-y">{nav.filter(n => n.id !== "overview" && !n.quiet).map(n => <li key={n.id}><Link className="flex min-h-14 items-center justify-between py-4 text-sm" href={n.href!}>{n.label}<span className="text-muted-foreground">{n.preview ? "Local preview · " : ""}→</span></Link></li>)}</ul></div> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{hasPermission(current.membership, "interviews.manage") && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review applications and record decisions. Changes are saved to the application; no automatic email is sent." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped decisionsOnly={active === "decisions"} /></>)}
@@ -278,35 +279,6 @@ function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged
         canIdentify={canIdentify}
         onChanged={() => { setRounds(null); setRevision((n) => n + 1); onChanged?.() }}
       />
-    </div>
-  );
-}
-function DemoMembers({ clubId }: { clubId: string }) {
-  const demo = useDemoMode(),
-    members = demo.state?.memberships.filter((m) => m.clubId === clubId) ?? [];
-  return (
-    <div className="max-w-3xl">
-      <h2 className="font-display text-2xl">Members</h2>
-      <p className="my-3 text-sm text-muted-foreground">
-        Fictional demo directory. Real invitations and access changes are
-        available outside Demo Mode.
-      </p>
-      <ul className="divide-y">
-        {members.map((m) => {
-          const u = demo.state!.students.find((u) => u.id === m.userId)!;
-          return (
-            <li className="py-4" key={m.id}>
-              <p className="font-medium">
-                {u.profile.firstName} {u.profile.lastName}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {m.groups.join(" · ")}
-                {m.cohort ? ` · ${m.cohort}` : ""}
-              </p>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

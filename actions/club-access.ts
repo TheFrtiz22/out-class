@@ -21,7 +21,7 @@ export async function getClubAccess(clubId: string) {
   return {
     members: await prisma.clubMember.findMany({
       where: { clubId },
-      include: { user: { select: { email: true } } },
+      include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } },
     }),
     invitations: await prisma.clubInvitation.findMany({
       where: {
@@ -247,7 +247,7 @@ export async function getClubMembers(clubId: string) {
   await requireClubPermission(clubId, ["members.manage"]);
   return prisma.clubMember.findMany({
     where: { clubId },
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } },
     orderBy: { id: "asc" },
   });
 }

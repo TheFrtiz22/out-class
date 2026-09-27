@@ -6,44 +6,60 @@ import {
   updateClubAccess,
   revokeClubInvitation,
 } from "@/actions/club-access"
-import { clubPermissions, permissionTemplates, permissionLabels } from "@/lib/permissions"
+import { useAuth } from "@/contexts/auth-context"
+import { clubPermissions, permissionTemplates, permissionLabels, hasPermission, type ClubPermission } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 export function ClubAccessEditor({
   clubId,
   initial,
+  selectedMemberId,
+  inviteOnly = false,
+  onSaved,
 }: {
+  selectedMemberId?: string
+  inviteOnly?: boolean
+  onSaved?: () => Promise<void>
   clubId: string
   initial: Awaited<ReturnType<typeof getClubAccess>>
 }) {
+  const { user, refreshUser } = useAuth()
+  const actor = user?.memberships.find(m => m.clubId === clubId)
   const [data, setData] = useState(initial),
     [email, setEmail] = useState(""),
-    [selected, setSelected] = useState<string[]>([]),
-    [memberId, setMemberId] = useState(""),
-    [owner, setOwner] = useState(false),
+    [selected, setSelected] = useState<string[]>(initial.members.find(m => m.id === selectedMemberId)?.permissions || []),
+    [memberId, setMemberId] = useState(selectedMemberId || ""),
+    [owner, setOwner] = useState(initial.members.find(m => m.id === selectedMemberId)?.isOwner || false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("")
+  const target = data.members.find(m => m.id === memberId)
+  const higherAuthority = !!target && !actor?.isOwner && (target.isOwner || target.permissions.some(p => !hasPermission(actor, p as ClubPermission)))
   async function run(action: () => Promise<unknown>) {
     setBusy(true)
     setMessage("")
     try {
       await action()
-      setData(await getClubAccess(clubId))
+      const updated = await getClubAccess(clubId)
+      setData(updated)
+      if (memberId) { const member = updated.members.find(m => m.id === memberId); setSelected(member?.permissions || []); setOwner(member?.isOwner || false) }
+      await onSaved?.()
       setMessage("Access updated.")
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Could not save.")
     } finally {
+      // Refresh self-access even when a successful revocation prevents the subsequent access read.
+      try { await refreshUser() } catch { /* The next server action still rechecks access. */ }
       setBusy(false)
     }
   }
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-saving={busy}>
       <p>
         Capabilities apply only to this club. Owners retain every capability. Only owners can
         appoint or change other owners. Anonymous reviewers need only “Review applications”. Identified review, identity reveals, moving applicants, and recording decisions require “View identified applicants”.
       </p>
-      <fieldset disabled={busy} className="space-y-4">
-        <label className="block">
+      <fieldset disabled={busy || higherAuthority || !hasPermission(actor, "leaders.manage")} className="space-y-4">
+        {!selectedMemberId && !inviteOnly && <label className="block">
           Person
           <select
             className="mt-2 block w-full rounded border p-3"
@@ -63,7 +79,7 @@ export function ClubAccessEditor({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         {!memberId && (
           <label className="block">
             UVA email
@@ -78,7 +94,7 @@ export function ClubAccessEditor({
             onChange={(e) => {
               if (e.target.value)
                 setSelected([
-                  ...permissionTemplates[e.target.value as keyof typeof permissionTemplates],
+                  ...permissionTemplates[e.target.value as keyof typeof permissionTemplates].filter(p => hasPermission(actor, p)),
                 ])
             }}
           >
@@ -94,6 +110,7 @@ export function ClubAccessEditor({
               <input
                 type="checkbox"
                 checked={selected.includes(p)}
+                disabled={!hasPermission(actor, p)}
                 onChange={(e) =>
                   setSelected(e.target.checked ? [...selected, p] : selected.filter((v) => v !== p))
                 }
@@ -104,7 +121,7 @@ export function ClubAccessEditor({
         </div>
         {memberId && (
           <label className="flex min-h-11 items-center gap-3">
-            <input type="checkbox" checked={owner} onChange={(e) => setOwner(e.target.checked)} />
+            <input type="checkbox" disabled={!actor?.isOwner} checked={owner} onChange={(e) => setOwner(e.target.checked)} />
             Club owner
           </label>
         )}
@@ -126,8 +143,9 @@ export function ClubAccessEditor({
         </Button>
         {memberId && <Button variant="outline" onClick={() => void run(() => updateClubAccess({ clubId, memberId, permissions: [], isOwner: false }))}>Revoke management access</Button>}
       </fieldset>
+      {higherAuthority && <p className="text-sm text-muted-foreground">Only an owner can change this member’s higher-authority access.</p>}
       <p role="status">{message}</p>
-      <h2 className="text-lg font-semibold">Pending invitations</h2>
+      {!selectedMemberId && <><h2 className="text-lg font-semibold">Pending invitations</h2>
       <p className="text-sm text-muted-foreground">
         Copy and share the invitation link. Email delivery is not configured by this feature.
       </p>
@@ -139,13 +157,13 @@ export function ClubAccessEditor({
           </a>
           <Button
             variant="outline"
-            disabled={busy}
+            disabled={busy || !hasPermission(actor, "leaders.manage")}
             onClick={() => void run(() => revokeClubInvitation(clubId, i.id))}
           >
             Revoke
           </Button>
         </div>
-      ))}
+      ))}</>}
     </div>
   )
 }
