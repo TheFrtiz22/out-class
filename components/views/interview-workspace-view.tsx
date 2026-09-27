@@ -1,26 +1,22 @@
 "use client"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitSession } from "@/components/interview-kit-session"
-import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { TestScoreDetail } from "@/components/test-score-detail"
 import { hasPermission } from "@/lib/permissions"
 
 import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Check, Pause, Play } from "lucide-react"
+import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
 import { getClubPipeline } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
-import { reviewerEvaluation, interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
+import { interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
 import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import "./interview/interview-mode.css"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
@@ -49,16 +45,18 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
   }
   return (
     <main className="min-h-dvh bg-background text-foreground">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
+      {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>
             <ArrowLeft className="size-4" />
-            Recruitment workspace
+            Back to interviews
           </Button>
           <span className="hidden h-5 border-l border-border sm:block" />
           <p className="text-sm font-semibold">Interview mode</p>
         </div>
-        {membership && !scoped && (
+      </header>}
+      <DemoInterviewGuide />
+      <div className="px-5">        {membership && !scoped && (
           <select
             aria-label="Interview club"
             disabled={locked}
@@ -73,9 +71,8 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             ))}
           </select>
         )}
-      </header>
-      <DemoInterviewGuide />
-      <div className="mx-auto max-w-[1500px] px-5 py-6 sm:px-8">
+</div>
+      <div className="mx-auto max-w-[1800px]">
         {loading ? (
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
@@ -91,7 +88,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={membership.clubId} membership={membership} onLock={handleLock} />
+          <InterviewSession key={membership.clubId} membership={membership} onLock={handleLock} onExit={exit} />
         )}
       </div>
     </main>
@@ -101,7 +98,9 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
 function InterviewSession({
   membership,
   onLock,
+  onExit,
 }: {
+  onExit: () => void
   membership: ExtendedMembership
   onLock: (locked: boolean, saving?: boolean) => void
 }) {
@@ -237,13 +236,12 @@ function InterviewSession({
     )
   const profile = active?.student.studentProfile
   const candidateName = profile ? `${profile.firstName} ${profile.lastName}` : active?.student.email
-  const savedReview =
-    active && reviewerEvaluation(active.evaluations, membership.id, round?.name || "")
   return (
     <div className="space-y-6">
-      {hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
         <div className="flex flex-wrap items-end gap-3">
+          {!active && <Button variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button>}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
             <select
@@ -312,33 +310,9 @@ function InterviewSession({
         </div>
       ) : (
         <div key={active.id} className="oc-interview-candidate space-y-6">
-          <header className="flex flex-wrap items-center justify-between gap-5">
-            <div className="flex min-w-0 items-center gap-4">
-              <Avatar className="size-14 shrink-0">
-                <AvatarImage src={safeProfileUrl(profile?.headshotUrl)} alt="" />
-                <AvatarFallback>
-                  {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <h1
-                  ref={heading}
-                  tabIndex={-1}
-                  className="break-words font-display text-3xl focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  {candidateName}
-                </h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {profile
-                    ? `${profile.major} · Class of ${profile.gradYear}`
-                    : "Profile not provided"}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {round?.name} · {applicationStatusLabels[active.status]}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
+            canManageKit={hasPermission(membership, "interviews.manage")}
+            toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · {candidateName}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>            <div className="flex items-center gap-3">
               <span
                 className="font-mono text-lg tabular-nums"
                 aria-label={`Elapsed interview time ${elapsedInterviewTime(seconds)}`}
@@ -346,6 +320,8 @@ function InterviewSession({
                 {elapsedInterviewTime(seconds)}
               </span>
               <Button
+                type="button"
+                disabled={completed}
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -357,23 +333,39 @@ function InterviewSession({
                 {running ? "Pause timer" : seconds ? "Resume timer" : "Start timer"}
               </Button>
             </div>
-          </header>
-          <div className="flex gap-4 text-sm lg:hidden">
-            <a className="underline underline-offset-4" href="#interview-context">
-              Candidate context
-            </a>
-            <a className="underline underline-offset-4" href="#interview-evaluation">
-              Your evaluation
-            </a>
-          </div>
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(360px,.85fr)]">
-            <div
-              className="min-w-0 space-y-7 lg:max-h-[calc(100dvh-310px)] lg:overflow-y-auto lg:pr-5"
+</div></>}
+            context={            <div
+              className="min-w-0 max-h-72 space-y-6 overflow-y-auto border-b p-5 lg:sticky lg:top-0 lg:max-h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r"
               role="region"
               id="interview-context"
               aria-label="Candidate context"
               tabIndex={0}
             >
+<div className="flex min-w-0 items-center gap-4">
+              <Avatar className="size-10 shrink-0">
+                <AvatarImage src={safeProfileUrl(profile?.headshotUrl)} alt="" />
+                <AvatarFallback>
+                  {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <h1
+                  ref={heading}
+                  tabIndex={-1}
+                  className="break-words font-display text-2xl focus-visible:outline-2 focus-visible:outline-ring"
+                >
+                  {candidateName}
+                </h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {profile
+                    ? [profile.major, profile.gradYear ? `Class of ${profile.gradYear}` : ""].filter(Boolean).join(" · ")
+                    : "Profile not provided"}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {round?.name} · {applicationStatusLabels[active.status]}
+                </p>
+              </div>
+            </div>
               <section className="space-y-3 border-t border-border pt-5">
                 <h2 className="text-sm font-semibold">Profile at a glance</h2>
                 <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
@@ -382,10 +374,7 @@ function InterviewSession({
                   <p className="whitespace-pre-wrap text-sm leading-7">{profile.bio}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {active.student.email}
-                  {profile?.gpa != null && ` · GPA ${profile.gpa}`}
-                  {profile?.actScore != null && ` · ACT ${profile.actScore}`}
-                  {profile?.satScore != null && ` · SAT ${profile.satScore}`}
+                  {[active.student.email, profile?.gpa != null ? `GPA ${profile.gpa}` : "", profile?.actScore != null ? `ACT ${profile.actScore}` : "", profile?.satScore != null ? `SAT ${profile.satScore}` : ""].filter(Boolean).join(" · ")}
                 </p>
                 {profile?.experiences.map((item) => (
                   <div key={item.id} className="text-sm">
@@ -438,7 +427,7 @@ function InterviewSession({
                   </div>
                 ))}
                 {!active.answers.length && (
-                  <p className="text-sm text-muted-foreground">No club-specific responses.</p>
+                  <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Application text and attachments are withheld during anonymous review. Prepared review content appears above when available." : "No club-specific responses."}</p>
                 )}
               </section>
               <section className="space-y-4 border-t border-border pt-5">
@@ -463,15 +452,13 @@ function InterviewSession({
                 )}
               </section>
             </div>
-            <div className="min-w-0 space-y-5">
-              {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onComplete={(evaluation, next) => {
-                setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, evaluations: [...app.evaluations.filter(e => e.id !== evaluation.id), evaluation] } : app) } : previous)
-                setRunning(false); setKitDirty(false)
-                if(next && queue[index+1]) { setActiveId(queue[index+1].id); setSeconds(0); carried.current=0 }
-              }} />}
-              <div className="flex items-center justify-between border-t pt-4"><Button type="button" variant="ghost" disabled={busy || index<=0} onClick={()=>choose(queue[index-1].id)}>Previous candidate</Button><span className="text-xs">{index+1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index>=queue.length-1} onClick={()=>choose(queue[index+1].id)}>Next candidate</Button></div>
-            </div>
-          </div>
+}
+            onComplete={(evaluation, next) => {
+              setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, evaluations: [...app.evaluations.filter(e => e.id !== evaluation.id), evaluation] } : app) } : previous)
+              carried.current = seconds; setRunning(false); setKitDirty(false)
+              if (next && queue[index + 1]) { setActiveId(queue[index + 1].id); setSeconds(0); carried.current = 0 }
+            }} />}
+          <div className="flex items-center justify-between gap-2 border-t px-5 py-4"><Button type="button" variant="ghost" disabled={busy || index <= 0} onClick={() => choose(queue[index - 1].id)}>Previous candidate</Button><span className="text-xs">{index + 1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index >= queue.length - 1} onClick={() => choose(queue[index + 1].id)}>Next candidate</Button></div>
         </div>
       )}
     </div>
