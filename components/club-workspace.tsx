@@ -1,5 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ManagerOverview } from "@/components/manager-overview";
 import { MemberOverview } from "@/components/member-overview";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation } from "@/lib/product-navigation";
@@ -33,14 +34,6 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 import { Button } from "@/components/ui/button";
 import { demoStore } from "@/lib/demo/store";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
-const when = (date: Date) =>
-  new Date(date).toLocaleString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 export function ClubWorkspace({
   clubId,
   section,
@@ -129,7 +122,7 @@ export function ClubWorkspace({
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">{membership.club.name}</p><h1 className="font-display text-3xl sm:text-4xl">{nav.find(n => n.id === active)?.label || "Workspace"}</h1></div><Link className="text-sm text-muted-foreground underline underline-offset-4" href={`/club/${clubId}`}>Public club profile ↗</Link></div>
           {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
-            {section === "overview" && (manager ? <WorkspaceOverview data={current} /> : <MemberOverview data={current} />)}
+            {section === "overview" && (manager ? <ManagerOverview data={current} /> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "team" ? "team" : "mine"} />}
             {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
             {section === "members" && (demo.isDemoEnabled ? <DemoMembers clubId={clubId} /> : <ClubWorkspaceSettings section="members" />)}
@@ -158,124 +151,6 @@ function RecruitmentFocus() {
   return null;
 }
 
-function WorkspaceOverview({ data }: { data: Overview }) {
-  const { club, meeting, work, awaitingReview, recruitment } = data;
-  const inReview =
-    recruitment
-      ?.filter((r) => ["SUBMITTED", "IN_REVIEW"].includes(r.status))
-      .reduce((n, r) => n + r.count, 0) ?? 0;
-  const interviews =
-    recruitment?.find((r) => r.status === "INTERVIEWING")?.count ?? 0;
-  return (
-    <div className="max-w-5xl space-y-8">
-      <div>
-        <h2 className="font-display text-2xl">What needs attention</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The next meeting, your outstanding work, and actions available to you.
-        </p>
-      </div>
-      <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="font-semibold">Your next steps</h3>
-            <Link
-              className="text-sm underline"
-              href={clubWorkspaceHref(club.id, "tasks")}
-            >
-              All tasks
-            </Link>
-          </div>
-          {work.length ? (
-            <ul className="divide-y border-y">
-              {work.map((w) => (
-                <li className="py-4" key={w.id}>
-                  <Link
-                    href={clubWorkspaceHref(club.id, "tasks")}
-                    className="block rounded-sm focus-visible:outline-2 focus-visible:outline-ring"
-                  >
-                    <p className="font-medium">{w.task.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {w.task.dueAt
-                        ? `${+new Date(w.task.dueAt) < Date.now() ? "Overdue · " : "Due "}${when(w.task.dueAt)}`
-                        : "No deadline"}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="border-t py-6 text-sm text-muted-foreground">
-              No outstanding assignments. Submitted work is available in Tasks.
-            </p>
-          )}
-          {awaitingReview !== null && awaitingReview > 0 && (
-            <Link
-              className="block border-t py-4 text-sm underline underline-offset-4"
-              href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`}
-            >
-              {awaitingReview} submission{awaitingReview === 1 ? "" : "s"}{" "}
-              waiting for review →
-            </Link>
-          )}
-        </section>
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="font-semibold">Next meeting</h3>
-            <Link
-              className="text-sm underline"
-              href={clubWorkspaceHref(club.id, "meetings")}
-            >
-              Meetings
-            </Link>
-          </div>
-          {meeting ? (
-            <Link
-              className="block border-t py-5"
-              href={`/meetings/${meeting.id}`}
-            >
-              <p className="text-xs text-muted-foreground">
-                {meeting.audience === "MEMBERS"
-                  ? "Members"
-                  : "Recruitment / Interest"}
-              </p>
-              <h4 className="mt-2 text-lg font-medium">{meeting.title}</h4>
-              <p className="mt-2 text-sm">{when(meeting.date)}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {meeting.location}
-              </p>
-              <span className="mt-4 block text-sm underline">
-                Agenda & resources →
-              </span>
-            </Link>
-          ) : (
-            <p className="border-t py-6 text-sm text-muted-foreground">
-              No upcoming meetings. Past agendas and recaps remain available in
-              Meetings.
-            </p>
-          )}
-        </section>
-      </div>
-      {recruitment !== null && (
-        <section className="border-t pt-6">
-          <h3 className="font-semibold">Recruitment</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {inReview} applications awaiting review · {interviews} at interview
-            stage
-            {!hasPermission(data.membership, "applicants.identify")
-              ? " · Anonymous rounds only"
-              : ""}
-          </p>
-          <Link
-            className="mt-4 inline-block text-sm underline underline-offset-4"
-            href={clubWorkspaceHref(club.id, "recruitment")}
-          >
-            Open recruitment →
-          </Link>
-        </section>
-      )}
-    </div>
-  );
-}
 function RecruitmentWorkspace({
   clubId,
   member,

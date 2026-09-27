@@ -28,7 +28,7 @@ export function MemberOverview({ data }: { data: MemberOverviewData }) {
   </div>
 }
 
-function RecentRecaps({ clubId }: { clubId: string }) {
+export function RecentRecaps({ clubId }: { clubId: string }) {
   const [meetings, setMeetings] = useState<Awaited<ReturnType<typeof listMeetings>> | null>(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
