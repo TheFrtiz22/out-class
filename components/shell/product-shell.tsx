@@ -64,6 +64,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   }
   function sidebar() { return <div className="flex h-full flex-col overflow-y-auto px-4 py-6">
     <div className="mb-7"><ClubWorkspaceSwitcher clubId={manager ? clubId : ""} managersOnly /></div>
+    {!manager && clubId && clubName && <p className="mb-4 break-words px-3 text-sm font-semibold text-primary">{clubName}</p>}
     <p className="mb-3 px-3 text-[11px] uppercase tracking-widest text-muted-foreground">{modes.find(m => m.id === mode)?.label || "Personal"}</p>
     <nav aria-label="Context navigation" className="space-y-1">{items.filter(i => !i.quiet).map(i => navLink(i))}</nav>
     {items.some(i => i.quiet) && <div className="mt-8"><p className="mb-3 px-3 text-[11px] uppercase tracking-widest text-muted-foreground">Review Tools</p><nav aria-label="Review tools" className="space-y-1">{items.filter(i => i.quiet).map(i => navLink(i))}</nav></div>}

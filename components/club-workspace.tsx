@@ -1,5 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MemberOverview } from "@/components/member-overview";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation } from "@/lib/product-navigation";
 import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view";
@@ -119,11 +120,12 @@ export function ClubWorkspace({
         modes={manager ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }, { id: "club", label: "Club", href: clubWorkspaceHref(clubId) }] : [{ id: "explore", label: "Explore", href: "/?workspace=student&view=discover" }, { id: "applications", label: "Applications", href: "/?workspace=student&view=tracker" }, { id: "clubs", label: "My Clubs", href: "/?workspace=student&view=my-clubs" }]}
         items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="font-display text-3xl">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
+          {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">{membership.club.name}</p><h1 className="font-display text-3xl sm:text-4xl">{nav.find(n => n.id === active)?.label || "Workspace"}</h1></div><Link className="text-sm text-muted-foreground underline underline-offset-4" href={`/club/${clubId}`}>Public club profile ↗</Link></div>
           {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
-            {section === "overview" && <WorkspaceOverview data={current} />}
-            {section === "tasks" && <ClubTasks clubId={clubId} embedded initialScope={taskView === "team" ? "team" : "mine"} />}
-            {section === "meetings" && <MeetingList clubId={clubId} embedded initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
+            {section === "overview" && (manager ? <WorkspaceOverview data={current} /> : <MemberOverview data={current} />)}
+            {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "team" ? "team" : "mine"} />}
+            {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
             {section === "members" && (demo.isDemoEnabled ? <DemoMembers clubId={clubId} /> : <ClubWorkspaceSettings section="members" />)}
             {section === "settings" && (demo.isDemoEnabled ? <DemoProfile clubId={clubId} /> : <ClubWorkspaceSettings section="settings" />)}
             {section === "announcements" && <><PreviewNotice /><BroadcastMessagesView /></>}
