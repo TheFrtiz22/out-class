@@ -21,14 +21,14 @@ function nodes(node) {
 }
 const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
 const flush = () => new Promise(resolve => setImmediate(resolve))
-function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage']) {
+function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false) {
   const slots = [], effects = [], calls = []
   let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
   const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
   const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);if(input.expectedStatus!==pipeline.applications[0].status)throw Error('stale');pipeline.applications[0].status=input.status;return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
   const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership});while(effects.length)effects.shift()();return tree}}
+  return {calls,api,setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly});while(effects.length)effects.shift()();return tree}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
@@ -58,4 +58,31 @@ test('evaluation save updates both presentations and explicit round movement rel
   nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
+})
+
+const { applicationDecisionGroup } = compile('lib/application-decisions.ts')
+test('decision groups use persisted status, exclude drafts, and keep waitlists out of Pending', () => {
+  for (const status of ['SUBMITTED','IN_REVIEW','INTERVIEWING']) assert.equal(applicationDecisionGroup(status),'pending')
+  for (const status of ['ACCEPTED','WAITLISTED','REJECTED']) assert.equal(applicationDecisionGroup(status),status.toLowerCase())
+  assert.equal(applicationDecisionGroup('DRAFTING'),null)
+  assert.equal(applicationDecisionGroup('Final round'),null)
+})
+const decisionAction = (tree,label) => nodes(tree).find(n=>n.type==='Button' && text(n)===label && n.props['aria-pressed'] === undefined)
+const decisionList = tree => nodes(tree).find(n=>n.type==='LiveDecisionList')
+const decisionGroupButton = (tree,label) => nodes(tree).find(n=>n.type==='Button' && text(n).startsWith(label) && n.props['aria-pressed'] !== undefined)
+test('Decisions reuses expected-status mutations and moves saved outcomes between groups', async () => {
+  const h=harness(undefined,true);h.render();await flush();let tree=h.render()
+  assert.equal(button(tree,'Kanban'),undefined)
+  decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
+  assert.equal(decisionList(tree),undefined)
+  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
+  assert.equal(decisionList(tree).props.applicants[0].status,'ACCEPTED')
+})
+test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
+  const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
+  const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
 })

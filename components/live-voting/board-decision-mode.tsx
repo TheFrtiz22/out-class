@@ -51,7 +51,7 @@ export function BoardDecisionMode({
         }
       >
         <Presentation className="size-4" />
-        Voting mode
+        Board decision review
       </Button>
       <Dialog
         open={!!pool}
@@ -66,7 +66,7 @@ export function BoardDecisionMode({
           onEscapeKeyDown={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >
-          <DialogTitle className="sr-only">Voting mode · board decision review</DialogTitle>
+          <DialogTitle className="sr-only">Board decision review</DialogTitle>
           {pool && (
             <DecisionPresentation
               key={clubId}
@@ -164,7 +164,7 @@ function DecisionPresentation({
     } catch {
       setFailed(true)
       setMessage(
-        "The decision could not be saved. It may have changed elsewhere. Close Voting Mode, refresh the applicant list, and try again.",
+        "The decision could not be saved. It may have changed elsewhere. Close board review, refresh the applicant list, and try again.",
       )
     } finally {
       setBusy(false)
@@ -175,7 +175,7 @@ function DecisionPresentation({
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-10">
         <div>
           <p className="text-sm font-semibold">
-            OutClass <span className="px-2 text-muted-foreground">/</span> Voting mode
+            OutClass <span className="px-2 text-muted-foreground">/</span> Board decision review
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{clubName} · Board decision review</p>
         </div>

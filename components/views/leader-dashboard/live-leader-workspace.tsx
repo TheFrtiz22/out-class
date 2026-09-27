@@ -1,5 +1,6 @@
 "use client"
-import { LiveApplicantList, LiveApplicantKanban } from "./live-applicant-views"
+import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
+import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitEditor } from "@/components/interview-kit-editor"
@@ -52,7 +53,7 @@ const average = (app: Candidate) =>
     ? app.evaluations.reduce((total, item) => total + item.score, 0) / app.evaluations.length
     : null
 
-export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: { scoped?: boolean; decisionsOnly?: boolean }) {
   const { user, activeClubId, selectClub } = useAuth()
   const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
@@ -98,13 +99,13 @@ export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
           </select>
         )}
       </div>}
-      <ClubWorkspace key={club.clubId} membership={club} />
-      {demo.isDemoEnabled && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} />
+      {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
 }
 
-function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
+function ClubWorkspace({ membership, decisionsOnly = false }: { membership: ExtendedMembership; decisionsOnly?: boolean }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(null)
   const [error, setError] = useState("")
@@ -112,6 +113,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [round, setRound] = useState("")
+  const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
   const [status, setStatus] = useState("")
   const [review, setReview] = useState("")
   const [major, setMajor] = useState("")
@@ -189,6 +191,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
               .includes(query.trim().toLowerCase()) &&
             (!round || app.roundId === round) &&
             (!status || app.status === status) &&
+            (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
             (!major || profile?.major === major) &&
             (!year || String(profile?.gradYear) === year) &&
             (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
@@ -217,6 +220,8 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         }),
     [
       applicants,
+      decisionsOnly,
+      decisionGroup,
       query,
       round,
       status,
@@ -238,7 +243,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
     if (leaderFocus.roundId) setRound(leaderFocus.roundId)
     if (leaderFocus.applicantId) {
       const target = data.applications.find((app) => app.id === leaderFocus.applicantId)
-      if (target) open(target)
+      if (target) { if (decisionsOnly) setDecisionGroup(applicationDecisionGroup(target.status) || "pending"); open(target) }
     }
     clearLeaderFocus()
   }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
@@ -366,8 +371,12 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
     )
   return (
     <div className="space-y-6" data-unsaved={dirty} data-saving={busy}>
+      {decisionsOnly && <>
+        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
+        <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
+      </>}
       <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>
+        {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
@@ -392,6 +401,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             </option>
           ))}
         </select>
+        {!decisionsOnly && <>
         <select
           aria-label="Filter status"
           className={selectStyle}
@@ -426,13 +436,15 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         >
           {compact ? "Compact rows" : "Comfortable rows"}
         </Button>
+        </>}
         <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
           <RefreshCw className="size-3.5" />
           Refresh
         </Button>
       </div>
-      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">Interview kits & voting</summary><div className="space-y-4 border-l pl-4">
-      {data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
+      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
+      {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
+      <p className="text-xs leading-6 text-muted-foreground">Board review is a presentation of this selection. Confirmed decisions use the same saved application statuses; it does not collect ballots. Local voting previews elsewhere are non-authoritative and do not determine these outcomes.</p>
       <BoardDecisionMode
         applicants={filtered}
         rounds={data.rounds}
@@ -453,7 +465,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         }
       />
       </div></details>
-      <details className="text-sm">
+      {!decisionsOnly && <details className="text-sm">
         <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
           Academic filters
         </summary>
@@ -521,10 +533,10 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           </div>
         </div>
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
-      </details>
+      </details>}
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
-          {filtered.length} of {applicants.length} applicants · scores out of 10
+          {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
         </p>
         {(query || round || status || review || major || year || gpa || sat || act) && (
           <Button
@@ -547,7 +559,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       </div>
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="score">Score</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Grouped by application status, not club round. Decision holds waitlists; Closed holds final outcomes. Open a card for explicit round and status actions.</p>}
-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? "No applicants match these filters." : "Submitted applications will appear here. Student drafts stay private."}</p> : view === "kanban" ? <LiveApplicantKanban applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       <Sheet
         open={!!active}
         onOpenChange={(value) => {

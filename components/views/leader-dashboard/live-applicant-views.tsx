@@ -39,3 +39,13 @@ export function LiveApplicantKanban({ applicants, rounds, open, name, average }:
     </section>
   })}</div>
 }
+
+export function LiveDecisionList({ applicants, rounds, open, name, average }: Props) {
+  return <ul className="divide-y border-y">{applicants.map(app => <li key={app.id}>
+    <button type="button" data-applicant-id={app.id} onClick={() => open(app)} className="grid min-h-20 w-full gap-3 rounded py-5 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center sm:gap-6 sm:px-3">
+      <span className="min-w-0"><span className="block break-words font-medium">{name(app)}</span><span className="mt-1 block text-xs text-muted-foreground">{app.studentId.startsWith("anonymous-") ? "Anonymous review" : app.student.email}</span></span>
+      <span className="space-y-1 text-xs text-muted-foreground"><span className="block">{rounds.find(r => r.id === app.roundId)?.name || "Round unavailable"}</span><span className="block"><Review app={app} average={average} /></span></span>
+      <span className="flex items-center justify-between gap-4 sm:justify-end"><Badge variant="secondary">{applicationStatusLabels[app.status]}</Badge><span className="text-xs">Review decision →</span></span>
+    </button>
+  </li>)}</ul>
+}
