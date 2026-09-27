@@ -6,7 +6,7 @@ import { managerNavigation } from "@/lib/product-navigation";
 import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view";
 import { BroadcastMessagesView } from "@/components/views/club-manager/broadcast-messages-view";
 import type { ViewId } from "@/lib/views";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -29,6 +29,7 @@ import { ClubInterviewKitSettings } from "@/components/interview-kit-editor";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { InterviewSchedulerView } from "@/components/views/interview-scheduler-view";
 import { DemoInterviewSchedule } from "@/components/demo-workspace";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { demoStore } from "@/lib/demo/store";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
@@ -52,6 +53,11 @@ export function ClubWorkspace({
   tool?: string;
 }) {
   const router = useRouter();
+  const params = useSearchParams();
+  const reviewTrigger = useRef<HTMLElement | null>(null);
+  const [reviewTool, setReviewTool] = useState<string | null>(tool === "rounds" || tool === "rules" ? tool : null);
+  const [privacyRevision, setPrivacyRevision] = useState(0);
+  useEffect(() => { setReviewTool(tool === "rounds" || tool === "rules" ? tool : null) }, [tool, clubId]);
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
@@ -99,7 +105,7 @@ export function ClubWorkspace({
   const current = data?.club.id === clubId ? data : null;
   const manager = !!membership && hasWorkspace(membership);
   const mode = section === "recruitment" ? "recruiting" : "club";
-  const active = mode === "recruiting" ? tool || "applicants" : section;
+  const active = mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
   const nav = manager ? managerNavigation(current?.membership ?? membership, clubId, mode) : [
     { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId) },
     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
@@ -118,7 +124,7 @@ export function ClubWorkspace({
     {interviewMode && current && hasPermission(current.membership, "applications.review") ? <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} /> :
       <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
         modes={manager ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }, { id: "club", label: "Club", href: clubWorkspaceHref(clubId) }] : [{ id: "explore", label: "Explore", href: "/?workspace=student&view=discover" }, { id: "applications", label: "Applications", href: "/?workspace=student&view=tracker" }, { id: "clubs", label: "My Clubs", href: "/?workspace=student&view=my-clubs" }]}
-        items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
+        onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="font-display text-3xl">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">{membership.club.name}</p><h1 className="font-display text-3xl sm:text-4xl">{nav.find(n => n.id === active)?.label || "Workspace"}</h1></div><Link className="text-sm text-muted-foreground underline underline-offset-4" href={`/club/${clubId}`}>Public club profile ↗</Link></div>
@@ -129,9 +135,17 @@ export function ClubWorkspace({
             {section === "members" && (demo.isDemoEnabled ? <DemoMembers clubId={clubId} /> : <ClubWorkspaceSettings section="members" />)}
             {section === "settings" && (demo.isDemoEnabled ? <DemoProfile clubId={clubId} /> : <ClubWorkspaceSettings section="settings" />)}
             {section === "announcements" && <><PreviewNotice /><BroadcastMessagesView /></>}
-            {section === "recruitment" && (active === "overview" ? <div className="max-w-3xl"><p className="mb-6 text-muted-foreground">Review applications, prepare interviews, and record decisions.</p><ul className="divide-y border-y">{nav.filter(n => n.id !== "overview").map(n => <li key={n.id}><Link className="flex min-h-14 items-center justify-between py-4 text-sm" href={n.href!}>{n.label}<span className="text-muted-foreground">{n.preview ? "Local preview · " : ""}→</span></Link></li>)}</ul></div> : active === "rounds" ? <RoundSettings clubId={clubId} /> : active === "rules" ? <><PreviewNotice /><ScreeningDashboardView /></> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{hasPermission(current.membership, "interviews.manage") && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review candidates and record outcomes. Voting mode opens the existing board decision workflow; changes do not send email." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace scoped /></>)}
+            {section === "recruitment" && (active === "overview" ? <div className="max-w-3xl"><p className="mb-6 text-muted-foreground">Review applications, prepare interviews, and record decisions.</p><ul className="divide-y border-y">{nav.filter(n => n.id !== "overview" && !n.quiet).map(n => <li key={n.id}><Link className="flex min-h-14 items-center justify-between py-4 text-sm" href={n.href!}>{n.label}<span className="text-muted-foreground">{n.preview ? "Local preview · " : ""}→</span></Link></li>)}</ul></div> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{hasPermission(current.membership, "interviews.manage") && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review candidates and record outcomes. Voting mode opens the existing board decision workflow; changes do not send email." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped /></>)}
           </section>}
         </>}
+        <Sheet open={!!reviewTool && !!current && mode === "recruiting" && nav.some(n => n.id === reviewTool && n.quiet)} onOpenChange={open => { if (!open) { if (document.querySelector('[data-saving="true"]')) return; setReviewTool(null); if (tool === "rounds" || tool === "rules") { const next = new URLSearchParams(params.toString()); next.set("tool", "overview"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`) } } }}>
+          <SheetContent className="w-full overflow-y-auto sm:max-w-lg" onCloseAutoFocus={event => { event.preventDefault(); const target = reviewTrigger.current; if (target?.isConnected) target.focus(); else document.getElementById("workspace-content")?.focus() }}>
+            <SheetTitle>{reviewTool === "rounds" ? "Anonymous Review" : "Auto-Reject Rules"}</SheetTitle>
+            <SheetDescription>{reviewTool === "rounds" ? "Round privacy and requirements for future submissions." : "Preview thresholds using sample data. No automated decisions."}</SheetDescription>
+            {reviewTool === "rounds" && current && <RoundSettings key={clubId} clubId={clubId} embedded canIdentify={hasPermission(current.membership, "applicants.identify")} onChanged={() => setPrivacyRevision(n => n + 1)} />}
+            {reviewTool === "rules" && <ScreeningDashboardView />}
+          </SheetContent>
+        </Sheet>
       </ProductShell>}
   </ApplicationStateProvider>;
 }
@@ -337,7 +351,7 @@ function RecruitmentWorkspace({
     </div>
   );
 }
-function RoundSettings({ clubId }: { clubId: string }) {
+function RoundSettings({ clubId, embedded = false, canIdentify = true, onChanged }: { clubId: string; embedded?: boolean; canIdentify?: boolean; onChanged?: () => void }) {
   const [rounds, setRounds] = useState<Awaited<
       ReturnType<typeof getWorkspaceRounds>
     > | null>(null),
@@ -369,14 +383,14 @@ function RoundSettings({ clubId }: { clubId: string }) {
   if (!rounds) return <p role="status">Loading rounds…</p>;
   return (
     <div className="max-w-3xl space-y-5">
-      <ol className="divide-y">
+      {!embedded && <ol className="divide-y">
         {rounds.map((r, i) => (
           <li className="py-3 text-sm" key={r.id}>
             {i + 1}. {r.name} ·{" "}
             {r.anonymousReview ? "Anonymous review" : "Identified review"}
           </li>
         ))}
-      </ol>
+      </ol>}
       {!rounds.length && (
         <p className="text-sm text-muted-foreground">
           No recruitment rounds are configured yet.
@@ -385,7 +399,9 @@ function RoundSettings({ clubId }: { clubId: string }) {
       <RecruitmentReviewSettings
         clubId={clubId}
         rounds={rounds}
-        onChanged={() => setRevision((n) => n + 1)}
+        embedded={embedded}
+        canIdentify={canIdentify}
+        onChanged={() => { setRounds(null); setRevision((n) => n + 1); onChanged?.() }}
       />
     </div>
   );

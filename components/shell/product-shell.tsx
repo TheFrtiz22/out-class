@@ -20,7 +20,8 @@ import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
-export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, onSelect, onNavigate }: {
+export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, onSelect, onNavigate, onReviewTool }: {
+  onReviewTool?: (id: string) => void;
   children: ReactNode; mode: string; modes: ProductNavItem[]; items: ProductNavItem[]; active: string; title: string;
   clubId?: string; clubName?: string; manager?: boolean; onSelect: (id: string) => void; onNavigate: (view: ViewId) => void;
 }) {
@@ -60,6 +61,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     const selected = top ? item.id === mode : item.id === active
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", top ? "border-b-2 rounded-b-none whitespace-nowrap sm:px-5" : "w-full text-left", selected ? top ? "border-brand-orange font-semibold text-primary" : "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const content = <>{item.label}{item.preview && <span className="ml-auto text-[10px] font-normal text-muted-foreground">Preview</span>}</>
+    if (item.quiet && onReviewTool) return <button key={item.id} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
     return item.href ? <Link key={item.id} href={item.href} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { moved.current = true; setMobile(false) } }}>{content}</Link> : <button key={item.id} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
   }
   function sidebar() { return <div className="flex h-full flex-col overflow-y-auto px-4 py-6">

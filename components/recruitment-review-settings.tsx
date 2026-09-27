@@ -10,7 +10,11 @@ export function RecruitmentReviewSettings({
   clubId,
   rounds,
   onChanged,
+  embedded = false,
+  canIdentify = true,
 }: {
+  embedded?: boolean;
+  canIdentify?: boolean;
   clubId: string;
   rounds: { id: string; name: string; anonymousReview: boolean }[];
   onChanged: () => void;
@@ -30,12 +34,8 @@ export function RecruitmentReviewSettings({
       setBusy(false);
     }
   }
-  return (
-    <details className="border-y py-4">
-      <summary className="cursor-pointer font-medium">
-        Review privacy and test requirements
-      </summary>
-      <div className="space-y-4 pt-4">
+  const content = (
+      <div className="space-y-4 pt-4" data-saving={busy}>
         <p className="text-sm text-muted-foreground">
           Anonymous review withholds identity, free text, attachments,
           experiences, prior notes, and appointments. Numeric metrics, scores,
@@ -44,11 +44,12 @@ export function RecruitmentReviewSettings({
           before review begins. Disabling anonymity exposes identities to users
           with identified-applicant access and is audited.
         </p>
+        {!canIdentify && <p className="text-sm text-muted-foreground">Changing anonymity also requires permission to identify applicants.</p>}
         {rounds.map((r) => (
           <label className="flex min-h-11 items-center gap-3" key={r.id}>
             <input
               type="checkbox"
-              disabled={busy}
+              disabled={busy || !canIdentify}
               checked={r.anonymousReview}
               onChange={(e) =>
                 void run(() =>
@@ -95,6 +96,6 @@ export function RecruitmentReviewSettings({
         </form>
         <p role="status">{message}</p>
       </div>
-    </details>
   );
+  return embedded ? content : <details className="border-y py-4"><summary className="cursor-pointer font-medium">Review privacy and test requirements</summary>{content}</details>;
 }

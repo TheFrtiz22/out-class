@@ -4,7 +4,6 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { TestScoreDetail } from "@/components/test-score-detail"
-import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
 
@@ -432,8 +431,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           Refresh
         </Button>
       </div>
-      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">Recruitment setup & voting</summary><div className="space-y-4 border-l pl-4">
-      {data && hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify") && <RecruitmentReviewSettings clubId={membership.clubId} rounds={data.rounds} onChanged={() => { setData(null); setActiveId(null); setRevision(v => v + 1) }} />}
+      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">Interview kits & voting</summary><div className="space-y-4 border-l pl-4">
       {data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
       <BoardDecisionMode
         applicants={filtered}
