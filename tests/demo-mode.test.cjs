@@ -374,3 +374,26 @@ test("saved graph validation rejects cross-club records and duplicate attendance
     s=>{s.interviews[0].clubId=s.clubs[1].id},
   ]) {const bad=structuredClone(s);corrupt(bad);assert.equal(demoSnapshotSchema.safeParse(bad).success,false)}
 })
+
+test('live applicant board uses demo adapter data, preserves anonymity, and follows round/status mutations', async () => {
+  const h=harness(), {demoStore, joinedApplication}=h.load('lib/demo/store.ts'), api=h.load('lib/workspace-api.ts'), {applicantLane}=h.load('lib/applicant-board.ts')
+  demoStore.start()
+  const club=demoStore.get().clubs[0]
+  demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}})
+  const pipeline=await api.getClubPipeline(club.id)
+  assert.ok(pipeline.applications.every(app=>applicantLane(app.status)))
+  const anonymous=pipeline.applications.find(app=>app.studentId.startsWith('anonymous-'))
+  assert.ok(anonymous)
+  assert.equal(anonymous.student.email,'');assert.equal(anonymous.bookings.length,0);assert.equal(anonymous.answers.length,0)
+  assert.ok(!JSON.stringify(anonymous).includes(joinedApplication(anonymous.id).student.email))
+  const app=pipeline.applications.find(a=>a.status==='INTERVIEWING')
+  await api.setApplicationStatus({clubId:club.id,applicationId:app.id,status:'WAITLISTED',expectedStatus:app.status})
+  assert.equal(applicantLane((await api.getClubPipeline(club.id)).applications.find(a=>a.id===app.id).status),'decision')
+  await assert.rejects(api.setApplicationStatus({clubId:club.id,applicationId:app.id,status:'ACCEPTED',expectedStatus:app.status}),/changed/)
+  const round=club.rounds.find(r=>r.anonymousReview)
+  await api.moveApplicantRound({clubId:club.id,applicationId:app.id,newRoundId:round.id})
+  const refreshed=(await api.getClubPipeline(club.id)).applications.find(a=>a.id===app.id)
+  assert.equal(refreshed.status,'WAITLISTED');assert.equal(refreshed.student.email,'');assert.equal(refreshed.roundId,round.id)
+  assert.equal(h.calls(),0)
+  demoStore.reset()
+})
