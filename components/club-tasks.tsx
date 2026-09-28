@@ -297,7 +297,7 @@ export function ClubTasks({
                 <span className="text-xs">{task.status === "DONE" ? "Closed" : manager ? `${reviewed}/${task.assignments.length} reviewed${submitted ? ` · ${submitted} awaiting review` : ""}` : own ? taskState(task, own) : task.status.replaceAll("_", " ")}</span>
               </button></li> })}</ul>
             </div>
-            <Sheet open={!!active} onOpenChange={open => { if (!open) closeTask() }}><SheetContent className="w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={e => { e.preventDefault(); if (taskTrigger.current?.isConnected) taskTrigger.current.focus(); else document.getElementById("workspace-content")?.focus() }}>
+            <Sheet open={!!active} onOpenChange={open => { if (!open) closeTask() }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={e => { e.preventDefault(); if (taskTrigger.current?.isConnected) taskTrigger.current.focus(); else document.getElementById("workspace-content")?.focus() }}>
               <SheetTitle>{active?.title || "Task details"}</SheetTitle><SheetDescription>{active?.kind === "PROJECT" ? "Project" : "Task"} · {active ? dateLabel(active.dueAt) : ""}</SheetDescription>
               {error && <p role="alert" className="my-4 text-sm text-destructive">{error} Your entries remain here. Close the drawer and refresh when ready to reload.</p>}
               {active && <div onChangeCapture={event => { if ((event.target as HTMLElement).closest("form")) setDirty(true) }} onClickCapture={event => { if ((event.target as HTMLElement).closest("[data-task-edit]")) setDirty(true) }}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={!!manager} run={run} busy={busy} /></div>}

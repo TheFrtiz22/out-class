@@ -1,0 +1,38 @@
+/* Authenticated surfaces only; public landing styles remain untouched. */
+.oc-workspace-drawer {
+  height: 100dvh;
+  padding: 3.5rem 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+.oc-workspace-drawer > * { flex-shrink: 0; min-width: 0; }
+.oc-workspace-drawer h2 { padding-right: 1.5rem; overflow-wrap: anywhere; }
+@media (min-width: 640px) {
+  .oc-workspace-drawer { padding-inline: 1.5rem; }
+}
+@media (max-width: 639px) {
+  .oc-workspace-drawer { max-width: 100vw; }
+  [data-workspace-detail] input:not([type="checkbox"]):not([type="radio"]),
+  [data-workspace-detail] textarea,
+  [data-workspace-detail] select,
+  [data-product-shell] input:not([type="checkbox"]):not([type="radio"]),
+  [data-product-shell] textarea,
+  [data-product-shell] select,
+  .oc-workspace-drawer input:not([type="checkbox"]):not([type="radio"]),
+  .oc-workspace-drawer textarea,
+  .oc-workspace-drawer select,
+  .oc-interview-candidate input,
+  .oc-interview-candidate textarea { font-size: 16px; max-width: 100%; }
+  [data-workspace-detail] button,
+  [data-workspace-detail] select,
+  [data-product-shell] button,
+  [data-product-shell] select,
+  .oc-workspace-drawer button,
+  .oc-workspace-drawer select,
+  .oc-interview-candidate button { min-height: 44px; }
+  .oc-workspace-drawer button { white-space: normal; overflow-wrap: anywhere; }
+  [data-product-shell] main { padding-inline: 1rem; }
+}
+
+[data-workspace-detail] { min-width: 0; overflow-wrap: anywhere; }

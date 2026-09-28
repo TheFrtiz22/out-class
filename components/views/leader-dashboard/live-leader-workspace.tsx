@@ -318,6 +318,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
           clubId: membership.clubId,
           applicationId: active.id,
           newRoundId: targetRound,
+          expectedRoundId: active.roundId,
         })
         setData(null)
         setActiveId(null)
@@ -430,7 +431,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         <Button
           size="sm"
           variant="ghost"
-          className="hidden md:inline-flex"
+          className="hidden xl:inline-flex"
           aria-pressed={compact}
           onClick={() => setCompact((value) => !value)}
         >
@@ -567,7 +568,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         }}
       >
         <SheetContent
-          className="w-full overflow-y-auto p-6 sm:max-w-2xl"
+          className="oc-workspace-drawer w-full overflow-y-auto p-6 sm:max-w-2xl"
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}
@@ -600,7 +601,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
               </SheetHeader>
-              <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                 <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
                 <div className="flex items-center gap-2">
                   <Button
@@ -752,7 +753,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                     disabled={busy}
                     onChange={(event) => setNotes(event.target.value)}
                   />
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Button disabled={busy || !hasPermission(membership, "applications.review")} type="submit">
                       {busy ? "Saving…" : "Save evaluation"}
                     </Button>

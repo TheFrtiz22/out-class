@@ -1,4 +1,5 @@
 "use client"
+import "@/components/shell/responsive-workspace.css"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitSession } from "@/components/interview-kit-session"
 import { TestScoreDetail } from "@/components/test-score-detail"
@@ -44,7 +45,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
       onExit?.()
   }
   return (
-    <main className="min-h-dvh bg-background text-foreground">
+    <main data-workspace-detail className="min-h-dvh bg-background text-foreground">
       {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>
@@ -458,7 +459,7 @@ function InterviewSession({
               carried.current = seconds; setRunning(false); setKitDirty(false)
               if (next && queue[index + 1]) { setActiveId(queue[index + 1].id); setSeconds(0); carried.current = 0 }
             }} />}
-          <div className="flex items-center justify-between gap-2 border-t px-5 py-4"><Button type="button" variant="ghost" disabled={busy || index <= 0} onClick={() => choose(queue[index - 1].id)}>Previous candidate</Button><span className="text-xs">{index + 1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index >= queue.length - 1} onClick={() => choose(queue[index + 1].id)}>Next candidate</Button></div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-4"><Button type="button" variant="ghost" disabled={busy || index <= 0} onClick={() => choose(queue[index - 1].id)}>Previous candidate</Button><span className="text-xs">{index + 1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index >= queue.length - 1} onClick={() => choose(queue[index + 1].id)}>Next candidate</Button></div>
         </div>
       )}
     </div>

@@ -78,6 +78,8 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
     throw new Error("Round unavailable.")
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
+    if (input.expectedRoundId && app.roundId !== input.expectedRoundId)
+      throw new Error("Application changed. Refresh before moving rounds.")
     app.roundId = input.newRoundId
     return { success: true, application: app }
   })

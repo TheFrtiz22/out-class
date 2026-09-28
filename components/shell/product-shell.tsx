@@ -1,4 +1,5 @@
 "use client"
+import "./responsive-workspace.css"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Bell, Menu, Search, UserRound, LogOut, Home, Users2 } from "lucide-react"
@@ -59,7 +60,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   function navigate(view: ViewId) { if (canLeaveWorkspace()) onNavigate(view) }
   function navLink(item: ProductNavItem, top = false) {
     const selected = top ? item.id === mode : item.id === active
-    const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", top ? "border-b-2 rounded-b-none whitespace-nowrap sm:px-5" : "w-full text-left", selected ? top ? "border-brand-orange font-semibold text-primary" : "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
+    const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", top ? "flex-1 justify-center border-b-2 rounded-b-none whitespace-nowrap px-2 sm:flex-none sm:px-5" : "w-full text-left", selected ? top ? "border-brand-orange font-semibold text-primary" : "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const content = <>{item.label}{item.preview && <span className="ml-auto text-[10px] font-normal text-muted-foreground">Preview</span>}</>
     if (item.quiet && onReviewTool) return <button key={item.id} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
     return item.href ? <Link key={item.id} href={item.href} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { moved.current = true; setMobile(false) } }}>{content}</Link> : <button key={item.id} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
@@ -86,7 +87,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
           <DropdownMenu><DropdownMenuTrigger asChild><IconButton aria-label={`Account menu for ${name}`}><UserRound /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem><DemoMenuItems />{user && !demo.isDemoEnabled && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2 px-4 sm:px-6 lg:pl-[248px]"><nav aria-label="Product modes" className="flex min-w-0 overflow-x-auto">{modes.map(m => navLink(m, true))}</nav>{demo.isDemoEnabled && <span className="shrink-0 text-[10px] text-muted-foreground">Demo Mode</span>}</div>
+      <div className="flex items-center justify-between gap-2 px-4 sm:px-6 lg:pl-[248px]"><nav aria-label="Product modes" className="flex min-w-0 flex-1 overflow-x-auto sm:flex-none">{modes.map(m => navLink(m, true))}</nav>{demo.isDemoEnabled && <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:inline">Demo Mode</span>}</div>
       {manager && <p className="truncate px-5 pb-2 text-xs text-muted-foreground sm:hidden">{clubName}</p>}
     </header>
     <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><aside className="sticky top-28 hidden h-[calc(100dvh-7rem)] border-r border-border lg:block">{sidebar()}</aside><main id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-7 outline-none sm:px-8 sm:py-10">

@@ -1,4 +1,5 @@
 "use client"
+import "@/components/shell/responsive-workspace.css"
 import { useState } from "react"
 import {
   getClubAccess,
@@ -53,7 +54,7 @@ export function ClubAccessEditor({
     }
   }
   return (
-    <div className="space-y-6" data-saving={busy}>
+    <div data-workspace-detail className="space-y-6" data-saving={busy}>
       <p>
         Capabilities apply only to this club. Owners retain every capability. Only owners can
         appoint or change other owners. Anonymous reviewers need only “Review applications”. Identified review, identity reveals, moving applicants, and recording decisions require “View identified applicants”.
@@ -89,7 +90,7 @@ export function ClubAccessEditor({
         <label className="block">
           Start with a template
           <select
-            className="ml-3 rounded border p-2"
+            className="mt-2 block min-h-11 w-full max-w-full rounded border p-2"
             defaultValue=""
             onChange={(e) => {
               if (e.target.value)
@@ -151,7 +152,7 @@ export function ClubAccessEditor({
       </p>
       {data.invitations.map((i) => (
         <div key={i.id} className="flex flex-wrap items-center gap-3 border-b py-3">
-          <span>{i.email}</span>
+          <span className="min-w-0 break-all">{i.email}</span>
           <a className="underline" href={`/invitations/${i.id}`}>
             Invitation link
           </a>

@@ -1,4 +1,5 @@
 "use client";
+import "@/components/shell/responsive-workspace.css"
 import Link from "next/link";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
 import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
@@ -320,7 +321,7 @@ export function MeetingDetail({ id }: { id: string }) {
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article className="mx-auto max-w-5xl space-y-8">
+    <article data-workspace-detail className="mx-auto max-w-5xl space-y-8">
       <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}

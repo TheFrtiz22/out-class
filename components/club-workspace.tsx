@@ -132,7 +132,7 @@ export function ClubWorkspace({
           </section>}
         </>}
         <Sheet open={!!reviewTool && !!current && mode === "recruiting" && nav.some(n => n.id === reviewTool && n.quiet)} onOpenChange={open => { if (!open) { if (document.querySelector('[data-saving="true"]')) return; setReviewTool(null); if (tool === "rounds" || tool === "rules") { const next = new URLSearchParams(params.toString()); next.set("tool", "overview"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`) } } }}>
-          <SheetContent className="w-full overflow-y-auto sm:max-w-lg" onCloseAutoFocus={event => { event.preventDefault(); const target = reviewTrigger.current; if (target?.isConnected) target.focus(); else document.getElementById("workspace-content")?.focus() }}>
+          <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-lg" onCloseAutoFocus={event => { event.preventDefault(); const target = reviewTrigger.current; if (target?.isConnected) target.focus(); else document.getElementById("workspace-content")?.focus() }}>
             <SheetTitle>{reviewTool === "rounds" ? "Anonymous Review" : "Auto-Reject Rules"}</SheetTitle>
             <SheetDescription>{reviewTool === "rounds" ? "Round privacy and requirements for future submissions." : "Preview thresholds using sample data. No automated decisions."}</SheetDescription>
             {reviewTool === "rounds" && current && <RoundSettings key={clubId} clubId={clubId} embedded canIdentify={hasPermission(current.membership, "applicants.identify")} onChanged={() => setPrivacyRevision(n => n + 1)} />}
