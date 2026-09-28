@@ -25,3 +25,15 @@
   .oc-application-progress { margin: 24px 0; }
   .oc-application-next { flex-direction: column; align-items: start; gap: 12px; }
 }
+
+[data-product-shell] .oc-application-row { border-radius: 15px; padding: 26px; transition: border-color 150ms; }
+[data-product-shell] .oc-application-identity h2 { color: var(--primary); }
+[data-product-shell] .oc-application-row .oc-recruitment-timeline li[data-complete="true"] > span { background: #102c54; color: #fff; }
+[data-product-shell] .oc-application-row .oc-recruitment-timeline li[aria-current="step"] > span { background: #fff; color: #102c54; border: 2px solid #102c54; box-shadow: inset 0 0 0 4px #fff; }
+@media (min-width: 1200px) {
+  [data-product-shell] .oc-application-row { display: grid; grid-template-columns: minmax(0,1fr) 220px; column-gap: 28px; }
+  [data-product-shell] .oc-application-identity { grid-column: 1; }
+  [data-product-shell] .oc-application-progress { grid-column: 1; margin-bottom: 0; }
+  [data-product-shell] .oc-application-next { grid-column: 2; grid-row: 1 / 3; border-top: 0; border-left: 1px solid var(--border); padding: 0 0 0 24px; flex-direction: column; align-items: start; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { [data-product-shell] .oc-application-row { transition: none; } }

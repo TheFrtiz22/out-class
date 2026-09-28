@@ -1,0 +1,83 @@
+/* Product-only visual language. Never attach these tokens to the public site/admin. */
+[data-product-shell] {
+  --background: #faf9f6;
+  --card: #fff;
+  --foreground: #17263f;
+  --primary: #102c54;
+  --primary-foreground: #fff;
+  --muted: #f2f4f7;
+  --muted-foreground: #617086;
+  --border: #e4e7eb;
+  --accent: #fff0e5;
+  --accent-foreground: #17263f;
+  --ring: #bf4b15;
+}
+[data-product-shell] .oc-product-header { background: #fff; }
+[data-product-shell] .oc-product-brand img { height: 38px; width: auto; }
+.oc-context-sidebar { background: #fff; }
+.oc-context-sidebar nav :is(a,button) { position: relative; gap: 12px; padding: 13px 14px; border-radius: 9px; }
+.oc-context-sidebar nav [aria-current="page"] { background: #fff0e5; color: #102c54; }
+.oc-context-sidebar nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 11px; bottom: 11px; width: 3px; background: #e45b1c; border-radius: 4px; }
+.oc-context-sidebar nav [aria-current="page"] svg { color: #c54e17; }
+.oc-context-sidebar nav[aria-label="Review tools"] :is(a,button) { font-size: 13px; }
+[data-product-shell] main > div > h1,
+[data-product-shell] [data-view-heading] h1 { font-family: var(--oc-font-display); font-size: clamp(29px, 3vw, 40px); letter-spacing: -.035em; line-height: 1.18; }
+[data-product-shell] :is(input,textarea,select) { border-radius: 8px; }
+[data-product-shell] :is(button,a,summary):focus-visible { outline-offset: 3px; }
+[data-product-shell] table thead { background: #f7f9fc; }
+[data-product-shell] table th { color: #263e5d; font-size: 12px; font-weight: 600; }
+[data-product-shell] table :is(th,td) { padding-inline: 18px; }
+[data-product-shell] table tbody tr { border-color: #edf0f3; }
+[data-product-shell] table tbody tr:hover { background: #f4f8fd; }
+.oc-workspace-drawer { background: #fff; color: #17263f; border-color: #e4e7eb; }
+.oc-workspace-drawer [data-slot="sheet-title"] { font-family: var(--oc-font-display); font-size: 28px; line-height: 1.2; }
+.oc-workspace-drawer :is(input,textarea,select) { border-radius: 8px; }
+.oc-overview-grid > section { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 24px; }
+.oc-overview-grid > section > a { border: 0; padding: 12px 0; }
+.oc-overview-grid h3 { font-size: 22px; }
+.oc-overview-grid > section > div > a { color: #a94111; font-size: 12px; text-decoration: none; }
+.oc-member-overview > section { background: var(--card); padding: 24px; border: 1px solid var(--border); border-radius: 14px; }
+.oc-member-overview > section > a { border: 0; padding-inline: 0; }
+.oc-live-pipeline { padding: 20px; background: #fff; border: 1px solid var(--border); border-radius: 14px; }
+.oc-applicant-board > section { background: #f0f6fc; border: 0; padding: 16px; border-radius: 12px; }
+.oc-applicant-board > section:nth-child(2) { background: #fcf6eb; }
+.oc-applicant-board > section:nth-child(3) { background: #eef8f3; }
+.oc-applicant-board > section:nth-child(4) { background: #f5f2fc; }
+.oc-applicant-board h3 { font-family: var(--oc-font-display); font-size: 20px; }
+.oc-applicant-board h3 > span { display: grid; place-items: center; min-width: 28px; height: 28px; border-radius: 50%; background: #ffffffb0; color: #294666; }
+.oc-applicant-board button[data-applicant-id] { border-color: #e5e9ee; border-radius: 10px; }
+.oc-applicant-board button[data-applicant-id]:hover { border-color: #55759a; background: #fff; }
+.oc-live-pipeline [aria-label="Applicant view"] button[aria-pressed="true"] { background: #102c54; color: #fff; }
+@media (min-width: 1100px) {
+  [data-product-shell] .oc-product-header { display: grid; grid-template-columns: minmax(230px,1fr) auto minmax(300px,1fr); align-items: center; min-height: 88px; padding: 0 28px; gap: 20px; }
+  .oc-product-header-row { display: contents; }
+  .oc-product-brand { grid-column: 1; grid-row: 1; justify-self: start; }
+  .oc-product-utilities { grid-column: 3; grid-row: 1; justify-self: end; }
+  .oc-product-club { display: none; }
+  [data-product-shell="manager"] .oc-product-club { display: block; border-left: 1px solid #e4e7eb; padding: 0 0 0 14px; max-width: 180px; }
+  .oc-product-modes { grid-column: 2; grid-row: 1; padding: 0; }
+  .oc-product-modes > span { position: absolute; bottom: 7px; right: 30px; }
+  [data-product-shell="manager"] .oc-product-modes nav { padding: 4px; border: 1px solid #e4e7eb; border-radius: 13px; gap: 4px; }
+  [data-product-shell="manager"] .oc-product-modes nav :is(a,button) { border: 0; border-radius: 9px; min-width: 130px; }
+  [data-product-shell="manager"] .oc-product-modes nav [aria-current="page"] { background: #102c54; color: #fff; }
+  [data-product-shell] > div > aside { top: 88px; height: calc(100dvh - 88px); }
+}
+@media (max-width: 639px) {
+  .oc-live-pipeline { padding: 12px; }
+  .oc-overview-grid > section, .oc-member-overview > section { padding: 18px; }
+  .oc-product-modes nav { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-product-shell] *, .oc-workspace-drawer * { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+.oc-pipeline-filters { position: relative; }
+.oc-pipeline-filters > summary { cursor: pointer; min-height: 44px; padding: 11px 18px; border: 1px solid #e4e7eb; border-radius: 8px; font-size: 13px; }
+.oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: 12px; padding: 18px; border: 1px solid #e4e7eb; border-radius: 10px; background: #fff; }
+.oc-pipeline-filter-fields > details { width: 100%; }
+@media (min-width: 640px) {
+  .oc-pipeline-filter-fields { position: absolute; z-index: 10; top: calc(100% + 8px); left: 0; width: min(450px, 65vw); box-shadow: 0 8px 24px #14243b0a; }
+}
+[data-product-shell] [data-application-status="ACCEPTED"] { background: #e8f6ee; color: #17633d; }
+[data-product-shell] [data-application-status="REJECTED"] { background: #fff0f0; color: #a92c39; }
+[data-product-shell] [data-application-status="WAITLISTED"] { background: #fff3df; color: #8e5515; }
+[data-product-shell] [data-application-status="INTERVIEWING"] { background: #eaf3ff; color: #245894; }

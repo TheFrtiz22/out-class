@@ -372,7 +372,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
       </div>
     )
   return (
-    <div className="space-y-6" data-unsaved={dirty} data-saving={busy}>
+    <div className="oc-live-pipeline space-y-6" data-unsaved={dirty} data-saving={busy}>
       {decisionsOnly && <>
         <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
@@ -390,6 +390,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
             className="pl-9"
           />
         </div>
+        <details className="oc-pipeline-filters"><summary>Filters</summary><div className="oc-pipeline-filter-fields">
         <select
           aria-label="Filter round"
           className={selectStyle}
@@ -439,34 +440,6 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
           {compact ? "Compact rows" : "Comfortable rows"}
         </Button>
         </>}
-        <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
-          <RefreshCw className="size-3.5" />
-          Refresh
-        </Button>
-      </div>
-      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
-      {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
-      <p className="text-xs leading-6 text-muted-foreground">Board review is a presentation of this selection. Confirmed decisions use the same saved application statuses; it does not collect ballots. Local voting previews elsewhere are non-authoritative and do not determine these outcomes.</p>
-      <BoardDecisionMode
-        applicants={filtered}
-        rounds={data.rounds}
-        clubId={membership.clubId}
-        clubName={membership.club.name}
-        canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
-        onDecision={(id, status) =>
-          setData((previous) =>
-            previous
-              ? {
-                  ...previous,
-                  applications: previous.applications.map((app) =>
-                    app.id === id ? { ...app, status } : app,
-                  ),
-                }
-              : previous,
-          )
-        }
-      />
-      </div></details>
       {!decisionsOnly && <details className="text-sm">
         <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
           Academic filters
@@ -536,6 +509,35 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         </div>
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
       </details>}
+        </div></details>
+        <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
+          <RefreshCw className="size-3.5" />
+          Refresh
+        </Button>
+      </div>
+      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
+      {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
+      <p className="text-xs leading-6 text-muted-foreground">Board review is a presentation of this selection. Confirmed decisions use the same saved application statuses; it does not collect ballots. Local voting previews elsewhere are non-authoritative and do not determine these outcomes.</p>
+      <BoardDecisionMode
+        applicants={filtered}
+        rounds={data.rounds}
+        clubId={membership.clubId}
+        clubName={membership.club.name}
+        canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
+        onDecision={(id, status) =>
+          setData((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  applications: previous.applications.map((app) =>
+                    app.id === id ? { ...app, status } : app,
+                  ),
+                }
+              : previous,
+          )
+        }
+      />
+      </div></details>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
           {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
@@ -569,7 +571,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         }}
       >
         <SheetContent
-          className="oc-workspace-drawer w-full overflow-y-auto p-6 sm:max-w-2xl"
+          className="oc-workspace-drawer oc-applicant-drawer w-full overflow-y-auto p-6 sm:max-w-2xl"
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}

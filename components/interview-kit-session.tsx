@@ -186,7 +186,7 @@ export function InterviewKitSession({
     setActiveQuestion(id);
   }
   return (
-    <form ref={formRef} id="interview-evaluation" className="min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) setClosing(true) }}>
+    <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) setClosing(true) }}>
       <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card px-5 py-4 sm:px-8">
         {toolbar?.(!!session.completedAt)}
         <div className="flex flex-wrap items-center gap-3">
@@ -196,12 +196,12 @@ export function InterviewKitSession({
         </div>
       </header>
       {error && <div role="alert" className="border-b px-5 py-3 text-sm text-destructive">{error} Your text remains here. <Button type="button" variant="outline" disabled={saving} onClick={() => void persist()}>Retry save</Button></div>}
-      <div className={`grid items-start lg:grid-cols-[260px_minmax(0,1fr)] ${libraryOpen ? "xl:grid-cols-[260px_minmax(0,1fr)_290px]" : ""}`}>
+      <div className={`oc-interview-columns grid items-start lg:grid-cols-[260px_minmax(0,1fr)] ${libraryOpen ? "xl:grid-cols-[260px_minmax(0,1fr)_290px]" : ""}`}>
         {context}
         <div className="min-w-0 space-y-7 px-5 py-7 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-muted-foreground">{session.completedAt ? "Interview record" : "Interview"}</p><Button type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-library" onClick={() => setLibraryOpen(v => !v)}>{libraryOpen ? "Hide library" : "Question library"}</Button></div>
           <fieldset disabled={disabled} className="min-w-0 space-y-6">
-            <section className="space-y-4" aria-label="Active question">
+            <section className="oc-active-question space-y-4" aria-label="Active question">
               <p className="text-sm text-muted-foreground">Active Question {active ? `· ${activeIndex + 1} of ${questions.length}` : ""}</p>
               <h2 className="font-display text-2xl leading-snug sm:text-3xl">{active?.prompt || "Make room for a conversation."}</h2>
               {active?.guidance && <p className="whitespace-pre-wrap border-l-2 border-brand-orange pl-4 text-sm leading-7 text-muted-foreground">{active.guidance}</p>}
@@ -209,7 +209,7 @@ export function InterviewKitSession({
               <p className="text-xs text-muted-foreground">Notes belong to your interview session. This is not a shared live document.</p>
             </section>
           </fieldset>
-          <section className="space-y-3 border-t pt-5"><h2 className="font-semibold">Question Agenda</h2><p className="text-xs text-muted-foreground">Kit order is preserved in this session’s snapshot.</p>
+          <section className="oc-question-agenda space-y-3 border-t pt-5"><h2 className="font-semibold">Question Agenda</h2><p className="text-xs text-muted-foreground">Kit order is preserved in this session’s snapshot.</p>
             <ol className="divide-y">{questions.map((q, i) => <li key={q.id}><button type="button" aria-current={q.id === active?.id ? "step" : undefined} onClick={() => setActiveQuestion(q.id)} className={`flex w-full gap-3 rounded px-3 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring ${q.id === active?.id ? "bg-accent font-medium" : "hover:bg-muted"}`}><span className="text-muted-foreground">{i + 1}.</span><span className="break-words">{q.prompt}{q.extra && <span className="mt-1 block text-xs font-normal text-muted-foreground">Off-script</span>}</span></button></li>)}</ol>
             {!session.completedAt && <fieldset disabled={completing} className="space-y-3 pt-3"><label htmlFor="new-interview-question" className="text-sm font-medium">Add an off-script question</label><Input id="new-interview-question" maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion("") }}>Add question</Button></fieldset>}
           </section>

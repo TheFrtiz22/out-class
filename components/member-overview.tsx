@@ -11,7 +11,7 @@ export const memberDate = (value: Date | string) => new Date(value).toLocaleStri
 /** Only personal work and permitted meeting data; management summaries stay in the manager workspace. */
 export function MemberOverview({ data }: { data: MemberOverviewData }) {
   const { club, meeting, work } = data
-  return <div className="max-w-4xl space-y-10">
+  return <div className="oc-member-overview max-w-4xl space-y-6">
     <p className="max-w-xl text-sm leading-7 text-muted-foreground">Your next meeting and the work assigned to you. Everything else is one step away in Meetings and Tasks.</p>
     <section aria-labelledby="member-next-meeting">
       <div className="mb-4 flex items-center justify-between gap-4"><h2 id="member-next-meeting" className="font-display text-2xl">Next meeting</h2><Link className="inline-flex min-h-11 items-center text-sm underline underline-offset-4" href={clubWorkspaceHref(club.id, "meetings")}>All meetings</Link></div>
