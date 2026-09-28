@@ -2,7 +2,7 @@
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw, FilePenLine, FileCheck2, Clock3 } from "lucide-react"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -368,10 +368,10 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         a.club.name.localeCompare(b.club.name),
     )
   return (
-    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-7">
+    <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-7" data-application-scope={scope}>
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="mb-3 text-xs tracking-widest uppercase text-muted-foreground">Your next chapter</p>
+          {scope !== "all" && <p className="mb-3 text-xs tracking-widest uppercase text-muted-foreground">Your next chapter</p>}
           <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}</h1>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
             {scope === "all" ? "Pick up a draft, follow your progress, or see what comes next." : scope === "interviews" ? "Your interview-stage applications and recorded bookings, in one place." : "Updates from your clubs. Open an application to read the details and next steps."}
@@ -419,7 +419,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 : scope === "interviews" && interview ? `${interview.past ? "Last interview" : "Interview"} · ${date(interview.booking.slot.startTime)} · ${interview.booking.slot.location || "Location not provided"}`
                 : item.status === "INTERVIEWING" ? interview && !interview.past ? `Interview · ${date(interview.booking.slot.startTime)}` : "No upcoming interview booking recorded. Check the club’s instructions."
                 : applicationNextStep(item.status)
-              return <li key={item.id}><article className="oc-application-row">
+              const NextIcon = item.status === "DRAFTING" ? FilePenLine : item.status === "INTERVIEWING" ? CalendarDays : ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status) ? FileCheck2 : Clock3
+              return <li key={item.id}><article className="oc-application-row" data-status={item.status}>
                 <div className="oc-application-identity">
                   <ClubLogo clubId={item.clubId} logoUrl={item.club.logoUrl} color={item.club.color || "#142d4e"} text={item.club.name.slice(0, 2)} size="lg" />
                   <div className="min-w-0"><h2><button data-application-id={item.id} onClick={() => { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }}>{item.club.name}<span className="sr-only"> · {item.status === "DRAFTING" ? "Continue draft" : "View application"}</span></button></h2>
@@ -428,7 +429,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                   <Badge variant="secondary" className="oc-application-status">{applicationStatusLabels[item.status]}</Badge>
                 </div>
                 <div className="oc-application-progress"><RecruitmentTimeline status={item.status} compact /></div>
-                <div className="oc-application-next"><p>{nextStep}</p><span aria-hidden="true">{item.status === "DRAFTING" ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>
+                <div className="oc-application-next">{scope === "all" && <NextIcon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{item.status === "DRAFTING" ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>
               </article></li>
             })}
           </ul>
