@@ -115,7 +115,7 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   },
   "screening-dashboard": {
     title: "Screening & Auto-Filter",
-    subtitle: "Screen high-volume applicants with dynamic auto-reject rules.",
+    subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
   },
   "interview-scheduler": {
     title: "Interview Scheduler & Booking Manager",

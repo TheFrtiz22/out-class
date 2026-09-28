@@ -1,4 +1,6 @@
 "use client"
+import * as recruitingRules from "@/actions/recruiting-rules"
+import * as demoRecruitingRules from "@/lib/demo/recruiting-rules"
 import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as demoTasks from "@/lib/demo/tasks"
@@ -391,3 +393,10 @@ export const getWorkspaceRounds = adapt(clubOverview.getWorkspaceRounds, clubId=
  const s=demoStore.get();if(clubId!==s.clubs[0].id)throw new Error("Demo management is limited to MII.")
  return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview}))
 })
+
+export const getRecruitingRules = adapt(recruitingRules.getRecruitingRules, demoRecruitingRules.getRecruitingRules)
+export const saveRecruitingRule = adapt(recruitingRules.saveRecruitingRule, demoRecruitingRules.saveRecruitingRule)
+export const previewRecruitingRule = adapt(recruitingRules.previewRecruitingRule, demoRecruitingRules.previewRecruitingRule)
+export const applyRecruitingRuleFlags = adapt(recruitingRules.applyRecruitingRuleFlags, demoRecruitingRules.applyRecruitingRuleFlags)
+export const getRecruitingRuleFlags = adapt(recruitingRules.getRecruitingRuleFlags, demoRecruitingRules.getRecruitingRuleFlags)
+export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRuleFlags, demoRecruitingRules.clearRecruitingRuleFlags)

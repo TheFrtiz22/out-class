@@ -43,6 +43,9 @@ export const demoStore = {
       /* Reset damaged browser data. */
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
+    state!.recruitingRules ??= []
+    state!.recruitingFlags ??= []
+    state!.recruitingRuleAudit ??= []
     state!.interviews ??= []
     if(!state!.meetings){const additions=createDemoSeed(state!.anchor);state!.meetings=additions.meetings;state!.meetingAttendances=additions.meetingAttendances}
     state!.meetingTokens ??= []

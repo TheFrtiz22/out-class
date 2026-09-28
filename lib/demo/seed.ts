@@ -1,3 +1,4 @@
+import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
 import { seedTasks } from "./task-seed"
 import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
@@ -336,6 +337,9 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
     interviews,
+    recruitingRules: [] as DemoRecruitingRule[],
+    recruitingFlags: [] as DemoRecruitingFlag[],
+    recruitingRuleAudit: [] as DemoRuleAudit[],
     version: 1 as const,
     anchor,
     perspective: { role: "student" as "student" | "leader", clubId: clubs[0].id },

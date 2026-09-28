@@ -18,7 +18,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(read ? [item("applicants", "Applicants", "recruitment")] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(read ? [item("decisions", "Decisions", "recruitment")] : []),
-      ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true, preview: true })] : [])]
+      ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
   }
   return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),

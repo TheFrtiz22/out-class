@@ -120,6 +120,19 @@ const assert = require("node:assert/strict")
   console.log("Platform view sessions are isolated from browser roles; token hashes unique; existing user and task data retained.")
   await db.exec(fs.readFileSync(dir + "20260925010000_marketing_participants/migration.sql", "utf8"))
   assert.equal((await db.query(`SELECT "marketingApprovedAt" FROM "Club" WHERE id='club'`)).rows[0].marketingApprovedAt, null)
+
+  await db.exec(fs.readFileSync(dir + "20260927000000_recruiting_rules/migration.sql", "utf8"))
+  assert.equal((await db.query('SELECT count(*)::int AS count FROM "RecruitingRule"')).rows[0].count, 0)
+  assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
+  await db.exec(`INSERT INTO "RecruitingRule" ("roundId","minGpa","minSat","minAct","updatedAt") VALUES ('round',3.5,1400,30,NOW())`)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minGpa"=4.1`),/check constraint/)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minSat"=1401`),/check constraint/)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minAct"=37`),/check constraint/)
+  await assert.rejects(db.exec(`INSERT INTO "RecruitingRule" ("roundId","updatedAt") VALUES ('foreign',NOW())`),/foreign key/)
+  await db.exec(`INSERT INTO "RecruitingRuleFlag" ("roundId","applicationId","ruleRevision",reasons,"flaggedBy") VALUES ('round','app',1,ARRAY['GPA below 3.5'],'owner')`)
+  assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
+  await assert.rejects(db.exec(`INSERT INTO "RecruitingRuleFlag" ("roundId","applicationId","ruleRevision",reasons,"flaggedBy") VALUES ('round','app',1,ARRAY['duplicate'],'owner')`),/unique constraint/)
+  console.log("Recruiting rules preserve decisions, validate thresholds, and isolate versioned flags from browser access.")
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {

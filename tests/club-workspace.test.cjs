@@ -181,7 +181,8 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
   assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "rounds", "rules"]);
   const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");
-  assert.ok(owner.find(item => item.id === "rules").preview);
+  assert.equal(owner.find(item => item.id === "rules").preview, undefined)
+  assert.equal(owner.find(item => item.id === "rules").quiet, true);
   assert.ok(owner.find(item => item.id === "rounds").quiet);
   for (const item of owner) {
     const url = new URL(item.href, "https://outclass.test");
