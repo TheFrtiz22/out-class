@@ -75,6 +75,8 @@ Audit reads, user inspection and changes are logged with actor, target, action a
 
 ## Database migration and rollout
 
+The authoritative current procedure is [database deployment](database-deployment.md). The historical inventory below is retained as audit context; do not execute its example commands before the reconciliation checks in that procedure.
+
 No data/account IDs are renamed or deleted. Additions include explicit capability arrays, ownership flags, account suspension, admin grants, invitations, claims, tasks, content, and audit records. Legacy role values remain untouched.
 
 The initial authorization work introduced the first two migrations below. The repository now contains nine migrations; see [the final integration audit](integration-audit.md) for the complete inventory:

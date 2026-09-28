@@ -1,4 +1,5 @@
 "use client"
+import { applicationAttachmentUrl } from "@/lib/student-applications"
 import "@/components/shell/responsive-workspace.css"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitSession } from "@/components/interview-kit-session"
@@ -411,9 +412,9 @@ function InterviewSession({
                 {active.answers.map((answer) => (
                   <div key={answer.id}>
                     <h3 className="text-sm font-medium leading-6">{answer.question.prompt}</h3>
-                    {answer.question.type === "FILE_UPLOAD" && safeProfileUrl(answer.response) ? (
+                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
                       <a
-                        href={safeProfileUrl(answer.response)}
+                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm underline"

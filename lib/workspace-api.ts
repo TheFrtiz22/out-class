@@ -28,7 +28,7 @@ import {
   demoDashboard,
   presentDemoMeeting,
 } from "@/lib/demo/store"
-import { applicationInputSchema, answerErrors } from "@/lib/student-applications"
+import { applicationInputSchema, answerErrors, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 function adapt<F extends (...args: never[]) => Promise<unknown>>(
@@ -156,6 +156,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
   const { applicationId } = await startClubApplication(parsed.clubId)

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { storagePathSchema } from "@/lib/student-profile"
 
 export const applicationInputSchema = z.object({
   clubId: z.string().uuid(),
@@ -41,11 +42,8 @@ export function answerErrors(
     }
     seen.add(answer.questionId)
     if (answer.response.trim() && question.type === "FILE_UPLOAD") {
-      try {
-        const url = new URL(answer.response)
-        if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error()
-      } catch {
-        errors[question.id] = "Use a complete http or https document URL."
+      if (!isApplicationAttachment(answer.response)) {
+        errors[question.id] = "Use an uploaded document or a complete http or https document URL."
       }
     }
     if (
@@ -84,5 +82,27 @@ export function applicationNextStep(status: string) {
       return "You’re on the waitlist. A place is not confirmed yet."
     default:
       return "Check your application for the latest details."
+  }
+}
+
+/** Uploaded documents use private resumes-bucket keys; existing external links remain supported. */
+export function isApplicationAttachment(value: string) {
+  if (isApplicationStoragePath(value)) return true
+  try { const url = new URL(value); return url.protocol === "http:" || url.protocol === "https:" } catch { return false }
+}
+export function isApplicationStoragePath(value: string) {
+  const parsed = storagePathSchema.safeParse(value)
+  return !!value && parsed.success && parsed.data === value
+}
+export function applicationAttachmentUrl(value: string, applicationId: string, questionId: string) {
+  if (isApplicationStoragePath(value))
+    return `/api/application-attachments?applicationId=${encodeURIComponent(applicationId)}&questionId=${encodeURIComponent(questionId)}`
+  return isApplicationAttachment(value) ? value : undefined
+}
+export function assertApplicationAttachmentOwnership(questions: ApplicationQuestion[], answers: { questionId: string; response: string }[], userId: string) {
+  for (const answer of answers) {
+    if (questions.some(q => q.id === answer.questionId && q.type === "FILE_UPLOAD") &&
+        isApplicationStoragePath(answer.response) && !answer.response.startsWith(`${userId}/`))
+      throw new Error("You can only attach your own uploaded documents.")
   }
 }

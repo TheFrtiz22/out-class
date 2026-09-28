@@ -225,7 +225,7 @@ export function ApplicationForm({
               ) : (
                 <Input
                   id={`answer-${question.id}`}
-                  type={question.type === "FILE_UPLOAD" ? "url" : "text"}
+                  type="text"
                   value={responses[question.id] || ""}
                   onChange={(event) => change(question.id, event.target.value)}
                   aria-required={question.required}

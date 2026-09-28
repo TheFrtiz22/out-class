@@ -1,4 +1,5 @@
 "use client"
+import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw } from "lucide-react"
@@ -309,9 +310,9 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                     </h3>
                     {question.type === "FILE_UPLOAD" &&
                     response &&
-                    /^https?:\/\//i.test(response) ? (
+                    applicationAttachmentUrl(response, app.id, question.id) ? (
                       <a
-                        href={response}
+                        href={applicationAttachmentUrl(response, app.id, question.id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-3 inline-block text-sm underline underline-offset-4"

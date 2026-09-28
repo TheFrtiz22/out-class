@@ -31,3 +31,11 @@ The existing server save action previously permitted overwriting submitted answe
 Production build succeeds. Full test suite: 41 pass, four existing club-customization fixture failures. All six new application tests pass. Type checking reports the two existing nullable-context errors in `lib/club-customization.tsx`. Lint remains blocked because ESLint is not installed/configured.
 
 Playwright checks with isolated transport fixtures cover desktop/tablet/mobile overflow, overview and decision states, required-answer validation, failed-save recovery, explicit save feedback, confirmation, submission read-only behavior, unsaved-change cancellation, and the recruitment timeline. No real users or applications are written by these tests. Actual Supabase uploads and database transactions remain unverified end-to-end locally because services are not configured.
+
+## Private attachment contract
+
+FILE_UPLOAD answers support existing external http(s) links or private resumes-bucket keys in the form user-UUID/filename. Uploaded keys remain internal paths, never public URLs. Server-side draft and submission validation rejects another user's key and malformed/traversal paths. The server never fetches external document links.
+
+GET /api/application-attachments?applicationId=…&questionId=… resolves the current saved answer and signs only that key for five minutes as a download. Owners can read their own saved drafts and submissions. Other readers require current club ownership or applicants.identify, a submitted application, and a non-anonymous round. A key need not equal the student's current profile resume: application documents and profile resumes have distinct saved references. Unknown/replaced answers and cross-club question references fail closed. Existing /api/resumes remains limited to the current profile resume.
+
+See [database deployment](database-deployment.md) for the required private bucket migration and deployed-token checks. No database answer rewrite is performed.

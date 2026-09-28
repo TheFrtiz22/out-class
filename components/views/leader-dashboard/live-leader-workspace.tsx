@@ -1,4 +1,5 @@
 "use client"
+import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -685,10 +686,10 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 {active.answers.map((answer) => (
                   <div key={answer.id}>
                     <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
-                    {answer.question.type === "FILE_UPLOAD" && safeProfileUrl(answer.response) ? (
+                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
                       <a
                         className="mt-2 inline-block text-sm underline"
-                        href={safeProfileUrl(answer.response)}
+                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

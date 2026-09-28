@@ -33,3 +33,7 @@ Demo uses the same workspace adapter and never invokes task server actions or re
 ## Validation
 
 Node tests cover targeting, authorization, query scoping, immutable audiences, revisions, required formats, overdue state, upload metadata, signed access, demo refresh/reset, and zero live demo calls. The optional PostgreSQL migration suite checks legacy backfill, recipient uniqueness, private table privileges, and former-member history preservation. No production migration or storage provisioning is implied by local test success.
+
+## Retired task writer
+
+The unused actions/club-workspace.ts saveClubTask endpoint now fails closed for old clients after checking tasks.manage. It cannot create legacy unassigned tasks or overwrite a task without a revision. Current clients continue to use actions/tasks.ts saveTask, with its membership recheck, immutable audience, assignment creation, and atomic expected-revision update. No task records are rewritten by this remediation.
