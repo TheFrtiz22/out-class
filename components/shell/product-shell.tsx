@@ -28,7 +28,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
 }) {
   const { user } = useAuth(), demo = useDemoMode(), { notifications } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
-  const main = useRef<HTMLElement>(null), previous = useRef(active), moved = useRef(false)
+  const contextKey = `${clubId}:${mode}:${active}`
+  const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
   const member = user?.memberships.find(m => m.clubId === clubId)
   const searchItems = manager ? adminNav.filter(item => {
     if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
@@ -41,8 +42,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const name = user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.email || "Your account"
   useEffect(() => {
     document.title = `${title} · OutClass`
-    if (previous.current !== active) { main.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: "instant" }); previous.current = active }
-  }, [active, title])
+    if (previous.current !== contextKey) { main.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, behavior: "instant" }); previous.current = contextKey }
+  }, [contextKey, title])
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)")
     const close = () => { if (media.matches) setMobile(false) }
