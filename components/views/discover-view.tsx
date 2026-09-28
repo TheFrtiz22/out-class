@@ -1,10 +1,11 @@
 "use client"
 import Image from "next/image"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Search, SlidersHorizontal, X, Compass } from "lucide-react"
+import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Sparkles, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
 import { getClubDirectory } from "@/lib/workspace-api"
@@ -15,6 +16,16 @@ import { demoStore, demoDirectory } from "@/lib/demo/store"
 import { useDemoMode } from "@/contexts/demo-context"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
+
+function categoryIcon(category: string) {
+  const value = category.toLowerCase()
+  if (/academic|education/.test(value)) return BookOpen
+  if (/professional|business|finance/.test(value)) return BriefcaseBusiness
+  if (/cultur|international/.test(value)) return Globe2
+  if (/service|volunteer/.test(value)) return Heart
+  if (/recreat|sport|outdoor/.test(value)) return Mountain
+  return Sparkles
+}
 
 export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigate: (view: ViewId) => void; categoriesOnly?: boolean }) {
   const [clubs, setClubs] = useState<DirectoryClub[]>([])
@@ -79,17 +90,7 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
   const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => club.source !== "preview" && club.applicationAvailable === true)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
-    return <li key={club.id} className="oc-explore-card">
-      <article>
-        <div className="oc-explore-card-identity"><DirectoryLogo club={club} size="lg" /><span className="oc-explore-category">{club.category || "Student organization"}</span></div>
-        <h3><button data-club-id={club.id} data-directory-entry={entry} onClick={() => open(club, entry)}>{club.name}</button></h3>
-        <p className="oc-explore-pitch">{club.pitch || club.description || "Get to know this club and explore its profile."}</p>
-        <div className="oc-explore-card-footer">
-          <span>{club.source === "preview" ? "Sample club" : club.applicationAvailable === true ? "Application available" : club.claimed === false ? "Unclaimed profile" : "Explore club"}</span>
-          <ArrowRight size={17} aria-hidden="true" />
-        </div>
-      </article>
-    </li>
+    return <DiscoveryCard key={club.id} club={club} entry={entry} onOpen={() => open(club, entry)} />
   }
   if (selected)
     return (
@@ -99,11 +100,11 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
     <div className="oc-discovery" ref={resultsRef}>
       <header className="oc-explore-heading">
         <div><p className="oc-club-eyebrow">Explore · University of Virginia</p>
-        <h1>{categoriesOnly ? "Follow your interests." : "Find your people."}</h1>
+        <h1>{categoriesOnly ? "Follow your interests." : <>Find your people<br />at UVA.</>}</h1>
       <p className="oc-directory-intro">
-        {categoriesOnly ? "Choose an interest to browse the club directory by category." : "Find a club by name, or follow your interests somewhere new."}
+        {categoriesOnly ? "Choose an interest to browse the club directory by category." : "Explore clubs, communities, and opportunities to make the most of your time on Grounds."}
       </p></div>
-        <Image src="/images/campus/rotunda-960.webp" alt="" width="180" height="110" className="oc-explore-campus" />
+        <Image src="/images/campus/rotunda-960.webp" alt="" width="960" height="640" sizes="(max-width: 600px) 100vw, 70vw" className="oc-explore-campus" />
       </header>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
@@ -130,19 +131,21 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
             aria-pressed={filters.category === "all"}
             onClick={() => change("category", "all")}
           >
-            All interests <span>{clubs.length}</span>
+            <Users size={18} aria-hidden="true" />All interests <span>{clubs.length}</span>
           </button>
-          {categories.map((category) => (
+          {categories.map((category) => {
+            const CategoryIcon = categoryIcon(category)
+            return (
             <button
               key={category}
               aria-label={`${category}, ${clubs.filter(club => club.category === category).length} clubs`}
               aria-pressed={filters.category === category}
               onClick={() => change("category", filters.category === category ? "all" : category)}
             >
-              {category}
+              <CategoryIcon size={18} aria-hidden="true" />{category}
               <span>{clubs.filter((club) => club.category === category).length}</span>
             </button>
-          ))}
+          )})}
         </section>
       )}
       <div className="oc-directory-tools">
@@ -243,14 +246,14 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
           {!active.length && !categoriesOnly && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
-              <div className="oc-explore-section-heading"><div><p className="oc-club-eyebrow">From the directory</p><h2 id="curated-title">A few places to start.</h2></div>
+              <div className="oc-explore-section-heading"><div><h2 id="curated-title">A few places to start</h2></div>
               <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An alphabetical introduction to the directory."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>
           )}
           {!active.length && !categoriesOnly && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
             <div><h2 id="available-title">Applications on OutClass</h2><p>An A–Z selection of clubs with applications available. Check their profiles for recruitment details.</p></div>
-            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}>{club.name}<ArrowRight size={14} aria-hidden="true" /></button></li>)}</ul>
+            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Application available</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
           </section>}
           <section aria-labelledby="directory-results-title">
             <div className="oc-directory-results-heading">
