@@ -21,8 +21,8 @@ export function SlotCard({
   return (
     <div
       className={cn(
-        "group relative flex min-h-[180px] flex-col justify-between rounded-none border border-border p-4",
-        "bg-white",
+        "group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-border p-4",
+        isEmpty ? "border-dashed bg-slate-50/60" : "bg-white",
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -31,7 +31,7 @@ export function SlotCard({
           variant={isFull ? "default" : "outline"}
           className={cn("font-normal", isFull && "bg-status-booked text-status-booked-foreground")}
         >
-          {`${bookedCount}/${slot.capacity} Booked`}
+          {isEmpty ? "Available" : `${bookedCount}/${slot.capacity} booked`}
         </Badge>
       </div>
 
