@@ -5,7 +5,6 @@ import {
   ArrowRight,
   CalendarDays,
   ChevronRight,
-  Compass,
   FileText,
   Bell,
   MapPin,
@@ -43,7 +42,9 @@ function SectionTitle({
   title,
   action,
   onClick,
+  icon: Icon,
 }: {
+  icon: typeof CalendarDays
   id: string
   title: string
   action: string
@@ -51,7 +52,7 @@ function SectionTitle({
 }) {
   return (
     <div className="oc-home-section-title">
-      <h2 id={id}>{title}</h2>
+      <h2 id={id}><Icon size={19} aria-hidden="true" />{title}</h2>
       <Button variant="ghost" size="sm" onClick={onClick}>
         {action}
         <ArrowRight size={14} aria-hidden="true" />
@@ -187,8 +188,6 @@ export function StudentDashboardView({
   const agendaUnavailable = realMode && initialData == null
   const agenda = now ? upcomingAgenda(accountEvents, now) : []
   const updates = relevantUpdates(accountNotifications)
-  const active = applications.filter((app) => !app.closed)
-  const interviews = agenda.filter((event) => event.type === "Interview")
   const next = now ? nextHomeAction(applications, agenda, now) : { kind: "discover" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
@@ -238,15 +237,11 @@ export function StudentDashboardView({
   return (
     <div className="oc-student-home">
       <header className="oc-home-greeting">
-        <p className="oc-home-eyebrow">
-          Your recruiting season <span aria-hidden="true">/</span>{" "}
-          <time dateTime={now.toISOString()}>
-            {now.toLocaleDateString("en-US", { month: "long", day: "numeric" })}
-          </time>
-        </p>
-        <h1>Welcome back{user?.profile?.firstName ? `, ${user.profile.firstName}` : ""}.</h1>
-        <p>Your applications, next steps, and upcoming conversations.</p>
+        <p className="oc-home-eyebrow">Your applicant workspace</p>
+        <h1>Applicant Overview</h1>
+        <p>{user?.profile?.firstName ? `${user.profile.firstName}, here’s` : "Here’s"} everything you need for your next chapter.</p>
       </header>
+      <div className="oc-home-columns">
       {unavailable ? (
         <section className="oc-home-next" role="status">
           <div>
@@ -257,36 +252,10 @@ export function StudentDashboardView({
         </section>
       ) : (
         <>
-          <div className="oc-home-summary" aria-label="Recruiting summary">
-            <button onClick={() => onNavigate("tracker")}>
-              <strong>{active.length}</strong> active{" "}
-              {active.length === 1 ? "application" : "applications"}
-            </button>
-            {!agendaUnavailable && (
-              <>
-                <span aria-hidden="true" />
-                <button onClick={() => onNavigate("calendar")}>
-                  <strong>{agenda.length}</strong> upcoming{" "}
-                  {agenda.length === 1 ? "event" : "events"}
-                </button>
-              </>
-            )}
-            {interviews.length > 0 && (
-              <>
-                <span aria-hidden="true" />
-                <button onClick={() => openEvent(interviews[0])}>
-                  <strong>{interviews.length}</strong>{" "}
-                  {interviews.length === 1 ? "interview" : "interviews"}
-                </button>
-              </>
-            )}
-          </div>
           <section className="oc-home-next" aria-labelledby="home-next-title">
-            <div>
-              <p className="oc-home-eyebrow">
-                {next.kind === "discover" ? "Make your next move" : "Up next"}
-              </p>
-              <h2 id="home-next-title">{nextTitle}</h2>
+            <div className="oc-home-section-title"><h2 id="home-next-title"><ArrowRight size={19} aria-hidden="true" />Your next step</h2></div>
+            <div className="oc-home-next-copy">
+              <h3>{nextTitle}</h3>
               <p>{nextCopy}</p>
             </div>
             <Button
@@ -304,17 +273,17 @@ export function StudentDashboardView({
           </section>
         </>
       )}
-      <div className="oc-home-columns">
         <section className="oc-home-applications" aria-labelledby="home-applications-title">
           <SectionTitle
             id="home-applications-title"
+            icon={FileText}
             title="Your applications"
             action="View all"
             onClick={() => onNavigate("tracker")}
           />
           {applications.length ? (
             <ul className="oc-home-list">
-              {applications.slice(0, 5).map((app) => (
+              {applications.slice(0, 4).map((app) => (
                 <ApplicationRow key={app.id} app={app} onOpen={() => openApplication(app)} />
               ))}
             </ul>
@@ -329,20 +298,21 @@ export function StudentDashboardView({
               </p>
             </div>
           )}
-          {applications.length > 5 && (
-            <p className="oc-home-list-note">Showing 5 of {applications.length} applications</p>
+          {applications.length > 4 && (
+            <p className="oc-home-list-note">Showing 4 of {applications.length} applications</p>
           )}
         </section>
         <section className="oc-home-agenda" aria-labelledby="home-agenda-title">
           <SectionTitle
             id="home-agenda-title"
+            icon={CalendarDays}
             title="Coming up"
             action="Calendar"
             onClick={() => onNavigate("calendar")}
           />
           {agenda.length ? (
             <ul className="oc-home-list">
-              {agenda.slice(0, 4).map((event) => (
+              {agenda.slice(0, 3).map((event) => (
                 <AgendaRow key={event.id} event={event} onOpen={() => openEvent(event)} />
               ))}
             </ul>
@@ -363,14 +333,15 @@ export function StudentDashboardView({
             </div>
           )}
         </section>
-        {updates.length > 0 && (
           <section className="oc-home-updates" aria-labelledby="home-updates-title">
             <SectionTitle
               id="home-updates-title"
+              icon={Bell}
               title="Updates for you"
               action="Open inbox"
               onClick={() => onNavigate("inbox")}
             />
+            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} strokeWidth={1.5} aria-hidden="true" /><h3>You’re all caught up</h3><p>Application updates and club announcements will appear here.</p></div>}
             <ul className="oc-home-list">
               {updates.map((update) => (
                 <li key={update.id}>
@@ -404,16 +375,7 @@ export function StudentDashboardView({
               ))}
             </ul>
           </section>
-        )}
-        <section className="oc-home-discovery" aria-labelledby="home-discover-title">
-          <Compass size={20} strokeWidth={1.5} aria-hidden="true" />
-          <h2 id="home-discover-title">There’s more to discover.</h2>
-          <p>Find clubs that share your interests. Take a closer look at what they’re building.</p>
-          <Button variant="ghost" onClick={() => onNavigate("discover")}>
-            Explore clubs
-            <ArrowRight size={14} aria-hidden="true" />
-          </Button>
-        </section>
+
       </div>
     </div>
   )

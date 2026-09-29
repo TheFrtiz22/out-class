@@ -98,7 +98,7 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
   "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },
-  "student-dashboard": { title: "Dashboard", subtitle: "Track your profile and active applications." },
+  "student-dashboard": { title: "Home", subtitle: "Your applications, next steps, and upcoming events." },
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   discover: { title: "Discover", subtitle: "Explore clubs and find your next opportunity." },

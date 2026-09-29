@@ -22,7 +22,7 @@ import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
-const navigationIcons: Record<string, typeof Home> = { discover: Compass, categories: LayoutGrid, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
+const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, discover: Compass, categories: LayoutGrid, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
 
 export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, onSelect, onNavigate, onReviewTool }: {
   onReviewTool?: (id: string) => void;

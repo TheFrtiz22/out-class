@@ -32,8 +32,9 @@ export function DashboardLayout({ children, view, appMode, onNavigate, personalS
   }, [leaderView, managedClubId, view, leaderFocus, router])
   const section = view === "calendar" ? "calendar" : view === "tracker" ? (["applications", "interviews", "decisions"].includes(personalSection) ? personalSection : "applications") : view === "my-clubs" ? personalSection : view === "discover" ? (personalSection === "categories" ? "categories" : "discover") : personalSection
   const mode = personalMode(section)
-  const items = personalNavigation[mode].filter(i => mode !== "clubs" || i.id === "clubs" || !!user?.memberships.length)
+  const items = [{ id: "student-dashboard", label: "Home" }, ...personalNavigation[mode].filter(i => mode !== "clubs" || i.id === "clubs" || !!user?.memberships.length)]
   function select(id: string) {
+    if (id === "student-dashboard") { onNavigate("student-dashboard"); return }
     const next = ({ explore: "discover", applications: "applications", clubs: "clubs" } as Record<string, string>)[id] || id
     const target = ["applications", "interviews", "decisions"].includes(next) ? "tracker" : ["clubs", "meetings", "tasks"].includes(next) ? "my-clubs" : next === "calendar" ? "calendar" : "discover"
     onNavigate(target)
