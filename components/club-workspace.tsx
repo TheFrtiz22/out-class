@@ -28,10 +28,8 @@ import { ClubTasks } from "@/components/club-tasks";
 import { MeetingList } from "@/components/meeting-workspace";
 import { LiveLeaderWorkspace } from "@/components/views/leader-dashboard/live-leader-workspace";
 import { InterviewWorkspaceView } from "@/components/views/interview-workspace-view";
-import { ClubInterviewKitSettings } from "@/components/interview-kit-editor";
+import { InterviewManagementTabs } from "@/components/interview-management-tabs";
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
-import { InterviewSchedulerView } from "@/components/views/interview-scheduler-view";
-import { DemoInterviewSchedule } from "@/components/demo-workspace";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
@@ -162,8 +160,7 @@ function RecruitmentWorkspace({
   onInterview: () => void;
   initialTool?: "kits";
 }) {
-  const demo = useDemoMode(),
-    tools = recruitmentTools(member),
+  const tools = recruitmentTools(member),
     [tool, setTool] = useState(initialTool ?? tools[0]?.id ?? "applicants");
   const active = tools.find((t) => t.id === tool)?.id ?? tools[0]?.id;
 
@@ -199,30 +196,7 @@ function RecruitmentWorkspace({
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}
-      {active === "kits" && (
-        <div className="space-y-8">
-          <ClubInterviewKitSettings clubId={clubId} />
-          {demo.isDemoEnabled ? (
-            <DemoInterviewSchedule onNavigate={onInterview} />
-          ) : (
-            <details className="border-t pt-4">
-              <summary className="cursor-pointer text-sm">
-                Existing scheduling preview tools
-              </summary>
-              <p className="my-3 text-sm text-muted-foreground">
-                These local scheduling tools do not publish real slots.
-                Interview kits above are persisted.
-              </p>
-              <InterviewSchedulerView
-                onNavigate={() => {
-                  if (hasPermission(member, "applications.review"))
-                    onInterview();
-                }}
-              />
-            </details>
-          )}
-        </div>
-      )}
+      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} onInterview={() => { if (hasPermission(member, "applications.review")) onInterview() }} />}
     </div>
   );
 }
