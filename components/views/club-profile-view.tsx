@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ClubLogo } from "@/components/club-logo"
-import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { SubscribeButton } from "@/components/clubs/subscribe-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
@@ -12,6 +10,8 @@ import { useApplicationState } from "@/lib/application-state"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
 import { startClubApplication } from "@/lib/workspace-api"
+import { MarketingProfile, MarketingSections } from "@/components/clubs/marketing-profile"
+import { profileDraft, readMarketing } from "@/lib/club-marketing"
 import { clubs } from "@/lib/data"
 import { eventStart } from "@/lib/calendar"
 import type { DirectoryClub } from "@/lib/club-directory"
@@ -37,7 +37,7 @@ export function ClubProfileView({
   const { user, refreshUser } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  const heading = useRef<HTMLHeadingElement>(null)
+  const heading = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (ready && !preview) heading.current?.focus()
   }, [ready, preview])
@@ -84,28 +84,13 @@ export function ClubProfileView({
     !real && (!customized || profile.showDirectory)
       ? clubs.find((item) => item.id === club.id)?.exec || []
       : []
-  const stats = [
-    ...((!customized || profile.showAcceptance) &&
-    (customized ? !!profile.acceptance : club.acceptanceRate != null)
-      ? [
-          {
-            label: "Acceptance rate",
-            value: customized ? profile.acceptance : `${club.acceptanceRate}%`,
-          },
-        ]
-      : []),
-    ...((!customized || profile.showAum) && (customized ? !!profile.aum : club.aumValue != null)
-      ? [
-          {
-            label: "Assets under management",
-            value: customized ? profile.aum : `$${club.aumValue!.toLocaleString()}`,
-          },
-        ]
-      : []),
-    ...(customized && profile.showPlacements && profile.placements
-      ? [{ label: "Alumni & placements", value: profile.placements }]
-      : []),
-  ]
+  const publicProfile = profileDraft({ ...club, name, color: accent, tagline: customized ? profile.tagline : club.pitch, description: about,
+    ...(customized ? {
+      acceptanceRate: profile.acceptance.trim() ? Number(profile.acceptance.replace(/[^0-9.]/g, "")) : null,
+      aumValue: profile.aum.trim() ? Number(profile.aum.replace(/[^0-9.]/g, "")) : null,
+      marketing: { ...readMarketing(club.marketing), showAcceptance: profile.showAcceptance, showAum: profile.showAum, placements: profile.showPlacements ? profile.placements.split("\n").filter(Boolean) : [] },
+    } : {}),
+  })
   async function apply() {
     if (preview) return
     if (real && !user) {
@@ -175,56 +160,10 @@ export function ClubProfileView({
           {configured ? "Includes changes saved on this device" : "Illustrative information"}
         </p>
       )}
-      <header className="oc-club-identity">
-        {real ? (
-          <DirectoryLogo club={club} size="xl" />
-        ) : (
-          <ClubLogo
-            clubId={club.id}
-            logoUrl={club.logoUrl}
-            text={
-              customized
-                ? name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .map((word) => word[0])
-                    .slice(0, 3)
-                    .join("")
-                : club.logoText
-            }
-            color={accent}
-            size="xl"
-          />
-        )}
-        <div>
-          <p className="oc-club-eyebrow">
-            University of Virginia <span> / </span>
-            {club.category}
-          </p>
-          <h1 ref={heading} tabIndex={-1}>
-            {name}
-          </h1>
-          <p>{customized ? profile.tagline : club.pitch}</p>
-        </div>
-      </header>
-      {club.tags.length > 0 && (
-        <ul className="oc-club-tags" aria-label="Club interests">
-          {club.tags.map((tag) => (
-            <li key={tag}>{tag}</li>
-          ))}
-        </ul>
-      )}
-      {club.bannerUrl && (
-        <img
-          className="oc-club-banner"
-          src={club.bannerUrl}
-          alt=""
-          width={1120}
-          height={200}
-          loading="lazy"
-        />
-      )}
-      <div className="oc-club-profile-grid">
+      <div ref={heading} tabIndex={-1} aria-label={name} className="outline-none">
+        <MarketingProfile profile={publicProfile} action={<Button disabled={preview || busy || (real && !application && !club.applicationAvailable)} onClick={() => void apply()}>{busy ? "Opening…" : application ? "View application" : real && !club.applicationAvailable ? "Applications unavailable" : "Apply now"}<ArrowRight size={15} /></Button>} />
+      </div>
+      <div className="oc-club-profile-grid mt-6">
         <aside className="oc-club-recruitment" aria-labelledby="club-recruitment">
           <p className="oc-club-eyebrow">Your next step</p>
           <h2 id="club-recruitment">Recruitment</h2>
@@ -285,24 +224,7 @@ export function ClubProfileView({
             <h2 id="club-about">About the organization</h2>
             <p className="oc-club-about">{about || "This club hasn’t added a description yet."}</p>
           </section>
-          {stats.length > 0 && (
-            <section className="oc-club-facts" aria-labelledby="club-facts">
-              <h2 id="club-facts">At a glance</h2>
-              <p className="oc-club-disclosure">
-                {real || configured
-                  ? "Club-reported figures · not independently verified"
-                  : "Sample figures · not verified club outcomes"}
-              </p>
-              <dl>
-                {stats.map((stat) => (
-                  <div key={stat.label}>
-                    <dt>{stat.label}</dt>
-                    <dd>{stat.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )}
+          <MarketingSections profile={publicProfile} />
           <section className="oc-club-events" aria-labelledby="club-events">
             <h2 id="club-events">Events & important dates</h2>
             {real ? (

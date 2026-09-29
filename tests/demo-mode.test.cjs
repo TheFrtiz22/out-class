@@ -429,3 +429,20 @@ test('persisted recruiting rules stay inside Demo, guard previews, retain flags,
  assert.equal(demoStore.get().recruitingRuleAudit.length,0)
  assert.equal(h.calls(),0)
 })
+
+test("published demo club branding survives reload and reaches Discover without live actions", async () => {
+  const h = harness()
+  const { demoStore, demoDirectory } = h.load("lib/demo/store.ts")
+  const { profileDraft } = h.load("lib/club-marketing.ts")
+  demoStore.start()
+  const club = demoStore.get().clubs[0]
+  const profile = profileDraft({ ...club, logoUrl: null, tagline: "Learn by building", marketing: { benefits: ["Member mentorship"], memberCount: 42, showAum: false } })
+  demoStore.mutate(s => Object.assign(s.clubs[0], profile))
+  demoStore.start()
+  const publicClub = demoDirectory().find(c => c.id === club.id)
+  assert.equal(publicClub.pitch, "Learn by building")
+  assert.equal(publicClub.marketing.memberCount, 42)
+  assert.deepEqual(publicClub.marketing.benefits, ["Member mentorship"])
+  assert.equal(publicClub.aumValue, null)
+  assert.equal(h.calls(), 0)
+})

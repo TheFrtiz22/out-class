@@ -142,6 +142,11 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     earlyAdopter: i < 3,
     category,
     theme,
+    tagline: "",
+    bannerUrl: null as string | null,
+    marketing: {} as import("@/lib/club-marketing").ClubMarketing,
+    acceptanceRate: (15 + (i % 7) * 3) as number | null,
+    aumValue: null as number | null,
     logoText: name
       .split(/\s+/)
       .map((w) => w[0])

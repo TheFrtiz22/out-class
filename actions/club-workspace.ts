@@ -1,22 +1,16 @@
 "use server";
+import { clubProfileSchema } from "@/lib/club-marketing";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 
 export async function updateClubSettings(input: {
-  clubId: string;
-  name: string;
-  tagline: string;
-  description: string;
-}) {
-  const data = z
-    .object({
-      clubId: z.string().uuid(),
-      name: z.string().trim().min(1).max(150),
-      tagline: z.string().max(300),
-      description: z.string().max(10000),
-    })
-    .parse(input);
+  clubId: string; name: string; tagline: string; description: string;
+} & Partial<import("@/lib/club-marketing").ClubProfileDraft>) {
+  const data = clubProfileSchema.partial().extend({
+    clubId: z.string().uuid(), name: z.string().trim().min(1).max(150),
+    tagline: z.string().max(300), description: z.string().max(10000),
+  }).parse(input);
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, ...fields } = data;
   return prisma.$transaction(async (tx) => {
