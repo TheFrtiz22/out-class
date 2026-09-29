@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { CalendarClock, FilePenLine, FileText, Link2, UploadCloud, CheckCircle2 } from "lucide-react";
+import "@/components/tasks.css";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
@@ -39,6 +41,13 @@ const dateLabel = (date: Date | string | null) =>
         minute: "2-digit",
       })
     : "No due date";
+function relativeDue(date: Date | string | null, now: number) {
+  if (!date) return "No due date";
+  const due = new Date(date), today = new Date(now), tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const time = due.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return due.toDateString() === today.toDateString() ? `Today ${time}` : due.toDateString() === tomorrow.toDateString() ? `Tomorrow ${time}` : dateLabel(date);
+}
 const memberName = (m: Workspace["members"][number]) =>
   m.user.studentProfile
     ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}`
@@ -74,6 +83,7 @@ export function ClubTasks({
     [scope, setScope] = useState(initialScope),
     [filter, setFilter] = useState("open"),
     [query, setQuery] = useState("");
+  const now = Date.now();
   const [activeId, setActiveId] = useState<string | null>(null), [dirty, setDirty] = useState(false);
   const taskTrigger = useRef<HTMLElement | null>(null);
   function closeTask() {
@@ -129,6 +139,16 @@ export function ClubTasks({
   const workspace = workspaceData?.clubId === clubId ? workspaceData : null;
   const manager = !personalOnly && workspace?.manage && scope === "team";
   const active = workspace?.clubId === clubId ? workspace.tasks.find(t => t.id === activeId) : undefined;
+  const personalTasks = workspace?.tasks.filter(t => t.kind === "TASK" && t.assignments.some(a => a.memberId === workspace.memberId)) ?? [];
+  const counts = personalTasks.reduce((totals, t) => {
+    const own = t.assignments.find(a => a.memberId === workspace!.memberId)!;
+    if (own.submittedAt || own.reviewedAt) totals.submitted++;
+    else if (t.status !== "DONE") {
+      if (taskState(t, own, now) === "Overdue") totals.missing++;
+      else totals.due++;
+    }
+    return totals;
+  }, { due: 0, missing: 0, submitted: 0 });
   const tasks =
     workspace?.tasks.filter(
       (t) =>
@@ -139,8 +159,9 @@ export function ClubTasks({
             .toLowerCase()
             .includes(query.toLowerCase())) &&
         (filter === "all" ||
+          (filter === "due" && t.kind === "TASK" && t.status !== "DONE" && t.assignments.some(a => a.memberId === workspace.memberId && !a.submittedAt && !a.reviewedAt && taskState(t, a, now) !== "Overdue")) ||
           (filter === "projects" && t.kind === "PROJECT") ||
-          (filter === "submitted" && t.assignments.some(a => (manager || a.memberId === workspace.memberId) && a.submittedAt && !a.reviewedAt)) ||
+          (filter === "submitted" && t.assignments.some(a => (manager || a.memberId === workspace.memberId) && (manager ? a.submittedAt && !a.reviewedAt : (a.submittedAt || a.reviewedAt)) && (manager || t.kind === "TASK"))) ||
           (filter === "completed" &&
             (t.status === "DONE" ||
               (t.assignments.length > 0 &&
@@ -152,7 +173,7 @@ export function ClubTasks({
             t.assignments.some(
               (a) =>
                 (manager || a.memberId === workspace.memberId) &&
-                taskState(t, a) === "Overdue",
+                taskState(t, a, now) === "Overdue" && (manager || t.kind === "TASK"),
             )) ||
           (filter === "open" &&
             t.status !== "DONE" &&
@@ -160,11 +181,11 @@ export function ClubTasks({
               t.assignments.some(
                 (a) =>
                   (manager || a.memberId === workspace.memberId) &&
-                  !a.reviewedAt,
+                  !a.reviewedAt && (manager || !a.submittedAt),
               )))),
     ) ?? [];
   return (
-    <div className="space-y-7" data-unsaved={dirty} data-saving={busy}>
+    <div className={`space-y-7 ${manager ? "" : "oc-personal-tasks"}`} data-unsaved={dirty} data-saving={busy}>
       {!embedded && (
         <nav
           aria-label="Club workspace"
@@ -232,9 +253,10 @@ export function ClubTasks({
       ) : (
         workspace && (
           <>
+            {!manager && <div className="oc-task-totals" aria-label="Your task totals">{[{ label: "Due", key: "due", filter: "due" }, { label: "Missing", key: "missing", filter: "overdue" }, { label: "Submitted", key: "submitted", filter: "submitted" }].map(item => <button key={item.key} type="button" className={`oc-task-total oc-task-${item.key}`} aria-pressed={filter === item.filter} onClick={() => { setFilter(item.filter); setQuery("") }}><strong>{counts[item.key as keyof typeof counts]}</strong><span>{item.label}</span></button>)}</div>}
             <div className="flex flex-wrap items-end gap-4">
               {!personalOnly && workspace.manage && (
-                <div role="group" aria-label="Task workspace" className="flex gap-1 rounded-md border bg-card p-1">{[{ id: "mine", label: "My Tasks" }, { id: "team", label: "Team" }].map(item => <Button key={item.id} variant={scope === item.id ? "secondary" : "ghost"} aria-pressed={scope === item.id} onClick={() => setScope(item.id)}>{item.label}</Button>)}</div>
+                <div role="group" aria-label="Task workspace" className="flex gap-1 rounded-md border bg-card p-1">{[{ id: "mine", label: "My Tasks" }, { id: "team", label: "Team" }].map(item => <Button key={item.id} variant={scope === item.id ? "secondary" : "ghost"} aria-pressed={scope === item.id} onClick={() => { setScope(item.id); setFilter("open") }}>{item.label}</Button>)}</div>
               )}
               <label className="text-sm">
                 Show
@@ -244,8 +266,9 @@ export function ClubTasks({
                   onChange={(e) => setFilter(e.target.value)}
                 >
                   <option value="open">Due & active</option>
-                  <option value="submitted">Submitted · awaiting review</option>
-                  <option value="overdue">Overdue</option>
+                  {!manager && <option value="due">Due</option>}
+                  <option value="submitted">{manager ? "Submitted · awaiting review" : "Submitted"}</option>
+                  <option value="overdue">{manager ? "Overdue" : "Missing"}</option>
                   <option value="completed">Completed / reviewed</option>
                   <option value="projects">Projects</option>
                   <option value="all">All work</option>
@@ -288,6 +311,16 @@ export function ClubTasks({
                 </p>
               </div>
             )}
+            {!manager ? <ul className="oc-task-list">{tasks.map(task => {
+              const own = task.assignments.find(a => a.memberId === workspace.memberId)!;
+              const status = task.status === "DONE" ? "Closed" : taskState(task, own, now);
+              const tone = own.submittedAt || own.reviewedAt ? "submitted" : status === "Overdue" ? "missing" : "due";
+              return <li key={task.id}><button type="button" className={`oc-task-row oc-task-${tone}`} onClick={event => { taskTrigger.current = event.currentTarget; setActiveId(task.id); setDirty(false); if (!own.viewedAt) void viewTask(own.id).catch(() => {}) }}>
+                <span className="oc-task-icon"><FilePenLine aria-hidden="true" /></span>
+                <span className="oc-task-row-copy"><strong>{task.title}</strong><span>{membership?.club.name ?? "Your club"}{task.projectId ? ` · ${workspace.tasks.find(p => p.id === task.projectId)?.title ?? "Related project"}` : ""}</span><small>{task.kind === "PROJECT" ? "Project" : (task.requirements?.length ? task.requirements.map(type => ({ TEXT: "Written response", LINK: "Link", FILE: "File upload" })[type] ?? type).join(" + ") : "Written response, link, or file")}{" · "}{status === "Overdue" ? "Missing" : status}</small></span>
+                <span className="oc-task-deadline"><CalendarClock aria-hidden="true" />{relativeDue(task.dueAt, now)}</span>
+              </button></li>
+            })}</ul> : (
             <div className="border-y">
               <div className="hidden grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-4 border-b px-3 py-3 text-xs text-muted-foreground md:grid" aria-hidden="true"><span>Task</span><span>Assigned to</span><span>Due</span><span>Status</span></div>
               <ul className="divide-y">{tasks.map(task => { const own = task.assignments.find(a => a.memberId === workspace.memberId); const reviewed = task.assignments.filter(a => a.reviewedAt).length; const submitted = task.assignments.filter(a => a.submittedAt && !a.reviewedAt).length; return <li key={task.id}><button type="button" className="grid w-full gap-3 rounded px-3 py-5 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-4" onClick={event => { taskTrigger.current = event.currentTarget; setActiveId(task.id); setDirty(false); if (own && !own.viewedAt) void viewTask(own.id).catch(() => {}) }}>
@@ -297,8 +330,11 @@ export function ClubTasks({
                 <span className="text-xs">{task.status === "DONE" ? "Closed" : manager ? `${reviewed}/${task.assignments.length} reviewed${submitted ? ` · ${submitted} awaiting review` : ""}` : own ? taskState(task, own) : task.status.replaceAll("_", " ")}</span>
               </button></li> })}</ul>
             </div>
-            <Sheet open={!!active} onOpenChange={open => { if (!open) closeTask() }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-2xl" onCloseAutoFocus={e => { e.preventDefault(); if (taskTrigger.current?.isConnected) taskTrigger.current.focus(); else document.getElementById("workspace-content")?.focus() }}>
-              <SheetTitle>{active?.title || "Task details"}</SheetTitle><SheetDescription>{active?.kind === "PROJECT" ? "Project" : "Task"} · {active ? dateLabel(active.dueAt) : ""}</SheetDescription>
+            )}
+            <Sheet open={!!active} onOpenChange={open => { if (!open) closeTask() }}><SheetContent className={`oc-workspace-drawer w-full overflow-y-auto sm:max-w-2xl ${manager ? "" : "oc-task-drawer"}`} onCloseAutoFocus={e => { e.preventDefault(); if (taskTrigger.current?.isConnected) taskTrigger.current.focus(); else document.getElementById("workspace-content")?.focus() }}>
+              {!manager && <div className="oc-task-detail-icon"><FilePenLine aria-hidden="true" /></div>}
+              <SheetTitle className={!manager ? "oc-task-detail-title" : ""}>{active?.title || "Task details"}</SheetTitle><SheetDescription>{membership?.club.name ?? "Your club"} · {active?.kind === "PROJECT" ? "Project" : "Assignment"}</SheetDescription>
+              {!manager && active && <div className="oc-task-detail-meta"><span><CalendarClock size={17} />Due {relativeDue(active.dueAt, now)}</span><span>{active.assignments.find(a => a.memberId === workspace.memberId) ? taskState(active, active.assignments.find(a => a.memberId === workspace.memberId)!, now) : active.status}</span></div>}
               {error && <p role="alert" className="my-4 text-sm text-destructive">{error} Your entries remain here. Close the drawer and refresh when ready to reload.</p>}
               {active && <div onChangeCapture={event => { if ((event.target as HTMLElement).closest("form")) setDirty(true) }} onClickCapture={event => { if ((event.target as HTMLElement).closest("[data-task-edit]")) setDirty(true) }}><TaskDetail key={`${active.id}-${active.revision}`} task={active} workspace={workspace} manager={!!manager} run={run} busy={busy} /></div>}
             </SheetContent></Sheet>
@@ -660,11 +696,12 @@ function TaskDetail({
       {task.projectId && <p className="mb-4 text-sm text-muted-foreground">Project: {workspace.tasks.find(p => p.id === task.projectId)?.title ?? "Related project"}</p>}
       {manager && <details className="border-b pb-4"><summary className="cursor-pointer text-sm font-medium">Audience & recipients · {task.assignments.length}</summary><p className="mt-3 text-xs leading-6 text-muted-foreground">Recipients were fixed when this assignment was created.</p><ul className="mt-3 space-y-2 text-sm">{audience.everyone && <li>Everyone at creation</li>}{audience.members.length > 0 && <li>Individuals: {audience.members.map(id => { const member = workspace.members.find(m => m.id === id); return member ? memberName(member) : "Former member" }).join(", ")}</li>}{audience.groups.length > 0 && <li>Groups: {audience.groups.join(", ")}</li>}{audience.cohorts.length > 0 && <li>Cohorts: {audience.cohorts.join(", ")}</li>}{audience.years.length > 0 && <li>Years: {audience.years.join(", ")}</li>}{audience.roles.length > 0 && <li>Roles: {audience.roles.map(r => r.replaceAll("_", " ").toLowerCase()).join(", ")}</li>}</ul></details>}
         <div className="mt-6 space-y-5">
+          <h3 className="text-base font-semibold">Instructions</h3>
           <p className="max-w-3xl whitespace-pre-wrap break-words text-sm leading-7">
             {task.description || "No additional instructions."}
           </p>
           {resources(task).length > 0 && (
-            <ul className="space-y-2 text-sm">
+            <ul aria-label="Task resources" className="space-y-2 rounded-xl border bg-slate-50 p-4 text-sm">
               {resources(task).map((r, i) => (
                 <li key={i}>
                   <a
@@ -798,15 +835,17 @@ function Submission({
     [uploading, setUploading] = useState(false),
     [error, setError] = useState("");
   const closed = !!a.reviewedAt || task.status === "DONE";
+  const [submitted, setSubmitted] = useState(false);
   return (
     <form
       data-task-uploading={uploading}
       data-saving={uploading || busy}
-      className="max-w-3xl space-y-4 border-t pt-5"
+      className="oc-task-submission max-w-3xl space-y-5 rounded-xl border p-5"
       onSubmit={async (e) => {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
-        await run(() =>
+        setSubmitted(false);
+        const success = await run(() =>
           submitTask({
             assignmentId: a.id,
             revision: a.revision,
@@ -815,9 +854,10 @@ function Submission({
             fileIds: files.map((f) => f.id),
           }),
         );
+        if (success) setSubmitted(true);
       }}
     >
-      <h3 className="font-medium">Your submission</h3>
+      <h3 className="flex items-center gap-2 text-lg font-semibold"><FilePenLine size={20} />Your submission</h3>
       <p className="text-sm text-muted-foreground">
         {a.submittedAt
           ? `Submitted ${dateLabel(a.submittedAt)}${closed ? "" : " · You can update it until it is reviewed or the task closes."}`
@@ -833,8 +873,8 @@ function Submission({
           ? "This submission is closed."
           : "Responses are saved when you submit."}
       </p>
-      <label className="block text-sm">
-        Written response
+      <label className="oc-task-submission-field">
+        <span><FileText size={17} />Written response <small>{task.requirements.includes("TEXT") ? "Required" : "Optional"}</small></span>
         <Textarea
           name="text"
           rows={5}
@@ -844,8 +884,8 @@ function Submission({
           defaultValue={a.text}
         />
       </label>
-      <label className="block text-sm">
-        Link
+      <label className="oc-task-submission-field">
+        <span><Link2 size={17} />Website or document link <small>{task.requirements.includes("LINK") ? "Required" : "Optional"}</small></span>
         <Input
           name="link"
           type="url"
@@ -898,8 +938,8 @@ function Submission({
         ))}
       </ul>
       {!closed && (
-        <label className="block text-sm">
-          Files{" "}
+        <label className="oc-task-submission-field oc-task-upload">
+          <span><UploadCloud size={19} />File upload <small>{task.requirements.includes("FILE") ? "Required" : "Optional"}</small></span>
           <span className="text-muted-foreground">
             — up to 5, 10 MB each; PDF, images, text, or Office documents
           </span>
@@ -960,11 +1000,12 @@ function Submission({
       )}
       {a.feedback && (
         <p className="whitespace-pre-wrap break-words text-sm">
-          <strong>Manager feedback:</strong> {a.feedback}
+          <strong className="flex items-center gap-2"><CheckCircle2 size={16} />Review feedback</strong> {a.feedback}
         </p>
       )}
+      {submitted && <p role="status" className="text-sm text-emerald-700">Your submission was saved.</p>}
       {!closed && (
-        <Button disabled={busy || uploading}>
+        <Button className="w-full sm:w-auto" disabled={busy || uploading}>
           {busy
             ? "Submitting…"
             : a.submittedAt
