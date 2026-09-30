@@ -86,11 +86,7 @@ export async function getEvaluations(clubId: string, applicationId: string) {
     },
     include: {
       interviewer: {
-<<<<<<< HEAD
-        include: { user: { include: { studentProfile: true } } }, // To display the interviewer's name/photo
-=======
         select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } },
->>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
       },
     },
     orderBy: { createdAt: "desc" },

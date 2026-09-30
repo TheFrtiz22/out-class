@@ -75,15 +75,11 @@ Audit reads, user inspection and changes are logged with actor, target, action a
 
 ## Database migration and rollout
 
-The authoritative current procedure is [database deployment](database-deployment.md). The historical inventory below is retained as audit context; do not execute its example commands before the reconciliation checks in that procedure.
+Use [database deployment](database-deployment.md) together with the project-specific [database reconciliation runbook](database-reconciliation.md). Their historical migration counts do not replace the current repository inventory below. Recheck all current migrations and live schema state, and complete staging verification before executing any deployment commands.
 
 No data/account IDs are renamed or deleted. Additions include explicit capability arrays, ownership flags, account suspension, admin grants, invitations, claims, tasks, content, and audit records. Legacy role values remain untouched.
 
-<<<<<<< HEAD
-The repository now contains a baseline plus seven subsequent migrations. The first two establish authorization:
-=======
-The initial authorization work introduced the first two migrations below. The repository now contains nine migrations; see [the final integration audit](integration-audit.md) for the complete inventory:
->>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
+The repository currently contains 13 Prisma migrations: one baseline and twelve subsequent migrations. The initial authorization work introduced the first two listed below. Use `prisma/migrations/` for the current inventory; the [integration audit](integration-audit.md) documents an earlier nine-migration snapshot.
 
 - `20260923000000_baseline`: the pre-change schema, for fresh databases or existing-schema baselining.
 - `20260923010000_capabilities`: additive extension, access backfills and protection.
@@ -100,15 +96,11 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-<<<<<<< HEAD
-**Fresh databases:** `npx prisma migrate deploy` applies all eight migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
-=======
 **Fresh databases:** `npx prisma migrate deploy` applies all committed migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
->>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
 
 All Prisma tables enable RLS and revoke direct `anon`/`authenticated` table access. This application uses Prisma server actions for those tables; existing browser Supabase calls are Auth and Storage, which are untouched. `DATABASE_URL` must use a trusted server database role with table access/RLS bypass, never the browser `anon`/`authenticated` roles. Review any external PostgREST integrations before rollout. Existing Supabase auth triggers remain separately configured.
 
-The final audit applied all nine migrations to fresh and populated legacy PGlite databases, verifying preservation, backfills and browser-role isolation. The configured live database connection timed out during migration-status inspection; no remote migration was applied. See [audit evidence and limitations](integration-audit.md).
+The historical integration audit reports applying its then-current nine migrations to fresh and populated legacy PGlite databases, verifying preservation, backfills and browser-role isolation. That evidence does not establish validation of all 13 current migrations. The configured live database connection timed out during migration-status inspection; no remote migration was applied. See [audit evidence and limitations](integration-audit.md).
 
 ## Demo identity
 
