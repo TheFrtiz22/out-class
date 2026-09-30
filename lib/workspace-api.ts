@@ -1,4 +1,6 @@
 "use client"
+import * as roomApi from "@/actions/interview-rooms"
+import * as demoRoomApi from "@/lib/demo/interview-rooms"
 import * as recruitingRules from "@/actions/recruiting-rules"
 import * as demoRecruitingRules from "@/lib/demo/recruiting-rules"
 import * as clubOverview from "@/actions/club-overview"
@@ -401,3 +403,11 @@ export const previewRecruitingRule = adapt(recruitingRules.previewRecruitingRule
 export const applyRecruitingRuleFlags = adapt(recruitingRules.applyRecruitingRuleFlags, demoRecruitingRules.applyRecruitingRuleFlags)
 export const getRecruitingRuleFlags = adapt(recruitingRules.getRecruitingRuleFlags, demoRecruitingRules.getRecruitingRuleFlags)
 export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRuleFlags, demoRecruitingRules.clearRecruitingRuleFlags)
+
+export const getRoomWorkspace = adapt(roomApi.getRoomWorkspace, demoRoomApi.getRoomWorkspace)
+export const createInterviewRoom = adapt(roomApi.createInterviewRoom, demoRoomApi.createInterviewRoom)
+export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, demoRoomApi.setInterviewRoomOpen)
+export const getApplicantSchedule = adapt(roomApi.getApplicantSchedule, demoRoomApi.getApplicantSchedule)
+export const reserveInterview = adapt(roomApi.reserveInterview, demoRoomApi.reserveInterview)
+export const cancelRoomBooking = adapt(roomApi.cancelRoomBooking, demoRoomApi.cancelRoomBooking)
+export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRoomApi.getBookingApplication)

@@ -1,4 +1,5 @@
 "use client"
+import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -253,7 +254,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 {applicationNextStep(app.status)}
               </p>
               {app.status === "ACCEPTED" && <p className="mt-2 text-sm leading-7 text-muted-foreground">Acceptance does not automatically add you as a club member. Follow the club’s instructions for joining.</p>}
-              {app.status === "INTERVIEWING" && !app.bookings.length && <p className="mt-2 text-sm leading-7 text-muted-foreground">No interview booking is recorded on OutClass yet. Check the club’s instructions for scheduling.</p>}
+              {app.status === "INTERVIEWING" && <ApplicantBooking key={app.id} applicationId={app.id} onChanged={() => { void getStudentApplications().then(apps => { setApplications(apps); sync(apps) }).catch(() => setNotice("Booking saved. Refresh to update the application summary.")) }} />}
               {app.status === "REJECTED" && (
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                   Thank you for the time and care you put into applying. You can continue exploring

@@ -22,18 +22,7 @@ export async function createInterviewSlots(data: z.infer<typeof createSlotsSchem
   // Must be an admin to define interview blocks
   await requireClubPermission(parsed.clubId, ["interviews.manage"]);
 
-  const slots = await prisma.interviewSlot.createMany({
-    data: parsed.slots.map(s => ({
-      clubId: parsed.clubId,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      location: s.location,
-      capacity: s.capacity
-    }))
-  });
-
-  revalidatePath(`/club-manager`);
-  return { success: true, count: slots.count };
+  throw new Error("Reload the interview manager and create a room with a recruitment round.");
 }
 
 export async function getAvailableSlots(clubId: string) {
@@ -41,7 +30,7 @@ export async function getAvailableSlots(clubId: string) {
   await requireAuth();
 
   const slots = await prisma.interviewSlot.findMany({
-    where: { clubId, startTime: { gt: new Date() } },
+    where: { clubId, roomId: null, startTime: { gt: new Date() } },
     include: {
       _count: { select: { bookings: true } }
     },
@@ -76,11 +65,18 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
           where: { id: parsed.slotId }, include: { bookings: true },
         });
         if (!slot || slot.clubId !== application.clubId) throw new Error("Slot not available for this application.");
+        if (slot.roomId) throw new Error("Use the interview booking page to reserve this room.");
         const existing = slot.bookings.find(item => item.applicationId === application.id);
         if (existing) return existing;
         if (application.status !== "INTERVIEWING") throw new Error("An interview invitation is required before booking.");
         if (slot.startTime <= new Date()) throw new Error("This interview slot has already started.");
         if (slot.bookings.length >= slot.capacity) throw new Error("This interview slot is already full.");
+        const otherBookings = await tx.interviewBooking.findMany({
+          where: { application: { studentId: user.id }, slot: { endTime: { gt: new Date() } } }, include: { slot: true },
+        });
+        if (otherBookings.some(b => b.applicationId === application.id || b.slot.startTime < slot.endTime && b.slot.endTime > slot.startTime)) {
+          throw new Error("You already have an interview booking for this application or time.");
+        }
         return tx.interviewBooking.create({ data: parsed });
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       break;

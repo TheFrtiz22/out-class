@@ -76,6 +76,7 @@ model Experience {
 model Club {
   marketing       Json?
   marketingApprovedAt DateTime? // Explicit consent to appear as a launch participant.
+  interviewRooms  InterviewRoom[]
   interviewSlots  InterviewSlot[]
   campusKey       String           @default("uva")
   directorySource String?
@@ -134,6 +135,8 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  interviewRooms InterviewRoom[]
+  scheduledBookings InterviewBooking[]
   screeningRule RecruitingRule?
   anonymousReview  Boolean           @default(false)
   interviewKit     Json              @default("[]")
@@ -265,7 +268,29 @@ model EventAttendance {
 // 5. SCHEDULING
 // ==========================================
 
+model InterviewRoom {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  roundId String
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  name String
+  location String
+  kind String
+  timezone String
+  duration Int
+  buffer Int @default(0)
+  isOpen Boolean @default(true)
+  panelMemberIds String[] @default([])
+  createdAt DateTime @default(now())
+  slots InterviewSlot[]
+  @@index([clubId, roundId])
+}
+
 model InterviewSlot {
+  roomId String?
+  room InterviewRoom? @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   id        String   @id @default(uuid())
   clubId    String
   club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -275,9 +300,14 @@ model InterviewSlot {
   capacity  Int      @default(1)
 
   bookings InterviewBooking[]
+  @@index([roomId, startTime])
+  @@index([clubId, startTime])
 }
 
 model InterviewBooking {
+  roundId String?
+  round PipelineRound? @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
   id            String        @id @default(uuid())
   slotId        String
   slot          InterviewSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
@@ -285,6 +315,7 @@ model InterviewBooking {
   application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@unique([slotId, applicationId])
+  @@unique([applicationId, roundId])
 }
 
 model InterviewRecord {

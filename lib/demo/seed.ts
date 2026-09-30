@@ -352,6 +352,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     clubs,
     memberships,
     applications,
+    interviewRooms: [] as import("@/lib/interview-rooms").InterviewRoom[],
+    roomBookings: [] as import("@/lib/interview-rooms").RoomBooking[],
     slots,
     subscriptions: clubs.slice(0, 7).map((c) => c.id),
     readNotifications: [] as string[],

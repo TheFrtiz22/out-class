@@ -446,3 +446,23 @@ test("published demo club branding survives reload and reaches Discover without 
   assert.equal(publicClub.aumValue, null)
   assert.equal(h.calls(), 0)
 })
+
+test("demo interview room creation, booking, reschedule and cancel persist through the real client boundary", async () => {
+ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts')
+ demoStore.start()
+ let clubId,roundId,applicationId
+ demoStore.mutate(s=>{const c=s.clubs[0];clubId=c.id;roundId=c.rounds[0].id;s.perspective={role:'leader',clubId};const app=s.applications.find(a=>a.clubId===clubId&&a.studentId===s.students[0].id);applicationId=app.id;app.status='INTERVIEWING';app.roundId=roundId;s.slots=s.slots.filter(slot=>slot.applicationId!==applicationId)})
+ await api.createInterviewRoom({clubId,roundId,name:'Test room',location:'Test Hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-09-07'],start:'10:00',end:'12:00',duration:20,buffer:0,capacity:1,panelMemberIds:[]})
+ let workspace=await api.getRoomWorkspace(clubId);assert.equal(workspace.rooms.length,1);assert.equal(workspace.rooms[0].slots.length,6)
+ const slots=workspace.rooms[0].slots
+ await api.reserveInterview({applicationId,slotId:slots[0].id})
+ demoStore.start()
+ let student=await api.getApplicantSchedule(applicationId);assert.equal(student.booking.slotId,slots[0].id);assert.equal(student.rooms[0].slots[0].booked,1);assert.deepEqual(student.rooms[0].panelMemberIds,[])
+ await api.reserveInterview({applicationId,slotId:slots[1].id})
+ student=await api.getApplicantSchedule(applicationId);assert.equal(student.booking.slotId,slots[1].id);assert.equal(student.rooms[0].slots[0].booked,0)
+ await api.cancelRoomBooking(student.booking.id)
+ assert.equal((await api.getApplicantSchedule(applicationId)).booking,null)
+ await api.setInterviewRoomOpen({roomId:workspace.rooms[0].id,open:false})
+ assert.equal((await api.getApplicantSchedule(applicationId)).rooms.length,0)
+ assert.equal(h.calls(),0)
+})

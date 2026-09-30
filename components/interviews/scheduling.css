@@ -1,0 +1,44 @@
+.ir-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.ir-select { width: 100%; min-width: 0; min-height: 38px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--card); color: var(--foreground); font-size: 13px; }
+.ir-field { display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 500; }
+.ir-symbol { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: color-mix(in srgb,var(--primary) 8%,var(--card)); color: var(--primary); }
+.ir-symbol svg { width: 22px; height: 22px; }
+.ir-overview { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.ir-overview > div { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; align-items: center; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
+.ir-overview svg { grid-row: span 2; color: var(--muted-foreground); }
+.ir-overview strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+.ir-overview span { font-size: 12px; color: var(--muted-foreground); }
+.ir-room-card { min-width: 0; border: 1px solid var(--border); border-radius: 16px; background: var(--card); padding: 22px; }
+.ir-room-slots { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin-top: 20px; }
+.ir-room-slots > div { display: flex; flex-direction: column; gap: 5px; padding: 10px 6px; border: 1px dashed var(--border); border-radius: 8px; text-align: center; }
+.ir-room-slots span,.ir-room-slots small { font-size: 10px; color: var(--muted-foreground); }
+.ir-room-slots strong { font-size: 12px; font-weight: 600; }
+.ir-room-slots .is-full { border-style: solid; background: var(--muted); }
+.ir-empty { display: flex; flex-direction: column; align-items: center; gap: 16px; border: 1px dashed var(--border); border-radius: 16px; padding: 50px 20px; text-align: center; }
+.ir-empty > svg { color: var(--primary); }
+.ir-empty h3 { font-size: 20px; font-weight: 600; }
+.ir-empty p { font-size: 14px; color: var(--muted-foreground); }
+.ir-booking { display: grid; grid-template-columns: minmax(200px,.75fr) minmax(0,2fr); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; background: var(--card); box-shadow: 0 4px 24px #142d4e06; }
+.ir-booking-intro { padding: 28px; border-right: 1px solid var(--border); background: color-mix(in srgb,var(--muted) 30%,var(--card)); }
+.ir-booking-intro .ir-symbol { margin-bottom: 22px; }
+.ir-booking-intro h2 { font-size: 24px; line-height: 1.35; font-weight: 600; margin-top: 10px; }
+.ir-booking-intro > p:not(.ir-eyebrow) { margin-top: 12px; font-size: 13px; line-height: 1.8; color: var(--muted-foreground); }
+.ir-detail { display: flex; align-items: center; gap: 9px; font-size: 13px; margin-top: 18px; color: var(--muted-foreground); }
+.ir-calendar-layout { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(150px,1fr); gap: 24px; }
+.ir-calendar { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 5px; }
+.ir-weekday { padding: 8px 0; text-align: center; font-size: 11px; color: var(--muted-foreground); }
+.ir-calendar button { aspect-ratio: 1; min-width: 0; border-radius: 50%; background: color-mix(in srgb,var(--primary) 8%,var(--card)); color: var(--primary); font-weight: 600; font-size: 13px; }
+.ir-calendar button:disabled { background: transparent; color: var(--muted-foreground); opacity: .4; }
+.ir-calendar button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+.ir-times { display: flex; flex-direction: column; gap: 9px; max-height: 360px; overflow-y: auto; padding: 2px; }
+.ir-times button { display: flex; flex-direction: column; gap: 3px; padding: 12px 8px; border: 1px solid color-mix(in srgb,var(--primary) 45%,var(--border)); border-radius: 8px; text-align: center; color: var(--primary); }
+.ir-times button strong { font-size: 14px; }
+.ir-times button span { font-size: 10px; overflow-wrap: anywhere; }
+.ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+.ir-times button:disabled { opacity: .4; border-style: dashed; }
+.ir-calendar button:focus-visible,.ir-times button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.ir-confirmed { display: flex; gap: 12px; margin-bottom: 22px; padding: 16px; border: 1px solid #b8dfc7; background: #f0faf4; border-radius: 12px; color: #1b6340; font-size: 13px; }
+.ir-confirmed > svg { flex-shrink: 0; }
+.ir-confirmed p { margin-top: 5px; }
+@media(max-width:1100px) { .ir-booking { grid-template-columns: minmax(0,1fr); } .ir-booking-intro { border-right: 0; border-bottom: 1px solid var(--border); } }
+@media(max-width:600px) { .ir-overview { gap: 8px; } .ir-overview > div { padding: 12px; grid-template-columns: 1fr; } .ir-overview svg { display: none; } .ir-overview strong { font-size: 20px; } .ir-room-slots { grid-template-columns: repeat(2,minmax(0,1fr)); } .ir-calendar-layout { grid-template-columns: minmax(0,1fr); } .ir-times { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } }

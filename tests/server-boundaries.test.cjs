@@ -23,7 +23,7 @@ test('legacy static attendance endpoints fail closed without a current token',as
 function bookingApi(overrides = {}, status = "INTERVIEWING") {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), capacity: 1, bookings: [], ...overrides }
   let writes = 0
-  const tx = { application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
+  const tx = { application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
   return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'Serializable'); return fn(tx) } }), writes: () => writes }
 }
 test('booking rejects foreign clubs, past slots, and full slots without writes', async () => {
