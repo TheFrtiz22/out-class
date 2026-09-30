@@ -16,7 +16,7 @@ function shell(routeSearch,windowSearch='') {
  new Function('require','module','exports','window',code)(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{location:{search:windowSearch}})
  const tree=mod.exports.AppShell({})
  effects.forEach(effect=>effect())
- return {view:tree.props.children.props.view,mode:tree.props.children.props.appMode,changes,redirects}
+ return {view:tree.type === "LandingPageView" ? "landing" : tree.props.children.props.view,mode:tree.props.children?.props.appMode,changes,redirects}
 }
 test('Student workspace navigation uses the incoming route, even before the browser URL commits',()=>{
  const result=shell('?workspace=student','')
@@ -25,8 +25,14 @@ test('Student workspace navigation uses the incoming route, even before the brow
  assert.deepEqual(result.changes,[['student']])
  assert.deepEqual(result.redirects,[])
 })
-test('leader home still forwards to the permitted MII workspace',()=>{
- const result=shell('')
+test('explicit leader workspace still forwards to the permitted MII workspace',()=>{
+ const result=shell('?workspace=leader')
  assert.equal(result.mode,'admin')
  assert.deepEqual(result.redirects,['/club/mii/workspace'])
+})
+
+test("main site link opens landing even with a saved demo leader session",()=>{
+ const result=shell('')
+ assert.equal(result.view,"landing")
+ assert.deepEqual(result.redirects,[])
 })

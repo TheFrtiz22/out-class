@@ -53,6 +53,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const router = useRouter()
   const searchParams = useSearchParams()
   const [personalSection, setPersonalSection] = useState<PersonalSection>("discover")
+  const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
   const wantsStudent = searchParams.get("workspace") === "student"
   const { selectClub, user } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
@@ -72,14 +73,14 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    demo.isDemoEnabled ? (searchParams.has("demoClub") ? "discover" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    showLanding ? "landing" : demo.isDemoEnabled ? (searchParams.has("demoClub") ? "discover" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
         ? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
   const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
-  function navigate(next: ViewId) { if (next === "tracker") setPersonalSection("applications"); if (next === "calendar") setPersonalSection("calendar"); if (next === "discover") setPersonalSection("discover"); if (next === "my-clubs") setPersonalSection("clubs"); if (demo.isDemoEnabled && ["landing", "auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
+  function navigate(next: ViewId) { if (next === "tracker") setPersonalSection("applications"); if (next === "calendar") setPersonalSection("calendar"); if (next === "discover") setPersonalSection("discover"); if (next === "my-clubs") setPersonalSection("clubs"); if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
 
   // If an auth error was found in the URL, force the auth view so the user sees the message
   useEffect(() => {
@@ -89,12 +90,13 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [authError, initialSession])
 
   useEffect(() => {
+    if (showLanding) { setView("landing"); return }
     const requested = searchParams.get("view")
-    if (["inbox", "student-profile", "discover", "my-clubs", "calendar", "tracker"].includes(requested || "")) {
+    if (["student-dashboard", "inbox", "student-profile", "discover", "my-clubs", "calendar", "tracker"].includes(requested || "")) {
       setView(requested as ViewId)
       setPersonalSection(requested === "tracker" ? "applications" : requested === "my-clubs" ? "clubs" : requested === "calendar" ? "calendar" : "discover")
     }
-  }, [searchParams])
+  }, [searchParams, showLanding])
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {
@@ -123,7 +125,10 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
         launchClubs={launchClubs}
         onNavigateToApp={(role) => {
           setAppMode(role === "leader" ? "admin" : "student")
-          setView("auth")
+          if (demo.isDemoEnabled || initialSession) {
+            setView(!demo.isDemoEnabled && !hasProfile ? "student-onboarding" : "student-dashboard")
+            setAppMode("student")
+          } else setView("auth")
         }}
       />
     )
