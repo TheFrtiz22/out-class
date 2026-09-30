@@ -1,10 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript')
 function shell(routeSearch,windowSearch='') {
- const effects=[],changes=[],redirects=[]
+ const effects=[],changes=[],redirects=[],stateChanges=[]
  const demo={isDemoEnabled:true,state:{perspective:{role:'leader',clubId:'mii'}},viewAs:(...args)=>changes.push(args)}
  const router={replace:path=>redirects.push(path),push:path=>redirects.push(path)}
  const mocks={
-  react:{useState:initial=>[initial,()=>{}],useEffect:effect=>effects.push(effect)},
+  react:{useState:initial=>[initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect)},
   'next/navigation':{useRouter:()=>router,useSearchParams:()=>new URLSearchParams(routeSearch)},
   '@/contexts/demo-context':{useDemoMode:()=>demo},
   '@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},selectClub(){}})},
@@ -16,7 +16,7 @@ function shell(routeSearch,windowSearch='') {
  new Function('require','module','exports','window',code)(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{location:{search:windowSearch}})
  const tree=mod.exports.AppShell({})
  effects.forEach(effect=>effect())
- return {view:tree.type === "LandingPageView" ? "landing" : tree.props.children.props.view,mode:tree.props.children?.props.appMode,changes,redirects}
+ return {view:tree.type === "LandingPageView" ? "landing" : tree.props.children.props.view,mode:tree.props.children?.props.appMode,changes,redirects,stateChanges,enter:tree.props.onNavigateToApp}
 }
 test('Student workspace navigation uses the incoming route, even before the browser URL commits',()=>{
  const result=shell('?workspace=student','')
@@ -35,4 +35,11 @@ test("main site link opens landing even with a saved demo leader session",()=>{
  const result=shell('')
  assert.equal(result.view,"landing")
  assert.deepEqual(result.redirects,[])
+})
+
+test("landing Sign in opens authentication despite a saved demo session",()=>{
+ const result=shell('')
+ result.stateChanges.length=0
+ result.enter("student")
+ assert.deepEqual(result.stateChanges,["student","auth"])
 })

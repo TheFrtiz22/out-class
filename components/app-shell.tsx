@@ -125,10 +125,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
         launchClubs={launchClubs}
         onNavigateToApp={(role) => {
           setAppMode(role === "leader" ? "admin" : "student")
-          if (demo.isDemoEnabled || initialSession) {
-            setView(!demo.isDemoEnabled && !hasProfile ? "student-onboarding" : "student-dashboard")
-            setAppMode("student")
-          } else setView("auth")
+          setView("auth")
         }}
       />
     )
