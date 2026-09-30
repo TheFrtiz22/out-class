@@ -13,7 +13,17 @@ BEGIN
     RAISE EXCEPTION 'Only @virginia.edu email addresses are allowed';
   END IF;
 
-  -- 2. Automatically sync Supabase Auth users to our Prisma User table
+  -- Email is not an identity key. Preserve public-only records and reject
+  -- signup collisions rather than moving their PK (and cascading relations).
+  IF EXISTS (
+    SELECT 1 FROM public."User"
+    WHERE lower(trim(email)) = NEW.email AND id <> NEW.id::text
+  ) THEN
+    RAISE EXCEPTION 'Email belongs to a different public user; manual identity review required';
+  END IF;
+
+  -- Sync only the same Auth ID. The unique email constraint also rejects races.
+  -- Never update public.User.id or create replacement credential storage.
   INSERT INTO public."User" (id, email, role, "createdAt")
   VALUES (
     NEW.id::text, 

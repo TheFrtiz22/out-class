@@ -36,7 +36,6 @@ export async function getClubPipeline(clubId: string) {
     include: {
       round: true,
       student: {
-        omit: { passwordHash: true },
         include: { studentProfile: { include: { experiences: true } } },
       },
       evaluations: true,
@@ -192,7 +191,6 @@ export async function revealApplicantIdentity(
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
       include: {
         student: {
-          omit: { passwordHash: true },
           include: { studentProfile: { include: { experiences: true } } },
         },
         evaluations: true,

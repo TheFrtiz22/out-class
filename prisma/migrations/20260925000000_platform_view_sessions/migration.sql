@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE "PlatformViewSession" (
  "id" TEXT NOT NULL PRIMARY KEY,
  "tokenHash" TEXT NOT NULL UNIQUE,
@@ -16,3 +18,5 @@ DO $$ BEGIN
  IF EXISTS (SELECT FROM pg_roles WHERE rolname='anon') THEN REVOKE ALL ON "PlatformViewSession" FROM anon; END IF;
  IF EXISTS (SELECT FROM pg_roles WHERE rolname='authenticated') THEN REVOKE ALL ON "PlatformViewSession" FROM authenticated; END IF;
 END $$;
+
+COMMIT;

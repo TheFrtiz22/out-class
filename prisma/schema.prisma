@@ -12,12 +12,11 @@ datasource db {
 // ==========================================
 
 model User {
-  disabledAt   DateTime?
-  id           String    @id @default(uuid())
-  email        String    @unique // MUST be @virginia.edu
-  passwordHash String? // If using local auth; omitted if using OAuth exclusively
-  role         AppRole   @default(STUDENT) // Global role
-  createdAt    DateTime  @default(now())
+  disabledAt DateTime? @db.Timestamptz(3)
+  id         String    @id @default(uuid())
+  email      String    @unique // MUST be @virginia.edu
+  role       AppRole   @default(STUDENT) // Global role
+  createdAt  DateTime  @default(now())
 
   studentProfile  StudentProfile?
   memberships     ClubMember[]
@@ -119,6 +118,7 @@ model ClubMember {
   evaluations Evaluation[]
 
   @@unique([userId, clubId])
+  @@index([clubId], map: "ClubMember_clubId_idx")
 }
 
 enum ClubRole {
@@ -143,6 +143,8 @@ model PipelineRound {
   order            Int
 
   applications Application[]
+
+  @@index([clubId], map: "PipelineRound_clubId_idx")
 }
 
 model ApplicationQuestion {
@@ -155,6 +157,8 @@ model ApplicationQuestion {
   wordLimit Int?
 
   answers ApplicationAnswer[]
+
+  @@index([clubId], map: "ApplicationQuestion_clubId_idx")
 }
 
 enum QuestionType {
@@ -182,6 +186,9 @@ model Application {
   bookings    InterviewBooking[]
 
   @@unique([studentId, clubId])
+  @@index([clubId], map: "Application_clubId_idx")
+  @@index([roundId], map: "Application_roundId_idx")
+  @@index([studentId], map: "Application_studentId_idx")
 }
 
 enum AppStatus {
@@ -243,6 +250,7 @@ model Meeting {
 
   attendances EventAttendance[]
 
+  @@index([clubId], map: "Event_clubId_idx")
   @@map("Event")
 }
 
@@ -255,6 +263,7 @@ model EventAttendance {
   checkedInAt DateTime @default(now())
 
   @@unique([eventId, studentId])
+  @@index([studentId], map: "EventAttendance_studentId_idx")
 }
 
 // ==========================================
@@ -271,6 +280,8 @@ model InterviewSlot {
   capacity  Int      @default(1)
 
   bookings InterviewBooking[]
+
+  @@index([clubId], map: "InterviewSlot_clubId_idx")
 }
 
 model InterviewBooking {
@@ -329,7 +340,7 @@ model ClubInvitation {
   inviter     User      @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
   clubId      String
   email       String
-  permissions String[]
+  permissions String[]  @default([])
   invitedBy   String
   expiresAt   DateTime
   declinedAt  DateTime?

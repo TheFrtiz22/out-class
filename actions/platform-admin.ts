@@ -760,7 +760,6 @@ export async function inspectPlatformUser(userId: string, reason: string) {
   });
   return prisma.user.findUnique({
     where: { id: userId },
-    omit: { passwordHash: true },
     include: {
       studentProfile: { include: { experiences: true } },
       memberships: true,

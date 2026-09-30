@@ -433,7 +433,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
     else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = previous;
   }
 });
-test("normal account API explicitly omits password hashes", async () => {
+test("normal account API queries the authenticated identity without obsolete omit fields", async () => {
   const api = load("app/api/users/me/route.ts", {
     "next/headers": { cookies: async () => ({}) },
     "@/utils/supabase/server": {
@@ -449,7 +449,8 @@ test("normal account API explicitly omits password hashes", async () => {
       prisma: {
         user: {
           findUnique: async (query) => {
-            assert.deepEqual(query.omit, { passwordHash: true });
+            assert.equal(query.omit, undefined);
+            assert.deepEqual(query.where, { id: actor });
             return {
               id: actor,
               email: "admin@virginia.edu",

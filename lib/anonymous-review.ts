@@ -2,7 +2,6 @@ import type { Prisma } from "@prisma/client";
 export type ReviewApplication = Prisma.ApplicationGetPayload<{
   include: {
     student: {
-      omit: { passwordHash: true };
       include: { studentProfile: { include: { experiences: true } } };
     };
     evaluations: true;

@@ -19,7 +19,7 @@ CREATE TYPE "AppStatus" AS ENUM ('DRAFTING', 'SUBMITTED', 'IN_REVIEW', 'INTERVIE
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "passwordHash" TEXT,
+    "disabledAt" TIMESTAMPTZ(3),
     "role" "AppRole" NOT NULL DEFAULT 'STUDENT',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -214,6 +214,17 @@ CREATE UNIQUE INDEX "EventAttendance_eventId_studentId_key" ON "EventAttendance"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "InterviewBooking_slotId_applicationId_key" ON "InterviewBooking"("slotId", "applicationId");
+
+-- Existing live indexes; baseline SQL runs only on fresh databases.
+CREATE INDEX "Application_clubId_idx" ON "Application"("clubId");
+CREATE INDEX "Application_roundId_idx" ON "Application"("roundId");
+CREATE INDEX "Application_studentId_idx" ON "Application"("studentId");
+CREATE INDEX "ApplicationQuestion_clubId_idx" ON "ApplicationQuestion"("clubId");
+CREATE INDEX "ClubMember_clubId_idx" ON "ClubMember"("clubId");
+CREATE INDEX "Event_clubId_idx" ON "Event"("clubId");
+CREATE INDEX "EventAttendance_studentId_idx" ON "EventAttendance"("studentId");
+CREATE INDEX "InterviewSlot_clubId_idx" ON "InterviewSlot"("clubId");
+CREATE INDEX "PipelineRound_clubId_idx" ON "PipelineRound"("clubId");
 
 -- AddForeignKey
 ALTER TABLE "StudentProfile" ADD CONSTRAINT "StudentProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

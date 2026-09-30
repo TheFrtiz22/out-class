@@ -1,15 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-async function main() {
-  try {
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO public."User" (id, email, role, "createdAt")
-      VALUES ('new-uuid-123', 'bsb4rd@virginia.edu', 'STUDENT', NOW())
-      ON CONFLICT (email) DO UPDATE SET id = EXCLUDED.id;
-    `);
-    console.log("Upsert succeeded");
-  } catch(e) {
-    console.error("Error:", e.message);
-  }
-}
-main();
+// Retired: this script previously replaced public.User IDs by matching email.
+// Review prisma/setup_auth_trigger.sql for the canonical identity-preserving SQL.
+// Applying that SQL requires a separately authorized deployment.
+throw new Error("Retired unsafe Auth trigger installer. No database connection was opened.");

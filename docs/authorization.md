@@ -77,12 +77,14 @@ Audit reads, user inspection and changes are logged with actor, target, action a
 
 No data/account IDs are renamed or deleted. Additions include explicit capability arrays, ownership flags, account suspension, admin grants, invitations, claims, tasks, content, and audit records. Legacy role values remain untouched.
 
-The repository previously had no migration history. Two migrations are supplied:
+The repository now contains a baseline plus seven subsequent migrations. The first two establish authorization:
 
 - `20260923000000_baseline`: the pre-change schema, for fresh databases or existing-schema baselining.
 - `20260923010000_capabilities`: additive extension, access backfills and protection.
 
 Backfill: presidents become club owners; recruitment leads retain recruitment/review/identified-applicant/interview/event access and gain a manager-oriented initial bundle; general members retain review, identity and attendance access previously provided by server actions. No existing user becomes a platform admin. New memberships default to no capabilities. Adjust grants using workspace access after migration.
+
+**For project `htlgjluegmdwfjkzzwic`, follow the reviewed [database reconciliation runbook](database-reconciliation.md), including its staging, live-state comparison and rollback gates. The commands below are future deployment instructions, not actions performed during repository reconciliation.**
 
 **Existing databases:** take a backup, compare the actual schema to the baseline, and reconcile drift before marking the baseline applied. Do not execute the baseline's CREATE TABLE statements on an existing installation. With a verified matching schema:
 
@@ -92,7 +94,7 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
-**Fresh databases:** `npx prisma migrate deploy` applies both migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
+**Fresh databases:** `npx prisma migrate deploy` applies all eight migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
 
 All Prisma tables enable RLS and revoke direct `anon`/`authenticated` table access. This application uses Prisma server actions for those tables; existing browser Supabase calls are Auth and Storage, which are untouched. `DATABASE_URL` must use a trusted server database role with table access/RLS bypass, never the browser `anon`/`authenticated` roles. Review any external PostgREST integrations before rollout. Existing Supabase auth triggers remain separately configured.
 

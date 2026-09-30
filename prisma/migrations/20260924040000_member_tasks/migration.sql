@@ -1,12 +1,15 @@
+BEGIN;
+
+-- ADD COLUMN defaults backfill existing rows with empty, non-null arrays.
 -- AlterTable
 ALTER TABLE "ClubMember" ADD COLUMN     "cohort" TEXT,
-ADD COLUMN     "groups" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ADD COLUMN     "groups" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
 
 -- AlterTable
 ALTER TABLE "ClubTask" ADD COLUMN     "audience" JSONB NOT NULL DEFAULT '{}',
 ADD COLUMN     "kind" TEXT NOT NULL DEFAULT 'TASK',
 ADD COLUMN     "projectId" TEXT,
-ADD COLUMN     "requirements" TEXT[] DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN     "requirements" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
 ADD COLUMN     "resources" JSONB NOT NULL DEFAULT '[]',
 ADD COLUMN     "revision" INTEGER NOT NULL DEFAULT 0;
 
@@ -81,3 +84,5 @@ DO $$ BEGIN
 END $$;
 ALTER TABLE "ClubTask" ADD CONSTRAINT "ClubTask_kind_check" CHECK (kind IN ('TASK','PROJECT'));
 ALTER TABLE "ClubTask" ADD CONSTRAINT "ClubTask_not_own_project" CHECK (id IS DISTINCT FROM "projectId");
+
+COMMIT;

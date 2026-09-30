@@ -1,11 +1,28 @@
 BEGIN;
 
 -- AlterTable
-ALTER TABLE "User" ADD COLUMN     "disabledAt" TIMESTAMP(3);
+-- Preserve an existing timezone-aware column, including its precision/values.
+-- Unexpected types require explicit review; never silently cast timestamps.
+DO $$
+DECLARE existing_type oid;
+BEGIN
+  SELECT atttypid INTO existing_type
+  FROM pg_attribute
+  WHERE attrelid = 'public."User"'::regclass
+    AND attname = 'disabledAt' AND attnum > 0 AND NOT attisdropped;
 
--- AlterTable
+  IF NOT FOUND THEN
+    ALTER TABLE public."User" ADD COLUMN "disabledAt" TIMESTAMPTZ(3);
+  ELSIF existing_type <> 'timestamptz'::regtype THEN
+    RAISE EXCEPTION 'public.User.disabledAt must be timestamptz; found %',
+      format_type(existing_type, NULL);
+  END IF;
+END $$;
+
+-- The default backfills all existing members with an empty, non-null array.
+-- Legacy role-specific grants are assigned below.
 ALTER TABLE "ClubMember" ADD COLUMN     "isOwner" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "permissions" TEXT[] DEFAULT ARRAY[]::TEXT[];
+ADD COLUMN     "permissions" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
 
 -- CreateTable
 CREATE TABLE "PlatformAdmin" (
@@ -35,7 +52,7 @@ CREATE TABLE "ClubInvitation" (
     "id" TEXT NOT NULL,
     "clubId" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "permissions" TEXT[],
+    "permissions" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
     "invitedBy" TEXT NOT NULL,
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "acceptedAt" TIMESTAMP(3),
