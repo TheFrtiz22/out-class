@@ -65,7 +65,7 @@ export default async function Page() {
   if (session.clubId && !member)
     return (
       <main className="p-6">
-        The user's club membership was removed. Exit view-as to continue.
+        The user&#39;s club membership was removed. Exit view-as to continue.
       </main>
     );
   const meetings = member

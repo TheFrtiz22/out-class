@@ -1,445 +1,106 @@
 "use client"
-
-import { useMemo, useState } from "react"
-import {
-  Plus,
-  Play,
-  Download,
-  ChevronDown,
-  ArrowUpDown,
-  Check,
-  MoreHorizontal,
-  Mail,
-} from "lucide-react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import { screeningApplicants as seed, type ScreeningApplicant, type ScreeningStatus } from "@/lib/data"
+import { useApplicationState } from "@/lib/application-state"
+import { getRecruitingRules, saveRecruitingRule, previewRecruitingRule, applyRecruitingRuleFlags, getRecruitingRuleFlags, clearRecruitingRuleFlags } from "@/lib/workspace-api"
+import { emptyRuleThresholds, type RulePreview, type RuleThresholds } from "@/lib/recruiting-rules"
+import { testRequirementLabels } from "@/lib/test-scores"
 
-const STATUS_STYLES: Record<ScreeningStatus, string> = {
-  "Passed Auto-Filter": "bg-emerald-100 text-emerald-800 border-transparent",
-  "Auto-Flagged": "bg-amber-100 text-amber-800 border-transparent",
-  "Manually Approved": "bg-sky-100 text-sky-800 border-transparent",
-  Rejected: "bg-rose-100 text-rose-700 border-transparent",
+type Rules = Awaited<ReturnType<typeof getRecruitingRules>>
+type Round = Rules["rounds"][number]
+export function ScreeningDashboardView({ clubId, onReview }: { clubId?: string; onReview?: () => void }) {
+  const [data, setData] = useState<Rules | null>(null)
+  const [roundId, setRoundId] = useState("")
+  const [error, setError] = useState(false)
+  const [reload, setReload] = useState(0)
+  useEffect(() => {
+    let current = true
+    setData(null); setError(false)
+    if (clubId) getRecruitingRules(clubId).then(value => {
+      if (current) { setData(value); setRoundId(id => value.rounds.some(round => round.id === id) ? id : value.rounds[0]?.id ?? "") }
+    }).catch(() => { if (current) setError(true) })
+    return () => { current = false }
+  }, [clubId, reload])
+  if (!clubId) return <p className="py-6 text-sm text-muted-foreground">Open Review Tools in a managed club workspace to configure persisted recruiting rules.</p>
+  if (error) return <div role="alert" className="py-6"><p>Rules could not be loaded. Check your access and try again.</p><Button onClick={() => setReload(n => n + 1)}>Retry</Button></div>
+  if (!data) return <p role="status" className="py-6">Loading recruiting rules…</p>
+  const round = data.rounds.find(round => round.id === roundId)
+  return <div className="space-y-6 py-6">
+    <p className="border-l-2 border-brand-orange pl-3 text-sm text-muted-foreground">Saved rules suggest candidates for rejection review. Only an explicit action applies flags. Application decisions never change here and no messages are sent.</p>
+    <label className="block text-sm font-medium">Recruitment round<select aria-label="Rule round" className="mt-2 min-h-11 w-full rounded-md border bg-background px-3" value={roundId} onChange={event => {
+      if (document.querySelector('[data-saving="true"]')) return
+      if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return
+      setRoundId(event.target.value)
+    }}>{data.rounds.map(round => <option key={round.id} value={round.id}>{round.name}</option>)}</select></label>
+    {round ? <RuleEditor key={round.id + ":" + (round.screeningRule?.revision ?? 0)} clubId={clubId} round={round} data={data} onReview={onReview} onReload={() => setReload(n => n + 1)} onSaved={saved => setData(current => current && ({ ...current, rounds: current.rounds.map(item => item.id === round.id ? { ...item, screeningRule: saved } : item) }))} /> : <p>No recruitment rounds are available.</p>}
+  </div>
 }
 
-const QUICK_FILTERS = [
-  { id: "sat", label: "SAT ≥ 1450" },
-  { id: "gpa", label: "GPA ≥ 3.7" },
-  { id: "major", label: "Commerce / McIntire" },
-  { id: "passed", label: "Passed Automated Screening" },
-] as const
-
-const SAT_CUTOFF = 1450
-const GPA_CUTOFF = 3.5
-
-function satColor(score: number) {
-  if (score < SAT_CUTOFF) return "text-rose-600 font-semibold"
-  if (score >= 1500) return "text-emerald-600 font-semibold"
-  return "text-foreground"
-}
-
-function gpaColor(gpa: number) {
-  return gpa < GPA_CUTOFF ? "text-rose-600 font-semibold" : "text-foreground"
-}
-
-export function ScreeningDashboardView() {
-  const [applicants, setApplicants] = useState<ScreeningApplicant[]>(seed)
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set())
-  const [ruleSheetOpen, setRuleSheetOpen] = useState(false)
-
-  const [satRuleOn, setSatRuleOn] = useState(true)
-  const [gpaRuleOn, setGpaRuleOn] = useState(true)
-  const [yearRuleOn, setYearRuleOn] = useState(false)
-  const [satThreshold, setSatThreshold] = useState("1450")
-  const [gpaThreshold, setGpaThreshold] = useState("3.5")
-
-  const filtered = useMemo(() => {
-    return applicants.filter((a) => {
-      if (activeFilters.has("sat") && a.satScore < 1450) return false
-      if (activeFilters.has("gpa") && a.gpa < 3.7) return false
-      if (activeFilters.has("major") && a.major !== "Commerce") return false
-      if (activeFilters.has("passed") && a.status !== "Passed Auto-Filter") return false
-      return true
-    })
-  }, [applicants, activeFilters])
-
-  const totalApplied = applicants.length + 236 // simulate the full 248 pipeline against our 12-row sample
-  const autoRejected = applicants.filter((a) => a.status === "Rejected").length + 52
-  const passedScreening = applicants.filter((a) => a.status !== "Rejected").length + 174
-  const interviewSlotsLeft = 35
-
-  const projectedRejects = applicants.filter((a) => {
-    const satFail = satRuleOn && a.satScore < Number(satThreshold)
-    const gpaFail = gpaRuleOn && a.gpa < Number(gpaThreshold)
-    const yearFail = yearRuleOn && a.classYear === "2026"
-    return satFail || gpaFail || yearFail
-  }).length
-
-  function toggleFilter(id: string) {
-    setActiveFilters((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { clubId: string; round: Round; data: Rules; onSaved: (saved: NonNullable<Round["screeningRule"]>) => void; onReload: () => void; onReview?: () => void }) {
+  const canPreview = data.canPreview && (round.anonymousReview || data.canIdentify)
+  const source: RuleThresholds = round.screeningRule ? { minGpa: round.screeningRule.minGpa, minSat: round.screeningRule.minSat, minAct: round.screeningRule.minAct } : emptyRuleThresholds
+  const [thresholds, setThresholds] = useState<RuleThresholds>(source)
+  const [preview, setPreview] = useState<RulePreview | null>(null)
+  const [flags, setFlags] = useState<Awaited<ReturnType<typeof getRecruitingRuleFlags>> | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState("")
+  const [error, setError] = useState("")
+  const { focusLeader } = useApplicationState()
+  const dirty = JSON.stringify(source) !== JSON.stringify(thresholds)
+  const scope = { clubId, roundId: round.id }
+  useEffect(() => {
+    let current = true
+    if (canPreview) getRecruitingRuleFlags({ clubId, roundId: round.id }).then(value => { if (current) setFlags(value) }).catch(() => { if (current) setError("Saved flags could not be loaded. Reload to try again.") })
+    return () => { current = false }
+  }, [clubId, round.id, canPreview])
+  useEffect(() => {
+    const guard = (event: BeforeUnloadEvent) => { if (dirty || busy) { event.preventDefault(); event.returnValue = "" } }
+    window.addEventListener("beforeunload", guard)
+    return () => window.removeEventListener("beforeunload", guard)
+  }, [dirty, busy])
+  async function run(action: () => Promise<void>) {
+    if (busy) return
+    setBusy(true); setMessage(""); setError("")
+    try { await action() } catch {
+      setPreview(null)
+      setError("Could not complete this action. Check the score ranges and test requirement. Rules, applicants, or access may have changed; reload and preview again.")
+    } finally { setBusy(false) }
   }
-
-  function toggleRow(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  function toggleAll() {
-    if (selected.size === filtered.length) {
-      setSelected(new Set())
-    } else {
-      setSelected(new Set(filtered.map((a) => a.id)))
-    }
-  }
-
-  function updateStatus(id: string, status: ScreeningStatus) {
-    setApplicants((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
-    toast.success(`${applicants.find((a) => a.id === id)?.name} → ${status}`)
-  }
-
-  function bulkReject() {
-    setApplicants((prev) => prev.map((a) => (selected.has(a.id) ? { ...a, status: "Rejected" } : a)))
-    toast.success(`Rejected ${selected.size} applicants`)
-    setSelected(new Set())
-  }
-
-  function bulkAdvance() {
-    setApplicants((prev) => prev.map((a) => (selected.has(a.id) ? { ...a, status: "Manually Approved" } : a)))
-    toast.success(`Moved ${selected.size} applicants to Round 1 interview stage`)
-    setSelected(new Set())
-  }
-
-  function sendBlast() {
-    toast.success(`Blast email queued for ${selected.size} applicants`)
-  }
-
-  function applyRules() {
-    setApplicants((prev) =>
-      prev.map((a) => {
-        const tags: string[] = []
-        const satFail = satRuleOn && a.satScore < Number(satThreshold)
-        const gpaFail = gpaRuleOn && a.gpa < Number(gpaThreshold)
-        const yearFail = yearRuleOn && a.classYear === "2026"
-        if (satFail) tags.push("Low SAT")
-        if (gpaFail) tags.push("Low GPA")
-        if (satFail || gpaFail || yearFail) {
-          return { ...a, status: "Rejected" as ScreeningStatus, flagTags: tags }
-        }
-        return a
-      }),
-    )
-    toast.success(`Auto-reject rules applied — ${projectedRejects} candidates rejected`)
-    setRuleSheetOpen(false)
-  }
-
-  function runAutomation() {
-    applyRules()
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-base font-semibold tracking-tight font-sans">
-            Virginia Consulting Group <span className="text-muted-foreground">— Candidate Pipeline</span>
-          </h1>
-          <p className="text-xs text-muted-foreground">Fall 2026 recruitment · high-volume screening</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setRuleSheetOpen(true)}>
-            <Plus className="size-3.5" /> Add Filter Rule
-          </Button>
-          <Button size="sm" variant="outline" className="h-8 text-xs" onClick={runAutomation}>
-            <Play className="size-3.5" /> Run Auto-Reject Automation
-          </Button>
-          <Button
-            size="sm"
-            className="h-8 text-xs"
-            onClick={() => toast.success("CRM export started — outclass_vcg_pipeline.csv")}
-          >
-            <Download className="size-3.5" /> Export CRM (.csv)
-          </Button>
-        </div>
-      </div>
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="py-0">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Applied</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{totalApplied}</p>
-          </CardContent>
-        </Card>
-        <Card className="py-0">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Auto-Filtered / Rejected</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-rose-600">{autoRejected}</p>
-          </CardContent>
-        </Card>
-        <Card className="py-0">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Passed Screening</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-600">{passedScreening}</p>
-          </CardContent>
-        </Card>
-        <Card className="py-0">
-          <CardContent className="p-3.5">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Interview Slots Remaining</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums">{interviewSlotsLeft}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter chips */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {QUICK_FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => toggleFilter(f.id)}
-            className={cn(
-              "rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors",
-              activeFilters.has(f.id)
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-transparent text-muted-foreground hover:bg-muted",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Batch actions bar */}
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
-          <span className="text-xs font-medium">{selected.size} selected</span>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={bulkReject}>
-              Bulk Reject ({selected.size} selected)
-            </Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={bulkAdvance}>
-              Bulk Move to Interview Stage
-            </Button>
-            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={sendBlast}>
-              <Mail className="size-3.5" /> Send Blast Email
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Screening table */}
-      <Card className="overflow-hidden py-0">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/40 [&_th]:h-12 [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
-                  <TableHead className="w-10 pl-4">
-                    <Checkbox
-                      checked={filtered.length > 0 && selected.size === filtered.length}
-                      onCheckedChange={toggleAll}
-                      aria-label="Select all"
-                    />
-                  </TableHead>
-                  <TableHead>Applicant</TableHead>
-                  <TableHead className="w-36">Year &amp; Major</TableHead>
-                  <TableHead className="w-24">
-                    <span className="inline-flex items-center gap-1">
-                      SAT <ArrowUpDown className="size-3" />
-                    </span>
-                  </TableHead>
-                  <TableHead className="w-20">GPA</TableHead>
-                  <TableHead className="w-40">Screening Status</TableHead>
-                  <TableHead className="w-10 pr-4" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((a) => (
-                  <TableRow key={a.id} data-state={selected.has(a.id) ? "selected" : undefined} className="text-xs [&_td]:h-16 [&_td]:py-4">
-                    <TableCell className="pl-4">
-                      <Checkbox checked={selected.has(a.id)} onCheckedChange={() => toggleRow(a.id)} aria-label={`Select ${a.name}`} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="size-6">
-                          <AvatarFallback className="bg-muted text-[10px] font-medium">{a.initials}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{a.name}</span>
-                        {a.flagTags.map((tag) => (
-                          <Badge key={tag} variant="outline" className="h-4 border-rose-200 bg-rose-50 px-1 text-[10px] font-normal text-rose-600">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {a.classYear} · {a.major}
-                    </TableCell>
-                    <TableCell className={cn("font-sans tabular-nums", satColor(a.satScore))}>{a.satScore}</TableCell>
-                    <TableCell className={cn("font-sans tabular-nums", gpaColor(a.gpa))}>{a.gpa.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge className={cn("font-medium", STATUS_STYLES[a.status])} variant="outline">
-                        {a.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="pr-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-6">
-                            <MoreHorizontal className="size-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="text-xs">
-                          <DropdownMenuItem onClick={() => updateStatus(a.id, "Manually Approved")}>
-                            Bypass Cutoff
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => updateStatus(a.id, "Manually Approved")}>
-                            Move to Round 1 Interview
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => updateStatus(a.id, "Rejected")}
-                          >
-                            Reject
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filtered.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                      No candidates match these filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Auto-rejection rule builder */}
-      <Sheet open={ruleSheetOpen} onOpenChange={setRuleSheetOpen}>
-        <SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-lg">
-          <SheetHeader className="border-b">
-            <SheetTitle>Auto-Reject Rule Builder</SheetTitle>
-            <SheetDescription>Configure criteria that automatically screen out candidates.</SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-5 p-4">
-            {/* Rule 1: SAT */}
-            <div className="rounded-lg border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Rule 1 — Test Score Threshold</p>
-                <Switch checked={satRuleOn} onCheckedChange={setSatRuleOn} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <Select defaultValue="sat">
-                  <SelectTrigger className="h-8 w-32 text-xs" size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sat" className="text-xs">
-                      SAT Score
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <span className="text-muted-foreground">&lt;</span>
-                <Input
-                  value={satThreshold}
-                  onChange={(e) => setSatThreshold(e.target.value)}
-                  className="h-8 w-24 text-xs"
-                />
-                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag "Low SAT"</span>
-              </div>
-            </div>
-
-            {/* Rule 2: GPA */}
-            <div className="rounded-lg border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Rule 2 — Cumulative GPA Threshold</p>
-                <Switch checked={gpaRuleOn} onCheckedChange={setGpaRuleOn} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <Select defaultValue="gpa">
-                  <SelectTrigger className="h-8 w-36 text-xs" size="sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gpa" className="text-xs">
-                      Cumulative GPA
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <span className="text-muted-foreground">&lt;</span>
-                <Input
-                  value={gpaThreshold}
-                  onChange={(e) => setGpaThreshold(e.target.value)}
-                  className="h-8 w-24 text-xs"
-                />
-                <span className="text-muted-foreground">→ Auto-Reject &amp; Tag "Low GPA"</span>
-              </div>
-            </div>
-
-            {/* Rule 3: Class year */}
-            <div className="rounded-lg border p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Rule 3 — Graduation Year Filter</p>
-                <Switch checked={yearRuleOn} onCheckedChange={setYearRuleOn} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Exclude</span>
-                <Badge variant="outline" className="font-normal">
-                  Class of 2026 (Seniors)
-                </Badge>
-                <span className="text-muted-foreground">→ Move to Screened Out</span>
-              </div>
-            </div>
-
-            <Alert className="border-amber-200 bg-amber-50">
-              <AlertDescription className="text-xs text-amber-800">
-                Applying these 3 rules will auto-reject <span className="font-semibold">{projectedRejects}</span>{" "}
-                candidates and send custom rejection email templates on{" "}
-                <span className="font-semibold">Sep 20, 2026</span>.
-              </AlertDescription>
-            </Alert>
-          </div>
-
-          <SheetFooter className="border-t">
-            <Button className="w-full" onClick={applyRules}>
-              <Check className="size-4" /> Apply Rules &amp; Update List
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    </div>
-  )
+  const matches = preview?.results.filter(result => result.outcome === "flag") ?? []
+  const fields = [
+    { key: "minGpa" as const, label: "GPA", min: 0, max: 4, step: 0.01 },
+    ...(data.testRequirement !== "ACT" || thresholds.minSat !== null ? [{ key: "minSat" as const, label: "SAT", min: 400, max: 1600, step: 10 }] : []),
+    ...(data.testRequirement !== "SAT" || thresholds.minAct !== null ? [{ key: "minAct" as const, label: "ACT", min: 1, max: 36, step: 1 }] : []),
+  ]
+  function review(id: string) { focusLeader({ clubId, applicantId: id, roundId: round.id }); onReview?.() }
+  return <div className="space-y-6" data-rule-dirty={dirty} data-unsaved={dirty} data-saving={busy}>
+    <p className="text-sm">{testRequirementLabels[data.testRequirement as keyof typeof testRequirementLabels]}</p>
+    <form onSubmit={event => { event.preventDefault(); void run(async () => { const saved = await saveRecruitingRule({ ...scope, expectedRevision: round.screeningRule?.revision ?? 0, thresholds }); onSaved(saved) }) }} className="space-y-4">
+      <fieldset disabled={busy} className="space-y-3"><legend className="mb-3 font-medium">Minimum scores</legend>
+        {fields.map(field => <label key={field.key} className="flex items-center justify-between gap-4 text-sm">{field.label}<input aria-label={`Minimum ${field.label}`} type="number" min={field.min} max={field.max} step={field.step} value={thresholds[field.key] ?? ""} onChange={event => { setThresholds(current => ({ ...current, [field.key]: event.target.value === "" ? null : event.target.valueAsNumber })); setPreview(null) }} className="min-h-11 w-28 rounded-md border bg-background px-3" /></label>)}
+      </fieldset>
+      <p className="text-xs text-muted-foreground">Blank means no threshold. Missing or invalid scores require manual review, never automatic failure. GPA is evaluated independently. SAT-only and ACT-only clubs use that test; Both evaluates each configured threshold. For SAT-or-ACT, set both test thresholds or neither. When both optional test thresholds are set, either qualifying score also suffices.</p>
+      <p className="text-xs text-muted-foreground">Saving replaces this round’s configuration and clears its previous flags. It does not evaluate or change any applicant.</p>
+      <Button type="submit" disabled={busy || (!dirty && !!round.screeningRule)}>Save rules</Button>
+      {round.screeningRule && <p role="status" className="text-xs text-muted-foreground">Saved version {round.screeningRule.revision}</p>}
+    </form>
+    {error && <div role="alert" className="space-y-2 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Discard unsaved rule changes and reload?")) onReload() }}>Reload</Button></div>}
+    {message && <p role="status" className="text-sm">{message}</p>}
+    <section className="space-y-4 border-t pt-5">
+      <h3 className="font-medium">Preview current applicants</h3>
+      <p className="text-sm text-muted-foreground">Only submitted, in-review, and interviewing applications in this round are evaluated. Drafts and existing decisions, including waitlists, are excluded. Labels stay pseudonymous here.</p>
+      <Button variant="outline" disabled={busy || dirty || !round.screeningRule || !canPreview} onClick={() => void run(async () => { setPreview(await previewRecruitingRule(scope)) })}>Preview saved rules</Button>
+      {!canPreview && <p className="text-sm text-muted-foreground">Applicant review permission is required; identified rounds also require identity access.</p>}
+      {preview && <div className="space-y-4">
+        <p role="status" className="text-sm">{preview.results.length} evaluated · {matches.length} suggested flags · {preview.results.filter(result => result.outcome === "manual").length} need manual review only.</p>
+        <ul className="max-h-80 divide-y overflow-y-auto rounded border px-3">{preview.results.map(result => <li key={result.id} className="space-y-1 py-3 text-sm"><p className="font-medium">{result.label}</p><p>{result.outcome === "flag" ? result.reasons.join("; ") : result.outcome === "manual" ? "Manual review" : "No flag suggested"}</p>{result.missing.length > 0 && <p className="text-muted-foreground">Missing / invalid: {result.missing.join(", ")}. Not treated as failures.</p>}</li>)}</ul>
+        <p className="text-xs text-muted-foreground">Applying replaces this round’s saved flags with this preview. Decisions remain unchanged. You can clear flags at any time.</p>
+        <Button disabled={busy || !data.canApply} onClick={() => void run(async () => { const result = await applyRecruitingRuleFlags({ ...scope, fingerprint: preview.fingerprint }); setPreview(null); setFlags(await getRecruitingRuleFlags(scope)); setMessage(`${result.flagged} flags saved. No decisions changed.`) })}>Apply {matches.length} review flags</Button>
+        {!data.canApply && <p className="text-sm text-muted-foreground">Decision-management permission is required to apply or clear flags.</p>}
+      </div>}
+    </section>
+    {canPreview && <section className="space-y-3 border-t pt-5"><h3 className="font-medium">Saved review flags</h3><p className="text-xs text-muted-foreground">These are snapshots, not decisions. Preview again to account for updated scores. Applicants who leave this round or receive a decision are omitted.</p>
+      {flags === null ? <p role="status">Loading saved flags…</p> : !flags.length ? <p className="text-sm text-muted-foreground">No active flags in this round.</p> : <><ul className="divide-y">{flags.map(flag => <li key={flag.applicationId} className="space-y-1 py-3 text-sm"><p className="font-medium">{flag.label}</p><p>{flag.reasons.join("; ")}</p><p className="text-xs text-muted-foreground">Version {flag.ruleRevision} · {new Date(flag.flaggedAt).toLocaleString()}</p>{onReview && <Button variant="outline" disabled={busy || dirty} onClick={() => review(flag.applicationId)}>Review applicant</Button>}</li>)}</ul><Button variant="outline" disabled={busy || !data.canApply || dirty} onClick={() => void run(async () => { await clearRecruitingRuleFlags(scope); setFlags([]); setPreview(null); setMessage("Flags cleared. Decisions are unchanged.") })}>Clear saved flags</Button></>}
+    </section>}
+  </div>
 }

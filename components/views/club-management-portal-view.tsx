@@ -119,7 +119,7 @@ function PublicPageDetailsPanel() {
             Public Page Details
           </h2>
           <p className="text-sm text-gray-500">
-            Edit the information prospective applicants see on your club's public profile.
+            Edit the information prospective applicants see on your club&#39;s public profile.
           </p>
         </div>
 
@@ -288,7 +288,7 @@ function ExecutiveRosterPanel() {
           <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
             Executive Roster
           </h2>
-          <p className="text-sm text-gray-500">Manage your club's executive team and their titles.</p>
+          <p className="text-sm text-gray-500">Manage your club&#39;s executive team and their titles.</p>
         </div>
         <Button
           variant="outline"
@@ -433,7 +433,7 @@ function MemberDirectoryPanel() {
         <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
           Member Directory
         </h2>
-        <p className="text-sm text-gray-500">Browse every member currently on your club's roster.</p>
+        <p className="text-sm text-gray-500">Browse every member currently on your club&#39;s roster.</p>
       </div>
 
       <div className="relative mt-4 max-w-sm">

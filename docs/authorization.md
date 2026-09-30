@@ -75,9 +75,15 @@ Audit reads, user inspection and changes are logged with actor, target, action a
 
 ## Database migration and rollout
 
+The authoritative current procedure is [database deployment](database-deployment.md). The historical inventory below is retained as audit context; do not execute its example commands before the reconciliation checks in that procedure.
+
 No data/account IDs are renamed or deleted. Additions include explicit capability arrays, ownership flags, account suspension, admin grants, invitations, claims, tasks, content, and audit records. Legacy role values remain untouched.
 
+<<<<<<< HEAD
 The repository now contains a baseline plus seven subsequent migrations. The first two establish authorization:
+=======
+The initial authorization work introduced the first two migrations below. The repository now contains nine migrations; see [the final integration audit](integration-audit.md) for the complete inventory:
+>>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
 
 - `20260923000000_baseline`: the pre-change schema, for fresh databases or existing-schema baselining.
 - `20260923010000_capabilities`: additive extension, access backfills and protection.
@@ -94,11 +100,15 @@ npx prisma migrate deploy
 npx prisma generate
 ```
 
+<<<<<<< HEAD
 **Fresh databases:** `npx prisma migrate deploy` applies all eight migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
+=======
+**Fresh databases:** `npx prisma migrate deploy` applies all committed migrations, then generate the client. Deploy the database extension before the application requiring these columns. PostgreSQL transactions make the additive migration atomic; test on staging first. Do not use `db push --accept-data-loss`.
+>>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
 
 All Prisma tables enable RLS and revoke direct `anon`/`authenticated` table access. This application uses Prisma server actions for those tables; existing browser Supabase calls are Auth and Storage, which are untouched. `DATABASE_URL` must use a trusted server database role with table access/RLS bypass, never the browser `anon`/`authenticated` roles. Review any external PostgREST integrations before rollout. Existing Supabase auth triggers remain separately configured.
 
-Live migration deployment was attempted but could not run because `DATABASE_URL` is absent in this workspace. Both migrations were applied to isolated PostgreSQL (PGlite), with seeded legacy identities/memberships; IDs, legacy roles, capability backfills, absence of automatic platform grants and append-only audit enforcement were verified. This does not substitute for testing the actual Supabase deployment/roles/MFA.
+The final audit applied all nine migrations to fresh and populated legacy PGlite databases, verifying preservation, backfills and browser-role isolation. The configured live database connection timed out during migration-status inspection; no remote migration was applied. See [audit evidence and limitations](integration-audit.md).
 
 ## Demo identity
 
@@ -113,6 +123,6 @@ The demo always uses the same fictional student identity, regardless of workspac
 - Platform user suspension blocks application access; it does not delete a Supabase identity. Email/password changes remain Supabase account-management operations.
 - Management tools may require both an operational capability and identity access where existing data cannot be safely anonymized.
 
-To repeat the isolated PostgreSQL check, make `@electric-sql/pglite` available in an external test environment and run `NODE_PATH=/path/to/test/node_modules node tests/authorization-migration.cjs`. The application has no new PGlite runtime dependency.
+Run `npm run test:migrations` to repeat the isolated PostgreSQL checks. PGlite is a development-only dependency.
 
 Semester work and private-file deployment are documented in [tasks.md](tasks.md). Membership group/cohort labels require `members.manage`; those labels never grant authorization.

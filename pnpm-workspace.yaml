@@ -1,8 +1,14 @@
 packages:
   - "."
 
+# Keep Next's transitive parsers/image libraries on patched versions.
+overrides:
+  'next>postcss': 8.5.23
+  'next>sharp': 0.35.4
+  '@prisma/config>deepmerge-ts': 8.0.0
 allowBuilds:
-  "@prisma/client": true
-  "@prisma/engines": true
-  "prisma": true
-  "sharp": true
+  '@prisma/client': true
+  '@prisma/engines': true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

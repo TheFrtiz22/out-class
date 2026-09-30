@@ -21,9 +21,8 @@ export function MemberPortalDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  if (!membership) return null
-
   const { managedEvents } = useApplicationState()
+  if (!membership) return null
   const meetings = managedEvents.filter((e) => e.clubId === membership.clubId && e.scope === "Members Only")
   const agendas = agendaDocuments.filter((a) => a.clubId === membership.clubId)
   const announcements = memberAnnouncements.filter((a) => a.clubId === membership.clubId)

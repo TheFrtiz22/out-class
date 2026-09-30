@@ -1,4 +1,8 @@
 "use client";
+import "@/components/shell/responsive-workspace.css"
+import Link from "next/link";
+import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
+import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -22,15 +26,17 @@ const localDate = (date: Date) => {
   copy.setMinutes(copy.getMinutes() - copy.getTimezoneOffset());
   return copy.toISOString().slice(0, 16);
 };
-export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" }: { clubId?: string; embedded?: boolean; initialAudience?: string }) {
+export function MeetingList({ clubId, embedded = false, initialAudience = "ALL", personalOnly = false }: { clubId?: string; embedded?: boolean; initialAudience?: string; personalOnly?: boolean }) {
   const [meetings, setMeetings] = useState<Meeting[]>([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
+    [period, setPeriod] = useState<"upcoming" | "past">("upcoming"),
     [audience, setAudience] = useState(initialAudience),
     [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let current = true;
     setLoading(true);
+    setMeetings([]);
     setError("");
     listMeetings(clubId)
       .then((value) => {
@@ -49,82 +55,30 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL" 
   }, [clubId, refresh]);
   const { user } = useAuth(),
     member = user?.memberships.find((m) => m.clubId === clubId);
-  return (
-    <section className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-2xl">Club meetings</h2>
-        {!embedded && <a className="text-sm underline" href="/meetings">
-          All available meetings
-        </a>}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Recruitment meetings and member meetings share one place for agendas,
-        resources, and recaps—including meetings you missed.
-      </p>
-      {clubId && hasPermission(member, "meetings.manage") && (
-        <details className="border-y py-4">
-          <summary className="cursor-pointer font-medium">
-            Create a meeting
-          </summary>
-          <MeetingEditor
-            clubId={clubId}
-            onSaved={() => setRefresh((v) => v + 1)}
-          />
-        </details>
-      )}
-      <label>
-        Audience{" "}
-        <select
-          className="ml-3 rounded border p-2"
-          value={audience}
-          onChange={(e) => setAudience(e.target.value)}
-        >
-          <option value="ALL">All permitted meetings</option>
-          <option value="RECRUITMENT">Recruitment / Interest</option>
-          <option value="MEMBERS">Members</option>
-        </select>
-      </label>
-      {loading && <p role="status">Loading meetings…</p>}
-      {error && (
-        <div role="alert">
-          {error}{" "}
-          <Button variant="outline" onClick={() => setRefresh((v) => v + 1)}>
-            Retry
-          </Button>
-        </div>
-      )}
-      {!loading && !error && !meetings.some(m => audience === "ALL" || m.audience === audience) && (
-        <p className="py-6 text-sm text-muted-foreground">
-          No meetings are available for this audience yet.
-        </p>
-      )}
-      <ul className="divide-y">
-        {meetings
-          .filter((m) => audience === "ALL" || m.audience === audience)
-          .map((m) => (
-            <li className="py-4" key={m.id}>
-              <a
-                className="block space-y-1 rounded-sm focus-visible:outline focus-visible:outline-ring"
-                href={`/meetings/${m.id}`}
-              >
-                <p className="text-xs text-muted-foreground">
-                  {m.club.name} ·{" "}
-                  {m.audience === "MEMBERS"
-                    ? "Members"
-                    : "Recruitment / Interest"}
-                </p>
-                <h3 className="font-semibold">{m.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(m.date).toLocaleString()} · {m.location}
-                </p>
-                {m.recap && <p className="text-xs">Recap available</p>}
-              </a>
-            </li>
-          ))}
-      </ul>
-    </section>
-  );
+  const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
+  return <section className="max-w-5xl space-y-7">
+    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
+    <p className="max-w-2xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance in one place. Past meetings include any recaps your club has shared.</p>
+    <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+      <div role="group" aria-label="Meeting time" className="flex gap-1">{(["upcoming", "past"] as const).map(value => <Button key={value} variant={period === value ? "secondary" : "ghost"} aria-pressed={period === value} onClick={() => setPeriod(value)}>{value === "upcoming" ? "Upcoming" : "Past"}</Button>)}</div>
+      <label className="flex items-center gap-3 text-sm">Audience<select className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></select></label>
+    </div>
+    {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <details className="rounded-lg border bg-card px-5"><summary className="min-h-12 cursor-pointer py-4 text-sm font-medium">Create a meeting</summary><MeetingEditor clubId={clubId} onSaved={() => setRefresh(v => v + 1)} /></details>}
+    {loading && <p role="status">Loading meetings…</p>}
+    {error && <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
+    {!loading && !error && !visible.length && <p role="status" className="border-y py-8 text-sm text-muted-foreground">No {period} meetings are available for this audience.{period === "upcoming" ? " Check Past for earlier agendas and recaps." : " Shared meeting history will appear here."}</p>}
+    <ul className="divide-y">{visible.map(meeting => <li key={meeting.id} className="py-5 first:pt-0">
+      <Link href={`/meetings/${meeting.id}`} className="group flex gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="mt-2 break-words text-lg font-semibold">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></Link>
+      {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
+    </li>)}</ul>
+  </section>;
 }
+/** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries. */
+function MeetingAttendanceState({ meeting }: { meeting: Meeting }) {
+  const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(false);
+  return <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-muted-foreground"><span role="status">{error ? "Attendance unavailable." : count === null ? "Attendance not loaded" : `${count} recorded check-in${count === 1 ? "" : "s"}`}</span><Button size="sm" variant="ghost" disabled={busy} onClick={async () => { setBusy(true); setError(false); try { const rows = await meetingAttendance(meeting.clubId, meeting.id); setCount(rows.length) } catch { setCount(null); setError(true) } finally { setBusy(false) } }}>{busy ? "Loading…" : count === null ? "Check attendance" : "Refresh attendance"}</Button></div>;
+}
+
 function MeetingEditor({
   clubId,
   meeting,
@@ -367,43 +321,43 @@ export function MeetingDetail({ id }: { id: string }) {
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (
-    <article className="space-y-7">
-      <header className="space-y-3">
+    <article data-workspace-detail className="mx-auto max-w-5xl space-y-8">
+      <header className="space-y-4 border-b pb-7">
         <p className="text-sm text-muted-foreground">
           {meeting.club.name} ·{" "}
           {meeting.audience === "MEMBERS"
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <h1 className="font-display text-3xl">{meeting.title}</h1>
+        <h1 className="break-words font-display text-3xl sm:text-4xl">{meeting.title}</h1>
         <p>
-          {new Date(meeting.date).toLocaleString()}
+          {meetingDate(meeting.date)}
           {meeting.endDate &&
-            ` – ${new Date(meeting.endDate).toLocaleTimeString()}`}{" "}
+            ` — ${meetingDate(meeting.endDate)}`}{" "}
           · {meeting.location}
         </p>
         <p className="whitespace-pre-wrap">{meeting.description}</p>
       </header>
       {(["agenda", "recap"] as const).map((key) => (
         <section key={key} className="space-y-3 border-t pt-5">
-          <h2 className="text-lg font-semibold capitalize">{key}</h2>
+          <h2 className="font-display text-2xl capitalize">{key}</h2>
           <p className="whitespace-pre-wrap text-sm leading-7">
             {meeting[key] || `No ${key} has been added yet.`}
           </p>
         </section>
       ))}
       <section className="space-y-3 border-t pt-5">
-        <h2 className="text-lg font-semibold">Resources</h2>
+        <h2 className="font-display text-2xl">Resources</h2>
         {resources.success && resources.data.length ? (
           resources.data.map((r) => (
             <a
               key={r.id}
-              className="block break-words text-sm underline"
+              className="block min-h-11 break-words rounded-md border bg-card p-4 text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
               href={r.url}
               target="_blank"
               rel="noreferrer"
             >
-              {r.label} · {r.kind.toLowerCase()}
+              {r.label} · {r.kind.toLowerCase()}<span className="sr-only"> (opens in a new tab)</span>
             </a>
           ))
         ) : (
@@ -431,6 +385,7 @@ export function MeetingDetail({ id }: { id: string }) {
 }
 function MeetingAttendance({ meeting }: { meeting: Meeting }) {
   const demo = useDemoMode();
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
   const [open, setOpen] = useState(false),
     [code, setCode] = useState<{ token: string; expiresAt: string } | null>(
       null,
@@ -443,17 +398,20 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
     [refresh, setRefresh] = useState(0);
   useEffect(() => {
     let current = true;
+    setRows([]);
+    setAttendanceLoading(true);
+    setError("");
     meetingAttendance(meeting.clubId, meeting.id)
       .then((value) => {
         if (current) setRows(value);
       })
       .catch(() => {
         if (current) setError("Could not load attendance.");
-      });
+      }).finally(() => { if (current) setAttendanceLoading(false) });
     return () => {
       current = false;
     };
-  }, [meeting.id, refresh]);
+  }, [meeting.clubId, meeting.id, refresh]);
   useEffect(() => {
     if (!open) return;
     let current = true;
@@ -479,11 +437,11 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       clearInterval(timer);
       clearInterval(clock);
     };
-  }, [open, meeting.id]);
+  }, [open, meeting.clubId, meeting.id]);
   const valid = code && new Date(code.expiresAt).getTime() > now;
   return (
     <section className="space-y-4 border-t pt-5">
-      <h2 className="text-lg font-semibold">Attendance</h2>
+      <h2 className="font-display text-2xl">Attendance</h2>
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo QR check-in works in this browser only. It does not simulate a
@@ -537,7 +495,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       {open && !valid && <p role="status">Waiting for a current code…</p>}
       {error && <p role="alert">{error}</p>}
       <div className="flex items-center gap-4">
-        <h3 className="font-medium">Attendance history · {rows.length}</h3>
+        <h3 className="font-medium">Attendance history{!attendanceLoading && !error ? ` · ${rows.length}` : ""}</h3>
         <Button variant="ghost" onClick={() => setRefresh((v) => v + 1)}>
           Refresh
         </Button>
@@ -553,7 +511,8 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
           </li>
         ))}
       </ul>
-      {!rows.length && (
+      {attendanceLoading && <p role="status" className="text-sm text-muted-foreground">Loading attendance…</p>}
+      {!attendanceLoading && !error && !rows.length && (
         <p className="text-sm text-muted-foreground">No check-ins yet.</p>
       )}
     </section>

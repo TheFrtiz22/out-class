@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
+  getInterviewKit,
   openInterviewSession,
   saveInterviewSession,
 } from "@/lib/workspace-api";
@@ -19,7 +20,13 @@ export function InterviewKitSession({
   formRef,
   onState,
   onComplete,
+  context,
+  toolbar,
+  canManageKit = false,
 }: {
+  context?: ReactNode;
+  toolbar?: (completed: boolean) => ReactNode;
+  canManageKit?: boolean;
   clubId: string;
   applicationId: string;
   roundId: string;
@@ -42,6 +49,22 @@ export function InterviewKitSession({
     [error, setError] = useState(""),
     [newQuestion, setNewQuestion] = useState(""),
     [retry, setRetry] = useState(0);
+  const [activeQuestion, setActiveQuestion] = useState("");
+  const [closing, setClosing] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [search, setSearch] = useState("");
+  const [library, setLibrary] = useState<InterviewSessionData["questions"]>([]);
+  const [libraryError, setLibraryError] = useState("");
+  const [libraryRetry, setLibraryRetry] = useState(0);
+  useEffect(() => {
+    if (!canManageKit) return;
+    let current = true;
+    setLibraryError("");
+    getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") });
+    return () => { current = false };
+  }, [clubId, roundId, canManageKit, libraryRetry]);
+  const closingHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (closing) { closingHeading.current?.scrollIntoView({ block: "center" }); closingHeading.current?.focus({ preventScroll: true }) } }, [closing]);
   const savingRef = useRef(false),
     mounted = useRef(true),
     sessionRef = useRef<InterviewSessionData | null>(null);
@@ -104,7 +127,7 @@ export function InterviewKitSession({
       if (mounted.current) {
         setSession(result.session);
         setSaved(JSON.stringify(snapshot));
-        if (complete && result.evaluation) onComplete(result.evaluation, next);
+        if (complete && result.evaluation) { setClosing(false); onComplete(result.evaluation, next); }
       }
     } catch (e) {
       if (mounted.current)
@@ -122,12 +145,12 @@ export function InterviewKitSession({
     }
   }
   useEffect(() => {
-    if (!dirty || !session || session.completedAt) return;
+    if (!dirty || !session || session.completedAt || error) return;
     const timer = setTimeout(() => {
       if (!savingRef.current) void persist();
     }, 800);
     return () => clearTimeout(timer);
-  }, [serialized, saved, session?.id]);
+  }, [serialized, saved, session?.id, saving]);
   if (!session)
     return (
       <div className="space-y-3" role="status">
@@ -148,209 +171,63 @@ export function InterviewKitSession({
       ],
     }));
   }
+  const questions = [
+    ...session.questions.map(q => ({ id: q.id, prompt: q.prompt, guidance: q.guidance, extra: false })),
+    ...draft.additionalQuestions.map(q => ({ id: q.id, prompt: q.question, guidance: "", extra: true })),
+  ];
+  const active = questions.find(q => q.id === activeQuestion) || questions[0];
+  const activeIndex = questions.findIndex(q => q.id === active?.id);
+  const disabled = !!session.completedAt || completing;
+  const libraryQuestions = [...session.questions, ...library.filter(q => !session.questions.some(saved => saved.id === q.id))].filter(q => `${q.prompt} ${q.guidance}`.toLowerCase().includes(search.toLowerCase()));
+  function addQuestion(prompt: string) {
+    if (disabled || draft.additionalQuestions.length >= 30 || !prompt.trim()) return;
+    const id = crypto.randomUUID();
+    setDraft(d => ({ ...d, additionalQuestions: [...d.additionalQuestions, { id, question: prompt.trim(), notes: "" }] }));
+    setActiveQuestion(id);
+  }
   return (
-    <form
-      ref={formRef}
-      className="min-w-0 space-y-6 border-t pt-5"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void persist(true);
-      }}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold">Interview kit</h2>
-        <span role="status" className="text-xs text-muted-foreground">
-          {session.completedAt
-            ? "Completed interview"
-            : saving
-              ? "Saving…"
-              : dirty
-                ? "Unsaved changes"
-                : "Draft saved"}
-        </span>
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      <fieldset
-        disabled={!!session.completedAt || completing}
-        className="space-y-6"
-      >
-        {!session.questions.length && (
-          <p className="text-sm text-muted-foreground">
-            No configured questions. Add questions below or record an overall
-            review.
-          </p>
-        )}
-        {session.questions.map((q, i) => (
-          <section className="space-y-3" key={q.id}>
-            <h3 className="font-medium">
-              {i + 1}. {q.prompt}
-            </h3>
-            {q.guidance && (
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {q.guidance}
-              </p>
-            )}
-            <label className="text-sm" htmlFor={`notes-${q.id}`}>
-              Question notes
-            </label>
-            <Textarea
-              id={`notes-${q.id}`}
-              rows={4}
-              maxLength={10000}
-              value={
-                draft.questionNotes.find((n) => n.questionId === q.id)?.notes ||
-                ""
-              }
-              onChange={(e) => note(q.id, e.target.value)}
-            />
-          </section>
-        ))}
-        <section className="space-y-4 border-t pt-4">
-          <h3 className="font-semibold">Additional Questions</h3>
-          {draft.additionalQuestions.map((q) => (
-            <div key={q.id} className="space-y-2">
-              <p className="font-medium">{q.question}</p>
-              <label htmlFor={`extra-${q.id}`} className="text-sm">
-                Question notes
-              </label>
-              <Textarea
-                id={`extra-${q.id}`}
-                maxLength={10000}
-                value={q.notes}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    additionalQuestions: d.additionalQuestions.map((item) =>
-                      item.id === q.id
-                        ? { ...item, notes: e.target.value }
-                        : item,
-                    ),
-                  }))
-                }
-              />
-            </div>
-          ))}
-          {!draft.additionalQuestions.length && (
-            <p className="text-sm text-muted-foreground">
-              No off-script questions added.
-            </p>
-          )}
-          {!session.completedAt && (
-            <div className="space-y-2">
-              <label htmlFor="new-interview-question">
-                Ask an off-script question
-              </label>
-              <Input
-                id="new-interview-question"
-                maxLength={3000}
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={
-                  !newQuestion.trim() || draft.additionalQuestions.length >= 30
-                }
-                onClick={() => {
-                  setDraft((d) => ({
-                    ...d,
-                    additionalQuestions: [
-                      ...d.additionalQuestions,
-                      {
-                        id: crypto.randomUUID(),
-                        question: newQuestion.trim(),
-                        notes: "",
-                      },
-                    ],
-                  }));
-                  setNewQuestion("");
-                }}
-              >
-                Add question
-              </Button>
-            </div>
-          )}
-        </section>
-        <section className="space-y-3 border-t pt-4">
-          <h3 className="font-semibold">Closing review</h3>
-          <details>
-            <summary className="cursor-pointer text-sm">
-              Additional Questions summary ({draft.additionalQuestions.length})
-            </summary>
-            {draft.additionalQuestions.map((q) => (
-              <div key={q.id} className="py-2">
-                <p className="font-medium">{q.question}</p>
-                <p className="whitespace-pre-wrap text-sm">
-                  {q.notes || "No notes recorded."}
-                </p>
-              </div>
-            ))}
-          </details>
-          <label htmlFor="overall-interview-review">Overall Review</label>
-          <Textarea
-            id="overall-interview-review"
-            rows={5}
-            maxLength={20000}
-            value={draft.overallReview}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, overallReview: e.target.value }))
-            }
-          />
-          <label htmlFor="interview-score">Overall score · 1–10</label>
-          <Input
-            id="interview-score"
-            type="number"
-            min={1}
-            max={10}
-            step="any"
-            className="w-28"
-            value={draft.score ?? ""}
-            onChange={(e) =>
-              setDraft((d) => ({
-                ...d,
-                score: e.target.value === "" ? null : Number(e.target.value),
-              }))
-            }
-          />
-          <p className="text-xs text-muted-foreground">
-            Question guidance supports the existing overall 1–10 score.
-            Question-specific notes stay separate from the overall evaluation.
-          </p>
-        </section>
-      </fieldset>
-      {!session.completedAt && (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={saving || !dirty}
-            onClick={() => void persist()}
-          >
-            Save draft
-          </Button>
-          <Button type="submit" disabled={saving || draft.score === null}>
-            Complete interview
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={saving || draft.score === null}
-            onClick={() => void persist(true, true)}
-          >
-            Complete & next
-          </Button>
+    <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) setClosing(true) }}>
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card px-5 py-4 sm:px-8">
+        {toolbar?.(!!session.completedAt)}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-medium text-primary">{session.completedAt ? "Ended" : "In progress"}</span>
+          <span role="status" className="text-xs text-muted-foreground">{session.completedAt ? "Completed interview" : error ? "Save needs attention" : saving ? "Saving…" : dirty || newQuestion.trim() ? "Unsaved changes" : "Draft saved"}</span>
+          {!session.completedAt && <Button type="button" disabled={saving} onClick={() => setClosing(true)}>End Interview</Button>}
         </div>
-      )}
-      <p className="text-xs text-muted-foreground">
-        Drafts autosave after a brief pause. Wait for “Draft saved” before
-        leaving. ⌘ / Ctrl + Enter completes the interview. Completion does not
-        change the candidate’s round or decision.
-      </p>
+      </header>
+      {error && <div role="alert" className="border-b px-5 py-3 text-sm text-destructive">{error} Your text remains here. <Button type="button" variant="outline" disabled={saving} onClick={() => void persist()}>Retry save</Button></div>}
+      <div className={`oc-interview-columns grid items-start lg:grid-cols-[260px_minmax(0,1fr)] ${libraryOpen ? "xl:grid-cols-[260px_minmax(0,1fr)_290px]" : ""}`}>
+        {context}
+        <div className="min-w-0 space-y-7 px-5 py-7 sm:px-8">
+          <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-muted-foreground">{session.completedAt ? "Interview record" : "Interview"}</p><Button type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-library" onClick={() => setLibraryOpen(v => !v)}>{libraryOpen ? "Hide library" : "Question library"}</Button></div>
+          <fieldset disabled={disabled} className="min-w-0 space-y-6">
+            <section className="oc-active-question space-y-4" aria-label="Active question">
+              <p className="text-sm text-muted-foreground">Active Question {active ? `· ${activeIndex + 1} of ${questions.length}` : ""}</p>
+              <h2 className="font-display text-2xl leading-snug sm:text-3xl">{active?.prompt || "Make room for a conversation."}</h2>
+              {active?.guidance && <p className="whitespace-pre-wrap border-l-2 border-brand-orange pl-4 text-sm leading-7 text-muted-foreground">{active.guidance}</p>}
+              {active ? <><label htmlFor={`active-notes-${active.id}`} className="block text-sm font-medium">Your private question notes</label><Textarea id={`active-notes-${active.id}`} className="min-h-48" rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} /></> : <p className="text-sm text-muted-foreground">This snapshot has no configured questions. Add an off-script question below.</p>}
+              <p className="text-xs text-muted-foreground">Notes belong to your interview session. This is not a shared live document.</p>
+            </section>
+          </fieldset>
+          <section className="oc-question-agenda space-y-3 border-t pt-5"><h2 className="font-semibold">Question Agenda</h2><p className="text-xs text-muted-foreground">Kit order is preserved in this session’s snapshot.</p>
+            <ol className="divide-y">{questions.map((q, i) => <li key={q.id}><button type="button" aria-current={q.id === active?.id ? "step" : undefined} onClick={() => setActiveQuestion(q.id)} className={`flex w-full gap-3 rounded px-3 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-ring ${q.id === active?.id ? "bg-accent font-medium" : "hover:bg-muted"}`}><span className="text-muted-foreground">{i + 1}.</span><span className="break-words">{q.prompt}{q.extra && <span className="mt-1 block text-xs font-normal text-muted-foreground">Off-script</span>}</span></button></li>)}</ol>
+            {!session.completedAt && <fieldset disabled={completing} className="space-y-3 pt-3"><label htmlFor="new-interview-question" className="text-sm font-medium">Add an off-script question</label><Input id="new-interview-question" maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion("") }}>Add question</Button></fieldset>}
+          </section>
+          {(closing || session.completedAt) && <section aria-label="Closing review" className="space-y-4 border-t pt-5">
+            <h2 ref={closingHeading} tabIndex={-1} className="font-display text-2xl">{session.completedAt ? "Overall review" : "Finish your interview"}</h2><p className="text-sm text-muted-foreground">Review your notes before confirming. Completion saves your evaluation and locks this interview; it does not change the candidate’s round or decision.</p>
+            <fieldset disabled={disabled} className="space-y-3"><label htmlFor="overall-interview-review">Overall Review</label><Textarea id="overall-interview-review" rows={5} maxLength={20000} value={draft.overallReview} onChange={e => setDraft(d => ({ ...d, overallReview: e.target.value }))} /><label htmlFor="interview-score" className="block">Overall score · 1–10 (required to complete)</label><Input id="interview-score" type="number" min={1} max={10} step="any" className="w-28" value={draft.score ?? ""} onChange={e => setDraft(d => ({ ...d, score: e.target.value === "" ? null : Number(e.target.value) }))} /></fieldset>
+            {!session.completedAt && <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving || draft.score === null} onClick={() => void persist(true)}>Confirm completion</Button><Button type="button" variant="outline" disabled={saving || draft.score === null} onClick={() => void persist(true, true)}>Complete & next</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => setClosing(false)}>Keep interviewing</Button></div>}
+          </section>}
+          {!session.completedAt && <Button type="button" variant="outline" disabled={saving || !dirty} onClick={() => void persist()}>Save draft</Button>}
+          <p className="text-xs text-muted-foreground">Drafts autosave after a brief pause. Wait for “Draft saved” before leaving. ⌘ / Ctrl + Enter opens the closing review.</p>
+        </div>
+        {libraryOpen && <aside id="interview-library" aria-label="Question library" className="min-w-0 space-y-4 border-t p-5 lg:col-start-2 xl:col-start-auto xl:sticky xl:top-0 xl:max-h-dvh xl:overflow-y-auto xl:border-l xl:border-t-0">
+          <h2 className="font-semibold">Question Library</h2><p className="text-xs leading-5 text-muted-foreground">Your session’s kit snapshot{canManageKit ? " and the current round kit" : ""}. Existing questions stay in the agenda.</p><Input aria-label="Search question library" placeholder="Search questions…" value={search} onChange={e => setSearch(e.target.value)} />
+          {libraryError && <p role="alert" className="text-xs">{libraryError} <Button type="button" variant="ghost" onClick={() => setLibraryRetry(v => v + 1)}>Retry</Button></p>}
+          <ul className="divide-y">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id || item.prompt === q.prompt); return <li key={q.id} className="space-y-3 py-4"><p className="text-sm font-medium leading-6">{q.prompt}</p>{q.guidance && <p className="text-xs leading-5 text-muted-foreground">{q.guidance}</p>}<Button type="button" size="sm" variant="outline" disabled={!existing && (disabled || draft.additionalQuestions.length >= 30)} onClick={() => existing ? setActiveQuestion(existing.id) : addQuestion(q.prompt)}>{existing ? "Go to question" : "Add to Interview"}</Button>{!existing && <p className="text-xs text-muted-foreground">Adds the prompt as an off-script question.</p>}</li> })}</ul>
+          {!libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching kit questions.</p>}
+        </aside>}
+      </div>
     </form>
   );
 }

@@ -5,6 +5,7 @@ import type { DirectoryClub } from "@/lib/club-directory"
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
+  marketing: true,
   testRequirement: true,
   claimedAt: true,
   campusKey: true,
@@ -29,6 +30,7 @@ const publicFields = {
 } as const
 function present(club: Awaited<ReturnType<typeof readClubs>>[number]): DirectoryClub {
   return {
+    marketing: club.marketing,
     testRequirement: club.testRequirement,
     claimed: !!club.claimedAt,
     campusKey: club.campusKey,
@@ -47,8 +49,8 @@ function present(club: Awaited<ReturnType<typeof readClubs>>[number]): Directory
     pitch: club.tagline,
     description: club.description,
     tags: [],
-    acceptanceRate: club.acceptanceRate,
-    aumValue: club.aumValue,
+    acceptanceRate: (club.marketing as { showAcceptance?: boolean } | null)?.showAcceptance === false ? null : club.acceptanceRate,
+    aumValue: (club.marketing as { showAum?: boolean } | null)?.showAum === false ? null : club.aumValue,
     timeCommitment: null,
     source: "database",
     applicationAvailable: club.pipelineRounds.length > 0,

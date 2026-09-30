@@ -118,6 +118,39 @@ const assert = require("node:assert/strict")
   await assert.rejects(db.exec(`INSERT INTO "PlatformViewSession" (id,"tokenHash","actorId","targetUserId",reason,"expiresAt") VALUES ('duplicate-view','hashed-token','owner','member','Support inspection',NOW()+interval '30 minutes')`),/unique constraint/)
   assert.equal((await db.query(`SELECT text FROM "TaskAssignment" WHERE id='former-work'`)).rows[0].text,'Preserved work')
   console.log("Platform view sessions are isolated from browser roles; token hashes unique; existing user and task data retained.")
+  await db.exec(fs.readFileSync(dir + "20260925010000_marketing_participants/migration.sql", "utf8"))
+  assert.equal((await db.query(`SELECT "marketingApprovedAt" FROM "Club" WHERE id='club'`)).rows[0].marketingApprovedAt, null)
+
+  await db.exec(fs.readFileSync(dir + "20260927000000_recruiting_rules/migration.sql", "utf8"))
+  assert.equal((await db.query('SELECT count(*)::int AS count FROM "RecruitingRule"')).rows[0].count, 0)
+  assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
+  await db.exec(`INSERT INTO "RecruitingRule" ("roundId","minGpa","minSat","minAct","updatedAt") VALUES ('round',3.5,1400,30,NOW())`)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minGpa"=4.1`),/check constraint/)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minSat"=1401`),/check constraint/)
+  await assert.rejects(db.exec(`UPDATE "RecruitingRule" SET "minAct"=37`),/check constraint/)
+  await assert.rejects(db.exec(`INSERT INTO "RecruitingRule" ("roundId","updatedAt") VALUES ('foreign',NOW())`),/foreign key/)
+  await db.exec(`INSERT INTO "RecruitingRuleFlag" ("roundId","applicationId","ruleRevision",reasons,"flaggedBy") VALUES ('round','app',1,ARRAY['GPA below 3.5'],'owner')`)
+  assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
+  await assert.rejects(db.exec(`INSERT INTO "RecruitingRuleFlag" ("roundId","applicationId","ruleRevision",reasons,"flaggedBy") VALUES ('round','app',1,ARRAY['duplicate'],'owner')`),/unique constraint/)
+  console.log("Recruiting rules preserve decisions, validate thresholds, and isolate versioned flags from browser access.")
+  await db.exec(fs.readFileSync(dir + "20260928000000_private_resume_storage/migration.sql", "utf8"))
+  // Every application table must be private, including tables added after the original capability migration.
+  const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
+  for (const table of tables) {
+    assert.equal(table.relrowsecurity, true, `RLS disabled: ${table.relname}`)
+    for (const role of ['anon','authenticated']) {
+      for (const privilege of ['SELECT','INSERT','UPDATE','DELETE']) {
+        const result=await db.query(`SELECT has_table_privilege($1,$2,$3) AS allowed`, [role, '"'+table.relname+'"',privilege])
+        assert.equal(result.rows[0].allowed,false, `${role} can ${privilege} ${table.relname}`)
+      }
+    }
+  }
+  const migrationNames = fs.readdirSync(dir).filter(name => fs.existsSync(dir+name+'/migration.sql')).sort()
+  const fresh = new PGlite()
+  await fresh.exec('CREATE ROLE anon; CREATE ROLE authenticated;')
+  for (const migration of migrationNames) await fresh.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))
+  await fresh.close()
+  console.log(`All ${migrationNames.length} migrations applied on fresh and legacy databases; all ${tables.length} tables enforce RLS and deny browser-role CRUD.`)
   await db.close()
 })().catch((e) => {
   console.error(e)

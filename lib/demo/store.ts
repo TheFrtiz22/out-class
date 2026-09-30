@@ -43,11 +43,16 @@ export const demoStore = {
       /* Reset damaged browser data. */
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
+    state!.recruitingRules ??= []
+    state!.recruitingFlags ??= []
+    state!.recruitingRuleAudit ??= []
     state!.interviews ??= []
     if(!state!.meetings){const additions=createDemoSeed(state!.anchor);state!.meetings=additions.meetings;state!.meetingAttendances=additions.meetingAttendances}
     state!.meetingTokens ??= []
     for (const application of state!.applications) application.anonymousReviewText ??= null
     for (const club of state!.clubs) {
+      club.claimed ??= true
+      club.earlyAdopter ??= state!.clubs.indexOf(club) < 3
       club.testRequirement ??= "OPTIONAL"
       for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
     }
@@ -152,10 +157,16 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
     .applications.filter((a) => a.studentId === studentId)
     .map((a) => joinedApplication(a.id))
 }
+export function presentDemoMeeting(meeting: DemoState["meetings"][number]) {
+  return { ...meeting, resources: meeting.resources.map(resource => ({
+    ...resource,
+    url: resource.url.startsWith("/demo/") ? new URL(resource.url, typeof window !== "undefined" ? window.location.origin : "https://demo.invalid").href : resource.url,
+  })) }
+}
 export function demoDashboard() {
   const s = demoStore.get()
   return {
-    meetings: s.meetings.filter(m => m.audience === "RECRUITMENT" || s.memberships.some(member => member.clubId === m.clubId && member.userId === demoUser().id)),
+    meetings: s.meetings.filter(m => m.audience === "RECRUITMENT" || s.memberships.some(member => member.clubId === m.clubId && member.userId === demoUser().id)).map(presentDemoMeeting),
     applications: studentApplications(),
     attendances: s.meetingAttendances.filter(a=>a.studentId===s.students[0].id).flatMap(a=>{const event=s.meetings.find(m=>m.id===a.eventId);return event&&(event.audience==="RECRUITMENT"||s.memberships.some(m=>m.clubId===event.clubId&&m.userId===s.students[0].id))?[{...a,event}]:[]}),
   }
@@ -193,22 +204,23 @@ export function demoDirectory() {
     ...club,
     source: "database" as const,
     recommended: i < 3,
-    pitch: `Sample ${club.theme} recruitment · fictional season`,
-    tags: ["Demo / sample", club.theme],
+    pitch: club.tagline || `Sample ${club.theme} recruitment · fictional season`,
+    tags: ["Demo / sample", ...(club.earlyAdopter ? ["Early adopter (sample)"] : []), club.theme],
     description: club.description,
-    applicationAvailable: true,
-    acceptanceRate: 15 + (i % 7) * 3,
-    aumValue: null,
+    applicationAvailable: club.claimed,
+    acceptanceRate: club.marketing?.showAcceptance === false ? null : club.acceptanceRate === undefined ? 15 + (i % 7) * 3 : club.acceptanceRate,
+    aumValue: club.marketing?.showAum === false ? null : club.aumValue ?? null,
     timeCommitment: "3-5" as const,
     requirements: club.questions.map((q) => q.prompt),
     publicEvents: [
-      {
+      ...s.meetings.filter(m => m.clubId === club.id && m.isPublic).map(m => ({ id: m.id, title: m.title, date: m.date.toISOString(), location: m.location, description: m.description })),
+      ...(club.claimed ? [{
         id: `deadline-${club.id}`,
         title: "Sample application deadline",
         date: club.deadline.toISOString(),
         location: "OutClass demo",
         description: "Fictional deadline, not an actual club announcement.",
-      },
+      }] : []),
     ],
   }))
 }

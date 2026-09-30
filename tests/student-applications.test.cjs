@@ -5,14 +5,14 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.replace("@/", "") + ".ts") : require(name), mod, mod.exports)
   return mod.exports
 }
 const helpers = load('lib/student-applications.ts')
 const clubId = '00000000-0000-4000-8000-000000000001'
 const questionId = '00000000-0000-4000-8000-000000000002'
 const question = { id: questionId, prompt: 'Why this club?', type: 'ESSAY', required: true, wordLimit: 3 }
-function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL' } = {}) {
+function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL', userId = 'student' } = {}) {
   const calls = []
   const tx = {
     club: { findUnique: async () => ({ testRequirement }) },
@@ -30,7 +30,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   }
   const actions = load('actions/applications.ts', {
     '@/lib/student-applications': helpers,
-    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }) },
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: userId } }) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     'next/cache': { revalidatePath: () => {} },
   })
@@ -89,4 +89,25 @@ test('submission enforces club SAT/ACT policy; drafts remain available without r
   await assert.rejects(setup({testRequirement:'BOTH',profile:{actScore:32}}).submitApplication(input), /SAT\/ACT requirement/)
   await setup({testRequirement:'BOTH',profile:{actScore:32,satScore:1500}}).submitApplication(input)
   await setup({testRequirement:'BOTH'}).saveApplicationDraft(input)
+})
+
+test('FILE_UPLOAD accepts private owned paths and external links but rejects unsafe/foreign attachments', async () => {
+ const fileQuestion={...question,type:'FILE_UPLOAD'},path=clubId+'/application.pdf'
+ assert.deepEqual(helpers.answerErrors([fileQuestion],[{questionId,response:path}],true),{})
+ assert.deepEqual(helpers.answerErrors([fileQuestion],[{questionId,response:'https://example.test/document.pdf'}],true),{})
+ assert.equal(helpers.applicationAttachmentUrl(path,'application',questionId),'/api/application-attachments?applicationId=application&questionId='+questionId)
+ for(const response of ['javascript:alert(1)',clubId+'/../secret.pdf',clubId+'/%2e%2e.pdf',clubId+'/folder/file.pdf',clubId+'/file.pdf?other',clubId+'/file.pdf#fragment'])
+   assert.ok(helpers.answerErrors([fileQuestion],[{questionId,response}],false)[questionId])
+ const h=setup({questions:[fileQuestion]})
+ await assert.rejects(h.saveApplicationDraft({clubId,answers:[{questionId,response:path}]}),/own uploaded/)
+ assert.ok(!h.calls.some(call=>call[0]==='update'))
+})
+
+test('owned private attachments persist unchanged in drafts and submissions',async()=>{
+ for(const method of ['saveApplicationDraft','submitApplication']){
+  const h=setup({userId:clubId,questions:[{...question,type:'FILE_UPLOAD'}]})
+  const response=clubId+'/application.pdf'
+  await h[method]({clubId,answers:[{questionId,response}]})
+  assert.equal(h.calls.find(call=>call[0]==='answers')[1].data[0].response,response)
+ }
 })

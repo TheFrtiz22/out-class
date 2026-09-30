@@ -1,5 +1,8 @@
 "use client"
 
+import { LandingNavigation } from "@/components/landing/landing-navigation"
+import { LaunchClubs } from "@/components/landing/launch-clubs"
+import type { LaunchClub } from "@/lib/launch-clubs"
 import { useState } from "react"
 import { ArrowRight } from "lucide-react"
 import { OutClassLogo } from "@/components/outclass-logo"
@@ -21,23 +24,28 @@ import "./landing.css"
 
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
+  launchClubs?: LaunchClub[]
   campusName?: string
 }
 
 export function LandingPageView({
   onNavigateToApp,
+  launchClubs = [],
   campusName = "University of Virginia",
 }: LandingPageViewProps) {
   const [signup, setSignup] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
   return (
     <ScrollMotion className="oc-landing" id="top">
+      <LandingNavigation />
+      <a className="oc-skip-link" href="#students">Skip to product overview</a>
       <LandingNavbar
         onSignIn={() => onNavigateToApp("student")}
         onCreateProfile={() => setSignup(true)}
       />
       <main>
         <LandingHero campusName={campusName} onCreateProfile={() => setSignup(true)} />
+        <LaunchClubs clubs={launchClubs} />
         <ProcessTimeline />
         <ProductStories onLeaderEnter={() => onNavigateToApp("leader")} />
         <SectionReveal

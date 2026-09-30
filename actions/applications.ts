@@ -4,7 +4,7 @@ import { meetsTestRequirement } from "@/lib/test-scores"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
-import { applicationInputSchema, answerErrors } from "@/lib/student-applications"
+import { applicationInputSchema, answerErrors, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
@@ -20,6 +20,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       if (!club || !meetsTestRequirement(club.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
     const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId } })
+    assertApplicationAttachmentOwnership(questions, parsed.answers, user.id)
     const errors = answerErrors(questions, parsed.answers, submit)
     if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
     const firstRound = await tx.pipelineRound.findFirst({
@@ -110,6 +111,7 @@ export async function getStudentDashboardData() {
 
   const applications = await prisma.application.findMany({
     where: { studentId: user.id },
+    omit: { anonymousReviewText: true },
     include: {
       club: {
         select: { name: true, logoUrl: true, color: true, _count: { select: { questions: true } } },

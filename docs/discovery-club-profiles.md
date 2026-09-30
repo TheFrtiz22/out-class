@@ -32,3 +32,15 @@ The previous club-profile form discarded its text fields. It is replaced by a di
 - The checkout lacks working Supabase/database configuration. Live database reads/writes and authentication cannot be certified locally; query and mutation contracts were tested with isolated mocks. The real directory displays an explicit retry state when the database is unavailable.
 
 No new dependencies or database migrations were added.
+
+## September 2026 profile editor
+
+The workspace Settings screen now uses `ClubProfileEditor`: collapsible sections, section shortcuts, desktop live preview, full preview on all screen sizes, discard, dirty-navigation protection, and explicit publishing. `MarketingProfile` and `MarketingSections` are shared with the Discover detail view and public club route.
+
+Clubs can publish identity, category, logo/cover, accent color, acceptance/AUM/member visibility, custom metrics, outcomes, accolades, member benefits, eligibility, commitment, dues, featured projects, a video link, gallery, FAQs, public contact/socials, and additional links. Empty sections are omitted. Existing recruitment/application flows stay in the public profile.
+
+Publishing uses the existing `club.settings` permission and audited transaction. `Club.marketing` holds validated public JSON; core fields remain in existing columns. Apply `20260929000000_club_marketing` through the established Prisma migration process before deploying this version. Demo publishing uses the isolated demo store and is reflected by the demo directory. No live deployment or production database mutation is performed by this change.
+
+Uploads are resized in the browser and stored as bounded raster data URLs (350 KB per image, up to eight images including logo and cover). HTTP(S) image URLs are also supported. Links reject executable protocols. This fits the existing 4 MB action limit without adding a storage service. Clubs with larger media libraries should use externally hosted image URLs.
+
+Verification includes profile schema and URL/image validation, permission-gated publishing and audit, public-directory propagation and hidden statistics, an actual PostgreSQL-compatible migration round trip, and desktop/mobile editor interaction checks with an isolated local fixture.

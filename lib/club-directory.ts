@@ -1,5 +1,6 @@
 import type { DiscoverClub } from "@/lib/data"
 export type DirectoryClub = DiscoverClub & {
+  marketing?: unknown
   testRequirement?: string
   claimed?: boolean
   campusKey?: string

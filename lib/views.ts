@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 
 export type ViewId =
+  | "my-clubs"
   | "landing"
   | "auth"
   | "student-onboarding"
@@ -93,10 +94,11 @@ export const navSections: { label: string; items: NavItem[] }[] = [
 ]
 
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
+  "my-clubs": { title: "My Clubs", subtitle: "Your communities, meetings, and assignments." },
   landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
   "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },
-  "student-dashboard": { title: "Dashboard", subtitle: "Track your profile and active applications." },
+  "student-dashboard": { title: "Home", subtitle: "Your applications, next steps, and upcoming events." },
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
   discover: { title: "Discover", subtitle: "Explore clubs and find your next opportunity." },
@@ -113,7 +115,7 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   },
   "screening-dashboard": {
     title: "Screening & Auto-Filter",
-    subtitle: "Screen high-volume applicants with dynamic auto-reject rules.",
+    subtitle: "Preview saved recruiting thresholds and mark applicants for review.",
   },
   "interview-scheduler": {
     title: "Interview Scheduler & Booking Manager",

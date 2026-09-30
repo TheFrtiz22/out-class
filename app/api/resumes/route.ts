@@ -80,6 +80,9 @@ export async function GET(request: Request) {
       secret
     );
 
+    const { data: bucket, error: bucketError } = await adminClient.storage.getBucket('resumes');
+    if (bucketError || !bucket || bucket.public) return new NextResponse('Private resume storage is unavailable', { status: 503 });
+
     const { data, error } = await adminClient.storage
       .from('resumes')
       .createSignedUrl(path, 60 * 5); // 5 minutes
@@ -88,7 +91,7 @@ export async function GET(request: Request) {
       return new NextResponse('Not found', { status: 404 });
     }
 
-    return NextResponse.redirect(data.signedUrl);
+    return NextResponse.redirect(data.signedUrl, { headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } });
   } catch (error: any) {
     // Rethrow Next.js redirects so we get the project's existing authentication behavior
     if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {

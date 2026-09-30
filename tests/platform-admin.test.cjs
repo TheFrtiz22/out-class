@@ -435,7 +435,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
 });
 test("normal account API queries the authenticated identity without obsolete omit fields", async () => {
   const api = load("app/api/users/me/route.ts", {
-    "next/headers": { cookies: async () => ({}) },
+    "next/headers": { cookies: async () => ({get:()=>undefined,has:()=>false}) },
     "@/utils/supabase/server": {
       createClient: async () => ({
         auth: {
@@ -449,8 +449,13 @@ test("normal account API queries the authenticated identity without obsolete omi
       prisma: {
         user: {
           findUnique: async (query) => {
+<<<<<<< HEAD
             assert.equal(query.omit, undefined);
             assert.deepEqual(query.where, { id: actor });
+=======
+            assert.deepEqual(query.omit, { passwordHash: true });
+            assert.deepEqual(query.include.applications.omit, { anonymousReviewText: true });
+>>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
             return {
               id: actor,
               email: "admin@virginia.edu",

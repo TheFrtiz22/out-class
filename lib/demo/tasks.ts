@@ -46,7 +46,7 @@ export function getTaskWorkspace(clubId: string) {
         ...t,
         assignments: t.assignments.filter(
           (a) => manage || a.memberId === member.id,
-        ),
+        ).map(a => ({ ...a, member: members.find(m => m.id === a.memberId)! })),
       })),
   });
 }

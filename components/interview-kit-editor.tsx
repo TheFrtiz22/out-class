@@ -8,6 +8,8 @@ import {
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ListChecks, ChevronRight } from "lucide-react";
+import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,
   rounds,
@@ -62,34 +64,26 @@ export function InterviewKitEditor({
     edit(items);
   }
   return (
-    <details className="border-y py-4">
-      <summary className="cursor-pointer font-medium">Interview kits</summary>
-      <div className="space-y-4 pt-4">
+    <section className="oc-kit-editor" data-unsaved={dirty} data-saving={busy} aria-label="Interview kit editor">
+      <header className="oc-kit-heading"><h2>Interview kits</h2>
+      <div>
         <p className="text-sm text-muted-foreground">
           Configure questions and guidance for each round. Changes apply to new
           interviews; existing interviews retain their original kit.
         </p>
-        <label>
-          Recruitment round{" "}
-          <select
-            className="ml-3 rounded border p-2"
-            value={round}
-            disabled={busy}
-            onChange={(e) => {
-              if (!dirty || window.confirm("Discard unsaved kit changes?"))
-                setRound(e.target.value);
-            }}
-          >
-            {rounds.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      </div></header>
+      <div className="oc-kit-layout">
+        <nav className="oc-kit-rounds" aria-label="Interview kit rounds"><h3>Rounds</h3>
+          {rounds.map((r, index) => <button key={r.id} type="button" aria-current={r.id === round ? "true" : undefined} disabled={busy} onClick={() => {
+            if (r.id !== round && (!dirty || window.confirm("Discard unsaved kit changes?"))) setRound(r.id);
+          }}><span>{index + 1}</span><strong>{r.name}</strong><ChevronRight size={17} aria-hidden="true" /></button>)}
+        </nav>
+        <div className="oc-kit-builder">
+          <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div><span>{loaded ? `${questions.length} questions` : "Loading…"}</span></header>
+          <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={busy || !loaded} className="space-y-5">
           {questions.map((q, i) => (
-            <section key={q.id} className="space-y-2 border-b pb-4">
+            <section key={q.id} className="oc-kit-question space-y-2">
               <label htmlFor={`prompt-${q.id}`}>Question {i + 1}</label>
               <Textarea
                 id={`prompt-${q.id}`}
@@ -105,9 +99,8 @@ export function InterviewKitEditor({
                   )
                 }
               />
-              <label htmlFor={`guidance-${q.id}`}>
-                Optional guidance / rubric
-              </label>
+              <details className="oc-kit-guidance"><summary>Guidance / rubric{q.guidance?.trim() ? " · Added" : " · Optional"}</summary>
+              <label className="sr-only" htmlFor={`guidance-${q.id}`}>Optional guidance / rubric</label>
               <Textarea
                 id={`guidance-${q.id}`}
                 value={q.guidance}
@@ -122,7 +115,8 @@ export function InterviewKitEditor({
                   )
                 }
               />
-              <div className="flex flex-wrap gap-2">
+              </details>
+              <div className="oc-kit-question-actions flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -151,7 +145,7 @@ export function InterviewKitEditor({
               </div>
             </section>
           ))}
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button
               type="button"
               variant="outline"
@@ -206,8 +200,9 @@ export function InterviewKitEditor({
         >
           Reload kit
         </Button>
+        </div>
       </div>
-    </details>
+    </section>
   );
 }
 export function ClubInterviewKitSettings({ clubId }: { clubId: string }) {

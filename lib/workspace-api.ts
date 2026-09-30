@@ -1,4 +1,8 @@
 "use client"
+import * as roomApi from "@/actions/interview-rooms"
+import * as demoRoomApi from "@/lib/demo/interview-rooms"
+import * as recruitingRules from "@/actions/recruiting-rules"
+import * as demoRecruitingRules from "@/lib/demo/recruiting-rules"
 import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as demoTasks from "@/lib/demo/tasks"
@@ -24,8 +28,9 @@ import {
   studentApplications,
   demoDirectory,
   demoDashboard,
+  presentDemoMeeting,
 } from "@/lib/demo/store"
-import { applicationInputSchema, answerErrors } from "@/lib/student-applications"
+import { applicationInputSchema, answerErrors, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 function adapt<F extends (...args: never[]) => Promise<unknown>>(
@@ -77,6 +82,8 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
     throw new Error("Round unavailable.")
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
+    if (input.expectedRoundId && app.roundId !== input.expectedRoundId)
+      throw new Error("Application changed. Refresh before moving rounds.")
     app.roundId = input.newRoundId
     return { success: true, application: app }
   })
@@ -127,6 +134,7 @@ export const startClubApplication = adapt(directory.startClubApplication, (clubI
   if (old) return { applicationId: old.id }
   const club = s.clubs.find((c) => c.id === clubId)
   if (!club) throw new Error("Club unavailable.")
+  if (!club.claimed) throw new Error("Applications are not available for this unclaimed club.")
   return demoStore.mutate((next) => {
     const id = crypto.randomUUID()
     next.applications.push({
@@ -150,6 +158,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
   const { applicationId } = await startClubApplication(parsed.clubId)
@@ -308,12 +317,12 @@ export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, clubId
 function demoMeetingAccess(id: string) {
   const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)
   if(!meeting || !canReadMeeting(meeting,membership?{}:null))throw new Error("Meeting unavailable or access denied.")
-  return meeting
+  return presentDemoMeeting(meeting)
 }
 function demoMeetingManager(clubId:string){demoMember();if(clubId!==demoStore.get().clubs[0].id)throw new Error("Access denied.")}
 export const listMeetings = adapt(meetingsApi.listMeetings, clubId => {
   const s=demoStore.get(),user=demoUser()
-  return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime())
+  return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime()).map(presentDemoMeeting)
 })
 export const getMeeting=adapt(meetingsApi.getMeeting, id=>demoMeetingAccess(id))
 export const saveMeeting=adapt(meetingsApi.saveMeeting, input=>{
@@ -362,7 +371,14 @@ export const viewTask = adapt(tasksApi.viewTask, demoTasks.viewTask)
 export const submitTask = adapt(tasksApi.submitTask, demoTasks.submitTask)
 export const reviewTask = adapt(tasksApi.reviewTask, demoTasks.reviewTask)
 export const uploadTaskFile = adapt(tasksApi.uploadTaskFile, () => { throw new Error("Demo files stay fictional. Use a text or link submission; no files are uploaded.") })
-export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, () => { throw new Error("This fictional demo file is not downloadable.") })
+export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, id => {
+  const s = demoStore.get()
+  const task = s.tasks.find(t => t.assignments.some(a => a.files.some(f => f.id === id)))
+  if (!task) throw new Error("File unavailable.")
+  const workspace = demoTasks.getTaskWorkspace(task.clubId)
+  if (!workspace.tasks.some(t => t.assignments.some(a => a.files.some(f => f.id === id)))) throw new Error("File unavailable.")
+  return { url: "/demo/sample-research.txt" }
+})
 
 export const getClubWorkspaceOverview = adapt(clubOverview.getClubWorkspaceOverview, (clubId) => {
  const s=demoStore.get(),user=demoUser(),membership=user.memberships.find(m=>m.clubId===clubId),club=s.clubs.find(c=>c.id===clubId)
@@ -380,3 +396,18 @@ export const getWorkspaceRounds = adapt(clubOverview.getWorkspaceRounds, clubId=
  const s=demoStore.get();if(clubId!==s.clubs[0].id)throw new Error("Demo management is limited to MII.")
  return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview}))
 })
+
+export const getRecruitingRules = adapt(recruitingRules.getRecruitingRules, demoRecruitingRules.getRecruitingRules)
+export const saveRecruitingRule = adapt(recruitingRules.saveRecruitingRule, demoRecruitingRules.saveRecruitingRule)
+export const previewRecruitingRule = adapt(recruitingRules.previewRecruitingRule, demoRecruitingRules.previewRecruitingRule)
+export const applyRecruitingRuleFlags = adapt(recruitingRules.applyRecruitingRuleFlags, demoRecruitingRules.applyRecruitingRuleFlags)
+export const getRecruitingRuleFlags = adapt(recruitingRules.getRecruitingRuleFlags, demoRecruitingRules.getRecruitingRuleFlags)
+export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRuleFlags, demoRecruitingRules.clearRecruitingRuleFlags)
+
+export const getRoomWorkspace = adapt(roomApi.getRoomWorkspace, demoRoomApi.getRoomWorkspace)
+export const createInterviewRoom = adapt(roomApi.createInterviewRoom, demoRoomApi.createInterviewRoom)
+export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, demoRoomApi.setInterviewRoomOpen)
+export const getApplicantSchedule = adapt(roomApi.getApplicantSchedule, demoRoomApi.getApplicantSchedule)
+export const reserveInterview = adapt(roomApi.reserveInterview, demoRoomApi.reserveInterview)
+export const cancelRoomBooking = adapt(roomApi.cancelRoomBooking, demoRoomApi.cancelRoomBooking)
+export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRoomApi.getBookingApplication)

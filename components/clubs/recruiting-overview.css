@@ -1,0 +1,30 @@
+.oc-recruiting-overview { container-type: inline-size; max-width: 1160px; }
+.oc-recruiting-intro { margin: -12px 0 28px; color: var(--muted-foreground); font-size: 15px; line-height: 1.8; }
+.oc-recruiting-privacy { display: flex; align-items: start; gap: 10px; margin-bottom: 24px; padding: 14px 18px; border-radius: 10px; background: #eef3f9; font-size: 13px; line-height: 1.7; color: #345781; }
+.oc-recruiting-privacy svg { flex-shrink: 0; margin-top: 3px; }
+.oc-recruiting-overview-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.oc-recruiting-card, .oc-recruiting-tools { display: flex; flex-direction: column; min-width: 0; padding: 28px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: 0 4px 18px #14243b03; }
+.oc-recruiting-card[data-featured="true"] { background: #f1f5fa; border-color: #dbe5f0; }
+.oc-recruiting-card-label { display: flex; align-items: center; gap: 11px; font-size: 13px; font-weight: 600; color: var(--primary); }
+.oc-recruiting-card-label > svg { flex-shrink: 0; }
+.oc-recruiting-card > h2 { margin: 26px 0 12px; max-width: 360px; font: 500 29px/1.22 var(--oc-font-display); letter-spacing: -.025em; color: var(--primary); text-wrap: balance; }
+.oc-recruiting-description { max-width: 420px; margin-bottom: 24px; font-size: 13px; line-height: 1.8; color: var(--muted-foreground); }
+.oc-recruiting-context { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.7; color: #425670; }
+.oc-recruiting-card > a { display: inline-flex; align-items: center; justify-content: center; align-self: start; gap: 12px; min-height: 44px; margin-top: 20px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 9px; font-size: 13px; font-weight: 500; color: var(--primary); background: #fff; }
+.oc-recruiting-card[data-featured="true"] > a { background: #102c54; border-color: #102c54; color: #fff; }
+.oc-recruiting-card > a:hover { border-color: #a63e10; }
+.oc-recruiting-tools > p { margin: 18px 0; font-size: 13px; line-height: 1.8; color: var(--muted-foreground); }
+.oc-recruiting-tools ul { list-style: none; padding: 0; }
+.oc-recruiting-tools li + li { border-top: 1px solid var(--border); }
+.oc-recruiting-tools a { display: flex; align-items: center; gap: 18px; padding: 18px 0; border-radius: 5px; }
+.oc-recruiting-tools a > span { flex: 1; min-width: 0; }
+.oc-recruiting-tools strong { display: block; font-size: 13px; font-weight: 500; color: var(--primary); }
+.oc-recruiting-tools small { display: block; margin-top: 7px; font-size: 12px; line-height: 1.7; color: var(--muted-foreground); }
+.oc-recruiting-tools a > svg { flex-shrink: 0; color: #a63e10; }
+.oc-recruiting-tools a:hover { background: #faf9f6; }
+.oc-recruiting-overview a { transition: background-color 150ms, border-color 150ms; }
+.oc-recruiting-overview a:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+@container (max-width: 740px) { .oc-recruiting-overview-grid { grid-template-columns: minmax(0,1fr); } }
+@container (max-width: 400px) { .oc-recruiting-card, .oc-recruiting-tools { padding: 22px; } .oc-recruiting-card > h2 { font-size: 26px; } }
+@media (max-width: 359px) { [data-product-shell]:has(.oc-recruiting-overview) .oc-product-brand img { max-width: 110px; height: auto; } }
+@media (prefers-reduced-motion: reduce) { .oc-recruiting-overview a { transition: none; } }

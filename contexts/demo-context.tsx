@@ -121,6 +121,7 @@ export function DemoDataProvider({
       demoStore.reset()
       const url = new URL(window.location.href)
       url.searchParams.delete("demoClub")
+      url.searchParams.delete("workspace")
       window.history.replaceState({}, "", url)
       setEpoch((v) => v + 1)
     } catch {

@@ -56,6 +56,7 @@ const moveApplicantSchema = z.object({
   clubId: z.string().uuid(),
   applicationId: z.string().uuid(),
   newRoundId: z.string().uuid(),
+  expectedRoundId: z.string().uuid().optional(),
 });
 
 export async function moveApplicantRound(
@@ -79,11 +80,12 @@ export async function moveApplicantRound(
         id: parsed.applicationId,
         clubId: parsed.clubId,
         status: { not: "DRAFTING" },
+        ...(parsed.expectedRoundId ? { roundId: parsed.expectedRoundId } : {}),
       },
       data: { roundId: parsed.newRoundId },
     });
     if (result.count !== 1)
-      throw new Error("Application is not available for this club.");
+      throw new Error("Application changed or is not available for this club. Refresh before moving rounds.");
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
       include: { round: true },

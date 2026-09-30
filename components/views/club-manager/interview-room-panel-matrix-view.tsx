@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import {
   Plus,
   Wand2,
@@ -13,6 +13,8 @@ import {
   Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -137,17 +139,31 @@ export function InterviewRoomPanelMatrixView() {
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
   const [previewOpen, setPreviewOpen] = useState(false)
 
-  function addRoom() {
-    const n = rooms.length + 1
+  const [roomDialogOpen, setRoomDialogOpen] = useState(false)
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null)
+
+  function addRoom(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    const name = String(data.get("name") ?? "").trim()
+    const location = String(data.get("location") ?? "").trim()
+    if (!name || !location) return
+    if (editingRoom) {
+      updateRoom(editingRoom.id, { name, location })
+      setRoomDialogOpen(false)
+      return
+    }
     const room: Room = {
-      id: `room-${Date.now()}`,
-      name: `Room ${100 + n} (Rouss Hall)`,
-      location: `Rouss Hall ${100 + n}`,
+      id: crypto.randomUUID(),
+      name,
+      location,
       panelFormat: "2-on-1",
       candidate: null,
       interviewers: emptySlots(),
     }
     setRooms((prev) => [...prev, room])
+    setRoomDialogOpen(false)
+    toast.success(`${name} created`)
   }
 
   function removeRoom(id: string) {
@@ -238,7 +254,7 @@ export function InterviewRoomPanelMatrixView() {
       </div>
 
       {/* Top Controls */}
-      <div className="flex flex-col gap-3 rounded-md border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Clock className="size-4 shrink-0 text-slate-400" />
           <Select value={timeSlot} onValueChange={setTimeSlot}>
@@ -259,7 +275,7 @@ export function InterviewRoomPanelMatrixView() {
           <Button
             type="button"
             variant="outline"
-            onClick={addRoom}
+            onClick={() => { setEditingRoom(null); setRoomDialogOpen(true) }}
             className="gap-1.5 border-gray-300 bg-white text-sm font-medium text-foreground hover:bg-slate-100"
           >
             <Plus className="size-4" /> Add Room
@@ -281,11 +297,11 @@ export function InterviewRoomPanelMatrixView() {
           const filledCount = room.interviewers.filter(Boolean).length
 
           return (
-            <div key={room.id} className="flex flex-col rounded-md border border-gray-200 bg-white p-4">
+            <div key={room.id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4">
               {/* Room Header */}
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{room.name}</p>
+                  <button type="button" className="text-left text-sm font-semibold text-foreground hover:underline" onClick={() => { setEditingRoom(room); setRoomDialogOpen(true) }} aria-label={`Edit ${room.name}`}>{room.name}</button>
                   <p className="flex items-center gap-1 text-xs text-slate-400">
                     <MapPin className="size-3" /> {room.location}
                   </p>
@@ -326,7 +342,7 @@ export function InterviewRoomPanelMatrixView() {
                     <DropdownMenuLabel>Assign candidate</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {candidateQueue.map((c) => (
-                      <DropdownMenuItem key={c.id} onSelect={() => assignCandidate(room.id, c)}>
+                      <DropdownMenuItem key={c.id} disabled={rooms.some((other) => other.id !== room.id && other.candidate?.id === c.id)} onSelect={() => assignCandidate(room.id, c)}>
                         {c.name}
                       </DropdownMenuItem>
                     ))}
@@ -339,7 +355,7 @@ export function InterviewRoomPanelMatrixView() {
                 <span className="text-xs text-slate-500">Panel Format</span>
                 <Select
                   value={room.panelFormat}
-                  onValueChange={(v) => updateRoom(room.id, { panelFormat: v as PanelFormat })}
+                  onValueChange={(v) => updateRoom(room.id, { panelFormat: v as PanelFormat, interviewers: room.interviewers.map((slot, i) => i < capacityFor(v as PanelFormat) ? slot : null) })}
                 >
                   <SelectTrigger className="h-8 w-auto border-gray-200 bg-white text-xs text-foreground">
                     <SelectValue />
@@ -398,16 +414,7 @@ export function InterviewRoomPanelMatrixView() {
                     )
                   }
 
-                  if (!isWithinCapacity) {
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center justify-center rounded-md border border-dashed border-gray-100 px-2.5 py-2 text-xs text-slate-300"
-                      >
-                        Slot {index + 1}/6 — exceeds panel format
-                      </div>
-                    )
-                  }
+                  if (!isWithinCapacity) return null
 
                   return (
                     <DropdownMenu key={index}>
@@ -416,14 +423,14 @@ export function InterviewRoomPanelMatrixView() {
                           type="button"
                           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2.5 py-2 text-xs font-medium text-slate-400 transition-colors hover:border-foreground hover:text-muted-foreground"
                         >
-                          <Plus className="size-3.5" /> Add Interviewer (Slot {index + 1}/6)
+                          <Plus className="size-3.5" /> Add Interviewer (Slot {index + 1}/{capacity})
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="center">
                         <DropdownMenuLabel>Assign interviewer</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         {interviewerPool.map((i) => (
-                          <DropdownMenuItem key={i.id} onSelect={() => assignInterviewer(room.id, index, i)}>
+                          <DropdownMenuItem key={i.id} disabled={rooms.some((other) => other.interviewers.some((assigned) => assigned?.id === i.id))} onSelect={() => assignInterviewer(room.id, index, i)}>
                             {i.name}
                           </DropdownMenuItem>
                         ))}
@@ -438,7 +445,7 @@ export function InterviewRoomPanelMatrixView() {
       </div>
 
       {/* Privacy & Applicant Preview Banner */}
-      <div className="mt-5 flex flex-col gap-3 rounded-md border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-5 flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-2.5">
           <Lock className="mt-0.5 size-4 shrink-0 text-foreground" />
           <p className="text-sm text-slate-600">
@@ -458,13 +465,23 @@ export function InterviewRoomPanelMatrixView() {
         </Button>
       </div>
 
+      <Dialog open={roomDialogOpen} onOpenChange={setRoomDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>{editingRoom ? "Edit interview room" : "Create a panel room"}</DialogTitle><DialogDescription>Add a location, then assign your interviewers and candidate from the room card.</DialogDescription></DialogHeader>
+          <form onSubmit={addRoom} className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="panel-room-name">Room name</Label><Input id="panel-room-name" name="name" required autoFocus defaultValue={editingRoom?.name ?? ""} placeholder="e.g. Room 101" pattern=".*\S.*" /></div>
+            <div className="space-y-2"><Label htmlFor="panel-room-location">Location or meeting link</Label><Input id="panel-room-location" name="location" required defaultValue={editingRoom?.location ?? ""} placeholder="e.g. Rouss Hall 101 or a Zoom link" pattern=".*\S.*" /></div>
+            <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={() => setRoomDialogOpen(false)}>Cancel</Button><Button type="submit">{editingRoom ? "Save changes" : "Create room"}</Button></div>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-foreground font-sans tracking-tight font-semibold">Applicant View</DialogTitle>
             <DialogDescription>This is the minimal, scrubbed version the student sees.</DialogDescription>
           </DialogHeader>
-          <div className="rounded-md border border-gray-200 bg-white p-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Your Interview</p>
             <p className="mt-1 text-lg font-semibold text-foreground">{timeSlot.split("—")[1]?.trim() ?? timeSlot}</p>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600">

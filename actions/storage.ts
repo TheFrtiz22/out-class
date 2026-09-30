@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { storagePathSchema } from "@/lib/student-profile";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 const uploadSchema = z.object({
   fileName: z.string().min(1).max(255).refine(name => !/[\\/\x00-\x1f]/.test(name) && name !== "." && name !== "..", "Use a file name without path separators."),
@@ -20,6 +22,15 @@ export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
   // Generate a unique file path tied to the user to prevent overwrites/collisions
   // Format: [userId]/[timestamp]-[filename]
   const uniqueFilePath = `${user.id}/${Date.now()}-${parsed.fileName}`;
+
+  if (parsed.bucket === "resumes") {
+    storagePathSchema.parse(uniqueFilePath);
+    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!secret) throw new Error("Private document storage is unavailable.");
+    const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret);
+    const { data: bucket, error } = await admin.storage.getBucket("resumes");
+    if (error || !bucket || bucket.public) throw new Error("Private document storage is unavailable.");
+  }
 
   // Request a signed upload URL from Supabase Storage
   const { data: uploadData, error } = await supabase

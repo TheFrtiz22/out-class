@@ -1,85 +1,95 @@
-# OutClass launch-quality audit
+# Authenticated OutClass launch-quality audit
 
-Reviewed September 22, 2026. This is a product/UI audit with local production-build inspection, not a certification of the deployed backend. The prior responsive pass remains in the working tree; this audit builds on it.
+September 28, 2026. Scope: the redesigned authenticated product; no new features, database changes, or landing-page redesign.
 
-## Assessment
+## Result and evidence limits
 
-The redesigned student product, public site and real applicant/interview/decision workspaces share a coherent bright, navy-led visual language. There is no reason for another broad redesign. The largest launch gap is the difference between the working applicant workflows and several local administrative previews. OutClass should not claim that every recruitment workflow is live until those integrations are completed and tested with the configured services.
+Local validation passes. The main authenticated navigation and live workspace boundaries are coherent. Two small launch regressions were fixed: contextual focus and misleading notification copy. Production readiness still depends on deploying/reconciling the database and Storage changes and testing actual accounts, devices, and provider services.
 
-## Route and screen review
+Evidence combines source review, 218 automated tests, real SQL migration tests in isolated PGlite, and an isolated local Demo browser fixture using the current components. Server tests mock authentication/database responses where indicated. These are not authenticated end-to-end sessions for every production persona. No production records, grants, messages, decisions, migrations, or provider settings were changed.
 
-Most authenticated destinations are view IDs within AppShell, not distinct URLs. These were reviewed through the existing shell, without restructuring navigation.
+## Regressions fixed
 
-| Route / screen | Review result and action |
+- ProductShell keyed focus only by sidebar destination. Switching Recruiting Overview → Club Overview reused the destination ID and could leave keyboard focus behind. It now keys focus by club, primary mode, and destination. A behavioral regression test verifies mode and club changes, with no repeated focus on unchanged context.
+- Notifications implied a connected delivery feed and an authoritative “all caught up” state. Copy now explicitly states that delivery is not connected and Demo/local preview updates stay in the browser. Existing notification actions and data behavior are unchanged.
+
+Changed implementation: components/shell/product-shell.tsx and components/views/inbox-view.tsx. Added tests/product-shell-focus.test.cjs. This report replaces the outdated pre-redesign audit.
+
+## Coverage matrix
+
+| Area | Findings and evidence |
 | --- | --- |
-| `/` public landing | Restrained editorial headings, preserved wordmark, licensed local campus image, clear CTA, product-led stories and footer. Mobile demo is a static three-candidate snapshot; desktop motion and pause controls retained. Existing reduced-motion and progressive-reveal behavior retained. Local production observation recorded no initial layout shift. |
-| Sign in | Clear UVA eligibility, labeled inputs and focused form. Tested desktop/mobile and short viewport. Live Microsoft/email delivery is unverified; no auth semantics changed. |
-| Onboarding | Existing structured steps retained. Tested the account-entry screen across six widths. Multi-step live account creation/upload requires service-backed end-to-end testing. |
-| Student Home | Calm next-action hierarchy, compact application list and agenda, secondary discovery. Source and prior responsive screenshots reviewed; production empty-state/navigation smoke checked. No new equal-weight cards or metrics added. |
-| Discover | Search/filter controls, categories and organization rows retained. Production tests cover populated directory, search, navigation and subscription persistence. No invented recommendations. |
-| Club profile / `/club/[clubId]` | Identity, application CTA, status timeline and self-reported information remain structured. Populated component tested through directory fixtures; standalone route tested in its service-unavailable state. Club marks now show initials immediately while an image loads instead of a blank tile. |
-| Applications overview | Existing row hierarchy and draft/in-progress/decision groups retained. Production responsive checks use real-shaped records. Logo loading treatment improves visual continuity. |
-| Application form / status / decisions | Required validation, dirty guards, save failure recovery, confirmation, submitted lock and respectful decisions verified with mocked transport. No validation or decision semantics changed. |
-| Calendar | Agenda remains default; optional grid views retained. Production tests cover event details, persisted-event protections, export and local RSVP. Event semantics are unchanged. |
-| Notifications | Priority/club grouping, readable detail view and restrained unread states retained. Read/unread, undo and reload persistence checked. Toast offset now clears student bottom navigation. |
-| Profile | Editorial identity plus functional section editing retained. Short-height dialog, save, cancel and keyboard dismissal checked. No unnecessary new containers. |
-| Leader applicants | Dense desktop table / mobile list retained. Replaced text-only auth loading with the shared skeleton. Authorized review, filter context, score save, separate round/status changes and confirmation checked. |
-| Interview Mode | Focused identity/context/notes/score layout retained. Dirty navigation, save-before-next, keyboard save, failed-save retention and reduced motion checked. No decorative animation added. |
-| Board Voting Mode | Focused candidate presentation retained. Confirmation, expected-status writes, failure recovery, role restrictions and return to filtered context checked. This is not collaborative ballot infrastructure. |
-| Interview Scheduler | Existing tabs and local schedule tools retained. Schedule-creation dialog now uses shared radius/surface/shadow defaults. Explicit local-preview notice prevents confusion with live bookings. |
-| Club Settings: roster, application builder, pipeline, events, branding, QR | All six tabs reviewed in the production viewport matrix. Detailed roster remains horizontally scrollable with guidance; local-preview notice added. Invitation feedback now says no email was sent. Existing permissions-preview behavior is unchanged. |
-| Broadcast Messages | Existing layout retained. Preview notice, action text and success feedback now accurately describe local history rather than delivered push/email. |
-| Screening / Management Portal | Source-level review of secondary legacy views. Added the same explicit local-preview notice. These are not promoted as live workflows. |
-| `/check-in` | Existing unavailable/preview states retained. Uses the actual logo and navy/warm-surface tokens instead of a plain-text mark and black controls. Cross-device attendance is still not connected here. |
-| `/live-voting`, `/vote` | Existing clearly labeled same-browser proctor/member previews retained. Reviewed at six widths. Do not confuse them with the authenticated board-decision workflow. |
-| `/preview` | Existing public exploration route retained; no fabricated production data introduced. Authenticated branches continue resolving real memberships and server actions. |
-| `/design-system` | Component reference checked across widths; noindex metadata retained. Not a student destination. |
-| Unknown routes | Added branded, restrained 404 with a clear return action. Production HTTP status and navigation checked. |
-| Page render failures | Added a generic, actionable error boundary with retry/home actions; no exception details exposed. Root-layout failures remain outside this page boundary. |
-| `/auth/callback`, `/api/users/me` | No standalone visual interface. Callback source remains unchanged; unauthenticated API should return 401. Icons are asset routes, not product screens. |
+| Personal navigation | Explore / Applications / My Clubs remain primary modes. Context menus contain Discover/Categories/Calendar; All Applications/Interviews/Decisions; membership-supported club destinations. No duplicate entries within a primary/context menu. Profile and notifications remain utilities. Browser checked mobile Explore, Applications, My Clubs and contextual navigation. |
+| Manager navigation | Recruiting / Club replaces student modes. Club identity and the existing one-account workspace selector remain visible. Quiet Review Tools contains Anonymous Review and persisted Auto-Reject Rules. Browser checked member → MII leader switching, recruiting overview, Applicants and Interviews. |
+| Discovery | Directory-backed categories/search/claimed state remain intact; no persistent Saved destination or invented deadlines. Source/tests cover query/filter data; mobile browser shows real-shaped Demo directory cards and search controls. |
+| Applications / interviews / decisions | Shared persisted application/status/round and booking data, draft locks, unsaved protection and respectful decisions remain covered. Attachments use the authorized saved-answer download route. Browser checked application rows/timeline and member landing; backend tests cover stale writes and attachment authorization. Acceptance does not imply membership. |
+| Profile / calendar / notifications | Profile saves remain section-scoped. Calendar derives live booking/attendance/meeting records; local scheduling/RSVP tools are not authoritative writes to those records. Notification delivery has no backend, now explicitly disclosed. Actual storage, identity-provider and email flows require staging QA. |
+| Applicants / List / Kanban | One shared pipeline, filtering, privacy projection and drawer. Status and round actions retain expected-state checks. Browser exercised keyboard List/Kanban switching, anonymous-round filtering, empty lanes, and the same applicant drawer. No local stage store or drag/drop mutation is used for the live board. |
+| Anonymous review / Review Tools | Server allowlist projection, reveal reason/audit, hidden attachments and appointments remain tested. Browser confirmed pseudonyms, prepared anonymous content and withheld files/appointments. Persisted rules expose save → preview → explicit reversible flags, with no automatic decision changes. |
+| Interviews / kits / focused mode | Existing permission-gated kits, snapshots, private notes, autosave/revisions, completion and failure recovery remain covered by dedicated tests. Browser checked interview entry, kit controls and the focused shell transition, which removes normal app navigation. No live collaborator presence is claimed. |
+| Club overview / meetings | Overview uses actionable live data rather than vanity metrics. Meeting audience/resource/attendance/issuer/revision guards remain covered. Member browser showed actual permitted next meeting and recap links. |
+| Club tasks / members | Assignment targeting, submission/review locks, reopen, signed files, access delegation and owner safeguards remain covered. Layout source retains mobile rows and bounded drawers. Legacy revisionless task writes remain disabled. |
+| Announcements / settings | Announcements are clearly preview-only with no fabricated delivery/history. Persisted public settings are separated from access/recruitment and collapsed local builders. |
+| Member visibility / QR | Ordinary-member sidebar has only Overview/Meetings/Tasks; confirmed in the TAMID Demo member workspace. Server tests cover current membership, targeting, private resources, QR expiry/issuer revocation and duplicate check-in. Cross-device QR operation was not tested against deployed services. |
+| Permission personas | Automated integration matrix covers ordinary student, applicant, member, limited/broad manager, anonymous reviewer, MII Demo and super-admin boundary, including forged club IDs/client roles. Live API access rejects Demo context; platform administration remains a separate protected route with audited read-only impersonation. Browser directly exercised student/member/MII leader only. |
+| Errors / loading / stale updates | Authenticated components retain actionable loading/empty/error states. Tests cover failed/stale mutations and privacy-safe reloads across applications, rounds, rules, interviews, tasks and meetings. Local browser confirms loading transitions, empty Kanban lanes and no-flags state. |
 
-## Material fixes in this audit
+## Responsive, accessibility and keyboard evidence
 
-- Shared recovery pages: `app/not-found.tsx`, `app/error.tsx`.
-- Mobile toast clearance: `components/ui/sonner.tsx`, `app/globals.css`.
-- Stable logo fallback: `components/club-logo.tsx`.
-- Consistent loading/dialog/brand treatment: leader entry, schedule dialog and check-in components.
-- Accurate preview communication: shared shell, roster invitations and broadcast feedback. No backend capability was invented or disabled.
-- Fixed the two nullable-context diagnostics by capturing the narrowed provider values for the update closure.
-- Repaired four tests with test-owned fixtures rather than restoring sample applicants to production data.
-- Re-enabled build-time TypeScript enforcement. Excluded alternate generated build directories from application type checking to avoid conflicting generated route declarations; the primary production route types remain included.
+Local browser checked narrow mobile and larger tablet/desktop layouts. Measured CSS widths included 320, 433, 853 and 1422px (browser zoom affects requested desktop viewport sizes). Checked surfaces had document scroll width equal to viewport width; the anonymous applicant drawer measured 320px at the narrowest width. This is representative sampling, not an exhaustive every-screen/device certification.
 
-## Validation and production inspection
+Keyboard Enter opens primary/context destinations, switches Kanban and opens the applicant drawer. Escape closes it and returns focus to the originating applicant card. Context navigation uses an accessible sheet, labeled workspace selector, and a skip link. Normal data tables adapt to mobile lists; Kanban stacks; drawer contents scroll.
 
-- All 66 Node tests pass.
-- `tsc --noEmit` passes.
-- Production build passes with type checking enabled.
-- `git diff --check` passes.
-- `npm run lint` cannot run: ESLint and its configuration are not installed. Build lint remains skipped; this is outstanding validation debt, not a passing lint result.
-- Served the compiled production build on port 3002, separately from the development server.
-- Public/secondary route matrix: 96 viewport checks, no page-level horizontal overflow, at 320/430/768/1280/1440/1920px. Additional populated workflow scripts cover the main student/leader screens, reduced motion and short-height forms.
-- Production functional checks use isolated HTTP/server-action fixtures. These are not live Supabase/Postgres, Microsoft sign-in, email, storage or cross-device tests.
-- Local unthrottled landing observation had CLS 0 during the initial inspection window. This is not a mobile field-performance score or a claim about all loaded states.
-- Build reports 411kB first-load JS for `/` and `/preview`, with 103kB shared. The public site imports the broad AppShell graph; separating marketing from infrequently used workspaces remains valuable.
+Reduced-motion emulation was enabled during mobile checks. Shared CSS overrides animation/transition durations and scrolling, while preserving presence completion events. Source review also checked native labels, pressed/current states, named dialogs and live status/error output. Screen-reader speech output, touch-only iOS behavior, high zoom and automated color-contrast coverage still need dedicated device QA.
 
-## Remaining technical debt / launch risks
+The local browser reported a Grammarly-injected body-attribute hydration warning. No application exception was observed during these sampled workflows; extensions were not disabled or modified.
 
-1. No configured live database/auth/storage environment was available for this audit. Validate UVA email enforcement, permissions, draft/submission races, file access, status concurrency and club isolation against real staging services before launch.
-2. ESLint/CI and durable browser-test infrastructure need setup. Current browser scripts run from the local audit workspace; they are not a checked-in CI suite. The Node tests remain checked in.
-3. AppShell eagerly imports many screens. Route/view-level lazy loading, cache behavior, and query pagination/indexing need measurement with realistic recruitment volume.
-4. Image optimization is globally disabled. Campus images are already locally sized WebP; remote club/avatar/resume resources still need production loading/access validation. Avoid switching optimization on without reviewing allowed sources.
-5. Legacy customization, scheduling, broadcasts and attendance code still coexist with live CRM workflows and hard-coded preview club/campus defaults. Preview labels reduce confusion but do not complete these integrations.
-6. Physical iOS/Android keyboards, safe areas, VoiceOver/NVDA, zoom, and slow-network usability need human/device testing. Chromium viewport emulation is not a substitute.
-7. The new page error boundary does not cover a failed root layout. Operational error monitoring and deployment recovery should be verified separately.
+## Remaining preview/local-only features
 
-## Intentionally deferred functionality
+- Announcement composition/list examples: no publishing, recipients or delivery.
+- Notifications: Demo/local state; no authoritative notification persistence or delivery.
+- Existing scheduling builder/student booking previews: browser-local; not the source of live slots/bookings. The MII Demo scheduler updates its isolated Demo graph.
+- Collapsed branding/application-builder/legacy management previews in settings: do not publish public profiles, questions, permissions or invitations.
+- Legacy local recruiting board/targets, plus /live-voting and /vote: no production ballots or cross-device voting authority. The live Applicants List/Kanban and saved application decisions are separate production workflows.
+- Demo seed data and changes, including recruiting-rule flags, stay in the browser and reset canonically.
 
-No new major features, schema migrations, dependencies or backend semantics were introduced. Still deferred where not already persisted: live administrative publishing, roster invitations/role editing, scheduling builders, broadcast/email delivery, server-synced subscription/notification workflows, cross-device attendance, real-time multi-device voting/ballots, persisted round targets, configurable rubrics, reapplication/semester/year eligibility rules, and LinkedIn/resume parsing. Existing upload/link functionality remains distinct from parsing. Future campus configuration should replace remaining UVA-specific preview defaults without altering the launch identity now.
+Auto-Reject Rules are no longer preview-only configuration: saved rules, previews and review flags have a backend. No rejection is executed automatically.
 
-## Five highest-value next improvements
+## Remaining backend/integration gaps
 
-1. **Complete and honestly gate the live administrative workflows.** Connect the existing builders, invitations, schedules and communications to authorized persistence; prioritize the workflows launch clubs actually need.
-2. **Run a real staging recruitment cycle end to end.** UVA sign-in → profile/resume → application → interview/evaluation → president decision → student delivery; include two clubs to prove isolation and concurrent writes.
-3. **Make quality checks repeatable in CI.** Configure ESLint, retain mandatory types/tests/build, and promote the key fixture-backed browser flows into a maintained runner with accessibility checks.
-4. **Reduce initial JavaScript and validate production performance.** Split the marketing/workspace bundles, measure mobile LCP/INP/CLS under throttling, and optimize images/queries based on evidence.
-5. **Conduct a focused student/leader usability and accessibility session.** Test real phones, keyboard/screen-reader use, first-time discovery, application recovery and high-volume review before adding more visual effects.
+- Announcement/broadcast persistence and delivery; notification persistence and delivery.
+- Production collaborative voting/ballots and realtime interview collaboration. Current interview notes are private persisted notes, not a shared realtime editor.
+- Wiring the legacy scheduling/editor previews to authoritative management APIs, where desired. Existing live application/booking/kit data is not a preview.
+- File malware scanning and automatic orphan/retention cleanup are not implemented.
+- Actual deployed migration drift, Storage policies, auth/email configuration and recovery behavior remain unverified here. Follow database-deployment.md; do not replay the archived Supabase history or blindly baseline an existing database.
+
+These gaps were not filled during this audit because doing so would add features or require service/deployment work outside this pass.
+
+## Obsolete components safe to remove later
+
+Repository import search found no runtime consumers for:
+- components/shell/navigation.tsx — replaced by ProductShell's contextual navigation.
+- components/ui/sidebar.tsx — unused sidebar primitive family.
+
+The unused ClubManagerView import in components/app-shell.tsx can also be removed later; the component itself is still referenced by explicitly labeled settings previews.
+
+Do not delete LocalLeaderDashboardView, its pipeline/speed-review components, ClubManagerView, InterviewSchedulerView, BroadcastMessagesView or live-voting preview components wholesale: legacy/preview routes still use them. Removing those requires a deliberate route cleanup. No components were deleted in this audit.
+
+## Validation and performance
+
+- npm run validate: 218/218 tests pass; lint 0 errors / 28 existing warnings; typecheck passes; production build passes.
+- All 11 migrations tested on fresh and populated legacy isolated databases; all 27 application tables enforce RLS/browser-role denial. Separate Storage SQL tests verify the restrictive resume policy against broad legacy grants.
+- git diff --check passes.
+- Production build: shared first-load JS 103 kB; root 471 kB; club workspace 389 kB; preview 472 kB. Compilation reported 2.3 seconds on this machine. These are build observations, not field latency/Lighthouse scores.
+- The broad AppShell import graph remains the clearest performance concern. Route-level splitting of infrequently used preview/manager tools should be considered separately and measured on throttled mobile hardware.
+
+## Highest-risk manual QA before launch
+
+1. Reconcile/deploy reviewed migrations and Storage policies on staging; test real anon/member/reviewer/manager tokens against private resumes, application attachments and task files. Verify direct Storage reads fail while authorized short-lived downloads work.
+2. Test concurrent browsers and revoked permissions during applicant decisions/round moves, rule preview/apply, interview autosave/completion, meeting edits and task submission/review/reopen.
+3. Test QR on a second physical device: expiry, rotated token, revoked issuer, duplicate check-in and private member resources.
+4. Verify owner safeguards, invitation acceptance/expiry, claiming, platform-admin separation and expired impersonation with independent real accounts.
+5. Test OAuth/session recovery and actual password-recovery email delivery/redirects.
+6. Run iOS Safari/Android touch and screen-reader checks, keyboard-only dialog flows, 200–400% zoom, and throttled cold-load performance on large club datasets.
+
+No production launch certification is implied by passing local tests.

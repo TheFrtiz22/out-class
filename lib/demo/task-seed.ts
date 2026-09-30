@@ -37,7 +37,7 @@ export function seedTasks(
     assigneeId: null,
     kind: i === 0 ? "PROJECT" : "TASK",
     projectId: i > 1 ? id(0) : null,
-    status: "OPEN",
+    status: i === 0 ? "IN_PROGRESS" : "OPEN",
     dueAt: new Date(
       time + (i === 0 ? 40 : i === 1 ? 3 : i === 2 ? -2 : 7) * 86400000,
     ),
@@ -49,7 +49,7 @@ export function seedTasks(
         url: "https://www.library.virginia.edu",
       },
     ],
-    requirements: i === 0 ? [] : ["TEXT"],
+    requirements: i === 0 ? [] : i === 2 ? ["TEXT", "LINK"] : ["TEXT"],
     audience: taskAudienceSchema.parse(
       i < 2
         ? { everyone: true }
@@ -77,10 +77,10 @@ export function seedTasks(
             ? "Fictional submission: rates and earnings expectations remain the key drivers. I would revisit the thesis if operating margins weakened for two consecutive quarters."
             : "",
         link: i > 0 && j % 3 === 1 ? "https://www.virginia.edu" : "",
-        files: [],
+        files: i === 3 && j % 3 === 1 ? [{ id: id(500 + i * 30 + j), name: "sample-research.txt", size: 233 }] : [],
         submittedAt: i > 0 && j % 3 === 1 ? new Date(time - 86400000) : null,
         reviewedAt: i > 0 && j % 3 === 1 && j % 4 === 1 ? new Date(time) : null,
-        reviewedBy: i > 0 && j % 3 === 1 && j % 4 === 1 ? "demo-manager" : null,
+        reviewedBy: i > 0 && j % 3 === 1 && j % 4 === 1 ? members[0].user.id : null,
         feedback:
           i > 0 && j % 3 === 1 && j % 4 === 1
             ? "Sample feedback: clear reasoning. Bring the downside scenario to our next meeting."

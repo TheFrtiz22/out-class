@@ -102,7 +102,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
       <header>
         <h2 className="font-display text-3xl tracking-tight">Your recruiting updates.</h2>
         <p className="mt-3 text-sm text-muted-foreground">
-          Read the latest, take the next step, and get on with your day.
+          Notification delivery is not connected yet. Demo and local preview updates stay in this browser.
         </p>
       </header>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -352,12 +352,12 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               <div className="space-y-3 p-10 text-center">
                 <Bell className="mx-auto size-7 text-neutral-300" />
                 <p className="text-sm font-medium">
-                  {items.length ? "No matching notifications" : "You're all caught up"}
+                  {items.length ? "No matching notifications" : "No notifications here yet"}
                 </p>
                 <p className="text-xs text-neutral-500">
                   {items.length
                     ? "Try another keyword or clear your filters."
-                    : "New club updates will appear here."}
+                    : "Live club updates will be available when notification delivery is connected."}
                 </p>
                 {!!items.length && (
                   <Button size="sm" variant="outline" onClick={resetFilters}>
@@ -491,7 +491,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 )}
               </div>
               <p className="border-t border-neutral-200 px-6 py-4 text-xs text-neutral-500">
-                Club notifications are read-only. Replies aren't available here.
+                Club notifications are read-only. Replies aren&#39;t available here.
               </p>
             </>
           )}

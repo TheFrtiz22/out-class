@@ -1,8 +1,11 @@
 "use client"
+import { applicationAttachmentUrl } from "@/lib/student-applications"
+import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
+import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live-applicant-views"
+import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { TestScoreDetail } from "@/components/test-score-detail"
-import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
 
@@ -36,14 +39,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
@@ -59,8 +54,9 @@ const average = (app: Candidate) =>
     ? app.evaluations.reduce((total, item) => total + item.score, 0) / app.evaluations.length
     : null
 
-export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: { scoped?: boolean; decisionsOnly?: boolean }) {
   const { user, activeClubId, selectClub } = useAuth()
+  const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
   const clubs = (user?.memberships || []).filter(
     (item) => (hasPermission(item, "applicants.identify") || hasPermission(item, "applications.review")),
@@ -68,8 +64,8 @@ export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
   const clubId = activeClubId
   const setClubId = selectClub
   useEffect(() => {
-    if (leaderFocus && (!scoped || leaderFocus.clubId === activeClubId)) setClubId(leaderFocus.clubId)
-  }, [leaderFocus])
+    if (leaderFocus && !scoped && leaderFocus.clubId !== activeClubId) setClubId(leaderFocus.clubId)
+  }, [leaderFocus, activeClubId, scoped, setClubId])
   const club = clubs.find((item) => item.clubId === clubId) || (!clubId ? clubs[0] : undefined)
   if (!club)
     return (
@@ -82,7 +78,7 @@ export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
     )
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {!scoped && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Recruitment workspace
@@ -103,14 +99,14 @@ export function LiveLeaderWorkspace({ scoped = false }: { scoped?: boolean }) {
             ))}
           </select>
         )}
-      </div>
-      <DemoRoundTarget />
-      <ClubWorkspace key={club.clubId} membership={club} />
+      </div>}
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} />
+      {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
 }
 
-function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
+function ClubWorkspace({ membership, decisionsOnly = false }: { membership: ExtendedMembership; decisionsOnly?: boolean }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(null)
   const [error, setError] = useState("")
@@ -118,6 +114,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [round, setRound] = useState("")
+  const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
   const [status, setStatus] = useState("")
   const [review, setReview] = useState("")
   const [major, setMajor] = useState("")
@@ -126,6 +123,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
   const [sat, setSat] = useState("")
   const [act, setAct] = useState("")
   const [compact, setCompact] = useState(true)
+  const [view, setView] = useState<"list" | "kanban">("list")
   const [sort, setSort] = useState("name")
   const [descending, setDescending] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -182,7 +180,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty, busy])
-  const applicants = data?.applications || []
+  const applicants = useMemo(() => data?.applications || [], [data])
   const filtered = useMemo(
     () =>
       applicants
@@ -194,6 +192,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
               .includes(query.trim().toLowerCase()) &&
             (!round || app.roundId === round) &&
             (!status || app.status === status) &&
+            (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
             (!major || profile?.major === major) &&
             (!year || String(profile?.gradYear) === year) &&
             (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
@@ -222,6 +221,8 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         }),
     [
       applicants,
+      decisionsOnly,
+      decisionGroup,
       query,
       round,
       status,
@@ -243,7 +244,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
     if (leaderFocus.roundId) setRound(leaderFocus.roundId)
     if (leaderFocus.applicantId) {
       const target = data.applications.find((app) => app.id === leaderFocus.applicantId)
-      if (target) open(target)
+      if (target) { if (decisionsOnly) setDecisionGroup(applicationDecisionGroup(target.status) || "pending"); open(target) }
     }
     clearLeaderFocus()
   }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
@@ -318,6 +319,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           clubId: membership.clubId,
           applicationId: active.id,
           newRoundId: targetRound,
+          expectedRoundId: active.roundId,
         })
         setData(null)
         setActiveId(null)
@@ -336,23 +338,17 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           clubId: membership.clubId,
           applicationId: active.id,
           status: decision as "ACCEPTED",
+          expectedStatus: active.status === "DRAFTING" ? undefined : active.status,
         })
-        setData((previous) =>
-          previous
-            ? {
-                ...previous,
-                applications: previous.applications.map((app) =>
-                  app.id === active.id ? { ...app, status: decision as Candidate["status"] } : app,
-                ),
-              }
-            : previous,
-        )
+        // Re-read the server projection; do not merge stale identity/round data into either view.
+        try { setData(await getClubPipeline(membership.clubId)) }
+        catch { setData(null); setActiveId(null); setError("Status saved, but the pipeline could not reload. Refresh to see current data.") }
         setDecision("")
         setMessage("Application status updated.")
       }
     } catch {
       setMessage(
-        "This change could not be saved. Your entries are still here. Check your access and try again.",
+        "This change could not be saved. The applicant may have changed or your access may have changed. Your entries are still here; save or copy your review, then reload before retrying.",
       )
     } finally {
       setBusy(false)
@@ -376,48 +372,25 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
       </div>
     )
   return (
-    <div className="space-y-6">
-      <dl className="grid grid-cols-2 gap-5 border-y border-border py-5 sm:grid-cols-4">
-        {[
-          ["Submitted applicants", applicants.length],
-          ["Unreviewed", applicants.filter((app) => !app.evaluations.length).length],
-          ["Interviewing", applicants.filter((app) => app.status === "INTERVIEWING").length],
-          ["Accepted", applicants.filter((app) => app.status === "ACCEPTED").length],
-        ].map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="mt-2 text-2xl font-semibold tabular-nums">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-border pb-4 text-xs text-muted-foreground">
-        {data.rounds.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setRound(round === item.id ? "" : item.id)}
-            aria-pressed={round === item.id}
-            className="rounded px-1 py-1 hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            {item.name}{" "}
-            <span className="ml-2 font-semibold text-foreground">
-              {applicants.filter((app) => app.roundId === item.id).length}
-            </span>
-          </button>
-        ))}
-      </div>
+    <div className="oc-live-pipeline space-y-6" data-unsaved={dirty} data-saving={busy}>
+      {decisionsOnly && <>
+        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
+        <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
+      </>}
       <div className="flex flex-wrap items-center gap-2">
+        {!decisionsOnly && <div role="group" aria-label="Applicant view" className="flex rounded-md border bg-card p-1">{(["list", "kanban"] as const).map(mode => <Button key={mode} size="sm" variant={view === mode ? "secondary" : "ghost"} aria-pressed={view === mode} onClick={() => setView(mode)}>{mode === "list" ? "List" : "Kanban"}</Button>)}</div>}
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
           <Input
             ref={search}
             aria-label="Search applicants"
-            placeholder="Name, email, or major · /"
+            placeholder="Name, anonymous ID, or major · /"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="pl-9"
           />
         </div>
+        <details className="oc-pipeline-filters"><summary>Filters</summary><div className="oc-pipeline-filter-fields">
         <select
           aria-label="Filter round"
           className={selectStyle}
@@ -431,6 +404,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
             </option>
           ))}
         </select>
+        {!decisionsOnly && <>
         <select
           aria-label="Filter status"
           className={selectStyle}
@@ -459,39 +433,14 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         <Button
           size="sm"
           variant="ghost"
-          className="hidden md:inline-flex"
+          className="hidden xl:inline-flex"
           aria-pressed={compact}
           onClick={() => setCompact((value) => !value)}
         >
           {compact ? "Compact rows" : "Comfortable rows"}
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
-          <RefreshCw className="size-3.5" />
-          Refresh
-        </Button>
-      </div>
-      {data && hasPermission(membership, "recruitment.manage") && hasPermission(membership, "applicants.identify") && <RecruitmentReviewSettings clubId={membership.clubId} rounds={data.rounds} onChanged={() => { setData(null); setActiveId(null); setRevision(v => v + 1) }} />}
-      {data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
-      <BoardDecisionMode
-        applicants={filtered}
-        rounds={data.rounds}
-        clubId={membership.clubId}
-        clubName={membership.club.name}
-        canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
-        onDecision={(id, status) =>
-          setData((previous) =>
-            previous
-              ? {
-                  ...previous,
-                  applications: previous.applications.map((app) =>
-                    app.id === id ? { ...app, status } : app,
-                  ),
-                }
-              : previous,
-          )
-        }
-      />
-      <details className="text-sm">
+        </>}
+      {!decisionsOnly && <details className="text-sm">
         <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
           Academic filters
         </summary>
@@ -559,10 +508,39 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           </div>
         </div>
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
-      </details>
+      </details>}
+        </div></details>
+        <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
+          <RefreshCw className="size-3.5" />
+          Refresh
+        </Button>
+      </div>
+      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
+      {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
+      <p className="text-xs leading-6 text-muted-foreground">Board review is a presentation of this selection. Confirmed decisions use the same saved application statuses; it does not collect ballots. Local voting previews elsewhere are non-authoritative and do not determine these outcomes.</p>
+      <BoardDecisionMode
+        applicants={filtered}
+        rounds={data.rounds}
+        clubId={membership.clubId}
+        clubName={membership.club.name}
+        canDecide={hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify")}
+        onDecision={(id, status) =>
+          setData((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  applications: previous.applications.map((app) =>
+                    app.id === id ? { ...app, status } : app,
+                  ),
+                }
+              : previous,
+          )
+        }
+      />
+      </div></details>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
-          {filtered.length} of {applicants.length} applicants · scores out of 10
+          {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
         </p>
         {(query || round || status || review || major || year || gpa || sat || act) && (
           <Button
@@ -583,175 +561,9 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
           </Button>
         )}
       </div>
-      <div className="space-y-3 md:hidden">
-        <label className="flex items-center justify-between gap-3 text-sm">
-          Sort applicants
-          <select
-            aria-label="Sort applicants"
-            className="min-h-11 rounded-md border border-border bg-card px-3"
-            value={sort}
-            onChange={(event) => sortBy(event.target.value)}
-          >
-            <option value="name">Name</option>
-            <option value="year">Class year</option>
-            <option value="status">Status</option>
-            <option value="score">Score</option>
-          </select>
-        </label>
-        <Button variant="ghost" size="sm" onClick={() => setDescending((value) => !value)}>
-          {descending ? "Descending ↓" : "Ascending ↑"}
-        </Button>
-        <ul className="divide-y divide-border border-y border-border">
-          {filtered.map((app) => (
-            <li key={app.id}>
-              <button
-                type="button"
-                data-applicant-id={app.id}
-                onClick={() => open(app)}
-                className="w-full space-y-3 py-5 text-left focus-visible:outline-2 focus-visible:outline-ring"
-              >
-                <span className="flex items-start justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="block break-words font-medium">{name(app)}</span>
-                    <span className="block break-all text-xs text-muted-foreground">
-                      {app.student.email}
-                    </span>
-                  </span>
-                  <Badge variant="secondary" className="shrink-0">
-                    {applicationStatusLabels[app.status]}
-                  </Badge>
-                </span>
-                <span className="block text-sm text-muted-foreground">
-                  {[
-                    app.student.studentProfile?.major,
-                    app.student.studentProfile?.gradYear &&
-                      `Class of ${app.student.studentProfile.gradYear}`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "Education not provided"}
-                </span>
-                <span className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span>
-                    {data.rounds.find((item) => item.id === app.roundId)?.name ||
-                      "Round not available"}
-                  </span>
-                  <span>
-                    {average(app) != null ? `Score ${average(app)?.toFixed(1)} / 10` : "Not scored"}
-                  </span>
-                  <span>
-                    {app.evaluations.length
-                      ? `${app.evaluations.length} evaluations`
-                      : "Unreviewed"}
-                  </span>
-                </span>
-                <span className="block text-xs font-medium">Review applicant →</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-        {!filtered.length && (
-          <p className="py-6 text-sm text-muted-foreground">
-            {applicants.length
-              ? "No applicants match these filters."
-              : "Submitted applications will appear here. Student drafts stay private."}
-          </p>
-        )}
-      </div>
-      <div className="hidden min-w-0 overflow-x-auto rounded-lg border border-border bg-card md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {[
-                ["name", "Applicant"],
-                ["year", "Education"],
-                ["round", "Round"],
-                ["status", "Status"],
-                ["score", "Avg score"],
-                ["review", "Review state"],
-              ].map(([key, label]) => (
-                <TableHead
-                  key={key}
-                  aria-sort={sort === key ? (descending ? "descending" : "ascending") : undefined}
-                >
-                  {["round", "review"].includes(key) ? (
-                    label
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => sortBy(key)}
-                      className="py-3 text-left focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      {label}
-                      {sort === key ? (descending ? " ↓" : " ↑") : ""}
-                    </button>
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((app) => (
-              <TableRow key={app.id} className="hover:bg-secondary/40">
-                <TableCell className={compact ? "py-3" : "py-5"}>
-                  <button
-                    data-applicant-id={app.id}
-                    type="button"
-                    onClick={() => open(app)}
-                    className="flex items-center gap-3 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                  >
-                    <Avatar className="size-8">
-                      <AvatarImage
-                        src={safeProfileUrl(app.student.studentProfile?.headshotUrl)}
-                        alt=""
-                      />
-                      <AvatarFallback className="text-xs">
-                        {name(app)
-                          .split(" ")
-                          .map((part) => part[0])
-                          .slice(0, 2)
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>
-                      <span className="block text-sm font-medium">{name(app)}</span>
-                      <span className="text-xs text-muted-foreground">{app.student.email}</span>
-                    </span>
-                  </button>
-                </TableCell>
-                <TableCell className="text-xs">
-                  <span className="block">
-                    {app.student.studentProfile?.major || "Not provided"}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {app.student.studentProfile?.gradYear
-                      ? `Class of ${app.student.studentProfile.gradYear}`
-                      : ""}
-                  </span>
-                </TableCell>
-                <TableCell className="text-xs">
-                  {data.rounds.find((item) => item.id === app.roundId)?.name || "Not available"}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{applicationStatusLabels[app.status]}</Badge>
-                </TableCell>
-                <TableCell className="tabular-nums">{average(app)?.toFixed(1) ?? "—"}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {app.evaluations.length ? `${app.evaluations.length} evaluations` : "Unreviewed"}
-                </TableCell>
-              </TableRow>
-            ))}
-            {!filtered.length && (
-              <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
-                  {applicants.length
-                    ? "No applicants match these filters."
-                    : "Submitted applications will appear here. Student drafts stay private."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="score">Score</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
+      {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Grouped by application status, not club round. Decision holds waitlists; Closed holds final outcomes. Open a card for explicit round and status actions.</p>}
+      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       <Sheet
         open={!!active}
         onOpenChange={(value) => {
@@ -759,7 +571,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
         }}
       >
         <SheetContent
-          className="w-full overflow-y-auto p-6 sm:max-w-2xl"
+          className="oc-workspace-drawer oc-applicant-drawer w-full overflow-y-auto p-6 sm:max-w-2xl"
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}
@@ -789,11 +601,10 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                 </SheetTitle>
                 {active.studentId.startsWith("anonymous-") && hasPermission(membership, "applicants.identify") && <RevealApplicant canPrepare={hasPermission(membership, "recruitment.manage")} key={active.id} clubId={membership.clubId} applicationId={active.id} />}
                 <SheetDescription>
-                  {active.student.studentProfile?.major || "Academic profile not provided"} ·{" "}
-                  {active.student.email}
+                  {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
               </SheetHeader>
-              <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                 <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
                 <div className="flex items-center gap-2">
                   <Button
@@ -871,15 +682,16 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   <p className="text-sm text-muted-foreground">No profile provided.</p>
                 )}
               </section>
+              <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="text-sm font-semibold">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{new Date(booking.slot.startTime).toLocaleString()} – {new Date(booking.slot.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
               <section className="space-y-5 border-b border-border pb-6">
                 <h3 className="text-sm font-semibold">Application responses</h3>
                 {active.answers.map((answer) => (
                   <div key={answer.id}>
                     <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
-                    {answer.question.type === "FILE_UPLOAD" && safeProfileUrl(answer.response) ? (
+                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
                       <a
                         className="mt-2 inline-block text-sm underline"
-                        href={safeProfileUrl(answer.response)}
+                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -893,7 +705,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   </div>
                 ))}
                 {!active.answers.length && (
-                  <p className="text-sm text-muted-foreground">No club-specific responses.</p>
+                  <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Responses and files are withheld during anonymous review. Any prepared anonymous content appears in the profile above." : "No club-specific responses."}</p>
                 )}
               </section>
               <section className="space-y-4 border-b border-border pb-6">
@@ -944,7 +756,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                     disabled={busy}
                     onChange={(event) => setNotes(event.target.value)}
                   />
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <Button disabled={busy || !hasPermission(membership, "applications.review")} type="submit">
                       {busy ? "Saving…" : "Save evaluation"}
                     </Button>
@@ -983,7 +795,7 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   Moving rounds does not change the student-visible application status. Save your
                   review before moving.
                 </p>
-                {hasPermission(membership, "decisions.manage") ? (
+                {hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") ? (
                   <div className="flex flex-wrap gap-2">
                     {(["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"] as const)
                       .filter((value) => value !== active.status)
@@ -1005,9 +817,8 @@ function ClubWorkspace({ membership }: { membership: ExtendedMembership }) {
                   </p>
                 )}
               </section>
-              <p role="status" className="text-sm leading-6">
-                {message}
-              </p>
+              <p role="status" className="text-sm leading-6">{message}</p>
+              <Button variant="ghost" disabled={busy} onClick={() => { if (dirty && !window.confirm("Discard your unsaved review and reload applicant data?")) return; setActiveId(null); setDecision(""); setRevision(v => v + 1) }}>Reload applicant data</Button>
             </>
           )}
         </SheetContent>

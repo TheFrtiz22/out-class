@@ -69,6 +69,7 @@ export function ApplicationForm({
       const target = event.target as HTMLElement
       if (
         !target.closest("[data-application-form]") &&
+        !target.closest("[data-product-shell] nav") &&
         target.closest("nav button, nav a, [data-shell-navigation]")
       ) {
         if (busy || !window.confirm("Leave this application? Your unsaved changes will be lost.")) {
@@ -224,7 +225,7 @@ export function ApplicationForm({
               ) : (
                 <Input
                   id={`answer-${question.id}`}
-                  type={question.type === "FILE_UPLOAD" ? "url" : "text"}
+                  type="text"
                   value={responses[question.id] || ""}
                   onChange={(event) => change(question.id, event.target.value)}
                   aria-required={question.required}

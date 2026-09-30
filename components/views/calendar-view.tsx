@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link";
 
 import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "lucide-react"
@@ -157,7 +158,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           <h2 className="font-display text-3xl tracking-tight">Make room for what’s next.</h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
-            <a href="/meetings" className="ml-2 underline">Club agendas and recaps</a>
+            <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.
@@ -676,7 +677,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           <DialogHeader>
             <DialogTitle>Virginia Venture Fund interview</DialogTitle>
             <DialogDescription>
-              Available times from the club's interview scheduler. Booking another slot replaces
+              Available times from the club&#39;s interview scheduler. Booking another slot replaces
               your previous reservation.
             </DialogDescription>
           </DialogHeader>

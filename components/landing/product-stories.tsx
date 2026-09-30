@@ -1,18 +1,18 @@
 "use client"
 
-import * as Tabs from "@radix-ui/react-tabs"
+import { useState } from "react"
+import { ProductMotion, Fill, useProductProgress } from "./product-motion"
 import type { ReactNode } from "react"
 import { Check, FileText, ArrowUpRight } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/components/status-badge"
-import { ClubLogo } from "@/components/club-logo"
 import { StickyStory, TextReveal, PreviewReveal } from "@/components/motion/scroll-motion"
 
 function ProductFrame({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <figure className="oc-story-frame">
+    <ProductMotion duration={title === "Club workspace" ? 32000 : 14000}><figure className="oc-story-frame">
       <div className="oc-story-toolbar">
         <span>OutClass</span>
         <strong>{title}</strong>
@@ -20,12 +20,13 @@ function ProductFrame({ title, children }: { title: string; children: ReactNode 
       </div>
       <div className="oc-story-interface">{children}</div>
       <figcaption>Illustrative interface · sample information</figcaption>
-    </figure>
+    </figure></ProductMotion>
   )
 }
-function ProfilePreview() {
+function ProfileContent() {
+  const progress = useProductProgress()
   return (
-    <ProductFrame title="Your profile">
+    <>
       <div className="oc-profile-person">
         <Avatar className="size-12">
           <AvatarFallback>JA</AvatarFallback>
@@ -41,49 +42,51 @@ function ProfilePreview() {
       <dl className="oc-profile-facts">
         <div>
           <dt>Studying</dt>
-          <dd>Economics</dd>
+          <dd><Fill at={.15}>Economics</Fill></dd>
         </div>
         <div>
           <dt>Experience</dt>
-          <dd>Research assistant</dd>
+          <dd><Fill at={.3}>Research assistant</Fill></dd>
         </div>
       </dl>
       <div className="oc-document-row">
         <FileText aria-hidden="true" size={20} />
         <div>
-          <strong>Jordan_Avery_Resume.pdf</strong>
+          <strong><Fill at={.48}>Jordan_Avery_Resume.pdf</Fill></strong>
           <span>Part of your shared profile</span>
         </div>
         <Check aria-hidden="true" className="text-success" size={17} />
       </div>
       <div className="oc-story-progress">
         <span>
-          Profile completeness <strong>80%</strong>
+          Profile completeness <strong>{progress < .15 ? 20 : progress < .3 ? 40 : progress < .48 ? 60 : 80}%</strong>
         </span>
-        <Progress value={80} aria-label="Sample profile completeness" />
+        <Progress value={progress < .15 ? 20 : progress < .3 ? 40 : progress < .48 ? 60 : 80} aria-label="Sample profile completeness" />
       </div>
-    </ProductFrame>
+    </>
   )
 }
+function ProfilePreview() { return <ProductFrame title="Your profile"><ProfileContent /></ProductFrame> }
 const clubs = [
   {
-    id: "180-degrees",
-    name: "180 Degrees Consulting",
-    logo: "/logos/180-degrees-globe.png",
+    id: "sample-impact",
+    name: "Impact Consulting · sample",
+    logo: undefined,
     category: "Consulting",
     description: "Bring fresh thinking to organizations creating social impact.",
   },
   {
-    id: "vvf",
-    name: "Virginia Venture Fund",
-    logo: "/logos/vvf.webp",
+    id: "sample-venture",
+    name: "Venture Collective · sample",
+    logo: undefined,
     category: "Finance",
     description: "Explore the people and ideas behind early-stage companies.",
   },
 ]
-function DiscoverPreview() {
+function DiscoverContent() {
+  const progress = useProductProgress()
   return (
-    <ProductFrame title="Discover">
+    <>
       <div className="oc-discover-intro">
         <h3>Find your kind of curious.</h3>
         <p>Explore clubs by what interests you.</p>
@@ -94,30 +97,31 @@ function DiscoverPreview() {
         <span>Finance</span>
         <span>Technology</span>
       </div>
-      {clubs.map((club) => (
+      <div className="oc-discover-window"><div style={{ transform: `translateY(-${Math.min(1, progress * 1.5) * 108}px)` }} className="oc-discover-scroll">{[...clubs, { id: "sample-design", name: "Design Collective · sample", logo: undefined, category: "Design", description: "Make useful things with a thoughtful team." }].map((club) => (
         <div key={club.id} className="oc-discover-row">
-          <ClubLogo
-            clubId={club.id}
-            logoUrl={club.logo}
-            text={club.name.slice(0, 2)}
-            color="#142d4e"
-            size="lg"
-          />
+          <span className="oc-sample-monogram" aria-hidden="true">{club.name.slice(0, 2).toUpperCase()}</span>
           <div>
             <h4>{club.name}</h4>
             <p>{club.description}</p>
             <Badge variant="outline">{club.category}</Badge>
           </div>
         </div>
-      ))}
-    </ProductFrame>
+      ))}</div></div>
+    </>
   )
+}
+function DiscoverPreview() { return <ProductFrame title="Discover"><DiscoverContent /></ProductFrame> }
+function Essay() {
+  const progress = useProductProgress()
+  const text = "I’d like to put research into practice, working with a team to help a local organization answer a question that matters."
+  const count = Math.floor(Math.min(1, progress * 1.5) * text.length)
+  return <p className="oc-essay"><span className="sr-only">{text}</span><span aria-hidden="true">{text.slice(0, count)}<span style={{ opacity: 0 }}>{text.slice(count)}</span></span></p>
 }
 function ApplyPreview() {
   return (
     <ProductFrame title="Application">
       <div className="oc-example-heading">
-        <h3>180 Degrees Consulting</h3>
+        <h3>Impact Consulting · sample</h3>
         <Badge variant="outline">Draft</Badge>
       </div>
       <div className="oc-profile-attached">
@@ -129,148 +133,43 @@ function ApplyPreview() {
       </div>
       <div className="oc-example-response">
         <h4>What draws you to impact consulting?</h4>
-        <p>
-          I’d like to put research into practice, working with a team to help a local organization
-          answer a question that matters.
-        </p>
+        <Essay />
         <span>Club-specific response</span>
       </div>
       <p className="oc-interface-note">Your story is already here. Make this answer your own.</p>
     </ProductFrame>
   )
 }
-function TrackPreview() {
-  return (
-    <ProductFrame title="Applications">
-      <div className="oc-example-heading">
-        <h3>Every next step, together.</h3>
-        <span className="oc-interface-note">3 applications</span>
-      </div>
-      <ul className="oc-track-list">
-        {[
-          ["Virginia Venture Fund", "Interviewing", "Next step", "Choose an interview time"],
-          [
-            "180 Degrees Consulting",
-            "In Review",
-            "Latest update",
-            "Your application is under review",
-          ],
-          ["McIntire Investment Institute", "Drafting", "Next step", "Finish your short response"],
-        ].map(([name, status, label, next]) => (
-          <li key={name}>
-            <div>
-              <h4>{name}</h4>
-              <StatusBadge status={status} />
-            </div>
-            <p>
-              <span>{label}</span>
-              {next}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </ProductFrame>
-  )
+function TrackContent() {
+  const progress = useProductProgress()
+  const stages = ["Applied", "In Review", "Round 1", "Interviewing", "Accepted"]
+  return <><div className="oc-example-heading"><h3>Every next step, together.</h3><span className="oc-interface-note">3 sample applications</span></div>
+    <ul className="oc-track-list">{["Venture Collective", "Impact Consulting", "Design Collective"].map((name, index) => {
+      const step = Math.min(4, Math.max(0, Math.floor(progress * (6 - index) - index * .4)))
+      const status = index === 1 && step === 4 ? "Rejected" : stages[step]
+      return <li key={name}><div><h4>{name}</h4><StatusBadge status={status} /></div><p><span>Application journey</span>Applied → Review → Round 1 → Interview → Decision</p></li>
+    })}</ul></>
 }
-function LeaderPreview() {
-  return (
-    <ProductFrame title="Applicants">
-      <div className="oc-example-heading">
-        <h3>Your next class, taking shape.</h3>
-        <Badge variant="outline">Fall recruitment</Badge>
-      </div>
-      <Tabs.Root defaultValue="applicants">
-        <Tabs.List className="oc-leader-example-tabs" aria-label="Example club workspace">
-          {[
-            ["applicants", "Applicants"],
-            ["review", "Review"],
-            ["interviews", "Interviews"],
-          ].map(([value, label]) => (
-            <Tabs.Trigger key={value} value={value}>
-              {label}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
-        <Tabs.Content value="applicants">
-          <div className="oc-leader-table-wrap">
-            <table className="oc-leader-table">
-              <caption className="sr-only">Example applicant review table</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Applicant</th>
-                  <th scope="col">Stage</th>
-                  <th scope="col">Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ["Jordan Avery", "In Review", "4.2"],
-                  ["Naomi Cho", "Round 1", "4.5"],
-                  ["Alex Morgan", "Applied", "—"],
-                ].map(([name, status, score]) => (
-                  <tr key={name}>
-                    <th scope="row">{name}</th>
-                    <td>
-                      <StatusBadge status={status} />
-                    </td>
-                    <td>{score}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="oc-review-note">
-            <span>Shared context</span>
-            <p>Profiles, responses, and evaluations belong in the same conversation.</p>
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="review">
-          <div className="oc-example-heading">
-            <h4>Naomi Cho · Application review</h4>
-            <Badge variant="outline">Sample evaluation</Badge>
-          </div>
-          <div className="oc-review-rubric">
-            {[
-              ["Motivation & fit", "4.5"],
-              ["Problem solving", "4.8"],
-              ["Collaboration", "4.3"],
-            ].map(([label, score]) => (
-              <div key={label}>
-                <span>{label}</span>
-                <strong>{score} / 5</strong>
-              </div>
-            ))}
-          </div>
-          <p>
-            “A thoughtful response, grounded in experience. Explore the project further during the
-            interview.”
-          </p>
-        </Tabs.Content>
-        <Tabs.Content value="interviews">
-          <div className="oc-interview-example">
-            <div>
-              <span>
-                <strong>Naomi Cho</strong>
-                <small>Round one · 20 minutes</small>
-              </span>
-              <Badge variant="outline">Scheduled</Badge>
-            </div>
-            <div>
-              <span>
-                Tuesday, September 22<small>4:00–4:20 PM · Interview room A</small>
-              </span>
-              <span>AJ · SK</span>
-            </div>
-            <p>
-              Keep the applicant’s profile, interview notes, and feedback together as the team makes
-              its next decision.
-            </p>
-          </div>
-        </Tabs.Content>
-      </Tabs.Root>
-    </ProductFrame>
-  )
+function TrackPreview() { return <ProductFrame title="Applications"><TrackContent /></ProductFrame> }
+
+const leaderChapters = ["Review Applications", "Interviews", "Voting & Decisions", "Club Management"]
+function LeaderContent() {
+  const progress = useProductProgress()
+  const [selected, setSelected] = useState<number | null>(null)
+  const chapter = selected ?? Math.min(3, Math.floor(progress * 4))
+  const phase = selected !== null || progress === 1 ? 1 : (progress * 4) % 1
+  return <>
+    <div className="oc-leader-chapters" aria-label="Product walkthrough chapters">{leaderChapters.map((label, index) => <button type="button" key={label} aria-pressed={chapter === index} onClick={() => setSelected(index)}>{label}</button>)}</div>
+    <div className="oc-leader-scene">
+      <p className="oc-story-eyebrow">{String(chapter + 1).padStart(2, "0")} / 04 · {leaderChapters[chapter]}</p>
+      {chapter === 0 && <><h3>Jordan Avery · Application review</h3><p className="oc-scene-note">“I helped our research team turn interviews into a clear recommendation.”</p><div className="oc-review-rubric">{["Motivation & fit", "Problem solving", "Collaboration"].map((label, i) => <div key={label}><span>{label}</span><strong>{phase > .15 + i * .18 ? ["4.5", "4.8", "4.3"][i] + " / 5" : "—"}</strong></div>)}</div><p className="oc-scene-note">{phase > .75 ? "Evaluation saved · ready for the team’s review" : "Read the response. Score against a shared rubric."}</p></>}
+      {chapter === 1 && <><h3>A conversation with context.</h3><p className="oc-scene-note">Jordan Avery · Round 1 · 20 minutes</p><div className="oc-interview-question"><small>QUESTION {phase < .5 ? "1" : "2"} OF 2</small><h4>{phase < .5 ? "Tell us about a time your team disagreed." : "How did you decide what to recommend?"}</h4></div><p className="oc-scene-note">Interviewer notes</p><p>{phase < .25 ? "Listening to the applicant…" : phase < .65 ? "Invited different perspectives before proposing a next step." : "Compared the evidence, explained tradeoffs, and checked the recommendation with the team."}</p></>}
+      {chapter === 2 && <><h3>Make the next decision together.</h3><p className="oc-scene-note">Jordan Avery · Final deliberation</p><div className="oc-review-rubric">{["Accept", "Waitlist", "Decline"].map((label, i) => <div key={label}><span>{label}</span><strong>{phase < .3 ? "—" : [phase < .6 ? "2 votes" : "4 votes", "1 vote", "0 votes"][i]}</strong></div>)}</div><p className="oc-scene-note">{phase > .75 ? "Decision recorded: Accepted · notification pending" : "Collect the team’s votes before recording a decision."}</p></>}
+      {chapter === 3 && <><h3>Keep the momentum going.</h3><p className="oc-scene-note">Your club, beyond recruitment</p><div className="oc-review-rubric"><div><span>Meeting · New member welcome</span><strong>Thu · 6 PM</strong></div><div><span>{phase > .35 ? "✓" : "○"} Prepare welcome agenda</span><strong>Naomi</strong></div><div><span>{phase > .7 ? "✓" : "○"} Share project briefs</span><strong>Alex</strong></div><div><span>Members</span><strong>{phase > .5 ? "13 · Jordan added" : "12 active"}</strong></div></div></>}
+    </div>
+  </>
 }
+function LeaderPreview() { return <ProductFrame title="Club workspace"><LeaderContent /></ProductFrame> }
 
 const stories = [
   {
@@ -347,8 +246,9 @@ export function ProductStories({ onLeaderEnter }: { onLeaderEnter: () => void })
             <h2 id="clubs-title">A clearer view of your next class.</h2>
           </TextReveal>
           <p data-motion="body">
-            Bring applicants, reviews, and recruitment decisions into one shared workspace.
+            Review applications, lead interviews, vote on decisions, and manage your club in one shared workspace.
           </p>
+          <p className="oc-leader-summary">Review Applications · Interviews<br />Voting &amp; Decisions · Club Management</p>
           <button type="button" className="oc-story-link" onClick={onLeaderEnter}>
             Explore the club workspace
             <ArrowUpRight aria-hidden="true" size={16} />

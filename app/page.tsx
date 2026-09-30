@@ -1,3 +1,4 @@
+import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { AppShell } from "@/components/app-shell"
@@ -12,7 +13,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   const supabase = await createClient(cookieStore)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-  if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <AppShell initialView="student-dashboard" />
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <AppShell launchClubs={await getLaunchClubs()} initialView="landing" />
 
   let initialData = null
   let hasProfile = false
@@ -32,5 +33,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
     hasProfile = !!profile
   }
 
-  return <AppShell initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
+  const launchClubs = await getLaunchClubs()
+  return <AppShell launchClubs={launchClubs} initialView={!user && next !== "/" ? "auth" : "landing"} initialSession={user} initialData={initialData} hasProfile={hasProfile} />
 }

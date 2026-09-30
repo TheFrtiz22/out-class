@@ -14,7 +14,7 @@ export const storagePathSchema = z.string().trim().refine((val) => {
   // Reject URLs and absolute paths
   if (val.includes('://') || val.startsWith('/') || val.startsWith('data:') || val.startsWith('javascript:')) return false;
   // Reject path traversal
-  if (val.includes('..')) return false;
+  if (val.includes('..') || /[\\%?#\x00-\x1f\x7f]/.test(val)) return false;
   
   const parts = val.split('/');
   if (parts.length !== 2) return false; // Expected format: uuid/filename

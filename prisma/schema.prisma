@@ -73,6 +73,9 @@ model Experience {
 // ==========================================
 
 model Club {
+  marketing       Json?
+  marketingApprovedAt DateTime? // Explicit consent to appear as a launch participant.
+  interviewRooms  InterviewRoom[]
   interviewSlots  InterviewSlot[]
   campusKey       String           @default("uva")
   directorySource String?
@@ -132,6 +135,9 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  interviewRooms InterviewRoom[]
+  scheduledBookings InterviewBooking[]
+  screeningRule RecruitingRule?
   anonymousReview  Boolean           @default(false)
   interviewKit     Json              @default("[]")
   kitVersion       Int               @default(0)
@@ -168,6 +174,7 @@ enum QuestionType {
 }
 
 model Application {
+  recruitingFlags RecruitingRuleFlag[]
   anonymousReviewText String?
   interviewRecords    InterviewRecord[]
   id                  String            @id @default(uuid())
@@ -270,7 +277,29 @@ model EventAttendance {
 // 5. SCHEDULING
 // ==========================================
 
+model InterviewRoom {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  roundId String
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  name String
+  location String
+  kind String
+  timezone String
+  duration Int
+  buffer Int @default(0)
+  isOpen Boolean @default(true)
+  panelMemberIds String[] @default([])
+  createdAt DateTime @default(now())
+  slots InterviewSlot[]
+  @@index([clubId, roundId])
+}
+
 model InterviewSlot {
+  roomId String?
+  room InterviewRoom? @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   id        String   @id @default(uuid())
   clubId    String
   club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -280,11 +309,19 @@ model InterviewSlot {
   capacity  Int      @default(1)
 
   bookings InterviewBooking[]
+<<<<<<< HEAD
 
   @@index([clubId], map: "InterviewSlot_clubId_idx")
+=======
+  @@index([roomId, startTime])
+  @@index([clubId, startTime])
+>>>>>>> 207c6c6ae315ebe2ae3f66f3da2bf9556175660d
 }
 
 model InterviewBooking {
+  roundId String?
+  round PipelineRound? @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
   id            String        @id @default(uuid())
   slotId        String
   slot          InterviewSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
@@ -292,6 +329,7 @@ model InterviewBooking {
   application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   @@unique([slotId, applicationId])
+  @@unique([applicationId, roundId])
 }
 
 model InterviewRecord {
@@ -456,4 +494,28 @@ model PlatformViewSession {
   endedAt      DateTime?
 
   @@index([actorId, endedAt])
+}
+
+// Screening suggestions are deliberately separate from application decisions.
+model RecruitingRule {
+  roundId String @id
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  minGpa Float?
+  minSat Int?
+  minAct Int?
+  revision Int @default(1)
+  updatedAt DateTime @updatedAt
+  flags RecruitingRuleFlag[]
+}
+
+model RecruitingRuleFlag {
+  roundId String
+  rule RecruitingRule @relation(fields: [roundId], references: [roundId], onDelete: Cascade)
+  applicationId String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  ruleRevision Int
+  reasons String[]
+  flaggedBy String
+  flaggedAt DateTime @default(now())
+  @@id([roundId, applicationId])
 }
