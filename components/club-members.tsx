@@ -5,6 +5,7 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { hasPermission, permissionLabels, type ClubPermission } from "@/lib/permissions"
 import { getClubMembers, getClubAccess, addClubMember, removeClubMember } from "@/actions/club-access"
 import { updateTaskMember } from "@/lib/workspace-api"
+import { RosterCsvImporter } from "@/components/roster-csv-importer"
 import { ClubAccessEditor } from "@/components/club-access-editor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,6 +45,7 @@ export function ClubMembers({ clubId }: { clubId: string }) {
   return <div className="max-w-5xl space-y-6" data-unsaved={dirty} data-saving={busy}>
     <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}
+    {!demo.isDemoEnabled && canMembers && <RosterCsvImporter key={clubId} clubId={clubId} />}
     <Input type="search" aria-label="Search members" placeholder="Search name, role, year, or group" value={query} onChange={e=>setQuery(e.target.value)} className="max-w-md" />
     {!demo.isDemoEnabled && canAccess && data?.access && <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium">Invite & pending invitations</summary><div className="mt-5"><ClubAccessEditor clubId={clubId} initial={data.access} inviteOnly onSaved={reload} /></div></details>}
     {!demo.isDemoEnabled && canMembers && <details className="border-b pb-4"><summary className="cursor-pointer text-sm">Add an existing member</summary><form className="mt-4 flex flex-wrap gap-3" onSubmit={e=>{e.preventDefault();const email=String(new FormData(e.currentTarget).get("email"));void run(()=>addClubMember(clubId,email))}}><Input name="email" type="email" required aria-label="Existing member UVA email" placeholder="UVA email" className="max-w-sm" /><Button disabled={busy}>Add member</Button></form></details>}
