@@ -5,6 +5,18 @@ DO $$ BEGIN
     RAISE NOTICE 'Supabase Storage is absent. Re-run this idempotent storage patch after provisioning Storage.';
     RETURN;
   END IF;
+  -- Supabase manages table-level RLS; this migration only manages bucket policies.
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_class
+    WHERE oid = pg_catalog.to_regclass('storage.objects')
+      AND relrowsecurity
+  ) THEN
+    RAISE EXCEPTION USING
+      ERRCODE = '55000',
+      MESSAGE = 'Supabase-managed storage.objects must already have row-level security (RLS) enabled before applying the private-resume migration.',
+      HINT = 'Have the Supabase-managed Storage configuration reviewed before retrying; this migration does not enable RLS on provider-owned tables.';
+  END IF;
   INSERT INTO storage.buckets (id, name, public)
     VALUES ('resumes', 'resumes', false)
     ON CONFLICT (id) DO UPDATE SET public = false;
@@ -22,6 +34,5 @@ DO $$ BEGIN
   CREATE POLICY outclass_resumes_insert_guard ON storage.objects
     AS RESTRICTIVE FOR INSERT TO PUBLIC
     WITH CHECK (bucket_id <> 'resumes' OR split_part(name, '/', 1) = (SELECT auth.uid())::text);
-  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 END $$;
 COMMIT;
