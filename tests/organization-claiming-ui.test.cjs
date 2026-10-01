@@ -17,9 +17,11 @@ function harness(api,file,props) {
     const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
     new Function('require','module','exports',compiled)(name=>{
       if(name==='react')return react;
+      if(name==='next/link')return{default:'Link'};
       if(name==='@/actions/club-onboarding'||name==='@/actions/club-access')return api;
       if(name==='@/components/ui/button')return{Button:'Button'};
-      if(name==='@/components/invitation-response')return{InvitationResponse:'InvitationResponse'};
+      if(name==='@/components/organization-invitation-card')return{OrganizationInvitationCard:'OrganizationInvitationCard'};
+      if(name==='@/contexts/auth-context')return{useAuth:()=>({user:{id:'user'},refreshUser:async()=>{}})};
       if(name.startsWith('@/'))return load(name.slice(2)+'.ts');
       return require(name);
     },mod,mod.exports);return mod.exports;
@@ -36,14 +38,14 @@ test('authenticated discovery surfaces ownership requests and editable profile s
   assert.ok(JSON.stringify(h.render()).includes('Checking organization'));await h.flush();const tree=h.render();
   assert.equal(calls,1);assert.deepEqual(defaults,{firstName:'John',lastName:'Smith',gradYear:'2027'});
   assert.ok(JSON.stringify(tree).includes('Madison Investment Fund'));
-  const cards=nodes(tree).filter(node=>node.type==='InvitationResponse');assert.equal(cards.length,1);assert.equal(cards[0].props.owner,true);
+  const cards=nodes(tree).filter(node=>node.type==='OrganizationInvitationCard');assert.equal(cards.length,2);assert.equal(cards[0].props.invitation.requestedRole,'OWNER');assert.equal(cards[1].props.invitation.requestedRole,'MEMBER');
   const disabled=harness(api,'components/organization-ownership-requests.tsx',{enabled:false});assert.equal(disabled.render(),null);await disabled.flush();assert.equal(calls,1);
 });
 
 test('failed discovery offers retry and successful empty discovery is unobtrusive',async()=>{
   let calls=0;const h=harness({getOrganizationInvitations:async()=>{if(++calls===1)throw Error('Unavailable');return[];}},'components/organization-ownership-requests.tsx',{enabled:true});
   h.render();await h.flush();let tree=h.render();assert.ok(nodes(tree).some(node=>node.props?.role==='alert'));
-  nodes(tree).find(node=>node.type==='Button').props.onClick();h.render();await h.flush();assert.equal(h.render(),null);assert.equal(calls,2);
+  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry invitations').props.onClick();h.render();await h.flush();assert.ok(JSON.stringify(h.render()).includes('all caught up'));assert.equal(calls,2);
 });
 
 test('claim button blocks repeated clicks, sends only invitation ID, and routes to existing club workspace',async()=>{

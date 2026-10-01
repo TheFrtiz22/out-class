@@ -50,7 +50,7 @@ test('first-login discovery and atomic ownership acceptance run against all repo
     clubInvitation:{
       findUnique:byId('ClubInvitation'),findUniqueOrThrow:byId('ClubInvitation'),
       update:async({where,data})=>update('ClubInvitation',where.id,data),
-      findMany:async({where})=>(await db.query(`SELECT i.*,jsonb_build_object('id',c.id,'name',c.name) AS club FROM "ClubInvitation" i JOIN "Club" c ON c.id=i."clubId" WHERE i."schoolIdentityId"=ANY($1::text[]) AND i.status=$2 AND i."expiresAt">$3 AND i."dismissedAt" IS NULL`,['{'+where.schoolIdentityId.in.join(',')+'}',where.status,where.expiresAt.gt])).rows,
+      findMany:async({where})=>(await db.query(`SELECT i.*,jsonb_build_object('id',c.id,'name',c.name) AS club FROM "ClubInvitation" i JOIN "Club" c ON c.id=i."clubId" WHERE i."schoolIdentityId"=ANY($1::text[]) AND i.status=$2 AND i."expiresAt">$3 ${where.dismissedAt === null ? 'AND i."dismissedAt" IS NULL' : ''}`,['{'+where.schoolIdentityId.in.join(',')+'}',where.status,where.expiresAt.gt])).rows,
     },
     auditLog:{create:async({data})=>{if(failAudit&&data.action==='club.invite.accept')throw Error('Audit failure');return one('INSERT INTO "AuditLog" (id,"actorId",action,"targetId","clubId",details) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[randomUUID(),data.actorId,data.action,data.targetId,data.clubId??null,JSON.stringify(data.details??null)]);}},
   };
@@ -72,4 +72,26 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   const claimed=await one('SELECT * FROM "ClubInvitation" WHERE id=$1',[invitation]);assert.equal(claimed.status,'ACCEPTED');assert.equal(claimed.claimedUserId,john);assert.ok(claimed.claimedAt);
   const membership=await one('SELECT * FROM "ClubMember" WHERE "userId"=$1',[john]);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.isOwner,true);assert.equal(membership.status,'ACTIVE');
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,1);assert.deepEqual(await api.getOrganizationInvitations(),[]);
+
+  const memberClub=randomUUID(),memberInvite=randomUUID(),laterInvite=randomUUID();
+  await db.query(`INSERT INTO "Club" (id,name,slug,"schoolId",tagline,description,color,category) VALUES ($1,'Member Club','member-club','school-uva','','','#ffffff','Academic')`,[memberClub]);
+  async function inviteMember(id) {
+    await db.query(`INSERT INTO "ClubInvitation" (id,"clubId","schoolId","schoolIdentityId",email,"invitedBy","expiresAt",purpose,"requestedRole","authoritySource") VALUES ($1,$2,'school-uva',$3,'jms8xy@virginia.edu',$4,NOW()+interval '7 days','MEMBERSHIP','MEMBER','PLATFORM_ADMIN')`,[id,memberClub,identity,actor]);
+  }
+  await inviteMember(memberInvite);
+  assert.equal((await api.getOrganizationInvitations()).length,1);
+  await api.setOrganizationInvitationDismissed(memberInvite,true);
+  assert.equal((await one('SELECT status FROM "ClubInvitation" WHERE id=$1',[memberInvite])).status,'PENDING');
+  assert.deepEqual(await api.getOrganizationInvitations(),[]);assert.equal((await api.getOrganizationInvitations(true)).length,1);
+  await api.setOrganizationInvitationDismissed(memberInvite,false);assert.equal((await api.getOrganizationInvitations()).length,1);
+  await api.declineIdentityClubInvitation(memberInvite);
+  assert.equal((await one('SELECT status FROM "ClubInvitation" WHERE id=$1',[memberInvite])).status,'DECLINED');
+  await assert.rejects(api.acceptIdentityClubInvitation(memberInvite),/unavailable/);
+  assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember" WHERE "clubId"=$1',[memberClub])).n,0);
+  await inviteMember(laterInvite);await api.setOrganizationInvitationDismissed(laterInvite,true);
+  await api.acceptIdentityClubInvitation(laterInvite);
+  assert.equal((await one('SELECT status FROM "ClubInvitation" WHERE id=$1',[laterInvite])).status,'ACCEPTED');
+  const member=await one('SELECT * FROM "ClubMember" WHERE "clubId"=$1',[memberClub]);assert.equal(member.userId,john);assert.equal(member.accessRole,'MEMBER');assert.equal(member.isOwner,false);
+  assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember" WHERE "clubId"=$1',[memberClub])).n,1);
+  await assert.rejects(api.acceptIdentityClubInvitation(laterInvite),/unavailable/);
 });

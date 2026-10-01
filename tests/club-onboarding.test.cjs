@@ -230,3 +230,17 @@ test('concurrent claiming attempts revalidate after the organization transaction
   assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
   assert.equal(h.state.audits.filter(audit=>audit.action==='club.invite.accept').length,1);
 });
+
+test('dismiss and restore revalidate identity and terminal state without any mutation on failure',async()=>{
+  for(const modify of [s=>{s.identityIds=['someone-else'];},s=>{s.verified=false;},s=>{s.invitation.status='REVOKED';},s=>{s.invitation.expiresAt=new Date(Date.now()-1);}]) {
+    for(const dismissed of [true,false]) {
+      const h=setup();modify(h.state);await assert.rejects(h.api.setOrganizationInvitationDismissed(inviteId,dismissed),/Verify|unavailable/);assert.equal(h.state.writes.length,0);
+    }
+  }
+});
+
+test('explicit decline is terminal; a dismissed pending member invitation can instead be accepted',async()=>{
+  const declined=setup();await declined.api.declineIdentityClubInvitation(inviteId);assert.equal(declined.state.invitation.status,'DECLINED');assert.equal(declined.state.writes.some(([kind])=>kind==='membership'),false);
+  await assert.rejects(declined.api.acceptIdentityClubInvitation(inviteId),/unavailable/);await assert.rejects(declined.api.setOrganizationInvitationDismissed(inviteId,false),/unavailable/);
+  const h=setup();await h.api.setOrganizationInvitationDismissed(inviteId,true);await h.api.acceptIdentityClubInvitation(inviteId);assert.equal(h.state.invitation.status,'ACCEPTED');assert.equal(h.state.invitation.claimedUserId,'recipient');assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
+});
