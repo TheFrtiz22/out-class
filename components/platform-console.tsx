@@ -1,5 +1,6 @@
 "use client";
 import { notifySupportSessionChanged } from "@/components/support-session-sync";
+import { PlatformOrganizationOnboarding } from "@/components/platform-organization-onboarding";
 import { useEffect, useState } from "react";
 import {
   readPlatformResource,
@@ -213,6 +214,7 @@ export function PlatformConsole() {
           </Button>
         ))}
       </nav>
+      {resource === "clubs" && <PlatformOrganizationOnboarding onCreated={() => setRevision(n => n + 1)} />}
       <form
         key={resource}
         className="space-y-4"
