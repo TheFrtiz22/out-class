@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const ts = require('typescript')
 
 function load(file, mocks = {}) {
+  mocks = { "@/utils/support-audit": { auditSupportAction: async () => {} }, ...mocks };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
   new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)

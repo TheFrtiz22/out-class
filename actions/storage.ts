@@ -1,5 +1,6 @@
 "use server";
 
+import { auditSupportAction } from "@/utils/support-audit";
 import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/auth";
 import { cookies } from "next/headers";
@@ -13,11 +14,17 @@ const uploadSchema = z.object({
 });
 
 export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
-  const { user } = await requireAuth();
+  const { user, impersonation } = await requireAuth();
   const parsed = uploadSchema.parse(data);
 
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  let supabase = await createClient(cookieStore);
+  if (impersonation) {
+    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!secret) throw new Error("Support uploads are unavailable.");
+    // Only the validated effective user's fresh path below can be signed.
+    supabase = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, { auth: { persistSession: false, autoRefreshToken: false } });
+  }
 
   // Generate a unique file path tied to the user to prevent overwrites/collisions
   // Format: [userId]/[timestamp]-[filename]
@@ -31,6 +38,8 @@ export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
     const { data: bucket, error } = await admin.storage.getBucket("resumes");
     if (error || !bucket || bucket.public) throw new Error("Private document storage is unavailable.");
   }
+
+  await auditSupportAction("platform.impersonation.storage-upload", user.id);
 
   // Request a signed upload URL from Supabase Storage
   const { data: uploadData, error } = await supabase

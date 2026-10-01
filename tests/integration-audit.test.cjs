@@ -76,17 +76,17 @@ test('student dashboard queries exclude private manager review text',async()=>{
   await load('actions/applications.ts').getStudentDashboardData()
 })
 
-test('account endpoint independently denies demo and administrator view cookies',async()=>{
+test('account endpoint independently denies demo cookies',async()=>{
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const viewCookie=loader({})('lib/platform-view-as.ts').PLATFORM_VIEW_COOKIE
-  for(const cookie of [demoCookie,viewCookie]){
+  for(const cookie of [demoCookie]){
     const load=loader({'next/headers':{cookies:async()=>({get:key=>key===cookie?{value:'1'}:undefined,has:key=>key===cookie})},'@/utils/supabase/server':{createClient:()=>{throw Error('Live auth must not be reached')}},'@/utils/prisma':{prisma:{}}})
     assert.equal((await load('app/api/users/me/route.ts').GET()).status,403,cookie)
   }
 })
 
  test('OAuth callback ignores forged forwarded hosts and rejects external return paths',async()=>{
-  const load=loader({'next/headers':{cookies:async()=>({})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
+  const load=loader({'next/headers':{cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
   const route=load('app/auth/callback/route.ts')
   for(const [next,expected] of [['/meetings','/meetings'],['//evil.example','/'],['/\\evil.example','/'],['https://evil.example','/']]) {
     const result=await route.GET(new Request(`https://outclass.example/auth/callback?code=test&next=${encodeURIComponent(next)}`,{headers:{'x-forwarded-host':'evil.example'}}))

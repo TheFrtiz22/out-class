@@ -55,7 +55,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const [personalSection, setPersonalSection] = useState<PersonalSection>("discover")
   const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
   const wantsStudent = searchParams.get("workspace") === "student"
-  const { selectClub, user } = useAuth()
+  const { selectClub, user, isImpersonating } = useAuth()
   const initialData = demo.isDemoEnabled ? demoDashboard() : realInitialData
   // ── Read auth error from URL query params (e.g. /?error=uva_only) ──
   const [authError, setAuthError] = useState("")
@@ -80,7 +80,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       : initialView
   )
   const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
-  function navigate(next: ViewId) { if (next === "tracker") setPersonalSection("applications"); if (next === "calendar") setPersonalSection("calendar"); if (next === "discover") setPersonalSection("discover"); if (next === "my-clubs") setPersonalSection("clubs"); if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
+  function navigate(next: ViewId) { if (isImpersonating && ["auth"].includes(next)) return; if (next === "tracker") setPersonalSection("applications"); if (next === "calendar") setPersonalSection("calendar"); if (next === "discover") setPersonalSection("discover"); if (next === "my-clubs") setPersonalSection("clubs"); if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return } setView(embedded && next === "landing" ? initialView : next) }
 
   // If an auth error was found in the URL, force the auth view so the user sees the message
   useEffect(() => {
@@ -130,6 +130,8 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       />
     )
   }
+
+  if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <button className="underline" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</button></main>
 
   if (view === "auth") {
     return <AuthView onCreateAccount={() => setView("student-onboarding")} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />

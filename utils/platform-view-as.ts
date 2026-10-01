@@ -12,7 +12,10 @@ export async function platformViewSession() {
   const session = await prisma.platformViewSession.findUnique({
     where: { tokenHash: viewTokenHash(token) },
   });
-  if (!session || session.actorId !== actor.id || session.endedAt) return null;
+  if (!session || session.actorId !== actor.id || session.endedAt || session.mode !== "IMPERSONATION") return null;
+  if ((process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(v => v.trim()).includes(session.targetUserId)) return null;
+  const target = await prisma.user.findUnique({ where: { id: session.targetUserId }, select: { disabledAt: true } });
+  if (!target || target.disabledAt) return null;
   if (
     await prisma.platformAdmin.findUnique({
       where: { userId: session.targetUserId },
@@ -30,6 +33,8 @@ export async function platformViewSession() {
           data: {
             actorId: actor.id,
             action: "platform.view-as.end",
+            effectiveUserId: session.targetUserId,
+            supportSessionId: session.id,
             targetId: session.targetUserId,
             clubId: session.clubId,
             reason: "Session expired",

@@ -1,4 +1,5 @@
 "use server"
+import type { AppTransactionClient } from "@/utils/prisma";
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
 import { prisma } from "@/utils/prisma"
@@ -14,7 +15,7 @@ function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
   return { id: room.id, clubId: room.clubId, roundId: room.roundId, name: room.name, location: room.location, kind: room.kind, timezone: room.timezone, duration: room.duration, buffer: room.buffer, isOpen: room.isOpen, panelMemberIds: applicant ? [] : room.panelMemberIds,
     slots: room.slots.filter(s => !applicant || +s.startTime > Date.now()).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings })) }
 }
-async function atomic<T>(fn: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
+async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     try { return await prisma.$transaction(fn, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }) }
     catch (error) {

@@ -1,4 +1,5 @@
 "use server";
+import type { AppTransactionClient } from "@/utils/prisma";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -10,7 +11,7 @@ import {
   validateQuestionNotes,
   type InterviewSessionData,
 } from "@/lib/interview-kits";
-import type { Prisma, InterviewRecord } from "@prisma/client";
+import type { InterviewRecord } from "@prisma/client";
 
 const scope = z.object({
   clubId: z.string().uuid(),
@@ -66,7 +67,7 @@ export async function saveInterviewKit(
   });
 }
 async function authorize(
-  tx: Prisma.TransactionClient,
+  tx: AppTransactionClient,
   input: z.infer<typeof scope>,
   membershipId: string,
 ) {

@@ -209,3 +209,8 @@ html { scroll-padding-top: 5rem; }
     --oc-toast-offset: calc(5.5rem + env(safe-area-inset-bottom));
   }
 }
+
+/* Keep the non-dismissable support context above sticky app navigation. */
+html:has([aria-label="Administrator view-as session"]) .oc-product-header {
+  top: var(--support-banner-height, 120px);
+}

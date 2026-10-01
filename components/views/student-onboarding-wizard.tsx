@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
 import { useState, useRef, useCallback, type DragEvent } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -204,6 +206,7 @@ export function StudentOnboardingWizard({
   onBack?: () => void
   onSignIn?: () => void
 }) {
+  const { isImpersonating } = useAuth()
   const [step, setStep] = useState(1)
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -235,6 +238,7 @@ export function StudentOnboardingWizard({
   }
 
   async function createAccount(skipVerification: boolean) {
+    if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
     if (loading) return
     setLoading(true)
     setGlobalError("")
@@ -261,6 +265,7 @@ export function StudentOnboardingWizard({
   })
 
   async function onStep2Submit(data: OtpVerifyData) {
+    if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
     setGlobalError("")
     setLoading(true)
     try {
@@ -285,6 +290,7 @@ export function StudentOnboardingWizard({
   }
 
   async function resendCode() {
+    if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
     setLoading(true)
     setGlobalError("")
     try {
@@ -384,6 +390,8 @@ export function StudentOnboardingWizard({
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  if (isImpersonating && !initialUser) return <p className="p-4">Account registration is unavailable during impersonation. <Link className="underline" href="/?workspace=student">Open the user’s workspace</Link> to review their existing profile.</p>
 
   return (
     <div className={embedded ? "font-sans" : "flex min-h-svh items-center justify-center bg-neutral-50 px-4 py-10 font-sans"}>

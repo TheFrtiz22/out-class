@@ -125,7 +125,7 @@ const start = {
   userId: target,
   clubId,
   reason: "Investigating reported missing tasks.",
-  confirmation: "VIEW ONLY",
+  confirmation: "LOG IN AS",
 };
 test("view-as validates MFA guard, origin, explicit confirmation, target and membership before starting", async () => {
   for (const prepare of [
@@ -205,53 +205,19 @@ test("expiry, revoked grants, newly privileged targets and replaced sessions fai
     1,
   );
 });
-test("middleware redirects normal navigation and routes all impersonated writes to audited denial", async () => {
+test("middleware allows effective application access but denies provider identity changes", async () => {
   let live = 0;
   const { middleware } = load("middleware.ts", {
-    "@/utils/supabase/middleware": {
-      createClient: async () => {
-        live++;
-        return new Response("normal");
-      },
-    },
+    "@/utils/supabase/middleware": { createClient: async () => { live++; return new Response("normal"); } },
   });
   const headers = { cookie: `${cookie}=token` };
-  assert.equal(
-    (
-      await middleware(
-        new NextRequest("https://outclass.test/api/users/me", { headers }),
-      )
-    ).status,
-    403,
-  );
-  assert.equal(
-    new URL(
-      (
-        await middleware(
-          new NextRequest("https://outclass.test/club/x/workspace", {
-            headers,
-          }),
-        )
-      ).headers.get("location"),
-    ).pathname,
-    "/platform/view-as",
-  );
-  for (const method of ["POST", "PATCH", "DELETE"]) {
-    const response = await middleware(
-      new NextRequest("https://outclass.test/platform", { method, headers }),
-    );
-    assert.equal(
-      new URL(response.headers.get("x-middleware-rewrite")).pathname,
-      "/api/platform/view-as/blocked",
-    );
+  for (const path of ["/api/users/me", "/club/x/workspace", "/api/platform/view-as"]) {
+    assert.equal((await middleware(new NextRequest(`https://outclass.test${path}`, { headers }))).status, 200);
   }
-  await middleware(
-    new NextRequest("https://outclass.test/api/platform/view-as", {
-      method: "POST",
-      headers,
-    }),
-  );
-  assert.equal(live, 1);
+  for (const path of ["/auth/callback", "/api/auth/password-recovery", "/api/demo", "/platform/login", "/login", "/forgot-password", "/reset-password"]) {
+    assert.equal((await middleware(new NextRequest(`https://outclass.test${path}`, { headers }))).status, 403);
+  }
+  assert.equal(live, 3);
 });
 test("blocked mutation attempts produce attributed audit events and never execute a target mutation", async () => {
   const h = sessionHarness(),
@@ -383,7 +349,7 @@ test("admin suspension protects self, privileged administrators, and the last ac
   );
   assert.equal(writes, 1);
 });
-test("ordinary auth and platform mutations reject view context even if middleware is bypassed", async () => {
+test("invalid support context and platform mutations fail closed even if middleware is bypassed", async () => {
   const jar = { has: () => true, get: () => undefined };
   const auth = load("utils/auth.ts", {
     "next/headers": { cookies: async () => jar },
@@ -392,6 +358,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
         throw Error("Must not reach Supabase");
       },
     },
+    "@/utils/platform-view-as": { platformViewSession: async () => null },
     "@/utils/prisma": { prisma: {} },
     "next/navigation": {
       redirect: () => {
@@ -399,7 +366,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
       },
     },
   });
-  await assert.rejects(auth.requireAuth(), /Exit read-only/);
+  await assert.rejects(auth.requireAuth(), /[Ee]xit impersonation/g);
   const previous = process.env.OUTCLASS_PLATFORM_ADMIN_IDS;
   process.env.OUTCLASS_PLATFORM_ADMIN_IDS = actor;
   try {
@@ -423,7 +390,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
         }),
       },
     });
-    await assert.rejects(guard.requirePlatformAdmin(), /Exit read-only/);
+    await assert.rejects(guard.requirePlatformAdmin(), /Exit impersonation/);
     assert.equal(
       (await guard.requirePlatformAdmin({ allowViewAs: true })).id,
       actor,
@@ -435,6 +402,7 @@ test("ordinary auth and platform mutations reject view context even if middlewar
 });
 test("normal account API queries the authenticated identity without obsolete omit fields", async () => {
   const api = load("app/api/users/me/route.ts", {
+    "@/utils/auth": { requireAuth: async () => ({ user: { id: actor }, impersonation: null }) },
     "next/headers": { cookies: async () => ({get:()=>undefined,has:()=>false}) },
     "@/utils/supabase/server": {
       createClient: async () => ({
@@ -467,4 +435,16 @@ test("normal account API queries the authenticated identity without obsolete omi
   const response = await api.GET();
   assert.equal(response.status, 200);
   assert.equal((await response.json()).passwordHash, undefined);
+});
+
+test("context synchronization reports only a marker and session ID, never tokens or target data", async () => {
+  const h = sessionHarness();
+  assert.deepEqual(await (await h.api.GET()).json(), { marker: false, sessionId: null });
+  const issued = await h.api.POST(req(start));
+  h.setToken(issued.cookies.get(cookie).value);
+  const response = await h.api.GET();
+  assert.deepEqual(await response.json(), { marker: true, sessionId: h.rows()[0].id });
+  assert.match(response.headers.get('cache-control'), /no-store/);
+  h.revoke();
+  assert.deepEqual(await (await h.api.GET()).json(), { marker: true, sessionId: null });
 });

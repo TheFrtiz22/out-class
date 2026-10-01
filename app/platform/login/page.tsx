@@ -1,4 +1,5 @@
 "use client"
+import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useState } from "react"
 import { createClient } from "@/utils/supabase/client"
@@ -13,9 +14,11 @@ export default function PlatformLogin() {
     [qr, setQr] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false)
+  const { isImpersonating } = useAuth()
   const demo = useDemoMode()
   const client = createClient()
   async function run(fn: () => Promise<void>) {
+    if (isImpersonating) return
     setBusy(true)
     setMessage("")
     try {
@@ -26,6 +29,7 @@ export default function PlatformLogin() {
       setBusy(false)
     }
   }
+  if (isImpersonating) return <main className="p-8">Exit impersonation above to restore platform administration.</main>
   if (demo.isDemoEnabled)
     return (
       <main className="p-8">

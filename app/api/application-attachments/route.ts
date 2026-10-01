@@ -1,3 +1,4 @@
+import { auditSupportAction } from "@/utils/support-audit";
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { requireAuth } from "@/utils/auth"
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret)
     const { data: bucket, error: bucketError } = await admin.storage.getBucket("resumes")
     if (bucketError || !bucket || bucket.public) return new NextResponse("Private storage unavailable", { status: 503, headers })
+    await auditSupportAction("platform.impersonation.attachment-read", user.id);
     const { data, error } = await admin.storage.from("resumes").createSignedUrl(answer.response, 300, { download: true })
     if (error || !data?.signedUrl) return new NextResponse("Not found", { status: 404, headers })
     return NextResponse.redirect(data.signedUrl, { headers })

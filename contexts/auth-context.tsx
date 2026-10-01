@@ -8,6 +8,7 @@ export type ExtendedApplication = Application & { club: Club };
 export type ExtendedMembership = ClubMember & { club: Club };
 
 export type PopulatedUser = User & {
+  impersonating?: boolean;
   profile: StudentProfile | null;
   applications: ExtendedApplication[];
   memberships: ExtendedMembership[];
@@ -15,6 +16,7 @@ export type PopulatedUser = User & {
 };
 
 interface AuthContextType {
+  isImpersonating: boolean;
   user: PopulatedUser | null;
   loading: boolean;
   mutateUser: (newUser: PopulatedUser) => void;
@@ -28,7 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 import { demoUser } from "@/lib/demo/store";
 import { useDemoMode } from "@/contexts/demo-context";
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children, isImpersonating = false }: { children: React.ReactNode; isImpersonating?: boolean }) {
   const [user, setUser] = useState<PopulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { isDemoEnabled, state, viewAs } = useDemoMode();
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else setSelectedClubId(clubId);
   };
   return (
-    <AuthContext.Provider value={{ user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : loading, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+    <AuthContext.Provider value={{ isImpersonating, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : loading, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

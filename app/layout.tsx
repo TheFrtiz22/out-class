@@ -1,3 +1,4 @@
+import { SupportSessionSync } from "@/components/support-session-sync"
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { platformViewSession } from "@/utils/platform-view-as"
 import { PlatformViewBanner } from "@/components/platform-view-banner"
@@ -39,7 +40,8 @@ export default async function RootLayout({
   const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
   const supabase = await createClient(cookieStore)
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  const demoAllowed = canAccessDemo(authError ? undefined : user?.email)
+  const target = viewSession ? await prisma.user.findUnique({ where: { id: viewSession.targetUserId }, select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } }) : null
+  const demoAllowed = !cookieStore.has(PLATFORM_VIEW_COOKIE) && canAccessDemo(authError ? undefined : user?.email)
   const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
   let template
   if (demoEnabled) {
@@ -52,11 +54,12 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}>
-        {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={viewSession ? `User ${viewSession.targetUserId}${viewSession.clubId ? ` · Club ${viewSession.clubId}` : ""}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
+        {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
+        <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
-          <AuthProvider>
+          <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <ClubCustomizationProvider>
-              {children}
+              <div style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
             </ClubCustomizationProvider>
           </AuthProvider>
           <Toaster />

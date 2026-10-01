@@ -11,7 +11,7 @@ async function blocked(request: NextRequest) {
           action: "platform.view-as.write-blocked",
           targetId: session.targetUserId,
           clubId: session.clubId,
-          reason: "Mutation attempted during read-only view",
+          reason: "Operation unavailable during impersonation",
           details: {
             sessionId: session.id,
             path:
@@ -25,7 +25,7 @@ async function blocked(request: NextRequest) {
     /* Denial must hold even when authentication or audit storage is unavailable. */
   }
   return NextResponse.json(
-    { error: "Read-only administrator view. Exit before making changes." },
+    { error: "This operation is unavailable during impersonation. Exit impersonation first." },
     { status: 403 },
   );
 }

@@ -1,6 +1,8 @@
 "use client"
 import "./responsive-workspace.css"
 import "./authenticated-product.css"
+import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, LayoutGrid, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
@@ -29,7 +31,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   children: ReactNode; mode: string; modes: ProductNavItem[]; items: ProductNavItem[]; active: string; title: string;
   clubId?: string; clubName?: string; manager?: boolean; onSelect: (id: string) => void; onNavigate: (view: ViewId) => void;
 }) {
-  const { user } = useAuth(), demo = useDemoMode(), { notifications } = useApplicationState()
+  const router = useRouter()
+  const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
   const contextKey = `${clubId}:${mode}:${active}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -67,8 +70,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", top ? "flex-1 justify-center border-b-2 rounded-b-none whitespace-nowrap px-2 sm:flex-none sm:px-5" : "w-full text-left", selected ? top ? "border-brand-orange font-semibold text-primary" : "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id]
     const content = <>{!top && NavIcon && <NavIcon aria-hidden="true" className="size-[18px] shrink-0" />}{item.label}{item.preview && <span className="ml-auto text-[10px] font-normal text-muted-foreground">Preview</span>}</>
-    if (item.quiet && onReviewTool) return <button key={item.id} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
-    return item.href ? <Link key={item.id} href={item.href} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { moved.current = true; setMobile(false) } }}>{content}</Link> : <button key={item.id} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
+    if (item.quiet && onReviewTool) return <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
+    return item.href ? <Link key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} href={item.href} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { moved.current = true; setMobile(false) } }}>{content}</Link> : <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
   }
   function sidebar() { return <div className="oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6">
     <div className="mb-7"><ClubWorkspaceSwitcher clubId={manager ? clubId : ""} managersOnly /></div>
@@ -88,17 +91,22 @@ export function ProductShell({ children, mode, modes, items, active, title, club
         <div className="oc-product-utilities ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <Button variant="ghost" className="hidden text-muted-foreground md:inline-flex" onClick={() => setSearch(true)}><Search />Search <kbd className="ml-2 text-[10px]">⌘ K</kbd></Button>
           <IconButton aria-label="Search OutClass" className="md:hidden" onClick={() => setSearch(true)}><Search /></IconButton>
-          <IconButton aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className="relative" onClick={() => navigate("inbox")}><Bell />{unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
+          <IconButton data-tour="notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className="relative" onClick={() => navigate("inbox")}><Bell />{unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
           {manager && <div className="oc-product-club hidden min-w-0 border-l pl-4 sm:block"><p className="max-w-72 truncate text-sm font-semibold text-primary">{clubName}</p><p className="text-[11px] text-muted-foreground">Club workspace</p></div>}
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton aria-label={`Account menu for ${name}`}><UserRound /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem><DemoMenuItems />{user && !demo.isDemoEnabled && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" aria-label={`Account menu for ${name}`}><UserRound /></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem><DemoMenuItems />{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
       <div className="oc-product-modes flex items-center justify-between gap-2 px-4 sm:px-6 lg:pl-[248px]"><nav aria-label="Product modes" className="flex min-w-0 flex-1 overflow-x-auto sm:flex-none">{modes.map(m => navLink(m, true))}</nav>{demo.isDemoEnabled && <span className="hidden shrink-0 text-[10px] text-muted-foreground sm:inline">Demo Mode</span>}</div>
       {manager && <p className="truncate px-5 pb-2 text-xs text-muted-foreground sm:hidden">{clubName}</p>}
     </header>
-    <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><aside className="sticky top-28 hidden h-[calc(100dvh-7rem)] border-r border-border lg:block">{sidebar()}</aside><main id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-7 outline-none sm:px-8 sm:py-10">
+    <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><aside className="sticky top-28 hidden h-[calc(100dvh-7rem)] border-r border-border lg:block">{sidebar()}</aside><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="mx-auto w-full min-w-0 max-w-[1440px] px-5 py-7 outline-none sm:px-8 sm:py-10">
       {demo.isDemoEnabled && <p className="mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}
     </main></div>
+    {user && !demo.isDemoEnabled && <TutorialWalkthrough key={`${user.id}:${manager ? "leader" : "student"}`} experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
+      if (!canLeaveWorkspace()) return
+      if ("view" in step) navigate(step.view)
+      else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
+    }} />}
     <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} items={[...searchItems, { id: "inbox", title: "Notifications", icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} onNavigate={onNavigate} />
   </div>
 }

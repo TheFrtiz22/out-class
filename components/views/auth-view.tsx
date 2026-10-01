@@ -1,5 +1,6 @@
 "use client"
 
+import { useAuth } from "@/contexts/auth-context"
 import { useState, useEffect, type FormEvent } from "react"
 import { ArrowLeft, ArrowRight, Check, Loader2, Mail, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   /** Pre-populated error message, e.g. from an OAuth redirect error. */
   initialError?: string
 }) {
+  const { isImpersonating } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -48,6 +50,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   const supabase = createClient()
 
   async function handleMicrosoftLogin() {
+    if (isImpersonating) return
     if (microsoftLoading) return
     setMicrosoftLoading(true)
     setError("")
@@ -70,6 +73,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
 
   async function signIn(event: FormEvent) {
     event.preventDefault()
+    if (isImpersonating) return
     if (!isUvaEmail(email)) { setError("Use your UVA email ending in @virginia.edu."); return }
     setLoading(true)
     setError("")
@@ -82,6 +86,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   }
 
   async function requestCode() {
+    if (isImpersonating) return
     if (!isUvaEmail(email)) { setError("Enter your UVA email first."); return }
     setLoading(true)
     setError("")
@@ -96,6 +101,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
 
   async function verifyCode(event: FormEvent) {
     event.preventDefault()
+    if (isImpersonating) return
     if (loading) return
     setLoading(true)
     setError("")
@@ -113,6 +119,8 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
       setLoading(false)
     }
   }
+
+  if (isImpersonating) return <main className="p-8">Exit impersonation above before changing authentication. <Link className="underline" href="/?workspace=student">Return to the user’s workspace</Link></main>
 
   return (
     <div className="grid min-h-svh bg-white font-sans text-neutral-900 lg:grid-cols-[1fr_1fr]">

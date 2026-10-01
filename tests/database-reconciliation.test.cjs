@@ -42,7 +42,7 @@ test('capabilities guards suspension type without rewriting existing values', ()
   assert.doesNotMatch(sql, /ALTER COLUMN "disabledAt"|SET "disabledAt"|USING.*disabledAt/i);
 });
 
-test('required arrays have non-null empty defaults and every migration is transactional', () => {
+test('required arrays have non-null empty defaults and each migration is transactional or a single atomic statement', () => {
   const caps = read(migrations + '20260923010000_capabilities/migration.sql');
   const tasks = read(migrations + '20260924040000_member_tasks/migration.sql');
   assert.equal(caps.match(/"permissions" TEXT\[\] NOT NULL DEFAULT ARRAY\[\]::TEXT\[\]/g).length, 2);
@@ -50,7 +50,14 @@ test('required arrays have non-null empty defaults and every migration is transa
     assert.ok(tasks.includes(`"${field}" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]`));
   }
   for (const name of fs.readdirSync(migrations).filter(n => /^\d/.test(n))) {
-    const sql = read(migrations + name + '/migration.sql').trim();
+    const sql = read(migrations + name + '/migration.sql').replace(/--[^\n]*/g, '').trim();
+    // These committed, single-statement migrations rely on PostgreSQL statement atomicity.
+    // Preserve their checksums rather than rewriting migration history to add BEGIN/COMMIT.
+    const atomic = {
+      '20260925010000_marketing_participants': 'ALTER TABLE "Club" ADD COLUMN "marketingApprovedAt" TIMESTAMP(3);',
+      '20260929000000_club_marketing': 'ALTER TABLE "Club" ADD COLUMN "marketing" JSONB;',
+    };
+    if (atomic[name]) { assert.equal(sql, atomic[name]); continue; }
     assert.ok(sql.startsWith('BEGIN;'), name);
     assert.ok(sql.endsWith('COMMIT;'), name);
   }

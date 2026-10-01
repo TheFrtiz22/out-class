@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { createClient } from "@/utils/supabase/server";
-import { viewTokenHash } from "@/utils/platform-view-as";
+import { platformViewSession, viewTokenHash } from "@/utils/platform-view-as";
 import {
   PLATFORM_VIEW_COOKIE,
   PLATFORM_VIEW_LIFETIME,
@@ -15,7 +15,7 @@ const startSchema = z.object({
   userId: z.string().uuid(),
   clubId: z.string().uuid().optional(),
   reason: z.string().trim().min(10).max(1000),
-  confirmation: z.literal("VIEW ONLY"),
+  confirmation: z.literal("LOG IN AS"),
 });
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin)
@@ -48,9 +48,11 @@ export async function POST(request: NextRequest) {
                 data: {
                   actorId: data.user!.id,
                   action: "platform.view-as.end",
+                  effectiveUserId: session.targetUserId,
+                  supportSessionId: session.id,
                   targetId: session.targetUserId,
                   clubId: session.clubId,
-                  reason: "Administrator exited read-only view",
+                  reason: "Administrator exited impersonation",
                   details: { sessionId: session.id },
                 },
               });
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
   try {
     const actor = await requirePlatformAdmin(),
       data = startSchema.parse(input);
-    if (data.userId === actor.id) throw new Error("Choose a different user.");
+    if (data.userId === actor.id || (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(v => v.trim()).includes(data.userId)) throw new Error("Choose a different user.");
     const token = randomBytes(32).toString("hex"),
       expiresAt = new Date(Date.now() + PLATFORM_VIEW_LIFETIME);
     await prisma.$transaction(async (tx) => {
@@ -111,6 +113,8 @@ export async function POST(request: NextRequest) {
           data: {
             actorId: actor.id,
             action: "platform.view-as.end",
+                  effectiveUserId: session.targetUserId,
+                  supportSessionId: session.id,
             targetId: session.targetUserId,
             clubId: session.clubId,
             reason: "Superseded by a new view session",
@@ -125,6 +129,7 @@ export async function POST(request: NextRequest) {
           clubId: data.clubId,
           reason: data.reason,
           tokenHash: viewTokenHash(token),
+          mode: "IMPERSONATION",
           expiresAt,
         },
       });
@@ -132,12 +137,14 @@ export async function POST(request: NextRequest) {
         data: {
           actorId: actor.id,
           action: "platform.view-as.start",
+          effectiveUserId: session.targetUserId,
+          supportSessionId: session.id,
           targetId: data.userId,
           clubId: data.clubId,
           reason: data.reason,
           details: {
             sessionId: session.id,
-            mode: "READ_ONLY",
+            mode: "IMPERSONATION",
             expiresAt: expiresAt.toISOString(),
           },
         },
@@ -161,4 +168,11 @@ export async function POST(request: NextRequest) {
       { status: 403 },
     );
   }
+}
+
+/** Only context markers: no target account data or credentials are returned. */
+export async function GET() {
+  const marker = (await cookies()).has(PLATFORM_VIEW_COOKIE);
+  const session = marker ? await platformViewSession().catch(() => null) : null;
+  return NextResponse.json({ marker, sessionId: session?.id ?? null }, { headers: { "Cache-Control": "private, no-store" } });
 }

@@ -1,5 +1,6 @@
 "use server"
 
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { cookies } from "next/headers"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/server"
@@ -7,6 +8,7 @@ import { registrationSchema } from "@/lib/onboarding-schemas"
 
 /** Only creates new accounts; never confirms or changes an existing account. */
 export async function registerStudent(input: unknown, skipVerification: boolean) {
+  if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return { error: "Exit impersonation before registering an account." }
   const parsed = registrationSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   const { email, password, firstName, lastName } = parsed.data

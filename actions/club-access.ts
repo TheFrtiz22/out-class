@@ -76,7 +76,7 @@ export async function inviteClubManager(
 
 export async function acceptClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
-  const { user, supabaseUser } = await requireAuth();
+  const { user, supabaseUser } = await requireAuth({ verifyEmail: true });
   if (!supabaseUser.email_confirmed_at || supabaseUser.app_metadata?.email_verification_skipped === true) throw new Error("Verify your UVA email before accepting an invitation.");
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });

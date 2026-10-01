@@ -1,9 +1,11 @@
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isUvaEmail, signInReturnPath } from '@/lib/auth'
 
 export async function GET(request: Request) {
+  if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Exit impersonation before changing authentication." }, { status: 403 })
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = signInReturnPath(searchParams.get('next'))

@@ -1,3 +1,4 @@
+import { auditSupportAction } from "@/utils/support-audit";
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/utils/auth';
 import { prisma } from '@/utils/prisma';
@@ -83,6 +84,7 @@ export async function GET(request: Request) {
     const { data: bucket, error: bucketError } = await adminClient.storage.getBucket('resumes');
     if (bucketError || !bucket || bucket.public) return new NextResponse('Private resume storage is unavailable', { status: 503 });
 
+    await auditSupportAction("platform.impersonation.resume-read", user.id);
     const { data, error } = await adminClient.storage
       .from('resumes')
       .createSignedUrl(path, 60 * 5); // 5 minutes

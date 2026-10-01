@@ -18,6 +18,6 @@ export async function requirePlatformAdmin(options: { allowViewAs?: boolean } = 
   const { data, error } = await client.auth.mfa.getAuthenticatorAssuranceLevel()
   if (error || data?.currentLevel !== "aal2")
     throw new Error("Verify your authenticator to enter platform administration.")
-  if (!options.allowViewAs && (await cookies()).has(PLATFORM_VIEW_COOKIE)) throw new Error("Exit read-only view before performing administrator operations.")
+  if (!options.allowViewAs && (await cookies()).has(PLATFORM_VIEW_COOKIE)) throw new Error("Exit impersonation before performing administrator operations.")
   return user
 }

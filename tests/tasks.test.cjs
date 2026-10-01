@@ -3,6 +3,7 @@ const { test } = require("node:test"),
   fs = require("node:fs"),
   ts = require("typescript");
 function load(file, mocks = {}) {
+  mocks = { "@/utils/support-audit": { auditSupportAction: async () => {} }, ...mocks };
   const mod = { exports: {} };
   new Function(
     "require",

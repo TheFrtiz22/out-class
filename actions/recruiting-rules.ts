@@ -1,4 +1,5 @@
 "use server"
+import type { AppTransactionClient } from "@/utils/prisma";
 
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
@@ -8,7 +9,7 @@ import { revalidatePath } from "next/cache"
 import { applyRuleSchema, buildRulePreview, ruleEligibleStatuses, ruleLabel, ruleScopeSchema, saveRuleSchema, validateRuleRequirement } from "@/lib/recruiting-rules"
 import type { z } from "zod"
 
-async function scopedRound(tx: Prisma.TransactionClient, scope: z.infer<typeof ruleScopeSchema>) {
+async function scopedRound(tx: AppTransactionClient, scope: z.infer<typeof ruleScopeSchema>) {
   const round = await tx.pipelineRound.findFirst({
     where: { id: scope.roundId, clubId: scope.clubId },
     include: { screeningRule: true, club: { select: { testRequirement: true } } },
@@ -48,7 +49,7 @@ export async function saveRecruitingRule(input: z.infer<typeof saveRuleSchema>) 
   return saved
 }
 
-async function preview(tx: Prisma.TransactionClient, scope: z.infer<typeof ruleScopeSchema>, canIdentify: boolean) {
+async function preview(tx: AppTransactionClient, scope: z.infer<typeof ruleScopeSchema>, canIdentify: boolean) {
   const round = await scopedRound(tx, scope)
   if (!round.anonymousReview && !canIdentify) throw new Error("Applicant identity permission is required for this round.")
   if (!round.screeningRule) throw new Error("Save this round's rules before previewing.")

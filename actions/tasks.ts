@@ -1,4 +1,6 @@
 "use server";
+import type { AppTransactionClient } from "@/utils/prisma";
+import { auditSupportAction } from "@/utils/support-audit";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
@@ -18,7 +20,6 @@ import {
   taskFileSchema,
   type TaskInput,
 } from "@/lib/tasks";
-import type { Prisma } from "@prisma/client";
 const uuid = z.string().uuid();
 const memberSelect = {
   id: true,
@@ -57,10 +58,11 @@ async function storage() {
   const { data, error } = await storage.getBucket("task-submissions");
   if (error || !data || data.public)
     throw new Error("Private task storage is not configured.");
+  await auditSupportAction("platform.impersonation.task-storage", "task-submissions");
   return storage.from("task-submissions");
 }
 async function currentMember(
-  tx: Prisma.TransactionClient,
+  tx: AppTransactionClient,
   clubId: string,
   userId: string,
   manage = false,

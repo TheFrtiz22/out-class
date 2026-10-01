@@ -1,3 +1,5 @@
+import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
+import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
@@ -11,9 +13,27 @@ import { redirect } from "next/navigation";
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
  * Redirects to /auth (or home) if not authenticated.
  */
-export async function requireAuth(options: { allowPlatformView?: boolean } = {}) {
+export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean } = {}) {
   const cookieStore = await cookies();
-  if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) throw new Error("Exit read-only administrator view before using normal account actions.");
+  if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) {
+    const session = await platformViewSession();
+    if (!session) throw new Error("Impersonation expired or unavailable. Exit impersonation to continue.");
+    const effective = await prisma.user.findUnique({ where: { id: session.targetUserId } });
+    if (!effective || effective.disabledAt) throw new Error("This account is unavailable.");
+    // Only operations which need provider verification fetch the target's Auth record.
+    // No target tokens are created or returned, and the original login is never changed.
+    if (options.verifyEmail) {
+      const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!secret) throw new Error("Target email verification is unavailable.");
+      const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { data, error } = await admin.auth.admin.getUserById(effective.id);
+      if (error || !data.user || data.user.id !== effective.id || data.user.email?.toLowerCase() !== effective.email.toLowerCase()) throw new Error("Target email verification is unavailable.");
+      const supabaseUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "app_metadata"> = { id: effective.id, email: effective.email, email_confirmed_at: data.user.email_confirmed_at, app_metadata: data.user.app_metadata };
+      return { user: effective, supabaseUser, impersonation: session };
+    }
+    // Never borrow the administrator's Auth metadata or verified-email status.
+    return { user: effective, supabaseUser: { id: effective.id, email: effective.email, email_confirmed_at: undefined, app_metadata: {} }, impersonation: session };
+  }
   if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new Error("Live data is unavailable in Demo Mode.");
   const supabase = await createClient(cookieStore);
   
@@ -24,7 +44,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean } = {})
   }
 
   // Fetch the Prisma user to get global roles
-  const prismaUser = await prisma.user.upsert({
+  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await prisma.user.findUnique({ where: { id: user.id } }) : await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email },
     create: { id: user.id, email: user.email!, role: "STUDENT" },
@@ -35,7 +55,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean } = {})
     redirect("/");
   }
 
-  return { supabaseUser: user, user: prismaUser };
+  return { supabaseUser: user, user: prismaUser, impersonation: null };
 }
 
 /** Every sensitive club operation checks the current database membership. */

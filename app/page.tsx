@@ -1,3 +1,5 @@
+import { requireAuth } from "@/utils/auth"
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { getLaunchClubs } from "@/lib/launch-clubs"
 import { safeReturnPath } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
@@ -11,7 +13,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ n
   const next = safeReturnPath((await searchParams).next)
   const cookieStore = await cookies()
   const supabase = await createClient(cookieStore)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const { data: { user: login }, error: authError } = await supabase.auth.getUser()
+  const user = cookieStore.has(PLATFORM_VIEW_COOKIE) ? (await requireAuth()).user : login
 
   if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <AppShell launchClubs={await getLaunchClubs()} initialView="landing" />
 

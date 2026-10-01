@@ -18,6 +18,7 @@ model User {
   role       AppRole   @default(STUDENT) // Global role
   createdAt  DateTime  @default(now())
 
+  tutorials       UserTutorial[]
   studentProfile  StudentProfile?
   memberships     ClubMember[]
   applications    Application[]
@@ -357,6 +358,8 @@ model PlatformAdmin {
 }
 
 model AuditLog {
+  effectiveUserId String?
+  supportSessionId String?
   id        String   @id @default(uuid())
   actorId   String
   action    String
@@ -481,6 +484,7 @@ model TaskFile {
 }
 
 model PlatformViewSession {
+  mode         String    @default("READ_ONLY")
   id           String    @id @default(uuid())
   tokenHash    String    @unique
   actorId      String
@@ -517,4 +521,17 @@ model RecruitingRuleFlag {
   flaggedAt     DateTime       @default(now())
 
   @@id([roundId, applicationId])
+}
+
+// Separate progress for each experience; server-only, never browser-writable.
+model UserTutorial {
+  userId     String
+  experience String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     String   @default("IN_PROGRESS")
+  step       Int      @default(0)
+  version    Int      @default(1)
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, experience])
 }

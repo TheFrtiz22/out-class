@@ -36,6 +36,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
   let membership = { role: "PRESIDENT", permissions: [], isOwner: false },
     demo = false
   const api = load("utils/auth.ts", {
+    "@/utils/platform-view-as": { platformViewSession: async () => null },
     "@/lib/permissions": permissions,
     "@/lib/demo/access": { DEMO_COOKIE: "demo" },
     "@/lib/auth": authPolicy,

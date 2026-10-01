@@ -1,4 +1,5 @@
 "use client";
+import { notifySupportSessionChanged } from "@/components/support-session-sync";
 import { useEffect, useState } from "react";
 import {
   readPlatformResource,
@@ -14,6 +15,7 @@ import {
 import { clubPermissions, permissionLabels } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 type RecordRow = Record<string, unknown>;
 const selectClass =
@@ -380,6 +382,7 @@ export function PlatformConsole() {
             >
               <div className="min-w-0 flex-1">
                 <p className="break-words font-medium">{title(r)}</p>
+                {resource === "audit" && !!r.supportSessionId && <p className="mt-2 break-all rounded bg-amber-50 p-2 text-xs text-slate-950">Support action · Acting admin: {string(r.actorId)} · Effective user: {string(r.effectiveUserId)} · Session: {string(r.supportSessionId)}</p>}
                 <p className="mt-1 break-all text-xs text-muted-foreground">
                   {string(r.id)}
                   {nested(r, "club", "name")
@@ -439,7 +442,7 @@ export function PlatformConsole() {
                   size="sm"
                   onClick={() => setViewTarget(string(r.id))}
                 >
-                  View as
+                  Log in as
                 </Button>
               )}
               {resource === "claims" && (
@@ -496,9 +499,12 @@ export function PlatformConsole() {
           }}
         />
       )}
-      {viewTarget && (
-        <ViewAsForm userId={viewTarget} onClose={() => setViewTarget("")} />
-      )}
+      <Dialog open={!!viewTarget} onOpenChange={open => { if (!open) setViewTarget(""); }}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>Log in as a customer</DialogTitle><DialogDescription>Confirm the account and explain the support request before starting.</DialogDescription></DialogHeader>
+          {viewTarget && <ViewAsForm label={title(rows.find(r => r.id === viewTarget) || { id: viewTarget })} userId={viewTarget} onClose={() => setViewTarget("")} />}
+        </DialogContent>
+      </Dialog>
       <details className="border-t pt-5">
         <summary className="cursor-pointer text-sm font-medium">
           Platform upkeep
@@ -512,7 +518,7 @@ export function PlatformConsole() {
         </p>
         <p className="text-sm">
           Protected by server allowlist, an active database grant, and MFA.
-          View-as is read-only and expires after 30 minutes.
+          Impersonation uses the customer’s permissions, records actions under both identities, and expires after 30 minutes.
         </p>
       </details>
     </div>
@@ -752,9 +758,11 @@ function OperationEditor({
   );
 }
 function ViewAsForm({
+  label,
   userId,
   onClose,
 }: {
+  label: string;
   userId: string;
   onClose: () => void;
 }) {
@@ -784,6 +792,7 @@ function ViewAsForm({
             throw Error(
               (await response.json()).error || "Could not start view-as.",
             );
+          notifySupportSessionChanged();
           window.location.assign("/platform/view-as");
         } catch (e) {
           setError(e instanceof Error ? e.message : "Could not start view-as.");
@@ -791,11 +800,10 @@ function ViewAsForm({
         }
       }}
     >
-      <h3 className="text-lg font-semibold">Start read-only view-as</h3>
-      <p className="break-all text-sm">User: {userId}</p>
+      <p className="break-all text-sm">{label}<br /><span className="text-xs text-muted-foreground">User ID: {userId}</span></p>
       <p className="text-sm text-muted-foreground">
         Retains your admin login. The target&#39;s permissions determine the support
-        snapshot. No writes, target tokens, or delegated privileges.
+        experience. Changes are real and audited under both identities. Your admin privileges are unavailable until you exit.
       </p>
       <label className="block text-sm">
         Optional club workspace UUID
@@ -806,17 +814,17 @@ function ViewAsForm({
         <Textarea name="reason" minLength={10} maxLength={1000} required />
       </label>
       <label className="block text-sm">
-        Type VIEW ONLY to start
+        Type LOG IN AS to start
         <Input
           name="confirmation"
-          pattern="VIEW ONLY"
+          pattern="LOG IN AS"
           required
           autoComplete="off"
         />
       </label>
       {error && <p role="alert">{error}</p>}
       <div className="flex gap-3">
-        <Button disabled={busy}>Start view-as</Button>
+        <Button disabled={busy}>Log in as</Button>
         <Button
           type="button"
           variant="outline"

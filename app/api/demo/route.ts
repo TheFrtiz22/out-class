@@ -1,3 +1,4 @@
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@/utils/supabase/server"
@@ -5,6 +6,7 @@ import { getDemoAccess, DEMO_COOKIE } from "@/lib/demo/access"
 
 async function access() {
   const jar = await cookies()
+  if (jar.has(PLATFORM_VIEW_COOKIE)) return { allowed: false, enabled: false, reason: "support-session" }
   const client = await createClient(jar)
   const {
     data: { user }, error,

@@ -5,6 +5,7 @@ const path = require('node:path')
 const ts = require('typescript')
 
 function load(file, mocks = {}) {
+  mocks = { "@/lib/platform-view-as": { PLATFORM_VIEW_COOKIE: "outclass-platform-view" }, ...mocks };
   const filename = path.resolve(__dirname, '..', file)
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
@@ -33,7 +34,7 @@ test('skip creates a new password account and authenticates, without an email re
   process.env.SUPABASE_SECRET_KEY = 'test-only-key'
   const calls = []
   const { registerStudent } = load('actions/onboarding.ts', {
-    'next/headers': { cookies: async () => ({}) },
+    'next/headers': { cookies: async () => ({ has: () => false }) },
     '@/lib/onboarding-schemas': schemas,
     '@/utils/supabase/server': { createClient: async () => ({ auth: {
       signInWithPassword: async input => { calls.push(['signin', input]); return { error: null } },
@@ -52,7 +53,7 @@ test('skip creates a new password account and authenticates, without an email re
 test('duplicate account never signs in or modifies an existing user', async () => {
   let signedIn = false
   const { registerStudent } = load('actions/onboarding.ts', {
-    'next/headers': { cookies: async () => ({}) },
+    'next/headers': { cookies: async () => ({ has: () => false }) },
     '@/lib/onboarding-schemas': schemas,
     '@/utils/supabase/server': { createClient: async () => ({ auth: { signInWithPassword: async () => { signedIn = true } } }) },
     '@supabase/supabase-js': { createClient: () => ({ auth: { admin: { createUser: async () => ({ error: { message: 'duplicate' } }) } } }) },
@@ -68,7 +69,7 @@ test('verification remains required when skipping is disabled in both app and Su
   global.fetch = async () => ({ ok: true, json: async () => ({ mailer_autoconfirm: false }) })
   try {
     const { registerStudent } = load('actions/onboarding.ts', {
-      'next/headers': { cookies: async () => ({}) },
+      'next/headers': { cookies: async () => ({ has: () => false }) },
       '@/lib/onboarding-schemas': schemas,
       '@/utils/supabase/server': { createClient: async () => ({ auth: {} }) },
       '@supabase/supabase-js': { createClient: () => { throw new Error('Admin must not be used') } },
