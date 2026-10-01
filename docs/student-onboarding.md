@@ -34,3 +34,17 @@ policies. Upload failures are displayed and do not silently discard the attachme
 Students can remove the file or skip optional assets and complete their profile.
 
 Run the focused regression tests with `node --test tests/onboarding.test.cjs`.
+
+## Organization settings
+
+The account menu and dashboard requests link to `/settings/organizations`. This
+verified-account page shows active memberships and their organization-specific
+roles using the existing authenticated `/api/users/me` data. Accepting an
+invitation refreshes that data so a new membership appears immediately.
+
+All pending, unexpired invitations appear here, including dashboard-dismissed
+requests. Users can accept, claim an OWNER invitation, restore a hidden request
+to the dashboard, or explicitly confirm a decline. These controls reuse the
+same identity-verified server actions and atomic membership creation as the
+dashboard. Dismissal changes visibility only; confirmed decline is terminal.
+Invitation history is not shown. No database or RLS changes are required.

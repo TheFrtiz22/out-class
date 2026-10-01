@@ -77,7 +77,7 @@ export async function getOrganizationInvitations(includeDismissed = false) {
     return tx.clubInvitation.findMany({
       where: { schoolIdentityId: { in: identities.map(i => i.id) }, status: "PENDING", expiresAt: { gt: new Date() }, ...(includeDismissed ? {} : { dismissedAt: null }) },
       select: { id: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, expiresAt: true, dismissedAt: true, club: { select: { id: true, name: true, logoUrl: true, color: true } } },
-      orderBy: { createdAt: "desc" }, take: 100,
+      orderBy: { createdAt: "desc" }, ...(includeDismissed ? {} : { take: 100 }),
     });
   });
 }

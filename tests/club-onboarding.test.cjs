@@ -244,3 +244,14 @@ test('explicit decline is terminal; a dismissed pending member invitation can in
   await assert.rejects(declined.api.acceptIdentityClubInvitation(inviteId),/unavailable/);await assert.rejects(declined.api.setOrganizationInvitationDismissed(inviteId,false),/unavailable/);
   const h=setup();await h.api.setOrganizationInvitationDismissed(inviteId,true);await h.api.acceptIdentityClubInvitation(inviteId);assert.equal(h.state.invitation.status,'ACCEPTED');assert.equal(h.state.invitation.claimedUserId,'recipient');assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
 });
+
+
+test('Settings invitation listing includes every pending request while retaining verified identity scope',async()=>{
+  const h=setup();await h.api.getOrganizationInvitations(true);
+  const query=h.state.queries.find(([kind])=>kind==='invitations')[1];
+  assert.equal(query.take,undefined);assert.equal(query.where.dismissedAt,undefined);
+  assert.deepEqual(query.where.schoolIdentityId,{in:['identity']});assert.equal(query.where.status,'PENDING');
+  assert.ok(query.where.expiresAt.gt instanceof Date);
+  h.state.queries=[];await h.api.getOrganizationInvitations();
+  assert.equal(h.state.queries.find(([kind])=>kind==='invitations')[1].take,100);
+});

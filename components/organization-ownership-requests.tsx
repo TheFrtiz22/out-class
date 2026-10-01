@@ -35,7 +35,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
       if (cancelled) return;
       setInvitations(result.flatMap(invitation => {
         const kind = changes.current.get(invitation.id);
-        if (kind === "accepted" || kind === "dismissed" && !includeDismissed) return [];
+        if (kind === "accepted" || kind === "declined" || kind === "dismissed" && !includeDismissed) return [];
         return [{ ...invitation, dismissedAt: kind === "dismissed" ? new Date() : kind === "restored" ? null : invitation.dismissedAt }];
       }));
       if (result.length) defaultsCallback.current?.(invitationProfileDefaults(result));
@@ -46,12 +46,13 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
 
   async function changed(change: InvitationChange) {
     changes.current.set(change.id, change.kind);
-    if (change.kind === "accepted" || change.kind === "dismissed" && !includeDismissed) {
+    if (change.kind === "accepted" || change.kind === "declined" || change.kind === "dismissed" && !includeDismissed) {
       setInvitations(current => current.filter(invitation => invitation.id !== change.id));
     } else {
       setInvitations(current => current.map(invitation => invitation.id === change.id ? { ...invitation, dismissedAt: change.kind === "dismissed" ? new Date() : null } : invitation));
     }
     setNotice(change.kind === "accepted" ? `You’ve joined ${change.clubName}.`
+      : change.kind === "declined" ? `You’ve declined the invitation from ${change.clubName}.`
       : change.kind === "restored" ? `${change.clubName} will appear on your dashboard again.`
       : `${change.clubName} is hidden from your dashboard. The invitation is still pending in Settings → Organizations.`);
     if (change.kind === "accepted") {
@@ -69,7 +70,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
     {notice && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">{notice}</p>}
     {loading ? <div role="status" className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">Checking organization invitations…</div>
       : failed ? <div className="rounded-xl border p-4 space-y-3"><p role="alert">Could not check organization invitations.</p><Button variant="outline" onClick={() => setAttempt(value => value + 1)}>Retry invitations</Button></div>
-      : invitations.length ? <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} />)}</ul>
+      : invitations.length ? <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} allowDecline={includeDismissed} />)}</ul>
       : <p className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">{includeDismissed ? "You have no pending organization invitations." : "You’re all caught up. No new club invitations."}</p>}
     {!includeDismissed && <p className="text-xs leading-5 text-muted-foreground">“Not now” hides a request without declining it. <Link href="/settings/organizations" className="underline underline-offset-4">Find all pending invitations in Settings → Organizations</Link>.</p>}
   </section>;

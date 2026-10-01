@@ -1,20 +1,22 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { acceptIdentityClubInvitation, setOrganizationInvitationDismissed, type getOrganizationInvitations } from "@/actions/club-onboarding";
+import { acceptIdentityClubInvitation, declineIdentityClubInvitation, setOrganizationInvitationDismissed, type getOrganizationInvitations } from "@/actions/club-onboarding";
 import { ClubLogo } from "@/components/club-logo";
 import { Button } from "@/components/ui/button";
 import { clubWorkspaceHref } from "@/lib/club-workspace";
 
 export type OrganizationInvitation = Awaited<ReturnType<typeof getOrganizationInvitations>>[number];
-export type InvitationChange = { id: string; kind: "accepted" | "dismissed" | "restored"; clubName: string };
+export type InvitationChange = { id: string; kind: "accepted" | "dismissed" | "restored" | "declined"; clubName: string };
 
-export function OrganizationInvitationCard({ invitation, onChanged }: {
+export function OrganizationInvitationCard({ invitation, onChanged, allowDecline = false }: {
   invitation: OrganizationInvitation;
+  allowDecline?: boolean;
   onChanged: (change: InvitationChange) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<InvitationChange["kind"] | null>(null);
   const [error, setError] = useState("");
+  const [confirmDecline, setConfirmDecline] = useState(false);
   const working = useRef(false);
   const owner = invitation.requestedRole === "OWNER";
   const role = ({ ADMIN: "an administrator", RECRUITING_ADMIN: "a recruiting administrator", INTERVIEWER: "an interviewer", MEMBER: "a member", OWNER: "an owner" } as const)[invitation.requestedRole];
@@ -26,6 +28,9 @@ export function OrganizationInvitationCard({ invitation, onChanged }: {
         const result = await acceptIdentityClubInvitation(invitation.id);
         await onChanged({ id: invitation.id, kind, clubName: invitation.club.name });
         if (owner) window.location.assign(clubWorkspaceHref(result.clubId));
+      } else if (kind === "declined") {
+        await declineIdentityClubInvitation(invitation.id);
+        await onChanged({ id: invitation.id, kind, clubName: invitation.club.name });
       } else {
         await setOrganizationInvitationDismissed(invitation.id, kind === "dismissed");
         await onChanged({ id: invitation.id, kind, clubName: invitation.club.name });
@@ -55,8 +60,13 @@ export function OrganizationInvitationCard({ invitation, onChanged }: {
         <Button className="min-h-11 flex-1 sm:flex-none" variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
           {busy === "dismissed" ? "Hiding…" : busy === "restored" ? "Restoring…" : invitation.dismissedAt ? "Show on dashboard" : "Not now"}
         </Button>
+        {allowDecline && <Button className="min-h-11" variant="ghost" disabled={!!busy} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>
     </article>
+    {confirmDecline && <div className="mt-4 space-y-3 rounded-lg border p-4">
+      <p className="text-sm">Decline the invitation from {invitation.club.name}? You’ll need a new invitation to join later.</p>
+      <div className="flex flex-wrap gap-2"><Button variant="destructive" className="min-h-11" disabled={!!busy} onClick={() => void respond("declined")}>{busy === "declined" ? "Declining…" : "Confirm decline"}</Button><Button variant="outline" className="min-h-11" disabled={!!busy} onClick={() => setConfirmDecline(false)}>Cancel</Button></div>
+    </div>}
     {error && <p role="alert" id={`invitation-error-${invitation.id}`} className="mt-3 text-sm text-destructive">{error}</p>}
   </li>;
 }

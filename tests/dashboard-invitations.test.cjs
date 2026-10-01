@@ -18,6 +18,7 @@ function harness(api,file,props,auth={user:{id:'user'},refreshUser:async()=>{}})
       if(name==='react')return react;if(name==='next/link')return{default:'Link'};
       if(name==='@/contexts/auth-context')return{useAuth:()=>auth};
       if(name==='@/utils/auth')return{requireAuth:api.requireAuth};
+      if(name==='@/components/organization-memberships')return{OrganizationMemberships:'OrganizationMemberships'};
       if(name==='@/components/outclass-logo')return{OutClassLogo:'OutClassLogo'};
       if(name==='@/actions/club-onboarding')return api;
       if(name==='@/components/ui/button')return{Button:'Button'};
@@ -105,4 +106,47 @@ test('organization Settings is protected by server authentication before renderi
   let checks=0;const allowed=harness({requireAuth:async options=>{assert.equal(options.verifyEmail,true);checks++;}},'app/settings/organizations/page.tsx',{});
   const tree=await allowed.render();assert.equal(checks,1);const area=nodes(tree).find(node=>node.type==='OrganizationOwnershipRequests');assert.ok(area);assert.equal(area.props.includeDismissed,true);
   const denied=harness({requireAuth:async()=>{throw Error('Unauthorized');}},'app/settings/organizations/page.tsx',{});await assert.rejects(denied.render(),/Unauthorized/);
+});
+
+
+test('Settings decline requires confirmation, supports cancel, and reuses the identity server action',async()=>{
+  let calls=0,changes=[];const h=card({declineIdentityClubInvitation:async id=>{assert.equal(id,'member');calls++;}},{allowDecline:true,onChanged:async value=>changes.push(value)});
+  const button=(label)=>nodes(h.render()).find(node=>node.type==='Button'&&node.props.children===label);
+  assert.equal(button('Confirm decline'),undefined);button('Decline').props.onClick();assert.equal(calls,0);
+  button('Cancel').props.onClick();assert.equal(button('Confirm decline'),undefined);
+  button('Decline').props.onClick();const confirm=button('Confirm decline');confirm.props.onClick();confirm.props.onClick();await h.flush();
+  assert.equal(calls,1);assert.equal(changes[0].kind,'declined');
+  assert.equal(nodes(card({}).render()).some(node=>node.props?.children==='Decline'),false);
+});
+
+test('failed decline retains the invitation and allows retry',async()=>{
+  let changed=0;const h=card({declineIdentityClubInvitation:async()=>{throw Error('Wrong identity');}},{allowDecline:true,onChanged:async()=>changed++});
+  nodes(h.render()).find(node=>node.props?.children==='Decline').props.onClick();
+  nodes(h.render()).find(node=>node.props?.children==='Confirm decline').props.onClick();await h.flush();
+  assert.equal(changed,0);assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));
+});
+
+test('decline removes only that pending Settings request and stale refresh cannot resurrect it',async()=>{
+  let resolve;const h=container({getOrganizationInvitations:()=>new Promise(done=>resolve=done)},{includeDismissed:true});
+  h.render();await h.flush();resolve([invitation(),invitation('other')]);await h.flush();let tree=h.render();
+  assert.equal(cards(tree)[0].props.allowDecline,true);const changed=cards(tree)[0].props.onChanged;
+  nodes(tree).find(node=>node.props?.children==='Refresh requests').props.onClick();h.render();await h.flush();
+  await changed({id:'member',kind:'declined',clubName:'Madison Investment Fund'});resolve([invitation(),invitation('other')]);await h.flush();
+  tree=h.render();assert.deepEqual(cards(tree).map(node=>node.props.invitation.id),['other']);assert.ok(JSON.stringify(tree).includes('declined the invitation'));
+});
+
+test('Settings memberships use each organization role and exclude inactive memberships',()=>{
+  const member=(id,accessRole,status='ACTIVE')=>({id,clubId:id,accessRole,status,isOwner:false,club:{name:id,logoUrl:null,color:null}});
+  const auth={user:{id:'user',role:'ADMIN',memberships:[member('Fund','OWNER'),member('Consulting','MEMBER'),member('Interviews','INTERVIEWER'),member('Inactive','ADMIN','LEFT')]},loading:false};
+  const h=harness({},'components/organization-memberships.tsx',{},auth);const tree=h.render();const text=JSON.stringify(tree);
+  assert.ok(text.includes('Owner'));assert.ok(text.includes('Member'));assert.ok(text.includes('Interviewer'));assert.ok(!text.includes('Inactive'));
+  assert.equal(nodes(tree).filter(node=>node.type==='Link').length,3);
+  auth.user.memberships.push(member('New organization','MEMBER'));assert.equal(nodes(h.render()).filter(node=>node.type==='Link').length,4);
+});
+
+test('Settings memberships handle loading, empty, and failed authenticated data',async()=>{
+  let retries=0;const auth={user:null,loading:true,refreshUser:async()=>retries++};const h=harness({},'components/organization-memberships.tsx',{},auth);
+  assert.ok(nodes(h.render()).some(node=>node.props?.role==='status'));auth.loading=false;
+  assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry organizations').props.onClick();assert.equal(retries,1);
+  auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('haven’t joined'));
 });
