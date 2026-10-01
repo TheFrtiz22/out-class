@@ -2,12 +2,12 @@
 
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { RosterRowStatus } from "@prisma/client";
+import type { RosterImportRow, RosterRowStatus } from "@prisma/client";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
 import { onboardingIdentifierPattern } from "@/lib/platform-organization-onboarding";
-import { parseRosterCsv, validateRosterRows, rosterSummary, ROSTER_MAX_BYTES, type RosterInputRow, type RosterRow } from "@/lib/roster-csv";
+import { parseRosterCsv, validateRosterRows, rosterSummary, ROSTER_MAX_BYTES, ROSTER_MAX_ROWS, type RosterInputRow, type RosterRow } from "@/lib/roster-csv";
 
 async function authorize(tx: AppTransactionClient, clubId: string, userId: string) {
   await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
@@ -98,7 +98,29 @@ export async function previewRosterImport(input: unknown) {
   }, { timeout: 60000 });
 }
 
-/** Explicit confirmation creates MEMBER invitations only; never sends email. */
+const IMPORT_BATCH_SIZE = 50;
+const importRowInput = z.object({ name: z.string(), year: z.string(), computing_id: z.string() });
+
+function importResult(rows: RosterImportRow[], completed: boolean, reused: boolean) {
+  const count = (status: RosterRowStatus) => rows.filter(row => row.status === status).length;
+  const created = count("INVITATION_CREATED");
+  return {
+    created, alreadyMember: count("ALREADY_MEMBER"), alreadyInvited: count("INVITATION_REUSED"),
+    invalid: count("INVALID"), duplicates: count("DUPLICATE_ROW"), failed: count("FAILED"),
+    total: rows.length, processed: rows.length - count("VALID"), skipped: rows.length - created - count("VALID"), completed, reused,
+    rows: completed ? rows.map(row => ({ rowNumber: row.rowNumber, name: row.invitedName || "", year: row.invitedYear || "",
+      identifier: row.identifier || "", status: row.status === "INVITATION_REUSED" ? "ALREADY_INVITED" as const : row.status,
+      errors: Array.isArray(row.errors) ? row.errors.filter((value): value is string => typeof value === "string") : [] })) : [],
+  };
+}
+
+function rowDataError(error: unknown) {
+  // Do not convert authorization, connectivity, timeout, or audit failures into row errors.
+  const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
+  return ["P2000", "P2002", "P2003", "P2011", "P2014", "P2020", "23502", "23503", "23505", "23514", "22001", "22003", "22P02"].includes(code) ? code : null;
+}
+
+/** One resumable transaction of at most 50 ready rows. Creates MEMBER invitations only; no email. */
 export async function confirmRosterImport(importId: string) {
   z.string().uuid().parse(importId);
   const hint = await prisma.rosterImport.findUniqueOrThrow({ where: { id: importId } });
@@ -106,37 +128,75 @@ export async function confirmRosterImport(importId: string) {
   return prisma.$transaction(async tx => {
     const config = await authorize(tx, hint.clubId, user.id);
     const record = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId }, include: { rows: { orderBy: { rowNumber: "asc" } } } });
-    if (record.uploadedById !== user.id) throw new Error("Only the uploader can confirm this preview.");
-    if (record.status === "COMPLETED") return { created: record.successfulRows, skipped: record.rowCount - record.successfulRows, reused: true };
-    if (record.status !== "VALIDATED") throw new Error("Import is not ready to confirm.");
-    const inputs = record.rows.map(row => z.object({ name: z.string(), year: z.string(), computing_id: z.string() }).parse(row.input));
-    const rows = await classify(tx, record.clubId, inputs, config);
-    let created = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i], saved = record.rows[i];
-      // Never include a row that was excluded from the uploaded preview.
-      if (saved.status !== "VALID") continue;
-      if (row.status !== "READY") {
-        await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
-          matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId } });
+    if (record.clubId !== hint.clubId || record.uploadedById !== user.id) throw new Error("Only the uploader can confirm this preview.");
+    if (record.status === "COMPLETED") return importResult(record.rows, true, true);
+    if (!["VALIDATED", "PROCESSING"].includes(record.status)) throw new Error("Import is not ready to confirm.");
+    if (record.rows.length > ROSTER_MAX_ROWS || record.rows.some(row => row.clubId !== record.clubId || row.importId !== record.id || row.status === "PENDING")) throw new Error("Import rows require review.");
+    if (record.status === "VALIDATED") {
+      await tx.rosterImport.update({ where: { id: importId }, data: { status: "PROCESSING" } });
+      await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.start", targetId: importId, clubId: record.clubId } });
+    }
+    // Keep duplicate detection across the complete original input, not individual batches.
+    const inputs = record.rows.map(row => importRowInput.safeParse(row.input));
+    const classified = await classify(tx, record.clubId, inputs.map(parsed => parsed.success ? parsed.data : { name: "", year: "", computing_id: "" }), config);
+    const selected = record.rows.filter(row => row.status === "VALID").slice(0, IMPORT_BATCH_SIZE);
+    for (const saved of selected) {
+      const index = record.rows.findIndex(row => row.id === saved.id);
+      const row = classified[index];
+      if (!inputs[index].success) { row.status = "INVALID"; row.errors = ["Malformed saved roster input; reupload this row"]; }
+      if (saved.normalizedIdentifier !== row.normalizedIdentifier && row.status === "READY") {
+        row.status = "INVALID"; row.errors.push("School identifier mapping changed; reupload this row");
+      }
+      await tx.$executeRaw`SAVEPOINT roster_import_row`;
+      const expiredIds: string[] = [];
+      let createdInvitationId = "";
+      try {
+        if (row.status !== "READY") {
+          await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: databaseStatus(row), errors: [...row.errors, ...row.warnings],
+            matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId } });
+          await tx.$executeRaw`RELEASE SAVEPOINT roster_import_row`;
+          continue;
+        }
+        const identity = await tx.schoolIdentity.upsert({ where: { schoolId_identifierTypeId_normalizedIdentifier: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: row.normalizedIdentifier! } },
+          create: { schoolId: config.schoolId, identifierTypeId: config.id, identifier: row.identifier, normalizedIdentifier: row.normalizedIdentifier! }, update: {} });
+        const stale = await tx.clubInvitation.findMany({ where: { clubId: record.clubId, schoolIdentityId: identity.id, status: "PENDING", expiresAt: { lte: new Date() } } });
+        for (const invitation of stale) {
+          await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "EXPIRED", expiredAt: new Date() } });
+          expiredIds.push(invitation.id);
+        }
+        const invitation = await tx.clubInvitation.create({ data: { clubId: record.clubId, schoolId: config.schoolId, schoolIdentityId: identity.id,
+          invitedName: row.name, invitedYear: row.year || null, requestedRole: "MEMBER", purpose: "MEMBERSHIP", authoritySource: "CLUB_MEMBER",
+          email: `${row.normalizedIdentifier}@${config.emailDomain}`, invitedBy: user.id, permissions: [], expiresAt: new Date(Date.now() + 7 * 86400000) } });
+        await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: "INVITATION_CREATED", schoolIdentityId: identity.id, invitationId: invitation.id, matchedUserId: row.matchedUserId } });
+        createdInvitationId = invitation.id;
+      } catch (error) {
+        const code = rowDataError(error);
+        if (!code) throw error;
+        await tx.$executeRaw`ROLLBACK TO SAVEPOINT roster_import_row`;
+        await tx.$executeRaw`RELEASE SAVEPOINT roster_import_row`;
+        // A concurrent legacy writer may have won a uniqueness race. Recheck before recording failure.
+        const [latest] = await classify(tx, record.clubId, [row.input], config);
+        if (latest.status === "ALREADY_MEMBER" || latest.status === "ALREADY_INVITED") {
+          await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: databaseStatus(latest), matchedUserId: latest.matchedUserId,
+            schoolIdentityId: latest.schoolIdentityId, invitationId: latest.invitationId, errors: latest.warnings } });
+        } else {
+          await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: "FAILED", errors: ["This row could not be imported. Review and reupload it."] } });
+          await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.row-failed", targetId: saved.id, clubId: record.clubId, details: { importId, rowNumber: saved.rowNumber, code } } });
+        }
         continue;
       }
-      const identity = await tx.schoolIdentity.upsert({ where: { schoolId_identifierTypeId_normalizedIdentifier: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: row.normalizedIdentifier! } },
-        create: { schoolId: config.schoolId, identifierTypeId: config.id, identifier: row.identifier, normalizedIdentifier: row.normalizedIdentifier! }, update: {} });
-      const stale = await tx.clubInvitation.findMany({ where: { clubId: record.clubId, schoolIdentityId: identity.id, status: "PENDING", expiresAt: { lte: new Date() } } });
-      for (const invitation of stale) {
-        await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "EXPIRED", expiredAt: new Date() } });
-        await tx.auditLog.create({ data: { actorId: user.id, action: "club.invite.expire", targetId: invitation.id, clubId: record.clubId } });
-      }
-      const invitation = await tx.clubInvitation.create({ data: { clubId: record.clubId, schoolId: config.schoolId, schoolIdentityId: identity.id,
-        invitedName: row.name, invitedYear: row.year || null, requestedRole: "MEMBER", purpose: "MEMBERSHIP", authoritySource: "CLUB_MEMBER",
-        email: `${row.normalizedIdentifier}@${config.emailDomain}`, invitedBy: user.id, permissions: [], expiresAt: new Date(Date.now() + 7 * 86400000) } });
-      await tx.rosterImportRow.update({ where: { id: saved.id }, data: { status: "INVITATION_CREATED", schoolIdentityId: identity.id, invitationId: invitation.id, matchedUserId: row.matchedUserId } });
-      await tx.auditLog.create({ data: { actorId: user.id, action: "club.identity-invite.create", targetId: invitation.id, clubId: record.clubId, details: { importId, rowNumber: row.rowNumber } } });
-      created++;
+      await tx.$executeRaw`RELEASE SAVEPOINT roster_import_row`;
+      // Audit failures are fatal to the batch, including constraint failures.
+      for (const id of expiredIds) await tx.auditLog.create({ data: { actorId: user.id, action: "club.invite.expire", targetId: id, clubId: record.clubId } });
+      await tx.auditLog.create({ data: { actorId: user.id, action: "club.identity-invite.create", targetId: createdInvitationId, clubId: record.clubId, details: { importId, rowNumber: saved.rowNumber } } });
     }
-    await tx.rosterImport.update({ where: { id: importId }, data: { status: "COMPLETED", successfulRows: created, failedRows: rows.filter((row, i) => row.status === "INVALID" || record.rows[i].status === "INVALID").length, completedAt: new Date() } });
-    await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.confirm", targetId: importId, clubId: record.clubId, details: { created, skipped: rows.length - created } } });
-    return { created, skipped: rows.length - created, reused: false };
+    const outcomes = await tx.rosterImportRow.findMany({ where: { importId, clubId: record.clubId }, orderBy: { rowNumber: "asc" } });
+    const completed = outcomes.every(row => row.status !== "VALID");
+    const result = importResult(outcomes, completed, false);
+    await tx.rosterImport.update({ where: { id: importId }, data: { status: completed ? "COMPLETED" : "PROCESSING", successfulRows: result.created,
+      failedRows: result.invalid + result.failed, completedAt: completed ? new Date() : null } });
+    await tx.auditLog.create({ data: { actorId: user.id, action: completed ? "club.roster.confirm" : "club.roster.batch", targetId: importId, clubId: record.clubId,
+      details: { created: result.created, alreadyMember: result.alreadyMember, alreadyInvited: result.alreadyInvited, invalid: result.invalid, duplicates: result.duplicates, failed: result.failed, processed: result.processed } } });
+    return result;
   }, { timeout: 60000 });
 }

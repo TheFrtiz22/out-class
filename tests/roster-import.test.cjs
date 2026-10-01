@@ -8,13 +8,13 @@ function setup() {
   const state={allowed:true,member:{isOwner:true,status:'ACTIVE',permissions:[]},identities:[],users:[],members:[],invitations:[],record:null,audits:[],writes:[],actor:'manager'};
   const config={id:'computing',key:'computing_id',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$',verification:'EMAIL_LOCAL_PART',emailDomain:'virginia.edu',school:{key:'uva',active:true}};
   const tx={
-    $queryRaw:async()=>[],club:{findUniqueOrThrow:async()=>({id:clubId,schoolId:'school-uva'})},
+    $queryRaw:async()=>[],$executeRaw:async()=>0,club:{findUniqueOrThrow:async()=>({id:clubId,schoolId:'school-uva'})},
     clubMember:{findUnique:async()=>state.member,findMany:async()=>state.members},schoolIdentifierType:{findMany:async()=>[config]},
     user:{findUnique:async()=>({disabledAt:null}),findMany:async()=>state.users,create:()=>{throw Error('Fake user forbidden');}},
     schoolIdentity:{findMany:async()=>state.identities,upsert:async({create})=>{const existing=state.identities.find(i=>i.normalizedIdentifier===create.normalizedIdentifier);if(existing)return existing;const identity={id:'identity-'+create.normalizedIdentifier,...create};state.identities.push(identity);state.writes.push('identity');return identity;}},
-    clubInvitation:{findMany:async({where})=>state.invitations.filter(invite=>invite.status==='PENDING'&&(where.expiresAt.gt?invite.expiresAt>where.expiresAt.gt:invite.expiresAt<=where.expiresAt.lte)),create:async({data})=>{const invite={id:'invite-'+state.invitations.length,status:'PENDING',...data};state.invitations.push(invite);state.writes.push('invitation');return invite;},update:async({where,data})=>Object.assign(state.invitations.find(i=>i.id===where.id),data)},
-    rosterImport:{findUnique:async()=>state.record,findUniqueOrThrow:async()=>state.record,create:async({data})=>{state.record={id:importId,...data,rows:data.rows.create.map((row,i)=>({id:'row-'+i,...row}))};state.writes.push('import');return state.record;},update:async({data})=>Object.assign(state.record,data)},
-    rosterImportRow:{update:async({where,data})=>Object.assign(state.record.rows.find(row=>row.id===where.id),data)},
+    clubInvitation:{findMany:async({where})=>state.invitations.filter(invite=>invite.status==='PENDING'&&(!invite.clubId||invite.clubId===where.clubId)&&(where.expiresAt.gt?invite.expiresAt>where.expiresAt.gt:invite.expiresAt<=where.expiresAt.lte)),create:async({data})=>{const invite={id:'invite-'+state.invitations.length,status:'PENDING',...data};state.invitations.push(invite);state.writes.push('invitation');return invite;},update:async({where,data})=>Object.assign(state.invitations.find(i=>i.id===where.id),data)},
+    rosterImport:{findUnique:async()=>state.record,findUniqueOrThrow:async()=>state.record,create:async({data})=>{state.record={id:importId,...data,rows:data.rows.create.map((row,i)=>({id:'row-'+i,importId,...row}))};state.writes.push('import');return state.record;},update:async({data})=>Object.assign(state.record,data)},
+    rosterImportRow:{findUniqueOrThrow:async({where})=>state.record.rows.find(row=>row.id===where.id),findMany:async()=>state.record.rows,update:async({where,data})=>Object.assign(state.record.rows.find(row=>row.id===where.id),data)},
     auditLog:{create:async({data})=>state.audits.push(data)},
   };
   let tail=Promise.resolve();const prisma={...tx,$transaction:fn=>{const result=tail.then(()=>fn(tx));tail=result.catch(()=>{});return result;}};
@@ -86,4 +86,26 @@ test('expired invitations are audited and replaced only after confirmation, pres
   await h.api.confirmRosterImport(importId);
   assert.equal(h.state.invitations[0].status,'EXPIRED');assert.equal(h.state.invitations[1].status,'PENDING');
   assert.ok(h.state.audits.some(a=>a.action==='club.invite.expire'));assert.equal(h.state.identities[0].userId,null);assert.equal(h.state.identities.length,1);assert.equal(h.state.invitations[1].schoolIdentityId,'identity-john');
+});
+
+test('1,000-row imports advance in bounded batches, preserve absent members, and return exact durable category totals',async()=>{
+  const h=setup();const csv=['name,year,computing_id'];
+  for(let i=0;i<1000;i++)csv.push(`Student ${i},2028,large${i}`);
+  h.state.users=Array.from({length:10},(_,i)=>({id:'member-'+i,email:`large${i}@virginia.edu`,disabledAt:null}));
+  h.state.members=h.state.users.map(user=>({userId:user.id}));h.state.members.push({userId:'absent-from-csv'});
+  h.state.invitations=Array.from({length:5},(_,i)=>({id:'existing-'+i,clubId,status:'PENDING',schoolIdentityId:null,email:`large${i+10}@virginia.edu`,expiresAt:new Date(Date.now()+86400000)}));
+  await h.api.previewRosterImport(input({csv:csv.join('\n')}));let result,calls=0;
+  do {const before=h.state.invitations.length;result=await h.api.confirmRosterImport(importId);assert.ok(h.state.invitations.length-before<=50);calls++;}while(!result.completed);
+  assert.equal(result.created,985);assert.equal(result.alreadyMember,10);assert.equal(result.alreadyInvited,5);assert.equal(result.total,1000);assert.equal(result.processed,1000);
+  assert.equal(calls,20);assert.ok(h.state.members.some(member=>member.userId==='absent-from-csv'));assert.equal(h.state.members.length,11);
+  const replay=await h.api.confirmRosterImport(importId);assert.equal(replay.reused,true);assert.deepEqual(replay.rows,result.rows);
+});
+
+test('an existing account is associated through the audit row while its identity remains unclaimed; other clubs do not contaminate classification',async()=>{
+  const h=setup();h.state.users=[{id:'john',email:'jms8xy@virginia.edu',disabledAt:null}];
+  h.state.invitations=[{id:'other-org-invitation',clubId:'different-club',status:'PENDING',schoolIdentityId:null,email:'jms8xy@virginia.edu',expiresAt:new Date(Date.now()+86400000)}];
+  await h.api.previewRosterImport(input({csv:'name,computing_id\nJohn,jms8xy'}));const result=await h.api.confirmRosterImport(importId);
+  assert.equal(result.created,1);assert.equal(h.state.record.rows[0].matchedUserId,'john');assert.equal(h.state.identities[0].userId,undefined);
+  assert.equal(h.state.invitations[1].clubId,clubId);assert.equal(h.state.invitations[1].requestedRole,'MEMBER');assert.equal(h.state.invitations[0].clubId,'different-club');
+  await assert.rejects(h.api.previewRosterImport(input({csv:'name,computing_id,role\nJohn,jms8xy,OWNER'})),/Unsupported column/);
 });

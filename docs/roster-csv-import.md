@@ -36,7 +36,7 @@ invited rows but cannot silently include previously excluded rows.
 
 The preview includes a summary, per-row errors/warnings, existing-account badges,
 and a horizontally scrollable table paginated at 50 rows for mobile. Admins can
-correct/reupload or explicitly confirm only ready rows. Confirmation is restricted
+correct/reupload or click **Import members** to process the reviewed roster. Confirmation is restricted
 to the uploader, rechecks permission, school configuration, row eligibility,
 memberships and invitations, and uses persisted input rather than browser rows.
 Eligible rows create pending seven-day MEMBER invitations, with reserved school
@@ -44,16 +44,36 @@ identities and audit attribution. Expired identity-bound pending invitations are
 expired/audited before replacement. No fake User is created, no membership is added,
 existing invitations are not upgraded, and no email is sent or queued.
 
-Confirmation, row outcomes, import counts, and audits commit atomically. Repeated
-confirmation returns the completed result instead of creating duplicates. Rows
-that became ineligible since preview are skipped and recorded. Counts represent
-invitations actually created; skips include duplicates, invalid rows, existing
-members and pending invitations. The transaction timeout is 60 seconds; failure
-rolls the import back and allows retry. Larger background imports and email delivery
-are future work.
+Each call processes at most 50 ready rows under the organization lock. The UI
+requests successive batches, displays progress, and offers **Resume import** after
+an interruption. Committed batches remain durable; the failed batch rolls back.
+Retry processes only rows still marked VALID. Each batch rechecks authorization,
+the uploader, organization scope, and current membership/invitation state. Each
+row uses a SQL savepoint: expected data/constraint errors roll back that row and
+record FAILED while other valid rows proceed. Authorization, connection, timeout,
+and audit failures stop the batch. Row changes and their audits commit together.
+The transaction timeout is 60 seconds per batch.
+
+Imports are additive: no membership is created, deleted, downgraded, or removed
+because a person is absent from the file. Existing accounts are associated through
+matchedUserId on the audit row and the invitation's verified/reserved school identity;
+email matching never claims that identity. CSV role columns remain unsupported.
+Every new invitation grants MEMBER with an empty capability list. Unique identity,
+invitation, and membership constraints continue to enforce the database boundaries.
+
+Final counts distinguish new invitations, already members, already invited, invalid,
+duplicate, and failed rows. The final paginated table shows persisted row outcomes
+and errors. ALREADY_INVITED is the public outcome for the existing database enum
+INVITATION_REUSED; no naming or schema change is needed. Repeated confirmation
+returns the saved outcomes, including counts, rather than granting access again.
+Rows excluded from the reviewed preview are not silently made eligible. A future
+background worker could use the same resumable batch action; email delivery remains
+separate and disabled.
 
 No schema, RLS or migration changes are needed. Tests cover parser limits and
 quoting, validation, authorization, state changes, idempotency, UI loading/error/
-confirmation behavior, safe text rendering, and atomic rollback against all current
-migrations in PGlite. Live authentication and multi-connection PostgreSQL tests are
+confirmation behavior, safe text rendering, and atomic batch/row rollback against all current
+migrations in PGlite, including a 160-row realistic roster (147 new, 10 members,
+2 invited, 1 invalid), competing uploads, and organization isolation. A 1,000-row
+server test exercises the maximum size, bounded batches, and durable counters. Live authentication and multi-connection PostgreSQL tests are
 separate deployment smoke checks.
