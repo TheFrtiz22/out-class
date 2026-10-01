@@ -76,11 +76,16 @@ export async function inviteClubManager(
 
 export async function acceptClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
-  const { user, supabaseUser } = await requireAuth({ verifyEmail: true });
+  const account = await requireAuth({ verifyEmail: true });
+  const { user, supabaseUser } = account;
   if (!supabaseUser.email_confirmed_at || supabaseUser.app_metadata?.email_verification_skipped === true) throw new Error("Verify your UVA email before accepting an invitation.");
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
+    if (hint.schoolIdentityId) {
+      const { acceptIdentityInvitationInTransaction } = await import("@/utils/club-onboarding");
+      return acceptIdentityInvitationInTransaction(tx, id, account);
+    }
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${hint.clubId} FOR UPDATE`;
     const invitation = await tx.clubInvitation.findUnique({ where: { id } });
     if (
@@ -125,7 +130,7 @@ export async function acceptClubInvitation(invitationId: string) {
     });
     await tx.clubInvitation.update({
       where: { id },
-      data: { acceptedAt: new Date() },
+      data: { acceptedAt: new Date(), claimedUserId: user.id },
     });
     await tx.auditLog.create({
       data: {
@@ -196,7 +201,7 @@ export async function updateClubAccess(input: {
       await tx.clubInvitation.updateMany({
         where: {
           clubId: data.clubId,
-          email: person.email.toLowerCase(),
+          OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }],
           acceptedAt: null,
           revokedAt: null,
         },
@@ -227,6 +232,10 @@ export async function revokeClubInvitation(
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
     const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
     if (!hasPermission(actor, "leaders.manage")) throw new Error("Access denied.");
+    const invitation = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
+    if (invitation?.schoolIdentityId && (!actor?.isOwner && (invitation.requestedRole === "OWNER" || invitation.permissions.some(p => !hasPermission(actor, p as (typeof clubPermissions)[number]))))) {
+      throw new Error("Only an authorized owner can revoke higher-authority invitations.");
+    }
     const result = await tx.clubInvitation.updateMany({
       where: { id: invitationId, clubId, acceptedAt: null },
       data: { revokedAt: new Date() },
@@ -304,7 +313,7 @@ export async function removeClubMember(clubId: string, memberId: string) {
         "Revoke leadership access first. Memberships with evaluation or interview history must be retained.",
       );
     const person = await tx.user.findUnique({ where: { id: target.userId }, select: { email: true } });
-    if (person) await tx.clubInvitation.updateMany({ where: { clubId, email: person.email.toLowerCase(), acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
+    if (person) await tx.clubInvitation.updateMany({ where: { clubId, OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }], acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
     await tx.clubMember.delete({ where: { id: target.id } });
     await tx.auditLog.create({
       data: {
@@ -319,10 +328,18 @@ export async function removeClubMember(clubId: string, memberId: string) {
 
 export async function declineClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
-  const { user } = await requireAuth();
+  const account = await requireAuth({ verifyEmail: true });
+  const { user } = account;
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
+    if (hint.schoolIdentityId) {
+      const { recipientInvitation } = await import("@/utils/club-onboarding");
+      const invitation = await recipientInvitation(tx, id, account);
+      await tx.clubInvitation.update({ where: { id }, data: { status: "DECLINED", declinedAt: new Date() } });
+      await tx.auditLog.create({ data: { actorId: user.id, action: "club.invite.decline", targetId: id, clubId: invitation.clubId } });
+      return;
+    }
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${hint.clubId} FOR UPDATE`;
     const result = await tx.clubInvitation.updateMany({
       where: {

@@ -20,7 +20,7 @@ export async function listMeetings(clubId?: string) {
       ...(clubId ? { clubId } : {}),
       OR: [
         { audience: "RECRUITMENT", isPublic: true },
-        { club: { members: { some: { userId: user.id } } } },
+        { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
       ],
     },
     select: meetingFields,
@@ -35,7 +35,7 @@ export async function getMeeting(meetingId: string) {
       id: meetingId,
       OR: [
         { audience: "RECRUITMENT", isPublic: true },
-        { club: { members: { some: { userId: user.id } } } },
+        { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
       ],
     },
     select: meetingFields,

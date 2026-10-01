@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type ClubAccess } from "@/lib/permissions";
+import { isActiveMembership, type ClubAccess } from "@/lib/permissions";
 export const meetingAudiences = ["RECRUITMENT", "MEMBERS"] as const;
 export const resourceSchema = z.object({
   id: z.string().uuid(),
@@ -38,7 +38,7 @@ export function canReadMeeting(
   membership: ClubAccess | null,
 ) {
   return (
-    (meeting.audience === "RECRUITMENT" && meeting.isPublic) || !!membership
+    (meeting.audience === "RECRUITMENT" && meeting.isPublic) || isActiveMembership(membership)
   );
 }
 export function canCheckIn(

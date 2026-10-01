@@ -603,7 +603,7 @@ export async function changePlatformResource(input: unknown, reason: string) {
           await tx.clubInvitation.updateMany({
             where: {
               clubId: data.clubId,
-              email: person.email.toLowerCase(),
+              OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: data.userId } }],
               acceptedAt: null,
               revokedAt: null,
             },

@@ -9,7 +9,7 @@ import { ClubAccessEditor } from "@/components/club-access-editor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-type Member = Awaited<ReturnType<typeof getClubMembers>>[number]
+type Member = Omit<Awaited<ReturnType<typeof getClubMembers>>[number], "status" | "accessRole" | "joinedAt" | "updatedAt">
 const name = (m: Member) => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email
 const role = (m: Member) => m.title || m.role.replaceAll("_", " ").toLowerCase()
 export function ClubMembers({ clubId }: { clubId: string }) {

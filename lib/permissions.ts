@@ -13,14 +13,19 @@ export const clubPermissions = [
   "leaders.manage",
 ] as const
 export type ClubPermission = (typeof clubPermissions)[number]
-export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[] }
+export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string }
+export function isActiveMembership(member: ClubAccess | null | undefined) {
+  return !!member && (!member.status || member.status === "ACTIVE")
+}
 export function hasPermission(member: ClubAccess | null | undefined, permission: ClubPermission) {
-  return !!member && (member.isOwner === true || member.permissions?.includes(permission) === true)
+  return isActiveMembership(member) && (member?.isOwner === true || member?.permissions?.includes(permission) === true)
 }
 export function hasWorkspace(member: ClubAccess) {
   return (
-    member.isOwner === true ||
-    clubPermissions.some((permission) => hasPermission(member, permission))
+    isActiveMembership(member) && (
+      member.isOwner === true ||
+      clubPermissions.some((permission) => hasPermission(member, permission))
+    )
   )
 }
 export const permissionTemplates = {

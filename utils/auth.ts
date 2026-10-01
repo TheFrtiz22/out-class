@@ -1,7 +1,7 @@
 import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
 import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
-import { hasPermission, type ClubPermission } from "@/lib/permissions";
+import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
 import { createClient } from "./supabase/server";
@@ -62,7 +62,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
 export async function requireClubPermission(clubId: string, permissions: ClubPermission[]) {
   const { user } = await requireAuth();
   const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
-  if (!membership || !permissions.every(permission => hasPermission(membership, permission))) {
+  if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
     throw new Error("You do not have permission for this club action.");
   }
   return { user, membership };

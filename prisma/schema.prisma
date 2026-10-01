@@ -12,6 +12,11 @@ datasource db {
 // ==========================================
 
 model User {
+  schoolIdentities SchoolIdentity[]
+  rosterImports    RosterImport[]
+  claimedInvitations ClubInvitation[] @relation("ClaimedInvitation")
+  invitationDeliveries InvitationDelivery[]
+  matchedRosterRows RosterImportRow[]
   disabledAt DateTime? @db.Timestamptz(3)
   id         String    @id @default(uuid())
   email      String    @unique // MUST be @virginia.edu
@@ -74,6 +79,9 @@ model Experience {
 // ==========================================
 
 model Club {
+  schoolId            String           @default("school-uva")
+  school              School           @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  rosterImports       RosterImport[]
   marketing           Json?
   marketingApprovedAt DateTime? // Explicit consent to appear as a launch participant.
   interviewRooms      InterviewRoom[]
@@ -102,9 +110,14 @@ model Club {
   applications   Application[]
   pipelineRounds PipelineRound[]
   questions      ApplicationQuestion[]
+  @@unique([id, schoolId])
 }
 
 model ClubMember {
+  accessRole       MembershipAccessRole @default(MEMBER)
+  status           MembershipStatus     @default(ACTIVE)
+  joinedAt         DateTime             @default(now())
+  updatedAt        DateTime             @default(now()) @updatedAt
   groups           String[]          @default([])
   cohort           String?
   taskAssignments  TaskAssignment[]
@@ -374,9 +387,27 @@ model AuditLog {
 }
 
 model ClubInvitation {
+  schoolId           String                    @default("school-uva")
+  school             School                    @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  schoolIdentityId   String?
+  schoolIdentity     SchoolIdentity?           @relation(fields: [schoolIdentityId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  invitedName        String?
+  invitedYear        String?
+  requestedRole      MembershipAccessRole      @default(MEMBER)
+  purpose            InvitationPurpose         @default(ACCESS_GRANT)
+  authoritySource    InvitationAuthoritySource @default(CLUB_MEMBER)
+  status             InvitationStatus          @default(PENDING)
+  claimedUserId      String?
+  claimedUser        User?                     @relation("ClaimedInvitation", fields: [claimedUserId], references: [id], onDelete: Restrict)
+  claimedAt          DateTime?
+  dismissedAt        DateTime?
+  expiredAt          DateTime?
+  updatedAt          DateTime                  @default(now()) @updatedAt
+  rosterRows         RosterImportRow[]
+  deliveries         InvitationDelivery[]
   id          String    @id @default(uuid())
-  club        Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  inviter     User      @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+  club        Club      @relation(fields: [clubId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  inviter     User      @relation(fields: [invitedBy], references: [id], onDelete: Restrict)
   clubId      String
   email       String
   permissions String[]  @default([])
@@ -388,6 +419,8 @@ model ClubInvitation {
   createdAt   DateTime  @default(now())
 
   @@index([email, clubId])
+  @@index([schoolIdentityId, status])
+  @@unique([id, clubId])
 }
 
 model ClubClaim {
@@ -534,4 +567,188 @@ model UserTutorial {
   updatedAt  DateTime @updatedAt
 
   @@id([userId, experience])
+}
+
+// Onboarding uses school identities, never placeholder User records.
+model School {
+  id              String @id @default(uuid())
+  key             String @unique
+  name            String
+  active          Boolean @default(true)
+  identifierTypes SchoolIdentifierType[]
+  identities      SchoolIdentity[]
+  clubs           Club[]
+  invitations     ClubInvitation[]
+  createdAt       DateTime @default(now())
+}
+
+model SchoolIdentifierType {
+  id               String @id @default(uuid())
+  schoolId         String
+  school           School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  key              String
+  label            String
+  normalization    IdentifierNormalization @default(TRIM_LOWERCASE)
+  validationRegex  String?
+  verification     IdentityVerification @default(UNCONFIGURED)
+  emailDomain      String?
+  identities       SchoolIdentity[]
+  @@unique([schoolId, key])
+  @@unique([id, schoolId])
+}
+
+model SchoolIdentity {
+  id                   String @id @default(uuid())
+  schoolId             String
+  school               School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+  identifierTypeId     String
+  identifierType       SchoolIdentifierType @relation(fields: [identifierTypeId, schoolId], references: [id, schoolId], onDelete: Restrict)
+  identifier           String
+  normalizedIdentifier String
+  userId               String?
+  user                 User? @relation(fields: [userId], references: [id], onDelete: Restrict)
+  verifiedAt           DateTime?
+  verificationMethod   IdentityVerification?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+  invitations          ClubInvitation[]
+  rosterRows           RosterImportRow[]
+  @@unique([schoolId, identifierTypeId, normalizedIdentifier])
+  @@unique([id, schoolId])
+  @@index([userId, schoolId])
+}
+
+model RosterImport {
+  id             String @id @default(uuid())
+  clubId         String
+  club           Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  uploadedById   String
+  uploadedBy     User @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  filename       String
+  fileHash       String?
+  idempotencyKey String
+  status         RosterImportStatus @default(VALIDATED)
+  rowCount       Int @default(0)
+  successfulRows Int @default(0)
+  failedRows     Int @default(0)
+  validationVersion Int @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  completedAt    DateTime?
+  rows           RosterImportRow[]
+  @@unique([clubId, idempotencyKey])
+  @@unique([id, clubId])
+  @@index([clubId, createdAt])
+}
+
+model RosterImportRow {
+  id                   String @id @default(uuid())
+  importId             String
+  clubId               String
+  import               RosterImport @relation(fields: [importId, clubId], references: [id, clubId], onDelete: Restrict)
+  rowNumber            Int
+  input                Json
+  invitedName          String?
+  invitedYear          String?
+  identifier           String?
+  normalizedIdentifier String?
+  schoolIdentityId     String?
+  schoolIdentity       SchoolIdentity? @relation(fields: [schoolIdentityId], references: [id], onDelete: Restrict)
+  matchedUserId        String?
+  matchedUser          User? @relation(fields: [matchedUserId], references: [id], onDelete: Restrict)
+  invitationId         String?
+  invitation           ClubInvitation? @relation(fields: [invitationId, clubId], references: [id, clubId], onDelete: Restrict)
+  status               RosterRowStatus @default(PENDING)
+  errors               Json @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @default(now()) @updatedAt
+  @@unique([importId, rowNumber])
+  @@index([invitationId])
+}
+
+model InvitationDelivery {
+  id                String @id @default(uuid())
+  invitationId      String
+  invitation        ClubInvitation @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  requestedById     String
+  requestedBy       User @relation(fields: [requestedById], references: [id], onDelete: Restrict)
+  recipientEmail    String
+  templateVersion   Int @default(1)
+  idempotencyKey    String @unique
+  status            InvitationDeliveryStatus @default(QUEUED)
+  providerMessageId String? @unique
+  attemptCount      Int @default(0)
+  nextAttemptAt     DateTime @default(now())
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  failureCode       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
+  @@index([status, nextAttemptAt])
+  @@index([invitationId, createdAt])
+}
+
+enum MembershipAccessRole {
+  OWNER
+  ADMIN
+  RECRUITING_ADMIN
+  INTERVIEWER
+  MEMBER
+}
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  LEFT
+}
+enum IdentifierNormalization {
+  TRIM_LOWERCASE
+  TRIM
+}
+enum IdentityVerification {
+  UNCONFIGURED
+  EMAIL_LOCAL_PART
+  INSTITUTIONAL_SSO
+}
+enum InvitationPurpose {
+  OWNER_DESIGNATION
+  MEMBERSHIP
+  ACCESS_GRANT
+}
+enum InvitationAuthoritySource {
+  PLATFORM_ADMIN
+  CLUB_MEMBER
+}
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  REVOKED
+  EXPIRED
+}
+enum RosterImportStatus {
+  VALIDATED
+  INVALID
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+enum RosterRowStatus {
+  PENDING
+  VALID
+  INVALID
+  DUPLICATE_ROW
+  ALREADY_MEMBER
+  INVITATION_REUSED
+  INVITATION_CREATED
+  FAILED
+}
+enum InvitationDeliveryStatus {
+  QUEUED
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+  CANCELLED
 }

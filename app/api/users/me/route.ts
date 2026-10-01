@@ -24,6 +24,7 @@ export async function GET() {
           }
         },
         memberships: {
+          where: { status: "ACTIVE" },
           include: {
             club: true,
           }

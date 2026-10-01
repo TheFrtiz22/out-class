@@ -10,7 +10,7 @@ import {
   requireClubMembership,
   requireClubPermission,
 } from "@/utils/auth";
-import { hasPermission } from "@/lib/permissions";
+import { hasPermission, isActiveMembership } from "@/lib/permissions";
 import {
   taskAudienceSchema,
   taskInputSchema,
@@ -71,7 +71,7 @@ async function currentMember(
   const member = await tx.clubMember.findUnique({
     where: { userId_clubId: { clubId, userId } },
   });
-  if (!member || (manage && !hasPermission(member, "tasks.manage")))
+  if (!member || !isActiveMembership(member) || (manage && !hasPermission(member, "tasks.manage")))
     throw new Error("Task access unavailable.");
   return member;
 }
@@ -85,6 +85,7 @@ async function ownedAssignment(assignmentId: string) {
   if (
     !assignment ||
     assignment.member?.userId !== user.id ||
+    !isActiveMembership(assignment.member) ||
     assignment.member.clubId !== assignment.task.clubId
   )
     throw new Error("Assignment unavailable.");
@@ -126,7 +127,7 @@ export async function getTaskWorkspace(clubId: string) {
     })),
     members: manage
       ? await prisma.clubMember.findMany({
-          where: { clubId },
+          where: { clubId, status: "ACTIVE" },
           select: memberSelect,
         })
       : [],
@@ -179,7 +180,7 @@ export async function saveTask(input: TaskInput) {
         throw new Error("This task changed. Refresh before saving.");
     } else {
       const members = await tx.clubMember.findMany({
-        where: { clubId: data.clubId },
+        where: { clubId: data.clubId, status: "ACTIVE" },
         select: memberSelect,
       });
       if (audience.members.some((id) => !members.some((m) => m.id === id)))
@@ -451,6 +452,7 @@ export async function downloadTaskFile(fileId: string) {
   });
   if (
     !membership ||
+    !isActiveMembership(membership) ||
     (file.assignment.member?.userId !== user.id &&
       !hasPermission(membership, "tasks.manage"))
   )

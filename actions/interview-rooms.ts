@@ -32,7 +32,7 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const [club, rounds, members, rooms, bookings] = await Promise.all([
     prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } }),
     prisma.pipelineRound.findMany({ where: { clubId }, orderBy: { order: "asc" }, select: { id: true, name: true } }),
-    prisma.clubMember.findMany({ where: { clubId, user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
+    prisma.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
     prisma.interviewRoom.findMany({ where: { clubId }, include: roomInclude, orderBy: { createdAt: "desc" } }),
     prisma.interviewBooking.findMany({ where: { slot: { clubId, roomId: { not: null } } }, include: { slot: true, round: { select: { anonymousReview: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } }),
   ])
@@ -48,7 +48,7 @@ export async function createInterviewRoom(raw: RoomInput) {
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId } })
     if (!round) throw new Error("Choose a recruitment round from this club.")
     const panelIds = [...new Set(input.panelMemberIds)]
-    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, user: { disabledAt: null } } }) !== panelIds.length) throw new Error("Choose interviewers who belong to this club.")
+    if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } }) !== panelIds.length) throw new Error("Choose interviewers who belong to this club.")
     const existing = await tx.interviewSlot.findMany({ where: { clubId: input.clubId, startTime: { lt: new Date(+slots[slots.length - 1].endTime + 3600000) }, endTime: { gt: new Date(+slots[0].startTime - 3600000) }, OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }, include: { room: true } })
     for (const slot of slots) for (const other of existing) {
       const sameRoom = other.location.trim().toLowerCase() === input.location.toLowerCase() || other.room?.name.trim().toLowerCase() === input.name.toLowerCase()
