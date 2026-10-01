@@ -5,6 +5,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { ClubCustomizationProvider } from "@/lib/club-customization"
@@ -60,6 +61,7 @@ export default async function RootLayout({
           </AuthProvider>
           <Toaster />
           <Analytics />
+          <SpeedInsights />
         </DemoDataProvider>
       </body>
     </html>
