@@ -1,21 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { isUvaEmail } from '@/lib/auth'
-
-/** Validate `next` param: must be a relative path, no protocol, no double-slash. */
-function safeNextPath(raw: string | null): string {
-  const value = raw?.trim() ?? '/'
-  if (!value.startsWith('/') || value.startsWith('//') || value.includes('://') || /[\\\x00-\x20]/.test(value)) {
-    return '/'
-  }
-  return value
-}
+import { isUvaEmail, signInReturnPath } from '@/lib/auth'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = safeNextPath(searchParams.get('next'))
+  const next = signInReturnPath(searchParams.get('next'))
 
   if (code) {
     const cookieStore = await cookies()

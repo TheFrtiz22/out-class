@@ -6,7 +6,7 @@ import { PersonalClubs } from "@/components/personal-clubs"
 import type { PersonalSection } from "@/lib/product-navigation"
 import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
 import { useDemoMode } from "@/contexts/demo-context"
-import { safeReturnPath } from "@/lib/auth"
+import { signInReturnPath } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { ClubWorkspaceSettings } from "@/components/club-workspace-settings"
 import { demoDashboard } from "@/lib/demo/store"
@@ -143,7 +143,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
         onSignIn={() => setView("auth")}
         onComplete={() => {
           // Reload so the Server Component layout picks up the new session and fetches fresh data
-          window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
+          window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
         }}
       />
     )
@@ -170,4 +170,3 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
     </ApplicationStateProvider>
   )
 }
-

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { OutClassLogo } from "@/components/outclass-logo"
-import { isUvaEmail, safeReturnPath } from "@/lib/auth"
+import { isUvaEmail, signInReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
@@ -57,7 +57,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         provider: "azure",
         options: {
           scopes: "email",
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeReturnPath(new URLSearchParams(window.location.search).get("next")))}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(signInReturnPath(new URLSearchParams(window.location.search).get("next")))}`,
         },
       })
       if (oauthError) throw oauthError
@@ -76,7 +76,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
       if (error) { setError(error.message); return }
-      window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
+      window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch { setError("Unable to sign in. Please try again.") }
     finally { setLoading(false) }
   }
@@ -106,7 +106,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         type: "email",
       })
       if (verifyError) { setError(verifyError.message); return }
-      window.location.href = safeReturnPath(new URLSearchParams(window.location.search).get("next"))
+      window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch {
       setError("Unable to verify this code. Please try again.")
     } finally {
