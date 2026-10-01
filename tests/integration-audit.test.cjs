@@ -88,7 +88,7 @@ test('account endpoint independently denies demo cookies',async()=>{
  test('OAuth callback ignores forged forwarded hosts and rejects external return paths',async()=>{
   const load=loader({'next/headers':{cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
   const route=load('app/auth/callback/route.ts')
-  for(const [next,expected] of [['/meetings','/meetings'],['//evil.example','/'],['/\\evil.example','/'],['https://evil.example','/']]) {
+  for(const [next,expected] of [['/meetings','/meetings'],['//evil.example','/?workspace=student'],['/\\evil.example','/?workspace=student'],['https://evil.example','/?workspace=student']]) {
     const result=await route.GET(new Request(`https://outclass.example/auth/callback?code=test&next=${encodeURIComponent(next)}`,{headers:{'x-forwarded-host':'evil.example'}}))
     assert.equal(result.headers.get('location'),`https://outclass.example${expected}`)
   }
