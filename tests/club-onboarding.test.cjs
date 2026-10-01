@@ -182,3 +182,51 @@ test('verified identity binding never moves a university identifier between acco
   await assert.rejects(helper.verifiedSchoolIdentities(h.tx,{user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',email_confirmed_at:'2026-10-01'}}),/manual review/);
   assert.equal(h.state.writes.length,0);
 });
+
+test('first login binds the normalized provider identity and discovers invitations without a recipient User insert', async () => {
+  const h=setup();let bound=false;
+  h.tx.schoolIdentifierType.findMany=async ({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];};
+  h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'identity',userId:bound?'recipient':null});
+  h.tx.schoolIdentity.update=async({data})=>{assert.equal(data.userId,'recipient');assert.ok(data.verifiedAt instanceof Date);bound=true;};
+  const invitations=await h.api.getOrganizationInvitations();
+  assert.equal(bound,true);assert.equal(invitations.length,1);
+  assert.equal(h.state.queries.find(([kind])=>kind==='identity')[1].create.normalizedIdentifier,'recipient');
+  assert.equal(h.state.audits[0].action,'school.identity.verify');
+});
+
+test('expired, revoked, declined, or previously claimed invitations cannot be replayed',async()=>{
+  for(const status of ['EXPIRED','REVOKED','DECLINED','ACCEPTED']) {
+    const h=setup();h.state.invitation.status=status;
+    await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/unavailable/);
+    assert.equal(h.state.writes.length,0);
+  }
+  const h=setup();h.state.invitation.expiresAt=new Date(Date.now()-1);
+  await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/expired/);
+  assert.equal(h.state.writes.length,0);
+});
+
+test('ownership claiming upgrades an existing member once and records claim timestamps',async()=>{
+  const h=setup();h.state.invitation.requestedRole='OWNER';h.state.invitation.purpose='OWNER_DESIGNATION';
+  h.state.recipient={id:'existing',isOwner:false,status:'ACTIVE',accessRole:'MEMBER',permissions:['tasks.manage']};
+  assert.deepEqual(await h.api.acceptIdentityClubInvitation(inviteId),{clubId});
+  const membership=h.state.writes.find(([kind])=>kind==='membership')[1];
+  assert.equal(membership.update.accessRole,'OWNER');assert.equal(membership.update.isOwner,true);
+  assert.equal(h.state.invitation.claimedUserId,'recipient');assert.ok(h.state.invitation.claimedAt instanceof Date);
+  assert.ok(h.state.writes.some(([kind])=>kind==='club'));
+  await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/unavailable/);
+  assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
+});
+
+test('concurrent claiming attempts revalidate after the organization transaction lock; only one succeeds',async()=>{
+  const h=setup();h.state.invitation.requestedRole='OWNER';
+  // Model the database transaction lock with a queue, including two concurrent callers.
+  let tail=Promise.resolve();
+  const prisma={...h.tx,$transaction:fn=>{const result=tail.then(()=>fn(h.tx));tail=result.catch(()=>{});return result;}};
+  const load=loader({'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
+  const api=load('actions/club-onboarding.ts');
+  const results=await Promise.allSettled([api.acceptIdentityClubInvitation(inviteId),api.acceptIdentityClubInvitation(inviteId)]);
+  assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
+  assert.equal(results.filter(result=>result.status==='rejected').length,1);
+  assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
+  assert.equal(h.state.audits.filter(audit=>audit.action==='club.invite.accept').length,1);
+});

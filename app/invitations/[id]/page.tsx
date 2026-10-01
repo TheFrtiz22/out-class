@@ -28,6 +28,7 @@ export default async function Invitation({
         { schoolIdentityId: null, email: person.email.toLowerCase() },
         { schoolIdentityId: { in: identities.map(identity => identity.id) } },
       ],
+      status: "PENDING",
       acceptedAt: null,
       declinedAt: null,
       revokedAt: null,
@@ -50,7 +51,7 @@ export default async function Invitation({
     );
   return (
     <main className="mx-auto max-w-lg space-y-6 p-8">
-      <h1 className="font-display text-3xl">Join {invitation.club.name}</h1>
+      <h1 className="font-display text-3xl">{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</h1>
       <p>
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
@@ -59,7 +60,8 @@ export default async function Invitation({
         Requested capabilities:{" "}
         {invitation.permissions.join(", ") || "Club membership"}
       </p>
-      <InvitationResponse id={id} />
+      {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p>You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
+      <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </main>
   );
 }

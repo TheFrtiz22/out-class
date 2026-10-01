@@ -22,3 +22,35 @@ Sources reviewed for the starter directory:
 - https://mcintireinvestmentinstitute.org/
 - https://economics.virginia.edu/business-consulting-and-finance-clubs
 - https://atuva.student.virginia.edu/organization/alternativeinvestmentfundatmcintire
+
+## Designated-owner invitations and first login
+
+Superadmin-designated presidents use the identity-bound onboarding invitations,
+not evidence-based directory claims. After a real sign-in, the student dashboard
+and authenticated profile wizard discover pending invitations through
+`getOrganizationInvitations`. `verifiedSchoolIdentities` derives the identifier
+from the verified provider account, applies the configured school normalization,
+and binds the reserved identity to that user. This association uses
+`SchoolIdentity.userId`; `ClubInvitation.claimedUserId` stays empty until acceptance.
+No recipient User or membership is created by discovery.
+
+Ownership requests explain the management access and offer **Claim organization**.
+The invitation link presents the same claiming behavior. The server's existing
+`acceptIdentityClubInvitation` and transaction helper revalidate identity, status,
+expiry, and current inviter authority after locking the organization. Membership
+upsert, owner grant, organization claim timestamp, invitation acceptance, recipient
+attribution, and audit entry commit together. Existing active membership access is
+preserved; inactive memberships require owner intervention. Replays fail without
+a second grant. Success reloads the existing `/club/[clubId]/workspace` route.
+
+The profile wizard can suggest a name and supported graduation year from matched
+invitations. Suggestions fill only untouched blank fields and never save a profile
+automatically. Existing login, school adapters, directory claims, and dismiss/restore
+semantics remain unchanged. Discovery excludes dashboard-dismissed requests; the
+existing server API's `includeDismissed` option remains available for Settings recovery.
+No email delivery or database migration is introduced here.
+
+Tests exercise server identity matching, terminal invitations, replay, existing
+memberships, concurrent callers, UI loading/error/retry/navigation, and SQL rollback
+against all migrations. PGlite serializes transactions; these tests do not substitute
+for multi-connection PostgreSQL locking and live Supabase authentication smoke tests.

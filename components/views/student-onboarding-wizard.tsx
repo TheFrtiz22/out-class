@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
+import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
 import { useState, useRef, useCallback, type DragEvent } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
@@ -307,6 +309,17 @@ export function StudentOnboardingWizard({
     defaultValues: { gradYear: "", major: "", gpa: "", satScore: "", actScore: "" },
   })
 
+  function applyInvitationDefaults(defaults: InvitationProfileDefaults) {
+    for (const field of ["firstName", "lastName"] as const) {
+      if (!step1Form.getValues(field) && !step1Form.getFieldState(field).isDirty) {
+        step1Form.setValue(field, defaults[field]);
+      }
+    }
+    if (!step3Form.getValues("gradYear") && !step3Form.getFieldState("gradYear").isDirty) {
+      step3Form.setValue("gradYear", defaults.gradYear);
+    }
+  }
+
   function onStep3Submit(data: AcademicProfileData) {
     wizardData.current.academic = data
     setStep(4)
@@ -401,6 +414,8 @@ export function StudentOnboardingWizard({
         <div className="mb-6 flex justify-center">
           <OutClassLogo variant="light" className="h-8 w-auto" />
         </div>
+
+        <OrganizationOwnershipRequests enabled={accountCreated && !isImpersonating} onProfileDefaults={applyInvitationDefaults} />
 
         {/* Card */}
         <div className="rounded-xl border border-neutral-200 bg-white px-6 py-8 sm:px-8">

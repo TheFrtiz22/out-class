@@ -1,5 +1,6 @@
 "use client"
 import { useRouter, useSearchParams } from "next/navigation"
+import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 
 import { PersonalClubs } from "@/components/personal-clubs"
@@ -155,7 +156,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   return (
     <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
       {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
-            {view === "student-dashboard" && <StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} />}
+            {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
