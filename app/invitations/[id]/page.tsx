@@ -7,6 +7,7 @@ import { requireAuth } from "@/utils/auth";
 import { redirect } from "next/navigation";
 import { verifiedSchoolIdentities } from "@/utils/school-identity";
 import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
+import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 export default async function Invitation({
   params,
 }: {
@@ -20,6 +21,7 @@ export default async function Invitation({
   if (!user) redirect(`/?next=${encodeURIComponent(`/invitations/${id}`)}`);
   const account = await requireAuth({ verifyEmail: true });
   const person = account.user;
+  await requireCompletedStudentProfile(person.id, `/invitations/${id}`);
   const verifiedEmail = hasConfirmedUniversityEmail(account) &&
     await requireVerifiedEmailPolicy().then(() => true).catch(() => false);
   // A delivery email is not identity proof. Legacy links retain their email binding.

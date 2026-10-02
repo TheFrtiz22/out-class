@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "validate": "npm run test && npm run test:migrations && npm run lint && npm run typecheck && npm run build",
     "db:deploy": "node scripts/check-migration-path.cjs && prisma migrate deploy",
-    "db:check-path": "node scripts/check-migration-path.cjs"
+    "db:check-path": "node scripts/check-migration-path.cjs",
+    "test:onboarding:e2e": "node scripts/run-onboarding-e2e.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

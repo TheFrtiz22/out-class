@@ -18,6 +18,7 @@ function harness(api,file,props,auth={user:{id:'user'},refreshUser:async()=>{}})
       if(name==='react')return react;if(name==='next/link')return{default:'Link'};
       if(name==='@/contexts/auth-context')return{useAuth:()=>auth};
       if(name==='@/utils/auth')return{requireAuth:api.requireAuth};
+      if(name==='@/utils/profile-onboarding')return{requireCompletedStudentProfile:api.requireCompletedStudentProfile};
       if(name==='@/components/organization-memberships')return{OrganizationMemberships:'OrganizationMemberships'};
       if(name==='@/components/outclass-logo')return{OutClassLogo:'OutClassLogo'};
       if(name==='@/actions/club-onboarding')return api;
@@ -103,8 +104,8 @@ test('a membership refresh failure never reverses committed acceptance or invite
 });
 
 test('organization Settings is protected by server authentication before rendering recovery controls',async()=>{
-  let checks=0;const allowed=harness({requireAuth:async options=>{assert.equal(options.verifyEmail,true);checks++;}},'app/settings/organizations/page.tsx',{});
-  const tree=await allowed.render();assert.equal(checks,1);const area=nodes(tree).find(node=>node.type==='OrganizationOwnershipRequests');assert.ok(area);assert.equal(area.props.includeDismissed,true);
+  let checks=0,profiles=0;const allowed=harness({requireAuth:async options=>{assert.equal(options.verifyEmail,true);checks++;return{user:{id:'verified-user'}};},requireCompletedStudentProfile:async(id,destination)=>{assert.equal(id,'verified-user');assert.equal(destination,'/settings/organizations');profiles++;}},'app/settings/organizations/page.tsx',{});
+  const tree=await allowed.render();assert.equal(checks,1);assert.equal(profiles,1);const area=nodes(tree).find(node=>node.type==='OrganizationOwnershipRequests');assert.ok(area);assert.equal(area.props.includeDismissed,true);
   const denied=harness({requireAuth:async()=>{throw Error('Unauthorized');}},'app/settings/organizations/page.tsx',{});await assert.rejects(denied.render(),/Unauthorized/);
 });
 
