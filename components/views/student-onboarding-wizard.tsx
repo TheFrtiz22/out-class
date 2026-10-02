@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
+import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
 import { useState, useRef, useCallback, type DragEvent } from "react"
@@ -229,7 +229,7 @@ export function StudentOnboardingWizard({
   // ── Step 1: Account Basics ────────────────────────────────────────────────
 
   const step1Form = useForm<AccountBasicsData & { password?: string }>({
-    resolver: zodResolver(initialUser ? accountBasicsSchema : registrationSchema),
+    resolver: zodResolver(accountCreated ? accountBasicsSchema : registrationSchema),
     defaultValues: { firstName: initialUser?.user_metadata?.first_name ?? "", lastName: initialUser?.user_metadata?.last_name ?? "", email: initialUser?.email ?? "", password: "" },
   })
 
@@ -415,7 +415,7 @@ export function StudentOnboardingWizard({
           <OutClassLogo variant="light" className="h-8 w-auto" />
         </div>
 
-        <OrganizationOwnershipRequests enabled={accountCreated && !isImpersonating} onProfileDefaults={applyInvitationDefaults} />
+        <InvitationProfileSuggestions enabled={accountCreated && !isImpersonating} onDefaults={applyInvitationDefaults} />
 
         {/* Card */}
         <div className="rounded-xl border border-neutral-200 bg-white px-6 py-8 sm:px-8">
@@ -433,10 +433,10 @@ export function StudentOnboardingWizard({
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
-                  Create your account
+                  {accountCreated ? "Let’s finish your profile" : "Create your account"}
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
-                  Use your UVA email to get started.
+                  {accountCreated ? "Review your name below. We’ll help you complete your academics and optional experience next." : "Use your UVA email to get started."}
                 </p>
               </div>
 
@@ -491,7 +491,7 @@ export function StudentOnboardingWizard({
                     {...step1Form.register("email")}
                   />
                   <p className="text-xs text-neutral-500">
-                    Only @virginia.edu addresses are accepted.
+                    {accountCreated ? "Your sign-in email is kept with your account. Invitations are matched using your verified university identity." : "Only @virginia.edu addresses are accepted."}
                   </p>
                   {step1Form.formState.errors.email && (
                     <p className="text-xs text-red-600">
@@ -500,7 +500,7 @@ export function StudentOnboardingWizard({
                   )}
                 </div>
 
-                {!initialUser && <div className="space-y-1.5">
+                {!accountCreated && <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
                   <Input id="password" type="password" autoComplete="new-password" {...step1Form.register("password")} />
                   <p className="text-xs text-neutral-500">At least 8 characters. Use this password to sign in again.</p>

@@ -47,7 +47,7 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
         <ClubLogo clubId={invitation.club.id} logoUrl={invitation.club.logoUrl} color={invitation.club.color || "#142d4e"} text={invitation.club.name.slice(0, 2)} />
         <div className="min-w-0 space-y-1.5">
           <h3 className="break-words font-medium">{invitation.club.name}</h3>
-          <p className="text-sm leading-6 text-muted-foreground">{owner ? `You’ve been designated as an administrator of ${invitation.club.name}.`
+          <p className="text-sm leading-6 text-muted-foreground">{owner ? `You’re the designated administrator for ${invitation.club.name}.`
             : invitation.requestedRole === "MEMBER" ? `${invitation.club.name} added you as a member.` : `${invitation.club.name} invited you to join as ${role}.`}</p>
           <p className="text-xs leading-5 text-muted-foreground">{owner ? "Claiming lets you manage members, roles, applications, recruiting, interviews, and organization settings." : "Accept to join this organization."}</p>
           {invitation.dismissedAt && <p className="text-xs font-medium text-muted-foreground">Hidden from your dashboard · still pending</p>}

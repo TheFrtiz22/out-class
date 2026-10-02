@@ -77,7 +77,7 @@ test('Not now and Show on dashboard call only dismissal preference changes, neve
 test('OWNER wording and claiming route are preserved and use the server-returned organization',async()=>{
   let route;const previous=global.window;global.window={location:{assign:value=>route=value}};
   try {
-    const h=card({acceptIdentityClubInvitation:async()=>({clubId:'server-club'})},{invitation:invitation('owner','OWNER')});let tree=h.render();assert.ok(JSON.stringify(tree).includes('administrator of Madison Investment Fund'));
+    const h=card({acceptIdentityClubInvitation:async()=>({clubId:'server-club'})},{invitation:invitation('owner','OWNER')});let tree=h.render();assert.ok(JSON.stringify(tree).includes('designated administrator for Madison Investment Fund'));
     nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Claim organization').props.onClick();await h.flush();assert.equal(route,'/club/server-club/workspace');
   } finally{global.window=previous;}
 });
