@@ -5,6 +5,8 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { clubPermissions, hasPermission } from "@/lib/permissions";
+import { onboardingRolePermissions } from "@/lib/club-onboarding";
+import { canControlOrganizationAccess, organizationCapabilities } from "@/lib/organization-authorization";
 import { isUvaEmail } from "@/lib/auth";
 
 const permissionsSchema = z
@@ -167,11 +169,11 @@ export async function updateClubAccess(input: {
     const target = await tx.clubMember.findFirst({
       where: { id: data.memberId, clubId: data.clubId },
     });
-    if (!actor || !target || !hasPermission(actor, "leaders.manage"))
+    if (!actor || !target || !organizationCapabilities(actor).canChangeRoles || (target.status && target.status !== "ACTIVE"))
       throw new Error("Access denied.");
     if (
       !actor.isOwner &&
-      (target.isOwner ||
+      (!canControlOrganizationAccess(actor, target) || target.isOwner ||
         data.isOwner ||
         data.permissions.some((p) => !hasPermission(actor, p)) ||
         target.permissions.some(
@@ -185,13 +187,15 @@ export async function updateClubAccess(input: {
       target.isOwner &&
       !data.isOwner &&
       (await tx.clubMember.count({
-        where: { clubId: data.clubId, isOwner: true, user: { disabledAt: null } },
+        where: { clubId: data.clubId, isOwner: true, status: "ACTIVE", user: { disabledAt: null } },
       })) <= 1
     )
       throw new Error("Assign another owner before removing the last owner.");
+    const template = Object.entries(onboardingRolePermissions).find(([role, permissions]) => role !== "OWNER" && permissions.length === new Set(data.permissions).size && permissions.every(p => data.permissions.includes(p)))?.[0];
+    const accessRole = data.isOwner ? "OWNER" : template || (target.isOwner ? "MEMBER" : target.accessRole || "MEMBER");
     await tx.clubMember.update({
       where: { id: target.id },
-      data: { permissions: data.permissions, isOwner: data.isOwner },
+      data: { permissions: data.permissions, isOwner: data.isOwner, accessRole: accessRole as keyof typeof onboardingRolePermissions },
     });
     const person = await tx.user.findUnique({
       where: { id: target.userId },

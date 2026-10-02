@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const ts=require('typescript');
 const nodes=node=>!node||typeof node!=='object'?[]:Array.isArray(node)?node.flatMap(nodes):[node,...nodes(node.props?.children)];
-function harness(api) {
+function harness(api,props={}) {
   const state=[],cache={};let cursor=0;
   function load(file) {
     file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;
@@ -17,7 +17,7 @@ function harness(api) {
     },mod,mod.exports);return mod.exports;
   }
   const Form=load('components/roster-csv-importer.tsx').RosterCsvImporter;
-  return{render(){cursor=0;return Form({clubId:'club'});},async flush(){for(let i=0;i<10;i++)await Promise.resolve();}};
+  return{render(){cursor=0;return Form({clubId:'club',...props});},async flush(){for(let i=0;i<10;i++)await Promise.resolve();}};
 }
 const row={rowNumber:1,name:'<script>alert(1)</script>',year:'',identifier:'jms8xy',status:'READY',errors:[],warnings:['Missing year'],existingUser:true};
 const preview={id:'import',filename:'roster.csv',rows:[row],summary:{total:1,ready:1,duplicates:0,invalid:0,alreadyMember:0,alreadyInvited:0}};
@@ -69,4 +69,13 @@ test('UI drives successive batches, retains progress after interruption, and res
   const resume=nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Resume import');assert.equal(resume.props.disabled,false);resume.props.onClick();await h.flush();tree=h.render();
   assert.equal(calls,3);assert.ok(JSON.stringify(tree).includes('new invitations'));assert.ok(JSON.stringify(tree).includes('already members'));assert.ok(JSON.stringify(tree).includes('already invited'));assert.ok(JSON.stringify(tree).includes('invalid'));
   assert.equal(nodes(tree).some(node=>node.type==='Button'&&node.props.children==='Resume import'),false);
+});
+
+
+test('completed additional CSV imports refresh the member directory once without reversing committed results',async()=>{
+  for(const fail of [false,true]){
+    let refreshes=0;const h=harness({previewRosterImport:async()=>preview,confirmRosterImport:async()=>({created:1,completed:true,alreadyMember:0,alreadyInvited:0,invalid:0,duplicates:0,failed:0,rows:[]})},{onImported:async()=>{refreshes++;if(fail)throw Error('Directory unavailable');}});
+    pick(h.render(),file());await h.flush();nodes(h.render()).find(node=>node.type==='Button'&&node.props.children==='Import members').props.onClick();await h.flush();
+    assert.equal(refreshes,1);assert.ok(JSON.stringify(h.render()).includes('Roster import confirmed'));if(fail)assert.ok(JSON.stringify(h.render()).includes('Refresh members'));
+  }
 });

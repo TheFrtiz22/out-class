@@ -37,6 +37,7 @@ function setup() {
     schoolIdentity: { findMany: async ({where}) => { assert.equal(where.userId,state.actorId); return state.identityIds.map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
     platformAdmin: { findUnique: async () => ({ active: state.platformAllowed }) },
     clubMember: {
+      findFirst: async () => null,
       findUnique: async ({where}) => where.userId_clubId.userId === 'inviter' ? state.inviter : state.recipient,
       count: async () => state.ownerCount,
       upsert: async args => { state.writes.push(['membership',args]); return { id:'membership' }; },
@@ -254,4 +255,20 @@ test('Settings invitation listing includes every pending request while retaining
   assert.ok(query.where.expiresAt.gt instanceof Date);
   h.state.queries=[];await h.api.getOrganizationInvitations();
   assert.equal(h.state.queries.find(([kind])=>kind==='invitations')[1].take,100);
+});
+
+
+test('manual identity invitations reject existing active memberships instead of creating duplicate requests',async()=>{
+  const h=setup();h.state.actorId='inviter';h.tx.clubMember.findFirst=async({where})=>{assert.equal(where.clubId,clubId);assert.equal(where.status,'ACTIVE');return{id:'member'};};
+  await assert.rejects(h.api.createClubIdentityInvitation({clubId,identifierTypeId:'computing',identifier:'abc',invitedName:'Student'}),/already an active member/);
+  assert.equal(h.state.writes.length,0);
+});
+
+test('only a newly authorized invitation can reactivate a removed membership; suspensions remain blocked',async()=>{
+  for(const status of ['LEFT','SUSPENDED']){
+    const h=setup();h.state.recipient={id:'existing',permissions:[],isOwner:false,status,accessRole:'MEMBER',updatedAt:new Date(1)};h.state.invitation.createdAt=new Date(2);
+    if(status==='SUSPENDED'){await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/inactive/);continue;}
+    await h.api.acceptIdentityClubInvitation(inviteId);const write=h.state.writes.find(([kind])=>kind==='membership')[1];assert.equal(write.update.status,'ACTIVE');assert.ok(write.update.joinedAt instanceof Date);
+  }
+  const stale=setup();stale.state.recipient={id:'existing',permissions:[],isOwner:false,status:'LEFT',accessRole:'MEMBER',updatedAt:new Date(2)};stale.state.invitation.createdAt=new Date(1);await assert.rejects(stale.api.acceptIdentityClubInvitation(inviteId),/inactive/);
 });

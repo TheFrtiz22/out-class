@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 type Preview = Awaited<ReturnType<typeof previewRosterImport>>;
 const labels = { READY: "Ready", INVALID: "Invalid", DUPLICATE: "Duplicate", ALREADY_MEMBER: "Already a member", ALREADY_INVITED: "Already invited" };
 
-export function RosterCsvImporter({ clubId }: { clubId: string }) {
+export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onImported?: () => Promise<void> }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof confirmRosterImport>> | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
@@ -38,7 +38,10 @@ export function RosterCsvImporter({ clubId }: { clubId: string }) {
       while (true) {
         const outcome = await confirmRosterImport(preview.id);
         setResult(outcome);
-        if (outcome.completed) break;
+        if (outcome.completed) {
+          try { await onImported?.(); } catch { setError("Import completed. Refresh members to update the directory."); }
+          break;
+        }
         if (outcome.processed <= previousProcessed) throw new Error("Import paused. Retry to resume processing.");
         previousProcessed = outcome.processed;
       }

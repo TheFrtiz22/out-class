@@ -1,8 +1,10 @@
 "use client"
+import { organizationCapabilities } from "@/lib/organization-authorization"
+import { OrganizationMemberManagement } from "@/components/organization-member-management"
 import { useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
-import { hasPermission, permissionLabels, type ClubPermission } from "@/lib/permissions"
+import { permissionLabels, type ClubPermission } from "@/lib/permissions"
 import { getClubMembers, getClubAccess, addClubMember, removeClubMember } from "@/actions/club-access"
 import { updateTaskMember } from "@/lib/workspace-api"
 import { RosterCsvImporter } from "@/components/roster-csv-importer"
@@ -16,12 +18,12 @@ const role = (m: Member) => m.title || m.role.replaceAll("_", " ").toLowerCase()
 export function ClubMembers({ clubId }: { clubId: string }) {
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
   const actor = user?.memberships.find(m => m.clubId === clubId)
-  const canAccess = hasPermission(actor, "leaders.manage"), canMembers = hasPermission(actor, "members.manage")
+  const { canChangeRoles: canAccess, canManageMembers: canMembers } = organizationCapabilities(actor)
   const [data, setData] = useState<{ clubId: string; members: Member[]; access: Awaited<ReturnType<typeof getClubAccess>> | null } | null>(null)
   const [query, setQuery] = useState(""), [activeId, setActiveId] = useState<string | null>(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0), [dirty, setDirty] = useState(false)
   const trigger = useRef<HTMLElement | null>(null)
   useEffect(() => {
-    if (!demo.ready) return
+    if (!demo.ready || !demo.isDemoEnabled) return
     let current = true
     setData(null); setError(""); setActiveId(null); setDirty(false)
     if (demo.isDemoEnabled) return
@@ -42,6 +44,7 @@ export function ClubMembers({ clubId }: { clubId: string }) {
   }
   async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(e instanceof Error ? e.message : "Could not save.") } finally { setBusy(false) } }
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
+  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} />
   return <div className="max-w-5xl space-y-6" data-unsaved={dirty} data-saving={busy}>
     <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}

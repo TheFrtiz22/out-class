@@ -45,6 +45,8 @@ export async function createClubIdentityInvitation(input: unknown) {
       where: { schoolId_identifierTypeId_normalizedIdentifier: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: normalized } },
       create: { schoolId: config.schoolId, identifierTypeId: config.id, identifier: data.identifier, normalizedIdentifier: normalized }, update: {},
     });
+    const existingMember = await tx.clubMember.findFirst({ where: { clubId: club.id, status: "ACTIVE", OR: [...(identity.userId ? [{ userId: identity.userId }] : []), { user: { email } }] } });
+    if (existingMember) throw new Error("This person is already an active member. Change their role through member management.");
     const expired = await tx.clubInvitation.findMany({ where: { clubId: club.id, schoolIdentityId: identity.id, status: "PENDING", expiresAt: { lte: new Date() } }, select: { id: true } });
     for (const stale of expired) {
       await tx.clubInvitation.update({ where: { id: stale.id }, data: { status: "EXPIRED", expiredAt: new Date() } });

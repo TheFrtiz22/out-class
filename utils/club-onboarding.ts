@@ -35,14 +35,17 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
     }
     const where = { userId_clubId: { userId: account.user.id, clubId: invitation.clubId } };
     const existing = await tx.clubMember.findUnique({ where });
-    if (existing && !isActiveMembership(existing)) throw new Error("Membership is inactive. Contact an organization owner.");
+    // Removed members may rejoin only through a new, currently authorized invitation.
+    // Suspensions and invitations predating removal never reactivate membership.
+    const rejoining = existing?.status === "LEFT" && invitation.createdAt > existing.updatedAt;
+    if (existing && !isActiveMembership(existing) && !rejoining) throw new Error("Membership is inactive. Contact an organization owner.");
     const permissions = Array.from(new Set([...(existing?.permissions || []), ...invitation.permissions]));
     const isOwner = existing?.isOwner === true || invitation.requestedRole === "OWNER";
     const roleOrder = ["MEMBER", "INTERVIEWER", "RECRUITING_ADMIN", "ADMIN", "OWNER"];
-    const accessRole = existing && roleOrder.indexOf(existing.accessRole) > roleOrder.indexOf(invitation.requestedRole) ? existing.accessRole : invitation.requestedRole;
+    const accessRole = existing && !rejoining && roleOrder.indexOf(existing.accessRole) > roleOrder.indexOf(invitation.requestedRole) ? existing.accessRole : invitation.requestedRole;
     const membership = await tx.clubMember.upsert({ where,
       create: { userId: account.user.id, clubId: invitation.clubId, permissions, isOwner, accessRole },
-      update: { permissions, isOwner, accessRole },
+      update: { permissions, isOwner, accessRole, ...(rejoining ? { status: "ACTIVE", joinedAt: new Date() } : {}) },
     });
     if (isOwner) await tx.club.update({ where: { id: invitation.clubId }, data: { claimedAt: new Date() } });
     const now = new Date();
