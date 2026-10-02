@@ -88,7 +88,7 @@ export async function previewRosterImport(input: unknown) {
     const record = existing ?? await tx.rosterImport.create({ data: {
       clubId: data.clubId, uploadedById: user.id, filename: data.filename, fileHash, idempotencyKey: data.requestId,
       status: "VALIDATED", rowCount: rows.length, failedRows: summary.invalid,
-      rows: { create: rows.map(row => ({ clubId: data.clubId, rowNumber: row.rowNumber, input: row.input,
+      rows: { create: rows.map(row => ({ rowNumber: row.rowNumber, input: row.input,
         invitedName: row.name || null, invitedYear: row.year || null, identifier: row.identifier || null, normalizedIdentifier: row.normalizedIdentifier,
         matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId,
         status: databaseStatus(row), errors: [...row.errors, ...row.warnings] })) },

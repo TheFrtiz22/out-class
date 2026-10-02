@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { requireAuth } from "@/utils/auth";
 import { redirect } from "next/navigation";
 import { verifiedSchoolIdentities } from "@/utils/school-identity";
+import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
 export default async function Invitation({
   params,
 }: {
@@ -19,13 +20,15 @@ export default async function Invitation({
   if (!user) redirect(`/?next=${encodeURIComponent(`/invitations/${id}`)}`);
   const account = await requireAuth({ verifyEmail: true });
   const person = account.user;
+  const verifiedEmail = hasConfirmedUniversityEmail(account) &&
+    await requireVerifiedEmailPolicy().then(() => true).catch(() => false);
   // A delivery email is not identity proof. Legacy links retain their email binding.
   const identities = await prisma.$transaction(tx => verifiedSchoolIdentities(tx, account)).catch(() => []);
   const invitation = await prisma.clubInvitation.findFirst({
     where: {
       id,
       OR: [
-        { schoolIdentityId: null, email: person.email.toLowerCase() },
+        ...(verifiedEmail ? [{ schoolIdentityId: null, email: person.email.toLowerCase() }] : []),
         { schoolIdentityId: { in: identities.map(identity => identity.id) } },
       ],
       status: "PENDING",

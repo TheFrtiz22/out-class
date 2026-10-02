@@ -58,7 +58,7 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   const cache={};function load(file) {
     file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;
     const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-    new Function('require','module','exports',compiled)(name=>name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:john,email:'jms8xy@virginia.edu'},supabaseUser:{id:john,email:' JMS8XY@VIRGINIA.EDU ',email_confirmed_at:'2026-10-01'}})}:name==='@/utils/platform-admin'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;
+    new Function('require','module','exports',compiled)(name=>name==='@/utils/verified-email-policy'?{...load('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}}:name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:john,email:'jms8xy@virginia.edu'},supabaseUser:{id:john,email:' JMS8XY@VIRGINIA.EDU ',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})}:name==='@/utils/platform-admin'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;
   }
   const api=load('actions/club-onboarding.ts');
   const pending=await api.getOrganizationInvitations();assert.equal(pending.length,1);assert.equal(pending[0].invitedName,'John Smith');

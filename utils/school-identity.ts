@@ -1,23 +1,25 @@
 import type { AppTransactionClient } from "@/utils/prisma";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
+import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
 
 type VerifiedAccount = {
   user: { id: string; email: string };
-  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; app_metadata?: Record<string, unknown> };
+  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown> };
 };
 
 /** Caller supplies requireAuth({verifyEmail:true}) output, never browser identity claims. */
 export async function verifiedSchoolIdentities(tx: AppTransactionClient, account: VerifiedAccount) {
   const { user, supabaseUser } = account;
-  if (supabaseUser.id !== user.id || !supabaseUser.email_confirmed_at || supabaseUser.app_metadata?.email_verification_skipped === true ||
-      supabaseUser.email?.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+  if (!hasConfirmedUniversityEmail(account)) {
     throw new Error("Verify your university identity before responding to invitations.");
   }
   const email = supabaseUser.email!.trim().toLowerCase();
+  await requireVerifiedEmailPolicy();
   const [local, domain] = email.split("@");
   const configs = await tx.schoolIdentifierType.findMany({
     where: { verification: "EMAIL_LOCAL_PART", emailDomain: domain, school: { active: true } },
   });
+  const currentIdentityIds: string[] = [];
   for (const config of configs) {
     const normalized = normalizeSchoolIdentifier(local, config);
     const identity = await tx.schoolIdentity.upsert({
@@ -32,7 +34,9 @@ export async function verifiedSchoolIdentities(tx: AppTransactionClient, account
       await tx.schoolIdentity.update({ where: { id: identity.id }, data: { userId: user.id, verifiedAt: new Date(), verificationMethod: "EMAIL_LOCAL_PART" } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "school.identity.verify", targetId: identity.id } });
     }
+    currentIdentityIds.push(current.id);
   }
-  // Future institutional SSO adapters can bind identities server-side. No client claims.
-  return tx.schoolIdentity.findMany({ where: { userId: user.id, verifiedAt: { not: null }, school: { active: true } } });
+  // Historical email bindings are retained for audit, but are not proof of current
+  // mailbox control after an Auth email change. Future SSO needs its own verifier.
+  return tx.schoolIdentity.findMany({ where: { id: { in: currentIdentityIds }, userId: user.id, verifiedAt: { not: null }, school: { active: true } } });
 }

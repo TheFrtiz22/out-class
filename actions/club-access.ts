@@ -6,8 +6,10 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { clubPermissions, hasPermission } from "@/lib/permissions";
 import { onboardingRolePermissions } from "@/lib/club-onboarding";
-import { canControlOrganizationAccess, organizationCapabilities } from "@/lib/organization-authorization";
+import { canControlOrganizationAccess, canManageOrganizationInvitation, organizationCapabilities } from "@/lib/organization-authorization";
 import { isUvaEmail } from "@/lib/auth";
+import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
+import { isActiveMembership } from "@/lib/permissions";
 
 const permissionsSchema = z
   .array(z.enum(clubPermissions))
@@ -16,7 +18,7 @@ const invitationSchema = z.object({
   clubId: z.string().uuid(),
   email: z.string().trim().toLowerCase().refine(isUvaEmail, "Use a UVA email."),
   permissions: permissionsSchema,
-});
+}).strict();
 
 export async function getClubAccess(clubId: string) {
   await requireClubPermission(clubId, ["leaders.manage"]);
@@ -79,8 +81,9 @@ export async function inviteClubManager(
 export async function acceptClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
-  const { user, supabaseUser } = account;
-  if (!supabaseUser.email_confirmed_at || supabaseUser.app_metadata?.email_verification_skipped === true) throw new Error("Verify your UVA email before accepting an invitation.");
+  const { user } = account;
+  if (!hasConfirmedUniversityEmail(account)) throw new Error("Verify your UVA email before accepting an invitation.");
+  await requireVerifiedEmailPolicy();
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
@@ -92,6 +95,7 @@ export async function acceptClubInvitation(invitationId: string) {
     const invitation = await tx.clubInvitation.findUnique({ where: { id } });
     if (
       !invitation ||
+      invitation.status !== "PENDING" ||
       invitation.email.toLowerCase() !== user.email.toLowerCase() ||
       invitation.declinedAt ||
       invitation.acceptedAt ||
@@ -121,6 +125,7 @@ export async function acceptClubInvitation(invitationId: string) {
     const existing = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: invitation.clubId } },
     });
+    if (existing && !isActiveMembership(existing)) throw new Error("Membership is inactive. Request a new identity invitation.");
     // Accepting an invite adds access; it never strips existing ownership or capabilities.
     const permissions = Array.from(
       new Set([...(existing?.permissions || []), ...invitation.permissions]),
@@ -132,7 +137,7 @@ export async function acceptClubInvitation(invitationId: string) {
     });
     await tx.clubInvitation.update({
       where: { id },
-      data: { acceptedAt: new Date(), claimedUserId: user.id },
+      data: { status: "ACCEPTED", acceptedAt: new Date(), claimedUserId: user.id },
     });
     await tx.auditLog.create({
       data: {
@@ -159,7 +164,7 @@ export async function updateClubAccess(input: {
       permissions: permissionsSchema,
       isOwner: z.boolean(),
     })
-    .parse(input);
+    .strict().parse(input);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${data.clubId} FOR UPDATE`;
@@ -205,11 +210,12 @@ export async function updateClubAccess(input: {
       await tx.clubInvitation.updateMany({
         where: {
           clubId: data.clubId,
+          status: "PENDING",
           OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }],
           acceptedAt: null,
           revokedAt: null,
         },
-        data: { revokedAt: new Date() },
+        data: { status: "REVOKED", revokedAt: new Date() },
       });
     await tx.auditLog.create({
       data: {
@@ -231,18 +237,19 @@ export async function revokeClubInvitation(
   clubId: string,
   invitationId: string,
 ) {
+  z.string().uuid().parse(clubId); z.string().uuid().parse(invitationId);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
     const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
     if (!hasPermission(actor, "leaders.manage")) throw new Error("Access denied.");
     const invitation = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
-    if (invitation?.schoolIdentityId && (!actor?.isOwner && (invitation.requestedRole === "OWNER" || invitation.permissions.some(p => !hasPermission(actor, p as (typeof clubPermissions)[number]))))) {
+    if (!invitation || invitation.clubId !== clubId || !canManageOrganizationInvitation(actor, invitation)) {
       throw new Error("Only an authorized owner can revoke higher-authority invitations.");
     }
     const result = await tx.clubInvitation.updateMany({
-      where: { id: invitationId, clubId, acceptedAt: null },
-      data: { revokedAt: new Date() },
+      where: { id: invitationId, clubId, status: "PENDING", acceptedAt: null },
+      data: { status: "REVOKED", revokedAt: new Date() },
     });
     if (result.count !== 1) throw new Error("Invitation unavailable.");
     await tx.auditLog.create({
@@ -275,6 +282,9 @@ export async function addClubMember(clubId: string, email: string) {
     "members.manage",
   ]);
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`;
+    const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: parsed.clubId } } });
+    if (!hasPermission(actor, "members.manage")) throw new Error("Access denied.");
     const person = await tx.user.findUnique({ where: { email: parsed.email } });
     if (!person || person.disabledAt)
       throw new Error("An active OutClass account is required.");
@@ -317,8 +327,8 @@ export async function removeClubMember(clubId: string, memberId: string) {
         "Revoke leadership access first. Memberships with evaluation or interview history must be retained.",
       );
     const person = await tx.user.findUnique({ where: { id: target.userId }, select: { email: true } });
-    if (person) await tx.clubInvitation.updateMany({ where: { clubId, OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }], acceptedAt: null, revokedAt: null }, data: { revokedAt: new Date() } });
-    await tx.clubMember.delete({ where: { id: target.id } });
+    if (person) await tx.clubInvitation.updateMany({ where: { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }], acceptedAt: null, revokedAt: null }, data: { status: "REVOKED", revokedAt: new Date() } });
+    await tx.clubMember.update({ where: { id: target.id }, data: { status: "LEFT", permissions: [], isOwner: false, accessRole: "MEMBER" } });
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -334,6 +344,8 @@ export async function declineClubInvitation(invitationId: string) {
   const id = z.string().uuid().parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
   const { user } = account;
+  if (!hasConfirmedUniversityEmail(account)) throw new Error("Verify your UVA email before responding to an invitation.");
+  await requireVerifiedEmailPolicy();
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
@@ -348,13 +360,14 @@ export async function declineClubInvitation(invitationId: string) {
     const result = await tx.clubInvitation.updateMany({
       where: {
         id,
+        status: "PENDING",
         email: user.email.toLowerCase(),
         acceptedAt: null,
         revokedAt: null,
         declinedAt: null,
         expiresAt: { gt: new Date() },
       },
-      data: { declinedAt: new Date() },
+      data: { status: "DECLINED", declinedAt: new Date() },
     });
     if (result.count !== 1)
       throw new Error("Invitation unavailable or expired.");

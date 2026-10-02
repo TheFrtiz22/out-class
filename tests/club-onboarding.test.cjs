@@ -28,13 +28,13 @@ function setup() {
     invitation: { id: inviteId, clubId, schoolId: 'school-uva', schoolIdentityId: 'identity', invitedBy: 'inviter', requestedRole: 'MEMBER', purpose: 'MEMBERSHIP', authoritySource: 'CLUB_MEMBER', permissions: [], status: 'PENDING', expiresAt: new Date(Date.now()+86400000), dismissedAt: null },
     writes: [], audits: [], queries: [],
   };
-  const account = () => ({ user: { id: state.actorId, email: state.actorId+'@virginia.edu' }, supabaseUser: { id: state.actorId, email: state.actorId+'@virginia.edu', email_confirmed_at: state.verified ? '2026-10-01' : null, app_metadata: { email_verification_skipped: state.skipped } } });
+  const account = () => ({ user: { id: state.actorId, email: state.actorId+'@virginia.edu' }, supabaseUser: { id: state.actorId, email: state.actorId+'@virginia.edu', confirmation_sent_at: '2026-09-01', email_confirmed_at: state.verified ? '2026-10-01' : null, app_metadata: { email_verification_skipped: state.skipped } } });
   const tx = {
     $queryRaw: async () => [],
     user: { findUnique: async () => ({ id: 'inviter', disabledAt: state.disabledInviter ? new Date() : null }), create: () => { throw Error('Fake User creation forbidden'); } },
     club: { findUniqueOrThrow: async () => ({ id: clubId, schoolId: 'school-uva', claimedAt: null }), update: async args => { state.writes.push(['club',args]); } },
-    schoolIdentifierType: { findMany: async () => [], findUniqueOrThrow: async () => ({ id: 'computing', schoolId: 'school-uva', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$', verification: 'EMAIL_LOCAL_PART', emailDomain: 'virginia.edu', school: { active: true } }) },
-    schoolIdentity: { findMany: async ({where}) => { assert.equal(where.userId,state.actorId); return state.identityIds.map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
+    schoolIdentifierType: { findMany: async () => [{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}], findUniqueOrThrow: async () => ({ id: 'computing', schoolId: 'school-uva', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$', verification: 'EMAIL_LOCAL_PART', emailDomain: 'virginia.edu', school: { active: true } }) },
+    schoolIdentity: { findUniqueOrThrow: async () => ({id:'identity',userId:state.actorId}), findMany: async ({where}) => { assert.equal(where.userId,state.actorId); return state.identityIds.filter(id => where.id.in.includes(id)).map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
     platformAdmin: { findUnique: async () => ({ active: state.platformAllowed }) },
     clubMember: {
       findFirst: async () => null,
@@ -57,6 +57,7 @@ function setup() {
     auditLog: { create: async args => { state.audits.push(args.data); } },
   };
   const load = loader({
+    '@/utils/verified-email-policy': { ...loader({})('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
     '@/utils/prisma': { prisma: {...tx,$transaction:fn=>fn(tx)} },
     '@/utils/auth': { requireAuth: async () => account(), requireClubPermission: async (_id,permissions) => {
       assert.deepEqual(permissions,['members.manage']);
@@ -180,7 +181,7 @@ test('verified identity binding never moves a university identifier between acco
   h.tx.schoolIdentifierType.findMany=async()=>[{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];
   h.tx.schoolIdentity.findUniqueOrThrow=async()=>({id:'identity',userId:'someone-else'});
   const helper=h.load('utils/school-identity.ts');
-  await assert.rejects(helper.verifiedSchoolIdentities(h.tx,{user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',email_confirmed_at:'2026-10-01'}}),/manual review/);
+  await assert.rejects(helper.verifiedSchoolIdentities(h.tx,{user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}}),/manual review/);
   assert.equal(h.state.writes.length,0);
 });
 
@@ -223,7 +224,7 @@ test('concurrent claiming attempts revalidate after the organization transaction
   // Model the database transaction lock with a queue, including two concurrent callers.
   let tail=Promise.resolve();
   const prisma={...h.tx,$transaction:fn=>{const result=tail.then(()=>fn(h.tx));tail=result.catch(()=>{});return result;}};
-  const load=loader({'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
+  const load=loader({'@/utils/verified-email-policy':{...loader({})('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
   const api=load('actions/club-onboarding.ts');
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(inviteId),api.acceptIdentityClubInvitation(inviteId)]);
   assert.equal(results.filter(result=>result.status==='fulfilled').length,1);

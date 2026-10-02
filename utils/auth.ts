@@ -28,7 +28,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
       const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, { auth: { persistSession: false, autoRefreshToken: false } });
       const { data, error } = await admin.auth.admin.getUserById(effective.id);
       if (error || !data.user || data.user.id !== effective.id || data.user.email?.toLowerCase() !== effective.email.toLowerCase()) throw new Error("Target email verification is unavailable.");
-      const supabaseUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "app_metadata"> = { id: effective.id, email: effective.email, email_confirmed_at: data.user.email_confirmed_at, app_metadata: data.user.app_metadata };
+      const supabaseUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "confirmation_sent_at" | "app_metadata"> = { id: effective.id, email: effective.email, email_confirmed_at: data.user.email_confirmed_at, confirmation_sent_at: data.user.confirmation_sent_at, app_metadata: data.user.app_metadata };
       return { user: effective, supabaseUser, impersonation: session };
     }
     // Never borrow the administrator's Auth metadata or verified-email status.

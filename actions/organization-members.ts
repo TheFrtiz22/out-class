@@ -11,9 +11,11 @@ import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 const id = z.string().uuid();
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string) {
   await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+  const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   const caps = organizationCapabilities(actor);
-  if (!caps.canManageMembers && !caps.canChangeRoles) throw new Error("Member management access denied.");
+  if (!account || account.disabledAt || (!caps.canManageMembers && !caps.canChangeRoles)) throw new Error("Member management access denied.");
   return actor!;
 }
 

@@ -146,9 +146,10 @@ function accessHarness(actor, target, invitation, options = {}) {
   }
   return {
     api: load("actions/club-access.ts", {
+      "@/utils/verified-email-policy": { ...load('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
       "@/utils/prisma": { prisma: { $transaction: async (fn) => fn(tx) } },
       "@/utils/auth": {
-        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu" }, supabaseUser: { email_confirmed_at: options.unverified ? null : "2026-09-25", app_metadata: { email_verification_skipped: !!options.skippedVerification } } }),
+        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu" }, supabaseUser: { id: "actor", email: "actor@virginia.edu", confirmation_sent_at: '2026-09-01', email_confirmed_at: options.unverified ? null : "2026-09-25", app_metadata: { email_verification_skipped: !!options.skippedVerification } } }),
       },
       "@/lib/permissions": permissions,
       "@/lib/auth": authPolicy,
@@ -187,6 +188,7 @@ test("access editing cannot escalate or remove the last owner", async () => {
 test("invitations bind acceptance to verified email, expiry, and current inviter authority", async () => {
   const base = {
     id: inviteId,
+    status: "PENDING", requestedRole: "MEMBER",
     clubId,
     email: "actor@virginia.edu",
     invitedBy: "owner",
@@ -237,7 +239,7 @@ test("every platform action checks its guard before reading or mutating data", a
 })
 
  test("suspended inviters and unverified recipient emails cannot grant access", async () => {
-  const invite={id:inviteId,clubId,email:"actor@virginia.edu",invitedBy:"owner",expiresAt:new Date(Date.now()+100000),permissions:["tasks.manage"]}
+  const invite={id:inviteId,status:"PENDING",requestedRole:"MEMBER",clubId,email:"actor@virginia.edu",invitedBy:"owner",expiresAt:new Date(Date.now()+100000),permissions:["tasks.manage"]}
   for(const options of [{disabledInviter:true},{unverified:true},{skippedVerification:true}]) {
     const h=accessHarness({isOwner:true,permissions:[]},null,invite,options)
     await assert.rejects(h.api.acceptClubInvitation(inviteId), /no longer|Verify/)

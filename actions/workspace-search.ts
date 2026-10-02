@@ -19,7 +19,7 @@ export async function searchWorkspace(
   if (text.length < 2) return []
   const memberships = leader
     ? await prisma.clubMember.findMany({
-        where: { userId: user.id, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
+        where: { userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }] },
         select: { clubId: true },
       })
     : []

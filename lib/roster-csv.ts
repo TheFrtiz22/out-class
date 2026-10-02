@@ -14,6 +14,7 @@ export type RosterRow = {
 export function parseRosterCsv(text: string): RosterInputRow[] {
   if (new TextEncoder().encode(text).length > ROSTER_MAX_BYTES) throw new Error("CSV must be 1 MB or smaller.");
   if (text.includes("\0")) throw new Error("CSV contains unsupported binary content.");
+  if (/\uFFFD|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text)) throw new Error("CSV contains malformed encoding. Export it as UTF-8 CSV again.");
   text = text.replace(/^\uFEFF/, "");
   const records: string[][] = [];
   let record: string[] = [], cell = "", state: "plain" | "quoted" | "closed" = "plain";

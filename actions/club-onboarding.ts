@@ -20,7 +20,7 @@ const invitationInput = z.object({
   requestedRole: z.enum(["OWNER", "ADMIN", "RECRUITING_ADMIN", "INTERVIEWER", "MEMBER"]).default("MEMBER"),
   deliveryEmail: z.string().trim().toLowerCase().email().max(254).optional(),
   platformDesignation: z.boolean().default(false),
-});
+}).strict();
 
 /** Creates identity-bound invitations only; no User is created for the recipient. */
 export async function createClubIdentityInvitation(input: unknown) {
@@ -134,7 +134,7 @@ export async function recordRosterImport(input: unknown) {
   const data = z.object({
     clubId: id, filename: z.string().trim().min(1).max(255), idempotencyKey: z.string().min(1).max(100),
     rows: z.array(z.record(z.string().max(2000))).max(10000),
-  }).parse(input);
+  }).strict().parse(input);
   const serialized = JSON.stringify(data.rows);
   if (Buffer.byteLength(serialized) > 1024 * 1024) throw new Error("Roster audit payload exceeds 1 MB.");
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
@@ -151,7 +151,7 @@ export async function recordRosterImport(input: unknown) {
     const record = await tx.rosterImport.create({ data: {
       clubId: data.clubId, uploadedById: user.id, filename: data.filename, fileHash, idempotencyKey: data.idempotencyKey,
       status: "PROCESSING", rowCount: data.rows.length,
-      rows: { create: data.rows.map((row, index) => ({ clubId: data.clubId, rowNumber: index + 1, input: row,
+      rows: { create: data.rows.map((row, index) => ({ rowNumber: index + 1, input: row,
         invitedName: row.name?.slice(0, 200) || null, invitedYear: row.year?.slice(0, 80) || null, identifier: row.computing_id?.slice(0, 128) || null,
       })) },
     } });

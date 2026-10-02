@@ -38,7 +38,7 @@ test('decline only closes a pending invitation belonging to the signed-in email 
     assert.equal(where.email, 'student@virginia.edu'); assert.equal(where.acceptedAt, null); assert.equal(where.revokedAt, null); assert.equal(where.declinedAt, null); assert.ok(where.expiresAt.gt instanceof Date); assert.ok(data.declinedAt instanceof Date)
     const count = available ? 1 : 0; available = false; return { count }
   } }, auditLog: { create: async ({ data }) => { assert.equal(data.action, 'club.invite.decline'); audited++ } } }
-  const api = load('actions/club-access.ts', { '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student', email: 'Student@virginia.edu' } }) }, '@/lib/permissions': load('lib/permissions.ts', {}), '@/lib/auth': load('lib/auth.ts', {}) })
+  const api = load('actions/club-access.ts', { '@/utils/verified-email-policy': { ...load('utils/verified-email-policy.ts', {}), requireVerifiedEmailPolicy: async () => {} }, '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student', email: 'Student@virginia.edu' }, supabaseUser: { id: 'student', email: 'student@virginia.edu', confirmation_sent_at: '2026-09-01', email_confirmed_at: '2026-10-02' } }) }, '@/lib/permissions': load('lib/permissions.ts', {}), '@/lib/auth': load('lib/auth.ts', {}) })
   await api.declineClubInvitation(clubId)
   await assert.rejects(api.declineClubInvitation(clubId), /unavailable or expired/)
   assert.equal(audited, 1)
