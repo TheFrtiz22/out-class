@@ -118,6 +118,34 @@ export async function POST(request: NextRequest) {
         400,
       );
     }
+    // A consumed email recovery token proves mailbox control even for legacy
+    // accounts without a signup confirmation_sent_at. Bind server-only proof to
+    // the exact provider identity and confirmation timestamp; email changes
+    // invalidate the receipt. Never use an email/user ID supplied by the browser.
+    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (secret) {
+      try {
+        const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+        const current = await admin.auth.admin.getUserById(data.user.id);
+        if (current.error || !current.data.user || current.data.user.id !== data.user.id ||
+          current.data.user.email?.trim().toLowerCase() !== data.user.email.trim().toLowerCase() ||
+          !current.data.user.email_confirmed_at ||
+          current.data.user.email_confirmed_at !== data.user.email_confirmed_at) {
+          throw new Error("Recovery identity changed.");
+        }
+        const identity = current.data.user;
+        const recorded = await admin.auth.admin.updateUserById(identity.id, { app_metadata: {
+          outclass_verified_email: { method: "password_recovery_v1", userId: identity.id,
+            email: identity.email!.trim().toLowerCase(), emailConfirmedAt: identity.email_confirmed_at,
+            verifiedAt: new Date().toISOString() },
+        } });
+        if (recorded.error) throw new Error("Recovery identity proof unavailable.");
+      } catch {
+        // The password already changed. Fail closed for invitation access while
+        // preserving the existing recovery response and revocation behavior.
+        console.warn("Password reset completed; university identity proof unavailable");
+      }
+    }
     // Revoke refresh sessions; existing access JWTs expire according to provider configuration.
     try {
       const signedOut = await client.auth.signOut({ scope: "global" });
