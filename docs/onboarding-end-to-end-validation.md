@@ -70,10 +70,14 @@ malicious fields, malformed input, and large rosters.
 Browser validation in Chrome additionally verified editable name/year suggestions,
 required profile completion, preserved invitation destination, claiming into the
 club workspace, saved setup checklist, dashboard dismissal, Settings recovery,
-and claiming from Settings. The Members page and upload control rendered.
-The **manual browser CSV file selection was blocked by the extension's missing
-file-URL permission**; it was not represented as a successful browser upload.
-Real HTTP preview/confirmation and audit/database outcomes passed.
+and claiming from Settings. After enabling Chrome file uploads, the complete browser file-picker flow also
+passed: six rows previewed as two ready, one duplicate, one invalid, one existing
+member, and one existing invitation. A missing year displayed a warning. Clicking
+Import members created two pending invitations and six durable audit rows. Database
+checks confirmed no fake users, no email sends, and unchanged prior memberships.
+Reuploading and confirming the same file created zero additional invitations; the
+preview correctly changed to three already invited rows. Both imports completed
+and retained all row outcomes. No application changes were needed for this retest.
 
 The initial president scenario uses the existing invitation URL and normal sign-in.
 It does not send an initial president email: the superadmin creation action has
