@@ -4,8 +4,8 @@ Prepared for integration only. No merge, rebase, push, production deployment or 
 
 ## Audit boundary and integration target
 
-- Branch: `feature/club-onboarding`; audited feature tip: `734e2f8`.
-- Comparison: local `main` (`f453b27988a1f2307c78f543149dfc60838e0a73`) to the feature tip: 97 files, 5,781 insertions, 79 deletions (68 new, 29 modified). This guide is an additional documentation-only commit.
+- Branch: `feature/club-onboarding`; audited branch tip: `032c31e`; implementation tip: `734e2f8`.
+- Comparison: local `main` (`f453b27988a1f2307c78f543149dfc60838e0a73`) to the audited branch tip: 98 files, 6,054 insertions, 79 deletions (69 new, 29 modified), including the original merge-guide commit. The subsequent guide refresh changes documentation only.
 - Cached `origin/main` is two commits ahead of local `main`: `1c024e2` (production MCP configuration) and `fed4fb8` (tutorial migration foreign key). These refs were inspected without fetching. They may not represent the other developer's latest work.
 - Those two commits change `.vscode/mcp.json` and the pre-existing `20261001000000_support_impersonation_tutorials/migration.sql`; neither path overlaps this branch's changed files. The latter adds `ON UPDATE CASCADE` to `UserTutorial.userId`. Resolve the prerequisite migration's applied checksum/history deliberately, then validate the combined migration stack. Do not rewrite an already-applied migration casually.
 - Before the eventual integration, compare against the actual agreed target and the other developer's latest changes. The conflict classifications below describe this audited comparison, not a guarantee of conflict-free integration.
@@ -36,12 +36,13 @@ Changes to tasks, meetings, applications, interview rooms and search are necessa
 | `523fe94` | Complete local onboarding E2E and native PostgreSQL validation. |
 | `522a219` | Chrome file upload and repeated-import validation. |
 | `734e2f8` | Responsive/accessibility polish and profile-entry consistency. |
+| `032c31e` | Integration audit and merge guide; documentation only. |
 
 ## Changed-file classification
 
-Primary categories distinguish textual conflict risk from security importance: a new isolated authorization file still requires security review. Configuration files also require careful conflict resolution. Each of the 97 changed paths appears once below.
+Primary categories distinguish textual conflict risk from security importance: a new isolated authorization file still requires security review. Configuration files also require careful conflict resolution. Each of the 98 changed paths appears once below.
 
-### 1. New isolated files (65)
+### 1. New isolated files (66)
 
 | File | Change to preserve / review |
 | --- | --- |
@@ -63,6 +64,7 @@ Primary categories distinguish textual conflict risk from security importance: a
 | `components/platform-organization-onboarding.tsx` (A) | Existing visual-system UI for platform organization onboarding. |
 | `components/roster-csv-importer.tsx` (A) | Existing visual-system UI for roster csv importer. |
 | `docs/club-onboarding-database.md` (A) | Feature documentation: club onboarding database. |
+| `docs/club-onboarding-merge-guide.md` (A) | Integration inventory, conflict preservation, environment names, validation and rollback guide; documentation only. |
 | `docs/dashboard-organization-invitations.md` (A) | Feature documentation: dashboard organization invitations. |
 | `docs/guided-organization-onboarding.md` (A) | Feature documentation: guided organization onboarding. |
 | `docs/onboarding-end-to-end-validation.md` (A) | Feature documentation: onboarding end to end validation. |
