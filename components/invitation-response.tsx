@@ -36,19 +36,20 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
   }
   return (
     <div className="space-y-3">
-      <div className="flex gap-3">
-        <Button disabled={busy} onClick={() => void respond(true)}>
+      <div className="flex flex-wrap gap-3">
+        <Button className="min-h-11 flex-1 sm:flex-none" disabled={busy} onClick={() => void respond(true)}>
           {busy ? "Responding…" : owner ? "Claim organization" : "Accept invitation"}
         </Button>
         <Button
           variant="outline"
+          className="min-h-11 flex-1 sm:flex-none"
           disabled={busy}
           onClick={() => void respond(false)}
         >
           Decline
         </Button>
       </div>
-      {message && <p role="alert">{message}</p>}
+      {message && <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm leading-6 text-destructive">{message}</p>}
     </div>
   );
 }

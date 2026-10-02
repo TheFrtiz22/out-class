@@ -42,28 +42,28 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
     } finally { working.current = false; setBusy(null); }
   }
   return <li className="rounded-xl border bg-card p-4 sm:p-5" aria-busy={!!busy}>
-    <article className="flex flex-col gap-4 sm:flex-row sm:items-center">
+    <article className="flex flex-col gap-4 lg:flex-row lg:items-center">
       <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
         <ClubLogo clubId={invitation.club.id} logoUrl={invitation.club.logoUrl} color={invitation.club.color || "#142d4e"} text={invitation.club.name.slice(0, 2)} />
         <div className="min-w-0 space-y-1.5">
-          <h3 className="break-words font-medium">{invitation.club.name}</h3>
+          <h3 className="break-words text-base font-semibold leading-6">{invitation.club.name}</h3>
           <p className="text-sm leading-6 text-muted-foreground">{owner ? `You’re the designated administrator for ${invitation.club.name}.`
             : invitation.requestedRole === "MEMBER" ? `${invitation.club.name} added you as a member.` : `${invitation.club.name} invited you to join as ${role}.`}</p>
           <p className="text-xs leading-5 text-muted-foreground">{owner ? "Claiming lets you manage members, roles, applications, recruiting, interviews, and organization settings." : "Accept to join this organization."}</p>
           {invitation.dismissedAt && <p className="text-xs font-medium text-muted-foreground">Hidden from your dashboard · still pending</p>}
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap gap-2 sm:max-w-64" aria-label={`Respond to ${invitation.club.name}`}>
-        <Button className="min-h-11 flex-1 sm:flex-none" disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
+      <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-72" aria-label={`Respond to ${invitation.club.name}`}>
+        <Button className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 sm:flex-none" disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
           {busy === "accepted" ? owner ? "Claiming…" : "Accepting…" : owner ? "Claim organization" : "Accept"}
         </Button>
-        <Button className="min-h-11 flex-1 sm:flex-none" variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
+        <Button className="h-auto min-h-11 min-w-0 flex-1 whitespace-normal px-3 sm:flex-none" variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
           {busy === "dismissed" ? "Hiding…" : busy === "restored" ? "Restoring…" : invitation.dismissedAt ? "Show on dashboard" : "Not now"}
         </Button>
-        {allowDecline && <Button className="min-h-11" variant="ghost" disabled={!!busy} onClick={() => setConfirmDecline(true)}>Decline</Button>}
+        {allowDecline && <Button className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>
     </article>
-    {confirmDecline && <div className="mt-4 space-y-3 rounded-lg border p-4">
+    {confirmDecline && <div id={`invitation-decline-${invitation.id}`} role="group" aria-label={`Confirm decline from ${invitation.club.name}`} className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-4">
       <p className="text-sm">Decline the invitation from {invitation.club.name}? You’ll need a new invitation to join later.</p>
       <div className="flex flex-wrap gap-2"><Button variant="destructive" className="min-h-11" disabled={!!busy} onClick={() => void respond("declined")}>{busy === "declined" ? "Declining…" : "Confirm decline"}</Button><Button variant="outline" className="min-h-11" disabled={!!busy} onClick={() => setConfirmDecline(false)}>Cancel</Button></div>
     </div>}
