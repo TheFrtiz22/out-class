@@ -10,6 +10,7 @@ function harness(api,props={}) {
     file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;
     const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
     new Function('require','module','exports',code)(name=>{
+      if(name==='@/components/invitation-email-controls')return{InvitationEmailControls:'InvitationEmailControls'};
       if(name==='react')return{useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],value=>state[i]=typeof value==='function'?value(state[i]):value];},useRef:initial=>{const i=cursor++;if(!(i in state))state[i]={current:initial};return state[i];}};
       if(name==='@/actions/roster-import')return api;
       if(name.startsWith('@/components/ui/'))return new Proxy({},{get:(_,key)=>key});

@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { randomUUID } from "node:crypto";
+import { resendOrganizationInvitation } from "@/actions/invitation-emails";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -97,6 +97,7 @@ export async function inviteOrganizationMember(input: unknown) {
 
 export async function manageOrganizationInvitation(input: unknown) {
   const data = z.object({ clubId: id, invitationId: id, action: z.enum(["REVOKE", "RESEND"]) }).strict().parse(input);
+  if (data.action === "RESEND") return resendOrganizationInvitation(data.clubId, data.invitationId);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
@@ -105,14 +106,6 @@ export async function manageOrganizationInvitation(input: unknown) {
     if (data.action === "REVOKE") {
       await tx.invitationDelivery.updateMany({ where: { invitationId: invitation.id, status: "QUEUED" }, data: { status: "CANCELLED" } });
       await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "REVOKED", revokedAt: new Date() } });
-    } else {
-      if (invitation.expiresAt <= new Date()) throw new Error("Expired invitations must be replaced with a new invitation.");
-      // Preserve the original grant authority. Queue only; a future delivery worker sends email.
-      const pending = await tx.invitationDelivery.findFirst({ where: { invitationId: invitation.id, status: { in: ["QUEUED", "SENDING"] } } });
-      if (pending) return { queued: true, reused: true };
-      const recent = await tx.invitationDelivery.findFirst({ where: { invitationId: invitation.id, createdAt: { gt: new Date(Date.now() - 60000) } } });
-      if (recent) throw new Error("Wait a minute before requesting another resend.");
-      await tx.invitationDelivery.create({ data: { invitationId: invitation.id, requestedById: user.id, recipientEmail: invitation.email, idempotencyKey: randomUUID() } });
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: invitation.id, action: data.action === "REVOKE" ? "club.invite.revoke" : "club.invite.resend.request" } });
     return { queued: data.action === "RESEND", reused: false };

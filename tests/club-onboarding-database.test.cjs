@@ -13,7 +13,7 @@ test('full migration stack preserves legacy data and enforces onboarding constra
   const db = new PGlite();
   t.after(() => db.close());
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
-  for (const name of migrations.filter(n => n !== onboarding)) await db.exec(read(name));
+  for (const name of migrations.filter(n => n < onboarding)) await db.exec(read(name));
   await db.exec(`
     INSERT INTO "User" (id,email) VALUES ('owner','owner@virginia.edu'),('member','member@virginia.edu'),('other','other@virginia.edu');
     INSERT INTO "Club" (id,slug,name,tagline,description,color,category) VALUES ('club','onboarding-test','Club','','','#ffffff','Academic');
@@ -29,6 +29,7 @@ test('full migration stack preserves legacy data and enforces onboarding constra
     ALTER DEFAULT PRIVILEGES GRANT ALL ON TABLES TO anon, authenticated;
   `);
   await db.exec(read(onboarding));
+  for (const name of migrations.filter(n => n > onboarding)) await db.exec(read(name));
   const one = async sql => (await db.query(sql)).rows[0];
   assert.equal((await one(`SELECT "schoolId" FROM "Club" WHERE id='club'`)).schoolId, 'school-uva');
   assert.deepEqual(await one(`SELECT role,"accessRole",permissions,status FROM "ClubMember" WHERE id='owner-member'`), {

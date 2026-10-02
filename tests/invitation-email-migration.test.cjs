@@ -1,0 +1,13 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{PGlite}=require('@electric-sql/pglite');
+test('email migration backfills metadata, coalesces legacy queues, constrains counts and prevents active duplicate attempts',async t=>{
+ const db=new PGlite();t.after(()=>db.close());await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');const latest='20261002000000_organization_invitation_emails';
+ for(const name of fs.readdirSync('prisma/migrations').sort()){const file=path.join('prisma/migrations',name,'migration.sql');if(name<latest&&fs.existsSync(file))await db.exec(fs.readFileSync(file,'utf8'));}
+ await db.exec(`INSERT INTO "User" (id,email) VALUES ('owner','owner@virginia.edu'); INSERT INTO "Club" (id,name,slug,tagline,description,color,category) VALUES ('club','Club','email-migration','','','#fff','Academic'); INSERT INTO "ClubMember" (id,"userId","clubId","isOwner") VALUES ('membership','owner','club',true); INSERT INTO "ClubInvitation" (id,"clubId",email,"invitedBy","expiresAt") VALUES ('invite','club','member@virginia.edu','owner',CURRENT_TIMESTAMP+interval '7 days'); INSERT INTO "InvitationDelivery" (id,"invitationId","requestedById","recipientEmail","idempotencyKey",status,"sentAt") VALUES ('sent','invite','owner','member@virginia.edu','sent','SENT',CURRENT_TIMESTAMP); INSERT INTO "InvitationDelivery" (id,"invitationId","requestedById","recipientEmail","idempotencyKey") VALUES ('q1','invite','owner','member@virginia.edu','q1'),('q2','invite','owner','member@virginia.edu','q2');`);
+ await db.exec(fs.readFileSync(path.join('prisma/migrations',latest,'migration.sql'),'utf8'));
+ const row=(await db.query('SELECT * FROM "ClubInvitation" WHERE id=\'invite\'')).rows[0];assert.equal(row.emailSendCount,1);assert.ok(row.firstEmailSentAt);assert.equal(+row.firstEmailSentAt,+row.lastEmailSentAt);
+ assert.equal((await db.query('SELECT count(*)::int AS n FROM "InvitationDelivery" WHERE status=\'QUEUED\'')).rows[0].n,1);
+ await assert.rejects(db.exec(`INSERT INTO "InvitationDelivery" (id,"invitationId","requestedById","recipientEmail","idempotencyKey") VALUES ('q3','invite','owner','member@virginia.edu','q3')`),/unique constraint/);
+ await assert.rejects(db.exec(`UPDATE "ClubInvitation" SET "emailSendCount"=-1 WHERE id='invite'`),/check constraint/);
+ await assert.rejects(db.exec(`UPDATE "ClubInvitation" SET "lastEmailSentAt"=NULL WHERE id='invite'`),/check constraint/);
+ for(const role of ['anon','authenticated'])assert.equal((await db.query(`SELECT has_table_privilege($1,'"InvitationDelivery"','INSERT') AS allowed`,[role])).rows[0].allowed,false);
+});

@@ -387,6 +387,9 @@ model AuditLog {
 }
 
 model ClubInvitation {
+  firstEmailSentAt    DateTime?
+  lastEmailSentAt     DateTime?
+  emailSendCount      Int                       @default(0)
   schoolId           String                    @default("school-uva")
   school             School                    @relation(fields: [schoolId], references: [id], onDelete: Restrict)
   schoolIdentityId   String?
@@ -687,6 +690,7 @@ model InvitationDelivery {
   updatedAt         DateTime @default(now()) @updatedAt
   @@index([status, nextAttemptAt])
   @@index([invitationId, createdAt])
+  @@index([requestedById, createdAt])
 }
 
 enum MembershipAccessRole {

@@ -105,6 +105,7 @@ function importResult(rows: RosterImportRow[], completed: boolean, reused: boole
   const count = (status: RosterRowStatus) => rows.filter(row => row.status === status).length;
   const created = count("INVITATION_CREATED");
   return {
+    existingUsers: rows.filter(row => row.status === "INVITATION_CREATED" && row.matchedUserId).length,
     created, alreadyMember: count("ALREADY_MEMBER"), alreadyInvited: count("INVITATION_REUSED"),
     invalid: count("INVALID"), duplicates: count("DUPLICATE_ROW"), failed: count("FAILED"),
     total: rows.length, processed: rows.length - count("VALID"), skipped: rows.length - created - count("VALID"), completed, reused,

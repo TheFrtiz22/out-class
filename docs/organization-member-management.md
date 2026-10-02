@@ -63,15 +63,11 @@ Additional CSV uploads reuse the additive importer and default MEMBER role.
 Successful completion refreshes the directory without repeating the import.
 
 Revoke and resend revalidate the current actor, invitation scope/state, role, and
-capabilities server-side. Resend creates a durable InvitationDelivery QUEUED record,
-with repeated requests coalesced under the organization lock and a one-minute
-cooldown for recently completed deliveries. Revocation cancels queued deliveries.
-Expired invitations must be revoked and replaced; terminal states cannot resend.
-
-**Email sending is not configured.** The UI explicitly says that resend is queued
-and offers the existing identity-verified invitation link. A future delivery worker
-must revalidate invitation state, expiry, recipient, and original grant authority
-before sending; queued status must never be presented as sent.
+capabilities server-side. Resend uses the shared SMTP delivery outbox with a
+15-minute cooldown and hourly limits. Revocation cancels queued deliveries.
+See [organization invitation emails](organization-invitation-emails.md) for
+explicit send controls, provider configuration, delivery metadata and uncertain
+SMTP outcome handling.
 
 ## Validation
 

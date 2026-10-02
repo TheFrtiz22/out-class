@@ -14,7 +14,7 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
   $queryRaw:async()=>{state.locks++;},
   club:{findUniqueOrThrow:async()=>({schoolId:'school-uva'})},
   schoolIdentifierType:{findMany:async args=>{state.reads.push(args);return[];}},
-  user:{findUniqueOrThrow:async({where})=>state.members.find(m=>m.userId===where.id).user},
+  user:{findUnique:async()=>({disabledAt:null}),findUniqueOrThrow:async({where})=>state.members.find(m=>m.userId===where.id).user},
   clubMember:{
    findUnique:async({where})=>state.members.find(m=>m.clubId===where.userId_clubId.clubId&&m.userId===where.userId_clubId.userId)||null,
    findFirst:async({where})=>state.members.find(m=>m.id===where.id&&m.clubId===where.clubId&&(!where.status||m.status===where.status)&&(!where.user||!m.user.disabledAt))||null,
@@ -28,12 +28,12 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
    update:async({where,data})=>{assert.equal(where.id,inviteId);Object.assign(state.invitation,data);},
    updateMany:async({where,data})=>{assert.equal(where.clubId,clubId);assert.equal(where.status,'PENDING');Object.assign(state.invitation,data);},
   },
-  invitationDelivery:{findFirst:async({where})=>state.deliveries.find(d=>d.invitationId===where.invitationId&&(!where.status||where.status.in.includes(d.status))&&(!where.createdAt||d.createdAt>where.createdAt.gt))||null,create:async({data})=>state.deliveries.push({...data,status:'QUEUED',createdAt:new Date()}),updateMany:async()=>{}},
+  invitationDelivery:{findUnique:async({where})=>state.deliveries.find(d=>d.idempotencyKey===where.idempotencyKey)||null,count:async()=>state.deliveries.length,findFirst:async({where})=>state.deliveries.find(d=>d.invitationId===where.invitationId&&(!where.status||(where.status.in?where.status.in.includes(d.status):d.status!==where.status.not))&&(!where.createdAt||d.createdAt>where.createdAt.gt))||null,create:async({data})=>state.deliveries.push({...data,status:'QUEUED',createdAt:new Date()}),updateMany:async()=>{}},
   auditLog:{create:async({data})=>{if(state.failAudit)throw Error('Audit failure');state.audits.push(data);}},
  };
  let tail=Promise.resolve();const prisma={$transaction:fn=>{const result=tail.then(async()=>{const snapshot=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,snapshot);throw e;}});tail=result.catch(()=>{});return result;}};
  let manual;
- const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma},'@/actions/club-onboarding':{createClubIdentityInvitation:async input=>{manual=input;return{id:inviteId};}}});
+ const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma},'@/utils/email':{invitationEmailConfig:()=>{}},'@/actions/club-onboarding':{createClubIdentityInvitation:async input=>{manual=input;return{id:inviteId};}}});
  return{state,api,manual:()=>manual};
 }
 
@@ -123,8 +123,8 @@ test('manual member creation delegates to identity invitations and rejects role/
 test('resend queues once under repeated/concurrent clicks and never claims email was sent',async()=>{
  const h=harness();const input={clubId,invitationId:inviteId,action:'RESEND'};
  const results=await Promise.all([h.api.manageOrganizationInvitation(input),h.api.manageOrganizationInvitation(input)]);
- assert.equal(h.state.deliveries.length,1);assert.ok(results.every(r=>r.queued));assert.equal(h.state.deliveries[0].status,'QUEUED');assert.equal(h.state.audits.length,1);
- h.state.deliveries[0].status='SENT';await assert.rejects(h.api.manageOrganizationInvitation(input),/Wait a minute/);
+ assert.equal(h.state.deliveries.length,1);assert.ok(results.every(r=>r.queued||r.reused));assert.equal(h.state.deliveries[0].status,'QUEUED');assert.equal(h.state.audits.length,1);
+ h.state.deliveries[0].status='SENT';await assert.rejects(h.api.manageOrganizationInvitation(input),/Wait 15 minutes/);
 });
 
 test('revoke and resend enforce invitation scope, state, expiry, role and capability boundaries',async()=>{
@@ -133,7 +133,7 @@ test('revoke and resend enforce invitation scope, state, expiry, role and capabi
   const h=harness();h.state.invitation.clubId=otherClub;await assert.rejects(h.api.manageOrganizationInvitation(input),/unavailable/);
   for(const status of ['ACCEPTED','DECLINED','REVOKED','EXPIRED']){h.state.invitation.clubId=clubId;h.state.invitation.status=status;await assert.rejects(h.api.manageOrganizationInvitation(input),/unavailable/);}
  }
- const h=harness();h.state.invitation.expiresAt=new Date(0);await assert.rejects(h.api.manageOrganizationInvitation({clubId,invitationId:inviteId,action:'RESEND'}),/Expired/);
+ const h=harness();h.state.invitation.expiresAt=new Date(0);await assert.rejects(h.api.manageOrganizationInvitation({clubId,invitationId:inviteId,action:'RESEND'}),/unavailable/);
  await h.api.manageOrganizationInvitation({clubId,invitationId:inviteId,action:'REVOKE'});assert.equal(h.state.invitation.status,'REVOKED');assert.ok(h.state.invitation.revokedAt instanceof Date);
 });
 
