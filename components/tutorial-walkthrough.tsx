@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleHelp, ArrowLeft, ArrowRight, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTutorial, saveTutorial } from "@/actions/tutorials";
+import { getTutorial, saveTutorial } from "@/lib/workspace-api";
 import { tutorialSteps, type TutorialExperience, type TutorialProgress } from "@/lib/tutorials";
 
 type Step = (typeof tutorialSteps)[TutorialExperience][number];
@@ -53,14 +53,14 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
     finally { setBusy(false); }
   }
   return <>
-    {!open && <div className="fixed bottom-4 left-4 z-30 max-w-[calc(100vw-2rem)]">
+    {!open && <div className="fixed bottom-20 left-4 lg:bottom-4 z-30 max-w-[calc(100vw-2rem)]">
       <Button variant="outline" className="bg-card shadow-sm" disabled={busy || (!progress && !error)} onClick={() => void change("restart", 0)}><CircleHelp className="size-4" />Tutorial help</Button>
       {error && <p role="status" className="mt-2 max-w-xs rounded border bg-card p-3 text-xs">{error}</p>}
     </div>}
     {open && <>
       {rect && <div aria-hidden="true" className="pointer-events-none fixed z-30 rounded-lg ring-2 ring-brand-orange ring-offset-4 ring-offset-background" style={{ top: Math.max(rect.top, 0), left: rect.left, width: rect.width, height: rect.height }} />}
       <div ref={card} role="dialog" aria-modal="false" aria-labelledby="tutorial-title" aria-describedby="tutorial-description" tabIndex={-1}
-        className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] max-w-sm max-h-[65dvh] overflow-y-auto rounded-xl border bg-card p-5 text-card-foreground shadow-xl focus-visible:outline-2 focus-visible:outline-ring sm:bottom-6 sm:right-6"
+        className="fixed bottom-20 right-4 lg:bottom-4 z-40 w-[calc(100vw-2rem)] max-w-sm max-h-[65dvh] overflow-y-auto rounded-xl border bg-card p-5 text-card-foreground shadow-xl focus-visible:outline-2 focus-visible:outline-ring lg:bottom-6 sm:right-6"
         onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); void change("skip"); } }}>
         <div className="flex items-center justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{experience === "student" ? "Your OutClass guide" : "Leader workspace guide"}</p><Button variant="ghost" size="icon" aria-label="Skip tutorial" disabled={busy} onClick={() => void change("skip")}><X className="size-4" /></Button></div>
         <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">Step {stepIndex + 1} of {steps.length}{preview ? " · Support preview (not saved)" : ""}</p>

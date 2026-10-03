@@ -1,5 +1,12 @@
 import { demoStore } from "./store"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
+// Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
+function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
+  return { ...booking, startTime: new Date(booking.startTime).toISOString(), endTime: new Date(booking.endTime).toISOString() }
+}
+function presentSlot(slot: import("@/lib/interview-rooms").RoomSlot) {
+  return { ...slot, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString() }
+}
 function manager(clubId: string) {
   const s = demoStore.get()
   if (s.perspective.role !== "leader" || clubId !== s.clubs[0].id) throw new Error("Choose the MII manager workspace.")
@@ -8,7 +15,7 @@ function manager(clubId: string) {
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const s = manager(clubId), club = s.clubs.find(c => c.id === clubId)!
   const bookings = (s.roomBookings ?? []).filter(b => (s.interviewRooms ?? []).some(r => r.id === b.roomId && r.clubId === clubId))
-  return { clubName: club.name, rounds: club.rounds.map(r => ({ id: r.id, name: r.name })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...slot, booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings }
+  return { clubName: club.name, rounds: club.rounds.map(r => ({ id: r.id, name: r.name })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(presentBooking) }
 }
 export async function createInterviewRoom(raw: RoomInput) {
   const input = roomInputSchema.parse(raw), s = manager(input.clubId)
@@ -34,7 +41,8 @@ function ownApplication(id: string) {
 }
 export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
   const app = ownApplication(applicationId), s = demoStore.get(), club = s.clubs.find(c => c.id === app.clubId)!
-  return { applicationId, clubName: club.name, roundName: club.rounds.find(r => r.id === app.roundId)!.name, booking: s.roomBookings?.find(b => b.applicationId === app.id && b.roundId === app.roundId) ?? null, rooms: (s.interviewRooms ?? []).filter(r => r.clubId === app.clubId && r.roundId === app.roundId && r.isOpen).map(r => ({ ...r, panelMemberIds: [], slots: r.slots.filter(slot => +new Date(slot.startTime) > Date.now()).map(slot => ({ ...slot, booked: (s.roomBookings ?? []).filter(b => b.slotId === slot.id).length })) })).filter(r => r.slots.length) }
+  const booking = s.roomBookings?.find(b => b.applicationId === app.id && b.roundId === app.roundId)
+  return { applicationId, clubName: club.name, roundName: club.rounds.find(r => r.id === app.roundId)!.name, booking: booking ? presentBooking(booking) : null, rooms: (s.interviewRooms ?? []).filter(r => r.clubId === app.clubId && r.roundId === app.roundId && r.isOpen).map(r => ({ ...r, panelMemberIds: [], slots: r.slots.filter(slot => +new Date(slot.startTime) > Date.now()).map(slot => ({ ...presentSlot(slot), booked: (s.roomBookings ?? []).filter(b => b.slotId === slot.id).length })) })).filter(r => r.slots.length) }
 }
 export async function reserveInterview({ applicationId, slotId }: { applicationId: string; slotId: string }) {
   const app = ownApplication(applicationId), s = demoStore.get(), room = s.interviewRooms?.find(r => r.slots.some(slot => slot.id === slotId)), slot = room?.slots.find(slot => slot.id === slotId)
@@ -51,7 +59,7 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
     s.roomBookings ??= []
     s.roomBookings = s.roomBookings.filter(b => b.id !== existing?.id)
     s.slots = s.slots.filter(slot => slot.id !== existing?.id)
-    s.roomBookings.push({ id, applicationId, slotId, roomId: room.id, roundId: room.roundId, candidate: `${s.students[0].profile.firstName} ${s.students[0].profile.lastName}`, startTime: slot.startTime, endTime: slot.endTime, location: room.location })
+    s.roomBookings.push({ id, applicationId, slotId, roomId: room.id, roundId: room.roundId, candidate: `${s.students[0].profile.firstName} ${s.students[0].profile.lastName}`, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), location: room.location })
     s.slots.push({ id, clubId: room.clubId, applicationId, startTime: new Date(slot.startTime), endTime: new Date(slot.endTime), location: room.location, interviewerId: room.panelMemberIds[0] || s.memberships.find(m => m.clubId === room.clubId)!.id })
   })
   return { id }

@@ -1,54 +1,7 @@
 const { test } = require("node:test")
 const assert = require("node:assert/strict")
-const fs = require("node:fs")
-const path = require("node:path")
-const ts = require("typescript")
-function harness() {
-  const cache = {}
-  let calls = 0
-  global.localStorage = {
-    data: new Map(),
-    getItem(k) {
-      return this.data.get(k) || null
-    },
-    setItem(k, v) {
-      this.data.set(k, v)
-    },
-    removeItem(k) {
-      this.data.delete(k)
-    },
-  }
-  function load(file) {
-    file = path.resolve(file)
-    if (cache[file]) return cache[file].exports
-    const mod = { exports: {} }
-    cache[file] = mod
-    const code = ts.transpileModule(fs.readFileSync(file, "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText
-    new Function("require", "module", "exports", code)(
-      (name) => {
-        if (name.startsWith("@/actions/"))
-          return new Proxy(
-            {},
-            {
-              get: () => async () => {
-                calls++
-                throw new Error("real server invoked")
-              },
-            },
-          )
-        if (name.startsWith("@/")) return load(name.slice(2) + ".ts")
-        if (name.startsWith(".")) return load(path.resolve(path.dirname(file), name) + ".ts")
-        return require(name)
-      },
-      mod,
-      mod.exports,
-    )
-    return mod.exports
-  }
-  return { load, calls: () => calls }
-}
+const { harness } = require("./helpers/demo-harness.cjs")
+
 test("deterministic season: unique fictional people, club/application/slot/reviewer relationships", () => {
   const h = harness(),
     { createDemoSeed } = h.load("lib/demo/seed.ts")
@@ -408,7 +361,7 @@ test('persisted recruiting rules stay inside Demo, guard previews, retain flags,
  demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}})
  const statuses=demoStore.get().applications.map(a=>a.status)
  const thresholds={minGpa:4,minSat:null,minAct:null}
- await api.saveRecruitingRule({...scope,thresholds,expectedRevision:0})
+ await api.saveRecruitingRule({...scope,thresholds,expectedRevision:1})
  assert.equal((await api.getRecruitingRules(club.id)).rounds.find(r=>r.id===round.id).screeningRule.minGpa,4)
  const preview=await api.previewRecruitingRule(scope)
  assert.ok(preview.results.some(result=>result.outcome==='flag'))
@@ -419,18 +372,19 @@ test('persisted recruiting rules stay inside Demo, guard previews, retain flags,
  assert.equal(demoStore.get().recruitingRuleAudit.length,2)
  demoStore.stop();demoStore.start()
  assert.ok((await api.getRecruitingRuleFlags(scope)).length>0)
- await api.saveRecruitingRule({...scope,thresholds:{...thresholds,minGpa:3.5},expectedRevision:1})
+ await api.saveRecruitingRule({...scope,thresholds:{...thresholds,minGpa:3.5},expectedRevision:2})
  await assert.rejects(api.applyRecruitingRuleFlags({...scope,fingerprint:preview.fingerprint}),/changed/)
  assert.equal((await api.getRecruitingRuleFlags(scope)).length,0)
  await assert.rejects(api.saveRecruitingRule({...scope,clubId:demoStore.get().clubs[1].id,thresholds,expectedRevision:0}),/leader/)
  demoStore.reset()
- assert.equal(demoStore.get().recruitingRules.length,0)
+ assert.equal(demoStore.get().recruitingRules.length,1)
+ assert.equal(demoStore.get().recruitingRules[0].minGpa,3.3)
  assert.equal(demoStore.get().recruitingFlags.length,0)
  assert.equal(demoStore.get().recruitingRuleAudit.length,0)
  assert.equal(h.calls(),0)
 })
 
-test("published demo club branding survives reload and reaches Discover without live actions", async () => {
+test("published demo club branding survives reload and reaches Explore without live actions", async () => {
   const h = harness()
   const { demoStore, demoDirectory } = h.load("lib/demo/store.ts")
   const { profileDraft } = h.load("lib/club-marketing.ts")
@@ -451,7 +405,7 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts')
  demoStore.start()
  let clubId,roundId,applicationId
- demoStore.mutate(s=>{const c=s.clubs[0];clubId=c.id;roundId=c.rounds[0].id;s.perspective={role:'leader',clubId};const app=s.applications.find(a=>a.clubId===clubId&&a.studentId===s.students[0].id);applicationId=app.id;app.status='INTERVIEWING';app.roundId=roundId;s.slots=s.slots.filter(slot=>slot.applicationId!==applicationId)})
+ demoStore.mutate(s=>{const c=s.clubs[0];clubId=c.id;roundId=c.rounds[0].id;s.perspective={role:'leader',clubId};const app=s.applications.find(a=>a.clubId===clubId&&a.studentId===s.students[0].id);applicationId=app.id;app.status='INTERVIEWING';app.roundId=roundId;s.slots=s.slots.filter(slot=>slot.applicationId!==applicationId);s.interviewRooms=[];s.roomBookings=[]})
  await api.createInterviewRoom({clubId,roundId,name:'Test room',location:'Test Hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-09-07'],start:'10:00',end:'12:00',duration:20,buffer:0,capacity:1,panelMemberIds:[]})
  let workspace=await api.getRoomWorkspace(clubId);assert.equal(workspace.rooms.length,1);assert.equal(workspace.rooms[0].slots.length,6)
  const slots=workspace.rooms[0].slots
@@ -467,7 +421,7 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  assert.equal(h.calls(),0)
 })
 
-test("persisted voting demo uses the same boundary, holds and two-pass history survive refresh, reset clears sessions", async () => {
+test("persisted voting demo uses the same boundary, holds and two-pass history survive refresh, reset restores seeded sessions", async () => {
   const h=harness(), {demoStore}=h.load('lib/demo/store.ts'), api=h.load('lib/workspace-api.ts');
   demoStore.start(); const clubId=demoStore.get().clubs[0].id;
   await assert.rejects(api.getVotingWorkspace(clubId),/leader/);
@@ -475,7 +429,7 @@ test("persisted voting demo uses the same boundary, holds and two-pass history s
   const id=await api.seedVotingDemo(clubId), view=await api.getVotingWorkspace(clubId,id);
   assert.equal(view.session.passes.length,2);assert.equal(view.summary.passed,1);assert.ok(view.summary.held>=1);assert.ok(view.summary.notPassed>=1);assert.equal(view.summary.target,2);assert.ok(view.session.passes[0].candidates.every(c=>c.ballots.length===1));
   const ballot=JSON.stringify(view.session.passes);demoStore.start();assert.equal(JSON.stringify((await api.getVotingWorkspace(clubId,id)).session.passes),ballot);assert.equal(h.calls(),0);
-  demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).session,null);
+  demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).sessions.length,2);assert.equal((await api.getVotingWorkspace(clubId)).session.currentPass,2);
 });
 
 test('Explore and Corkboard share deterministic demo clubs; saved items survive refresh/reset and never call production',async()=>{

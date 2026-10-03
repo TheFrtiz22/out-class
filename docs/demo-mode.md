@@ -21,6 +21,8 @@ No environment values or deployment settings were changed by this implementation
 
 Turning ON sets an HttpOnly, same-site cookie for eight hours and reloads into the isolated workspace. OFF removes that cookie and reloads the real application, preserving the actual login/session. The original local-preview browser state is not overwritten. Disabling demo access on the server removes stale demo cookies when the user returns. Other tabs receive an ON/OFF notification and reload; the presentation itself is intended for one active editing tab.
 
+Current-product coverage and final verification are documented in [Prompt 36 integration audit](product-integration-audit.md). Earlier numbered verification results below are historical.
+
 ## Presenting
 
 The account workspace switcher exposes **Personal / Student** and **MII — Club workspace** for the same fictional student. The demo menu exposes **Reset Demo**. Demo leadership is limited to MII; other clubs remain available for discovery and applications. Perspective changes remount view-local state but retain the shared demo records. Reset reconstructs the same season using its stored date anchor, clears demo customizations, and returns to the sample student. Dates are relative to the first initialization date; reset preserves that date for deterministic presentations. To start a later season with a new anchor, remove only `outclass.presentation.v1` from this browser while demo is off.
@@ -28,10 +30,10 @@ The account workspace switcher exposes **Personal / Student** and **MII — Club
 Suggested walkthrough:
 
 1. Student Home: priorities, mixed application states, meetings, deadlines and updates.
-2. Discover: sample curated selection and 20 club profiles, questions, dates and subscriptions.
+2. Explore: sample curated selection, category/search/filter browsing, 20 club profiles, public events, and Corkboard saves.
 3. Applications: finish the AIF draft, save it, then submit it.
 4. Switch to MII’s club workspace: find an applicant, review responses, score or advance the round.
-5. Voting mode: record an accepted/not-selected decision, then switch to student to see the outcome.
+5. Recruitment voting: inspect seeded history and Pass 2, record ballots, review Hold/Fringe, run further passes, finish/reopen, and explicitly publish before switching to Student to see final statuses.
 6. MII club workspace → Interviews: release/reassign a slot, open its candidate in Interview Mode, save notes and an overall 1–10 evaluation.
 7. Student Calendar and Applications show the same scheduled slot. Club Settings shows the fictional member directory, question set, rounds and sample offer target.
 8. Reset Demo and repeat without affecting real records.
@@ -45,7 +47,7 @@ Suggested walkthrough:
 - `lib/demo/validate.ts`: validates saved snapshots and relationships before hydration; incompatible/damaged snapshots regenerate safely.
 - `lib/workspace-api.ts`: typed adapter around existing server actions. OFF forwards to the original functions; ON uses the local graph and never calls those actions. Draft validation and word limits, 1–10 scores, independent round/status changes, expected-status decision conflicts and club scoping remain intact.
 - `contexts/demo-context.tsx` manages readiness, mode/perspective/reset and storage errors. `AuthProvider` presents a synthetic identity only inside demo; Supabase identity and credentials are untouched.
-- Existing student/application/profile/discovery/CRM/interview/board-review components consume the adapter. `components/demo-workspace.tsx` provides compact demo-only schedule, question-guide, offer-target and membership projections where the real legacy builders lack connected persistence.
+- Existing student/application/profile/Explore/CRM/interview/voting components consume the adapter. `components/demo-workspace.tsx` provides compact demo-only schedule, question-guide, offer-target and membership projections where the real legacy builders lack connected persistence.
 - `ApplicationStateProvider` derives demo calendar/notifications from the shared records and never reads/writes the normal preview key while demo is active. Subscriptions/read states/RSVP state persist in the canonical demo snapshot. Customization uses a separate demo key.
 
 The normalized records are the source of truth: application answers, status, current round, evaluations and interview slot ownership are shared across perspectives. Scheduling an applicant changes their interview status/round and calendar booking; opening that slot targets the same candidate in the existing Interview Mode. Decisions update the student record and notification projection. Past slots remain history; decisions do not silently erase bookings.
@@ -60,10 +62,10 @@ Public club deep links redirect into the demo directory while authorized demo mo
 
 ## Honest implementation boundaries
 
-- Voting Mode demonstrates the existing president's board-decision workflow. It does **not** create real-time ballots, real member votes, transcripts, recording or AI.
+- Recruitment voting uses the current session/pass/immutable-ballot engine through its isolated demo adapter. It demonstrates multiple passes, held candidates, target progress, sealed history, and explicit publication. Demo ballots remain fictional and local; there are no recordings, transcripts, or AI.
 - Rubric guidance is category-specific sample text. Persistence uses the actual overall 1–10 evaluation + notes model; there are no invented weighted criterion scores.
-- Offer targets and sample deadlines are demo-only fields, clearly labeled. They do not add a real recruitment-cycle or eligibility backend.
-- Scheduling is local slot assignment, not a connected availability/email/calendar service. The member directory reflects canonical fictional memberships; it does not send invitations or edit real permissions.
+- Sample offer projections/deadlines remain labeled demo fields. Voting target sizes use the current session configuration and never automatically admit a class.
+- Room booking, rescheduling and cancellation use the existing room adapter and calendar projections. Demo changes stay local; no external email/calendar service is invoked. The member directory reflects canonical fictional memberships; it does not send invitations or edit real permissions.
 - LinkedIn import, résumé parsing and real file uploads are not simulated as working. A safe sample résumé document is provided.
 - Legacy broadcast/screening/publishing builders remain labeled previews, not newly implemented production functionality. The demo includes application-driven updates/notifications; external delivery remains absent.
 - Reset/persistence applies to the canonical presentation and view-local state, not a real multi-presenter transactional backend. Use one active presentation tab for edits.
@@ -82,14 +84,14 @@ See [authorization architecture](authorization.md) for membership capabilities, 
 
 ## Expanded canonical season (September 2026)
 
-New presentations and **Reset Demo** load the expanded fixtures. Existing saved presentations retain edits until reset. Reset preserves the season anchor and returns to Student, clearing the selected workspace URL and customizations.
+New presentations and **Reset Demo** load the expanded fixtures. Existing saved presentations retain edits until reset. Reset preserves the season anchor, clears customizations, and navigates to canonical Student Home.
 
 - Jordan Avery remains a STUDENT, owns only MII's workspace, and is a general member of TAMID alongside an accepted TAMID application. The real workspace switcher provides Student ↔ MII Leader; no platform administrator is granted.
 - MII, GMG, and AIF are labeled fictional early-adopter examples. VCG, Common Cents, and Mergers & Acquisitions are unclaimed directory examples without members, meetings, or applications; application creation is blocked for them.
 - Club requirements cover SAT, ACT, both, either, and optional. Jordan has both scores. Review rounds start anonymous with manager-reviewed sample content; Interview rounds retain identified kits, drafts, completed notes, additional questions, overall reviews and scores.
 - Each claimed club has two historical interest meetings, an interest meeting on the anchor date, a historical member meeting and an upcoming member meeting. Jordan's historical MII interest attendance feeds the same meeting roster, student history and applicant attendance summary. Public directory events now use the canonical meeting records, so edits propagate there too.
 - MII has an in-progress semester project and weekly/group/cohort tasks, including overdue, submitted and reviewed assignments. Link-required work and fictional file attachments supplement written responses. File downloads resolve only to the bundled sample text document; uploads remain disabled. Membership edits update task member labels while preserving the assigned recipient set.
-- Voting mode continues to use the implemented board-decision workflow. Decisions update applications and student notifications; this does not invent a persisted ballot service.
+- Recruitment voting now uses the implemented session/pass engine. Initial data includes a published historical session and an open second pass; only explicit publication updates applications and student notifications.
 
 Regression workflows exercise attendance check-in across all three projections, public meeting creation, anonymous pipeline projections, member edits, task submission/review, safe document downloads, interview completion, decision propagation, refresh and byte-for-byte canonical reset. Saved-graph validation also rejects cross-club slots, rounds, interview sessions, mismatched task recipients and duplicate attendance.
 
@@ -98,3 +100,7 @@ Validation for this expansion: **158/158 Node tests pass**, TypeScript passes, a
 ## Explore and Corkboard
 
 Explore uses the existing demo club directory. Corkboard starts with two deterministically saved clubs and stores add/remove changes in the existing demo store through `workspace-api`. It never calls live Corkboard actions while Demo Mode is enabled. Reset restores the seeded saves; older stored demo states receive the new field without resetting other progress. See [Explore and Corkboard](explore-corkboard.md).
+
+## Final current-product expansion (Prompt 36)
+
+Reset includes connected applicant display configurations, Pros/Cons, room schedules, a self-service GMG invitation, historical/completed and draft interviews, an open two-pass MII voting session, and sealed published history. Tutorial help now works through the demo adapter and stores independent student/leader progress without invoking production actions. Original tutorial indices remain compatible. Repeated resets restore deterministic data, including Prompt 34/35 state; older templates receive missing defaults. See the integration audit for the complete workflow, fixes, tests and environmental limitations.

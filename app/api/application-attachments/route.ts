@@ -22,7 +22,7 @@ export async function GET(request: Request) {
         application: { OR: [
           { studentId: user.id },
           { status: { not: "DRAFTING" }, round: { anonymousReview: false }, club: { members: { some: {
-            userId: user.id, OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }],
+            userId: user.id, status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }],
           } } } },
         ] },
       },

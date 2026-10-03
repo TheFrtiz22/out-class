@@ -19,21 +19,11 @@ Management uses structured forms backed by the existing closed Zod operation sch
 
 Club claim approvals and membership changes are searchable in the audit log; claim events include their club context. Audit storage remains append-only through the existing database trigger. Content-change audit records log key and size rather than duplicating potentially large payloads. `demo.seed` continues to use the existing demo-template validator.
 
-## Safe view-as (read-only impersonation)
+## Customer-service impersonation
 
-The current architecture does **not** safely support delegating writable user sessions. View-as is an explicitly labeled, permission-aware support snapshot, not the complete target app UI and not a Supabase impersonation token.
+The current `/platform/view-as` flow opens the customer's real application workspace using a server-validated effective identity. Starting it requires the existing administrator allowlist, active grant, MFA AAL2, support reason, and `LOG IN AS` confirmation. Original Supabase login cookies remain intact; no customer token is minted. A hashed random support-session token binds the original actor, target and 30-minute lifetime.
 
-- Start from a user row, supply a support reason, optionally select a club UUID, and type VIEW ONLY.
-- The target must be an available non-admin account, different from the actor. A selected club must be one of the target's memberships. Target admin grants are rechecked during session reads.
-- The server records a 30-minute `PlatformViewSession` bound to the original authenticated administrator and the target. It stores only a SHA-256 hash of a random 256-bit token. Starting a new session ends/audits previous actor sessions.
-- A separate HttpOnly, SameSite=Strict cookie carries the token; it is Secure in production. Original Supabase session cookies are never replaced or deleted by this feature.
-- The persistent banner identifies the target and provides Exit view-as. Ordinary page navigation returns to the dedicated snapshot. Account reads and all other mutations are blocked; original normal/admin server guards enforce the block independently of middleware.
-- Snapshot reads recheck actor allowlist, active grant, MFA, expiry, and token/actor binding. Target suspension and selected-club membership are rechecked before displaying data. Recruitment aggregates reflect the target's review/identity permissions; private evaluations and identified applicants are not exposed through the target snapshot.
-- The cookie marker intentionally persists beyond the view's expiry until explicit exit, so an expired view never silently becomes a writable admin context. Stale, invalid, ended, or foreign-actor sessions reveal no target data.
-- Start, successful snapshot reads, explicit/expired/superseded/administrator-ended sessions, and blocked write attempts are audited with the original administrator and session ID. Middleware routes attempted mutations to an audited denial endpoint; it never executes the original action. If audit storage is unavailable, writes remain denied. Ending a verified session fails closed on database/audit failure. Unauthenticated or foreign actors can clear a stale local marker but cannot end another actor's database session; remaining expired rows can be terminated from the console.
-- Exit is a same-origin POST and does not require a still-active admin grant or MFA; it verifies the original authenticated actor before ending a database session. This allows recovery after revocation without granting access. Endpoints reject cross-origin requests.
-
-Read-only means there are no sensitive *successful* mutations under a target identity. To make a change, exit view-as and use the audited platform controls as yourself.
+Every sensitive operation uses the target's current capabilities; the administrator does not gain extra club access through impersonation. The persistent banner identifies the target and provides Exit. Support writes and sensitive reads use the existing audit infrastructure with original/effective identities and reason. Privileged authentication/admin/ownership actions are blocked, target provider verification is checked where required, and expired/revoked/forged sessions fail closed. Tutorial previews do not consume the customer's progress. See [support impersonation and tutorials](support-impersonation-tutorials.md) and the [final integration audit](product-integration-audit.md) for current behavior. The earlier read-only snapshot mode is historical and does not describe current support access.
 
 ## Deployment and verification
 

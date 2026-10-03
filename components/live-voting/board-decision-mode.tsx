@@ -34,7 +34,7 @@ function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeof Board
   const years=[...new Set(data?.graduationYears.map(a=>a.student.studentProfile?.gradYear).filter(Boolean))].sort()
   const command=(action:string,extra:Record<string,unknown>={})=>commandVotingSession({clubId,sessionId:s!.id,revision:s!.revision,action,...extra})
   return <div className="mx-auto w-full max-w-5xl space-y-5 py-5">
-    <p className="text-xs text-muted-foreground">Saved on the server · refreshes every 5 seconds · votes never change application statuses until publication.</p>
+    <p className="text-xs text-muted-foreground">{demo.isDemoEnabled ? "Saved in this isolated demo browser" : "Saved on the server"} · refreshes every 5 seconds · votes never change application statuses until publication.</p>
     {error&&<p role="alert" className="text-destructive">{error}<Button variant="ghost" onClick={()=>void refresh()}>Refresh</Button></p>}
     {!data&&!error&&<p role="status">Loading voting workspace…</p>}
     {data&&<>

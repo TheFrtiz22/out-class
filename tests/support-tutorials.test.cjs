@@ -231,7 +231,7 @@ test('tutorial UI advances, goes back, skips with Escape, restarts, highlights c
   global.ResizeObserver = class { observe() {} disconnect() {} };
   global.HTMLElement ??= class {};
   try {
-    const { TutorialWalkthrough } = loader({ react, '@/components/ui/button': { Button: 'button' }, '@/actions/tutorials': api })('components/tutorial-walkthrough.tsx');
+    const { TutorialWalkthrough } = loader({ react, '@/components/ui/button': { Button: 'button' }, '@/lib/workspace-api': api })('components/tutorial-walkthrough.tsx');
     let tree;
     const walk = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)];
     const label = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(label).join('') : node?.props ? label(node.props.children) : '';
