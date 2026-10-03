@@ -6,7 +6,6 @@ import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live
 import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitEditor } from "@/components/interview-kit-editor"
-import { TestScoreDetail } from "@/components/test-score-detail"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
 
@@ -637,9 +636,6 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 <h3 className="oc-card-heading ">Profile</h3>
                 {active.student.studentProfile ? (
                   <>
-                    <p className="whitespace-pre-wrap text-sm leading-7">
-                      {active.student.studentProfile.bio || "No introduction provided."}
-                    </p>
                     <p className="text-xs text-muted-foreground">
                       Class of {active.student.studentProfile.gradYear}
                       {active.student.studentProfile.gpa != null &&
@@ -649,7 +645,6 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                         ` · SAT ${active.student.studentProfile.satScore}`}
                     </p>
                     <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
-                    <TestScoreDetail profile={active.student.studentProfile} />
                     {active.student.studentProfile.experiences.map((item) => (
                       <div key={item.id} className="text-sm">
                         <p className="font-medium">{item.title}</p>

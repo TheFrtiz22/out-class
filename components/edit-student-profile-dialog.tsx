@@ -3,7 +3,7 @@
 import { useState, type ReactNode, type FormEvent } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
-import { getSignedUploadUrl } from "@/lib/workspace-api"
+import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import { type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {
@@ -16,11 +16,10 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
 const titles = {
-  identity: "Introduction",
+  identity: "Name & photo",
   education: "Education",
   experience: "Experience",
   links: "Links & résumé",
@@ -65,7 +64,7 @@ export function EditStudentProfileDialog({
     try {
       const payload =
         section === "identity"
-          ? { section, firstName: draft.firstName, lastName: draft.lastName, bio: draft.bio || "" }
+          ? { section, firstName: draft.firstName, lastName: draft.lastName, headshotUrl: draft.headshotUrl }
           : section === "education"
             ? {
                 section,
@@ -92,31 +91,15 @@ export function EditStudentProfileDialog({
       setBusy(false)
     }
   }
-  async function upload(file?: File) {
+  async function upload(file?: File, kind: "resume" | "headshot" = "resume") {
     if (!file || !draft) return
-    if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
-      setError("Choose a PDF up to 10 MB.")
-      return
-    }
-    setBusy(true)
-    setError("")
+    setBusy(true); setError("")
     try {
-      const { signedUrl, publicUrl } = await getSignedUploadUrl({
-        fileName: file.name,
-        bucket: "resumes",
-      })
-      const response = await fetch(signedUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": "application/pdf" },
-      })
-      if (!response.ok) throw new Error("Upload failed")
-      setDraft((current) => (current ? { ...current, resumeUrl: publicUrl } : current))
-    } catch {
-      setError("The upload failed. Your existing résumé has not changed. Try again.")
-    } finally {
-      setBusy(false)
-    }
+      const payload = new FormData(); payload.set("file", file); payload.set("kind", kind)
+      const { reference } = await uploadProfileFile(payload)
+      setDraft(current => current ? { ...current, [kind === "resume" ? "resumeUrl" : "headshotUrl"]: reference } : current)
+    } catch (e) { setError(e instanceof Error ? e.message : "Upload failed. Your saved profile has not changed.") }
+    finally { setBusy(false) }
   }
   function field(
     key: "firstName" | "lastName" | "major" | "linkedinUrl" | "resumeUrl",
@@ -129,7 +112,8 @@ export function EditStudentProfileDialog({
         <Input
           id={`profile-${key}`}
           required={required}
-          type={key.endsWith("Url") ? "url" : "text"}
+          type="text"
+          inputMode={key.endsWith("Url") ? "url" : undefined}
           value={draft?.[key] || ""}
           onChange={(event) =>
             setDraft((current) => (current ? { ...current, [key]: event.target.value } : current))
@@ -178,15 +162,18 @@ export function EditStudentProfileDialog({
                   {field("firstName", "First name", true)}
                   {field("lastName", "Last name", true)}
                   <div className="space-y-2">
-                    <Label htmlFor="profile-bio">Introduction</Label>
-                    <Textarea
-                      id="profile-bio"
-                      maxLength={3000}
-                      rows={5}
-                      placeholder="Your interests, what you’re working on, and what you hope to explore."
-                      value={draft.bio || ""}
-                      onChange={(event) => setDraft({ ...draft, bio: event.target.value })}
+                    <Label htmlFor="profile-headshot">Profile photo (JPEG, PNG or WebP, up to 5 MB)</Label>
+                    <Input
+                      id="profile-headshot"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={event => {
+                        void upload(event.target.files?.[0], "headshot")
+                        event.target.value = ""
+                      }}
                     />
+                    <Button type="button" variant="ghost" onClick={() => setDraft({ ...draft, headshotUrl: null })}>Remove photo</Button>
+                    <p className="text-xs text-muted-foreground">Save changes to update your photo.</p>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Your computing ID is managed by your university account.

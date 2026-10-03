@@ -46,6 +46,7 @@ function ensurePresentation(value: DemoState) {
     for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
   }
   for (const student of value.students) {
+    if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
     student.profile.actScore ??= null
     student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
   }
@@ -127,6 +128,7 @@ export function demoMember() {
 function presentProfile(profile: DemoState["students"][number]["profile"]) {
   return {
     ...profile,
+    headshotUrl: profile.headshotUrl && typeof window !== "undefined" ? new URL(profile.headshotUrl, window.location.origin).href : profile.headshotUrl,
     resumeUrl:
       profile.resumeUrl && typeof window !== "undefined"
         ? new URL(profile.resumeUrl, window.location.origin).href

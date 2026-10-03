@@ -40,9 +40,8 @@ import {
 import { OutClassLogo } from "@/components/outclass-logo"
 import { createClient } from "@/utils/supabase/client"
 import { registerStudent } from "@/actions/onboarding"
-import { Textarea } from "@/components/ui/textarea"
 import { upsertStudentProfile } from "@/actions/profile"
-import { getSignedUploadUrl } from "@/actions/storage"
+import { uploadProfileFile } from "@/actions/storage"
 import {
   accountBasicsSchema,
   registrationSchema,
@@ -66,7 +65,7 @@ const STEPS = [
 ] as const
 
 const GRAD_YEARS = ["2025", "2026", "2027", "2028", "2029", "2030"]
-const MAX_RESUME_SIZE = 5 * 1024 * 1024 // 5 MB
+const MAX_RESUME_SIZE = 10 * 1024 * 1024 // 10 MB
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -186,7 +185,7 @@ function ResumeDropZone({
       <p className="text-sm font-medium text-neutral-700">
         Drag & drop your resume here
       </p>
-      <p className="text-xs text-neutral-500">PDF only, up to 5 MB</p>
+      <p className="text-xs text-neutral-500">PDF only, up to 10 MB</p>
       <input
         ref={inputRef}
         type="file"
@@ -342,17 +341,17 @@ export function StudentOnboardingWizard({
 
   const step4Form = useForm<ExperienceAssetsData>({
     resolver: zodResolver(experienceAssetsSchema),
-    defaultValues: { linkedinUrl: "", bio: "", experiences: [] },
+    defaultValues: { linkedinUrl: "", experiences: [] },
   })
 
   const experienceFields = useFieldArray({ control: step4Form.control, name: "experiences" })
 
   const handleResumeFile = useCallback((f: File) => {
     if (f.size > MAX_RESUME_SIZE) {
-      setGlobalError("Resume must be under 5 MB")
+      setGlobalError("Resume must be under 10 MB")
       return
     }
-    if (f.type !== "application/pdf") {
+    if (!["application/pdf", "application/octet-stream", ""].includes(f.type)) {
       setGlobalError("Only PDF files are accepted")
       return
     }
@@ -362,10 +361,8 @@ export function StudentOnboardingWizard({
 
   async function uploadResume(): Promise<string | null> {
     if (!resumeFile) return null
-    const { signedUrl, publicUrl } = await getSignedUploadUrl({ fileName: resumeFile.name, bucket: "resumes" })
-    const response = await fetch(signedUrl, { method: "PUT", body: resumeFile, headers: { "Content-Type": "application/pdf" } })
-    if (!response.ok) throw new Error("Resume upload failed. Retry or remove the file to continue without it.")
-    return publicUrl
+    const input = new FormData(); input.set("kind", "resume"); input.set("file", resumeFile)
+    return (await uploadProfileFile(input)).reference
   }
 
   async function onStep4Submit(data: ExperienceAssetsData, skipAssets = false) {
@@ -396,7 +393,6 @@ export function StudentOnboardingWizard({
           ? parseInt(academic!.satScore, 10)
           : undefined,
         linkedinUrl: data.linkedinUrl || "",
-        bio: data.bio,
         experiences: data.experiences,
         resumeUrl: resumeUrl ?? undefined,
       })
@@ -770,10 +766,7 @@ export function StudentOnboardingWizard({
                 onSubmit={step4Form.handleSubmit((data) => onStep4Submit(data))}
                 className="space-y-5"
               >
-                <div className="space-y-1.5">
-                  <Label htmlFor="bio">About you (optional)</Label>
-                  <Textarea id="bio" maxLength={2000} placeholder="Your interests, goals, and what you bring to a club" {...step4Form.register("bio")} />
-                </div>
+
                 <div className="space-y-3">
                   <Label>Experience (optional)</Label>
                   {experienceFields.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-lg border p-3">
@@ -794,7 +787,7 @@ export function StudentOnboardingWizard({
                   </Label>
                   <Input
                     id="linkedinUrl"
-                    type="url"
+                    type="text" inputMode="url"
                     placeholder="https://linkedin.com/in/your-profile"
                     className="h-11 rounded-md border-neutral-200"
                     {...step4Form.register("linkedinUrl")}

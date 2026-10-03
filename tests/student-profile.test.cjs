@@ -45,7 +45,6 @@ test('invalid links and scores never reach persistence', async () => {
     { section: 'links', linkedinUrl: 'https://linkedin.com.evil.com/user', resumeUrl: null },
     { section: 'links', linkedinUrl: 'not-a-url', resumeUrl: null },
     { section: 'links', linkedinUrl: null, resumeUrl: 'javascript:alert(1)' },
-    { section: 'links', linkedinUrl: null, resumeUrl: 'https://evil.com/resume.pdf' },
     { section: 'links', linkedinUrl: null, resumeUrl: '../secret.pdf' },
     { section: 'links', linkedinUrl: null, resumeUrl: '/foo.pdf' },
     { section: 'links', linkedinUrl: null, resumeUrl: 'random-text' },
@@ -66,8 +65,8 @@ test('completion reflects saved supported data and excludes optional scores', ()
   const items = helpers.profileChecklist({ firstName: 'Student', lastName: 'Name', major: 'Math', gradYear: 2028, bio: null, experiences: [], resumeUrl: null, linkedinUrl: null })
   assert.equal(items.find(i => i.label === 'Name').complete, true)
   assert.equal(items.find(i => i.label === 'Education').complete, true)
-  assert.equal(items.find(i => i.label === 'Introduction').complete, false)
-  assert.equal(items.find(i => i.label === 'Experience').complete, false)
+  assert.equal(items.some(i => i.label === 'Introduction'), false)
+  assert.equal(items.some(i => i.label === 'Experience'), false)
   assert.equal(items.find(i => i.label === 'Résumé').complete, false)
 })
 

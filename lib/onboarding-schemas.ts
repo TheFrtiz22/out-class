@@ -1,3 +1,4 @@
+import { linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
@@ -85,27 +86,12 @@ export type AcademicProfileData = z.infer<typeof academicProfileSchema>
 // ─── Step 4: Experience & Assets ──────────────────────────────────────────────
 
 export const experienceAssetsSchema = z.object({
-  bio: z.string().trim().max(2000).optional(),
   experiences: z.array(z.object({
     title: z.string().trim().min(1, "Add a role or title").max(120),
     subtitle: z.string().trim().min(1, "Add an organization").max(120),
     period: z.string().trim().min(1, "Add a date or period").max(100),
   })).max(20).optional(),
-  linkedinUrl: z
-    .string()
-    .optional()
-    .refine(
-      (v) => {
-        if (!v || v === "") return true
-        try {
-          const url = new URL(v)
-          return url.protocol === "https:" && (url.hostname === "linkedin.com" || url.hostname.endsWith(".linkedin.com"))
-        } catch {
-          return false
-        }
-      },
-      "Enter a valid LinkedIn URL"
-    ),
+  linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
 })
 
 export type ExperienceAssetsData = z.infer<typeof experienceAssetsSchema>

@@ -8,7 +8,7 @@ import {
   submitApplication,
   type getStudentApplications,
 } from "@/lib/workspace-api"
-import { getSignedUploadUrl } from "@/lib/workspace-api"
+import { uploadProfileFile } from "@/lib/workspace-api"
 import { answerErrors, wordCount } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -130,7 +130,7 @@ export function ApplicationForm({
   }
   async function upload(id: string, file?: File) {
     if (!file) return
-    if (file.type !== "application/pdf" || file.size > 10 * 1024 * 1024) {
+    if (!["application/pdf", "application/octet-stream", ""].includes(file.type) || file.size > 10 * 1024 * 1024) {
       setErrors((current) => ({
         ...current,
         [id]: "Choose a PDF up to 10 MB, or add a document link.",
@@ -140,14 +140,11 @@ export function ApplicationForm({
     setBusy(true)
     setError("")
     try {
-      const upload = await getSignedUploadUrl({ fileName: file.name, bucket: "resumes" })
-      const response = await fetch(upload.signedUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": "application/pdf" },
-      })
-      if (!response.ok) throw new Error()
-      change(id, upload.publicUrl)
+      const input = new FormData()
+      input.set("kind", "resume")
+      input.set("file", file)
+      const upload = await uploadProfileFile(input)
+      change(id, upload.reference)
       setMessage("Document uploaded. Save your draft to keep the attachment.")
     } catch {
       setError("The document upload failed. Your previous response has not changed.")

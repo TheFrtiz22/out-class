@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { storagePathSchema } from "@/lib/student-profile"
+import { storagePathSchema, resumeReferenceSchema } from "@/lib/student-profile"
 
 export const applicationInputSchema = z.object({
   clubId: z.string().uuid(),
@@ -42,8 +42,8 @@ export function answerErrors(
     }
     seen.add(answer.questionId)
     if (answer.response.trim() && question.type === "FILE_UPLOAD") {
-      if (!isApplicationAttachment(answer.response)) {
-        errors[question.id] = "Use an uploaded document or a complete http or https document URL."
+      if (!resumeReferenceSchema.safeParse(answer.response).success) {
+        errors[question.id] = "Use an uploaded PDF or a valid document URL."
       }
     }
     if (
@@ -86,6 +86,10 @@ export function applicationNextStep(status: string) {
 }
 
 /** Uploaded documents use private resumes-bucket keys; existing external links remain supported. */
+export function normalizeApplicationAttachments(questions: ApplicationQuestion[], answers: { questionId: string; response: string }[]) {
+  return answers.map(answer => questions.some(q => q.id === answer.questionId && q.type === "FILE_UPLOAD") && answer.response.trim()
+    ? { ...answer, response: resumeReferenceSchema.parse(answer.response) } : answer)
+}
 export function isApplicationAttachment(value: string) {
   if (isApplicationStoragePath(value)) return true
   try { const url = new URL(value); return url.protocol === "http:" || url.protocol === "https:" } catch { return false }

@@ -30,7 +30,7 @@ test('student profile → Explore filters → Corkboard → shared club → appl
   const h = setup(), { filterDirectory, emptyDirectoryFilters } = h.load('lib/club-directory.ts')
   const profile = (await h.api.getStudentProfile()).profile
   assert.equal(profile.firstName, 'Jordan'); assert.ok(profile.experiences.length >= 5)
-  await h.api.updateStudentProfileSection({ section: 'identity', firstName: 'Jordan', lastName: 'Avery', bio: 'Fictional research and teamwork profile.' })
+  await h.api.updateStudentProfileSection({ section: 'identity', firstName: 'Jordan', lastName: 'Avery' })
   const directory = (await h.api.getClubDirectory()).clubs
   const club = filterDirectory(directory, { ...emptyDirectoryFilters, query: 'AIF', category: 'Finance' })[0]
   assert.ok(club); await h.api.setCorkboardClub({ clubId: club.id, saved: true })
@@ -83,7 +83,7 @@ test('leader kits → configured applicant → Pros/Cons → interview → repea
   await h.api.saveApplicantDisplayConfiguration({ clubId, roundId: scope.roundId, version: config.version, config: { version: 1, fields: ['name', 'experiences', 'gpa', 'resume', 'pros', 'cons', 'score', 'feedback'] } })
   let display = await h.api.getApplicantDisplay(scope)
   assert.ok(display.observations.some(o => o.body.includes('trade-off')))
-  assert.equal(display.links[0].href, '/demo/sample-resume.txt')
+  assert.equal(display.links[0].href, '/demo/sample-resume.pdf')
   const draft = { ...interview.draft, overallReview: 'Sample: strong reasoning and thoughtful follow-through.', score: 9 }
   await h.api.saveInterviewSession({ ...scope, revision: interview.revision, draft })
   h.store.stop(); h.store.start(); interview = await h.api.openInterviewSession(scope)
@@ -176,3 +176,27 @@ test('demo publication enforces production conflict rules and atomically rejects
   assert.equal((await h.api.getVotingWorkspace(clubId, sessionId)).session.publishedAt, null)
   assert.equal(h.calls(), 0)
 })
+
+test('Demo profile photos/PDF/LinkedIn survive reload and reset with no production uploads', async () => {
+  const h=setup(), initial=structuredClone(h.store.get());
+  assert.equal(initial.students[0].profile.resumeUrl,'/demo/sample-resume.pdf');
+  assert.equal(initial.students[0].profile.headshotUrl,'/demo/sample-headshot.svg');
+  assert.match(initial.students[0].profile.linkedinUrl,/^https:\/\/linkedin\.com\//);
+  assert.ok(initial.students.some(s=>!s.profile.headshotUrl));
+  const data=new FormData();data.set('kind','resume');data.set('file',new Blob(['%PDF-']), 'resume.pdf');
+  await assert.rejects(h.api.uploadProfileFile(data),/disabled|Demo/i);
+  h.store.mutate(s=>{s.students[0].profile.headshotUrl=null;s.students[0].profile.resumeUrl=null});
+  h.store.stop();h.store.start();assert.equal((await h.api.getStudentProfile()).profile.headshotUrl,null);
+  h.store.reset();assert.equal((await h.api.getStudentProfile()).profile.headshotUrl,initial.students[0].profile.headshotUrl);
+  assert.equal((await h.api.getStudentProfile()).profile.resumeUrl,initial.students[0].profile.resumeUrl);assert.equal(h.calls(),0);
+});
+
+test('browser-origin Demo projection has one résumé link and a working photo URL',async t=>{
+  const previous=global.window;t.after(()=>{if(previous===undefined)delete global.window;else global.window=previous});
+  global.window={location:{origin:'http://localhost:3000'}};
+  const h=setup();h.store.mutate(s=>{s.perspective.role='leader'});
+  const student=h.store.get().students[0];const app=h.store.get().applications.find(a=>a.studentId===student.id&&a.clubId===h.store.get().clubs[0].id);
+  h.store.mutate(s=>{const round=s.clubs[0].rounds.find(r=>r.id===app.roundId);round.anonymousReview=false});
+  const view=await h.api.getApplicantDisplay({clubId:app.clubId,applicationId:app.id});
+  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/demo/sample-headshot.svg');
+});

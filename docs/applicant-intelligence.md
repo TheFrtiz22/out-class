@@ -10,13 +10,13 @@ Prompt 31's focused interview/session UI and applicant/board views are extended 
 
 | Existing source | Configurable fields | Anonymous review |
 | --- | --- | --- |
-| StudentProfile | Name, headshot, major, graduation year, GPA, SAT, ACT composite/sections, biography | Only graduation year and academic metrics survive |
-| Experience | Title, subtitle, period | Withheld; no separate activity/work/research/project categories exist |
+| StudentProfile | Name, headshot, major, graduation year, GPA, SAT, ACT composite, authorized résumé/LinkedIn links | Only graduation year and academic metrics survive |
+| Experience | Title, subtitle, period | Withheld anonymously; suppressed alongside configured résumé to avoid duplication |
 | Application / PipelineRound | Current round and status | Available |
 | ApplicationAnswer / question | Prompt and non-file response | Withheld |
 | Evaluation | Score and overall feedback, round and reviewer membership attribution | Score and round only; notes withheld |
 | ApplicantObservation | Pros, Cons, author and timestamps | Withheld in full, including mutation access |
-| Sensitive/private | Email, computing ID, résumé paths, LinkedIn, file-answer paths, appointments, private question notes | Not offered by the focused display contract at all |
+| Sensitive/private | Email, computing ID, raw résumé paths, file-answer paths, appointments, private question notes | Not offered by the focused display contract at all |
 
 The shared server action authorizes the club and submitted application, rechecks current membership and privacy, applies `anonymousApplication`, then constructs a new field allowlist. The client cannot request extra fields or turn off anonymization. Settings are presentation preferences, not permission grants. Other already-authorized CRM views continue to use their existing projections. Identified review requires both `applications.review` and `applicants.identify`; anonymous review requires `applications.review`.
 

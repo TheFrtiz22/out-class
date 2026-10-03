@@ -36,9 +36,6 @@ function ProfileContent() {
           <p>University of Virginia · Class of 2029</p>
         </div>
       </div>
-      <p className="oc-profile-bio">
-        Curious about the ideas that turn a small business into something lasting.
-      </p>
       <dl className="oc-profile-facts">
         <div>
           <dt>Studying</dt>

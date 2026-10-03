@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
-import { storagePathSchema } from "@/lib/student-profile";
+import { storagePathSchema, validateProfileFile } from "@/lib/student-profile";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 const uploadSchema = z.object({
@@ -72,3 +72,20 @@ export async function getSignedUploadUrl(data: z.infer<typeof uploadSchema>) {
   };
 }
 
+
+/** Validate actual bytes on the server, then use the existing owner-scoped signed upload. */
+export async function uploadProfileFile(input: FormData) {
+  await requireAuth()
+  const kind = z.enum(['resume', 'headshot']).parse(input.get('kind'))
+  const file = input.get('file')
+  if (!file || typeof file === 'string' || !file.size) throw new Error('Choose a file')
+  if (file.size > (kind === 'resume' ? 10 : 5) * 1024 * 1024) throw new Error('File is too large')
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const contentType = validateProfileFile(bytes, file.type, kind)
+  const bucket = kind === 'resume' ? 'resumes' : 'headshots'
+  const signed = await getSignedUploadUrl({ fileName: file.name, bucket })
+  const client = await createClient(await cookies())
+  const { error } = await client.storage.from(bucket).uploadToSignedUrl(signed.path, signed.token, bytes, { contentType })
+  if (error) throw new Error('Upload failed. Your saved profile has not changed.')
+  return { reference: signed.publicUrl! }
+}

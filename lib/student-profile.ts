@@ -3,12 +3,34 @@ import { z } from "zod"
 import type { Experience, StudentProfile } from "@prisma/client"
 
 export type FullStudentProfile = StudentProfile & { experiences: Experience[] }
-const webUrl = z
-  .string()
-  .trim()
-  .url()
-  .refine((value) => /^https?:\/\//i.test(value), "Use an http or https URL")
-const optionalUrl = webUrl.or(z.literal("")).nullable()
+/** Shared normalization for profile imports; internal storage keys never become URLs. */
+export function normalizeWebUrl(value: string): string {
+  const text = value.trim()
+  if (!text || text.startsWith("/") || /^https?:\/\/\//i.test(text) || /[\s\\\x00-\x1f]/.test(text)) throw new Error("Enter a valid web URL")
+  const explicit = /^[a-z][a-z0-9+.-]*:/i.test(text)
+  if (explicit && !/^https?:\/\//i.test(text)) throw new Error("Use an http or https URL")
+  const url = new URL(explicit ? text : `https://${text}`)
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password ||
+      !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,63}$/i.test(url.hostname)) throw new Error("Enter a valid web URL")
+  return url.href
+}
+export const webUrlSchema = z.string().transform((value, ctx) => {
+  try { return normalizeWebUrl(value) } catch { ctx.addIssue({ code: 'custom', message: 'Enter a valid web URL' }); return z.NEVER }
+})
+export const headshotUrlSchema = z.string().url().refine(value => /^https?:\/\//i.test(value), "Use a web image URL")
+export const linkedinUrlSchema = webUrlSchema.refine(value => { try { return /(^|\.)linkedin\.com$/i.test(new URL(value).hostname) } catch { return false } }, "Use a LinkedIn URL")
+export function validateProfileFile(bytes: Uint8Array, type: string, kind: 'resume' | 'headshot') {
+  if (!bytes.length) throw new Error("Choose a file")
+  if (bytes.length > (kind === 'resume' ? 10 : 5) * 1024 * 1024) throw new Error(kind === 'resume' ? "Choose a PDF up to 10 MB" : "Choose an image up to 5 MB")
+  const starts = (signature: number[]) => signature.every((v, i) => bytes[i] === v)
+  if (kind === 'resume') {
+    if (!['application/pdf', 'application/octet-stream', ''].includes(type) || !starts([37,80,68,70,45])) throw new Error("Choose a valid PDF")
+    return 'application/pdf'
+  }
+  const detected = starts([137,80,78,71,13,10,26,10]) ? 'image/png' : starts([255,216,255]) ? 'image/jpeg' : starts([82,73,70,70]) && [87,69,66,80].every((v,i) => bytes[i+8] === v) ? 'image/webp' : null
+  if (!detected || (type && type !== detected)) throw new Error("Choose a JPEG, PNG or WebP image")
+  return detected
+}
 export const storagePathSchema = z.string().trim().refine((val) => {
   if (!val) return true; // allow empty strings when chained with .or(literal(""))
   // Reject URLs and absolute paths
@@ -29,12 +51,18 @@ export const storagePathSchema = z.string().trim().refine((val) => {
   return true;
 }, "Invalid storage path");
 
+export const resumeReferenceSchema = z.string().trim().transform((value, ctx) => {
+  if (!value || storagePathSchema.safeParse(value).success) return value
+  try { return normalizeWebUrl(value) } catch { ctx.addIssue({ code: 'custom', message: 'Enter a valid résumé URL or upload a PDF' }); return z.NEVER }
+})
+export function isPrivateResume(value: string) { return !!value && storagePathSchema.safeParse(value).success }
+
 export const profileSectionSchema = z.discriminatedUnion("section", [
   z.object({
     section: z.literal("identity"),
     firstName: z.string().trim().min(1).max(100),
     lastName: z.string().trim().min(1).max(100),
-    bio: z.string().trim().max(3000),
+    headshotUrl: headshotUrlSchema.nullable().or(z.literal("")).optional(),
   }),
   z.object({
     section: z.literal("education"),
@@ -58,15 +86,8 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
   }),
   z.object({
     section: z.literal("links"),
-    linkedinUrl: optionalUrl.refine((value) => {
-      if (!value) return true
-      try {
-        return /(^|\.)linkedin\.com$/i.test(new URL(value).hostname)
-      } catch {
-        return false
-      }
-    }, "Use a LinkedIn URL"),
-    resumeUrl: storagePathSchema.nullable().or(z.literal("")),
+    linkedinUrl: linkedinUrlSchema.nullable().or(z.literal("")),
+    resumeUrl: resumeReferenceSchema.nullable().or(z.literal("")),
   }),
 ])
 export type ProfileSection = z.infer<typeof profileSectionSchema>["section"]
@@ -82,8 +103,6 @@ export function profileChecklist(profile: FullStudentProfile) {
   return [
     { label: "Name", complete: Boolean(profile.firstName.trim() && profile.lastName.trim()) },
     { label: "Education", complete: Boolean(profile.major.trim() && profile.gradYear) },
-    { label: "Introduction", complete: Boolean(profile.bio?.trim()) },
-    { label: "Experience", complete: profile.experiences.length > 0 },
     { label: "Résumé", complete: Boolean(resolveResumeUrl(profile.resumeUrl)) },
     { label: "LinkedIn", complete: Boolean(safeProfileUrl(profile.linkedinUrl)) },
   ]

@@ -1,7 +1,7 @@
 "use server";
 
 import { actShape } from "@/lib/test-scores";
-import { storagePathSchema, profileSectionSchema } from "@/lib/student-profile";
+import { resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -17,10 +17,9 @@ const profileSchema = z.object({
   gradYear: z.number().int().min(2020).max(2030),
   gpa: z.number().min(0).max(4.0).optional(),
   satScore: z.number().int().min(400).max(1600).optional(),
-  linkedinUrl: z.string().url().optional().or(z.literal("")),
-  bio: z.string().optional(),
-  resumeUrl: storagePathSchema.optional(),
-  headshotUrl: z.string().url().optional(),
+  linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
+  resumeUrl: resumeReferenceSchema.optional(),
+  headshotUrl: headshotUrlSchema.optional(),
   experiences: z.array(z.object({
     title: z.string(),
     subtitle: z.string(),
@@ -47,7 +46,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
   // Identity comes from the authenticated account, never a client-supplied ID.
   parsed.computingId = user.email.split("@")[0];
 
-  if (parsed.resumeUrl && !parsed.resumeUrl.startsWith(`${user.id}/`)) {
+  if (parsed.resumeUrl && isPrivateResume(parsed.resumeUrl) && !parsed.resumeUrl.startsWith(`${user.id}/`)) {
     throw new Error("You can only save your own resume.");
   }
 
@@ -64,7 +63,6 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
-      bio: parsed.bio || null,
       resumeUrl: parsed.resumeUrl || null,
       headshotUrl: parsed.headshotUrl || null,
       experiences: {
@@ -83,7 +81,6 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
       linkedinUrl: parsed.linkedinUrl || null,
-      bio: parsed.bio || null,
       resumeUrl: parsed.resumeUrl || null,
       headshotUrl: parsed.headshotUrl || null,
       experiences: {
@@ -110,7 +107,7 @@ export async function updateStudentProfileSection(input: unknown) {
   if (parsed.data.section === "experience") {
     data = { experiences: { deleteMany: {}, create: parsed.data.experiences } };
   } else if (parsed.data.section === "links") {
-    if (parsed.data.resumeUrl && !parsed.data.resumeUrl.startsWith(`${user.id}/`)) {
+    if (parsed.data.resumeUrl && isPrivateResume(parsed.data.resumeUrl) && !parsed.data.resumeUrl.startsWith(`${user.id}/`)) {
       return { error: "You can only save your own resume." };
     }
     data = { linkedinUrl: parsed.data.linkedinUrl || null, resumeUrl: parsed.data.resumeUrl || null };

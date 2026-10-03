@@ -1,5 +1,4 @@
 "use client"
-import { hasWorkspace } from "@/lib/permissions"
 
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
@@ -15,9 +14,7 @@ import type { StudentMembership } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ClubLogo } from "@/components/club-logo"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
-import { MemberPortalDialog } from "@/components/views/member-portal-dialog"
 
 export type ProfileMembership = StudentMembership
 
@@ -28,7 +25,6 @@ export function UnifiedStudentProfileView() {
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
   const [saved, setSaved] = useState(false)
-  const [selected, setSelected] = useState<StudentMembership | null>(null)
   useEffect(() => {
     let active = true
     setProfile(null)
@@ -56,18 +52,6 @@ export function UnifiedStudentProfileView() {
       active = false
     }
   }, [user?.id, loading, retry])
-  const memberships: StudentMembership[] = (user?.memberships || []).map((membership) => ({
-    clubId: membership.clubId,
-    clubName: membership.club.name,
-    logoText: membership.club.name.slice(0, 2),
-    logoUrl: membership.club.logoUrl,
-    color: membership.club.color || "#051B3D",
-    role:
-      hasWorkspace(membership)
-        ? "Executive"
-        : "Member",
-    title: membership.title || undefined,
-  }))
   if (loading || pending)
     return (
       <div aria-busy="true" aria-label="Loading profile" className="max-w-4xl space-y-8">
@@ -112,11 +96,11 @@ export function UnifiedStudentProfileView() {
           <Button
             variant="ghost"
             size="sm"
-            aria-label={`Edit ${section === "identity" ? "introduction" : section}`}
+            aria-label={`Edit ${section === "identity" ? "name and photo" : section}`}
             className="shrink-0 text-muted-foreground"
           >
             <Pencil className="size-3.5" />
-            <span>Edit</span>
+            <span>{section === "experience" ? "Edit structured experience" : "Edit"}</span>
           </Button>
         }
       />
@@ -144,7 +128,7 @@ export function UnifiedStudentProfileView() {
         {saved ? "Profile changes saved." : ""}
       </p>
       <header className="flex items-start gap-5 pb-9 sm:gap-7 sm:pb-12">
-        <Avatar className="size-16 shrink-0 sm:size-24">
+        <Avatar className="size-24 shrink-0 sm:size-32">
           <AvatarImage src={safeProfileUrl(profile.headshotUrl)} alt="" />
           <AvatarFallback className="bg-secondary text-xl font-medium text-primary sm:text-3xl">
             {profile.firstName[0]}
@@ -165,6 +149,7 @@ export function UnifiedStudentProfileView() {
             </span>
             Class of {profile.gradYear}
           </p>
+          {edit("identity")}
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm">
             {safeProfileUrl(profile.linkedinUrl) && (
               <a
@@ -196,16 +181,6 @@ export function UnifiedStudentProfileView() {
       <div className="grid gap-x-14 lg:grid-cols-[minmax(0,1fr)_220px]">
         <div className="min-w-0">
           {section(
-            "Introduction",
-            "identity",
-            <p
-              className={`max-w-2xl whitespace-pre-wrap break-words text-sm leading-7 ${profile.bio ? "" : "text-muted-foreground"}`}
-            >
-              {profile.bio ||
-                "Add a short introduction to help clubs understand your interests and what you’d bring to their community."}
-            </p>,
-          )}
-          {section(
             "Education",
             "education",
             <div>
@@ -224,7 +199,6 @@ export function UnifiedStudentProfileView() {
                       <dd>{profile.gpa.toFixed(2)} / 4.00</dd>
                     </div>
                   )}
-                  {(["actEnglish", "actMath", "actReading", "actScience"] as const).map(key => profile[key] != null && <div key={key}><dt className="text-muted-foreground">ACT {key.slice(3)}</dt><dd>{profile[key]}</dd></div>)}
                   {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}
                   {profile.satScore != null && (
                     <div className="flex gap-2">
@@ -236,69 +210,6 @@ export function UnifiedStudentProfileView() {
               )}
             </div>,
           )}
-          {section(
-            "Experience",
-            "experience",
-            profile.experiences.length ? (
-              <ol className="space-y-7">
-                {profile.experiences.map((experience) => (
-                  <li key={experience.id}>
-                    <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
-                      <h4 className="break-words font-medium">{experience.title}</h4>
-                      {experience.period && (
-                        <span className="text-sm text-muted-foreground">{experience.period}</span>
-                      )}
-                    </div>
-                    <p className="mt-1 break-words text-sm leading-relaxed text-muted-foreground">
-                      {experience.subtitle}
-                    </p>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Add an internship, research role, project, or leadership experience. Start with what
-                matters most to you.
-              </p>
-            ),
-          )}
-          <section className="border-t border-border py-8" aria-labelledby="profile-involvement">
-            <h3 id="profile-involvement" className="oc-card-heading mb-5">
-              Campus involvement
-            </h3>
-            {memberships.length ? (
-              <div className="divide-y divide-border">
-                {memberships.map((membership) => (
-                  <button
-                    key={membership.clubId}
-                    type="button"
-                    onClick={() => setSelected(membership)}
-                    className="flex w-full items-center gap-4 rounded-sm py-4 text-left transition-colors hover:bg-secondary/50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
-                  >
-                    <ClubLogo
-                      clubId={membership.clubId}
-                      logoUrl={membership.logoUrl}
-                      text={membership.logoText}
-                      color={membership.color}
-                      size="lg"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium">{membership.clubName}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {membership.title || membership.role}
-                      </p>
-                    </div>
-                    <ArrowUpRight className="size-4 shrink-0" />
-                    <span className="sr-only">Open member portal</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Your club memberships will appear here when you join an organization.
-              </p>
-            )}
-          </section>
         </div>
         <aside className="border-t border-border pt-8 lg:pt-10">
           <h3 className="oc-card-heading ">Make it yours</h3>
@@ -345,15 +256,9 @@ export function UnifiedStudentProfileView() {
               available.
             </p>
           </div>
+          <div className="mt-4">{edit("experience")}</div>
         </aside>
       </div>
-      <MemberPortalDialog
-        membership={selected}
-        open={!!selected}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null)
-        }}
-      />
     </article>
   )
 }

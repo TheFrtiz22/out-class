@@ -173,11 +173,6 @@
   margin-top: 4px;
   line-height: var(--oc-leading-body);
 }
-.oc-profile-bio {
-  font-size: var(--oc-size-14);
-  line-height: var(--oc-leading-body);
-  margin: 24px 0;
-}
 .oc-profile-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;

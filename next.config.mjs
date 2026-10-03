@@ -4,7 +4,7 @@ const nextConfig = {
   distDir: process.env.OUTCLASS_PUBLISH_BUILD
     ? ".next-publish"
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
-  experimental: { serverActions: { bodySizeLimit: "4mb" } },
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
   eslint: {
     ignoreDuringBuilds: false,
   },

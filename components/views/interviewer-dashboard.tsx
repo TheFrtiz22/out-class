@@ -15,7 +15,6 @@ export interface InterviewCandidate {
   major: string
   photoUrl?: string
   gpa: string
-  bio: string
   experience: string[]
   skills: string[]
 }
@@ -42,22 +41,22 @@ export const mockInterviewerSchedule: AssignedInterview[] = [
   {
     id: "slot-maya", startsAt: "2026-09-20T10:00:00-04:00", endsAt: "2026-09-20T10:30:00-04:00",
     location: "Rouss Hall 101", round: "Behavioral Round", evaluationStatus: "submitted",
-    candidate: { id: "maya", name: "Maya Patel", year: "Second year", major: "Economics", gpa: "3.86", bio: "Interested in early-stage investing and community entrepreneurship.", experience: ["Analyst, student investment fund", "Volunteer, Charlottesville business incubator"], skills: ["Research", "Financial modeling"] },
+    candidate: { id: "maya", name: "Maya Patel", year: "Second year", major: "Economics", gpa: "3.86", experience: ["Analyst, student investment fund", "Volunteer, Charlottesville business incubator"], skills: ["Research", "Financial modeling"] },
   },
   {
     id: "slot-alex", startsAt: "2026-09-20T11:00:00-04:00", endsAt: "2026-09-20T11:30:00-04:00",
     location: "Rouss Hall 101", round: "Behavioral Round", evaluationStatus: "draft",
-    candidate: { id: "alex", name: "Alex Johnson", year: "First year", major: "Commerce", gpa: "3.78", bio: "Enjoys working with small teams to turn research into practical business ideas.", experience: ["Founder, campus resale project", "Summer intern, local credit union"], skills: ["Market research", "Presentation"] },
+    candidate: { id: "alex", name: "Alex Johnson", year: "First year", major: "Commerce", gpa: "3.78", experience: ["Founder, campus resale project", "Summer intern, local credit union"], skills: ["Market research", "Presentation"] },
   },
   {
     id: "slot-jordan", startsAt: "2026-09-20T14:00:00-04:00", endsAt: "2026-09-20T14:30:00-04:00",
     location: "Rouss Hall 101", round: "Behavioral Round", evaluationStatus: "not-started",
-    candidate: { id: "jordan", name: "Jordan Lee", year: "Second year", major: "Computer Science", gpa: "3.92", bio: "Builds software tools and wants to explore the intersection of technology and venture capital.", experience: ["Developer, student product studio", "Teaching assistant, introductory programming"], skills: ["Python", "Product design"] },
+    candidate: { id: "jordan", name: "Jordan Lee", year: "Second year", major: "Computer Science", gpa: "3.92", experience: ["Developer, student product studio", "Teaching assistant, introductory programming"], skills: ["Python", "Product design"] },
   },
   {
     id: "slot-sofia", startsAt: "2026-09-20T15:00:00-04:00", endsAt: "2026-09-20T15:30:00-04:00",
     location: "Rouss Hall 102", round: "Behavioral Round", evaluationStatus: "not-started",
-    candidate: { id: "sofia", name: "Sofia Martinez", year: "Third year", major: "Public Policy", gpa: "3.89", bio: "Studies how policy and capital can help grow sustainable businesses.", experience: ["Research assistant, sustainability lab", "Operations intern, social enterprise"], skills: ["Data analysis", "Public speaking"] },
+    candidate: { id: "sofia", name: "Sofia Martinez", year: "Third year", major: "Public Policy", gpa: "3.89", experience: ["Research assistant, sustainability lab", "Operations intern, social enterprise"], skills: ["Data analysis", "Public speaking"] },
   },
 ]
 export const mockInterviewerAvailability: InterviewerAvailability[] = [
@@ -95,7 +94,6 @@ function CandidateProfile({ candidate }: { candidate: InterviewCandidate }) {
         <DialogTitle className="oc-modal-title ">{candidate.name}</DialogTitle>
         <DialogDescription>{candidate.year} · {candidate.major} · GPA {candidate.gpa}</DialogDescription>
       </DialogHeader>
-      <p className="text-sm leading-relaxed text-neutral-600">{candidate.bio}</p>
       <div><h3 className="oc-card-heading ">Resume highlights</h3><ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-neutral-600">{candidate.experience.map(item => <li key={item}>{item}</li>)}</ul></div>
       <div><h3 className="oc-card-heading ">Skills</h3><div className="mt-2 flex flex-wrap gap-2">{candidate.skills.map(skill => <span key={skill} className="rounded-full border border-neutral-200 px-3 py-1 text-xs">{skill}</span>)}</div></div>
     </DialogContent>

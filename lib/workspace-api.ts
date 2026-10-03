@@ -39,7 +39,7 @@ import {
   demoNotifications,
   presentDemoMeeting,
 } from "@/lib/demo/store"
-import { applicationInputSchema, answerErrors, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
+import { applicationInputSchema, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 function adapt<F extends (...args: never[]) => Promise<unknown>>(
@@ -167,6 +167,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   if (s.perspective.role !== "student" || !club)
     throw new Error("Switch to the sample student first.")
   if (submit && !meetsTestRequirement(club.testRequirement, demoUser().profile)) throw new Error("Update your profile to meet this club’s SAT/ACT requirement.")
+  parsed.answers = normalizeApplicationAttachments(club.questions, parsed.answers)
   assertApplicationAttachmentOwnership(club.questions, parsed.answers, demoUser().id)
   const errors = answerErrors(club.questions, parsed.answers, submit)
   if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
@@ -208,6 +209,9 @@ export const updateStudentProfileSection = adapt(profile.updateStudentProfileSec
     else Object.assign(user.profile, fields)
     return { profile: user.profile }
   })
+})
+export const uploadProfileFile = adapt(storage.uploadProfileFile, () => {
+  throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 })
 export const getSignedUploadUrl = adapt(storage.getSignedUploadUrl, () => {
   throw new Error(
@@ -433,7 +437,10 @@ export const getApplicantDisplay = adapt(applicantIntelligence.getApplicantDispl
   const round = s.clubs[0].rounds.find(r => r.id === app.roundId)!;
   const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig, (s.observations || []).filter(o => o.applicationId === app.id));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
-  if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.txt") display.links.push({ field: "resume", label: "Sample résumé", href: "/demo/sample-resume.txt" });
+  if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
+    display.links = display.links.filter(link => link.field !== "resume")
+    display.links.push({ field: "resume", label: "Sample résumé", href: "/demo/sample-resume.pdf" })
+  }
   return display;
 });
 export const getApplicantDisplayConfiguration = adapt(applicantIntelligence.getApplicantDisplayConfiguration, (clubId, roundId) => {
