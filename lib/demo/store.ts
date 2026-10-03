@@ -43,6 +43,8 @@ export const demoStore = {
       /* Reset damaged browser data. */
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
+    state!.applicantDisplay ??= {}
+    state!.observations ??= []
     state!.recruitingRules ??= []
     state!.recruitingFlags ??= []
     state!.recruitingRuleAudit ??= []

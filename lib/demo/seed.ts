@@ -342,6 +342,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
     interviews,
+    applicantDisplay: {} as Record<string, { config: import("@/lib/applicant-display").ApplicantDisplayConfig; version: number }>,
+    observations: [] as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],
     recruitingRules: [] as DemoRecruitingRule[],
     recruitingFlags: [] as DemoRecruitingFlag[],
     recruitingRuleAudit: [] as DemoRuleAudit[],

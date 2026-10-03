@@ -18,13 +18,16 @@ const scope = z.object({
   applicationId: z.string().uuid(),
   roundId: z.string().uuid(),
 });
-function present(record: InterviewRecord): InterviewSessionData {
+async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
+  const draft = interviewDraftSchema.parse(record.draft);
+  const canonical = record.completedAt && record.evaluationId
+    ? await tx.evaluation.findUnique({ where: { id: record.evaluationId } }) : null;
   return {
-    id: record.id,
-    revision: record.revision,
+    id: record.id, revision: record.revision,
     questions: kitSchema.parse(record.questions),
-    draft: interviewDraftSchema.parse(record.draft),
+    draft: canonical ? { ...draft, score: canonical.score, overallReview: canonical.notes || "" } : draft,
     completedAt: record.completedAt?.toISOString() || null,
+    feedbackSource: record.completedAt ? canonical ? "evaluation" : "historical-snapshot" : "draft",
   };
 }
 export async function getInterviewKit(clubId: string, roundId: string) {
@@ -126,7 +129,7 @@ export async function openInterviewSession(
       throw new Error(
         "This interview was recorded under different privacy settings. Its notes remain protected; restore the original round privacy to access it.",
       );
-    return present(record);
+    return present(record, tx);
   });
 }
 export async function saveInterviewSession(
@@ -200,6 +203,7 @@ export async function saveInterviewSession(
           notes: parsed.draft.overallReview,
         },
       });
+      await tx.interviewRecord.updateMany({ where: { id: record.id }, data: { evaluationId: evaluation.id } });
       await tx.auditLog.create({
         data: {
           actorId: user.id,
@@ -210,8 +214,8 @@ export async function saveInterviewSession(
       });
     }
     return {
-      session: present(
-        (await tx.interviewRecord.findUnique({ where: { id: record.id } }))!,
+      session: await present(
+        (await tx.interviewRecord.findUnique({ where: { id: record.id } }))!, tx,
       ),
       evaluation:
         evaluation && round.anonymousReview

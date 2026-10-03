@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  reviewObservations ApplicantObservation[]
   schoolIdentities SchoolIdentity[]
   rosterImports    RosterImport[]
   claimedInvitations ClubInvitation[] @relation("ClaimedInvitation")
@@ -149,6 +150,8 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  applicantDisplay Json @default("{}")
+  displayVersion Int @default(0)
   interviewRooms    InterviewRoom[]
   scheduledBookings InterviewBooking[]
   screeningRule     RecruitingRule?
@@ -188,6 +191,7 @@ enum QuestionType {
 }
 
 model Application {
+  observations ApplicantObservation[]
   recruitingFlags     RecruitingRuleFlag[]
   anonymousReviewText String?
   interviewRecords    InterviewRecord[]
@@ -234,6 +238,7 @@ model ApplicationAnswer {
 }
 
 model Evaluation {
+  interviewRecords InterviewRecord[]
   id            String      @id @default(uuid())
   applicationId String
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -345,6 +350,8 @@ model InterviewBooking {
 }
 
 model InterviewRecord {
+  evaluationId String?
+  evaluation Evaluation? @relation(fields: [evaluationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   id              String        @id @default(uuid())
   applicationId   String
   application     Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
@@ -360,6 +367,7 @@ model InterviewRecord {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([evaluationId])
   @@unique([applicationId, interviewerId, roundId])
 }
 
@@ -755,4 +763,21 @@ enum InvitationDeliveryStatus {
   DELIVERED
   FAILED
   CANCELLED
+}
+
+// Structured reviewer observations, independent of scored evaluations and private interview notes.
+model ApplicantObservation {
+  id String @id @default(uuid())
+  applicationId String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  authorId String
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  kind String
+  body String
+  anonymousReview Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([applicationId, createdAt])
+  @@index([authorId])
 }

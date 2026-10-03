@@ -805,7 +805,8 @@ export async function inspectPlatformRecord(
       include: {
         answers: { include: { question: true } },
         evaluations: true,
-        interviewRecords: true,
+        // Evaluation is canonical; draft remains preserved historical interview evidence.
+        interviewRecords: { include: { evaluation: true } },
         round: true,
         club: { select: { name: true } },
         student: {

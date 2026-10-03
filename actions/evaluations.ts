@@ -71,7 +71,7 @@ export async function submitEvaluation(data: z.infer<typeof evaluateSchema>) {
 
 export async function getEvaluations(clubId: string, applicationId: string) {
   // Verifying access
-  await requireClubPermission(clubId, ["applicants.identify"]);
+  await requireClubPermission(clubId, ["applications.review", "applicants.identify"]);
 
   const application = await prisma.application.findFirst({
     where: { id: applicationId, clubId, status: { not: "DRAFTING" } },

@@ -1,4 +1,5 @@
 "use client"
+import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live-applicant-views"
@@ -708,8 +709,13 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                   <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Responses and files are withheld during anonymous review. Any prepared anonymous content appears in the profile above." : "No club-specific responses."}</p>
                 )}
               </section>
+              {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
               <section className="space-y-4 border-b border-border pb-6">
+<<<<<<< HEAD
                 <h3 className="oc-card-heading ">Evaluations</h3>
+=======
+                <h3 className="text-sm font-semibold">Canonical evaluations · score and overall feedback</h3>
+>>>>>>> 98cfd3c (Prompt 33)
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
                     <p className="text-xs font-medium">
@@ -748,7 +754,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                     disabled={busy}
                     onChange={(event) => setScore(event.target.value)}
                   />
-                  <Label htmlFor="review-notes">Notes for club reviewers</Label>
+                  <Label htmlFor="review-notes">Overall evaluation feedback</Label>
                   <Textarea
                     id="review-notes"
                     rows={4}

@@ -214,10 +214,75 @@ export function InterviewKitSession({
             {!session.completedAt && <fieldset disabled={completing} className="space-y-3 pt-3"><label htmlFor="new-interview-question" className="text-sm font-medium">Add an off-script question</label><Input id="new-interview-question" maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion("") }}>Add question</Button></fieldset>}
           </section>
           {(closing || session.completedAt) && <section aria-label="Closing review" className="space-y-4 border-t pt-5">
-            <h2 ref={closingHeading} tabIndex={-1} className="oc-section-heading ">{session.completedAt ? "Overall review" : "Finish your interview"}</h2><p className="text-sm text-muted-foreground">Review your notes before confirming. Completion saves your evaluation and locks this interview; it does not change the candidate’s round or decision.</p>
-            <fieldset disabled={disabled} className="space-y-3"><label htmlFor="overall-interview-review">Overall Review</label><Textarea id="overall-interview-review" rows={5} maxLength={20000} value={draft.overallReview} onChange={e => setDraft(d => ({ ...d, overallReview: e.target.value }))} /><label htmlFor="interview-score" className="block">Overall score · 1–10 (required to complete)</label><Input id="interview-score" type="number" min={1} max={10} step="any" className="w-28" value={draft.score ?? ""} onChange={e => setDraft(d => ({ ...d, score: e.target.value === "" ? null : Number(e.target.value) }))} /></fieldset>
-            {!session.completedAt && <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving || draft.score === null} onClick={() => void persist(true)}>Confirm completion</Button><Button type="button" variant="outline" disabled={saving || draft.score === null} onClick={() => void persist(true, true)}>Complete & next</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => setClosing(false)}>Keep interviewing</Button></div>}
-          </section>}
+  <h2 ref={closingHeading} tabIndex={-1} className="oc-section-heading">
+    {session.completedAt ? "Overall review" : "Finish your interview"}
+  </h2>
+  <p className="text-sm text-muted-foreground">
+    Review your notes before confirming. Completion saves your evaluation and locks this interview; it does not change the candidate’s round or decision.
+  </p>
+  <p className="text-xs text-muted-foreground">
+    {session.feedbackSource === "historical-snapshot"
+      ? "Historical snapshot: no unambiguous canonical evaluation was linked. Original feedback is preserved."
+      : session.completedAt
+        ? "Canonical feedback from the evaluation. Private question notes remain the original interview snapshot."
+        : "Completion publishes this score and overall feedback to the canonical evaluation."}
+  </p>
+  <fieldset disabled={disabled} className="space-y-3">
+    <label htmlFor="overall-interview-review">Overall Review</label>
+    <Textarea
+      id="overall-interview-review"
+      rows={5}
+      maxLength={20000}
+      value={draft.overallReview}
+      onChange={e => setDraft(d => ({ ...d, overallReview: e.target.value }))}
+    />
+    <label htmlFor="interview-score" className="block">
+      Overall score · 1–10 (required to complete)
+    </label>
+    <Input
+      id="interview-score"
+      type="number"
+      min={1}
+      max={10}
+      step="any"
+      className="w-28"
+      value={draft.score ?? ""}
+      onChange={e =>
+        setDraft(d => ({
+          ...d,
+          score: e.target.value === "" ? null : Number(e.target.value),
+        }))
+      }
+    />
+  </fieldset>
+  {!session.completedAt && (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        type="button"
+        disabled={saving || draft.score === null}
+        onClick={() => void persist(true)}
+      >
+        Confirm completion
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        disabled={saving || draft.score === null}
+        onClick={() => void persist(true, true)}
+      >
+        Complete & next
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        disabled={saving}
+        onClick={() => setClosing(false)}
+      >
+        Keep interviewing
+      </Button>
+    </div>
+  )}
+</section>}
           {!session.completedAt && <Button type="button" variant="outline" disabled={saving || !dirty} onClick={() => void persist()}>Save draft</Button>}
           <p className="text-xs text-muted-foreground">Drafts autosave after a brief pause. Wait for “Draft saved” before leaving. ⌘ / Ctrl + Enter opens the closing review.</p>
         </div>

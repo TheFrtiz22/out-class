@@ -1,9 +1,7 @@
 "use client"
-import { applicationAttachmentUrl } from "@/lib/student-applications"
+import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import "@/components/shell/responsive-workspace.css"
-import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { InterviewKitSession } from "@/components/interview-kit-session"
-import { TestScoreDetail } from "@/components/test-score-detail"
 import { hasPermission } from "@/lib/permissions"
 
 import { useApplicationState } from "@/lib/application-state"
@@ -13,12 +11,9 @@ import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
 import { getClubPipeline } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
-import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
-import { applicationStatusLabels } from "@/lib/student-applications"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import "./interview/interview-mode.css"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
@@ -236,8 +231,6 @@ function InterviewSession({
         </Button>
       </div>
     )
-  const profile = active?.student.studentProfile
-  const candidateName = profile ? `${profile.firstName} ${profile.lastName}` : active?.student.email
   return (
     <div className="space-y-6">
 
@@ -314,7 +307,7 @@ function InterviewSession({
         <div key={active.id} className="oc-interview-candidate space-y-6">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
             canManageKit={hasPermission(membership, "interviews.manage")}
-            toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="oc-section-heading ">Interview · {candidateName}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>            <div className="flex items-center gap-3">
+toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span> 98cfd3c (Prompt 33)
               <span
                 className="tabular-nums text-lg tabular-nums"
                 aria-label={`Elapsed interview time ${elapsedInterviewTime(seconds)}`}
@@ -336,124 +329,21 @@ function InterviewSession({
               </Button>
             </div>
 </div></>}
-            context={            <div
-              className="min-w-0 max-h-72 space-y-6 overflow-y-auto border-b p-5 lg:sticky lg:top-0 lg:max-h-dvh lg:overflow-y-auto lg:border-b-0 lg:border-r"
-              role="region"
-              id="interview-context"
-              aria-label="Candidate context"
-              tabIndex={0}
-            >
-<div className="flex min-w-0 items-center gap-4">
-              <Avatar className="size-10 shrink-0">
-                <AvatarImage src={safeProfileUrl(profile?.headshotUrl)} alt="" />
-                <AvatarFallback>
-                  {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <h1
-                  ref={heading}
-                  tabIndex={-1}
-                  className="oc-page-title break-words focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  {candidateName}
-                </h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {profile
-                    ? [profile.major, profile.gradYear ? `Class of ${profile.gradYear}` : ""].filter(Boolean).join(" · ")
-                    : "Profile not provided"}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {round?.name} · {applicationStatusLabels[active.status]}
-                </p>
-              </div>
-            </div>
-              <section className="space-y-3 border-t border-border pt-5">
-                <h2 className="oc-section-heading ">Profile at a glance</h2>
-                <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
-                <TestScoreDetail profile={profile} />
-              {profile?.bio && (
-                  <p className="whitespace-pre-wrap text-sm leading-7">{profile.bio}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  {[active.student.email, profile?.gpa != null ? `GPA ${profile.gpa}` : "", profile?.actScore != null ? `ACT ${profile.actScore}` : "", profile?.satScore != null ? `SAT ${profile.satScore}` : ""].filter(Boolean).join(" · ")}
-                </p>
-                {profile?.experiences.map((item) => (
-                  <div key={item.id} className="text-sm">
-                    <p className="font-medium">{item.title}</p>
-                    <p className="mt-1 text-muted-foreground">
-                      {item.subtitle} · {item.period}
-                    </p>
-                  </div>
-                ))}
-                <div className="flex gap-4">
-                  {[
-                    { label: "Résumé", url: profile?.resumeUrl, resolver: resolveResumeUrl },
-                    { label: "LinkedIn", url: profile?.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
-                  ].map(
-                    ({ label, url, resolver }) =>
-                      resolver(url) && (
-                        <a
-                          key={label}
-                          href={resolver(url)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm underline underline-offset-4"
-                        >
-                          {label}
-                          <span className="sr-only"> (new tab)</span>
-                        </a>
-                      ),
-                  )}
-                </div>
-              </section>
-              <section className="space-y-4 border-t border-border pt-5">
-                <h2 className="oc-section-heading ">Application context</h2>
-                {active.answers.map((answer) => (
-                  <div key={answer.id}>
-                    <h3 className="oc-card-heading ">{answer.question.prompt}</h3>
-                    {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
-                      <a
-                        href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm underline"
-                      >
-                        Open document (new tab)
-                      </a>
-                    ) : (
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {answer.response || "No response provided."}
-                      </p>
-                    )}
-                  </div>
-                ))}
-                {!active.answers.length && (
-                  <p className="text-sm text-muted-foreground">{active.studentId.startsWith("anonymous-") ? "Application text and attachments are withheld during anonymous review. Prepared review content appears above when available." : "No club-specific responses."}</p>
-                )}
-              </section>
-              <section className="space-y-4 border-t border-border pt-5">
-                <h2 className="oc-section-heading ">Other round evaluations</h2>
-                {active.evaluations
-                  .filter((item) => item.round !== round?.name)
-                  .map((item) => (
-                    <div key={item.id} className="border-l-2 border-border pl-3">
-                      <p className="text-xs font-medium">
-                        {item.round} · {item.score} / 10
-                        {item.interviewerId === membership.id ? " · You" : " · Club reviewer"}
-                      </p>
-                      {item.notes && (
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
-                          {item.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                {!active.evaluations.some((item) => item.round !== round?.name) && (
-                  <p className="text-sm text-muted-foreground">No evaluations from other rounds.</p>
-                )}
-              </section>
-            </div>
+context={
+  <div
+    className="min-w-0 max-h-72 overflow-y-auto border-b p-5 lg:sticky lg:top-0 lg:max-h-dvh lg:border-r"
+    role="region"
+    aria-label="Candidate context"
+    tabIndex={0}
+  >
+    <ApplicantDisplayPanel
+      key={active.id}
+      clubId={membership.clubId}
+      applicationId={active.id}
+      refreshKey={JSON.stringify(active.evaluations)}
+      mode="interview"
+    />
+  </div>
 }
             onComplete={(evaluation, next) => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, evaluations: [...app.evaluations.filter(e => e.id !== evaluation.id), evaluation] } : app) } : previous)

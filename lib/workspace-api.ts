@@ -1,4 +1,7 @@
 "use client"
+import * as applicantIntelligence from "@/actions/applicant-intelligence"
+import { defaultDisplayConfig, displayConfigSchema, projectApplicantDisplay } from "@/lib/applicant-display"
+import { z } from "zod"
 import * as roomApi from "@/actions/interview-rooms"
 import * as demoRoomApi from "@/lib/demo/interview-rooms"
 import * as recruitingRules from "@/actions/recruiting-rules"
@@ -287,7 +290,8 @@ export const openInterviewSession = adapt(interviewKits.openInterviewSession, in
     let record = s.interviews.find(r => r.applicationId === app.id && r.interviewerId === member.id && r.roundId === round.id)
     if (!record) { record = { id: crypto.randomUUID(), ...input, interviewerId: member.id, anonymousReview: round.anonymousReview, revision: 0, questions: structuredClone(round.interviewKit), draft: structuredClone(emptyInterviewDraft), completedAt: null }; s.interviews.push(record) }
     if (record.anonymousReview !== round.anonymousReview) throw new Error("Interview privacy settings changed.")
-    return record
+    const canonical = record.completedAt ? app.evaluations.find(e => e.interviewerId === member.id && e.round === round.name) : null
+    return { ...record, draft: canonical ? { ...record.draft, score: canonical.score, overallReview: canonical.notes || "" } : record.draft, feedbackSource: record.completedAt ? canonical ? "evaluation" : "historical-snapshot" : "draft" }
   })
 })
 export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, input => {
@@ -411,3 +415,48 @@ export const getApplicantSchedule = adapt(roomApi.getApplicantSchedule, demoRoom
 export const reserveInterview = adapt(roomApi.reserveInterview, demoRoomApi.reserveInterview)
 export const cancelRoomBooking = adapt(roomApi.cancelRoomBooking, demoRoomApi.cancelRoomBooking)
 export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRoomApi.getBookingApplication)
+
+
+export const getApplicantDisplay = adapt(applicantIntelligence.getApplicantDisplay, input => {
+  const app = scopedApplication(input.clubId, input.applicationId), s = demoStore.get();
+  const round = s.clubs[0].rounds.find(r => r.id === app.roundId)!;
+  return projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig, (s.observations || []).filter(o => o.applicationId === app.id));
+});
+export const getApplicantDisplayConfiguration = adapt(applicantIntelligence.getApplicantDisplayConfiguration, (clubId, roundId) => {
+  demoMeetingManager(clubId);
+  if (!demoStore.get().clubs[0].rounds.some(r => r.id === roundId)) throw new Error("Round unavailable.");
+  return demoStore.get().applicantDisplay?.[roundId] || { config: defaultDisplayConfig, version: 0 };
+});
+export const saveApplicantDisplayConfiguration = adapt(applicantIntelligence.saveApplicantDisplayConfiguration, input => {
+  const data = z.object({ clubId: z.string(), roundId: z.string(), version: z.number(), config: displayConfigSchema }).parse(input);
+  demoMeetingManager(data.clubId);
+  if (!demoStore.get().clubs[0].rounds.some(r => r.id === data.roundId)) throw new Error("Round unavailable.");
+  return demoStore.mutate(s => {
+    s.applicantDisplay ??= {};
+    if ((s.applicantDisplay[data.roundId]?.version || 0) !== data.version) throw new Error("Configuration changed. Reload.");
+    return s.applicantDisplay[data.roundId] = { config: data.config, version: data.version + 1 };
+  });
+});
+export const saveApplicantObservation = adapt(applicantIntelligence.saveApplicantObservation, input => {
+  const data = z.object({ clubId: z.string(), applicationId: z.string(), id: z.string().optional(), kind: z.enum(["PRO", "CON"]), body: z.string().trim().min(1).max(3000) }).parse(input);
+  const app = scopedApplication(data.clubId, data.applicationId);
+  if (demoStore.get().clubs[0].rounds.find(r => r.id === app.roundId)?.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
+  return demoStore.mutate(s => {
+    s.observations ??= [];
+    const old = s.observations.find(o => o.id === data.id && o.applicationId === app.id && o.own);
+    if (data.id && !old) throw new Error("Only the author can edit this observation.");
+    if (old) Object.assign(old, { body: data.body, kind: data.kind, updatedAt: new Date().toISOString() });
+    else s.observations.push({ id: crypto.randomUUID(), applicationId: app.id, kind: data.kind, body: data.body, author: "Demo reviewer", own: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    return { success: true };
+  });
+});
+export const deleteApplicantObservation = adapt(applicantIntelligence.deleteApplicantObservation, input => {
+  const data = z.object({ clubId: z.string(), applicationId: z.string(), id: z.string() }).parse(input);
+  const app = scopedApplication(data.clubId, data.applicationId);
+  if (demoStore.get().clubs[0].rounds.find(r => r.id === app.roundId)?.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
+  return demoStore.mutate(s => {
+    if (!s.observations?.some(o => o.id === data.id && o.applicationId === app.id && o.own)) throw new Error("Only the author can delete this observation.");
+    s.observations = s.observations.filter(o => o.id !== data.id);
+    return { success: true };
+  });
+});

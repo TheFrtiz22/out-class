@@ -1,4 +1,5 @@
 "use client";
+import { ApplicantDisplaySettings } from "@/components/applicant-intelligence";
 import { useEffect, useState } from "react";
 import {
   getInterviewKit,
@@ -80,6 +81,7 @@ export function InterviewKitEditor({
         </nav>
         <div className="oc-kit-builder">
           <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div><span>{loaded ? `${questions.length} questions` : "Loading…"}</span></header>
+          <ApplicantDisplaySettings key={round} clubId={clubId} roundId={round} />
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={busy || !loaded} className="space-y-5">
           {questions.map((q, i) => (

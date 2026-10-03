@@ -12,7 +12,7 @@ Drafts autosave after an 800ms pause and have an explicit Save draft control. Ed
 
 Completion validates the score, freezes the interview record, and upserts the existing overall evaluation in one transaction, with an audit record. Question-specific notes never replace overall evaluation notes. Complete & next advances only after a successful response. Completion does not change application round/status/decision. The existing scheduled-interview agenda remains unchanged; session identity follows the existing per-reviewer/per-round evaluation model rather than creating new bookings.
 
-Completed records remain readable by their author while the applicant is in that round. Previous-round records are retained in the database, but this version does not add a cross-round interview-record browser or team-wide question-note sharing. Existing prior-round overall evaluations remain available under their existing permissions. Later edits to an overall evaluation elsewhere do not rewrite the frozen original interview record.
+Completed records remain readable by their author while the applicant is in that round. Previous-round records are retained in the database, but this version does not add a cross-round interview-record browser or team-wide question-note sharing. Existing prior-round overall evaluations remain available under their existing permissions. Later edits to an overall evaluation elsewhere do not rewrite the frozen original interview record. With Prompt 33, completed-session displays read canonical score and feedback through the evaluation link; question notes remain the original snapshot. Unlinked historical records are labelled explicitly. See [applicant intelligence](applicant-intelligence.md).
 
 ## Authorization and anonymous review
 

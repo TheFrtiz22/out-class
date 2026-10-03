@@ -1,5 +1,5 @@
 "use client"
-import { TestScoreDetail } from "@/components/test-score-detail"
+import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 
 import { DemoRoundTarget } from "@/components/demo-workspace"
 import { useRef, useState } from "react"
@@ -8,11 +8,8 @@ import type { AppStatus } from "@prisma/client"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import { setApplicationStatus } from "@/lib/workspace-api"
 import { boardDecisionProgress } from "@/lib/board-review"
-import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -120,18 +117,6 @@ function DecisionPresentation({
     )
   const profile = app.student.studentProfile
   const name = profile ? `${profile.firstName} ${profile.lastName}` : app.student.email
-  const scores = rounds
-    .map((round) => {
-      const values = app.evaluations.filter((item) => item.round === round.name)
-      return {
-        round,
-        count: values.length,
-        score: values.length
-          ? values.reduce((sum, value) => sum + value.score, 0) / values.length
-          : null,
-      }
-    })
-    .filter((item) => item.count > 0)
   function navigate(next: number) {
     if (busy) return
     setIndex(next)
@@ -203,144 +188,19 @@ function DecisionPresentation({
           {!choice ? message : ""}
         </p>
         <article key={app.id} className="oc-voting-candidate space-y-7">
-          <header className="flex flex-wrap items-center gap-5 sm:gap-7">
-            <Avatar className="size-20 shrink-0 sm:size-28">
-              <AvatarImage src={safeProfileUrl(profile?.headshotUrl)} alt="" />
-              <AvatarFallback className="bg-secondary text-3xl text-primary">
-                {profile ? `${profile.firstName[0]}${profile.lastName[0]}` : "?"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                {rounds.find((round) => round.id === app.roundId)?.name || "Round not available"}
-              </p>
-              <h2
-                ref={heading}
-                tabIndex={-1}
-                className="oc-section-heading break-words focus-visible:outline-2 focus-visible:outline-ring"
-              >
-                {name}
-              </h2>
-              <p className="mt-3 text-sm text-muted-foreground">
-                {profile
-                  ? `${profile.major} · Class of ${profile.gradYear}`
-                  : "Academic profile not provided"}
-              </p>
-              <Badge variant="secondary" className="mt-3">
-                {applicationStatusLabels[app.status]}
-              </Badge>
-            </div>
-          </header>
-          <div className="grid gap-8 border-y border-border py-7 md:grid-cols-[minmax(0,1.25fr)_minmax(0,.75fr)]">
-            <section className="min-w-0 space-y-4">
-              <h3 className="oc-card-heading ">Profile & experience</h3>
-              <TestScoreDetail profile={profile} />
-              {profile?.bio && (
-                <p className="whitespace-pre-wrap break-words text-sm leading-7">{profile.bio}</p>
-              )}
-              {profile?.experiences.slice(0, 3).map((item) => (
-                <div key={item.id}>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    {item.subtitle} · {item.period}
-                  </p>
-                </div>
-              ))}
-              {!profile?.bio && !profile?.experiences.length && (
-                <p className="text-sm text-muted-foreground">
-                  No profile introduction or experience provided.
-                </p>
-              )}
-              <div className="flex flex-wrap gap-4 text-sm">
-                {[
-                  { label: "View résumé", url: profile?.resumeUrl, resolver: resolveResumeUrl },
-                  { label: "LinkedIn", url: profile?.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
-                ].map(
-                  ({ label, url, resolver }) =>
-                    resolver(url) && (
-                      <a
-                        key={label}
-                        href={resolver(url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-4"
-                      >
-                        {label}
-                        <span className="sr-only"> (new tab)</span>
-                      </a>
-                    ),
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {profile?.gpa != null && `GPA ${profile.gpa} / 4.0`}
-                {profile?.gpa != null && profile?.satScore != null && " · "}
-                {profile?.actScore != null && ` · ACT ${profile.actScore}`}
-                  {profile?.satScore != null && `SAT ${profile.satScore}`}
-              </p>
-              {profile && profile.experiences.length > 3 && (
-                <details className="text-sm">
-                  <summary className="cursor-pointer py-2">
-                    More experience ({profile.experiences.length - 3})
-                  </summary>
-                  {profile.experiences.slice(3).map((item) => (
-                    <p key={item.id} className="py-2 leading-6 text-muted-foreground">
-                      {item.title} · {item.subtitle} · {item.period}
-                    </p>
-                  ))}
-                </details>
-              )}
-            </section>
-            <section className="space-y-4">
-              <h3 className="oc-card-heading ">Round evaluations</h3>
-              {scores.length ? (
-                <dl className="divide-y divide-border">
-                  {scores.map((item) => (
-                    <div
-                      key={item.round.id}
-                      className="flex items-center justify-between gap-4 py-3"
-                    >
-                      <dt className="text-sm">
-                        {item.round.name}
-                        <span className="mt-1 block text-xs text-muted-foreground">
-                          {item.count} saved {item.count === 1 ? "evaluation" : "evaluations"}
-                        </span>
-                      </dt>
-                      <dd className="text-xl font-semibold tabular-nums">
-                        {item.score?.toFixed(1)}
-                        <span className="ml-1 text-xs font-normal text-muted-foreground">/ 10</span>
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              ) : (
-                <p className="text-sm text-muted-foreground">No round evaluations recorded.</p>
-              )}
-              <p className="text-xs leading-6 text-muted-foreground">
-                Average of saved evaluations within each round.
-              </p>
-            </section>
-          </div>
-          {app.evaluations.some((item) => item.notes) && (
-            <details className="text-sm">
-              <summary className="w-fit cursor-pointer rounded py-2 font-medium focus-visible:outline-2 focus-visible:outline-ring">
-                Review evaluation notes
-              </summary>
-              <div className="mt-3 grid gap-4 md:grid-cols-2">
-                {app.evaluations
-                  .filter((item) => item.notes)
-                  .map((item) => (
-                    <div key={item.id} className="border-l-2 border-border pl-4">
-                      <p className="text-xs font-medium">
-                        {item.round} · {item.score} / 10
-                      </p>
-                      <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-muted-foreground">
-                        {item.notes}
-                      </p>
-                    </div>
-                  ))}
-              </div>
-            </details>
-          )}
+<h2
+  ref={heading}
+  tabIndex={-1}
+  className="font-display text-2xl"
+>
+  Candidate {index + 1}
+</h2>
+<ApplicantDisplayPanel
+  key={app.id}
+  clubId={clubId}
+  applicationId={app.id}
+  mode="voting"
+/> 98cfd3c (Prompt 33)
         </article>
         <div className="flex flex-wrap items-center justify-between gap-5">
           <Button
