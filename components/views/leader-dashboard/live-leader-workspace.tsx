@@ -518,7 +518,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
       </div>
       <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
       {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
-      <p className="text-xs leading-6 text-muted-foreground">Board review is a presentation of this selection. Confirmed decisions use the same saved application statuses; it does not collect ballots. Local voting previews elsewhere are non-authoritative and do not determine these outcomes.</p>
+      <p className="text-xs leading-6 text-muted-foreground">Recruitment voting saves immutable ballots across multiple passes. Leadership reviews and explicitly publishes application decisions when ready.</p>
       <BoardDecisionMode
         applicants={filtered}
         rounds={data.rounds}

@@ -1,4 +1,6 @@
 "use client"
+import * as votingApi from "@/actions/voting"
+import * as demoVoting from "@/lib/demo/voting"
 import * as applicantIntelligence from "@/actions/applicant-intelligence"
 import { defaultDisplayConfig, displayConfigSchema, projectApplicantDisplay } from "@/lib/applicant-display"
 import { z } from "zod"
@@ -460,3 +462,13 @@ export const deleteApplicantObservation = adapt(applicantIntelligence.deleteAppl
     return { success: true };
   });
 });
+
+// Persisted voting follows the same Demo Mode boundary as recruitment and applicant display.
+export const getVotingWorkspace = adapt(votingApi.getVotingWorkspace, demoVoting.getVotingWorkspace)
+export const createVotingSession = adapt(votingApi.createVotingSession, demoVoting.createVotingSession)
+export const submitVotingBallot = adapt(votingApi.submitVotingBallot, demoVoting.submitVotingBallot)
+export const commandVotingSession = adapt(votingApi.commandVotingSession, demoVoting.commandVotingSession)
+export async function seedVotingDemo(clubId: string) {
+  if (!demoStore.active()) throw Error("Sample voting is available only in Demo Mode.")
+  return demoVoting.seedVotingDemo(clubId)
+}

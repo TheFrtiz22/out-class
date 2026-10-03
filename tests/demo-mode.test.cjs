@@ -466,3 +466,14 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  assert.equal((await api.getApplicantSchedule(applicationId)).rooms.length,0)
  assert.equal(h.calls(),0)
 })
+
+test("persisted voting demo uses the same boundary, holds and two-pass history survive refresh, reset clears sessions", async () => {
+  const h=harness(), {demoStore}=h.load('lib/demo/store.ts'), api=h.load('lib/workspace-api.ts');
+  demoStore.start(); const clubId=demoStore.get().clubs[0].id;
+  await assert.rejects(api.getVotingWorkspace(clubId),/leader/);
+  demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});
+  const id=await api.seedVotingDemo(clubId), view=await api.getVotingWorkspace(clubId,id);
+  assert.equal(view.session.passes.length,2);assert.equal(view.summary.passed,1);assert.ok(view.summary.held>=1);assert.ok(view.summary.notPassed>=1);assert.equal(view.summary.target,2);assert.ok(view.session.passes[0].candidates.every(c=>c.ballots.length===1));
+  const ballot=JSON.stringify(view.session.passes);demoStore.start();assert.equal(JSON.stringify((await api.getVotingWorkspace(clubId,id)).session.passes),ballot);assert.equal(h.calls(),0);
+  demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).session,null);
+});

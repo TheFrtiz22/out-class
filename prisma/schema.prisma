@@ -80,6 +80,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
   school              School           @relation(fields: [schoolId], references: [id], onDelete: Restrict)
   rosterImports       RosterImport[]
@@ -115,6 +116,7 @@ model Club {
 }
 
 model ClubMember {
+  votingParticipants VotingParticipant[]
   accessRole       MembershipAccessRole @default(MEMBER)
   status           MembershipStatus     @default(ACTIVE)
   joinedAt         DateTime             @default(now())
@@ -150,6 +152,7 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  votingSessions VotingSession[]
   applicantDisplay Json @default("{}")
   displayVersion Int @default(0)
   interviewRooms    InterviewRoom[]
@@ -191,6 +194,7 @@ enum QuestionType {
 }
 
 model Application {
+  votingCandidates VotingCandidate[]
   observations ApplicantObservation[]
   recruitingFlags     RecruitingRuleFlag[]
   anonymousReviewText String?
@@ -780,4 +784,86 @@ model ApplicantObservation {
 
   @@index([applicationId, createdAt])
   @@index([authorId])
+}
+
+// Durable decisions are separate from published application statuses.
+model VotingSession {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
+  roundId String
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  state String @default("DRAFT")
+  targetSize Int
+  autoAdvance String @default("NONE")
+  threshold Int @default(100)
+  currentPass Int @default(0)
+  revision Int @default(0)
+  createdBy String
+  startedAt DateTime?
+  endedAt DateTime?
+  publishedAt DateTime?
+  publishedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  participants VotingParticipant[]
+  candidates VotingCandidate[]
+  passes VotingPass[]
+  @@index([clubId, roundId, createdAt])
+}
+model VotingParticipant {
+  sessionId String
+  session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  memberId String
+  member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  ballots VotingBallot[]
+  @@id([sessionId, memberId])
+}
+model VotingCandidate {
+  sessionId String
+  session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  applicationId String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  position Int
+  expectedStatus AppStatus
+  publishedStatus AppStatus?
+  passes VotingPassCandidate[]
+  @@id([sessionId, applicationId])
+  @@unique([sessionId, position])
+}
+model VotingPass {
+  sessionId String
+  session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  number Int
+  state String @default("OPEN")
+  startedAt DateTime @default(now())
+  completedAt DateTime?
+  candidates VotingPassCandidate[]
+  @@id([sessionId, number])
+}
+model VotingPassCandidate {
+  sessionId String
+  passNumber Int
+  applicationId String
+  pass VotingPass @relation(fields: [sessionId, passNumber], references: [sessionId, number], onDelete: Restrict)
+  candidate VotingCandidate @relation(fields: [sessionId, applicationId], references: [sessionId, applicationId], onDelete: Restrict)
+  position Int
+  override String?
+  overrideBy String?
+  overrideAt DateTime?
+  ballots VotingBallot[]
+  @@id([sessionId, passNumber, applicationId])
+  @@unique([sessionId, passNumber, position])
+}
+model VotingBallot {
+  id String @id @default(uuid())
+  sessionId String
+  passNumber Int
+  applicationId String
+  memberId String
+  candidate VotingPassCandidate @relation(fields: [sessionId, passNumber, applicationId], references: [sessionId, passNumber, applicationId], onDelete: Restrict)
+  participant VotingParticipant @relation(fields: [sessionId, memberId], references: [sessionId, memberId], onDelete: Restrict)
+  decision String
+  createdAt DateTime @default(now())
+  @@unique([sessionId, passNumber, applicationId, memberId])
 }

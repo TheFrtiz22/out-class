@@ -53,6 +53,7 @@ export async function GET(request: Request) {
             members: {
               some: {
                 userId: user.id,
+                status: "ACTIVE",
                 OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }]
               }
             }

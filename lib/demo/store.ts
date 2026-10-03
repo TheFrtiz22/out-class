@@ -44,6 +44,8 @@ export const demoStore = {
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
     state!.applicantDisplay ??= {}
+    state!.votingSessions ??= []
+    state!.votingAudit ??= []
     state!.observations ??= []
     state!.recruitingRules ??= []
     state!.recruitingFlags ??= []

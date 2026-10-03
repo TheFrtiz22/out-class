@@ -12,7 +12,7 @@ type Message = { type: "request" } | { type: "snapshot"; state: VotingSession }
   | { type: "find"; pin: string; requestId: string }
   | { type: "found"; sessionId: string; requestId: string }
 
-/** Same-document and same-browser simulation. Replace with authenticated WebSockets for devices. */
+/** Local preview only. Production sessions and ballots use actions/voting.ts and server polling. */
 function connect(sessionId: string, receive: (message: Message) => void) {
   const topic = `outclass-live-voting:${sessionId}`
   const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(topic) : null

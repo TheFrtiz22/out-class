@@ -1,6 +1,6 @@
 # Local voting preview
 
-For the authenticated board-review workflow, see [voting-mode.md](voting-mode.md). Real multi-device infrastructure is separately scoped in [voting-backend.md](voting-backend.md).
+For the persisted production recruitment voting workflow, see [voting-mode.md](voting-mode.md) and [voting-backend.md](voting-backend.md). The transport described below is an isolated local preview and never determines production outcomes.
 
 In the local preview CRM, select **Voting preview**. The session snapshots the current
 filtered applicant pool and its order. The setup modal validates a target range

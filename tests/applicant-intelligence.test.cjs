@@ -93,3 +93,10 @@ test('migration preserves historical feedback and links canonical evaluations, c
  await db.exec(`UPDATE "User" SET id='new-author' WHERE id='author'`);assert.equal((await db.query('SELECT "authorId" FROM "ApplicantObservation"')).rows[0].authorId,'new-author');
  } finally {await db.close()}
 });
+
+test('configured résumé/LinkedIn links reuse private download access and disappear anonymously',()=>{
+ const app=application();app.student.studentProfile.resumeUrl=`${applicationId}/resume.pdf`;app.student.studentProfile.linkedinUrl='https://www.linkedin.com/in/example';
+ const config={version:1,fields:['resume','linkedin']};let view=projectApplicantDisplay(app,app.round,config,[]);
+ assert.equal(view.links.length,2);assert.match(view.links[0].href,/^\/api\/resumes\?path=/);assert.doesNotMatch(JSON.stringify(view),/signedUrl/);
+ app.round.anonymousReview=true;view=projectApplicantDisplay(app,app.round,config,[]);assert.deepEqual(view.links,[]);assert.deepEqual(view.visible,[]);
+});

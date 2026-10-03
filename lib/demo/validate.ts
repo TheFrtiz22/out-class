@@ -17,6 +17,7 @@ export const demoSnapshotSchema = z
     recruitingRules: z.array(z.object({ roundId: id, minGpa: z.number().min(0).max(4).nullable(), minSat: z.number().int().min(400).max(1600).multipleOf(10).nullable(), minAct: z.number().int().min(1).max(36).nullable(), revision: z.number().int().positive(), updatedAt: z.date() })).optional(),
     recruitingFlags: z.array(z.object({ roundId: id, applicationId: id, ruleRevision: z.number().int().positive(), reasons: z.array(z.string()), flaggedBy: id, flaggedAt: z.date() })).optional(),
     recruitingRuleAudit: z.array(z.object({ action: z.string(), roundId: id, actorId: id, at: z.date(), details: z.string() })).optional(),
+    votingSessions: z.array(z.object({ id, clubId: id, roundId: id, state: z.enum(["DRAFT", "OPEN", "PAUSED", "COMPLETED"]), targetSize: z.number().int().positive(), currentPass: z.number().int().min(0), revision: z.number().int().min(0), autoAdvance: z.enum(["NONE", "UNANIMOUS", "THRESHOLD"]), threshold: z.number().int().min(51).max(100), participants: z.array(z.object({ memberId: id })), candidates: z.array(z.object({ applicationId: id, position: z.number().int().min(0) })), passes: z.array(z.object({ number: z.number().int().positive(), state: z.enum(["OPEN", "COMPLETED"]), candidates: z.array(z.object({ applicationId: id, ballots: z.array(z.object({ memberId: id, decision: z.enum(["PASS", "HOLD", "NOT_PASS"]), createdAt: z.date() })) })) })) })).optional(),
     version: z.literal(1),
     anchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     perspective: z.object({ role: z.enum(["student", "leader"]), clubId: id }),
@@ -109,6 +110,12 @@ export const demoSnapshotSchema = z
     for (const app of s.applications) {
       const club = s.clubs.find(c => c.id === app.clubId)
       if (!club?.rounds.some(r => r.id === app.roundId) || app.answers.some(a => !club.questions.some(q => q.id === a.questionId)) || app.evaluations.some(e => !s.memberships.some(m => m.id === e.interviewerId && m.clubId === app.clubId))) invalid()
+    }
+    for (const session of s.votingSessions ?? []) {
+      if (!s.clubs.find(c => c.id === session.clubId)?.rounds.some(r => r.id === session.roundId) || session.participants.some(p => !s.memberships.some(m => m.id === p.memberId && m.clubId === session.clubId)) || session.candidates.some(c => !s.applications.some(a => a.id === c.applicationId && a.clubId === session.clubId))) invalid()
+      for (const pass of session.passes) for (const candidate of pass.candidates) {
+        if (!session.candidates.some(c => c.applicationId === candidate.applicationId) || candidate.ballots.some(b => !session.participants.some(p => p.memberId === b.memberId)) || new Set(candidate.ballots.map(b => b.memberId)).size !== candidate.ballots.length) invalid()
+      }
     }
     for (const slot of s.slots) {
       if (slot.endTime <= slot.startTime || !s.memberships.some(m => m.id === slot.interviewerId && m.clubId === slot.clubId) || (slot.applicationId && !s.applications.some(a => a.id === slot.applicationId && a.clubId === slot.clubId))) invalid()

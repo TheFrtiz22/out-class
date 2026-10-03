@@ -343,6 +343,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     meetings, meetingAttendances, meetingTokens,
     interviews,
     applicantDisplay: {} as Record<string, { config: import("@/lib/applicant-display").ApplicantDisplayConfig; version: number }>,
+    votingSessions: [] as NonNullable<Awaited<ReturnType<typeof import("@/actions/voting").getVotingWorkspace>>["session"]>[],
+    votingAudit: [] as { action: string; sessionId: string; at: Date }[],
     observations: [] as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],
     recruitingRules: [] as DemoRecruitingRule[],
     recruitingFlags: [] as DemoRecruitingFlag[],

@@ -1,314 +1,69 @@
 "use client"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
-
-import { DemoRoundTarget } from "@/components/demo-workspace"
-import { useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Check, Presentation, X } from "lucide-react"
-import type { AppStatus } from "@prisma/client"
+import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
 import type { getClubPipeline } from "@/lib/workspace-api"
-import { setApplicationStatus } from "@/lib/workspace-api"
-import { boardDecisionProgress } from "@/lib/board-review"
-import { applicationStatusLabels } from "@/lib/student-applications"
+import type { AppStatus } from "@prisma/client"
+import { useDemoMode } from "@/contexts/demo-context"
+import type { Decision } from "@/lib/voting-engine"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import "./voting-mode.css"
-
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
-type Candidate = Pipeline["applications"][number]
-export function BoardDecisionMode({
-  applicants,
-  rounds,
-  clubId,
-  clubName,
-  canDecide,
-  onDecision,
-}: {
-  applicants: Candidate[]
-  rounds: Pipeline["rounds"]
-  clubId: string
-  clubName: string
-  canDecide: boolean
-  onDecision: (id: string, status: AppStatus) => void
-}) {
-  const [pool, setPool] = useState<Candidate[] | null>(null)
-  return (
-    <>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!applicants.length}
-        onClick={() =>
-          setPool(structuredClone(applicants.filter((app) => app.status !== "DRAFTING")))
-        }
-      >
-        <Presentation className="size-4" />
-        Board decision review
-      </Button>
-      <Dialog
-        open={!!pool}
-        onOpenChange={(value) => {
-          if (!value) setPool(null)
-        }}
-      >
-        <DialogContent
-          showCloseButton={false}
-          aria-describedby={undefined}
-          data-workspace-detail className="oc-voting-stage inset-0 flex h-dvh max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-y-auto rounded-none border-0 bg-background p-0 sm:max-w-none"
-          onEscapeKeyDown={(event) => event.preventDefault()}
-          onInteractOutside={(event) => event.preventDefault()}
-        >
-          <DialogTitle className="oc-modal-title sr-only">Board decision review</DialogTitle>
-          {pool && (
-            <DecisionPresentation
-              key={clubId}
-              initial={pool}
-              rounds={rounds}
-              clubId={clubId}
-              clubName={clubName}
-              canDecide={canDecide}
-              onClose={() => setPool(null)}
-              onDecision={onDecision}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
+const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
+export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
+  const [open,setOpen]=useState(false)
+  return <><Button variant="outline" size="sm" onClick={()=>setOpen(true)}>Recruitment voting</Button><Dialog open={open} onOpenChange={setOpen}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} />}</DialogContent></Dialog></>
 }
-
-function DecisionPresentation({
-  initial,
-  rounds,
-  clubId,
-  clubName,
-  canDecide,
-  onClose,
-  onDecision,
-}: {
-  initial: Candidate[]
-  rounds: Pipeline["rounds"]
-  clubId: string
-  clubName: string
-  canDecide: boolean
-  onClose: () => void
-  onDecision: (id: string, status: AppStatus) => void
-}) {
-  const [pool, setPool] = useState(initial)
-  const [index, setIndex] = useState(0)
-  const [choice, setChoice] = useState<"ACCEPTED" | "REJECTED" | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState("")
-  const [failed, setFailed] = useState(false)
-  const heading = useRef<HTMLHeadingElement>(null)
-  const app = pool[index]
-  const progress = boardDecisionProgress(pool)
-  if (!app)
-    return (
-      <div className="space-y-4 p-8">
-        <p>No submitted candidates in this selection.</p>
-        <Button onClick={onClose}>Return to applicants</Button>
-      </div>
-    )
-  const profile = app.student.studentProfile
-  const name = profile ? `${profile.firstName} ${profile.lastName}` : app.student.email
-  function navigate(next: number) {
-    if (busy) return
-    setIndex(next)
-    setMessage("")
-    setFailed(false)
-    requestAnimationFrame(() => heading.current?.focus())
-  }
-  async function confirm() {
-    if (!choice || busy || !canDecide) return
-    setBusy(true)
-    setMessage("")
-    setFailed(false)
-    try {
-      await setApplicationStatus({
-        clubId,
-        applicationId: app.id,
-        status: choice,
-        expectedStatus: app.status === "DRAFTING" ? undefined : app.status,
-      })
-      setPool((previous) =>
-        previous.map((item) => (item.id === app.id ? { ...item, status: choice } : item)),
-      )
-      onDecision(app.id, choice)
-      setChoice(null)
-      setMessage(`${name}: ${choice === "ACCEPTED" ? "accepted" : "not selected"}. Decision saved.`)
-      if (index < pool.length - 1) {
-        setIndex(index + 1)
-        requestAnimationFrame(() => heading.current?.focus())
-      }
-    } catch {
-      setFailed(true)
-      setMessage(
-        "The decision could not be saved. It may have changed elsewhere. Close board review, refresh the applicant list, and try again.",
-      )
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <>
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-10">
-        <div>
-          <p className="text-sm font-semibold">
-            OutClass <span className="px-2 text-muted-foreground">/</span> Board decision review
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{clubName} · Board decision review</p>
-        </div>
-        <Button variant="ghost" size="sm" disabled={busy} onClick={onClose}>
-          <X className="size-4" />
-          Return to applicants
-        </Button>
-      </header>
-      <div className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-5 py-6 sm:px-10 sm:py-8">
-        <DemoRoundTarget />
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>
-            Candidate {index + 1} of {pool.length} · Current filtered selection
-          </p>
-          <p>Facilitated discussion · individual ballots are not collected</p>
-        </div>
-        <p
-          role={failed ? "alert" : "status"}
-          className={
-            message && !choice
-              ? `text-sm ${failed ? "text-destructive" : "text-muted-foreground"}`
-              : "sr-only"
-          }
-        >
-          {!choice ? message : ""}
-        </p>
-        <article key={app.id} className="oc-voting-candidate space-y-7">
-<h2
-  ref={heading}
-  tabIndex={-1}
-  className="font-display text-2xl"
->
-  Candidate {index + 1}
-</h2>
-<ApplicantDisplayPanel
-  key={app.id}
-  clubId={clubId}
-  applicationId={app.id}
-  mode="voting"
-/>
-        </article>
-        <div className="flex flex-wrap items-center justify-between gap-5">
-          <Button
-            variant="ghost"
-            disabled={busy || index === 0}
-            onClick={() => navigate(index - 1)}
-          >
-            <ArrowLeft className="size-4" />
-            Previous
-          </Button>
-          {canDecide ? (
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                className="min-h-12 min-w-36"
-                disabled={busy || app.status === "REJECTED"}
-                onClick={() => {
-                  setMessage("")
-                  setChoice("REJECTED")
-                }}
-              >
-                <X className="size-4" />
-                Not selected
-              </Button>
-              <Button
-                className="min-h-12 min-w-36"
-                disabled={busy || app.status === "ACCEPTED"}
-                onClick={() => {
-                  setMessage("")
-                  setChoice("ACCEPTED")
-                }}
-              >
-                <Check className="size-4" />
-                Accept
-              </Button>
-            </div>
-          ) : (
-            <p className="max-w-sm text-center text-sm text-muted-foreground">
-              Presentation only. Decision-management permission is required to record final decisions.
-            </p>
-          )}
-          <Button
-            variant="ghost"
-            disabled={busy || index === pool.length - 1}
-            onClick={() => navigate(index + 1)}
-          >
-            Next
-            <ArrowRight className="size-4" />
-          </Button>
-        </div>
-        <p className="text-center text-xs leading-6 text-muted-foreground">
-          Final decisions update the student’s application after confirmation. No automatic email is
-          sent.
-        </p>
-      </div>
-      <footer className="border-t border-border bg-card px-5 py-4 sm:px-10">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 text-sm">
-          <p>
-            <strong className="tabular-nums">{progress.accepted}</strong> accepted{" "}
-            <span className="mx-2 text-muted-foreground">·</span>
-            <strong className="tabular-nums">{progress.rejected}</strong> not selected
-          </p>
-          <p className="text-muted-foreground">
-            {progress.remaining} without a final decision in this selection
-          </p>
-        </div>
-      </footer>
-      <Dialog
-        open={!!choice}
-        onOpenChange={(value) => {
-          if (!value && !busy) setChoice(null)
-        }}
-      >
-        <DialogContent
-          showCloseButton={!busy}
-          onInteractOutside={(event) => event.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>
-              {choice === "ACCEPTED" ? `Accept ${name}?` : `Mark ${name} as not selected?`}
-            </DialogTitle>
-            <DialogDescription>
-              This saves a final application decision visible to the student. Current status:{" "}
-              {applicationStatusLabels[app.status]}.{" "}
-              {index < pool.length - 1
-                ? "After saving, the next candidate will appear."
-                : "This is the final candidate in your selection."}
-            </DialogDescription>
-          </DialogHeader>
-          {message && (
-            <p role="alert" className="text-sm text-destructive">
-              {message}
-            </p>
-          )}
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" disabled={busy} onClick={() => setChoice(null)}>
-              Keep discussing
-            </Button>
-            <Button disabled={busy} onClick={() => void confirm()}>
-              {busy
-                ? "Saving decision…"
-                : index < pool.length - 1
-                  ? "Confirm & next"
-                  : "Confirm decision"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
+function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeof BoardDecisionMode>[0]) {
+  const demo = useDemoMode()
+  const requestRevision = useRef({value:0})
+  const initializedSession = useRef<string | undefined>(undefined)
+  const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
+  const [sessionId,setSessionId]=useState<string>(),[round,setRound]=useState(""),[target,setTarget]=useState(40),[rule,setRule]=useState("NONE"),[threshold,setThreshold]=useState(100),[members,setMembers]=useState<string[]>([])
+  const [index,setIndex]=useState(0),[ballotFilter,setBallotFilter]=useState("ALL"),[filter,setFilter]=useState("ALL"),[year,setYear]=useState("ALL"),[viewPass,setViewPass]=useState(0),[selected,setSelected]=useState<string[]>([]),[publishReview,setPublishReview]=useState(false),[override,setOverride]=useState<Decision>("HOLD"),[reason,setReason]=useState("")
+  const refresh=useCallback(async()=>{const request=++requestRevision.current.value;try{const v=await getVotingWorkspace(clubId,sessionId);if(request!==requestRevision.current.value)return;setData(v);setError("")}catch(e){if(request!==requestRevision.current.value)return;setData(null);setError(e instanceof Error?e.message:"Session unavailable.")}},[clubId,sessionId])
+  useEffect(()=>{const revision=requestRevision.current;let live=true;const poll=async()=>{if(live)await refresh()};void poll();const timer=setInterval(()=>void poll(),5000);return()=>{live=false;revision.value++;clearInterval(timer)}},[refresh])
+  async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
+  const s=data?.session,summary=data?.summary,current=s?.passes.find(p=>p.number===s.currentPass),shown=s?.passes.find(p=>p.number===(viewPass||s.currentPass))
+  useEffect(()=>{if(s&&initializedSession.current!==s.id){initializedSession.current=s.id;setTarget(s.targetSize);setViewPass(0);setIndex(0);setSelected([]);setPublishReview(false)}},[s])
+  const queue=(shown?.candidates??s?.candidates??[]).filter(c=>filter==="ALL"||summary?.outcomes.find(o=>o.applicationId===c.applicationId)?.outcome===filter).filter(c=>year==="ALL"||String(data?.graduationYears.find(a=>a.id===c.applicationId)?.student.studentProfile?.gradYear)===year)
+  const filteredQueue=queue.filter(c=>ballotFilter==="ALL"||(shown?.candidates.find(v=>v.applicationId===c.applicationId)?.ballots.some(b=>b.memberId===data?.memberId)??false)===(ballotFilter==="VOTED"))
+  const app=filteredQueue[Math.min(index,Math.max(0,filteredQueue.length-1))],outcome=summary?.outcomes.find(o=>o.applicationId===app?.applicationId),entry=shown?.candidates.find(c=>c.applicationId===app?.applicationId),mine=entry?.ballots.find(b=>b.memberId===data?.memberId)
+  const years=[...new Set(data?.graduationYears.map(a=>a.student.studentProfile?.gradYear).filter(Boolean))].sort()
+  const command=(action:string,extra:Record<string,unknown>={})=>commandVotingSession({clubId,sessionId:s!.id,revision:s!.revision,action,...extra})
+  return <div className="mx-auto w-full max-w-5xl space-y-5 py-5">
+    <p className="text-xs text-muted-foreground">Saved on the server · refreshes every 5 seconds · votes never change application statuses until publication.</p>
+    {error&&<p role="alert" className="text-destructive">{error}<Button variant="ghost" onClick={()=>void refresh()}>Refresh</Button></p>}
+    {!data&&!error&&<p role="status">Loading voting workspace…</p>}
+    {data&&<>
+      {!!data.sessions.length&&<label className="block">Session history <select className="rounded border bg-background p-2" value={sessionId??data.session?.id??""} onChange={e=>{setData(null);setSessionId(e.target.value);setIndex(0);setViewPass(0);setSelected([]);setPublishReview(false)}}>{data.sessions.map(v=><option key={v.id} value={v.id}>{new Date(v.createdAt).toLocaleString()} · {v.state} · Pass {v.currentPass}</option>)}</select></label>}
+      {data.canManage&&<details open={!s}><summary className="cursor-pointer py-2">Create a voting session</summary><form className="space-y-3 rounded-lg border p-4" onSubmit={e=>{e.preventDefault();void run(async()=>{const id=await createVotingSession({clubId,roundId:round,applicationIds:applicants.filter(a=>a.roundId===round&&a.status!=="DRAFTING").map(a=>a.id),participantIds:members,targetSize:target,autoAdvance:rule,threshold});setSessionId(id);setSelected([]);setViewPass(0)})}}>
+        <label className="block">Recruitment round <select required className="rounded border bg-background p-2" value={round} onChange={e=>setRound(e.target.value)}><option value="">Choose round</option>{data.rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
+        <p className="text-xs text-muted-foreground">Snapshots submitted candidates in this round from the current applicant selection. Existing sessions remain in history.</p>
+        <label className="block">Target class size <input required type="number" min={1} max={2000} className="w-24 rounded border bg-background p-2" value={target} onChange={e=>setTarget(Number(e.target.value))}/></label>
+        <label className="block">Visible automatic advancement rule <select className="rounded border bg-background p-2" value={rule} onChange={e=>setRule(e.target.value)}><option value="NONE">None · complete ballots and strict majority</option><option value="UNANIMOUS">Unanimous Pass</option><option value="THRESHOLD">Pass threshold of all participants</option></select></label>
+        {rule==="THRESHOLD"&&<label>Threshold % <input type="number" min={51} max={100} value={threshold} onChange={e=>setThreshold(Number(e.target.value))}/></label>}
+        <fieldset><legend>Authorized voting participants</legend>{data.eligible.map(m=><label key={m.id} className="mr-4 inline-flex min-h-11 items-center gap-2"><input type="checkbox" checked={members.includes(m.id)} onChange={e=>setMembers(v=>e.target.checked?[...v,m.id]:v.filter(id=>id!==m.id))}/>{m.label}</label>)}</fieldset>
+        <Button disabled={busy||!members.length||!round}>Create draft session</Button>
+      </form></details>}
+      {s&&summary?<>
+        <div className="rounded-lg border bg-card p-4"><p className="font-semibold">{s.state} · Pass {s.currentPass} · {data.rounds.find(r=>r.id===s.roundId)?.name}</p><p>Target: {summary.target} · Passed: {summary.passed} · Hold: {summary.held} · Not passed: {summary.notPassed} · Unresolved / remaining: {summary.remaining} · Processed: {summary.processed} / {summary.total}</p>{summary.targetReached&&<p role="status" className="font-semibold text-emerald-700">Target reached. Leadership can continue voting and review.</p>}{s.publishedAt&&<p>Published {new Date(s.publishedAt).toLocaleString()} · session sealed.</p>}</div>
+        <div className="flex flex-wrap items-center gap-4"><label>Outcome <select className="rounded border bg-background p-2" value={filter} onChange={e=>{setFilter(e.target.value);setIndex(0)}}><option value="ALL">All outcomes</option>{Object.entries(labels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>Graduation year <select className="rounded border bg-background p-2" value={year} onChange={e=>{setYear(e.target.value);setIndex(0)}}><option value="ALL">All years</option>{years.map(y=><option key={y} value={y}>{y} ({data.graduationYears.filter(a=>a.student.studentProfile?.gradYear===y).length})</option>)}</select></label><label>Your voting state <select className="rounded border bg-background p-2" value={ballotFilter} onChange={e=>{setBallotFilter(e.target.value);setIndex(0)}}><option value="ALL">All candidates</option><option value="VOTED">Ballot recorded</option><option value="UNVOTED">Not voted</option></select></label><label>Review pass <select className="rounded border bg-background p-2" value={viewPass} onChange={e=>{setViewPass(Number(e.target.value));setIndex(0)}}><option value={0}>Current pass</option>{s.passes.map(p=><option key={p.number} value={p.number}>Pass {p.number} · {p.state}</option>)}</select></label></div>
+        {app?<article className="space-y-4"><h2 className="font-display text-2xl">Candidate {Math.min(index,filteredQueue.length-1)+1} of {filteredQueue.length}</h2><p>Latest outcome: {outcome?labels[outcome.outcome]:"Unresolved"}{outcome?.automatic&&" · Automatically advanced by configured rule"} · Your ballot in this pass: {mine?labels[mine.decision as Decision]:"Not recorded"} · {entry?.ballots.length??0} / {s.participants.length} ballots</p><ApplicantDisplayPanel key={app.applicationId} clubId={clubId} applicationId={app.applicationId} mode="voting"/><div className="flex flex-wrap justify-between gap-3"><Button variant="outline" disabled={index===0} onClick={()=>setIndex(i=>i-1)}>Previous candidate</Button><div className="flex flex-wrap gap-2">{(["PASS","HOLD","NOT_PASS"] as const).map(d=><Button key={d} variant={d==="PASS"?"default":"outline"} disabled={busy||!data.canVote||!!mine||s.state!=="OPEN"||shown?.number!==s.currentPass||current?.state!=="OPEN"||!entry} onClick={()=>void run(()=>submitVotingBallot({clubId,sessionId:s.id,passNumber:s.currentPass,applicationId:app.applicationId,decision:d}))}>{labels[d]}</Button>)}</div><Button variant="outline" disabled={index>=filteredQueue.length-1} onClick={()=>setIndex(i=>i+1)}>Next candidate</Button></div>
+        {data.canManage&&!s.publishedAt&&s.state!=="COMPLETED"&&<details><summary className="cursor-pointer py-3">Leadership override</summary><form className="flex flex-wrap gap-3" onSubmit={e=>{e.preventDefault();void run(()=>command("OVERRIDE",{applicationId:app.applicationId,decision:override,reason}))}}><label>Outcome <select value={override} onChange={e=>setOverride(e.target.value as Decision)}>{(["PASS","HOLD","NOT_PASS"] as const).map(d=><option key={d} value={d}>{labels[d]}</option>)}</select></label><label>Reason <input required maxLength={1000} className="rounded border bg-background p-2" value={reason} onChange={e=>setReason(e.target.value)}/></label><Button disabled={busy}>Record override</Button></form></details>}
+        </article>:<p>No candidates match this view.</p>}
+        {(data.canManage||data.canStart||data.canFinish||data.canReopen)&&!s.publishedAt&&<div className="space-y-3 border-t pt-4">
+          {data.canStart&&s.state==="OPEN"&&<Button disabled={busy} variant="outline" onClick={()=>void run(()=>command("PAUSE"))}>Pause session</Button>}
+          {data.canStart&&s.state==="PAUSED"&&current?.state==="OPEN"&&<Button disabled={busy} onClick={()=>void run(()=>command("RESUME"))}>Resume voting</Button>}
+          {data.canStart&&current?.state==="OPEN"&&s.state!=="COMPLETED"&&<><p>{current.candidates.every(c=>c.ballots.length===s.participants.length)?"Everyone has voted. Complete this pass, then choose another pass or finish.":"Some ballots remain. Closing this pass preserves unresolved candidates for review."}</p><Button variant="outline" disabled={busy} onClick={()=>void run(()=>command("COMPLETE_PASS"))}>Complete pass</Button></>}
+          {(s.state==="DRAFT"||(s.state==="PAUSED"&&current?.state!=="OPEN"))&&<><p>Would you like {s.currentPass?"another":"the first"} pass? Select candidates, or leave the selection empty to include Hold and Unresolved candidates.</p><details><summary className="cursor-pointer py-2">Select next-pass candidates ({selected.length})</summary>{summary.outcomes.map((o,i)=><label key={o.applicationId} className="block min-h-9"><input type="checkbox" checked={selected.includes(o.applicationId)} onChange={e=>setSelected(v=>e.target.checked?[...v,o.applicationId]:v.filter(id=>id!==o.applicationId))}/> Candidate {i+1} · {labels[o.outcome]}</label>)}</details><Button disabled={busy||!data.canStart} onClick={()=>void run(async()=>{await command("START_PASS",selected.length?{applicationIds:selected}:{});setSelected([]);setViewPass(0);setIndex(0)})}>Start pass {s.currentPass+1}</Button>{data.canFinish&&s.currentPass>0&&<Button variant="outline" disabled={busy} onClick={()=>void run(()=>command("FINISH"))}>Finish session</Button>}</>}
+          {data.canReopen&&s.state==="COMPLETED"&&<Button variant="outline" disabled={busy} onClick={()=>void run(()=>command("REOPEN"))}>Reopen for review / another pass</Button>}
+          {data.canManage&&s.state!=="COMPLETED"&&<form className="flex gap-3" onSubmit={e=>{e.preventDefault();void run(()=>command("CONFIGURE",{targetSize:target}))}}><label>Update target <input required type="number" min={1} max={2000} className="w-24 rounded border bg-background p-2" value={target} onChange={e=>setTarget(Number(e.target.value))}/></label><Button variant="outline" disabled={busy}>Save target</Button></form>}
+        </div>}
+        {data.canPublish&&s.state==="COMPLETED"&&!s.publishedAt&&<section className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Review and publish application decisions</h3><p>Pass → Accepted · Hold → Waitlisted · Do Not Pass → Rejected. Unselected candidates keep their application status. Publication seals this session.</p>{summary.outcomes.filter(o=>o.outcome!=="UNRESOLVED").map((o,i)=><label key={o.applicationId} className="block min-h-9"><input type="checkbox" checked={selected.includes(o.applicationId)} onChange={e=>{setPublishReview(false);setSelected(v=>e.target.checked?[...v,o.applicationId]:v.filter(id=>id!==o.applicationId))}}/> Candidate {i+1} · {o.applicationId} · {labels[o.outcome]} · Pass {o.passNumber}</label>)}<label className="block"><input type="checkbox" checked={publishReview} onChange={e=>setPublishReview(e.target.checked)}/> I reviewed these candidates and confirm the student-visible statuses.</label><Button disabled={busy||!publishReview||!selected.length} onClick={()=>void run(async()=>{await command("PUBLISH",{applicationIds:selected});for(const id of selected){const o=summary.outcomes.find(o=>o.applicationId===id);if(o)onDecision(id,o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED")}setSelected([]);setPublishReview(false)})}>Publish {selected.length} decisions</Button></section>}
+      </>:<div><p>No voting session yet.</p>{demo.isDemoEnabled && <Button disabled={busy} onClick={()=>void run(async()=>{setSessionId(await seedVotingDemo(clubId))})}>Load sample two-pass voting session</Button>}</div>}
+    </>}
+  </div>
 }

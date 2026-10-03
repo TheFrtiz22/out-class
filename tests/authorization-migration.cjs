@@ -134,6 +134,9 @@ const assert = require("node:assert/strict")
   await assert.rejects(db.exec(`INSERT INTO "RecruitingRuleFlag" ("roundId","applicationId","ruleRevision",reasons,"flaggedBy") VALUES ('round','app',1,ARRAY['duplicate'],'owner')`),/unique constraint/)
   console.log("Recruiting rules preserve decisions, validate thresholds, and isolate versioned flags from browser access.")
   await db.exec(fs.readFileSync(dir + "20260928000000_private_resume_storage/migration.sql", "utf8"))
+  const migrationNames = fs.readdirSync(dir).filter(name => fs.existsSync(dir+name+'/migration.sql')).sort()
+  for (const migration of migrationNames.filter(name => name >= "20260929000000")) await db.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))
+  assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {
@@ -145,7 +148,6 @@ const assert = require("node:assert/strict")
       }
     }
   }
-  const migrationNames = fs.readdirSync(dir).filter(name => fs.existsSync(dir+name+'/migration.sql')).sort()
   const fresh = new PGlite()
   await fresh.exec('CREATE ROLE anon; CREATE ROLE authenticated;')
   for (const migration of migrationNames) await fresh.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))

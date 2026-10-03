@@ -10,6 +10,11 @@ export const clubPermissions = [
   "interviews.manage",
   "decisions.vote",
   "decisions.manage",
+  "decisions.publish",
+  "decisions.view",
+  "decisions.start",
+  "decisions.reopen",
+  "decisions.finish",
   "leaders.manage",
 ] as const
 export type ClubPermission = (typeof clubPermissions)[number]
@@ -51,7 +56,12 @@ export const permissionLabels: Record<ClubPermission, string> = {
   "applications.review": "Review applications",
   "applicants.identify": "View identified applicants",
   "interviews.manage": "Manage interview slots",
-  "decisions.vote": "Vote (future ballot service)",
-  "decisions.manage": "Manage application decisions",
+  "decisions.vote": "Participate in recruitment voting",
+  "decisions.manage": "Manage voting sessions and application decisions",
+  "decisions.publish": "Publish voting outcomes",
+  "decisions.view": "View recruitment voting sessions",
+  "decisions.start": "Start, pause and complete voting passes",
+  "decisions.reopen": "Reopen completed voting sessions",
+  "decisions.finish": "Finish recruitment voting sessions",
   "leaders.manage": "Invite and manage workspace access",
 }
