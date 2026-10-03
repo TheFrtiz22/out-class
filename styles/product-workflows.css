@@ -18,7 +18,7 @@
 [data-product-shell] [data-application-status="WAITLISTED"] { background: var(--warning-subtle); color: var(--warning); }
 [data-product-shell] [data-application-status="INTERVIEWING"] { background: var(--interview-subtle); color: var(--interview); }
 [data-product-shell] [data-application-status="IN_REVIEW"] { background: var(--info-subtle); color: var(--info); }
-[data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 2rem; padding-block: 1.5rem; border-block: 1px solid var(--border); }
+[data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 1.25rem; padding-block: .75rem; border-block: 1px solid var(--border); }
 [data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
 [data-product-shell] .ir-room-card { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] .ir-room-slots > div { border: 0; background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); padding: 1rem .5rem; }
@@ -29,15 +29,15 @@
 [data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-scheduling-location { border: 0; background: var(--card); box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
 [data-workspace-detail] { font-family: var(--oc-font-sans); }
-[data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 5rem; background: var(--background); color: var(--foreground); }
-[data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: 1.25rem 2rem; }
+[data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 4rem; background: var(--background); color: var(--foreground); }
+[data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: .75rem 1.5rem; }
 [data-workspace-detail] .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
 [data-workspace-detail] .oc-focused-interview > header button { color: var(--oc-rail-text); }
 [data-workspace-detail] .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
 [data-workspace-detail] .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
 [data-workspace-detail] .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); padding: 2rem; }
-[data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.5rem,2.2vw,2rem); font-weight: 400; line-height: 1.35; }
+[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); padding: var(--oc-density-inset); }
+[data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem,1.8vw,1.5rem); font-weight: 400; line-height: 1.35; }
 [data-workspace-detail] .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
 [data-workspace-detail] .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
 [data-workspace-detail] .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
@@ -48,8 +48,8 @@
 .oc-voting-stage > header :is(.text-neutral-500,.text-muted-foreground) { color: var(--oc-rail-muted); }
 .oc-voting-stage > header button, .oc-voting-stage > header a { color: var(--oc-rail-text); background: transparent; border-color: var(--oc-rail-muted); }
 .oc-voting-stage > header button:hover, .oc-voting-stage > header a:hover { background: var(--oc-rail-selected); }
-.oc-voting-stage .oc-voting-candidate { border: 0; padding: 2rem; background: var(--card); border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); }
-.oc-voting-stage .oc-voting-candidate h2 { font-family: var(--oc-font-display); font-size: clamp(2rem,4vw,3.25rem); font-weight: 400; }
+.oc-voting-stage .oc-voting-candidate { border: 0; padding: var(--oc-density-inset); background: var(--card); border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); }
+.oc-voting-stage .oc-voting-candidate h2 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 400; }
 .oc-voting-stage .oc-voting-candidate > div:first-child [data-slot="avatar"] { background: var(--oc-surface-blue); border: 0; }
 .oc-voting-stage progress, .oc-voting-stage [data-slot="progress"] { transition: width var(--oc-duration-ui) var(--oc-ease-out); }
 .oc-voting-pad { background: var(--background); font-family: var(--oc-font-sans); }
@@ -77,3 +77,19 @@
 .oc-applicant-review { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
 .oc-applicant-review strong { display: inline-flex; align-items: baseline; gap: .15rem; padding: .2rem .4rem; background: var(--oc-surface-sage); color: var(--success); border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 600; font-variant-numeric: tabular-nums; }
 .oc-applicant-review strong > span { font-size: var(--oc-size-10); font-weight: 400; }
+
+[data-product-shell] .oc-organization-checklist[data-density="compact"] { margin-top: 1.25rem; margin-bottom: 0; padding: 1rem; }
+[data-product-shell] .oc-organization-checklist[data-density="compact"] h2 { font-size: var(--oc-text-card); margin-top: .25rem; }
+[data-product-shell] .oc-organization-checklist[data-density="compact"] > div p:last-child { margin-top: .25rem; }
+[data-product-shell] .oc-organization-checklist[data-density="compact"] > details { margin-top: .5rem; }
+[data-product-shell] .oc-organization-checklist[data-density="compact"] > a { margin-top: .5rem; padding-block: .5rem; }
+[data-workspace-detail] .oc-focused-interview .oc-interview-columns { gap: var(--oc-density-gap); }
+.oc-voting-stage > header { padding-block: .75rem; }
+.oc-voting-stage .oc-voting-candidate > :not(:last-child) { margin-bottom: 1rem; }
+.oc-voting-stage .oc-voting-candidate dl { padding-block: .75rem; }
+
+[data-product-shell] .oc-interviewer-hub .oc-availability-summary { font-size: var(--oc-text-card); letter-spacing: normal; }
+[data-product-shell] .oc-interviewer-hub > :not(:last-child) { margin-bottom: var(--oc-density-gap); }
+[data-product-shell] .oc-interviewer-hub section { border-color: var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
+[data-product-shell] .oc-interviewer-hub .bg-black { background: var(--primary); }
+[data-product-shell] .oc-interviewer-hub .text-amber-700 { color: var(--warning); }

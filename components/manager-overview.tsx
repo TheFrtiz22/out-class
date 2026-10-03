@@ -11,7 +11,7 @@ import "@/components/clubs/manager-overview.css"
 
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 const linkStyle = "inline-flex min-h-11 items-center text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-export function ManagerOverview({ data }: { data: Overview }) {
+export function ManagerOverview({ data, showRecaps = true }: { data: Overview; showRecaps?: boolean }) {
   const { club, meeting, work, membership, awaitingReview, recruitment } = data
   const canReview = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
   const pending = canReview ? recruitment?.filter(row => ["SUBMITTED", "IN_REVIEW"].includes(row.status)).reduce((sum, row) => sum + row.count, 0) ?? 0 : 0
@@ -23,12 +23,12 @@ export function ManagerOverview({ data }: { data: Overview }) {
     ...(interviews > 0 ? [{ title: `${interviews} application${interviews === 1 ? "" : "s"} at interview stage`, detail: "Check recorded interview details and next steps in Applicants.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
   ]
   return <div className="oc-manager-overview">
-    <p className="oc-overview-intro">The next meeting, your outstanding work, and follow-ups that keep {club.name} moving.</p>
     {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
-      ...(canReview ? [{ label: "to review", value: pending }, { label: "interview stage", value: interviews }] : []),
-      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions }] : []),
+      ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
+      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),
     ]} />}
     <div className="oc-manager-overview-grid">
+      {operations.length > 0 && <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul></section>}
       <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
         <header><h2 id="club-next-meeting"><CalendarDays aria-hidden="true" size={20} />Next meeting</h2><Link href={clubWorkspaceHref(club.id, "meetings")} className={linkStyle}>All meetings <ArrowRight aria-hidden="true" size={15} /></Link></header>
         {meeting ? <div className="oc-overview-meeting">
@@ -48,8 +48,7 @@ export function ManagerOverview({ data }: { data: Overview }) {
         </Link></li>)}</ul> : <p className="oc-overview-empty">You have no outstanding assignments. Your submissions and feedback remain available in Tasks.</p>}
         {hasPermission(membership, "tasks.manage") && <Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`} className="oc-overview-team-link">View team tasks & projects <ArrowRight aria-hidden="true" size={15} /></Link>}
       </section>
-      {operations.length > 0 && <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul></section>}
-      <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>
+      {showRecaps && <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>}
     </div>
   </div>
 }

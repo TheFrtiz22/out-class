@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ArrowUpRight, CalendarDays, Check, ClipboardList, Clock3, MapPin } from "lucide-react"
+import { ArrowUpRight, Check, MapPin } from "lucide-react"
+import { PageHeader } from "@/components/product/page-header"
+import { MetricStrip } from "@/components/product/metric-strip"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -125,25 +127,21 @@ export function InterviewerDashboard({
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hourCycle: "h23" }).format(current))
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
 
-  return <div className="space-y-8 font-sans text-neutral-900">
-    <header>
-      <p className="mb-3 text-xs font-medium uppercase tracking-widest text-neutral-500">Interviewer Hub</p>
-      <h1 className="oc-page-title ">{greeting}, {interviewerName.split(" ")[0]}.</h1>
-      <p className="mt-3 text-sm text-neutral-500 sm:text-base">You have {today.length} {today.length === 1 ? "interview" : "interviews"} today. Here&apos;s your day at a glance.</p>
-    </header>
-    <section aria-label="Interview overview" className="grid gap-4 sm:grid-cols-3">
-      <div className={`${card} p-6`}><div className="flex items-center justify-between text-sm font-medium text-neutral-600">Interviews Today<CalendarDays className="size-4 text-neutral-400" aria-hidden="true" /></div><p className="mt-5 text-4xl font-semibold tracking-tight tabular-nums">{today.length}</p><p className="mt-2 text-xs text-neutral-500">{date(current)}</p></div>
-      <div className={`${card} p-6`}><div className="flex items-center justify-between text-sm font-medium text-neutral-600">Pending Evaluations<ClipboardList className="size-4 text-neutral-400" aria-hidden="true" /></div><p className={`mt-5 text-4xl font-semibold tracking-tight tabular-nums ${pending.length ? "text-amber-700" : ""}`}>{pending.length}</p><p className={`mt-2 text-xs ${pending.length ? "font-medium text-amber-700" : "text-neutral-500"}`}>{pending.length ? "Needs attention · feedback not submitted" : "All caught up on feedback"}</p></div>
-      <div className={`${card} p-6`}><div className="flex items-center justify-between text-sm font-medium text-neutral-600">Upcoming Availability<Clock3 className="size-4 text-neutral-400" aria-hidden="true" /></div><p className="mt-5 text-xl font-semibold tracking-tight">{nextAvailability ? date(nextAvailability.startsAt) : "No upcoming blocks"}</p><p className="mt-2 text-xs text-neutral-500">{nextAvailability ? range(nextAvailability) : "Submit a free block to get scheduled"}</p></div>
-    </section>
-    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+  return <div className="oc-interviewer-hub space-y-5 font-sans text-foreground">
+    <PageHeader eyebrow="Interviewer hub" title="Interviews" description={`${greeting}, ${interviewerName.split(" ")[0]}. Here’s your day at a glance.`} />
+    <MetricStrip label="Interview overview" items={[
+      { label: "Interviews Today", value: today.length, detail: date(current) },
+      { label: "Pending Evaluations", value: pending.length, detail: pending.length ? "Needs attention · feedback not submitted" : "All caught up on feedback" },
+      { label: "Upcoming Availability", value: <span className="oc-availability-summary">{nextAvailability ? date(nextAvailability.startsAt) : "No upcoming blocks"}</span>, detail: nextAvailability ? range(nextAvailability) : "Submit a free block to get scheduled" },
+    ]} />
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
       <section aria-labelledby="itinerary-heading" className={card}>
-        <div className="border-b border-neutral-200 p-5 sm:p-6"><h2 id="itinerary-heading" className="oc-section-heading ">Today&apos;s itinerary</h2><p className="mt-1 text-xs text-neutral-500">{date(current)} · All times in {timeZone}</p></div>
+        <div className="border-b border-border p-4"><h2 id="itinerary-heading" className="oc-section-heading ">Today&apos;s itinerary</h2><p className="mt-1 text-xs text-neutral-500">{date(current)} · All times in {timeZone}</p></div>
         <ol className="divide-y divide-neutral-200">{today.map(slot => {
           const completed = Date.parse(slot.endsAt) <= current.getTime() && slot.evaluationStatus === "submitted"
           const overdue = pending.some(item => item.id === slot.id)
-          return <li key={slot.id} className="p-5 sm:p-6">
-            <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2"><p className="text-sm font-semibold tabular-nums"><time dateTime={slot.startsAt}>{time(slot.startsAt)}</time> – <time dateTime={slot.endsAt}>{time(slot.endsAt)}</time></p><span className="flex items-center gap-1.5 text-xs text-neutral-500"><MapPin className="size-3.5" aria-hidden="true" />{slot.meetingUrl ? <a href={slot.meetingUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{slot.location}</a> : slot.location}</span></div>
+          return <li key={slot.id} className="p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2"><p className="text-sm font-semibold tabular-nums"><time dateTime={slot.startsAt}>{time(slot.startsAt)}</time> – <time dateTime={slot.endsAt}>{time(slot.endsAt)}</time></p><span className="flex items-center gap-1.5 text-xs text-neutral-500"><MapPin className="size-3.5" aria-hidden="true" />{slot.meetingUrl ? <a href={slot.meetingUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{slot.location}</a> : slot.location}</span></div>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-start gap-3"><CandidateAvatar candidate={slot.candidate} /><div><h3 className="oc-card-heading ">{slot.candidate.name}</h3><p className="mt-1 text-xs text-neutral-500">{slot.candidate.year} · {slot.candidate.major}</p><CandidateProfile candidate={slot.candidate} /></div></div>
               <Button disabled={completed} onClick={() => onOpenWorkspace(slot)} className={`${completed ? "border border-neutral-200 bg-white text-neutral-500 shadow-none disabled:opacity-100" : primaryButton} shrink-0`} aria-label={completed ? `${slot.candidate.name}: completed` : `Open Live Workspace for ${slot.candidate.name}`}>

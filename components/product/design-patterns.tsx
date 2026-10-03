@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { ApplicationJourneyCard } from "@/components/applications/application-journey-card"
 import { RecruitingOverview } from "@/components/recruiting-overview"
+import { ManagerOverview } from "@/components/manager-overview"
 import { SlotCard } from "@/components/views/scheduler/slot-card"
 import { PageHeader } from "@/components/product/page-header"
 import { SegmentedControl } from "@/components/product/segmented-control"
@@ -26,7 +27,12 @@ const overview: ComponentProps<typeof RecruitingOverview>["data"] = {
   meeting: null, work: [], awaitingReview: 3,
   recruitment: [{ status: "SUBMITTED", count: 24 }, { status: "IN_REVIEW", count: 12 }, { status: "INTERVIEWING", count: 8 }, { status: "ACCEPTED", count: 5 }, { status: "WAITLISTED", count: 3 }],
 }
-const options = ["Discovery", "Club profile", "Applications", "Recruitment", "Scheduling"]
+const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
+  ...overview,
+  meeting: { id: "reference-meeting", title: "Fall project kickoff", date: new Date("2026-10-06T21:00:00Z"), location: "Newcomb Hall", audience: "MEMBERS" },
+  work: [{ id: "reference-assignment", task: { id: "reference-task", title: "Prepare the interview guide", dueAt: new Date("2026-10-05T21:00:00Z"), kind: "TASK" } }],
+}
+const options = ["Discovery", "Club profile", "Applications", "Club overview", "Recruitment", "Scheduling"]
 
 /** Isolated visual fixtures. Never enables Demo Mode or touches account data. */
 export function DesignPatterns() {
@@ -35,12 +41,13 @@ export function DesignPatterns() {
   return <section data-product-shell="personal" className="oc-pattern-reference" aria-label="Product pattern reference">
     <PageHeader eyebrow="Populated patterns · fictional reference data" title="One campus. One product." description="Actual product components with isolated visual examples. No account data or demo session is used." />
     <SegmentedControl label="Preview product patterns" options={options.map(label => ({label, value: label}))} value={view} onChange={setView} />
-    <div className="oc-pattern-content" key={view}>
+    <div className="oc-pattern-content" key={view} onClickCapture={event => { if ((event.target as HTMLElement).closest("a")) { event.preventDefault(); sampleAction() } }}>
       {view === "Discovery" && <ul className="oc-explore-grid">{clubs.map(club => <DiscoveryCard key={club.id} club={club} entry={club.id} onOpen={sampleAction} />)}</ul>}
       {view === "Club profile" && <MarketingProfile profile={{ ...profileDraft(clubs[0]), tagline: "Design is better together.", marketing: { ...profileDraft(clubs[0]).marketing, benefits: ["Work on a campus project", "Learn from other student designers"], memberCount: 28, showMembers: true }, description: "Fictional visual reference." }} />}
       {view === "Applications" && <div className="oc-applications" data-application-scope="all"><ul className="oc-application-list">{clubs.map((club, index) => <li key={club.id}><ApplicationJourneyCard id={club.id} club={club} status={["DRAFTING", "INTERVIEWING", "ACCEPTED"][index]} round={["Applied", "Interview", "Final Decision"][index]} nextStep={["Your draft is ready. Pick up where you left off.", "Your next conversation is booked. Open your application for the details.", "Your decision is ready. Follow the club’s instructions for joining."][index]} onOpen={sampleAction} /></li>)}</ul></div>}
-      {view === "Recruitment" && <RecruitingOverview data={overview} />}
-      {view === "Scheduling" && <div><PageHeader title="Make room for a conversation." eyebrow="Sample interview day" description="Availability, capacity, and the next action in a single glance." /><div className="oc-slot-reference">{[0,1,2].map(index => <SlotCard key={index} onLaunch={sampleAction} slot={{ id: `reference-${index}`, time: ["2:00 PM", "2:30 PM", "3:00 PM"][index], capacity: 2, bookedCount: index, candidates: index ? [{ name: "Jordan Avery", email: "student@demo.invalid", initials: "JA" }, ...(index === 2 ? [{ name: "Amara Park", email: "sample@demo.invalid", initials: "AP" }] : [])] : [] }} />)}</div></div>}
+      {view === "Club overview" && <><PageHeader eyebrow={overview.club.name} title="Overview" description="Your club, in motion." /><ManagerOverview data={managerOverview} showRecaps={false} /></>}
+      {view === "Recruitment" && <><PageHeader eyebrow={overview.club.name} title="Recruitment" description="Build your next class." /><RecruitingOverview data={overview} /></>}
+      {view === "Scheduling" && <div><PageHeader title="Interviews" eyebrow="Sample interview day" description="Availability, capacity, and the next action in a single glance." /><div className="oc-slot-reference">{[0,1,2].map(index => <SlotCard key={index} onLaunch={sampleAction} slot={{ id: `reference-${index}`, time: ["2:00 PM", "2:30 PM", "3:00 PM"][index], capacity: 2, bookedCount: index, candidates: index ? [{ name: "Jordan Avery", email: "student@demo.invalid", initials: "JA" }, ...(index === 2 ? [{ name: "Amara Park", email: "sample@demo.invalid", initials: "AP" }] : [])] : [] }} />)}</div></div>}
     </div>
   </section>
 }

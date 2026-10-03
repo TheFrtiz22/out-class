@@ -156,8 +156,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     <div className="oc-calendar-workspace space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-5">
         <div>
-          <h2 className="oc-section-heading ">Make room for what’s next.</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
             <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
           </p>

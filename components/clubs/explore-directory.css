@@ -8,19 +8,19 @@
 .oc-discovery .oc-directory-search { min-height: 60px; padding: 8px 18px; border-radius: 16px; background: var(--card); box-shadow: 0 5px 20px #14243b06; }
 .oc-discovery .oc-directory-search input { min-width: 0; min-height: 44px; font-size: var(--oc-size-16); }
 .oc-discovery .oc-directory-search > button { flex-shrink: 0; }
-.oc-discovery .oc-directory-categories { gap: 10px; margin: 24px 0 12px; }
+.oc-discovery .oc-directory-categories { gap: 10px; margin: 12px 0 8px; }
 .oc-discovery .oc-directory-categories button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; border: 1px solid var(--border); border-radius: 24px; padding: 10px 16px; font-size: var(--oc-text-small); background: var(--card); color: var(--muted-foreground); transition: background-color 150ms, border-color 150ms; }
 .oc-discovery .oc-directory-categories button svg { flex-shrink: 0; }
 .oc-discovery .oc-directory-categories button span { margin-left: 0; font-size: var(--oc-size-11); color: inherit; }
 .oc-discovery .oc-directory-categories button:hover { background: var(--accent); border-color: #efc9b1; }
 .oc-discovery .oc-directory-categories button[aria-pressed="true"] { background: #fff0e5; border-color: #ffe1ca; color: #a63e10; }
-.oc-discovery .oc-directory-tools { margin: 0 0 26px; align-items: start; gap: 16px; }
+.oc-discovery .oc-directory-tools { margin: 0 0 16px; align-items: start; gap: 16px; }
 .oc-discovery .oc-directory-tools :is(summary, select) { min-height: 44px; }
 .oc-discovery .oc-directory-tools summary { font-size: var(--oc-size-12); }
 .oc-discovery .oc-directory-tools details[open] .oc-directory-filters { padding: 16px; margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); }
 .oc-discovery .oc-directory-active button { min-height: 44px; border-radius: 20px; }
-.oc-explore-section { margin: 28px 0 36px; }
-.oc-explore-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 20px; }
+.oc-explore-section { margin: 20px 0 24px; }
+.oc-explore-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 12px; }
 .oc-explore-section-heading h2, .oc-explore-available h2, .oc-discovery .oc-directory-results-heading h2 { font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-section); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans); letter-spacing: var(--oc-tracking-heading); color: var(--primary); }
 .oc-explore-section-heading > p { max-width: 300px; font-size: var(--oc-text-small); color: var(--muted-foreground); line-height: var(--oc-leading-body); }
 .oc-explore-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 0; list-style: none; }
@@ -45,7 +45,7 @@
 .oc-explore-card-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; font-size: var(--oc-size-11); color: var(--muted-foreground); }
 .oc-explore-card-footer [data-available="true"] { color: #17634d; background: #edf8f3; padding: 5px 9px; border-radius: 14px; }
 .oc-explore-card-footer svg { flex-shrink: 0; width: 36px; height: 36px; padding: 8px; border: 1px solid #ffe1ca; border-radius: 50%; color: #b44917; }
-.oc-explore-available { padding: 28px 0 32px; border-block: 1px solid var(--border); margin-bottom: 32px; }
+.oc-explore-available { padding: 16px 0; border-block: 1px solid var(--border); margin-bottom: 20px; }
 .oc-explore-available p { font-size: var(--oc-text-small); line-height: var(--oc-leading-body); color: var(--muted-foreground); margin-top: 8px; }
 .oc-explore-available ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin-top: 20px; }
 .oc-explore-available li { min-width: 0; }
@@ -90,9 +90,9 @@
   [data-product-shell]:has(.oc-discovery) .oc-product-brand img { max-width: 110px; height: auto; }
 }
 /* Discovery's expressive moment, inside the universal workspace. */
-[data-product-shell] .oc-discovery .oc-explore-heading { min-height: 22rem; padding: 2.5rem; margin: 0 0 1.5rem; overflow: hidden; border-radius: var(--oc-radius-xl); background: var(--oc-rail); color: var(--oc-rail-text); }
+[data-product-shell] .oc-discovery .oc-explore-heading { min-height: 0; padding: 1.25rem 1.5rem; margin: 0 0 1rem; overflow: hidden; border-radius: var(--oc-radius-xl); background: var(--oc-rail); color: var(--oc-rail-text); }
 [data-product-shell] .oc-explore-heading > .oc-page-header { position: relative; z-index: 1; margin: 0; max-width: 34rem; background: none; padding: 0; }
-[data-product-shell] .oc-explore-heading h1 { font-family: var(--oc-font-display); font-size: clamp(2.25rem, 4vw, 3.5rem); color: var(--oc-rail-text); font-weight: 400; margin-block: .85rem; }
+[data-product-shell] .oc-explore-heading h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); color: var(--oc-rail-text); font-weight: 400; margin-block: .375rem; }
 [data-product-shell] .oc-explore-heading h1 em { font-weight: 400; color: #f3bc97; }
 [data-product-shell] .oc-explore-heading .oc-eyebrow { color: var(--oc-rail-muted); font-size: var(--oc-size-10); }
 [data-product-shell] .oc-explore-heading .oc-page-description { max-width: 24rem; color: var(--oc-rail-muted); font-size: var(--oc-text-small); }
@@ -105,11 +105,11 @@
 [data-product-shell] .oc-discovery .oc-directory-categories button[aria-pressed="true"] svg { color: var(--brand-orange); }
 [data-product-shell] .oc-explore-card article { overflow: hidden; border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
 [data-product-shell] .oc-explore-card article:hover { transform: translateY(-4px); box-shadow: var(--oc-shadow-popover); }
-[data-product-shell] .oc-explore-card-cover { position: relative; isolation: isolate; height: 10rem; background: color-mix(in srgb, var(--oc-club-accent) 9%, var(--oc-surface-blue)); }
+[data-product-shell] .oc-explore-card-cover { position: relative; isolation: isolate; height: 7rem; background: color-mix(in srgb, var(--oc-club-accent) 9%, var(--oc-surface-blue)); }
 [data-product-shell] .oc-explore-card-cover > .oc-campus-ribbon { position: absolute; z-index: -1; inset: -.5rem -3rem auto auto; width: 17rem; color: var(--oc-club-accent); opacity: .3; transform: rotate(-15deg); }
 [data-product-shell] .oc-explore-category { background: var(--card); color: var(--foreground); font-size: var(--oc-size-10); border-radius: var(--oc-radius-sm); }
 [data-product-shell] .oc-explore-card-logo > :first-child { box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
-[data-product-shell] .oc-explore-card-body { padding: 1.4rem; }
+[data-product-shell] .oc-explore-card-body { padding: 1.125rem; }
 [data-product-shell] .oc-explore-card h3 { font-size: 1.125rem; }
 [data-product-shell] .oc-explore-card h3 button { font-size: inherit; line-height: 1.4; font-weight: 600; }
 [data-product-shell] .oc-explore-card-footer svg { background: var(--muted); border: 0; color: var(--foreground); }
@@ -117,8 +117,8 @@
 [data-product-shell] .oc-explore-available button { border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] .oc-discovery .oc-directory-empty { border: 0; background: var(--oc-surface-blue); }
 @container (max-width: 520px) {
-  [data-product-shell] .oc-discovery .oc-explore-heading { padding: 1.5rem; min-height: 22rem; align-items: start; }
-  [data-product-shell] .oc-explore-heading h1 { font-size: 2.25rem; }
+  [data-product-shell] .oc-discovery .oc-explore-heading { padding: 1.25rem; min-height: 0; align-items: start; }
+  [data-product-shell] .oc-explore-heading h1 { font-size: 1.75rem; }
   [data-product-shell] .oc-explore-campus { width: 100%; mask-image: linear-gradient(to bottom, transparent 20%, #000); opacity: .25; }
   [data-product-shell] .oc-explore-section > .oc-explore-grid { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 85%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
   [data-product-shell] .oc-explore-section > .oc-explore-grid > li { scroll-snap-align: start; }

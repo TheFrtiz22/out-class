@@ -101,7 +101,7 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
   return (
     <div className="oc-discovery" ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="Explore · University of Virginia" title={categoriesOnly ? "Follow your interests." : <>Find your people.<br /><em>Make your mark.</em></>} description={categoriesOnly ? "Choose an interest and see where it takes you." : "Big ideas, shared interests, and your kind of people. Discover your place on Grounds."} />
+        <PageHeader eyebrow="University of Virginia" title={categoriesOnly ? "Explore interests" : "Explore clubs"} description={categoriesOnly ? "Choose an interest and see where it takes you." : "Find your people. Make your mark."} />
         <Image src="/images/campus/rotunda-960.webp" alt="" width={960} height={640} sizes="(max-width: 600px) 100vw, 50vw" className="oc-explore-campus" />
         <CampusRibbon />
       </div>

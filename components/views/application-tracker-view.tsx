@@ -375,7 +375,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     )
   return (
     <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-7" data-application-scope={scope}>
-      <PageHeader eyebrow="Your next chapter" title={scope === "all" ? "Every step, together." : scope === "interviews" ? "Make a connection." : "The next chapter."} description={scope === "all" ? "Your applications, from first draft to final decision." : scope === "interviews" ? "Get ready for the conversation. Your interview details live here." : "Updates from your clubs, with a clear next step."} ribbon action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
+      <PageHeader eyebrow="Your campus" title={scope === "all" ? "Applications" : scope === "interviews" ? "Interviews" : "Decisions"} description={scope === "all" ? "Your applications, from first draft to final decision." : scope === "interviews" ? "Get ready for the conversation. Your interview details live here." : "Updates from your clubs, with a clear next step."} ribbon action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
       {applications.length > 0 && scope === "all" && <MetricStrip label="Application progress" items={[
         { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },
         { label: "in progress", value: applications.filter(item => ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"].includes(item.status)).length },

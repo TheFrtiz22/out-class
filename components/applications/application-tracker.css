@@ -1,7 +1,7 @@
 /* One journey pattern across Applications, Interviews and Decisions. */
 .oc-applications { container-type: inline-size; }
-.oc-application-list { display: grid; gap: 1.25rem; list-style: none; padding: 0; }
-.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1.5rem 2rem; padding: 1.75rem; border-left: 3px solid transparent; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
+.oc-application-list { display: grid; gap: 1rem; list-style: none; padding: 0; }
+.oc-application-row { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 14rem; gap: 1rem 1.25rem; padding: 1.25rem; border-left: 3px solid transparent; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
 .oc-application-row:hover { border-color: var(--brand-orange); transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
 .oc-application-row:focus-within { outline: 2px solid var(--ring); outline-offset: 4px; }
 .oc-application-row[data-status="DRAFTING"] { border-left-color: var(--brand-orange); }
@@ -9,7 +9,7 @@
 .oc-application-identity { display: flex; align-items: center; gap: 1rem; min-width: 0; }
 .oc-application-identity > :first-child { flex: 0 0 3rem; width: 3rem; height: 3rem; border-radius: var(--oc-radius-md); }
 .oc-application-identity > div:not(:first-child) { flex: 1; min-width: 0; }
-.oc-application-identity h2 { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); letter-spacing: var(--oc-tracking-heading); overflow-wrap: anywhere; }
+.oc-application-identity h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); letter-spacing: var(--oc-tracking-heading); overflow-wrap: anywhere; }
 .oc-application-identity button { font-size: inherit; font-weight: inherit; text-align: left; cursor: pointer; }
 .oc-application-identity button::after { content: ""; position: absolute; inset: 0; border-radius: var(--oc-radius-lg); }
 .oc-application-identity button:focus-visible { outline: none; }
@@ -19,7 +19,7 @@
 .oc-application-row .oc-recruitment-timeline, .oc-application-row .oc-recruitment-timeline ol { margin: 0; }
 .oc-application-row .oc-recruitment-timeline strong { font-size: var(--oc-size-11); }
 .oc-application-row .oc-recruitment-timeline small { display: none; }
-.oc-application-next { grid-column: 2; grid-row: 1 / 3; display: grid; grid-template-columns: 2.5rem minmax(0,1fr); align-content: center; align-items: start; gap: .65rem; border-left: 1px solid var(--border); padding-left: 1.5rem; }
+.oc-application-next { grid-column: 2; grid-row: 1 / 3; display: grid; grid-template-columns: 2.5rem minmax(0,1fr); align-content: center; align-items: start; gap: .65rem; border-left: 1px solid var(--border); padding-left: 1rem; }
 .oc-application-next p { font-size: var(--oc-text-caption); line-height: var(--oc-leading-body); color: var(--muted-foreground); overflow-wrap: anywhere; }
 .oc-application-next > span { grid-column: 2; display: flex; align-items: center; gap: .5rem; font-size: var(--oc-text-caption); color: var(--brand-ink); }
 .oc-application-next-icon { box-sizing: content-box; padding: .5rem; border-radius: var(--oc-radius-md); background: var(--oc-surface-blue); color: var(--info); }
@@ -31,11 +31,11 @@
 [data-product-shell] .oc-application-detail > section[aria-label="Application update"] { padding: 1.5rem; border: 0; background: var(--oc-surface-blue); border-radius: var(--oc-radius-lg); }
 [data-product-shell] .oc-applications .oc-segmented-control [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 @container (max-width: 740px) {
-  .oc-application-row { grid-template-columns: minmax(0,1fr); padding: 1.5rem; }
+  .oc-application-row { grid-template-columns: minmax(0,1fr); padding: 1.25rem; }
   .oc-application-next { grid-column: 1; grid-row: auto; border: 0; border-top: 1px solid var(--border); padding: 1rem 0 0; }
 }
 @container (max-width: 400px) {
-  .oc-application-row { padding: 1.25rem; gap: 1.25rem; }
+  .oc-application-row { padding: 1rem; gap: 1rem; }
   .oc-application-identity { flex-wrap: wrap; gap: .75rem; }
   .oc-application-status { margin-left: 3.75rem; }
 }

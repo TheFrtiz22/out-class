@@ -239,7 +239,7 @@ export function StudentDashboardView({
 
   return (
     <div className="oc-student-home">
-      <PageHeader eyebrow="University of Virginia · Your campus, connected" title={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}.` : "Your next chapter starts here."} description="A little direction. A world of possibility. Here’s what’s next on Grounds." />
+      <PageHeader eyebrow="University of Virginia" title="Home" description={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.` : "Your applications, upcoming events, and next step."} />
       {!unavailable && <MetricStrip label="Your campus activity" items={[
         { label: "applications", value: applications.length },
         { label: "coming up", value: agenda.length },

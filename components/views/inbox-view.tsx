@@ -100,8 +100,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   return (
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
       <header>
-        <h2 className="oc-section-heading ">Your recruiting updates.</h2>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Notification delivery is not connected yet. Demo and local preview updates stay in this browser.
         </p>
       </header>

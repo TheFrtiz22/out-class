@@ -73,7 +73,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
         {loading ? (
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
-          <div className="max-w-xl space-y-4 py-16">
+          <div className="max-w-xl space-y-3 px-5 py-8">
             <h1 className="oc-page-title ">A focused space for a better conversation.</h1>
             <p className="text-sm leading-7 text-muted-foreground">
               {user
@@ -289,7 +289,7 @@ function InterviewSession({
         {message}
       </p>
       {!active ? (
-        <div className="max-w-xl space-y-4 py-16">
+        <div className="max-w-xl space-y-3 px-5 py-8">
           <h1 className="oc-page-title ">Ready when you are.</h1>
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
