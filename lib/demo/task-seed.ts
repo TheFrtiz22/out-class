@@ -1,6 +1,6 @@
 import type { getTaskWorkspace } from "@/actions/tasks";
 import { taskAudienceSchema } from "@/lib/tasks";
-type Task = Awaited<ReturnType<typeof getTaskWorkspace>>["tasks"][number];
+type Task = Omit<Awaited<ReturnType<typeof getTaskWorkspace>>["tasks"][number], "project">;
 export function seedTasks(
   clubId: string,
   members: {
@@ -70,6 +70,8 @@ export function seedTasks(
         memberId: member.id,
         userId: member.user.id,
         member,
+        groupLabel: null,
+        revisionRequestedAt: null,
         assignedAt: new Date(time - 5 * 86400000),
         viewedAt: j % 3 ? new Date(time - 86400000) : null,
         text:

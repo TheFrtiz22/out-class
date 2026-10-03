@@ -511,12 +511,15 @@ model TaskAssignment {
   submittedAt DateTime?
   reviewedAt  DateTime?
   reviewedBy  String?
+  revisionRequestedAt DateTime?
+  groupLabel String?
   feedback    String      @default("")
   revision    Int         @default(0)
   files       TaskFile[]
 
   @@unique([taskId, memberId])
   @@index([memberId])
+  @@index([taskId, submittedAt, reviewedAt], map: "TaskAssignment_review_queue_idx")
 }
 
 model TaskFile {

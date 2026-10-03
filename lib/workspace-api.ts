@@ -36,6 +36,7 @@ import {
   studentApplications,
   demoDirectory,
   demoDashboard,
+  demoNotifications,
   presentDemoMeeting,
 } from "@/lib/demo/store"
 import { applicationInputSchema, answerErrors, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
@@ -373,8 +374,13 @@ export const recruitmentAttendanceSummary=adapt(meetingsApi.recruitmentAttendanc
 })
 
 // Semester work follows the same isolated demo boundary as recruitment.
+export const getTaskNotifications = adapt(tasksApi.getTaskNotifications, () => demoNotifications().filter(notification => "taskHref" in notification && notification.taskHref))
 export const getTaskWorkspace = adapt(tasksApi.getTaskWorkspace, demoTasks.getTaskWorkspace)
 export const saveTask = adapt(tasksApi.saveTask, demoTasks.saveTask)
+export const previewTaskAudience = adapt(tasksApi.previewTaskAudience, demoTasks.previewTaskAudience)
+export const bulkUpdateTasks = adapt(tasksApi.bulkUpdateTasks, demoTasks.bulkUpdateTasks)
+export const addTaskRecipients = adapt(tasksApi.addTaskRecipients, demoTasks.addTaskRecipients)
+export const bulkApproveTaskSubmissions = adapt(tasksApi.bulkApproveTaskSubmissions, demoTasks.bulkApproveTaskSubmissions)
 export const updateTaskMember = adapt(tasksApi.updateTaskMember, demoTasks.updateTaskMember)
 export const viewTask = adapt(tasksApi.viewTask, demoTasks.viewTask)
 export const submitTask = adapt(tasksApi.submitTask, demoTasks.submitTask)

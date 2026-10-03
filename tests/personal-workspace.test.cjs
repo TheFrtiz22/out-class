@@ -100,7 +100,7 @@ test('legacy applicant path redirects preserve repeated parameters and leave the
 });
 
 test('personal shell keeps page headings in content once, with universal and contextual navigation',()=>{
- const h=hooks(),mocks={react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
+ const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
  const {DashboardLayout}=load('components/dashboard-layout.tsx',mocks),{ProductShell}=load('components/shell/product-shell.tsx',mocks);
  for(const [view,section,own] of [['student-dashboard','explore',true],['explore','explore',true],['explore','categories',true],['tracker','applications',true],['status','status',true],['my-clubs','clubs',false],['student-profile','explore',false],['inbox','explore',false],['calendar','calendar',false]]){
   const layout=h.render(()=>DashboardLayout({view,personalSection:section,appMode:'student',children:own?{type:'h1',props:{children:'Page title'}}:null,onNavigate(){}}));
@@ -116,7 +116,7 @@ test('personal shell keeps page headings in content once, with universal and con
 });
 
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{
- const h=hooks(),mocks={react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{}};
+ const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{}};
  const {ApplicationStateProvider}=load('lib/application-state.tsx',mocks);
  const initialData={applications:[app('Invite','INTERVIEWING',{bookings:[booking('old')]})],meetings:[{id:'meeting',clubId:'club',date:new Date(),title:'Members meeting',location:'Hall',audience:'MEMBERS',club:{name:'Club'}}]};
  const render=()=>h.render(()=>ApplicationStateProvider({children:null,initialData,persistLocalState:false})).props.value;
@@ -127,7 +127,7 @@ test('authoritative booking synchronization replaces cancelled/rescheduled booki
 
 test('universal destinations work from a member club shell whose context links use hrefs',()=>{
  const h=hooks(),navigation=[],context=[];
- const {ProductShell}=load('components/shell/product-shell.tsx',{react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
+ const {ProductShell}=load('components/shell/product-shell.tsx',{'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
  const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',modes:[],items:[],active:'overview',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
  for(const id of ['student-dashboard','inbox','student-profile']) nodes(shell).find(node=>node.props?.['data-tour']==='nav-'+id).props.onClick();
  assert.deepEqual(navigation,['student-dashboard','inbox','student-profile']);assert.deepEqual(context,[]);

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useState, useRef } from "react"
 import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "lucide-react"
 import { ClubLogo } from "@/components/club-logo"
@@ -106,7 +107,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       <header>
         <p className="text-sm text-muted-foreground">
-          Notification delivery is not connected yet. Demo and local preview updates stay in this browser.
+          Your club updates and tasks, together in one place.
         </p>
       </header>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -361,7 +362,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 <p className="text-xs text-neutral-500">
                   {items.length
                     ? "Try another keyword or clear your filters."
-                    : "Live club updates will be available when notification delivery is connected."}
+                    : "New task assignments and review updates will appear here."}
                 </p>
                 {!!items.length && (
                   <Button size="sm" variant="outline" onClick={resetFilters}>
@@ -482,7 +483,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     View calendar
                   </Button>
                 )}
-                {selected.cta && selected.type !== "Interview Invite" && (
+                {selected.taskHref && <Button variant="outline" asChild><Link href={selected.taskHref}>View task</Link></Button>}
+                {selected.cta && !selected.taskHref && selected.type !== "Interview Invite" && (
                   <Button
                     variant="outline"
                     onClick={() => {

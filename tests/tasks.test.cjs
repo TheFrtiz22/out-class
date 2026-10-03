@@ -70,6 +70,7 @@ function setup() {
     kind: "TASK",
     status: "OPEN",
     requirements: ["TEXT"],
+    assignments: [],
     revision: 0,
     audience: rules.taskAudienceSchema.parse({ everyone: true }),
   };
@@ -121,6 +122,7 @@ function setup() {
       },
     },
     taskAssignment: {
+      createMany: async ({data}) => { creates.push({assignmentRows:data}); return {count:data.length} },
       findUnique: async ({ where }) =>
         where.id === assignmentId ? assignment : null,
       updateMany: async ({ where, data }) => {
@@ -129,7 +131,10 @@ function setup() {
             where.revision !== assignment.revision) ||
           (where.reviewedAt === null && assignment.reviewedAt) ||
           (where.submittedAt?.not === null && !assignment.submittedAt) ||
-          (where.member?.userId && where.member.userId !== actor)
+          (where.member?.userId && where.member.userId !== actor) ||
+          (where.revisionRequestedAt === null && assignment.revisionRequestedAt) ||
+          (where.task?.clubId && where.task.clubId !== assignment.task.clubId) ||
+          (where.task?.kind && where.task.kind !== assignment.task.kind)
         )
           return { count: 0 };
         Object.assign(assignment, data, {
@@ -274,6 +279,7 @@ test("audiences union groups, cohorts, individuals, roles and graduation year wi
   assert.deepEqual(h.creates[0].assignments.create[0], {
     memberId,
     userId: "student",
+    groupLabel: null,
   });
   assert.equal(h.audits[0].action, "club.task.save");
   for (const audience of [
@@ -497,4 +503,49 @@ test("private uploads validate ownership, file size/type/name, storage metadata,
     if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY;
     else process.env.SUPABASE_SECRET_KEY = oldKey;
   }
+});
+
+test('advanced AND and exclusions are explicit; legacy targeting remains a union',()=>{
+ const m={id:memberId,groups:['Research'],cohort:'Fall 2026',role:'GENERAL_MEMBER',gradYear:2028};
+ assert.equal(rules.matchesTaskAudience(m,rules.taskAudienceSchema.parse({groups:['Other'],years:[2028]})),true);
+ assert.equal(rules.matchesTaskAudience(m,rules.taskAudienceSchema.parse({match:'ALL',groups:['Other'],years:[2028]})),false);
+ assert.equal(rules.matchesTaskAudience(m,rules.taskAudienceSchema.parse({match:'ALL',groups:['Research'],years:[2028,2029]})),true);
+ for(const exclude of [{excludeMembers:[memberId]},{excludeGroups:['Research']}])assert.equal(rules.matchesTaskAudience(m,rules.taskAudienceSchema.parse({everyone:true,...exclude})),false);
+ assert.equal(rules.matchesTaskAudience(m,rules.taskAudienceSchema.parse({match:'ALL'})),false);
+});
+test('random samples and balanced groups are deterministic across roster ordering and persist at assignment',async()=>{
+ const members=Array.from({length:24},(_,i)=>({id:uuid(50+i),groups:[],cohort:null,role:'GENERAL_MEMBER',user:{id:'u'+i,studentProfile:{gradYear:2028}}}));
+ const audience=rules.taskAudienceSchema.parse({everyone:true,random:{seed:uuid(40),count:10,groups:null}});
+ const selected=rules.resolveTaskRecipients(members,audience);assert.equal(selected.length,10);assert.equal(new Set(selected.map(r=>r.member.id)).size,10);
+ assert.deepEqual(rules.resolveTaskRecipients([...members].reverse(),audience),selected);
+ assert.notDeepEqual(rules.resolveTaskRecipients(members,{...audience,random:{...audience.random,seed:uuid(41)}}),selected);
+ const groups=rules.resolveTaskRecipients(members,{...audience,random:{seed:uuid(40),count:null,groups:5}});const sizes=Object.values(Object.groupBy(groups,r=>r.groupLabel)).map(rows=>rows.length);assert.ok(Math.max(...sizes)-Math.min(...sizes)<=1);assert.equal(groups.length,24);
+ assert.throws(()=>rules.resolveTaskRecipients(members,{...audience,random:{...audience.random,count:25}}),/Only 24/);
+ const h=setup();h.manager();const input={clubId,title:'Random group work',audience:{everyone:true,random:{seed:uuid(40),count:null,groups:2}}};const preview=await h.api.previewTaskAudience(input);await h.api.saveTask({...input,expectedRecipients:preview.map(r=>r.member.id)});assert.deepEqual(h.creates[0].assignments.create.map(a=>({memberId:a.memberId,groupLabel:a.groupLabel})),preview.map(r=>({memberId:r.member.id,groupLabel:r.groupLabel})));
+ await assert.rejects(h.api.saveTask({...input,expectedRecipients:[uuid(99)]}),/recipient list changed/);
+});
+test('drafts create no assignments; publishing a draft checks the exact recipient preview and fixed audiences',async()=>{
+ const h=setup();h.manager();await h.api.saveTask({clubId,title:'Saved draft',status:'DRAFT',audience:{}});assert.equal(h.creates[0].assignments.create.length,0);assert.equal(h.audits[0].action,'club.task.draft');
+ h.task.status='DRAFT';const audience={members:[memberId]};await h.api.saveTask({clubId,id:taskId,title:'Publish draft',audience,expectedRecipients:[memberId]});assert.deepEqual(h.creates[1].assignmentRows.map(a=>a.memberId),[memberId]);assert.equal(h.task.status,'OPEN');
+ await assert.rejects(h.api.saveTask({clubId,id:taskId,revision:1,title:'Undo publish',status:'DRAFT',audience}),/cannot become a draft/);
+});
+test('revision requests require feedback, persist separately from approval, and clear on resubmission',async()=>{
+ const h=setup();h.manager();h.assignment.submittedAt=new Date();const input={assignmentId,revision:0,feedback:'',reopen:true,requestChanges:true};await assert.rejects(h.api.reviewTask(input),/feedback/);
+ await h.api.reviewTask({...input,feedback:'Add your sources.'});assert.ok(h.assignment.revisionRequestedAt);assert.equal(h.assignment.reviewedAt,null);assert.equal(rules.taskState(h.task,h.assignment),'Revisions requested');assert.equal(h.audits.at(-1).action,'club.task.request-revision');
+ await h.api.submitTask({assignmentId,revision:1,text:'Sources added',link:'',fileIds:[]});assert.equal(h.assignment.revisionRequestedAt,null);assert.equal(rules.taskState(h.task,h.assignment),'Submitted');
+ h.revoke();await assert.rejects(h.api.reviewTask({...input,revision:2,feedback:'Denied'}));
+});
+test('bulk approval rejects unsubmitted, revision-requested, stale, foreign and non-manager work',async()=>{
+ const input={clubId,assignments:[{id:assignmentId,revision:0}]};let h=setup();await assert.rejects(h.api.bulkApproveTaskSubmissions(input),/Denied/);
+ for(const change of [h=>{},h=>h.assignment.revision=2,h=>h.assignment.revisionRequestedAt=new Date(),h=>h.assignment.task.clubId=uuid(99),h=>h.assignment.reviewedAt=new Date()]){h=setup();h.manager();h.assignment.submittedAt=new Date();change(h);if(change.toString()==='h=>{}')h.assignment.submittedAt=null;await assert.rejects(h.api.bulkApproveTaskSubmissions(input),/changed|unavailable/)}
+ h=setup();h.manager();h.assignment.submittedAt=new Date();await h.api.bulkApproveTaskSubmissions(input);assert.ok(h.assignment.reviewedAt);assert.equal(h.audits.at(-1).action,'club.task.review');
+});
+test('adding recipients preserves existing work and checks membership, permission and expected recipients',async()=>{
+ const h=setup(),input={clubId,taskId,revision:0,audience:{everyone:true},expectedRecipients:[uuid(6)]};await assert.rejects(h.api.addTaskRecipients(input),/Denied/);h.manager();h.task.assignments=[{memberId}];await h.api.addTaskRecipients(input);assert.deepEqual(h.creates[0].assignmentRows.map(a=>a.memberId),[uuid(6)]);assert.deepEqual(h.task.assignments,[{memberId}]);await assert.rejects(h.api.addTaskRecipients({...input,revision:1,expectedRecipients:[memberId]}),/recipient list changed/);
+});
+
+test('task notification reads stay scoped to the authenticated active member and expose no other submissions',async()=>{
+ let query;const api=load('actions/tasks.ts',{'@/utils/prisma':{prisma:{taskAssignment:{findMany:async input=>{query=input;return[]}}}},'@/utils/auth':{requireAuth:async()=>({user:{id:'authenticated-student'}})}});
+ assert.deepEqual(await api.getTaskNotifications(),[]);
+ assert.equal(query.where.userId,'authenticated-student');assert.equal(query.where.member.userId,'authenticated-student');assert.equal(query.where.member.status,'ACTIVE');assert.equal(query.where.member.user.disabledAt,null);assert.equal(query.where.task.kind,'TASK');assert.equal(query.where.task.status.not,'DRAFT');assert.equal(query.take,100);assert.equal(query.select.text,undefined);assert.equal(query.select.files,undefined);assert.equal(query.select.member,undefined);
 });

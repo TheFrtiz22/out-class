@@ -2,7 +2,7 @@
 
 import { useDemoMode } from "@/contexts/demo-context"
 import { demoStore, demoDashboard, demoNotifications, demoDeadlines } from "@/lib/demo/store"
-import { createContext, useCallback, useContext, useMemo, useState, useEffect, type Dispatch, type SetStateAction, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useMemo, useState, useEffect, useRef, type Dispatch, type SetStateAction, type ReactNode } from "react"
 import {
   managedEvents as seedManagedEvents, currentStudent, clubs, studentMemberships,
   type ManagedEvent,
@@ -44,6 +44,7 @@ type ApplicationStateValue = {
   syncApplications: (apps: TrackedApplication[]) => void
   syncApplicationBookings: (apps: NonNullable<CalendarSource["applications"]>) => void
   trackedApps: TrackedApplication[]
+  syncTaskNotifications: (items: Notification[]) => void
   notifications: Notification[]
   events: ClubEvent[]
   appliedClubIds: Set<string>
@@ -100,6 +101,10 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const [leaderFocus, focusLeader] = useState<LeaderFocus | null>(null)
   const clearLeaderFocus = useCallback(() => focusLeader(null), [])
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(initialData ? serverApps : seedTrackedApplications)
+  const dismissedTaskNotifications = useRef(new Set<string>())
+  const syncTaskNotifications = useCallback((items: Notification[]) => {
+    setNotifications(previous => [...previous.filter(item => !item.taskHref), ...items.filter(item => !dismissedTaskNotifications.current.has(item.id)).map(item => ({...item, read:previous.find(old=>old.id===item.id)?.read ?? item.read}))])
+  }, [])
   const [notifications, setNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
   
   const serverEvents = studentCalendarEvents(initialData)
@@ -221,12 +226,14 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
   const deleteNotifications = useCallback((ids: string[]) => {
     if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return }
+    ids.forEach(id => { if (id.startsWith("task-update-")) dismissedTaskNotifications.current.add(id) })
     const targets = new Set(ids)
     setNotifications((prev) => prev.filter((item) => !targets.has(item.id)))
   }, [])
 
   const restoreNotifications = useCallback((items: Notification[]) => {
     if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return }
+    items.forEach(item=>dismissedTaskNotifications.current.delete(item.id))
     setNotifications((prev) => [...prev, ...items.filter((item) => !prev.some((existing) => existing.id === item.id))])
   }, [])
 
@@ -306,7 +313,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       syncApplications: setTrackedApps,
       syncApplicationBookings,
       trackedApps,
-      notifications,
+      notifications, syncTaskNotifications,
       events: calendarEvents,
       appliedClubIds,
       isApplied,
@@ -325,7 +332,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       leaderFocus, clearLeaderFocus, syncApplicationBookings,
       hydrated,
       trackedApps,
-      notifications,
+      notifications, syncTaskNotifications,
       calendarEvents,
       appliedClubIds,
       isApplied,

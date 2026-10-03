@@ -329,6 +329,7 @@ export const scheduleLocationNames = []
 export type NotificationType = "Announcement" | "Interview Invite"
 
 export type Notification = {
+  taskHref?: string
   eventId?: string
   createdAt?: string
   clubId?: string

@@ -14,12 +14,18 @@ import { hasPermission, isActiveMembership } from "@/lib/permissions";
 import {
   taskAudienceSchema,
   taskInputSchema,
-  matchesTaskAudience,
+  resolveTaskRecipients,
+  assertRecipientPreview,
+  reviewTaskSchema,
+  bulkTaskSchema,
+  bulkReviewSchema,
+  type TaskAudience,
   submissionSchema,
   validateTaskSubmission,
   taskFileSchema,
   type TaskInput,
 } from "@/lib/tasks";
+import { taskNotifications } from "@/lib/task-notifications";
 const uuid = z.string().uuid();
 const memberSelect = {
   id: true,
@@ -101,6 +107,7 @@ export async function getTaskWorkspace(clubId: string) {
       ...(manage ? {} : { assignments: { some: { memberId: membership.id } } }),
     },
     include: {
+      project: { select: { id: true, title: true, clubId: true } },
       assignments: {
         where: manage ? {} : { memberId: membership.id },
         include: assignmentInclude,
@@ -112,8 +119,9 @@ export async function getTaskWorkspace(clubId: string) {
     clubId,
     manage,
     memberId: membership.id,
-    tasks: tasks.map((task) => ({
+    tasks: tasks.map(({project, ...task}) => ({
       ...task,
+      project: project?.clubId === clubId ? {id:project.id,title:project.title} : null,
       assignments: task.assignments.map(({ recipient, ...assignment }) => ({
         ...assignment,
         member: assignment.member ?? {
@@ -127,95 +135,107 @@ export async function getTaskWorkspace(clubId: string) {
     })),
     members: manage
       ? await prisma.clubMember.findMany({
-          where: { clubId, status: "ACTIVE" },
+          where: { clubId, status: "ACTIVE", user: { disabledAt: null } },
           select: memberSelect,
         })
       : [],
   };
 }
+async function recipientsFor(tx: AppTransactionClient, clubId: string, audience: TaskAudience) {
+  const members = await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: memberSelect });
+  if ([...audience.members, ...audience.excludeMembers].some(id => !members.some(member => member.id === id))) throw new Error("An assignee is no longer a member of this club.");
+  let excluded: string[] = [];
+  if (audience.excludeTasks.length) {
+    const tasks = await tx.clubTask.findMany({ where: { clubId, id: { in: audience.excludeTasks } }, select: { id: true, assignments: { select: { memberId: true } } } });
+    if (tasks.length !== new Set(audience.excludeTasks).size) throw new Error("Choose exclusion tasks in this club.");
+    excluded = tasks.flatMap(task => task.assignments.flatMap(assignment => assignment.memberId ? [assignment.memberId] : []));
+  }
+  return resolveTaskRecipients(members, audience, excluded);
+}
+export async function previewTaskAudience(input: { clubId: string; audience: TaskInput["audience"] }) {
+  const data = z.object({ clubId: uuid, audience: taskAudienceSchema }).parse(input);
+  const { user } = await requireClubPermission(data.clubId, ["tasks.manage"]);
+  return prisma.$transaction(async tx => {
+    await currentMember(tx, data.clubId, user.id, true);
+    return (await recipientsFor(tx, data.clubId, data.audience)).map(({member,groupLabel}) => ({member,groupLabel}));
+  });
+}
 export async function saveTask(input: TaskInput) {
   const data = taskInputSchema.parse(input);
   const { user } = await requireClubPermission(data.clubId, ["tasks.manage"]);
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async tx => {
     await currentMember(tx, data.clubId, user.id, true);
-    if (data.projectId) {
-      if (
-        data.kind !== "TASK" ||
-        data.projectId === data.id ||
-        !(await tx.clubTask.findFirst({
-          where: { id: data.projectId, clubId: data.clubId, kind: "PROJECT" },
-        }))
-      )
-        throw new Error("Choose a project in this club.");
-    }
-    const existing = data.id
-      ? await tx.clubTask.findFirst({
-          where: { id: data.id, clubId: data.clubId },
-        })
-      : null;
+    if (data.projectId && (data.kind !== "TASK" || data.projectId === data.id || !(await tx.clubTask.findFirst({ where: { id: data.projectId, clubId: data.clubId, kind: "PROJECT" } })))) throw new Error("Choose a project in this club.");
+    const existing = data.id ? await tx.clubTask.findFirst({ where: { id: data.id, clubId: data.clubId } }) : null;
     if (data.id && !existing) throw new Error("Task unavailable.");
-    if (existing && existing.kind !== data.kind)
-      throw new Error("Task type cannot change after creation.");
-    const { id, revision, audience, ...fields } = data;
-    const values = {
-      ...fields,
-      dueAt: fields.dueAt ? new Date(fields.dueAt) : null,
-      audience,
-    };
-    if (
-      existing &&
-      JSON.stringify(taskAudienceSchema.parse(existing.audience)) !==
-        JSON.stringify(audience)
-    )
-      throw new Error(
-        "Audience is fixed after assignment. Create a new task for a different audience.",
-      );
+    if (existing && existing.kind !== data.kind) throw new Error("Task type cannot change after creation.");
+    if (existing && existing.status !== "DRAFT" && data.status === "DRAFT") throw new Error("An assigned task cannot become a draft.");
+    if (existing && existing.status !== "DRAFT" && JSON.stringify(taskAudienceSchema.parse(existing.audience)) !== JSON.stringify(data.audience)) throw new Error("Audience is fixed after assignment. Create a new task for a different audience.");
+    const { id, revision, audience, expectedRecipients, ...fields } = data;
+    const values = { ...fields, dueAt: fields.dueAt ? new Date(fields.dueAt) : null, audience };
+    const assigning = data.status !== "DRAFT" && (!existing || existing.status === "DRAFT");
+    const recipients = assigning ? await recipientsFor(tx, data.clubId, audience) : [];
+    if (assigning) {
+      if (!recipients.length) throw new Error("Choose an audience with at least one current member.");
+      assertRecipientPreview(recipients, expectedRecipients);
+    }
+    const assignments = recipients.map(({member,groupLabel}) => ({memberId: member.id, userId: member.user.id, groupLabel}));
     let taskId = id;
     if (id) {
-      const updated = await tx.clubTask.updateMany({
-        where: { id, clubId: data.clubId, revision },
-        data: { ...values, revision: { increment: 1 } },
-      });
-      if (!updated.count)
-        throw new Error("This task changed. Refresh before saving.");
+      const updated = await tx.clubTask.updateMany({ where: { id, clubId: data.clubId, revision }, data: { ...values, revision: { increment: 1 } } });
+      if (!updated.count) throw new Error("This task changed. Refresh before saving.");
+      if (assigning) await tx.taskAssignment.createMany({data: assignments.map(assignment=>({...assignment,taskId:id}))});
     } else {
-      const members = await tx.clubMember.findMany({
-        where: { clubId: data.clubId, status: "ACTIVE" },
-        select: memberSelect,
-      });
-      if (audience.members.some((id) => !members.some((m) => m.id === id)))
-        throw new Error("An assignee is no longer a member of this club.");
-      const recipients = members.filter((m) =>
-        matchesTaskAudience(
-          { ...m, gradYear: m.user.studentProfile?.gradYear ?? null },
-          audience,
-        ),
-      );
-      if (!recipients.length)
-        throw new Error("Choose an audience with at least one current member.");
-      const task = await tx.clubTask.create({
-        data: {
-          ...values,
-          assignments: {
-            create: recipients.map((m) => ({
-              memberId: m.id,
-              userId: m.user.id,
-            })),
-          },
-        },
-      });
+      const task = await tx.clubTask.create({ data: { ...values, assignments: { create: assignments } } });
       taskId = task.id;
     }
-    // Audience is a snapshot. Editing content never silently removes submitted work or adds recipients.
-    await tx.auditLog.create({
-      data: {
-        actorId: user.id,
-        clubId: data.clubId,
-        action: "club.task.save",
-        targetId: taskId!,
-      },
-    });
-    return { id: taskId! };
+    await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,action:data.status === "DRAFT" ? "club.task.draft" : "club.task.save",targetId:taskId!}});
+    return {id:taskId!};
+  });
+}
+export async function bulkUpdateTasks(input: z.input<typeof bulkTaskSchema>) {
+  const data = bulkTaskSchema.parse(input);
+  const {user} = await requireClubPermission(data.clubId,["tasks.manage"]);
+  return prisma.$transaction(async tx => {
+    await currentMember(tx,data.clubId,user.id,true);
+    if (new Set(data.tasks.map(task=>task.id)).size !== data.tasks.length) throw new Error("Choose each task once.");
+    for (const task of data.tasks) {
+      const result = await tx.clubTask.updateMany({where:{id:task.id,clubId:data.clubId,revision:task.revision,status:{not:"DRAFT"}},data:{...(data.action === "CLOSE" ? {status:"DONE"} : {dueAt:data.dueAt ? new Date(data.dueAt):null}),revision:{increment:1}}});
+      if (!result.count) throw new Error("A task changed or is unavailable. Refresh before continuing.");
+      await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,action:data.action === "CLOSE" ? "club.task.close" : "club.task.due",targetId:task.id}});
+    }
+    return {success:true};
+  });
+}
+export async function addTaskRecipients(input: {clubId:string;taskId:string;revision:number;audience:TaskInput["audience"];expectedRecipients:string[]}) {
+  const data=z.object({clubId:uuid,taskId:uuid,revision:z.number().int().nonnegative(),audience:taskAudienceSchema,expectedRecipients:z.array(uuid).max(1000)}).parse(input);
+  const {user}=await requireClubPermission(data.clubId,["tasks.manage"]);
+  return prisma.$transaction(async tx=>{
+    await currentMember(tx,data.clubId,user.id,true);
+    const task=await tx.clubTask.findFirst({where:{id:data.taskId,clubId:data.clubId},include:{assignments:{select:{memberId:true}}}});
+    if(!task || task.status === "DRAFT" || task.status === "DONE")throw new Error("Choose an open assigned task.");
+    const recipients=(await recipientsFor(tx,data.clubId,data.audience)).filter(({member})=>!task.assignments.some(a=>a.memberId === member.id));
+    assertRecipientPreview(recipients,data.expectedRecipients);
+    if(!recipients.length)throw new Error("These members already have this task.");
+    const updated=await tx.clubTask.updateMany({where:{id:task.id,clubId:data.clubId,revision:data.revision},data:{revision:{increment:1}}});
+    if(!updated.count)throw new Error("This task changed. Refresh before assigning.");
+    await tx.taskAssignment.createMany({data:recipients.map(({member,groupLabel})=>({taskId:task.id,memberId:member.id,userId:member.user.id,groupLabel}))});
+    await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,action:"club.task.add-recipients",targetId:task.id}});
+    return {success:true};
+  });
+}
+export async function bulkApproveTaskSubmissions(input: z.input<typeof bulkReviewSchema>) {
+  const data=bulkReviewSchema.parse(input);
+  const {user}=await requireClubPermission(data.clubId,["tasks.manage"]);
+  return prisma.$transaction(async tx=>{
+    await currentMember(tx,data.clubId,user.id,true);
+    if(new Set(data.assignments.map(a=>a.id)).size !== data.assignments.length)throw new Error("Choose each submission once.");
+    for(const assignment of data.assignments){
+      const result=await tx.taskAssignment.updateMany({where:{id:assignment.id,revision:assignment.revision,task:{clubId:data.clubId,kind:"TASK"},submittedAt:{not:null},reviewedAt:null,revisionRequestedAt:null},data:{reviewedAt:new Date(),reviewedBy:user.id,revision:{increment:1}}});
+      if(!result.count)throw new Error("A submission changed or is unavailable. Refresh before approving.");
+      await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,action:"club.task.review",targetId:assignment.id}});
+    }
+    return {success:true};
   });
 }
 export async function updateTaskMember(input: {
@@ -309,6 +329,7 @@ export async function submitTask(input: z.infer<typeof submissionSchema>) {
         text: data.text,
         link: data.link,
         submittedAt: new Date(),
+        revisionRequestedAt: null,
         revision: { increment: 1 },
       },
     });
@@ -340,21 +361,16 @@ export async function reviewTask(input: {
   revision: number;
   feedback: string;
   reopen: boolean;
+  requestChanges?: boolean;
 }) {
-  const data = z
-    .object({
-      assignmentId: uuid,
-      revision: z.number().int().nonnegative(),
-      feedback: z.string().max(5000),
-      reopen: z.boolean(),
-    })
-    .parse(input);
+  const data = reviewTaskSchema.parse(input);
   await requireAuth();
   const assignment = await prisma.taskAssignment.findUnique({
     where: { id: data.assignmentId },
     select: { task: { select: { clubId: true, kind: true } } },
   });
   if (!assignment) throw new Error("Assignment unavailable.");
+  if (data.requestChanges && assignment.task.kind !== "TASK") throw new Error("Revision requests apply to submitted tasks.");
   const { user } = await requireClubPermission(assignment.task.clubId, [
     "tasks.manage",
   ]);
@@ -372,6 +388,7 @@ export async function reviewTask(input: {
         reviewedAt: data.reopen ? null : new Date(),
         reviewedBy: data.reopen ? null : user.id,
         feedback: data.feedback,
+        revisionRequestedAt: data.requestChanges ? new Date() : null,
         revision: { increment: 1 },
       },
     });
@@ -383,7 +400,7 @@ export async function reviewTask(input: {
       data: {
         actorId: user.id,
         clubId: assignment.task.clubId,
-        action: data.reopen ? "club.task.reopen" : "club.task.review",
+        action: data.requestChanges ? "club.task.request-revision" : data.reopen ? "club.task.reopen" : "club.task.review",
         targetId: data.assignmentId,
       },
     });
@@ -462,4 +479,10 @@ export async function downloadTaskFile(fileId: string) {
   ).createSignedUrl(file.path, 60, { download: file.name });
   if (error || !data) throw new Error("Could not download file. Try again.");
   return { url: data.signedUrl };
+}
+
+export async function getTaskNotifications() {
+  const {user}=await requireAuth();
+  const records=await prisma.taskAssignment.findMany({where:{userId:user.id,member:{userId:user.id,status:"ACTIVE",user:{disabledAt:null}},task:{kind:"TASK",status:{not:"DRAFT"}}},select:{id:true,assignedAt:true,submittedAt:true,reviewedAt:true,revisionRequestedAt:true,feedback:true,task:{select:{id:true,clubId:true,title:true,kind:true,status:true,dueAt:true,club:{select:{name:true,color:true,logoUrl:true}}}}},orderBy:{assignedAt:"desc"},take:100});
+  return taskNotifications(records);
 }

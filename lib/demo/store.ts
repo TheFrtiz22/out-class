@@ -1,3 +1,4 @@
+import { taskNotifications } from "@/lib/task-notifications"
 import { seedTasks } from "./task-seed"
 import { sampleInterviewKit } from "@/lib/interview-kits"
 import { clubPermissions, hasWorkspace } from "@/lib/permissions"
@@ -19,6 +20,7 @@ function ensureSemesterWork(value: DemoState) {
   }),value.anchor)
 }
 function ensureCurrentWorkflows(value: DemoState) {
+  for (const task of value.tasks ?? []) for (const assignment of task.assignments) { assignment.groupLabel ??= null; assignment.revisionRequestedAt ??= null }
   value.tutorials ??= { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } }
   value.interviewRooms ??= []
   value.roomBookings ??= []
@@ -197,7 +199,7 @@ export function demoDashboard() {
 }
 export function demoNotifications() {
   const s = demoStore.get()
-  return studentApplications()
+  const recruiting = studentApplications()
     .filter((a) => a.status !== "DRAFTING")
     .map((a) => ({
       id: `update-${a.id}-${a.status}`,
@@ -221,6 +223,8 @@ export function demoNotifications() {
       read: s.readNotifications.includes(`update-${a.id}-${a.status}`),
     }))
     .filter((n) => !s.deletedNotifications.includes(n.id))
+  const work=taskNotifications(s.tasks.flatMap(task=>task.assignments.filter(assignment=>assignment.userId===s.students[0].id && s.memberships.some(member=>member.id===assignment.memberId)).map(assignment=>({...assignment,task:{...task,club:s.clubs.find(club=>club.id===task.clubId)!}})))).map(notification=>({...notification,read:s.readNotifications.includes(notification.id)})).filter(notification=>!s.deletedNotifications.includes(notification.id))
+  return [...recruiting,...work]
 }
 export function demoDirectory() {
   const s = demoStore.get()

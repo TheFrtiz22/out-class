@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
+import { getTaskNotifications } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { createClient } from "@/utils/supabase/client"
@@ -34,7 +35,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   clubId?: string; clubName?: string; manager?: boolean; onSelect: (id: string) => void; onNavigate: (view: ViewId) => void;
 }) {
   const router = useRouter()
-  const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications } = useApplicationState()
+  const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
   const contextKey = `${clubId}:${mode}:${active}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -48,6 +49,16 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     if (item.id === "broadcast-messages") return hasPermission(member, "meetings.manage")
     return hasPermission(member, "club.settings")
   }) : [...studentNav.filter(i => i.id !== "student-profile"), { id: "my-clubs" as const, title: "My Clubs", icon: Users2 }]
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId || demo.isDemoEnabled) return
+    let active=true
+    const refresh=()=>{void getTaskNotifications().then(items=>{if(active)syncTaskNotifications(items)}).catch(()=>{})}
+    refresh()
+    const timer=setInterval(refresh,60000)
+    window.addEventListener("focus",refresh);window.addEventListener("outclass:tasks-changed",refresh)
+    return()=>{active=false;clearInterval(timer);window.removeEventListener("focus",refresh);window.removeEventListener("outclass:tasks-changed",refresh)}
+  }, [userId, demo.isDemoEnabled, syncTaskNotifications])
   const unread = notifications.filter(n => !n.read).length
   const { invitations } = useOrganizationInvitations()
   const pendingInvitations = invitations.length

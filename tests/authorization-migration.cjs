@@ -137,6 +137,13 @@ const assert = require("node:assert/strict")
   const migrationNames = fs.readdirSync(dir).filter(name => fs.existsSync(dir+name+'/migration.sql')).sort()
   for (const migration of migrationNames.filter(name => name >= "20260929000000")) await db.exec(fs.readFileSync(dir+ migration+'/migration.sql','utf8'))
   assert.equal((await db.query(`SELECT status FROM "Application" WHERE id='app'`)).rows[0].status, 'IN_REVIEW')
+  const migratedWork=(await db.query(`SELECT * FROM "TaskAssignment" WHERE id='former-work'`)).rows[0]
+  assert.equal(migratedWork.text,'Preserved work'); assert.equal(migratedWork.groupLabel,null); assert.equal(migratedWork.revisionRequestedAt,null)
+  await assert.rejects(db.exec(`UPDATE "TaskAssignment" SET "revisionRequestedAt"=NOW() WHERE "memberId"='m3'`), /check constraint/)
+  await db.exec(`UPDATE "TaskAssignment" SET "revisionRequestedAt"=NOW(), "groupLabel"='Group 1' WHERE id='former-work'`)
+  await assert.rejects(db.exec(`UPDATE "TaskAssignment" SET "reviewedAt"=NOW() WHERE id='former-work'`), /check constraint/)
+  await db.exec(`UPDATE "TaskAssignment" SET "revisionRequestedAt"=NULL, "reviewedAt"=NOW() WHERE id='former-work'`)
+  console.log("Task workflow migration preserves existing responses, validates revision requests, and persists group labels.")
   // Every application table must be private, including tables added after the original capability migration.
   const tables = (await db.query(`SELECT c.relname, c.relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind='r'`)).rows
   for (const table of tables) {
