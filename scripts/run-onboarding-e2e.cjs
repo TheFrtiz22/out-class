@@ -30,6 +30,8 @@ async function ready(url,headers={}){
  const mfaStart=config.indexOf('[auth.mfa.totp]'),mfaEnd=config.indexOf('[auth.mfa.phone]',mfaStart);config=config.slice(0,mfaStart)+config.slice(mfaStart,mfaEnd).replace('enroll_enabled = false','enroll_enabled = true').replace('verify_enabled = false','verify_enabled = true')+config.slice(mfaEnd);
  if(!/^project_id = "outclass-onboarding-e2e"$/m.test(config))throw Error('Refusing to operate on a non-test Supabase project');
  config+='\n[auth.email.template.confirmation]\nsubject = "Confirm your OutClass account"\ncontent_path = "./supabase/templates/confirmation.html"\n';
+ config+='\n[auth.email.template.recovery]\nsubject = \"Reset your OutClass password\"\ncontent_path = \"./supabase/templates/recovery.html\"\n';
+ fs.writeFileSync(path.join(root,'supabase/templates/recovery.html'),'<h2>Reset your password</h2><a href="{{ .RedirectTo }}#token_hash={{ .TokenHash }}">Reset password</a>');
  fs.writeFileSync(path.join(root,'supabase/config.toml'),config);
  fs.writeFileSync(path.join(root,'supabase/templates/confirmation.html'),'<h2>Confirm your OutClass account</h2><p>Your code is {{ .Token }}</p><a href="{{ .ConfirmationURL }}">Confirm email</a>');
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.

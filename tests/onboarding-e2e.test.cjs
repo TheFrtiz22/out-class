@@ -113,4 +113,36 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await assert.rejects(call(president,'invitation-emails','resendOrganizationInvitation',clubId,invitation.id));
   const mail=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();assert.equal(mail.messages.filter(m=>m.To.some(to=>to.Address===invitation.email)).length,1);
  });
+ await scenario('I — legacy account re-verifies university mailbox through real password recovery before invitation acceptance',async()=>{
+  const {createClient}=require('@supabase/supabase-js');
+  const provider=createClient(config.status.API_URL,config.status.SECRET_KEY,{auth:{persistSession:false}});
+  const identifier='legacy'+suffix,email=identifier+'@virginia.edu',password='Legacy-local-only!123',nextPassword='Recovered-local-only!123';
+  const created=await provider.auth.admin.createUser({email,password,email_confirm:true,app_metadata:{email_verification_skipped:true}});assert.equal(created.error,null);
+  assert.equal(created.data.user.confirmation_sent_at,undefined);
+  await db.user.create({data:{id:created.data.user.id,email}});
+  const legacy=new Actor(config);await legacy.signIn(email,password);await legacy.profile('Legacy Student',2028);
+  const invitation=await call(president,'club-onboarding','createClubIdentityInvitation',{clubId,identifierTypeId:'school-uva-computing-id',identifier,requestedRole:'MEMBER',invitedName:'Legacy Student',invitedYear:'2028'});
+  await assert.rejects(call(legacy,'club-onboarding','getOrganizationInvitations',true));
+  const session=await legacy.client.auth.getSession();
+  await fetch(config.status.API_URL+'/auth/v1/user',{method:'PUT',headers:{apikey:config.status.PUBLISHABLE_KEY,authorization:'Bearer '+session.data.session.access_token,'content-type':'application/json'},body:JSON.stringify({app_metadata:{outclass_verified_email:{method:'password_recovery_v1',userId:created.data.user.id,email,emailConfirmedAt:created.data.user.email_confirmed_at,verifiedAt:new Date().toISOString()}},data:{computing_id:'victim'}})});
+  assert.equal((await provider.auth.admin.getUserById(created.data.user.id)).data.user.app_metadata.outclass_verified_email,undefined,'Browser cannot set server identity proof');
+  await assert.rejects(call(legacy,'club-onboarding','getOrganizationInvitations',true));
+  const recovery=await legacy.request('/api/auth/password-recovery',{method:'POST',headers:{origin:config.appUrl.replace('127.0.0.1','localhost'),'content-type':'application/json'},body:JSON.stringify({action:'request',email})});assert.equal(recovery.status,200);
+  let tokenHash;
+  for(let attempt=0;attempt<30&&!tokenHash;attempt++){
+   const list=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();
+   const found=list.messages.find(m=>m.To.some(to=>to.Address===email)&&/Reset|Recovery/i.test(m.Subject));
+   if(found){const message=await(await fetch(config.status.MAILPIT_URL+'/api/v1/message/'+found.ID)).json();tokenHash=(message.HTML+' '+message.Text).match(/(?:[?&]token=|#token_hash=)([a-f0-9]+)/i)?.[1];}
+   if(!tokenHash)await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.ok(tokenHash,'Actual local recovery email must supply the one-use token');
+  const result=await legacy.request('/api/auth/password-recovery',{method:'POST',headers:{origin:config.appUrl.replace('127.0.0.1','localhost'),'content-type':'application/json'},body:JSON.stringify({action:'reset',tokenHash,password:nextPassword,confirmation:nextPassword,userId:'attacker',email:'attacker@virginia.edu'})});assert.equal(result.status,200,await result.text());
+  const recovered=await provider.auth.admin.getUserById(created.data.user.id);assert.equal(recovered.data.user.app_metadata.outclass_verified_email.email,email);assert.equal(recovered.data.user.app_metadata.email_verification_skipped,true,'Recovery proof must preserve other server metadata');
+  await legacy.signIn(email,nextPassword);
+  const pending=await call(legacy,'club-onboarding','getOrganizationInvitations',true);assert.ok(pending.some(item=>item.id===invitation.id));
+  await call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id);
+  assert.equal(await db.clubMember.count({where:{clubId,userId:created.data.user.id,status:'ACTIVE'}}),1);
+  await assert.rejects(call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id));
+ });
+
 });
