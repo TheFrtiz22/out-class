@@ -11,20 +11,15 @@ import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { ClubCustomizationProvider } from "@/lib/club-customization"
 
-// One family with real faces only; no synthetic 600 or italic face.
-const horshamSerial = localFont({
+// One Caslon family, with real variable weights and a real italic face.
+const libreCaslonText = localFont({
   src: [
-    { path: "./fonts/horsham-serial/horsham-serial-xlight.otf", weight: "200", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-light.otf", weight: "300", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-regular.otf", weight: "400", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-medium.otf", weight: "500", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-bold.otf", weight: "700", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-xbold.otf", weight: "800", style: "normal" },
-    { path: "./fonts/horsham-serial/horsham-serial-heavy.otf", weight: "900", style: "normal" },
+    { path: "./fonts/libre-caslon-text/libre-caslon-text-variable.ttf", weight: "400 700", style: "normal" },
+    { path: "./fonts/libre-caslon-text/libre-caslon-text-italic-variable.ttf", weight: "400 700", style: "italic" },
   ],
-  variable: "--font-horsham-serial",
+  variable: "--font-libre-caslon-text",
   display: "swap",
-  fallback: ["sans-serif"],
+  fallback: ["serif"],
   adjustFontFallback: false,
 })
 
@@ -66,7 +61,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className={horshamSerial.variable}>
+    <html lang="en" className={libreCaslonText.variable}>
       <body className="font-sans antialiased">
         {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />

@@ -1,4 +1,4 @@
-import { horshamGlyphs, horshamUnitsPerEm } from "./horsham-glyphs"
+import { caslonGlyphs, caslonUnitsPerEm } from "./caslon-glyphs"
 
 /** Safe, code-generated placeholders; never a claim to be an official club logo. */
 export function demoMonogram(name: string, color: string) {
@@ -8,11 +8,11 @@ export function demoMonogram(name: string, color: string) {
     .join("")
     .replace(/[^a-z0-9]/gi, "")
     .slice(0, 3)
-  const scale = 26 / horshamUnitsPerEm
-  const width = [...letters].reduce((total, letter) => total + horshamGlyphs[letter].width, 0)
+  const scale = 26 / caslonUnitsPerEm
+  const width = [...letters].reduce((total, letter) => total + caslonGlyphs[letter].width, 0)
   let cursor = 0
   const paths = [...letters].map(letter => {
-    const glyph = horshamGlyphs[letter]
+    const glyph = caslonGlyphs[letter]
     const path = `<path transform="translate(${cursor} 0)" d="${glyph.path}"/>`
     cursor += glyph.width
     return path

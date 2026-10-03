@@ -11,7 +11,12 @@
   --font-display: var(--oc-font-display);
   --font-mono: var(--oc-font-sans);
   --font-serif: var(--oc-font-sans);
-  --font-weight-thin: 200;
+  /* Keep legacy utilities within the font's real 400–700 range. */
+  --font-weight-thin: 400;
+  --font-weight-extralight: 400;
+  --font-weight-light: 400;
+  --font-weight-extrabold: 700;
+  --font-weight-black: 700;
   --font-weight-semibold: 700;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
