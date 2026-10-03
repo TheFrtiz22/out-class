@@ -111,3 +111,19 @@ test('owned private attachments persist unchanged in drafts and submissions',asy
   assert.equal(h.calls.find(call=>call[0]==='answers')[1].data[0].response,response)
  }
 })
+
+test('student status projection remains owned and exposes only public round names and booking details', async () => {
+  let query
+  const actions = load('actions/applications.ts', {
+    '@/utils/auth': { requireAuth: async () => ({ user: { id: 'authenticated-student' } }) },
+    '@/utils/prisma': { prisma: { application: { findMany: async input => { query = input; return [] } } } },
+    'next/cache': { revalidatePath() {} },
+  })
+  await actions.getStudentApplications()
+  assert.deepEqual(query.where, { studentId: 'authenticated-student' })
+  assert.deepEqual(query.select.club.select.pipelineRounds, { select: { id: true, name: true, order: true }, orderBy: { order: 'asc' } })
+  assert.deepEqual(query.select.round.select, { id: true, name: true, order: true })
+  assert.deepEqual(query.select.bookings.select, { id: true, roundId: true, slot: { select: { startTime: true, endTime: true, location: true } } })
+  assert.equal(query.select.scores, undefined)
+  assert.equal(query.select.notes, undefined)
+})

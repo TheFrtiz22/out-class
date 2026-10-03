@@ -1,22 +1,31 @@
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
-export type PersonalSection = "explore" | "corkboard" | "calendar" | "applications" | "interviews" | "decisions" | "clubs" | "meetings" | "tasks"
+export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
+export type PersonalMode = "explore" | "apply" | "clubs"
 export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean }
 export const personalModes: ProductNavItem[] = [
-  { id: "explore", label: "Explore" }, { id: "corkboard", label: "Corkboard" },
-  { id: "applications", label: "Applications" }, { id: "clubs", label: "My Clubs" },
+  { id: "explore", label: "Explore" }, { id: "apply", label: "Apply" }, { id: "clubs", label: "My Clubs" },
 ]
-export function personalItems(hasMemberships: boolean): ProductNavItem[] {
-  return [
-    { id: "student-dashboard", label: "Home" }, { id: "explore", label: "Explore" },
-    { id: "corkboard", label: "Corkboard" }, { id: "applications", label: "Applications" },
-    { id: "interviews", label: "Interviews" }, { id: "calendar", label: "Calendar" },
-    { id: "clubs", label: "My Clubs" }, { id: "decisions", label: "Decisions" },
-    ...(hasMemberships ? [{ id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }] : []),
-  ]
+export const personalUniversalItems: ProductNavItem[] = [
+  { id: "student-dashboard", label: "Home" },
+  { id: "inbox", label: "Notifications" },
+  { id: "student-profile", label: "Profile" },
+]
+const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
+  explore: [{ id: "explore", label: "Discover" }, { id: "categories", label: "Categories" }, { id: "corkboard", label: "Corkboard" }],
+  apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Status" }, { id: "calendar", label: "Calendar" }],
+  clubs: [{ id: "clubs", label: "Clubs" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
 }
-export function personalMode(section: PersonalSection) {
-  if (section === "corkboard") return "corkboard"
-  return ["clubs", "meetings", "tasks"].includes(section) ? "clubs" : ["applications", "interviews", "decisions"].includes(section) ? "applications" : "explore"
+export function personalItems(mode: PersonalMode): ProductNavItem[] { return personalNavigation[mode] }
+export function personalMode(section: PersonalSection): PersonalMode {
+  return ["clubs", "meetings", "tasks"].includes(section) ? "clubs" : ["applications", "status", "calendar"].includes(section) ? "apply" : "explore"
+}
+export function personalDestination(id: string): { view: import("@/lib/views").ViewId; section?: PersonalSection } {
+  if (["student-dashboard", "inbox", "student-profile"].includes(id)) return { view: id as import("@/lib/views").ViewId }
+  if (id === "apply" || id === "applications") return { view: "tracker", section: "applications" }
+  if (id === "status") return { view: "status", section: "status" }
+  if (["clubs", "meetings", "tasks"].includes(id)) return { view: "my-clubs", section: id as PersonalSection }
+  if (id === "calendar" || id === "corkboard") return { view: id, section: id }
+  return { view: "explore", section: id === "categories" ? "categories" : "explore" }
 }
 export function managerNavigation(member: ClubAccess, clubId: string, mode: string): ProductNavItem[] {
   const href = (section: string, tool?: string) => `/club/${encodeURIComponent(clubId)}/workspace?section=${section}${tool ? `&tool=${tool}` : ""}`

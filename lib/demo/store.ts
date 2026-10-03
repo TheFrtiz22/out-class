@@ -169,7 +169,17 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
   return demoStore
     .get()
     .applications.filter((a) => a.studentId === studentId)
-    .map((a) => joinedApplication(a.id))
+    .map((a) => {
+      const application = joinedApplication(a.id)
+      return {
+        ...application,
+        club: { ...application.club, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
+        bookings: application.bookings.map(booking => ({
+          ...booking,
+          roundId: demoStore.get().roomBookings?.find(record => record.id === booking.slot.id)?.roundId ?? null,
+        })),
+      }
+    })
 }
 export function presentDemoMeeting(meeting: DemoState["meetings"][number]) {
   return { ...meeting, resources: meeting.resources.map(resource => ({

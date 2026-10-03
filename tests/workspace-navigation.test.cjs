@@ -49,12 +49,12 @@ test("landing Sign in opens authentication despite a saved demo session",()=>{
 
 test('legacy Discovery/Categories bookmarks resolve into one canonical Explore destination',()=>{
  for(const alias of ['discover','discovery','categories']){
-  const result=shell(`?workspace=student&view=${alias}`);assert.ok(result.stateChanges.includes('explore'));assert.deepEqual(result.redirects,['/?workspace=student&view=explore']);
+  const result=shell(`?workspace=student&view=${alias}`);assert.ok(result.stateChanges.includes('explore'));assert.deepEqual(result.redirects,[alias==='categories'?'/?workspace=student&view=explore&section=categories':'/?workspace=student&view=explore']);
  }
  const current=shell('?workspace=student&view=explore');assert.ok(current.stateChanges.includes('explore'));assert.deepEqual(current.redirects,[]);
  const board=shell('?workspace=student&view=corkboard');assert.ok(board.stateChanges.includes('corkboard'));assert.deepEqual(board.redirects,[]);
 });
 test('student route scope preserves existing interviews, decisions, membership tasks and rejects unrelated sections',()=>{
  const {resolveStudentView,sectionForStudentView}=navigationModule.exports;
- assert.equal(resolveStudentView('bad'),null);assert.equal(resolveStudentView('Categories'),'explore');assert.equal(sectionForStudentView('tracker','interviews'),'interviews');assert.equal(sectionForStudentView('tracker','decisions'),'decisions');assert.equal(sectionForStudentView('my-clubs','tasks'),'tasks');assert.equal(sectionForStudentView('explore','categories'),'explore');assert.equal(sectionForStudentView('corkboard','tasks'),'corkboard');
+ assert.equal(resolveStudentView('bad'),null);assert.equal(resolveStudentView('Categories'),'explore');assert.equal(sectionForStudentView('tracker','interviews'),'status');assert.equal(sectionForStudentView('tracker','decisions'),'status');assert.equal(sectionForStudentView('my-clubs','tasks'),'tasks');assert.equal(sectionForStudentView('explore','categories'),'categories');assert.equal(sectionForStudentView('corkboard','tasks'),'corkboard');
 });

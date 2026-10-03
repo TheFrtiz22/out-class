@@ -14,7 +14,7 @@ import {
   type ClubEvent,
 } from "@/lib/data"
 
-import { studentCalendarEvents } from "@/lib/student-calendar-data"
+import { studentCalendarEvents, type CalendarSource } from "@/lib/student-calendar-data"
 import { dateKey, dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar"
 import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
 
@@ -42,6 +42,7 @@ type ApplicationStateValue = {
   clearLeaderFocus: () => void
   hydrated: boolean
   syncApplications: (apps: TrackedApplication[]) => void
+  syncApplicationBookings: (apps: NonNullable<CalendarSource["applications"]>) => void
   trackedApps: TrackedApplication[]
   notifications: Notification[]
   events: ClubEvent[]
@@ -138,6 +139,10 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setResponses(demo.state.responses)
   }, [demo.state, demo.isDemoEnabled])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
+  const syncApplicationBookings = useCallback((applications: NonNullable<CalendarSource["applications"]>) => {
+    if (demo.isDemoEnabled) return // Demo bookings already refresh from the shared demo store.
+    setEvents(previous => [...previous.filter(event => !(event.readOnly && event.id.startsWith("booking-"))), ...studentCalendarEvents({ applications })])
+  }, [demo.isDemoEnabled])
   const [focusApplicationClubId, setFocusApplicationClubId] = useState<string | null>(null)
 
   const focusApplication = useCallback((clubId: string) => {
@@ -299,6 +304,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       hydrated,
       leaderFocus, focusLeader, clearLeaderFocus,
       syncApplications: setTrackedApps,
+      syncApplicationBookings,
       trackedApps,
       notifications,
       events: calendarEvents,
@@ -316,7 +322,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       managedEvents, setManagedEvents, scheduleBlocks, setScheduleBlocks, bookInterview, submitApplication, cancelInterview, notifyEventChange, calendarYear, setCalendarYear,
     }),
     [
-      leaderFocus, clearLeaderFocus,
+      leaderFocus, clearLeaderFocus, syncApplicationBookings,
       hydrated,
       trackedApps,
       notifications,

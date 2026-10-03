@@ -43,3 +43,39 @@
   .oc-application-detail form > :last-child { position: sticky; bottom: calc(var(--oc-shell-mobile-height) + env(safe-area-inset-bottom)); background: var(--card); padding: 1rem; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); }
 }
 @media (prefers-reduced-motion: reduce) { .oc-application-row:hover { transform: none; } }
+
+/* Forms and submissions stay separate from the post-application status journey. */
+.oc-status-list, .oc-application-management-list { display: grid; gap: .875rem; list-style: none; padding: 0; }
+.oc-application-management-row { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-md); }
+.oc-application-management-row h2, .oc-status-card h2 { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); overflow-wrap: anywhere; }
+.oc-application-management-row p { margin-top: .3rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-management-state { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-status-card { padding: 1.1rem 1.25rem; border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
+.oc-status-card[data-attention="true"] { border-left-color: var(--brand-orange); }
+.oc-status-card[data-status="ACCEPTED"], .oc-status-detail-update[data-status="ACCEPTED"] { border-left-color: var(--success); background: var(--oc-surface-sage); }
+.oc-status-card[data-status="WAITLISTED"] { border-left-color: var(--warning); }
+.oc-status-card-heading { display: flex; align-items: center; gap: .875rem; }
+.oc-status-card-heading > div { min-width: 0; flex: 1; }
+.oc-status-card-heading p { margin-top: .25rem; color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+.oc-status-stages { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .875rem; margin-block: 1rem; padding: 0; list-style: none; }
+.oc-status-stages li { display: inline-flex; align-items: center; gap: .4rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-status-stages li:not(:last-child)::after { content: "→"; color: var(--muted-foreground); margin-left: .4rem; }
+.oc-status-stages li > span { width: .4rem; height: .4rem; border: 1px solid currentColor; border-radius: 50%; }
+.oc-status-stages [aria-current="step"] { font-weight: 600; color: var(--primary); }
+.oc-status-stages [aria-current="step"] > span { background: var(--brand-orange); border-color: var(--brand-orange); box-shadow: 0 0 0 3px var(--brand-subtle); }
+.oc-status-next { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1rem; padding-top: .875rem; border-top: 1px solid var(--border); }
+.oc-status-next > div { flex: 1 1 18rem; min-width: 0; }
+.oc-status-next p { font-size: var(--oc-text-caption); color: var(--muted-foreground); overflow-wrap: anywhere; }
+.oc-status-next .oc-status-next-label, .oc-status-next .oc-status-interview { display: flex; gap: .4rem; align-items: center; margin-bottom: .3rem; color: var(--foreground); font-size: var(--oc-text-small); font-weight: 600; }
+.oc-status-detail-update { padding: 1.25rem; border: 1px solid var(--border); border-left: 3px solid var(--brand-orange); border-radius: var(--oc-radius-lg); background: var(--card); }
+@media (max-width: 639px) {
+  .oc-applications[data-application-scope="status"] .oc-segmented-control { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; width: 100%; }
+  .oc-applications[data-application-scope="status"] .oc-segmented-control button { flex: 0 0 auto; white-space: nowrap; }
+  .oc-status-card { padding: 1rem; }
+  .oc-status-card-heading { flex-wrap: wrap; }
+  .oc-status-card-heading > div { flex-basis: calc(100% - 4rem); }
+  .oc-application-management-row { display: grid; grid-template-columns: 2.75rem minmax(0,1fr); align-items: start; padding: 1rem; gap: .75rem; }
+  .oc-application-management-row > div, .oc-application-management-row > .oc-management-state, .oc-application-management-row > button { grid-column: 2; }
+  .oc-application-management-row > .oc-management-state { margin-left: 0; }
+  .oc-application-management-row > button { justify-self: start; }
+}

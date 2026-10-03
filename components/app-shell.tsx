@@ -23,7 +23,7 @@ import { UnifiedStudentProfileView } from "@/components/views/unified-student-pr
 import { InboxView } from "@/components/views/inbox-view"
 import { ExploreView } from "@/components/views/explore-view"
 import { CorkboardView } from "@/components/views/corkboard-view"
-import { resolveStudentView, sectionForStudentView } from "@/lib/student-navigation"
+import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
 import { ApplicationTrackerView } from "@/components/views/application-tracker-view"
 import { CalendarView } from "@/components/views/calendar-view"
 import { LeaderDashboardView } from "@/components/views/leader-dashboard-view"
@@ -105,17 +105,11 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
   useEffect(() => {
     if (showLanding) { setView("landing"); return }
-    const raw = searchParams.get("view")
-    const requested = resolveStudentView(raw)
-    if (requested) {
-      setView(requested)
-      setPersonalSection(sectionForStudentView(requested, searchParams.get("section")))
-      if (raw !== requested || ["discover", "discovery", "categories"].includes(searchParams.get("section") || "")) {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set("view", requested)
-        params.delete("section")
-        router.replace(`${embedded ? "/preview" : "/"}?${params}`)
-      }
+    const route = canonicalStudentParams(new URLSearchParams(searchParams.toString()))
+    if (route) {
+      setView(route.view)
+      setPersonalSection(route.section)
+      if (route.params.toString() !== searchParams.toString()) router.replace(`${embedded ? "/preview" : "/"}?${route.params}`)
     }
   }, [searchParams, showLanding, embedded, router])
 
@@ -180,9 +174,10 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}
             {view === "my-clubs" && <PersonalClubs section={personalSection} />}
-            {view === "explore" && <ExploreView onNavigate={navigate} />}
+            {view === "explore" && <ExploreView onNavigate={navigate} section={personalSection === "categories" ? "categories" : "explore"} />}
             {view === "corkboard" && <CorkboardView onNavigate={navigate} />}
-            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} scope={personalSection === "interviews" ? "interviews" : personalSection === "decisions" ? "decisions" : "all"} />}
+            {view === "tracker" && <ApplicationTrackerView onNavigate={navigate} scope="all" />}
+            {view === "status" && <ApplicationTrackerView onNavigate={navigate} scope="status" />}
             {view === "calendar" && <CalendarView onNavigate={navigate} />}
             {view === "leader-dashboard" && <LeaderDashboardView />}
             {view === "screening-dashboard" && <ScreeningDashboardView />}

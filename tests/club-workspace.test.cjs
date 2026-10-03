@@ -190,7 +190,7 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
     assert.equal(url.searchParams.get("section"), "recruitment");
     assert.equal(url.searchParams.get("tool"), item.id);
   }
-  assert.equal(personalMode("interviews"), "applications");
+  assert.equal(personalMode("status"), "apply");
   assert.equal(personalMode("tasks"), "clubs");
   assert.equal(personalMode("explore"), "explore");
 });

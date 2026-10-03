@@ -194,7 +194,7 @@ export function StudentDashboardView({
   const next = now ? nextHomeAction(applications, agenda, now) : { kind: "explore" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
-    onNavigate("tracker")
+    onNavigate(app.draft ? "tracker" : "status")
   }
   function openEvent(event: ClubEvent) {
     focusEvent(event.id)

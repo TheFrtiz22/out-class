@@ -8,7 +8,7 @@ export const tutorialSteps = {
     { title: "Explore OutClass", text: "Browse Explore by interest, search and compare clubs, and open a club’s page for its recruitment details and public events.", anchor: "nav-explore", view: "explore" },
     { title: "Your clubs", text: "My Clubs brings your memberships together. Open a club to find its meetings, tasks, and workspace tools available to you.", anchor: "nav-clubs", view: "my-clubs" },
     { title: "Applications", text: "Start from a club’s page, answer its questions, and check your profile before submitting. Track all your applications here.", anchor: "nav-applications", view: "tracker" },
-    { title: "Application status", text: "Your tracker shows each application’s current status, interview invitations, and released decisions. Open an application for details.", anchor: "nav-applications", view: "tracker" },
+    { title: "Application status", text: "Status brings review progress, interview scheduling, and released decisions together. Open an application to review its next step.", anchor: "nav-status", view: "status" },
     { title: "Calendar and events", text: "Find upcoming events and interview times in Calendar. Open an event for its details and attendance options.", anchor: "nav-calendar", view: "calendar" },
     { title: "Your Corkboard", text: "Save interesting clubs from Explore or a club profile. Revisit them on Corkboard, or remove a saved club whenever your interests change. Saving does not apply or subscribe you.", anchor: "nav-corkboard", view: "corkboard" },
     { title: "Stay in the loop", text: "Use the bell for notifications and application updates. You can restart this walkthrough anytime using Tutorial help.", anchor: "notifications", view: "inbox" },

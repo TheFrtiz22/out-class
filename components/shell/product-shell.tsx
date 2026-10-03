@@ -22,11 +22,11 @@ import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { createClient } from "@/utils/supabase/client"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
-import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation"
+import { canLeaveWorkspace, personalUniversalItems, type ProductNavItem } from "@/lib/product-navigation"
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
-const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
+const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
 
 export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, onSelect, onNavigate, onReviewTool }: {
   onReviewTool?: (id: string) => void;
@@ -40,6 +40,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
   const mobileOrigin = useRef<HTMLElement | null>(null)
   const member = user?.memberships.find(m => m.clubId === clubId)
+  const personal = !manager && mode !== "preview"
   const searchItems = manager ? adminNav.filter(item => {
     if (item.id === "leader-dashboard") return hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     if (item.id === "interview-workspace") return hasPermission(member, "applications.review")
@@ -68,7 +69,12 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
   }, [])
-  function select(id: string) { if (!canLeaveWorkspace()) return; moved.current = true; setMobile(false); onSelect(id) }
+  function select(id: string) {
+    if (!canLeaveWorkspace()) return
+    moved.current = true; setMobile(false)
+    if (personalUniversalItems.some(item => item.id === id)) onNavigate(id as ViewId)
+    else onSelect(id)
+  }
   function navigate(view: ViewId) { if (canLeaveWorkspace()) onNavigate(view) }
   function navLink(item: ProductNavItem, top = false) {
     const selected = top ? item.id === mode : item.id === active
@@ -82,9 +88,11 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /><span>YOUR CAMPUS. CONNECTED.</span></button>
     <div className="mb-7"><ClubWorkspaceSwitcher clubId={manager ? clubId : ""} managersOnly /></div>
     {!manager && clubId && clubName && <p className="mb-4 break-words px-3 text-sm font-semibold text-primary">{clubName}</p>}
-    <p className="mb-3 px-3 text-[length:var(--oc-size-11)] uppercase tracking-widest text-muted-foreground">{manager ? modes.find(m => m.id === mode)?.label || "Club" : "Your campus"}</p>
+    {personal && <nav aria-label="Universal navigation" className="mb-5 space-y-1">{personalUniversalItems.filter(item => item.id === "student-dashboard").map(item => navLink(item))}</nav>}
+    <p className="mb-3 px-3 text-[length:var(--oc-size-11)] uppercase tracking-widest text-muted-foreground">{modes.find(m => m.id === mode)?.label || (manager ? "Club" : "Your campus")}</p>
     <nav aria-label="Context navigation" className="space-y-1">{items.filter(i => !i.quiet).map(i => navLink(i))}</nav>
     {items.some(i => i.quiet) && <div className="mt-8"><p className="mb-3 px-3 text-[length:var(--oc-size-11)] uppercase tracking-widest text-muted-foreground">Review Tools</p><nav aria-label="Review tools" className="space-y-1">{items.filter(i => i.quiet).map(i => navLink(i))}</nav></div>}
+    {personal && <nav aria-label="Account navigation" className="mt-6 space-y-1 border-t border-white/10 pt-4">{personalUniversalItems.filter(item => item.id !== "student-dashboard").map(item => navLink(item))}</nav>}
     <div className="oc-rail-footer"><span className="oc-campus-dot" />University of Virginia<span>Made for your next chapter.</span></div>
   </div> }
   return <div className="min-h-dvh bg-background text-foreground" data-product-shell={manager ? "manager" : "personal"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
@@ -94,7 +102,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
         <Sheet open={mobile} onOpenChange={setMobile}><SheetTrigger asChild><IconButton aria-label="Open navigation" className="lg:hidden"><Menu /></IconButton></SheetTrigger><SheetContent side="left" className="oc-navigation-sheet w-[min(88vw,300px)] p-0" onCloseAutoFocus={e => { if (moved.current) { e.preventDefault(); main.current?.focus(); moved.current = false; mobileOrigin.current = null } else if (mobileOrigin.current?.isConnected) { e.preventDefault(); mobileOrigin.current.focus(); mobileOrigin.current = null } }}><SheetTitle className="oc-modal-title sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Choose a workspace or contextual destination.</SheetDescription>{sidebar()}</SheetContent></Sheet>
         <button aria-label="OutClass home" onClick={() => navigate("student-dashboard")} className="oc-product-brand shrink-0 rounded focus-visible:outline-2 focus-visible:outline-ring"><OutClassLogo variant="light" className="h-8 w-auto" /></button>
 
-        <div className="oc-header-context"><span>{manager ? "Club workspace" : "Personal workspace"}</span><strong>{manager ? clubName : title}</strong></div>
+        <div className="oc-header-context"><span>{manager ? "Club workspace" : "Personal workspace"}</span>{!personal && <strong>{manager ? clubName : title}</strong>}</div>
         <div className="oc-product-utilities ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <Button variant="ghost" className="oc-global-search hidden text-muted-foreground md:inline-flex" onClick={() => setSearch(true)}><Search />Search OutClass <kbd className="ml-2 text-[length:var(--oc-size-10)]">⌘ K</kbd></Button>
           <IconButton aria-label="Search OutClass" className="md:hidden" onClick={() => setSearch(true)}><Search /></IconButton>
@@ -109,7 +117,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><aside className="sticky top-28 hidden h-[calc(100dvh-7rem)] border-r border-border lg:block">{sidebar()}</aside><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content mx-auto w-full min-w-0 max-w-[1440px] outline-none">
       {demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}
     </main></div>
-    <MobileNavigation items={items} active={active} manager={manager} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
+    <MobileNavigation items={items} active={active} manager={manager || mode === "preview"} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
     {user && <TutorialWalkthrough key={`${user.id}:${manager ? "leader" : "student"}`} experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
       if (!canLeaveWorkspace()) return
       if ("view" in step) navigate(step.view)

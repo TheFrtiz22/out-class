@@ -30,7 +30,7 @@ function categoryIcon(category: string) {
   return Sparkles
 }
 
-export function ExploreView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
+export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (view: ViewId) => void; section?: "explore" | "categories" }) {
   const [clubs, setClubs] = useState<DirectoryClub[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -69,6 +69,7 @@ export function ExploreView({ onNavigate }: { onNavigate: (view: ViewId) => void
         ?.focus({ preventScroll: true })
     }
   }, [selected])
+  useEffect(() => { setSelected(null) }, [section])
   const categories = useMemo(
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],
@@ -98,9 +99,9 @@ export function ExploreView({ onNavigate }: { onNavigate: (view: ViewId) => void
       <ClubProfileView club={selected} onBack={() => setSelected(null)} onNavigate={onNavigate} />
     )
   return (
-    <div className="oc-discovery" ref={resultsRef}>
+    <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="University of Virginia" title="Explore" description="Find your people. Browse by interest, compare clubs, and save what catches your eye." />
+        <PageHeader eyebrow="University of Virginia" title={section === "categories" ? "Categories" : "Discover"} description={section === "categories" ? "Browse the club directory by interest. Choose a category to see its organizations." : "Find your people. Compare clubs and save what catches your eye."} />
         <Image src="/images/campus/rotunda-960.webp" alt="" width={960} height={640} sizes="(max-width: 600px) 100vw, 50vw" className="oc-explore-campus" />
         <CampusRibbon />
       </div>
@@ -242,14 +243,14 @@ export function ExploreView({ onNavigate }: { onNavigate: (view: ViewId) => void
       ) : (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
-          {!active.length && highlights.length > 0 && (
+          {section !== "categories" && !active.length && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Worth getting to know</h2></div>
               <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An alphabetical introduction to the directory."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {!active.length && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
+          {section !== "categories" && !active.length && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
             <div><h2 id="available-title">Applications on OutClass</h2><p>An A–Z selection of clubs with applications available. Check their profiles for recruitment details.</p></div>
             <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Application available</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
           </section>}

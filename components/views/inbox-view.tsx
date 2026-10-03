@@ -30,6 +30,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     focusApplication,
     focusNotificationId,
     focusNotification,
+    trackedApps = [],
   } = useApplicationState()
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
@@ -486,10 +487,10 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     variant="outline"
                     onClick={() => {
                       if (selected.clubId) focusApplication(selected.clubId)
-                      onNavigate("tracker")
+                      onNavigate(trackedApps.some(app => app.clubId === selected.clubId && app.status === "Drafting") ? "tracker" : "status")
                     }}
                   >
-                    View application
+                    {trackedApps.some(app => app.clubId === selected.clubId && app.status === "Drafting") ? "Continue application" : "View status"}
                   </Button>
                 )}
               </div>

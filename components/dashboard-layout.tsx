@@ -2,7 +2,7 @@
 import { useEffect, type ReactNode } from "react"
 import { PageHeader } from "@/components/product/page-header"
 import { ProductShell } from "@/components/shell/product-shell"
-import { personalMode, personalItems, personalModes, type PersonalSection } from "@/lib/product-navigation"
+import { personalMode, personalItems, personalModes, personalDestination, type PersonalSection } from "@/lib/product-navigation"
 import { adminNav, viewTitles, type AppMode, type ViewId } from "@/lib/views"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -31,21 +31,19 @@ export function DashboardLayout({ children, view, appMode, onNavigate, personalS
     if (leaderFocus?.roundId) query.set("roundId", leaderFocus.roundId)
     router.replace(`/club/${encodeURIComponent(managedClubId)}/workspace?${query}`)
   }, [leaderView, managedClubId, view, leaderFocus, router])
-  const section = view === "calendar" ? "calendar" : view === "tracker" ? (["applications", "interviews", "decisions"].includes(personalSection) ? personalSection : "applications") : view === "my-clubs" ? personalSection : view === "explore" ? "explore" : view === "corkboard" ? "corkboard" : personalSection
+  const section = view === "calendar" ? "calendar" : view === "status" ? "status" : view === "tracker" ? "applications" : view === "corkboard" ? "corkboard" : view === "explore" ? personalSection === "categories" ? "categories" : "explore" : personalSection
   const mode = personalMode(section)
-  const items = personalItems(!!user?.memberships.length)
+  const items = personalItems(mode)
   function select(id: string) {
-    if (id === "student-dashboard") { onNavigate("student-dashboard"); return }
-    const next = id
-    const target = ["applications", "interviews", "decisions"].includes(next) ? "tracker" : ["clubs", "meetings", "tasks"].includes(next) ? "my-clubs" : next === "calendar" ? "calendar" : next === "corkboard" ? "corkboard" : "explore"
-    onNavigate(target, next as PersonalSection)
-    onPersonalSection?.(next as PersonalSection)
+    const destination = personalDestination(id)
+    onNavigate(destination.view, destination.section)
+    if (destination.section) onPersonalSection?.(destination.section)
   }
   if (leaderView && managed) return <p role="status" className="p-8">Opening club workspace…</p>
   if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p>{children}</ProductShell>
-  const title = view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
-  return <ProductShell mode={mode} modes={personalModes} items={items} active={view === "student-profile" || view === "inbox" || view === "student-dashboard" ? view : section} title={viewTitles[view].title} onSelect={select} onNavigate={onNavigate}>
-    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "corkboard" && <PageHeader eyebrow="Your campus, connected" title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} ribbon />}
+  const title = ["student-dashboard", "student-profile", "inbox"].includes(view) ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
+  return <ProductShell mode={mode} modes={personalModes} items={items} active={view === "student-profile" || view === "inbox" || view === "student-dashboard" ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
+    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader eyebrow="Your campus, connected" title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} ribbon />}
     {(["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}
   </ProductShell>

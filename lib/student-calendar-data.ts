@@ -2,7 +2,7 @@ import type { ClubEvent } from "@/lib/data"
 import { dateKey } from "@/lib/calendar"
 
 type Timestamp = Date | string
-type CalendarSource = {
+export type CalendarSource = {
   meetings?: { id: string; clubId: string; date: Timestamp; title: string; location: string; description?: string | null; audience: string; club: { name: string } }[]
   applications?: {
     clubId: string
