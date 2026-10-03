@@ -64,7 +64,7 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
   if (!enabled) return null;
   return <section aria-label={includeDismissed ? "Pending organization invitations" : "Club Invitations"} className="mb-6 min-w-0 max-w-5xl space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-2">
-      <div><h2 className="font-display text-2xl">{includeDismissed ? "Pending Invitations" : "Club Invitations"}</h2><p className="mt-1 text-sm text-muted-foreground">{includeDismissed ? "All pending requests, including those you set aside." : "Your communities, on your terms. Accept now or come back later."}</p></div>
+      <div><h2 className="oc-section-heading ">{includeDismissed ? "Pending Invitations" : "Club Invitations"}</h2><p className="mt-1 text-sm text-muted-foreground">{includeDismissed ? "All pending requests, including those you set aside." : "Your communities, on your terms. Accept now or come back later."}</p></div>
       {!loading && <Button size="sm" className="min-h-11" variant="ghost" onClick={() => setAttempt(value => value + 1)}>Refresh requests</Button>}
     </header>
     {onProfileDefaults && invitations.length > 0 && <p className="text-sm text-muted-foreground">Invitation details may fill blank profile fields. Review and edit your name and graduation year before saving.</p>}

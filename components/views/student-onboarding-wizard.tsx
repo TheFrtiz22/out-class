@@ -432,7 +432,7 @@ export function StudentOnboardingWizard({
           {step === 1 && (
             <>
               <div className="mb-6">
-                <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+                <h2 className="oc-section-heading text-neutral-900">
                   {accountCreated ? "Let’s finish your profile" : "Create your account"}
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
@@ -528,7 +528,7 @@ export function StudentOnboardingWizard({
           {step === 2 && (
             <>
               <div className="mb-6">
-                <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+                <h2 className="oc-section-heading text-neutral-900">
                   {codeSent ? "Check your inbox" : "Email verification"}
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
@@ -620,7 +620,7 @@ export function StudentOnboardingWizard({
           {step === 3 && (
             <>
               <div className="mb-6">
-                <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+                <h2 className="oc-section-heading text-neutral-900">
                   Academic profile
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
@@ -742,7 +742,7 @@ export function StudentOnboardingWizard({
           {step === 4 && (
             <>
               <div className="mb-6">
-                <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+                <h2 className="oc-section-heading text-neutral-900">
                   Experience & assets
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">

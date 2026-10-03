@@ -29,7 +29,7 @@ function BookingManagerPanel({ onNavigate, blocks, onCreate, selectedDate, setSe
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Interview scheduling</p><h2 className="text-2xl font-semibold tracking-tight">A room for every conversation.</h2><p className="mt-2 text-sm text-muted-foreground">Create rooms, open booking slots, and keep your interview day organized.</p></div>
+        <div><p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Interview scheduling</p><h2 className="oc-section-heading ">A room for every conversation.</h2><p className="mt-2 text-sm text-muted-foreground">Create rooms, open booking slots, and keep your interview day organized.</p></div>
         <div className="flex gap-6 text-sm"><div><span className="block text-2xl font-semibold">{dateBlocks.length}</span><span className="text-muted-foreground">Rooms</span></div><div><span className="block text-2xl font-semibold">{dateBlocks.reduce((sum, b) => sum + b.slots.length, 0)}</span><span className="text-muted-foreground">Time slots</span></div><div><span className="block text-2xl font-semibold">{dateBlocks.reduce((sum, b) => sum + b.slots.reduce((n, slot) => n + slot.bookedCount, 0), 0)}</span><span className="text-muted-foreground">Booked</span></div></div>
       </div>
       <Tabs value={mode} onValueChange={(value) => setMode(value as "admin" | "student")}>
@@ -65,12 +65,12 @@ function BookingManagerPanel({ onNavigate, blocks, onCreate, selectedDate, setSe
           </div>
 
           <div className="flex flex-col gap-5">
-            {visibleLocations.length === 0 && <div className="rounded-xl border border-dashed bg-slate-50/50 px-6 py-14 text-center"><DoorOpen className="mx-auto mb-4 size-9 text-primary" /><h3 className="text-lg font-semibold">Make room for your next members</h3><p className="mb-5 mt-2 text-sm text-muted-foreground">No rooms match this date and location. Create a room to start taking bookings.</p><CreateScheduleDialog selectedDate={selectedDate} onCreate={(block) => { onCreate(block); setLocationFilter("all") }} /></div>}
+            {visibleLocations.length === 0 && <div className="rounded-xl border border-dashed bg-slate-50/50 px-6 py-14 text-center"><DoorOpen className="mx-auto mb-4 size-9 text-primary" /><h3 className="oc-card-heading ">Make room for your next members</h3><p className="mb-5 mt-2 text-sm text-muted-foreground">No rooms match this date and location. Create a room to start taking bookings.</p><CreateScheduleDialog selectedDate={selectedDate} onCreate={(block) => { onCreate(block); setLocationFilter("all") }} /></div>}
             {visibleLocations.map((location) => (
               <div key={location.id} className="rounded-xl border border-border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <MapPin className="size-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold font-sans tracking-tight"><a href={location.mapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{location.locationName}</a></h3><span className="ml-auto text-xs text-muted-foreground">{location.slots.length} slots · {location.slots.reduce((n, slot) => n + Math.max(0, slot.capacity - slot.bookedCount), 0)} openings</span>
+                  <h3 className="oc-card-heading "><a href={location.mapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{location.locationName}</a></h3><span className="ml-auto text-xs text-muted-foreground">{location.slots.length} slots · {location.slots.reduce((n, slot) => n + Math.max(0, slot.capacity - slot.bookedCount), 0)} openings</span>
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                   {location.slots.map((slot) => (

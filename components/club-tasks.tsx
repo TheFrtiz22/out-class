@@ -217,7 +217,7 @@ export function ClubTasks({
           <p className="text-sm text-muted-foreground">
             {membership?.club.name ?? "Club workspace"}
           </p>
-          <h1 className="font-display text-3xl sm:text-4xl">Semester work</h1>
+          <h1 className="oc-page-title ">Semester work</h1>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             Projects, weekly assignments, and the next thing to do. Your club
             work stays here.
@@ -299,7 +299,7 @@ export function ClubTasks({
             )}
             {!tasks.length && (
               <div className="py-12">
-                <h2 className="text-lg font-medium">
+                <h2 className="oc-section-heading ">
                   {query || filter !== "open"
                     ? "No matching work"
                     : "You're up to date"}
@@ -696,7 +696,7 @@ function TaskDetail({
       {task.projectId && <p className="mb-4 text-sm text-muted-foreground">Project: {workspace.tasks.find(p => p.id === task.projectId)?.title ?? "Related project"}</p>}
       {manager && <details className="border-b pb-4"><summary className="cursor-pointer text-sm font-medium">Audience & recipients · {task.assignments.length}</summary><p className="mt-3 text-xs leading-6 text-muted-foreground">Recipients were fixed when this assignment was created.</p><ul className="mt-3 space-y-2 text-sm">{audience.everyone && <li>Everyone at creation</li>}{audience.members.length > 0 && <li>Individuals: {audience.members.map(id => { const member = workspace.members.find(m => m.id === id); return member ? memberName(member) : "Former member" }).join(", ")}</li>}{audience.groups.length > 0 && <li>Groups: {audience.groups.join(", ")}</li>}{audience.cohorts.length > 0 && <li>Cohorts: {audience.cohorts.join(", ")}</li>}{audience.years.length > 0 && <li>Years: {audience.years.join(", ")}</li>}{audience.roles.length > 0 && <li>Roles: {audience.roles.map(r => r.replaceAll("_", " ").toLowerCase()).join(", ")}</li>}</ul></details>}
         <div className="mt-6 space-y-5">
-          <h3 className="text-base font-semibold">Instructions</h3>
+          <h3 className="oc-card-heading ">Instructions</h3>
           <p className="max-w-3xl whitespace-pre-wrap break-words text-sm leading-7">
             {task.description || "No additional instructions."}
           </p>
@@ -727,7 +727,7 @@ function TaskDetail({
           )}
           {task.kind === "PROJECT" && (
             <div className="text-sm">
-              <h3 className="font-medium">Related tasks</h3>
+              <h3 className="oc-card-heading ">Related tasks</h3>
               <ul className="mt-2 space-y-2">
                 {workspace.tasks
                   .filter((t) => t.projectId === task.id)
@@ -759,7 +759,7 @@ function TaskDetail({
                 />
               </details>
               <div className="border-t pt-5">
-                <h3 className="font-medium">Member progress</h3>
+                <h3 className="oc-card-heading ">Member progress</h3>
                 <div className="my-4 flex flex-wrap gap-3">
                   <label className="text-sm">
                     Status
@@ -857,7 +857,7 @@ function Submission({
         if (success) setSubmitted(true);
       }}
     >
-      <h3 className="flex items-center gap-2 text-lg font-semibold"><FilePenLine size={20} />Your submission</h3>
+      <h3 className="oc-card-heading flex items-center gap-2"><FilePenLine size={20} />Your submission</h3>
       <p className="text-sm text-muted-foreground">
         {a.submittedAt
           ? `Submitted ${dateLabel(a.submittedAt)}${closed ? "" : " · You can update it until it is reviewed or the task closes."}`

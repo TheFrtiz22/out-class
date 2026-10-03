@@ -1,13 +1,11 @@
-const defaultTheme = require("tailwindcss/defaultTheme")
-
 /** Tailwind v4 loads this shared configuration via @config in app/globals.css. */
 module.exports = {
   darkMode: ['class'],
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)', ...defaultTheme.fontFamily.sans],
-        mono: ['var(--font-geist-mono)', 'monospace'],
+        sans: ['var(--oc-font-sans)'],
+        mono: ['var(--oc-font-sans)'],
       },
       colors: {
         canvas: 'var(--card)',

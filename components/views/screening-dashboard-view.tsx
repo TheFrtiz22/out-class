@@ -87,7 +87,7 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
     {error && <div role="alert" className="space-y-2 text-sm"><p>{error}</p><Button variant="outline" disabled={busy} onClick={() => { if (!dirty || window.confirm("Discard unsaved rule changes and reload?")) onReload() }}>Reload</Button></div>}
     {message && <p role="status" className="text-sm">{message}</p>}
     <section className="space-y-4 border-t pt-5">
-      <h3 className="font-medium">Preview current applicants</h3>
+      <h3 className="oc-card-heading ">Preview current applicants</h3>
       <p className="text-sm text-muted-foreground">Only submitted, in-review, and interviewing applications in this round are evaluated. Drafts and existing decisions, including waitlists, are excluded. Labels stay pseudonymous here.</p>
       <Button variant="outline" disabled={busy || dirty || !round.screeningRule || !canPreview} onClick={() => void run(async () => { setPreview(await previewRecruitingRule(scope)) })}>Preview saved rules</Button>
       {!canPreview && <p className="text-sm text-muted-foreground">Applicant review permission is required; identified rounds also require identity access.</p>}
@@ -99,7 +99,7 @@ function RuleEditor({ clubId, round, data, onSaved, onReload, onReview }: { club
         {!data.canApply && <p className="text-sm text-muted-foreground">Decision-management permission is required to apply or clear flags.</p>}
       </div>}
     </section>
-    {canPreview && <section className="space-y-3 border-t pt-5"><h3 className="font-medium">Saved review flags</h3><p className="text-xs text-muted-foreground">These are snapshots, not decisions. Preview again to account for updated scores. Applicants who leave this round or receive a decision are omitted.</p>
+    {canPreview && <section className="space-y-3 border-t pt-5"><h3 className="oc-card-heading ">Saved review flags</h3><p className="text-xs text-muted-foreground">These are snapshots, not decisions. Preview again to account for updated scores. Applicants who leave this round or receive a decision are omitted.</p>
       {flags === null ? <p role="status">Loading saved flags…</p> : !flags.length ? <p className="text-sm text-muted-foreground">No active flags in this round.</p> : <><ul className="divide-y">{flags.map(flag => <li key={flag.applicationId} className="space-y-1 py-3 text-sm"><p className="font-medium">{flag.label}</p><p>{flag.reasons.join("; ")}</p><p className="text-xs text-muted-foreground">Version {flag.ruleRevision} · {new Date(flag.flaggedAt).toLocaleString()}</p>{onReview && <Button variant="outline" disabled={busy || dirty} onClick={() => review(flag.applicationId)}>Review applicant</Button>}</li>)}</ul><Button variant="outline" disabled={busy || !data.canApply || dirty} onClick={() => void run(async () => { await clearRecruitingRuleFlags(scope); setFlags([]); setPreview(null); setMessage("Flags cleared. Decisions are unchanged.") })}>Clear saved flags</Button></>}
     </section>}
   </div>

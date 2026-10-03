@@ -59,7 +59,7 @@ export function MediaUploader({ value, onChange, label, helpText, shape }: Media
           ) : (
             <span className="flex flex-col items-center gap-1 px-2 text-center">
               <ImageIcon className="size-5" />
-              <span className="text-[11px] font-medium leading-tight">Drop or click to upload</span>
+              <span className="text-[length:var(--oc-size-11)] font-medium leading-tight">Drop or click to upload</span>
             </span>
           )}
           {value && (

@@ -13,7 +13,7 @@ export default async function PlatformPage() {
       <Link className="underline" href="/">
         Personal workspace
       </Link>
-      <h1 className="font-display text-3xl">OutClass platform administration</h1>
+      <h1 className="oc-page-title ">OutClass platform administration</h1>
       <p className="text-sm text-muted-foreground">Protected platform controls. Changes require a reason and confirmation; every operation is audited.</p>
       <a className="block underline" href="/platform/claims">Review club claims</a>
       <PlatformConsole />

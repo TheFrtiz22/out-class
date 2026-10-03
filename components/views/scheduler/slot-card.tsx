@@ -42,11 +42,11 @@ export function SlotCard({
           {slot.candidates.map((student) => (
             <div key={student.email} className="flex items-center gap-2">
               <Avatar className="size-6">
-                <AvatarFallback className="text-[10px] font-medium">{student.initials}</AvatarFallback>
+                <AvatarFallback className="text-[length:var(--oc-size-10)] font-medium">{student.initials}</AvatarFallback>
               </Avatar>
               <div className="grid min-w-0 leading-tight">
                 <span className="truncate text-xs font-medium">{student.name}</span>
-                <span className="truncate text-[11px] text-muted-foreground">{student.email}</span>
+                <span className="truncate text-[length:var(--oc-size-11)] text-muted-foreground">{student.email}</span>
               </div>
             </div>
           ))}

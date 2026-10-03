@@ -48,7 +48,7 @@ export default async function Invitation({
     return (
       <main className="mx-auto min-h-svh max-w-xl space-y-4 px-4 py-8 sm:px-8 sm:py-12">
         <Link href="/?workspace=student" aria-label="OutClass dashboard" className={`inline-flex min-h-11 items-center ${onboardingFocus}`}><OutClassLogo className="h-7 w-auto" /></Link>
-      <h1 className="break-words font-display text-3xl leading-tight sm:text-4xl">Invitation unavailable</h1>
+      <h1 className="oc-page-title break-words">Invitation unavailable</h1>
         <p>
           This link may have expired or already been answered. Sign in with the
           invited UVA account, or ask the club manager for a new invitation.
@@ -61,12 +61,12 @@ export default async function Invitation({
   return (
     <main className="mx-auto min-h-svh max-w-xl space-y-6 px-4 py-8 sm:px-8 sm:py-12">
       <Link href="/?workspace=student" aria-label="OutClass dashboard" className={`inline-flex min-h-11 items-center ${onboardingFocus}`}><OutClassLogo className="h-7 w-auto" /></Link>
-      <h1 className="break-words font-display text-3xl leading-tight sm:text-4xl">{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</h1>
+      <h1 className="oc-page-title break-words">{(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") ? "Claim" : "Join"} {invitation.club.name}</h1>
       <p className="text-sm leading-7 text-muted-foreground">
         Accept with the UVA account this invitation was sent to. Your personal
         profile and existing memberships stay intact.
       </p>
-      <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="text-sm font-semibold">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
+      <div className="rounded-xl border bg-card p-4 sm:p-5"><h2 className="oc-section-heading ">Your organization access</h2><ul className="mt-3 flex flex-wrap gap-2">{(invitation.permissions.length ? invitation.permissions : ["membership"]).map(permission => <li key={permission} className="rounded-md bg-muted px-2.5 py-1.5 text-xs leading-5">{permissionLabels[permission as ClubPermission] || "Club membership"}</li>)}</ul></div>
       {(invitation.schoolIdentityId && invitation.requestedRole === "OWNER") && <p className="text-sm leading-7">You’ve been designated as an administrator. Claiming gives you owner access to manage members, roles, applications, recruiting, interviews, and organization settings.</p>}
       <InvitationResponse id={id} owner={!!invitation.schoolIdentityId && invitation.requestedRole === "OWNER"} />
     </main>

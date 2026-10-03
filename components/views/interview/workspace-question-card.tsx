@@ -34,7 +34,7 @@ export function WorkspaceQuestionCard({
         <div className="space-y-2 rounded-md border border-slate-200 bg-white p-3">
           <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
             <span>Score</span>
-            <span className="text-sm font-bold text-muted-foreground">
+            <span className="text-sm font-semibold text-muted-foreground">
               {score || 0} <span className="text-xs font-normal text-muted-foreground">/ {scale}</span>
             </span>
           </div>
@@ -70,7 +70,7 @@ export function WorkspaceQuestionCard({
                   className="flex items-start gap-2.5 rounded-md border border-slate-200 bg-slate-100 p-2.5"
                 >
                   <Avatar className="size-6 shrink-0">
-                    <AvatarFallback className="bg-slate-300 text-[10px] font-medium text-slate-700">
+                    <AvatarFallback className="bg-slate-300 text-[length:var(--oc-size-10)] font-medium text-slate-700">
                       {comment.initials}
                     </AvatarFallback>
                   </Avatar>

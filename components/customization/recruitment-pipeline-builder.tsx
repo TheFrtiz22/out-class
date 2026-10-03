@@ -17,7 +17,7 @@ export function RecruitmentPipelineBuilder({ clubId = "vvf" }: { clubId?: string
     update(previous => { const stages = [...previous.stages]; [stages[index], stages[index + offset]] = [stages[index + offset], stages[index]]; return { ...previous, stages } })
   }
   return <fieldset disabled={!ready} className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6 font-sans">
-    <div><h2 className="text-lg font-semibold">Recruitment Pipeline</h2><p className="mt-1 text-sm text-neutral-500">Define your process. Applicants can move directly to any stage in the CRM.</p></div>
+    <div><h2 className="oc-section-heading ">Recruitment Pipeline</h2><p className="mt-1 text-sm text-neutral-500">Define your process. Applicants can move directly to any stage in the CRM.</p></div>
     <ol className="space-y-2">{state.stages.map((stage, index) => <li key={stage.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 p-3">
       <span className="w-6 text-sm text-neutral-400">{index + 1}</span>
       <Input aria-label={`Stage ${index + 1} name`} className="min-w-32 flex-1 shadow-none" defaultValue={stage.name} maxLength={60} onBlur={event => {

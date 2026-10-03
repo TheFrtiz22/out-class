@@ -32,7 +32,7 @@ export default async function Page({
       <Link className="underline" href="/">
         Back to OutClass
       </Link>
-      <h1 className="font-display text-3xl">Claim {club.name}</h1>
+      <h1 className="oc-page-title ">Claim {club.name}</h1>
       <p>
         Keep your student identity. Once an OutClass administrator approves your
         request, this club’s workspace will become available to you.

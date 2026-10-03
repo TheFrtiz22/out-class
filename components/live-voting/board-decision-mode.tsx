@@ -66,7 +66,7 @@ export function BoardDecisionMode({
           onEscapeKeyDown={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >
-          <DialogTitle className="sr-only">Board decision review</DialogTitle>
+          <DialogTitle className="oc-modal-title sr-only">Board decision review</DialogTitle>
           {pool && (
             <DecisionPresentation
               key={clubId}
@@ -217,7 +217,7 @@ function DecisionPresentation({
               <h2
                 ref={heading}
                 tabIndex={-1}
-                className="break-words font-display text-3xl tracking-tight focus-visible:outline-2 focus-visible:outline-ring sm:text-4xl"
+                className="oc-section-heading break-words focus-visible:outline-2 focus-visible:outline-ring"
               >
                 {name}
               </h2>
@@ -233,7 +233,7 @@ function DecisionPresentation({
           </header>
           <div className="grid gap-8 border-y border-border py-7 md:grid-cols-[minmax(0,1.25fr)_minmax(0,.75fr)]">
             <section className="min-w-0 space-y-4">
-              <h3 className="text-sm font-semibold">Profile & experience</h3>
+              <h3 className="oc-card-heading ">Profile & experience</h3>
               <TestScoreDetail profile={profile} />
               {profile?.bio && (
                 <p className="whitespace-pre-wrap break-words text-sm leading-7">{profile.bio}</p>
@@ -291,7 +291,7 @@ function DecisionPresentation({
               )}
             </section>
             <section className="space-y-4">
-              <h3 className="text-sm font-semibold">Round evaluations</h3>
+              <h3 className="oc-card-heading ">Round evaluations</h3>
               {scores.length ? (
                 <dl className="divide-y divide-border">
                   {scores.map((item) => (

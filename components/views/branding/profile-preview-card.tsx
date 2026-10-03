@@ -64,22 +64,22 @@ export function ProfilePreviewCard({ profile }: { profile: ClubBrandingProfile }
         <div className="mt-4 grid grid-cols-3 gap-2 rounded-lg border bg-muted/30 p-3 text-center">
           <div>
             <p className="text-sm font-semibold">{profile.acceptanceRate || "—"}</p>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Acceptance</p>
+            <p className="text-[length:var(--oc-size-10)] uppercase tracking-wide text-muted-foreground">Acceptance</p>
           </div>
           <div>
             <p className="text-sm font-semibold">{profile.displayAum && profile.aum ? `$${profile.aum}` : "—"}</p>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">AUM</p>
+            <p className="text-[length:var(--oc-size-10)] uppercase tracking-wide text-muted-foreground">AUM</p>
           </div>
           <div>
             <p className="text-sm font-semibold">{profile.memberCount || "—"}</p>
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Members</p>
+            <p className="text-[length:var(--oc-size-10)] uppercase tracking-wide text-muted-foreground">Members</p>
           </div>
         </div>
 
         {/* Placements */}
         {profile.placements.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1.5 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1.5 flex items-center gap-1 text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-muted-foreground">
               <Users className="size-3" /> Notable placements
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -95,7 +95,7 @@ export function ProfilePreviewCard({ profile }: { profile: ClubBrandingProfile }
         {/* Accolades */}
         {profile.accolades.some((a) => a.text.trim()) && (
           <div className="mt-4 space-y-1.5">
-            <p className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="flex items-center gap-1 text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-muted-foreground">
               <Trophy className="size-3" /> Accolades
             </p>
             <ul className="space-y-1">

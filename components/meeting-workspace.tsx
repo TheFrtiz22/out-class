@@ -57,7 +57,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     member = user?.memberships.find((m) => m.clubId === clubId);
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="max-w-5xl space-y-7">
-    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-2xl">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
+    {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
     <p className="max-w-2xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance in one place. Past meetings include any recaps your club has shared.</p>
     <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
       <div role="group" aria-label="Meeting time" className="flex gap-1">{(["upcoming", "past"] as const).map(value => <Button key={value} variant={period === value ? "secondary" : "ghost"} aria-pressed={period === value} onClick={() => setPeriod(value)}>{value === "upcoming" ? "Upcoming" : "Past"}</Button>)}</div>
@@ -68,7 +68,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     {error && <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <p role="status" className="border-y py-8 text-sm text-muted-foreground">No {period} meetings are available for this audience.{period === "upcoming" ? " Check Past for earlier agendas and recaps." : " Shared meeting history will appear here."}</p>}
     <ul className="divide-y">{visible.map(meeting => <li key={meeting.id} className="py-5 first:pt-0">
-      <Link href={`/meetings/${meeting.id}`} className="group flex gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="mt-2 break-words text-lg font-semibold">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></Link>
+      <Link href={`/meetings/${meeting.id}`} className="group flex gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></Link>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
     </li>)}</ul>
   </section>;
@@ -200,7 +200,7 @@ function MeetingEditor({
           </label>
         ))}
         <section className="space-y-3">
-          <h3 className="font-medium">Slides, files, and links</h3>
+          <h3 className="oc-card-heading ">Slides, files, and links</h3>
           <p className="text-xs text-muted-foreground">
             Attach links to resources. For member-only documents, also restrict
             sharing with your file provider.
@@ -329,7 +329,7 @@ export function MeetingDetail({ id }: { id: string }) {
             ? "Member meeting"
             : "Recruitment / Interest"}
         </p>
-        <h1 className="break-words font-display text-3xl sm:text-4xl">{meeting.title}</h1>
+        <h1 className="oc-page-title break-words">{meeting.title}</h1>
         <p>
           {meetingDate(meeting.date)}
           {meeting.endDate &&
@@ -340,14 +340,14 @@ export function MeetingDetail({ id }: { id: string }) {
       </header>
       {(["agenda", "recap"] as const).map((key) => (
         <section key={key} className="space-y-3 border-t pt-5">
-          <h2 className="font-display text-2xl capitalize">{key}</h2>
+          <h2 className="oc-section-heading capitalize">{key}</h2>
           <p className="whitespace-pre-wrap text-sm leading-7">
             {meeting[key] || `No ${key} has been added yet.`}
           </p>
         </section>
       ))}
       <section className="space-y-3 border-t pt-5">
-        <h2 className="font-display text-2xl">Resources</h2>
+        <h2 className="oc-section-heading ">Resources</h2>
         {resources.success && resources.data.length ? (
           resources.data.map((r) => (
             <a
@@ -441,7 +441,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
   const valid = code && new Date(code.expiresAt).getTime() > now;
   return (
     <section className="space-y-4 border-t pt-5">
-      <h2 className="font-display text-2xl">Attendance</h2>
+      <h2 className="oc-section-heading ">Attendance</h2>
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo QR check-in works in this browser only. It does not simulate a
@@ -495,7 +495,7 @@ function MeetingAttendance({ meeting }: { meeting: Meeting }) {
       {open && !valid && <p role="status">Waiting for a current code…</p>}
       {error && <p role="alert">{error}</p>}
       <div className="flex items-center gap-4">
-        <h3 className="font-medium">Attendance history{!attendanceLoading && !error ? ` · ${rows.length}` : ""}</h3>
+        <h3 className="oc-card-heading ">Attendance history{!attendanceLoading && !error ? ` · ${rows.length}` : ""}</h3>
         <Button variant="ghost" onClick={() => setRefresh((v) => v + 1)}>
           Refresh
         </Button>

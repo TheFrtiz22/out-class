@@ -313,7 +313,7 @@ function LocalLeaderDashboardView() {
             <Button variant="outline" size="sm" className="h-8 text-xs">
               Major / Year
               {(majors.size > 0 || years.size > 0) && (
-                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[10px] font-medium text-secondary-foreground">
+                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
                   {majors.size + years.size}
                 </span>
               )}
@@ -322,7 +322,7 @@ function LocalLeaderDashboardView() {
           <PopoverContent align="start" className="w-56 rounded-xl border-neutral-200 bg-white p-3 shadow-none">
             <div className="space-y-3">
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Major</p>
+                <p className="mb-1.5 text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-muted-foreground">Major</p>
                 <div className="space-y-1.5">
                   {allMajors.map((m) => (
                     <label key={m} className="flex items-center gap-2 text-xs">
@@ -334,7 +334,7 @@ function LocalLeaderDashboardView() {
               </div>
               <Separator />
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Year</p>
+                <p className="mb-1.5 text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-muted-foreground">Year</p>
                 <div className="space-y-1.5">
                   {allYears.map((y) => (
                     <label key={y} className="flex items-center gap-2 text-xs">
@@ -353,7 +353,7 @@ function LocalLeaderDashboardView() {
             <Button variant="outline" size="sm" className="h-8 text-xs">
               <SlidersHorizontal className="size-3.5" /> Advanced Filters
               {(appliedMinSat !== null || appliedMinGpa !== null) && (
-                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[10px] font-medium text-secondary-foreground">
+                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
                   {(appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)}
                 </span>
               )}
@@ -442,7 +442,7 @@ function LocalLeaderDashboardView() {
           <div className="overflow-x-auto">
             {crmColumns.every(column => !visible(column.id)) ? <p className="p-8 text-center text-sm text-neutral-500">All columns are hidden. Open View Settings to show columns.</p> : <Table>
               <TableHeader>
-                <TableRow className="bg-white [&_th]:h-12 [&_th]:text-[11px] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
+                <TableRow className="bg-white [&_th]:h-12 [&_th]:text-[length:var(--oc-size-11)] [&_th]:font-medium [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground">
                   {visible("selection") && <TableHead className="w-10 pl-4">
                     <Checkbox
                       checked={filtered.length > 0 && filtered.every(a => selected.has(a.id))}
@@ -455,7 +455,7 @@ function LocalLeaderDashboardView() {
                       aria-sort={sortConfig.key === column.key ? sortConfig.direction : "none"}>
                       <button type="button" onClick={() => requestSort(column.key)}
                         aria-label={`Sort by ${column.label} ${sortConfig.key === column.key && sortConfig.direction === "descending" ? "ascending" : "descending"}`}
-                        className={cn("flex min-h-10 w-full cursor-pointer select-none items-center gap-1 whitespace-nowrap rounded px-1 text-left text-[11px] font-medium uppercase tracking-wide transition-colors hover:bg-neutral-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-neutral-900")}>
+                        className={cn("flex min-h-10 w-full cursor-pointer select-none items-center gap-1 whitespace-nowrap rounded px-1 text-left text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide transition-colors hover:bg-neutral-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400", column.key === "score" && "justify-end", sortConfig.key === column.key && "text-neutral-900")}>
                         {column.label}
                         <span className="inline-flex size-3 shrink-0" aria-hidden="true">
                           {sortConfig.key === column.key && (sortConfig.direction === "ascending" ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />)}
@@ -483,7 +483,7 @@ function LocalLeaderDashboardView() {
                     {visible("name") && <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar className="size-6">
-                          <AvatarFallback className="bg-muted text-[10px] font-medium">{a.initials}</AvatarFallback>
+                          <AvatarFallback className="bg-muted text-[length:var(--oc-size-10)] font-medium">{a.initials}</AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <p className="truncate font-medium">{a.name}</p>
@@ -579,7 +579,7 @@ function LocalLeaderDashboardView() {
                     <AvatarFallback className="bg-secondary font-medium text-foreground">{active.initials}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <SheetTitle className="truncate text-sm font-semibold">{active.name}</SheetTitle>
+                    <SheetTitle className="oc-modal-title truncate">{active.name}</SheetTitle>
                     <SheetDescription className="truncate text-xs text-muted-foreground">{active.major} · {active.year}</SheetDescription>
                   </div>
                   <StatusBadge status={stageName(active.status)} />
@@ -634,7 +634,7 @@ function LocalLeaderDashboardView() {
                 </div>
 
                 <TabsContent value="application" className="flex-1 space-y-4 overflow-y-auto p-4">
-                  <h3 className="text-sm font-semibold font-sans tracking-tight">Essays</h3>
+                  <h3 className="oc-card-heading ">Essays</h3>
                   {active.essays.map((essay, i) => (
                     <div key={i} className="rounded-lg border p-3">
                       <p className="text-xs font-medium text-muted-foreground">{essay.question}</p>
@@ -644,7 +644,7 @@ function LocalLeaderDashboardView() {
 
                   {active.links.length > 0 && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold font-sans tracking-tight">Links</h3>
+                      <h3 className="oc-card-heading mb-2">Links</h3>
                       <div className="flex flex-wrap gap-2">
                         {active.links.map((link) => (
                           <span
@@ -660,18 +660,18 @@ function LocalLeaderDashboardView() {
                   )}
 
                   <div>
-                    <h3 className="mb-2 text-sm font-semibold font-sans tracking-tight">Resume</h3>
+                    <h3 className="oc-card-heading mb-2">Resume</h3>
                     <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border bg-muted/30 text-muted-foreground">
                       <FileText className="size-8" />
                       <p className="text-xs font-medium">{active.resumeFileName}</p>
-                      <p className="text-[11px]">Embedded PDF preview</p>
+                      <p className="text-[length:var(--oc-size-11)]">Embedded PDF preview</p>
                     </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="rubric" className="flex-1 space-y-6 overflow-y-auto p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold font-sans tracking-tight">Screening rubric</h3>
+                    <h3 className="oc-card-heading ">Screening rubric</h3>
                     <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                       {averageScore(active.id, active.score).toFixed(1)} avg
                     </span>
@@ -778,7 +778,7 @@ function LocalLeaderDashboardView() {
                                       {stage.notes.map((n, idx) => (
                                         <div key={idx} className="flex gap-2 rounded-md bg-white p-2">
                                           <Avatar className="size-6 shrink-0">
-                                            <AvatarFallback className="text-[10px]">{n.initials}</AvatarFallback>
+                                            <AvatarFallback className="text-[length:var(--oc-size-10)]">{n.initials}</AvatarFallback>
                                           </Avatar>
                                           <div className="min-w-0">
                                             <p className="text-xs font-medium text-foreground">{n.interviewer}</p>

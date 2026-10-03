@@ -128,7 +128,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         <OutClassLogo variant="dark" className="h-10 w-auto self-start" />
         <div className="relative z-10 max-w-lg py-16">
           <span className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/80"><ShieldCheck className="size-4 text-orange-400" />Built for the UVA community</span>
-          <h1 className="text-5xl font-semibold leading-[1.12] tracking-tight xl:text-6xl">Your next chapter<br />starts here.</h1>
+          <h1 className="oc-page-title leading-[1.12]">Your next chapter<br />starts here.</h1>
           <p className="mt-6 max-w-sm text-base leading-7 text-slate-300">One profile. Every opportunity. Find your people and take your next step at UVA.</p>
           <ul className="mt-10 space-y-4 text-sm text-slate-200">
             {["Apply to clubs with one profile", "Keep every deadline in one place", "Get updates that keep you moving"].map((text) => <li key={text} className="flex items-center gap-3"><Check className="size-4 text-orange-400" />{text}</li>)}
@@ -146,7 +146,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-14">
           <div className="mb-6 flex size-12 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50">{step === "email" ? <ShieldCheck className="size-6 text-[#051B3D]" /> : <Mail className="size-6 text-[#051B3D]" />}</div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">{step === "email" ? "Welcome to OutClass" : "Verify your email"}</p>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
+          <h2 className="oc-section-heading ">{step === "email" ? "Log in. Find your people." : "Check your inbox."}</h2>
           <p className="mt-4 text-sm leading-6 text-neutral-500">{step === "email" ? "Sign in using your UVA Microsoft account or email." : <>Enter the six-digit code for <strong className="break-all font-medium text-neutral-900">{email}</strong>.</>}</p>
           {step === "email" ? (
             <>
@@ -157,7 +157,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                   variant="outline"
                   disabled={microsoftLoading || loading}
                   onClick={handleMicrosoftLogin}
-                  className="h-12 w-full gap-3 text-[15px] font-medium"
+                  className="h-12 w-full gap-3 text-[length:var(--oc-size-16)] font-medium"
                 >
                   {microsoftLoading ? (
                     <><Loader2 className="size-4 animate-spin" />Redirecting…</>

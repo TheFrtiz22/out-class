@@ -51,7 +51,7 @@ export function MemberVotingPad({
         {!session || !applicant ? (
           <div role="status" className="space-y-3 py-12 text-center">
             <Loader2 className="mx-auto size-7 animate-spin text-neutral-400" />
-            <h1 className="text-xl font-semibold tracking-tight">Waiting for the proctor</h1>
+            <h1 className="oc-page-title ">Waiting for the proctor</h1>
             <p className="text-sm leading-6 text-neutral-500">
               Keep the presentation open in another tab of this browser. If this session has
               expired, ask the proctor for a new link.
@@ -60,7 +60,7 @@ export function MemberVotingPad({
         ) : session.status === "ended" ? (
           <div role="status" className="space-y-4 py-12 text-center">
             <CheckCircle2 className="mx-auto size-10" />
-            <h1 className="text-2xl font-semibold tracking-tight">Session complete</h1>
+            <h1 className="oc-page-title ">Session complete</h1>
             <p className="text-sm text-neutral-500">Thanks for contributing to deliberations.</p>
           </div>
         ) : !participant ? (
@@ -88,7 +88,7 @@ export function MemberVotingPad({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="font-display text-3xl tracking-tight">{applicant.name}</h1>
+                <h1 className="oc-page-title ">{applicant.name}</h1>
                 <p className="mt-2 text-sm text-neutral-500">
                   {applicant.year} · {applicant.major}
                 </p>

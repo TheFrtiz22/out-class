@@ -19,23 +19,23 @@
 .oc-context-sidebar nav [aria-current="page"] { background: #fff0e5; color: #102c54; }
 .oc-context-sidebar nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 11px; bottom: 11px; width: 3px; background: #e45b1c; border-radius: 4px; }
 .oc-context-sidebar nav [aria-current="page"] svg { color: #c54e17; }
-.oc-context-sidebar nav[aria-label="Review tools"] :is(a,button) { font-size: 13px; }
+.oc-context-sidebar nav[aria-label="Review tools"] :is(a,button) { font-size: var(--oc-text-small); }
 [data-product-shell] main > div > h1,
-[data-product-shell] [data-view-heading] h1 { font-family: var(--oc-font-display); font-size: clamp(29px, 3vw, 40px); letter-spacing: -.035em; line-height: 1.18; }
+[data-product-shell] [data-view-heading] h1 { font-family: var(--oc-font-sans); font-size: var(--oc-text-title); letter-spacing: var(--oc-tracking-heading); line-height: var(--oc-leading-heading); }
 [data-product-shell] :is(input,textarea,select) { border-radius: 8px; }
 [data-product-shell] :is(button,a,summary):focus-visible { outline-offset: 3px; }
 [data-product-shell] table thead { background: #f7f9fc; }
-[data-product-shell] table th { color: #263e5d; font-size: 12px; font-weight: 600; }
+[data-product-shell] table th { color: #263e5d; font-size: var(--oc-size-12); font-weight: var(--oc-weight-semibold); }
 [data-product-shell] table :is(th,td) { padding-inline: 18px; }
 [data-product-shell] table tbody tr { border-color: #edf0f3; }
 [data-product-shell] table tbody tr:hover { background: #f4f8fd; }
 .oc-workspace-drawer { background: #fff; color: #17263f; border-color: #e4e7eb; }
-.oc-workspace-drawer [data-slot="sheet-title"] { font-family: var(--oc-font-display); font-size: 28px; line-height: 1.2; }
+.oc-workspace-drawer [data-slot="sheet-title"] { font-family: var(--oc-font-sans); font-size: var(--oc-text-modal); line-height: var(--oc-leading-heading); }
 .oc-workspace-drawer :is(input,textarea,select) { border-radius: 8px; }
 .oc-overview-grid > section { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 24px; }
 .oc-overview-grid > section > a { border: 0; padding: 12px 0; }
-.oc-overview-grid h3 { font-size: 22px; }
-.oc-overview-grid > section > div > a { color: #a94111; font-size: 12px; text-decoration: none; }
+.oc-overview-grid h3 { font-size: var(--oc-text-card); }
+.oc-overview-grid > section > div > a { color: #a94111; font-size: var(--oc-size-12); text-decoration: none; }
 .oc-member-overview > section { background: var(--card); padding: 24px; border: 1px solid var(--border); border-radius: 14px; }
 .oc-member-overview > section > a { border: 0; padding-inline: 0; }
 .oc-live-pipeline { padding: 20px; background: #fff; border: 1px solid var(--border); border-radius: 14px; }
@@ -43,7 +43,7 @@
 .oc-applicant-board > section:nth-child(2) { background: #fcf6eb; }
 .oc-applicant-board > section:nth-child(3) { background: #eef8f3; }
 .oc-applicant-board > section:nth-child(4) { background: #f5f2fc; }
-.oc-applicant-board h3 { font-family: var(--oc-font-display); font-size: 20px; }
+.oc-applicant-board h3 { font-family: var(--oc-font-sans); font-size: var(--oc-text-card); }
 .oc-applicant-board h3 > span { display: grid; place-items: center; min-width: 28px; height: 28px; border-radius: 50%; background: #ffffffb0; color: #294666; }
 .oc-applicant-board button[data-applicant-id] { border-color: #e5e9ee; border-radius: 10px; }
 .oc-applicant-board button[data-applicant-id]:hover { border-color: #55759a; background: #fff; }
@@ -71,7 +71,7 @@
   [data-product-shell] *, .oc-workspace-drawer * { scroll-behavior: auto; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
 .oc-pipeline-filters { position: relative; }
-.oc-pipeline-filters > summary { cursor: pointer; min-height: 44px; padding: 11px 18px; border: 1px solid #e4e7eb; border-radius: 8px; font-size: 13px; }
+.oc-pipeline-filters > summary { cursor: pointer; min-height: 44px; padding: 11px 18px; border: 1px solid #e4e7eb; border-radius: 8px; font-size: var(--oc-text-small); }
 .oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: 12px; padding: 18px; border: 1px solid #e4e7eb; border-radius: 10px; background: #fff; }
 .oc-pipeline-filter-fields > details { width: 100%; }
 @media (min-width: 640px) {

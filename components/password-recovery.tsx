@@ -106,7 +106,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
           />
           <h1
             id="recovery-title"
-            className="font-display text-3xl tracking-tight"
+            className="oc-page-title "
           >
             {done
               ? mode === "request"

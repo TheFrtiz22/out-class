@@ -11,14 +11,14 @@
 .oc-focused-interview > header { background: #fff; gap: 18px; }
 .oc-focused-interview > header > div:last-child > button { background: #c7491d; color: #fff; border-radius: 8px; }
 .oc-focused-interview #interview-context { background: #fff; }
-.oc-focused-interview #interview-context h1 { font-family: var(--oc-font-display); font-size: 27px; line-height: 1.2; }
+.oc-focused-interview #interview-context h1 { font-family: var(--oc-font-sans); font-size: var(--oc-text-title); line-height: var(--oc-leading-heading); }
 .oc-focused-interview :is(.oc-active-question,.oc-question-agenda) { background: #fff; border: 1px solid #e4e7eb; border-radius: 13px; padding: 24px; }
-.oc-focused-interview .oc-active-question > p:first-child { color: #ac4019; font-weight: 600; }
-.oc-focused-interview .oc-active-question textarea { background: #fbfcfd; border-color: #e4e7eb; font-size: 15px; line-height: 1.8; padding: 16px; border-radius: 9px; }
+.oc-focused-interview .oc-active-question > p:first-child { color: #ac4019; font-weight: var(--oc-weight-semibold); }
+.oc-focused-interview .oc-active-question textarea { background: #fbfcfd; border-color: #e4e7eb; font-size: var(--oc-size-14); line-height: var(--oc-leading-body); padding: 16px; border-radius: 9px; }
 .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: #fff0e5; color: #17263f; }
 .oc-focused-interview .oc-question-agenda li button > span:first-child { flex-shrink: 0; display: grid; place-items: center; height: 25px; width: 25px; border-radius: 50%; background: #eef2f7; color: #23415f; }
 .oc-focused-interview #interview-library { background: #fff; }
-.oc-focused-interview #interview-library > h2 { font-family: var(--oc-font-display); font-size: 24px; }
+.oc-focused-interview #interview-library > h2 { font-family: var(--oc-font-sans); font-size: var(--oc-text-section); }
 .oc-focused-interview #interview-library ul { display: grid; gap: 10px; }
 .oc-focused-interview #interview-library li { padding: 16px; border: 1px solid #e4e7eb; border-radius: 9px; }
 @media (min-width: 1280px) {

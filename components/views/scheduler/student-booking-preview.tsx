@@ -44,7 +44,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
           <div className="flex size-12 items-center justify-center rounded-full bg-success/10">
             <CheckCircle2 className="size-6 text-success" />
           </div>
-          <h3 className="text-base font-semibold font-sans tracking-tight">Interview Confirmed</h3>
+          <h3 className="oc-card-heading ">Interview Confirmed</h3>
           <p className="text-sm text-muted-foreground">
             You&apos;re booked for {scheduleDate} at {selectedSlot.time} at {activeLocation.locationName}.
           </p>
@@ -59,7 +59,7 @@ export function StudentBookingPreview({ blocks: scheduleLocations, date }: { blo
   return (
     <Card className="mx-auto max-w-2xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-lg font-sans tracking-tight font-semibold">
+        <CardTitle className="oc-card-heading ">
           You&apos;ve been invited to Round 1 with Virginia Venture Fund!
         </CardTitle>
         <CardDescription>Pick your interview time.</CardDescription>

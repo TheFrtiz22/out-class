@@ -13,7 +13,7 @@ export default async function Page() {
       <a className="underline" href="/platform">
         Platform administration
       </a>
-      <h1 className="font-display text-3xl">Club claims</h1>
+      <h1 className="oc-page-title ">Club claims</h1>
       <ClaimReview initial={await listClubClaims("PENDING")} />
     </main>
   );

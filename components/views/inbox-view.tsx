@@ -100,7 +100,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   return (
     <div className="mx-auto max-w-6xl space-y-6 text-foreground">
       <header>
-        <h2 className="font-display text-3xl tracking-tight">Your recruiting updates.</h2>
+        <h2 className="oc-section-heading ">Your recruiting updates.</h2>
         <p className="mt-3 text-sm text-muted-foreground">
           Notification delivery is not connected yet. Demo and local preview updates stay in this browser.
         </p>
@@ -254,7 +254,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           <div className="space-y-6">
             {groups.map((group) => (
               <section key={group.label} aria-label={group.label}>
-                <h3 className="border-b border-border py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <h3 className="oc-card-heading border-b border-border py-3 uppercase tracking-wider text-muted-foreground">
                   {group.label}
                 </h3>
                 <div className="divide-y divide-border">
@@ -295,11 +295,11 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                             logoUrl={item.logoUrl}
                             text={item.logoText}
                             color={item.color}
-                            className="size-7 shrink-0 rounded-md text-[10px]"
+                            className="size-7 shrink-0 rounded-md text-[length:var(--oc-size-10)]"
                           />
                           <span className="text-xs text-neutral-500">{item.club}</span>
                           {!item.read && (
-                            <span className="ml-auto shrink-0 text-[11px] font-medium text-primary">
+                            <span className="ml-auto shrink-0 text-[length:var(--oc-size-11)] font-medium text-primary">
                               <span
                                 aria-hidden="true"
                                 className="mr-1 inline-block size-1.5 rounded-full bg-primary"
@@ -319,7 +319,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                         <p className="line-clamp-2 text-xs leading-relaxed text-neutral-500">
                           {item.preview}
                         </p>
-                        <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
+                        <div className="flex flex-wrap items-center gap-2 text-[length:var(--oc-size-11)] text-neutral-500">
                           {item.urgent && (
                             <span className="rounded bg-secondary px-1.5 py-0.5 font-medium text-foreground">
                               Urgent
@@ -419,7 +419,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   <h2
                     ref={detailHeading}
                     tabIndex={-1}
-                    className="text-xl font-semibold leading-snug tracking-tight focus-visible:outline-2 focus-visible:outline-ring"
+                    className="oc-section-heading focus-visible:outline-2 focus-visible:outline-ring"
                   >
                     {selected.title}
                   </h2>

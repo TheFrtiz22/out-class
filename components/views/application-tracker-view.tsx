@@ -154,7 +154,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   if (!user)
     return (
       <div className="max-w-xl space-y-4 py-10">
-        <h2 className="font-display text-3xl">A little clarity for every next step.</h2>
+        <h2 className="oc-section-heading ">A little clarity for every next step.</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Sign in to view your applications and save responses to your account. Preview activity
           does not submit an application to a club.
@@ -165,7 +165,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   if (error)
     return (
       <div className="space-y-4 py-8" role="alert">
-        <h2 className="text-xl font-semibold">Your applications couldn’t load</h2>
+        <h2 className="oc-section-heading ">Your applications couldn’t load</h2>
         <p className="text-sm text-muted-foreground">
           Your saved responses haven’t changed. Please try again.
         </p>
@@ -204,7 +204,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
               Your application
             </p>
-            <h1 tabIndex={-1} className="break-words font-display text-3xl tracking-tight outline-none">{app.club.name}</h1>
+            <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <Badge variant="secondary">{applicationStatusLabels[app.status]}</Badge>
               <p className="text-xs text-muted-foreground">
@@ -239,7 +239,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                   An invitation to your next chapter
                 </p>
               )}
-              <h2 className="text-xl font-semibold">
+              <h2 className="oc-section-heading ">
                 {app.status === "ACCEPTED"
                   ? `You’ve been accepted to ${app.club.name}.`
                   : app.status === "REJECTED"
@@ -275,7 +275,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             </section>
             {app.bookings.length > 0 && (
               <section aria-label="Interview details" className="space-y-4">
-                <h2 className="text-base font-semibold">Your interviews</h2>
+                <h2 className="oc-section-heading ">Your interviews</h2>
                 <ul className="divide-y divide-border">
                   {app.bookings.map((booking) => (
                     <li key={booking.id} className="flex items-start gap-3 py-4">
@@ -296,7 +296,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             )}
             <section className="space-y-6" aria-label="Submitted responses">
               <div>
-                <h2 className="text-base font-semibold">Your submitted responses</h2>
+                <h2 className="oc-section-heading ">Your submitted responses</h2>
                 <p className="mt-2 text-xs text-muted-foreground">Read-only after submission.</p>
               </div>
               {app.club.questions.map((question, index) => {
@@ -306,7 +306,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 return (
                   <div key={question.id} className="border-t border-border pt-5">
                     <p className="mb-2 text-xs text-muted-foreground">Question {index + 1}</p>
-                    <h3 className="whitespace-pre-wrap text-sm font-medium leading-7">
+                    <h3 className="oc-card-heading whitespace-pre-wrap">
                       {question.prompt}
                     </h3>
                     {question.type === "FILE_UPLOAD" &&
@@ -373,7 +373,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           {scope !== "all" && <p className="mb-3 text-xs tracking-widest uppercase text-muted-foreground">Your next chapter</p>}
-          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}</h1>
+          <h1 className="oc-page-title ">{scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}</h1>
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
             {scope === "all" ? "Pick up a draft, follow your progress, or see what comes next." : scope === "interviews" ? "Your interview-stage applications and recorded bookings, in one place." : "Updates from your clubs. Open an application to read the details and next steps."}
           </p>
@@ -384,7 +384,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
       </header>
       {!applications.length ? (
         <div className="space-y-4 border-y border-border py-12">
-          <h3 className="text-lg font-semibold">No applications yet</h3>
+          <h3 className="oc-card-heading ">No applications yet</h3>
           <p className="max-w-lg text-sm leading-7 text-muted-foreground">
             Your drafts, submissions, and decisions will appear here when you start an application.
           </p>

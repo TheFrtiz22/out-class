@@ -96,7 +96,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
         <div className="hidden items-center gap-3 sm:flex">
           {SHORTCUTS.map((s) => (
             <span key={s.label} className="flex items-center gap-1.5 text-xs text-gray-500">
-              <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground">
+              <kbd className="rounded border border-gray-300 bg-white px-1.5 py-0.5 tabular-nums text-[length:var(--oc-size-10)] font-medium text-foreground">
                 {s.key}
               </kbd>
               {s.label}
@@ -119,20 +119,20 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <h2 className="truncate text-lg font-semibold text-foreground font-sans tracking-tight">{candidate.name}</h2>
+                  <h2 className="oc-section-heading truncate text-foreground">{candidate.name}</h2>
                   <p className="truncate text-sm text-gray-500">
                     {candidate.year} · {candidate.major} · GPA {candidate.gpa}
                   </p>
                 </div>
                 <div className="shrink-0 rounded-md bg-white px-3 py-1.5 text-center">
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">SAT</p>
-                  <p className="font-mono text-sm font-semibold text-foreground">{candidate.satScore}</p>
+                  <p className="text-[length:var(--oc-size-10)] font-medium uppercase tracking-wide text-gray-400">SAT</p>
+                  <p className="tabular-nums text-sm font-semibold text-foreground">{candidate.satScore}</p>
                 </div>
               </div>
 
               {/* Essays */}
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Essay Responses</h3>
+                <h3 className="oc-card-heading text-foreground">Essay Responses</h3>
                 {candidate.essays.map((essay, i) => (
                   <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 shadow-none">
                     <p className="text-xs font-medium text-gray-500">{essay.question}</p>
@@ -146,7 +146,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
               {candidate.links.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Links</h3>
+                  <h3 className="oc-card-heading text-foreground">Links</h3>
                   <div className="flex flex-wrap gap-2">
                     {candidate.links.map((link) => (
                       <span
@@ -163,12 +163,12 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
 
               {/* Simulated resume / PDF embed */}
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-foreground font-sans tracking-tight">Resume</h3>
+                <h3 className="oc-card-heading text-foreground">Resume</h3>
                 <div className="rounded-lg border border-gray-200 bg-white shadow-none">
                   <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-3 py-2">
                     <FileText className="size-4 text-muted-foreground" />
                     <span className="text-xs font-medium text-foreground">{candidate.resumeFileName}</span>
-                    <span className="ml-auto rounded bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400">
+                    <span className="ml-auto rounded bg-white px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-medium text-gray-400">
                       PDF
                     </span>
                   </div>
@@ -262,7 +262,7 @@ export function SpeedReviewMode({ candidates, onClose, onDecide }: SpeedReviewMo
             <div className="flex size-14 items-center justify-center rounded-full bg-secondary">
               <PartyPopper className="size-6 text-muted-foreground" />
             </div>
-            <h2 className="text-lg font-semibold text-foreground font-sans tracking-tight">Queue complete</h2>
+            <h2 className="oc-section-heading text-foreground">Queue complete</h2>
             <p className="max-w-sm text-sm text-gray-500">
               You&apos;ve reviewed every candidate in this Speed Review queue. Decisions have been synced to the CRM.
             </p>

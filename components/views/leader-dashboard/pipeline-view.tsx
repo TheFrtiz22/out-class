@@ -66,10 +66,10 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               aria-label="Expand Rejected column"
             >
               <ChevronLeft className="size-3.5" />
-              <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">
+              <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold text-gray-500">
                 {items.length}
               </span>
-              <span className="text-[10px] font-medium tracking-wide" style={{ writingMode: "vertical-rl" }}>
+              <span className="text-[length:var(--oc-size-10)] font-medium tracking-wide" style={{ writingMode: "vertical-rl" }}>
                 Rejected
               </span>
             </button>
@@ -100,7 +100,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                   </p>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                      "shrink-0 rounded-full px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
                       isRejected ? "bg-gray-200 text-gray-500" : "bg-foreground/10 text-foreground",
                     )}
                   >
@@ -108,7 +108,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                   </span>
                 </div>
                 {column.subtitle && (
-                  <p className={cn("truncate text-[11px]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
+                  <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
                     {column.subtitle}
                   </p>
                 )}
@@ -142,7 +142,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                       isRejected && "grayscale",
                     )}
                   >
-                    <button type="button" aria-label={`Drag ${a.name}`} className="mb-1 flex touch-none items-center gap-1 rounded px-1 py-0.5 text-[10px] text-neutral-400 hover:bg-neutral-50"
+                    <button type="button" aria-label={`Drag ${a.name}`} className="mb-1 flex touch-none items-center gap-1 rounded px-1 py-0.5 text-[length:var(--oc-size-10)] text-neutral-400 hover:bg-neutral-50"
                       onClick={event => event.stopPropagation()}
                       onPointerDown={event => { event.preventDefault(); event.stopPropagation(); event.currentTarget.setPointerCapture(event.pointerId); setDraggedId(a.id) }}
                       onPointerMove={event => { if (!event.currentTarget.hasPointerCapture(event.pointerId)) return; const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>("[data-stage-column]"); setDragOverColumn(target?.dataset.stageColumn ?? null) }}
@@ -159,7 +159,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                       <Avatar className="size-7 shrink-0">
                         <AvatarFallback
                           className={cn(
-                            "text-[10px] font-medium",
+                            "text-[length:var(--oc-size-10)] font-medium",
                             isRejected ? "bg-gray-100 text-gray-400" : "bg-foreground/10 text-foreground",
                           )}
                         >
@@ -170,13 +170,13 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         <p className={cn("truncate text-xs font-semibold", isRejected ? "text-gray-500" : "text-foreground")}>
                           {a.name}
                         </p>
-                        <p className={cn("truncate text-[11px]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
+                        <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
                           {a.major}
                         </p>
                         {score > 0 && (
                           <span
                             className={cn(
-                              "mt-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                              "mt-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
                               isRejected ? "bg-gray-100 text-gray-400" : "bg-secondary text-muted-foreground",
                             )}
                           >
@@ -217,7 +217,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               })}
 
               {items.length === 0 && (
-                <p className="py-6 text-center text-[11px] text-muted-foreground">No candidates here.</p>
+                <p className="py-6 text-center text-[length:var(--oc-size-11)] text-muted-foreground">No candidates here.</p>
               )}
             </div>
           </div>

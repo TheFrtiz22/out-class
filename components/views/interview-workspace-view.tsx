@@ -79,7 +79,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
           <div className="max-w-xl space-y-4 py-16">
-            <h1 className="font-display text-3xl">A focused space for a better conversation.</h1>
+            <h1 className="oc-page-title ">A focused space for a better conversation.</h1>
             <p className="text-sm leading-7 text-muted-foreground">
               {user
                 ? "You need club membership to access interview applicants."
@@ -297,7 +297,7 @@ function InterviewSession({
       </p>
       {!active ? (
         <div className="max-w-xl space-y-4 py-16">
-          <h1 className="font-display text-3xl">Ready when you are.</h1>
+          <h1 className="oc-page-title ">Ready when you are.</h1>
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose a candidate to bring their profile, application, and your evaluation into one focused view."
@@ -314,9 +314,9 @@ function InterviewSession({
         <div key={active.id} className="oc-interview-candidate space-y-6">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
             canManageKit={hasPermission(membership, "interviews.manage")}
-            toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · {candidateName}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>            <div className="flex items-center gap-3">
+            toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="oc-section-heading ">Interview · {candidateName}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>            <div className="flex items-center gap-3">
               <span
-                className="font-mono text-lg tabular-nums"
+                className="tabular-nums text-lg tabular-nums"
                 aria-label={`Elapsed interview time ${elapsedInterviewTime(seconds)}`}
               >
                 {elapsedInterviewTime(seconds)}
@@ -354,7 +354,7 @@ function InterviewSession({
                 <h1
                   ref={heading}
                   tabIndex={-1}
-                  className="break-words font-display text-2xl focus-visible:outline-2 focus-visible:outline-ring"
+                  className="oc-page-title break-words focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   {candidateName}
                 </h1>
@@ -369,7 +369,7 @@ function InterviewSession({
               </div>
             </div>
               <section className="space-y-3 border-t border-border pt-5">
-                <h2 className="text-sm font-semibold">Profile at a glance</h2>
+                <h2 className="oc-section-heading ">Profile at a glance</h2>
                 <RecruitmentAttendanceSummary clubId={membership.clubId} applicationId={active.id} />
                 <TestScoreDetail profile={profile} />
               {profile?.bio && (
@@ -408,10 +408,10 @@ function InterviewSession({
                 </div>
               </section>
               <section className="space-y-4 border-t border-border pt-5">
-                <h2 className="text-sm font-semibold">Application context</h2>
+                <h2 className="oc-section-heading ">Application context</h2>
                 {active.answers.map((answer) => (
                   <div key={answer.id}>
-                    <h3 className="text-sm font-medium leading-6">{answer.question.prompt}</h3>
+                    <h3 className="oc-card-heading ">{answer.question.prompt}</h3>
                     {answer.question.type === "FILE_UPLOAD" && applicationAttachmentUrl(answer.response, active.id, answer.questionId) ? (
                       <a
                         href={applicationAttachmentUrl(answer.response, active.id, answer.questionId)}
@@ -433,7 +433,7 @@ function InterviewSession({
                 )}
               </section>
               <section className="space-y-4 border-t border-border pt-5">
-                <h2 className="text-sm font-semibold">Other round evaluations</h2>
+                <h2 className="oc-section-heading ">Other round evaluations</h2>
                 {active.evaluations
                   .filter((item) => item.round !== round?.name)
                   .map((item) => (

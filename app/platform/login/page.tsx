@@ -42,7 +42,7 @@ export default function PlatformLogin() {
       <Link href="/" className="underline">
         Back to OutClass
       </Link>
-      <h1 className="font-display text-3xl">Platform administrator sign-in</h1>
+      <h1 className="oc-page-title ">Platform administrator sign-in</h1>
       <p>
         Requires a provisioned platform grant, server allowlist, and authenticator verification.
         Club ownership does not grant access.

@@ -8,7 +8,7 @@ export default async function AccessPage({ params }: { params: Promise<{ clubId:
       <a href={`/club/${clubId}/workspace?section=members`} className="underline">
         Back to club members
       </a>
-      <h1 className="font-display text-3xl">Workspace access</h1>
+      <h1 className="oc-page-title ">Workspace access</h1>
       <ClubAccessEditor clubId={clubId} initial={data} />
     </main>
   )

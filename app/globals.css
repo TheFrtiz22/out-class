@@ -1,14 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "../styles/tokens.css";
+@import "../styles/typography.css";
 @config "../tailwind.config.js";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: var(--oc-font-sans);
   --font-display: var(--oc-font-display);
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-mono: var(--oc-font-sans);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -92,7 +93,7 @@
   }
 
   p, li, td, th, label, input, textarea, select, button, a {
-    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: inherit;
   }
 }
 
@@ -189,7 +190,7 @@ html { scroll-padding-top: 5rem; }
   [data-slot="sheet-content"] {
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
-  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: 16px; }
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select { font-size: var(--oc-text-body); }
   [data-slot="dialog-title"], [data-slot="sheet-title"] { padding-right: 2rem; line-height: 1.35; }
   .dashboard-layout { padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); }
 }

@@ -86,7 +86,7 @@ export function InterviewerAvailabilityView() {
       onPointerLeave={handlePointerUp}
     >
       <div>
-        <h2 className="text-xl font-bold text-foreground font-sans tracking-tight">Interviewer Availability Submission</h2>
+        <h2 className="oc-section-heading text-foreground">Interviewer Availability Submission</h2>
         <p className="text-sm text-slate-500">Select your free blocks for Fall 2026 Recruitment.</p>
       </div>
 
@@ -94,7 +94,7 @@ export function InterviewerAvailabilityView() {
         {/* Weekly grid */}
         <Card className="bg-white shadow-none">
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-foreground font-sans tracking-tight">Weekly Availability</CardTitle>
+            <CardTitle className="oc-card-heading text-foreground">Weekly Availability</CardTitle>
             <p className="text-xs text-muted-foreground">Click and drag across time slots to mark yourself as available.</p>
           </CardHeader>
           <CardContent>
@@ -111,7 +111,7 @@ export function InterviewerAvailabilityView() {
                 {/* Time rows */}
                 {HOURS.map((hour) => (
                   <div key={hour} className="contents">
-                    <div className="flex items-start justify-end pr-2 pt-0.5 text-[11px] text-muted-foreground">
+                    <div className="flex items-start justify-end pr-2 pt-0.5 text-[length:var(--oc-size-11)] text-muted-foreground">
                       {formatHour(hour)}
                     </div>
                     {DAYS.map((day) => {
@@ -154,7 +154,7 @@ export function InterviewerAvailabilityView() {
         {/* Preference settings */}
         <Card className="bg-white shadow-none">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground font-sans tracking-tight">
+            <CardTitle className="oc-card-heading flex items-center gap-2 text-foreground">
               <CalendarClock className="size-4 text-muted-foreground" />
               Preference Settings
             </CardTitle>

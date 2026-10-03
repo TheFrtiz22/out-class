@@ -89,19 +89,19 @@
 }
 .oc-hero-context {
   margin: 0 0 24px;
-  font-size: 10px;
-  font-weight: 600;
+  font-size: var(--oc-size-10);
+  font-weight: var(--oc-weight-semibold);
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: #52647c;
 }
 .oc-landing .oc-hero-editorial h1 {
   margin: 0;
-  font-family: var(--oc-font-display);
-  font-weight: 400;
-  font-size: clamp(48px, 5.7vw, 76px);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
+  font-family: var(--oc-font-sans);
+  font-weight: var(--oc-weight-semibold);
+  font-size: var(--oc-text-hero);
+  line-height: var(--oc-leading-heading);
+  letter-spacing: var(--oc-tracking-heading);
 }
 .oc-hero-editorial h1 > span {
   display: block;
@@ -113,8 +113,8 @@
   margin: 26px auto 0;
   max-width: 600px;
   color: #46566c;
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: var(--oc-size-16);
+  line-height: var(--oc-leading-body);
   text-wrap: pretty;
 }
 .oc-hero-ctas {
@@ -125,12 +125,12 @@
 .oc-hero-ctas [data-slot="button"] {
   min-height: 48px;
   padding-inline: 27px;
-  font-size: 13px;
+  font-size: var(--oc-text-small);
   box-shadow: 0 4px 12px #14243a12;
 }
 .oc-hero-footnote {
   margin: 13px 0 0;
-  font-size: 11px;
+  font-size: var(--oc-size-11);
   color: #33465b;
 }
 .oc-hero-marginalia {
@@ -151,13 +151,13 @@
   margin-bottom: 12px;
 }
 .oc-hero-marginalia span {
-  font-size: 8px;
+  font-size: var(--oc-size-8);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  line-height: 2;
+  line-height: var(--oc-leading-body);
 }
 .oc-hero-margin-right p {
-  font: italic 15px/1.4 var(--oc-font-display);
+  font-style: italic; font-size: var(--oc-size-14); line-height: var(--oc-leading-compact); font-family: var(--oc-font-sans);
   margin-bottom: 18px;
 }
 .oc-hero-margin-right i {
@@ -175,13 +175,13 @@
   text-align: center;
 }
 .oc-process > .oc-story-eyebrow {
-  font-size: 9px;
+  font-size: var(--oc-size-9);
   letter-spacing: 0.2em;
   margin-bottom: 15px;
 }
 .oc-process h2 {
-  font: 400 clamp(28px, 3vw, 38px)/1.2 var(--oc-font-display);
-  letter-spacing: -0.03em;
+  font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-section); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans);
+  letter-spacing: var(--oc-tracking-heading);
 }
 .oc-process-steps {
   display: grid;
@@ -217,19 +217,19 @@
 }
 .oc-process-number {
   margin-top: 18px;
-  font-size: 9px;
+  font-size: var(--oc-size-9);
   color: #637189;
   letter-spacing: 0.08em;
 }
 .oc-process h3 {
   margin-top: 6px;
-  font: 600 16px/1.4 var(--oc-font-display);
+  font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-card); line-height: var(--oc-leading-compact); font-family: var(--oc-font-sans);
 }
 .oc-process-steps p {
   margin-top: 8px;
   color: var(--muted-foreground);
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: var(--oc-size-12);
+  line-height: var(--oc-leading-body);
   max-width: 215px;
 }
 .oc-process-steps a:hover .oc-process-icon {
@@ -314,7 +314,7 @@
     height: 1000px;
   }
   .oc-hero-context {
-    font-size: 9px;
+    font-size: var(--oc-size-9);
   }
   .oc-process {
     padding: 40px 24px 50px;
@@ -323,7 +323,7 @@
     gap: 20px;
   }
   .oc-process h3 {
-    font-size: 14px;
+    font-size: var(--oc-text-card);
   }
   .oc-nav-primary {
     display: none;
@@ -334,16 +334,16 @@
     padding: 120px 16px 24px;
   }
   .oc-landing .oc-hero-editorial h1 {
-    font-size: clamp(38px, 10.7vw, 56px);
-    line-height: 1.07;
+    font-size: var(--oc-text-hero-mobile);
+    line-height: var(--oc-leading-heading);
   }
   .oc-hero-context {
     letter-spacing: 0.18em;
     margin-bottom: 22px;
   }
   .oc-hero-support > p:first-child {
-    font-size: 14px;
-    line-height: 1.7;
+    font-size: var(--oc-size-14);
+    line-height: var(--oc-leading-body);
     max-width: 335px;
     margin-top: 22px;
   }
@@ -397,7 +397,7 @@
   }
   .oc-process h3 {
     margin-top: 3px;
-    font-size: 17px;
+    font-size: var(--oc-text-card);
   }
   .oc-process-steps p {
     max-width: none;

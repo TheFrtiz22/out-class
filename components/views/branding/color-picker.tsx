@@ -37,7 +37,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
               >
                 {active && <Check className="size-4 text-white drop-shadow" />}
               </span>
-              <span className="text-[11px] text-muted-foreground">{preset.name}</span>
+              <span className="text-[length:var(--oc-size-11)] text-muted-foreground">{preset.name}</span>
             </button>
           )
         })}
@@ -51,7 +51,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="#232D4B"
-          className="h-8 max-w-[140px] font-mono text-xs uppercase"
+          className="h-8 max-w-[140px] tabular-nums text-xs uppercase"
           aria-label="Custom hex code"
         />
         <span className="text-xs text-muted-foreground">Custom HEX</span>

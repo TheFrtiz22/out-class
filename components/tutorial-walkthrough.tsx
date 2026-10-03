@@ -65,7 +65,7 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
         <div className="flex items-center justify-between gap-2"><p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{experience === "student" ? "Your OutClass guide" : "Leader workspace guide"}</p><Button variant="ghost" size="icon" aria-label="Skip tutorial" disabled={busy} onClick={() => void change("skip")}><X className="size-4" /></Button></div>
         <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">Step {stepIndex + 1} of {steps.length}{preview ? " · Support preview (not saved)" : ""}</p>
         <progress className="my-3 h-1.5 w-full accent-orange-600" aria-label="Tutorial progress" value={stepIndex + 1} max={steps.length} />
-        <h2 id="tutorial-title" className="text-lg font-semibold">{step.title}</h2>
+        <h2 id="tutorial-title" className="oc-section-heading ">{step.title}</h2>
         <p id="tutorial-description" className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.text}</p>
         <Button variant="link" className="mt-2 h-auto px-0" onClick={() => onOpenStep(step)}>Show me where</Button>
         {error && <div role="alert" className="mt-3 text-sm"><p>{error}</p><Button variant="link" onClick={() => setDismissed(true)}>Close for now</Button></div>}

@@ -33,7 +33,7 @@ export default function DesignSystemPage() {
     <header className="space-y-6 entrance">
       <OutClassLogo className="h-12 w-auto" />
       <p className="text-caption uppercase tracking-widest text-muted-foreground">Design foundations · component reference</p>
-      <h1 className="max-w-2xl font-display text-display font-normal">A considered place for your next chapter.</h1>
+      <h1 className="oc-page-title max-w-2xl">A considered place for your next chapter.</h1>
       <p className="max-w-xl text-body text-muted-foreground">Editorial character for meaningful moments. Clear, quiet tools for everyday work.</p>
     </header>
     <Divider />

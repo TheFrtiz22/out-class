@@ -40,7 +40,7 @@ export function MeetingCheckIn() {
   }, [user?.id, id]);
   return (
     <main className="mx-auto max-w-lg space-y-5 px-5 py-12">
-      <h1 className="font-display text-3xl">Meeting check-in</h1>
+      <h1 className="oc-page-title ">Meeting check-in</h1>
       {demo.isDemoEnabled && (
         <p className="text-sm text-muted-foreground">
           Demo check-in is local to this browser. It does not record real
@@ -70,7 +70,7 @@ export function MeetingCheckIn() {
         </p>
       ) : result ? (
         <div role="status">
-          <h2 className="text-xl font-semibold">
+          <h2 className="oc-section-heading ">
             {result.status === "already-checked-in"
               ? "You’re already checked in"
               : "You’re checked in"}

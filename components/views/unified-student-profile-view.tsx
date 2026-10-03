@@ -79,7 +79,7 @@ export function UnifiedStudentProfileView() {
   if (error)
     return (
       <div role="alert" className="space-y-4">
-        <h2 className="text-xl font-semibold">Your profile couldn’t load</h2>
+        <h2 className="oc-section-heading ">Your profile couldn’t load</h2>
         <p className="text-muted-foreground">Your saved details haven’t changed.</p>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
           Try again
@@ -89,7 +89,7 @@ export function UnifiedStudentProfileView() {
   if (!profile)
     return (
       <div className="max-w-xl space-y-3 py-10">
-        <h2 className="font-display text-3xl">Your story starts here.</h2>
+        <h2 className="oc-section-heading ">Your story starts here.</h2>
         <p className="text-muted-foreground">
           {user
             ? "Complete student onboarding to create your recruiting profile."
@@ -126,7 +126,7 @@ export function UnifiedStudentProfileView() {
     return (
       <section aria-label={title} className="border-t border-border py-8 sm:py-10">
         <div className="mb-5 flex items-center justify-between gap-4">
-          <h3 className="text-base font-semibold tracking-tight">{title}</h3>
+          <h3 className="oc-card-heading ">{title}</h3>
           {edit(key)}
         </div>
         {description && (
@@ -155,7 +155,7 @@ export function UnifiedStudentProfileView() {
           <p className="mb-2 text-xs font-medium uppercase tracking-[.16em] text-muted-foreground">
             University of Virginia
           </p>
-          <h2 className="break-words font-display text-3xl tracking-tight sm:text-4xl">
+          <h2 className="oc-section-heading break-words">
             {profile.firstName} {profile.lastName}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -263,7 +263,7 @@ export function UnifiedStudentProfileView() {
             ),
           )}
           <section className="border-t border-border py-8" aria-labelledby="profile-involvement">
-            <h3 id="profile-involvement" className="mb-5 text-base font-semibold">
+            <h3 id="profile-involvement" className="oc-card-heading mb-5">
               Campus involvement
             </h3>
             {memberships.length ? (
@@ -301,7 +301,7 @@ export function UnifiedStudentProfileView() {
           </section>
         </div>
         <aside className="border-t border-border pt-8 lg:pt-10">
-          <h3 className="text-sm font-semibold">Make it yours</h3>
+          <h3 className="oc-card-heading ">Make it yours</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
             application requirements.
@@ -337,7 +337,7 @@ export function UnifiedStudentProfileView() {
           </ul>
           <div className="mt-8 border-t border-border pt-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Links & résumé</h3>
+              <h3 className="oc-card-heading ">Links & résumé</h3>
               {edit("links")}
             </div>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">

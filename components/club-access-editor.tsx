@@ -146,7 +146,7 @@ export function ClubAccessEditor({
       </fieldset>
       {higherAuthority && <p className="text-sm text-muted-foreground">Only an owner can change this member’s higher-authority access.</p>}
       <p role="status">{message}</p>
-      {!selectedMemberId && <><h2 className="text-lg font-semibold">Pending invitations</h2>
+      {!selectedMemberId && <><h2 className="oc-section-heading ">Pending invitations</h2>
       <p className="text-sm text-muted-foreground">
         Copy and share the invitation link. Email delivery is not configured by this feature.
       </p>

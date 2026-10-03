@@ -13,7 +13,7 @@ export function PlatformOrganizationOnboarding({ onCreated }: { onCreated: () =>
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false);
   return <>
     <section className="flex flex-col gap-4 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-      <div className="min-w-0"><h2 className="font-display text-xl">Onboard an organization</h2><p className="mt-1 text-sm text-muted-foreground">Create its listing and designate the initial president as owner.</p></div>
+      <div className="min-w-0"><h2 className="oc-section-heading ">Onboard an organization</h2><p className="mt-1 text-sm text-muted-foreground">Create its listing and designate the initial president as owner.</p></div>
       <Button className="h-auto min-h-11 whitespace-normal text-center sm:max-w-72" type="button" onClick={() => setOpen(true)}>Create organization &amp; invite president</Button>
     </section>
     <Dialog open={open} onOpenChange={next => { if (!busy) setOpen(next); }}>
@@ -49,7 +49,7 @@ export function OrganizationOnboardingForm({ onCreated, onClose, onBusy }: { onC
   const errorProps = (field: string) => ({ "aria-invalid": !!fieldErrors[field]?.length, "aria-describedby": fieldErrors[field]?.length ? `organization-onboarding-${field}-error` : undefined });
 
   if (result) return <section role="status" className="space-y-4" aria-live="polite">
-    <h3 className="break-words font-display text-2xl">{result.organization.name} created</h3>
+    <h3 className="oc-card-heading break-words">{result.organization.name} created</h3>
     <p className="text-sm">{result.invitation.state === "PENDING" ? `An owner invitation is pending for ${result.invitation.identifier}.` : `Owner invitation status: ${result.invitation.state.toLowerCase()}.`}</p>
     <p className="text-sm text-muted-foreground">{result.accountMatch === "EXISTING" ? "An existing OutClass account matches this university address. The president can claim the organization after verified sign-in." : "The president can create an OutClass account with their university identity, then accept the invitation."}</p>
     <p className="text-sm">Email has not been sent. Share the invitation link with the president.</p>

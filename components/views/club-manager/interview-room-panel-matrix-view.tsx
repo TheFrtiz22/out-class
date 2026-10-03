@@ -247,7 +247,7 @@ export function InterviewRoomPanelMatrixView() {
   return (
     <div className="bg-white">
       <div className="mb-5">
-        <h2 className="text-xl font-semibold text-foreground font-sans tracking-tight">Interview Room &amp; Panel Matrix</h2>
+        <h2 className="oc-section-heading text-foreground">Interview Room &amp; Panel Matrix</h2>
         <p className="mt-1 text-sm text-slate-500">
           Build interview rooms, staff each panel, and schedule candidates for this time slot.
         </p>
@@ -321,7 +321,7 @@ export function InterviewRoomPanelMatrixView() {
               {/* Candidate Assignment Slot */}
               <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-white p-3 shadow-none">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Candidate</p>
+                  <p className="text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-slate-400">Candidate</p>
                   <p className="truncate text-sm font-medium text-foreground">
                     {room.candidate ? room.candidate.name : "Unassigned"}
                   </p>
@@ -372,7 +372,7 @@ export function InterviewRoomPanelMatrixView() {
 
               {/* Interviewer Panel Slots */}
               <div className="space-y-1.5">
-                <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <p className="text-[length:var(--oc-size-11)] font-medium uppercase tracking-wide text-slate-400">
                   Interviewers ({filledCount}/{capacity} filled)
                 </p>
                 {room.interviewers.map((slot, index) => {
@@ -388,7 +388,7 @@ export function InterviewRoomPanelMatrixView() {
                         )}
                       >
                         <Avatar className="size-6">
-                          <AvatarFallback className="bg-foreground text-[10px] font-semibold text-white">
+                          <AvatarFallback className="bg-foreground text-[length:var(--oc-size-10)] font-semibold text-white">
                             {slot.initials}
                           </AvatarFallback>
                         </Avatar>
@@ -396,7 +396,7 @@ export function InterviewRoomPanelMatrixView() {
                           {index + 1}. {slot.name}
                         </span>
                         {slot.role && (
-                          <Badge variant="outline" className="border-border text-[10px] text-muted-foreground">
+                          <Badge variant="outline" className="border-border text-[length:var(--oc-size-10)] text-muted-foreground">
                             {slot.role}
                           </Badge>
                         )}
@@ -478,7 +478,7 @@ export function InterviewRoomPanelMatrixView() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-sans tracking-tight font-semibold">Applicant View</DialogTitle>
+            <DialogTitle className="oc-modal-title text-foreground">Applicant View</DialogTitle>
             <DialogDescription>This is the minimal, scrubbed version the student sees.</DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border border-gray-200 bg-white p-4">

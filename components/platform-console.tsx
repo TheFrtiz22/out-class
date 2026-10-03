@@ -337,7 +337,7 @@ export function PlatformConsole() {
         </details>
       </form>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-2xl">{labels[resource]}</h2>
+        <h2 className="oc-section-heading ">{labels[resource]}</h2>
         {editable.includes(resource) &&
           !["users", "applications", "view-sessions"].includes(resource) && (
             <Button
@@ -479,7 +479,7 @@ export function PlatformConsole() {
       {selected && !operation && (
         <section className="space-y-3 border-t pt-5">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Record details</h3>
+            <h3 className="oc-card-heading ">Record details</h3>
             <Button variant="ghost" onClick={() => setSelected(null)}>
               Close
             </Button>
@@ -561,7 +561,7 @@ function OperationEditor({
         }
       }}
     >
-      <h3 className="text-lg font-semibold">Review platform change</h3>
+      <h3 className="oc-card-heading ">Review platform change</h3>
       <p className="text-sm text-muted-foreground">
         This changes real platform data. Verify the target and values before
         applying.
@@ -628,7 +628,7 @@ function OperationEditor({
                 Content JSON
                 <Textarea
                   rows={8}
-                  className="font-mono"
+                  className="tabular-nums"
                   defaultValue={JSON.stringify(v, null, 2)}
                   onChange={(e) => {
                     try {

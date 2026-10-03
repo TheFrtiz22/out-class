@@ -23,7 +23,7 @@
   .oc-workspace-drawer textarea,
   .oc-workspace-drawer select,
   .oc-interview-candidate input,
-  .oc-interview-candidate textarea { font-size: 16px; max-width: 100%; }
+  .oc-interview-candidate textarea { font-size: var(--oc-size-16); max-width: 100%; }
   [data-workspace-detail] button,
   [data-workspace-detail] select,
   [data-product-shell] button,

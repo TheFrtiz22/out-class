@@ -115,7 +115,7 @@ function PublicPageDetailsPanel() {
     <div className="flex flex-col">
       <div className="flex-1 space-y-6 p-6">
         <div>
-          <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+          <h2 className="oc-section-heading " style={{ color: NAVY }}>
             Public Page Details
           </h2>
           <p className="text-sm text-gray-500">
@@ -154,7 +154,7 @@ function PublicPageDetailsPanel() {
               ) : (
                 <span className="flex flex-col items-center gap-1 px-2 text-center">
                   <ImageIcon className="size-6" />
-                  <span className="text-[11px] font-medium leading-tight">Drop or click to upload</span>
+                  <span className="text-[length:var(--oc-size-11)] font-medium leading-tight">Drop or click to upload</span>
                 </span>
               )}
               {details.logoUrl && (
@@ -285,7 +285,7 @@ function ExecutiveRosterPanel() {
     <div className="p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+          <h2 className="oc-section-heading " style={{ color: NAVY }}>
             Executive Roster
           </h2>
           <p className="text-sm text-gray-500">Manage your club&#39;s executive team and their titles.</p>
@@ -430,7 +430,7 @@ function MemberDirectoryPanel() {
   return (
     <div className="p-6">
       <div>
-        <h2 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+        <h2 className="oc-section-heading " style={{ color: NAVY }}>
           Member Directory
         </h2>
         <p className="text-sm text-gray-500">Browse every member currently on your club&#39;s roster.</p>

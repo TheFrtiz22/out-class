@@ -46,7 +46,7 @@ export function ClaimReview({
       {!claims.length && <p>No {status.toLowerCase()} claims on this page.</p>}
       {claims.map((claim) => (
         <section key={claim.id} className="space-y-3 border-t py-5">
-          <h2 className="text-xl font-semibold">{claim.club.name}</h2>
+          <h2 className="oc-section-heading ">{claim.club.name}</h2>
           <p className="break-all">
             {claim.user.email} · {claim.status.toLowerCase()}
           </p>

@@ -132,7 +132,7 @@ export function EventsMeetingsView() {
     <div className="space-y-6">
       <Card className="border-gray-200 bg-white shadow-none">
         <CardHeader>
-          <CardTitle className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+          <CardTitle className="oc-card-heading " style={{ color: NAVY }}>
             {editingId ? "Edit Event" : "Event Creator"}
           </CardTitle>
           <CardDescription>Schedule a public info session or an internal members-only meeting.</CardDescription>
@@ -274,7 +274,7 @@ export function EventsMeetingsView() {
 
       <div className="space-y-3">
         <div>
-          <h3 className="text-base font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+          <h3 className="oc-card-heading " style={{ color: NAVY }}>
             Active Events Roster
           </h3>
           <p className="text-sm text-gray-500">Every upcoming session and meeting currently scheduled.</p>

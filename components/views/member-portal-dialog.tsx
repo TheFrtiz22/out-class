@@ -38,7 +38,7 @@ export function MemberPortalDialog({
           <div className="flex items-center gap-3">
             <ClubLogo clubId={membership.clubId} logoUrl={membership.logoUrl} text={membership.logoText} color={membership.color} size="lg" />
             <div className="min-w-0">
-              <DialogTitle className="truncate font-sans tracking-tight font-semibold" style={{ color: NAVY }}>
+              <DialogTitle className="oc-modal-title truncate" style={{ color: NAVY }}>
                 {membership.clubName}
               </DialogTitle>
               <DialogDescription className="text-gray-500">Member Portal · My Club Hub</DialogDescription>
@@ -48,7 +48,7 @@ export function MemberPortalDialog({
 
         <div className="space-y-6 pt-2">
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+            <h3 className="oc-card-heading flex items-center gap-1.5" style={{ color: NAVY }}>
               <CalendarClock className="size-4" /> Member Meeting Schedule
             </h3>
             <div className="space-y-2">
@@ -74,7 +74,7 @@ export function MemberPortalDialog({
           </section>
 
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+            <h3 className="oc-card-heading flex items-center gap-1.5" style={{ color: NAVY }}>
               <Download className="size-4" /> Agenda Downloads
             </h3>
             <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -107,7 +107,7 @@ export function MemberPortalDialog({
           </section>
 
           <section className="space-y-2.5">
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold font-sans tracking-tight" style={{ color: NAVY }}>
+            <h3 className="oc-card-heading flex items-center gap-1.5" style={{ color: NAVY }}>
               <Megaphone className="size-4" /> Internal Announcements
             </h3>
             <div className="space-y-2">

@@ -36,7 +36,7 @@
     gap: 48px;
   }
   .oc-landing[data-scroll-motion] .oc-motion-story > .feature-copy { position: sticky; top: 40px; max-width: 420px; }
-  .oc-landing[data-scroll-motion] .oc-motion-story .feature-copy h2 { font-size: clamp(28px, 2.7vw, 38px); }
+  .oc-landing[data-scroll-motion] .oc-motion-story .feature-copy h2 { font-size: var(--oc-text-section); }
 }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {

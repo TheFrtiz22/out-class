@@ -30,7 +30,7 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
       onSaved?.()
       try { await refreshUser() } catch { /* The saved profile is authoritative; keep the editor usable. */ }
     }} />
-    {links.length > 0 && <section aria-labelledby="related-club-settings" className="border-t pt-7"><h2 id="related-club-settings" className="font-display text-2xl">Other club settings</h2><ul className="mt-4 divide-y">{links.map(link => <li key={link.href}><Link href={link.href} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }} className="block rounded py-5 focus-visible:outline-2 focus-visible:outline-ring"><p className="text-xs text-muted-foreground">{link.group}</p><h3 className="mt-1 text-sm font-medium">{link.title} →</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{link.detail}</p></Link></li>)}</ul></section>}
+    {links.length > 0 && <section aria-labelledby="related-club-settings" className="border-t pt-7"><h2 id="related-club-settings" className="oc-section-heading ">Other club settings</h2><ul className="mt-4 divide-y">{links.map(link => <li key={link.href}><Link href={link.href} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }} className="block rounded py-5 focus-visible:outline-2 focus-visible:outline-ring"><p className="text-xs text-muted-foreground">{link.group}</p><h3 className="oc-card-heading mt-1">{link.title} →</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{link.detail}</p></Link></li>)}</ul></section>}
 
   </div>
 }

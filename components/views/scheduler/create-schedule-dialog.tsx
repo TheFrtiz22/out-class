@@ -40,7 +40,7 @@ export function CreateScheduleDialog({ selectedDate, onCreate }: { selectedDate:
       <DialogTrigger asChild><Button className="gap-2"><Plus className="size-4" />Create interview room</Button></DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-xl">Create an interview room</DialogTitle>
+          <DialogTitle className="oc-modal-title ">Create an interview room</DialogTitle>
           <DialogDescription>Choose a location and time window. We’ll create the booking slots for you.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -61,7 +61,7 @@ export function CreateScheduleDialog({ selectedDate, onCreate }: { selectedDate:
             <aside className="rounded-xl border bg-slate-50 p-5" aria-live="polite">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Room preview</p>
               <DoorOpen className="my-4 size-7 text-primary" />
-              <h3 className="break-words text-lg font-semibold">{name.trim() || "Your interview room"}</h3>
+              <h3 className="oc-card-heading break-words">{name.trim() || "Your interview room"}</h3>
               <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="size-4" />{date ? new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "Choose a date"}</p>
               <div className="my-5 grid grid-cols-2 gap-3 border-y py-4">
                 <div><Clock className="mb-2 size-4 text-muted-foreground" /><p className="text-2xl font-semibold">{preview.slots.length}</p><p className="text-xs text-muted-foreground">interview slots</p></div>

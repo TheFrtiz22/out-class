@@ -52,7 +52,7 @@ export function QrCodeCard({ title, description, path, filename }: { title: stri
         {origin ? <QRCodeSVG ref={svg} value={url} size={184} level="M" marginSize={4} title={title} /> : <span className="text-sm text-neutral-500">Preparing QR code…</span>}
       </div>
       <div className="min-w-0 space-y-3">
-        <h3 className="text-lg font-semibold">{title}</h3><p className="text-sm text-neutral-500">{description}</p>
+        <h3 className="oc-card-heading ">{title}</h3><p className="text-sm text-neutral-500">{description}</p>
         {origin && <a href={url} className="block break-all text-sm underline underline-offset-4">{url}</a>}
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="shadow-none" disabled={!origin || busy} onClick={() => download("png")}><Download className="size-4" />Download as PNG</Button>

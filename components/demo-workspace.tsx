@@ -64,7 +64,7 @@ export function DemoClubSettings() {
   return (
     <div className="space-y-9">
       <div>
-        <h2 className="font-display text-2xl">{club.name}</h2>
+        <h2 className="oc-section-heading ">{club.name}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
           {club.description}
         </p>
@@ -72,7 +72,7 @@ export function DemoClubSettings() {
       <a className="inline-block text-sm underline underline-offset-4" href={`/club/${club.id}/workspace`}>Open club workspace</a>
       <DemoRoundTarget />
       <section>
-        <h3 className="mb-4 text-lg font-semibold">Application questions</h3>
+        <h3 className="oc-card-heading mb-4">Application questions</h3>
         <ol className="list-decimal space-y-3 pl-5 text-sm">
           {club.questions.map((q) => (
             <li key={q.id}>
@@ -85,14 +85,14 @@ export function DemoClubSettings() {
         </ol>
       </section>
       <section>
-        <h3 className="mb-4 text-lg font-semibold">Recruitment rounds</h3>
+        <h3 className="oc-card-heading mb-4">Recruitment rounds</h3>
         <p className="text-sm leading-7">{club.rounds.map((r) => r.name).join(" → ")}</p>
         <p className="mt-2 text-xs text-muted-foreground">
           Sample deadline: {club.deadline.toLocaleString()}
         </p>
       </section>
       <section>
-        <h3 className="text-lg font-semibold">Fictional member directory</h3>
+        <h3 className="oc-card-heading ">Fictional member directory</h3>
         <ul className="mt-4 divide-y divide-border">
           {state.memberships
             .filter((m) => m.clubId === club.id)
@@ -155,7 +155,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
   return (
     <section className="space-y-5">
       <div>
-        <h2 className="font-display text-2xl">{club.name} interview agenda</h2>
+        <h2 className="oc-section-heading ">{club.name} interview agenda</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Sample availability · assigning a slot updates the same application and student calendar.
         </p>

@@ -11,10 +11,10 @@ export const editorialUi = {
   sidebarLinkActive:
     "border-l-2 border-primary bg-muted font-semibold text-foreground",
   surface: "border border-border bg-card shadow-none",
-  title: "font-sans font-semibold tracking-tight text-foreground",
-  secondaryText: "font-sans text-muted-foreground",
+  title: "oc-page-title text-foreground",
+  secondaryText: "oc-body-small text-muted-foreground",
   primaryAction:
-    "border border-primary bg-primary font-semibold text-white shadow-none hover:bg-primary/90",
+    "border border-primary bg-primary oc-button text-white shadow-none hover:bg-primary/90",
   secondaryAction:
-    "border border-input bg-card font-medium text-foreground shadow-none hover:bg-muted",
+    "border border-input bg-card oc-button text-foreground shadow-none hover:bg-muted",
 } as const

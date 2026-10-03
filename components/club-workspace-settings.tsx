@@ -46,7 +46,7 @@ export function ClubWorkspaceSettings({ section = "legacy" }: { section?: "legac
   return (
     <div className="max-w-3xl space-y-8" key={member.id}>
       {section === "legacy" && hasPermission(member, "interviews.manage") && <ClubInterviewKitSettings clubId={activeClubId} />}
-      {section === "legacy" && <h1 className="font-display text-3xl">{member.club.name}</h1>}
+      {section === "legacy" && <h1 className="oc-page-title ">{member.club.name}</h1>}
       {section === "legacy" && <MeetingList key={activeClubId} clubId={activeClubId} />}
       {section !== "settings" && hasPermission(member, "leaders.manage") && (
         <a className="inline-block underline" href={`/club-access/${member.clubId}`}>
@@ -92,7 +92,7 @@ export function ClubWorkspaceSettings({ section = "legacy" }: { section?: "legac
       {section === "legacy" && <a className="inline-block text-sm underline underline-offset-4" href={`/club/${member.clubId}/workspace?section=tasks`}>Tasks & semester projects</a>}
       {section !== "settings" && hasPermission(member, "members.manage") && (
         <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Members</h2>
+          <h2 className="oc-section-heading ">Members</h2>
           <form
             className="flex gap-3"
             onSubmit={(e) => {

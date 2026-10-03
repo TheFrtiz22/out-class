@@ -49,7 +49,7 @@ export function ProctorPresentationView({
         <div className="flex items-center gap-3">
           <Monitor className="size-5" />
           <div>
-            <h1 className="font-semibold">Voting preview</h1>
+            <h1 className="oc-page-title ">Voting preview</h1>
             <p className="text-xs text-neutral-500">
               {ended
                 ? "Session complete"
@@ -151,7 +151,7 @@ export function ProctorPresentationView({
                     <p className="mb-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
                       Applicant profile
                     </p>
-                    <h2 className="font-display text-3xl tracking-tight md:text-4xl">
+                    <h2 className="oc-section-heading ">
                       {applicant.name}
                     </h2>
                     <p className="mt-3 text-neutral-500">
@@ -176,7 +176,7 @@ export function ProctorPresentationView({
                   </div>
                 </dl>
                 <section className="border-b border-border pb-5">
-                  <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500">
+                  <h3 className="oc-card-heading uppercase tracking-widest text-neutral-500">
                     Resume highlight
                   </h3>
                   <p className="mt-3 text-base leading-7">
@@ -185,7 +185,7 @@ export function ProctorPresentationView({
                 </section>
                 <section>
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-medium">Interview performance</h3>
+                    <h3 className="oc-card-heading ">Interview performance</h3>
                     <p className="text-sm text-neutral-500">
                       Cumulative score{" "}
                       <strong className="ml-2 text-lg font-semibold text-black tabular-nums">

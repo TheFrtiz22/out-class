@@ -155,7 +155,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-5">
         <div>
-          <h2 className="font-display text-3xl tracking-tight">Make room for what’s next.</h2>
+          <h2 className="oc-section-heading ">Make room for what’s next.</h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Meetings, interviews, and recruiting dates, together.
             <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
@@ -198,7 +198,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           >
             <ChevronLeft className="size-4" />
           </Button>
-          <h2 className="text-base font-semibold">
+          <h2 className="oc-section-heading ">
             {cursor.toLocaleDateString(
               "en-US",
               view === "day"
@@ -271,7 +271,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             <div className="space-y-8">
               {agenda.map((group) => (
                 <section key={group.label} aria-label={group.label}>
-                  <h3 className="border-b border-border pb-3 text-sm font-semibold">
+                  <h3 className="oc-card-heading border-b border-border pb-3">
                     {group.label}
                   </h3>
                   <ul className="divide-y divide-border">
@@ -320,7 +320,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
               {!agenda.length && (
                 <div className="space-y-3 border-y border-border py-12">
                   <CalendarDays className="size-6 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="oc-card-heading ">
                     {query || filter !== "all" || hiddenClubs.size
                       ? "No events match these filters"
                       : "A little breathing room"}
@@ -391,7 +391,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               onClick={() => open(event)}
                               title={`${event.time} · ${event.title}`}
                               className={cn(
-                                "block w-full rounded p-1.5 text-left text-[11px] leading-snug hover:ring-1 hover:ring-neutral-300",
+                                "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
@@ -424,7 +424,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                       dayEvents = visible.filter((event) => event.date === key)
                     return (
                       <section key={key} className="p-5">
-                        <h3 className="mb-3 text-sm font-semibold">
+                        <h3 className="oc-card-heading mb-3">
                           {day.toLocaleDateString("en-US", {
                             weekday: "long",
                             month: "short",
@@ -471,7 +471,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
         </div>
         <aside className="space-y-5">
           <section className="border-t border-border py-5">
-            <h3 className="mb-3 text-sm font-semibold">Your club calendars</h3>
+            <h3 className="oc-card-heading mb-3">Your club calendars</h3>
             {!clubs.length && (
               <p className="text-xs leading-6 text-muted-foreground">
                 Clubs appear here when they have events on your calendar.
@@ -497,7 +497,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </section>
           {view !== "agenda" && (
             <section className="border-t border-border py-5">
-              <h3 className="mb-3 text-sm font-semibold">Up next</h3>
+              <h3 className="oc-card-heading mb-3">Up next</h3>
               <div className="space-y-2">
                 {upcoming.map((event) => (
                   <button

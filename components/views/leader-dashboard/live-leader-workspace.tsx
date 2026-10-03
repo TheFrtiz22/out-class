@@ -70,7 +70,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: {
   if (!club)
     return (
       <div className="space-y-3 py-10">
-        <h2 className="text-xl font-semibold">No recruitment workspace assigned</h2>
+        <h2 className="oc-section-heading ">No recruitment workspace assigned</h2>
         <p className="text-sm text-muted-foreground">
           Your club manager can grant applicant access. Use Club settings for your other workspace capabilities.
         </p>
@@ -83,7 +83,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: {
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
             Recruitment workspace
           </p>
-          <h2 className="mt-2 font-display text-3xl">{club.club.name}</h2>
+          <h2 className="oc-section-heading mt-2">{club.club.name}</h2>
         </div>
         {!scoped && clubs.length > 1 && (
           <select
@@ -595,7 +595,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 <SheetTitle
                   ref={heading}
                   tabIndex={-1}
-                  className="text-xl focus-visible:outline-2 focus-visible:outline-ring"
+                  className="oc-modal-title focus-visible:outline-2 focus-visible:outline-ring"
                 >
                   {name(active)}
                 </SheetTitle>
@@ -633,7 +633,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 </div>
               </div>
               <section className="space-y-3 border-b border-border pb-6">
-                <h3 className="text-sm font-semibold">Profile</h3>
+                <h3 className="oc-card-heading ">Profile</h3>
                 {active.student.studentProfile ? (
                   <>
                     <p className="whitespace-pre-wrap text-sm leading-7">
@@ -682,9 +682,9 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                   <p className="text-sm text-muted-foreground">No profile provided.</p>
                 )}
               </section>
-              <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="text-sm font-semibold">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{new Date(booking.slot.startTime).toLocaleString()} – {new Date(booking.slot.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
+              <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{new Date(booking.slot.startTime).toLocaleString()} – {new Date(booking.slot.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
               <section className="space-y-5 border-b border-border pb-6">
-                <h3 className="text-sm font-semibold">Application responses</h3>
+                <h3 className="oc-card-heading ">Application responses</h3>
                 {active.answers.map((answer) => (
                   <div key={answer.id}>
                     <h4 className="text-sm font-medium leading-6">{answer.question.prompt}</h4>
@@ -709,7 +709,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 )}
               </section>
               <section className="space-y-4 border-b border-border pb-6">
-                <h3 className="text-sm font-semibold">Evaluations</h3>
+                <h3 className="oc-card-heading ">Evaluations</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
                     <p className="text-xs font-medium">
@@ -767,7 +767,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                 </form>
               </section>
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold">Recruitment actions</h3>
+                <h3 className="oc-card-heading ">Recruitment actions</h3>
                 <Label htmlFor="move-round">Round</Label>
                 <div className="flex flex-wrap gap-2">
                   <select

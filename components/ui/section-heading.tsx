@@ -11,11 +11,11 @@ type SectionHeadingProps = Omit<ComponentProps<"div">, "title"> & {
   editorial?: boolean
 }
 
-export function SectionHeading({ title, description, eyebrow, action, headingId, as: Heading = "h2", editorial = false, className, ...props }: SectionHeadingProps) {
+export function SectionHeading({ title, description, eyebrow, action, headingId, as: Heading = "h2", editorial: _editorial, className, ...props }: SectionHeadingProps) {
   return <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)} {...props}>
     <div className="max-w-2xl space-y-3">
       {eyebrow && <p className="text-caption font-medium uppercase tracking-widest text-muted-foreground">{eyebrow}</p>}
-      <Heading id={headingId} className={cn("text-title text-foreground", editorial ? "font-display font-normal tracking-tight" : "font-sans font-semibold tracking-tight")}>{title}</Heading>
+      <Heading id={headingId} className={cn("text-foreground", Heading === "h1" ? "oc-page-title" : Heading === "h3" ? "oc-card-heading" : "oc-section-heading")}>{title}</Heading>
       {description && <p className="text-body text-muted-foreground">{description}</p>}
     </div>
     {action && <div className="shrink-0">{action}</div>}
