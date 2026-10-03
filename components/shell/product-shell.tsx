@@ -107,7 +107,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
       {demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}
     </main></div>
     <MobileNavigation items={items} active={active} manager={manager} onSelect={select} onLink={event => { if (!canLeaveWorkspace()) event.preventDefault() }} onMore={() => { mobileOrigin.current = document.activeElement as HTMLElement; setMobile(true) }} />
-    {user && !demo.isDemoEnabled && <TutorialWalkthrough key={`${user.id}:${manager ? "leader" : "student"}`} experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
+    {user && <TutorialWalkthrough key={`${user.id}:${manager ? "leader" : "student"}`} experience={manager ? "leader" : "student"} clubId={manager ? clubId : undefined} preview={user.impersonating} onOpenStep={step => {
       if (!canLeaveWorkspace()) return
       if ("view" in step) navigate(step.view)
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)

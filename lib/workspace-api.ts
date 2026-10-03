@@ -1,4 +1,6 @@
 "use client"
+import * as tutorials from "@/actions/tutorials"
+import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
 import { corkboardInput } from "@/lib/corkboard"
 import * as votingApi from "@/actions/voting"
 import * as demoVoting from "@/lib/demo/voting"
@@ -423,7 +425,10 @@ export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRo
 export const getApplicantDisplay = adapt(applicantIntelligence.getApplicantDisplay, input => {
   const app = scopedApplication(input.clubId, input.applicationId), s = demoStore.get();
   const round = s.clubs[0].rounds.find(r => r.id === app.roundId)!;
-  return projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig, (s.observations || []).filter(o => o.applicationId === app.id));
+  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig, (s.observations || []).filter(o => o.applicationId === app.id));
+  // The bundled fictional résumé is a demo asset, never a live private-download request.
+  if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.txt") display.links.push({ field: "resume", label: "Sample résumé", href: "/demo/sample-resume.txt" });
+  return display;
 });
 export const getApplicantDisplayConfiguration = adapt(applicantIntelligence.getApplicantDisplayConfiguration, (clubId, roundId) => {
   demoMeetingManager(clubId);
@@ -488,5 +493,23 @@ export const setCorkboardClub = adapt(directory.setCorkboardClub, input => {
     let item = s.corkboard.find(item => item.clubId === data.clubId)
     if (!item) { item = { clubId: data.clubId, savedAt: new Date(`${s.anchor}T12:00:00Z`) }; s.corkboard.push(item) }
     return { saved: true, savedAt: item.savedAt.toISOString() }
+  })
+})
+
+function demoTutorialScope(experience: unknown, clubId?: string) {
+  const kind = tutorialExperience.parse(experience), state = demoStore.get()
+  if (kind === "leader" && (state.perspective.role !== "leader" || clubId !== state.clubs[0].id)) throw new Error("Choose the MII leader workspace.")
+  return kind
+}
+export const getTutorial = adapt(tutorials.getTutorial, (experience, clubId) => {
+  const kind = demoTutorialScope(experience, clubId)
+  return demoStore.get().tutorials[kind]
+})
+export const saveTutorial = adapt(tutorials.saveTutorial, input => {
+  const data = tutorialInput.parse(input), kind = demoTutorialScope(data.experience, data.clubId)
+  return demoStore.mutate(s => {
+    const previous = s.tutorials[kind]
+    if (data.action !== "restart" && previous.status !== "IN_PROGRESS") return previous
+    return s.tutorials[kind] = { status: data.action === "skip" ? "SKIPPED" : data.action === "complete" ? "COMPLETED" : "IN_PROGRESS", step: data.action === "restart" ? 0 : data.step, version: 1 }
   })
 })

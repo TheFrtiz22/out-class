@@ -1,5 +1,6 @@
 "use client"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { resolveStudentView } from "@/lib/student-navigation"
 import { demoStore } from "@/lib/demo/store"
 import type { DemoState } from "@/lib/demo/seed"
 
@@ -108,7 +109,12 @@ export function DemoDataProvider({
       })
       const url = new URL(window.location.href)
       url.searchParams.delete("demoClub")
-      url.searchParams.delete("workspace")
+      const requestedStudentView = role === "student" && url.searchParams.get("workspace") === "student" && resolveStudentView(url.searchParams.get("view"))
+      if (!requestedStudentView) {
+        url.searchParams.delete("workspace")
+        url.searchParams.delete("view")
+        url.searchParams.delete("section")
+      }
       window.history.replaceState({}, "", url)
       setEpoch((v) => v + 1)
     } catch {
@@ -120,10 +126,12 @@ export function DemoDataProvider({
       localStorage.removeItem("outclass.demo.customization.v1")
       demoStore.reset()
       const url = new URL(window.location.href)
-      url.searchParams.delete("demoClub")
-      url.searchParams.delete("workspace")
-      window.history.replaceState({}, "", url)
-      setEpoch((v) => v + 1)
+      // A full navigation resets route-local state and Next's cached search parameters,
+      // including resets initiated inside a club workspace.
+      url.pathname = url.pathname === "/preview" ? "/preview" : "/"
+      url.search = new URLSearchParams({ workspace: "student", view: "student-dashboard" }).toString()
+      url.hash = ""
+      window.location.assign(url.toString())
     } catch {
       setError("Could not reset the demo. Check available browser storage.")
     }

@@ -21,15 +21,15 @@ function provider() {
       }
     },
   }
-  const store = { subscribe: () => () => {}, stop() {}, active: () => false }
+  const changes = [], store = { subscribe: () => () => {}, stop() {}, active: () => false, mutate(fn) { const state = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }; fn(state); changes.push(state) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  const mocks = { react, '@/lib/demo/store': { demoStore: store } }
+  const mocks = { react, '@/lib/demo/store': { demoStore: store }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
   const fetch = (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject }))
-  const window = { addEventListener() {}, removeEventListener() {}, location: { reload() {}, assign() {} } }
-  new Function('require', 'module', 'exports', 'fetch', 'window', code)(name => mocks[name] || require(name), mod, mod.exports, fetch, window)
+  const window = { addEventListener() {}, removeEventListener() {}, location: { href: 'http://localhost/preview?workspace=student&view=corkboard&section=decisions&demoClub=mii', reload() {}, assign(url) { window.location.href = String(url) } }, history: { replaceState(_state, _title, url) { window.location.href = String(url) } } }
+  new Function('require', 'module', 'exports', 'fetch', 'window', 'localStorage', code)(name => mocks[name] || require(name), mod, mod.exports, fetch, window, {removeItem(){}})
   return {
-    requests,
+    requests, changes, window,
     render(props = {}) { cursor = 0; return mod.exports.DemoDataProvider({ children: 'NORMAL_ACCOUNT', clearStaleSession: true, ...props }) },
     effects() { pending.splice(0).forEach(fn => fn()) },
   }
@@ -67,4 +67,39 @@ test('normal users mount without demo calls; successful stale cleanup precedes a
   stale.requests[0].resolve({ ok: true })
   await settle()
   assert.equal(stale.render().props.children[1].props.children, 'NORMAL_ACCOUNT')
+})
+
+test('demo perspective changes and reset clear obsolete student view/section routing without touching live data', () => {
+  const h = provider(), tree = h.render({ clearStaleSession: false })
+  tree.props.value.viewAs('leader', 'mii')
+  assert.equal(h.changes[0].perspective.role, 'leader')
+  assert.equal(new URL(h.window.location.href).search, '')
+  h.window.location.href = 'http://localhost/preview?workspace=student&view=tracker&section=interviews'
+  h.render({ clearStaleSession: false }).props.value.resetDemo()
+  assert.equal(h.changes[1], 'reset')
+  const resetUrl = new URL(h.window.location.href)
+  assert.equal(resetUrl.searchParams.get('view'), 'student-dashboard')
+  assert.equal(resetUrl.searchParams.get('workspace'), 'student')
+  assert.equal(resetUrl.searchParams.has('section'), false)
+  assert.equal(h.requests.length, 0)
+})
+
+test('an explicit student bookmark survives the perspective change needed to open it', () => {
+  const h = provider()
+  h.render({ clearStaleSession: false }).props.value.viewAs('student', 'mii')
+  const url = new URL(h.window.location.href)
+  assert.equal(url.searchParams.get('workspace'), 'student')
+  assert.equal(url.searchParams.get('view'), 'corkboard')
+  assert.equal(url.searchParams.has('demoClub'), false)
+})
+
+test('reset from a club route returns to canonical student Home instead of re-entering leadership', () => {
+ const h = provider()
+ h.window.location.href = 'http://localhost/club/mii/workspace?section=recruitment&tool=decisions'
+ h.render({clearStaleSession:false}).props.value.resetDemo()
+ const url = new URL(h.window.location.href)
+ assert.equal(url.pathname, '/')
+ assert.equal(url.searchParams.get('view'), 'student-dashboard')
+ assert.equal(url.searchParams.get('workspace'), 'student')
+ assert.equal(url.searchParams.has('tool'), false)
 })

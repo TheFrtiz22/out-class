@@ -1,4 +1,6 @@
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
+import { defaultDisplayConfig } from "@/lib/applicant-display"
+import { readMarketing } from "@/lib/club-marketing"
 import { seedTasks } from "./task-seed"
 import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
@@ -113,7 +115,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       computingId: `sample${i + 1}`,
       major: majors[i % majors.length],
       gradYear: year + 1 + (i % 4),
-      gpa: i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),
+      gpa: i === 0 ? 3.72 : i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),
       actScore: i === 0 ? 33 : i % 3 ? 24 + (i % 13) : null,
       actEnglish: null as number | null, actMath: null as number | null, actReading: null as number | null, actScience: null as number | null,
       satScore: i === 0 ? 1480 : i % 4 ? 1250 + (i % 16) * 20 : null,
@@ -329,6 +331,52 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       slot.startTime = at(-1, 14); slot.endTime = at(-1, 14, 50)
     }
   }
+  // Current-product fixtures share the existing profiles, rounds, interviews, and applications.
+  students[0].profile.experiences = [
+    ["Education · UVA", "Economics · coursework in econometrics and statistics", `${year - 2}–Present`],
+    ["Research assistant", "Fictional campus team · tested local transit demand assumptions", `${year - 1}–Present`],
+    ["Data analyst intern", "Fictional community enterprise · Python analysis and reporting", `${year} · Summer`],
+    ["Campus refill project", "Fictional student project · interviews, prototype, and budget planning", `${year} · Spring`],
+    ["Skills and interests", "Python, financial modeling, research writing, and team facilitation", "Ongoing"],
+  ].map(([title, subtitle, period], i) => ({ id: uid(30, i), studentProfileId: students[0].profile.id, title, subtitle, period }))
+  clubs[0].tagline = "Sample research, thoughtful debate, and practical learning"
+  clubs[0].marketing = readMarketing({ memberCount: memberships.filter(m => m.clubId === clubs[0].id).length, showAum: false, benefits: ["Fictional weekly research teams", "Sample peer mentoring"], commitment: "Sample: 3–5 hours per week", eligibility: "Fictional undergraduate recruitment example", faqs: [{ question: "What is this demonstration?", answer: "All people, projects, and outcomes are fictional. Nothing is submitted to a real club." }] })
+  const mii = clubs[0], manager = memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")!
+  const interviewRound = mii.rounds.find(r => r.name === "Interview")!
+  const reviewRound = mii.rounds.find(r => r.name === "Review")!
+  const interviewPool = applications.filter(a => a.clubId === mii.id && a.roundId === interviewRound.id && a.status === "INTERVIEWING").slice(0, 6)
+  const observations = interviewPool.slice(0, 3).flatMap((app, i) => (["PRO", "CON"] as const).map((kind, j) => ({
+    id: uid(31, i * 2 + j), applicationId: app.id, kind, author: "Jordan Avery", own: true,
+    body: kind === "PRO" ? "Sample: explained the evidence behind a revised recommendation." : "Sample: follow up on ownership and how the project result was measured.",
+    createdAt: at(-1).toISOString(), updatedAt: at(-1).toISOString(),
+  })))
+  const applicantDisplay = Object.fromEntries(mii.rounds.map(r => [r.id, { config: structuredClone(defaultDisplayConfig), version: 1 }]))
+  const recruitingRules: DemoRecruitingRule[] = [{ roundId: reviewRound.id, minGpa: 3.3, minSat: 1350, minAct: 28, revision: 1, updatedAt: at(-4) }]
+  type Session = NonNullable<Awaited<ReturnType<typeof import("@/actions/voting").getVotingWorkspace>>["session"]>
+  function votingFixture(n: number, pool: typeof applications, published: boolean): Session {
+    const id = uid(32, n), started = at(published ? -5 : -1), decisions = ["PASS", "PASS", "HOLD", "NOT_PASS", "HOLD", "HOLD"] as const
+    const choice = (app: typeof applications[number], i: number) => published ? app.status === "ACCEPTED" ? "PASS" : app.status === "WAITLISTED" ? "HOLD" : "NOT_PASS" : decisions[i]
+    const entries = pool.map((app, position) => ({ sessionId: id, passNumber: 1, applicationId: app.id, position, override: null, overrideBy: null, overrideAt: null, ballots: [{ id: uid(33, n * 20 + position), sessionId: id, passNumber: 1, applicationId: app.id, memberId: manager.id, decision: choice(app, position), createdAt: started }] }))
+    return { id, clubId: mii.id, roundId: pool[0].roundId, state: published ? "COMPLETED" : "OPEN", targetSize: 2, autoAdvance: "UNANIMOUS", threshold: 100, currentPass: published ? 1 : 2, revision: published ? 5 : 12, createdBy: manager.userId, startedAt: started, endedAt: published ? at(-4) : null, publishedAt: published ? at(-4) : null, publishedBy: published ? manager.userId : null, createdAt: started, updatedAt: published ? at(-4) : at(0),
+      participants: [{ sessionId: id, memberId: manager.id }],
+      candidates: pool.map((app, position) => ({ sessionId: id, applicationId: app.id, position, expectedStatus: published ? "INTERVIEWING" : app.status, publishedStatus: published ? app.status : null })),
+      passes: [{ sessionId: id, number: 1, state: "COMPLETED", startedAt: started, completedAt: at(published ? -4 : -1, 17), candidates: entries }, ...(published ? [] : [{ sessionId: id, number: 2, state: "OPEN" as const, startedAt: at(0), completedAt: null, candidates: pool.map((app, i) => ({ app, i })).filter(({i}) => i >= 2 && i !== 3).map(({app, i}, position) => ({ sessionId: id, passNumber: 2, applicationId: app.id, position, override: null, overrideBy: null, overrideAt: null, ballots: i === 2 ? [{ id: uid(33, n * 20 + 10), sessionId: id, passNumber: 2, applicationId: app.id, memberId: manager.id, decision: "HOLD" as const, createdAt: at(0) }] : [] })) }])],
+    }
+  }
+  const finalPool = applications.filter(a => a.clubId === mii.id && ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(a.status)).slice(0, 3)
+  const votingSessions = [votingFixture(0, finalPool, true), votingFixture(1, interviewPool, false)]
+  const votingAudit = votingSessions.flatMap(session => ["voting.session.created", "voting.start_pass", "voting.ballot.submitted", "voting.complete_pass", ...(session.publishedAt ? ["voting.finish", "voting.publish"] : ["voting.start_pass"])].map(action => ({ action, sessionId: session.id, at: session.updatedAt })))
+  // A booked historical interview and open future slots use the same room/calendar graph.
+  const studentSlot = slots.find(slot => slot.applicationId === interviewPool[0].id)!
+  const roomId = uid(34, 0), historicalSlot = uid(35, 0)
+  const interviewRooms: import("@/lib/interview-rooms").InterviewRoom[] = [{ id: roomId, clubId: mii.id, roundId: interviewRound.id, name: "Sample research panel", location: studentSlot.location, kind: "IN_PERSON", timezone: "America/New_York", duration: 20, buffer: 5, isOpen: true, panelMemberIds: [manager.id], slots: [{ id: historicalSlot, startTime: studentSlot.startTime.toISOString(), endTime: studentSlot.endTime.toISOString(), capacity: 1, booked: 0 }, ...[0, 1, 2].map(i => ({ id: uid(35, i + 1), startTime: at(4, 10, i * 25).toISOString(), endTime: at(4, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 }))] }]
+  const roomBookings: import("@/lib/interview-rooms").RoomBooking[] = [{ id: studentSlot.id, applicationId: interviewPool[0].id, slotId: historicalSlot, roomId, roundId: interviewRound.id, candidate: "Jordan Avery", startTime: studentSlot.startTime.toISOString(), endTime: studentSlot.endTime.toISOString(), location: studentSlot.location }]
+  // GMG is already on Jordan's Corkboard: its invitation demonstrates self-service booking.
+  const invitedClub = clubs[1], invitedRound = invitedClub.rounds.find(r => r.name === "Interview")!
+  const invitedApplication = applications.find(a => a.clubId === invitedClub.id && a.studentId === students[0].id)!
+  invitedApplication.status = "INTERVIEWING"; invitedApplication.roundId = invitedRound.id
+  interviewRooms.push({ id: uid(34, 1), clubId: invitedClub.id, roundId: invitedRound.id, name: "Sample markets conversation", location: "Clemons · sample meeting room", kind: "IN_PERSON", timezone: "America/New_York", duration: 20, buffer: 5, isOpen: true, panelMemberIds: [memberships.find(m => m.clubId === invitedClub.id && m.role === "PRESIDENT")!.id], slots: [0, 1, 2].map(i => ({ id: uid(35, 10 + i), startTime: at(5, 10, i * 25).toISOString(), endTime: at(5, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 })) })
+
   const meetings = clubs.filter(club => club.claimed).flatMap((club,c) => Array.from({length:5},(_,i)=>({
     id: uid(17,c*10+i), clubId:club.id, club:{name:club.name}, title: `${club.name} · sample ${i<3?"interest meeting":"member meeting"} ${i+1}`,
     description: "Fictional meeting for the OutClass demonstration.", date:at(i<2?-7+i*3:i===2?0:i===3?-2:5,12), endDate:at(i<2?-7+i*3:i===2?0:i===3?-2:5,13) as Date | null,
@@ -342,11 +390,12 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
     interviews,
-    applicantDisplay: {} as Record<string, { config: import("@/lib/applicant-display").ApplicantDisplayConfig; version: number }>,
-    votingSessions: [] as NonNullable<Awaited<ReturnType<typeof import("@/actions/voting").getVotingWorkspace>>["session"]>[],
-    votingAudit: [] as { action: string; sessionId: string; at: Date }[],
-    observations: [] as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],
-    recruitingRules: [] as DemoRecruitingRule[],
+    tutorials: { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } } as Record<import("@/lib/tutorials").TutorialExperience, import("@/lib/tutorials").TutorialProgress>,
+    applicantDisplay,
+    votingSessions,
+    votingAudit,
+    observations: observations as (import("@/lib/applicant-display").ObservationView & { applicationId: string })[],
+    recruitingRules,
     recruitingFlags: [] as DemoRecruitingFlag[],
     recruitingRuleAudit: [] as DemoRuleAudit[],
     version: 1 as const,
@@ -356,8 +405,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     clubs,
     memberships,
     applications,
-    interviewRooms: [] as import("@/lib/interview-rooms").InterviewRoom[],
-    roomBookings: [] as import("@/lib/interview-rooms").RoomBooking[],
+    interviewRooms,
+    roomBookings,
     slots,
     corkboard: clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${anchor}T12:00:00Z`) })),
     subscriptions: clubs.slice(0, 7).map((c) => c.id),

@@ -18,6 +18,42 @@ function ensureSemesterWork(value: DemoState) {
     return {...m,user:{id:user.id,email:user.email,studentProfile:{firstName:user.profile.firstName,lastName:user.profile.lastName,gradYear:user.profile.gradYear}}}
   }),value.anchor)
 }
+function ensureCurrentWorkflows(value: DemoState) {
+  value.tutorials ??= { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } }
+  value.interviewRooms ??= []
+  value.roomBookings ??= []
+  value.applicantDisplay ??= {}
+  value.corkboard ??= value.clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${value.anchor}T12:00:00Z`) }))
+  value.votingSessions ??= []
+  value.votingAudit ??= []
+  value.observations ??= []
+  value.recruitingRules ??= []
+  value.recruitingFlags ??= []
+  value.recruitingRuleAudit ??= []
+  value.interviews ??= []
+}
+function ensurePresentation(value: DemoState) {
+  ensureCurrentWorkflows(value)
+  if(!value.meetings){const additions=createDemoSeed(value.anchor);value.meetings=additions.meetings;value.meetingAttendances=additions.meetingAttendances}
+  value.meetingTokens ??= []
+  for (const application of value.applications) application.anonymousReviewText ??= null
+  for (const club of value.clubs) {
+    club.claimed ??= true
+    club.earlyAdopter ??= value.clubs.indexOf(club) < 3
+    club.testRequirement ??= "OPTIONAL"
+    for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
+  }
+  for (const student of value.students) {
+    student.profile.actScore ??= null
+    student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
+  }
+  // Upgrade saved presentations without resetting applications or evaluations.
+  const mii = value.clubs[0]
+  const manager = value.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
+  if (manager) manager.userId = value.students[0].id
+  if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
+  ensureSemesterWork(value)
+}
 export const demoStore = {
   active: () => enabled,
   get: () => {
@@ -43,34 +79,7 @@ export const demoStore = {
       /* Reset damaged browser data. */
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
-    state!.applicantDisplay ??= {}
-    state!.corkboard ??= state!.clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${state!.anchor}T12:00:00Z`) }))
-    state!.votingSessions ??= []
-    state!.votingAudit ??= []
-    state!.observations ??= []
-    state!.recruitingRules ??= []
-    state!.recruitingFlags ??= []
-    state!.recruitingRuleAudit ??= []
-    state!.interviews ??= []
-    if(!state!.meetings){const additions=createDemoSeed(state!.anchor);state!.meetings=additions.meetings;state!.meetingAttendances=additions.meetingAttendances}
-    state!.meetingTokens ??= []
-    for (const application of state!.applications) application.anonymousReviewText ??= null
-    for (const club of state!.clubs) {
-      club.claimed ??= true
-      club.earlyAdopter ??= state!.clubs.indexOf(club) < 3
-      club.testRequirement ??= "OPTIONAL"
-      for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
-    }
-    for (const student of state!.students) {
-      student.profile.actScore ??= null
-      student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
-    }
-    // Upgrade saved presentations without resetting applications or evaluations.
-    const mii = state!.clubs[0]
-    const manager = state!.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
-    if (manager) manager.userId = state!.students[0].id
-    if (state!.perspective.clubId !== mii.id) state!.perspective = { role: "student", clubId: mii.id }
-    ensureSemesterWork(state!)
+    ensurePresentation(state!)
     enabled = true
     demoStore.save()
   },
@@ -99,7 +108,7 @@ export const demoStore = {
   reset: () => {
     const previous = demoStore.get()
     state = template ? structuredClone(template) : createDemoSeed(previous.anchor)
-    ensureSemesterWork(state)
+    ensurePresentation(state)
     try {
       demoStore.save()
     } catch (error) {
@@ -191,7 +200,7 @@ export function demoNotifications() {
       senderTitle: "Demo update",
       urgent: false,
       type: "Announcement" as const,
-      title: `${a.club.name}: ${a.status === "INTERVIEWING" ? "Your interview is scheduled" : a.status === "ACCEPTED" ? "Your decision is ready" : "Application update"}`,
+      title: `${a.club.name}: ${a.status === "INTERVIEWING" ? a.bookings.length ? "Your interview is scheduled" : "Choose an interview time" : a.status === "ACCEPTED" ? "Your decision is ready" : "Application update"}`,
       preview: "Your sample recruiting record has been updated.",
       body: [
         `Demo application status: ${a.status}. Open Applications for your record and Calendar for scheduled meetings.`,

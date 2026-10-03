@@ -104,3 +104,5 @@ Tests cover server authorization and identity restoration, historical/forged/rev
 - `tests/support-tutorials.test.cjs`
 - `tests/tasks.test.cjs`
 
+
+Prompt 36 enables the same tutorial component through the existing Demo Mode adapter, with isolated deterministic progress and unchanged step indices. Current copy covers kits, configured applicant information, Pros/Cons, passes and explicit publication. See [final integration audit](product-integration-audit.md).

@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { displayConfigSchema } from "@/lib/applicant-display"
 // Reject damaged or unrelated saved records before they reach UI adapters.
 const id = z.string().min(1)
 const profile = z
@@ -18,6 +19,11 @@ export const demoSnapshotSchema = z
     recruitingFlags: z.array(z.object({ roundId: id, applicationId: id, ruleRevision: z.number().int().positive(), reasons: z.array(z.string()), flaggedBy: id, flaggedAt: z.date() })).optional(),
     recruitingRuleAudit: z.array(z.object({ action: z.string(), roundId: id, actorId: id, at: z.date(), details: z.string() })).optional(),
     votingSessions: z.array(z.object({ id, clubId: id, roundId: id, state: z.enum(["DRAFT", "OPEN", "PAUSED", "COMPLETED"]), targetSize: z.number().int().positive(), currentPass: z.number().int().min(0), revision: z.number().int().min(0), autoAdvance: z.enum(["NONE", "UNANIMOUS", "THRESHOLD"]), threshold: z.number().int().min(51).max(100), participants: z.array(z.object({ memberId: id })), candidates: z.array(z.object({ applicationId: id, position: z.number().int().min(0) })), passes: z.array(z.object({ number: z.number().int().positive(), state: z.enum(["OPEN", "COMPLETED"]), candidates: z.array(z.object({ applicationId: id, ballots: z.array(z.object({ memberId: id, decision: z.enum(["PASS", "HOLD", "NOT_PASS"]), createdAt: z.date() })) })) })) })).optional(),
+    tutorials: z.object({ student: z.object({ status: z.enum(["IN_PROGRESS", "SKIPPED", "COMPLETED"]), step: z.number().int().min(0).max(7), version: z.literal(1) }), leader: z.object({ status: z.enum(["IN_PROGRESS", "SKIPPED", "COMPLETED"]), step: z.number().int().min(0).max(5), version: z.literal(1) }) }).optional(),
+    observations: z.array(z.object({ id, applicationId: id, kind: z.enum(["PRO", "CON"]), body: z.string().min(1).max(3000), author: z.string(), own: z.boolean(), createdAt: z.union([z.string().datetime(), z.date()]), updatedAt: z.union([z.string().datetime(), z.date()]) })).optional(),
+    applicantDisplay: z.record(z.object({ config: displayConfigSchema, version: z.number().int().min(0) })).optional(),
+    interviewRooms: z.array(z.object({ id, clubId: id, roundId: id, panelMemberIds: z.array(id), slots: z.array(z.object({ id, startTime: z.union([z.string().datetime(), z.date()]), endTime: z.union([z.string().datetime(), z.date()]), capacity: z.number().int().positive() })) }).passthrough()).optional(),
+    roomBookings: z.array(z.object({ id, applicationId: id, slotId: id, roomId: id, roundId: id, startTime: z.union([z.string().datetime(), z.date()]), endTime: z.union([z.string().datetime(), z.date()]) }).passthrough()).optional(),
     version: z.literal(1),
     anchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     perspective: z.object({ role: z.enum(["student", "leader"]), clubId: id }),
@@ -115,9 +121,23 @@ export const demoSnapshotSchema = z
     if ((s.corkboard ?? []).some(item => !clubs.has(item.clubId)) || new Set((s.corkboard ?? []).map(item => item.clubId)).size !== (s.corkboard ?? []).length) invalid()
     for (const session of s.votingSessions ?? []) {
       if (!s.clubs.find(c => c.id === session.clubId)?.rounds.some(r => r.id === session.roundId) || session.participants.some(p => !s.memberships.some(m => m.id === p.memberId && m.clubId === session.clubId)) || session.candidates.some(c => !s.applications.some(a => a.id === c.applicationId && a.clubId === session.clubId))) invalid()
+      if (new Set(session.participants.map(p => p.memberId)).size !== session.participants.length || new Set(session.candidates.map(c => c.applicationId)).size !== session.candidates.length || new Set(session.passes.map(p => p.number)).size !== session.passes.length || session.currentPass !== (session.passes.at(-1)?.number ?? 0)) invalid()
       for (const pass of session.passes) for (const candidate of pass.candidates) {
         if (!session.candidates.some(c => c.applicationId === candidate.applicationId) || candidate.ballots.some(b => !session.participants.some(p => p.memberId === b.memberId)) || new Set(candidate.ballots.map(b => b.memberId)).size !== candidate.ballots.length) invalid()
       }
+    }
+    for (const [roundId] of Object.entries(s.applicantDisplay ?? {})) if (!s.clubs.some(c => c.rounds.some(r => r.id === roundId))) invalid()
+    if (new Set((s.observations ?? []).map(o => o.id)).size !== (s.observations ?? []).length || (s.observations ?? []).some(o => !applications.has(o.applicationId))) invalid()
+    const bookingKeys = new Set<string>()
+    for (const room of s.interviewRooms ?? []) {
+      if (!s.clubs.find(c => c.id === room.clubId)?.rounds.some(r => r.id === room.roundId) || room.panelMemberIds.some(id => !s.memberships.some(m => m.id === id && m.clubId === room.clubId)) || new Set(room.slots.map(slot => slot.id)).size !== room.slots.length || room.slots.some(slot => +new Date(slot.endTime) <= +new Date(slot.startTime))) invalid()
+    }
+    for (const booking of s.roomBookings ?? []) {
+      const room = s.interviewRooms?.find(r => r.id === booking.roomId), slot = room?.slots.find(slot => slot.id === booking.slotId)
+      const app = s.applications.find(a => a.id === booking.applicationId), key = `${booking.applicationId}:${booking.roundId}`
+      if (!room || !slot || !app || app.clubId !== room.clubId || booking.roundId !== room.roundId || +new Date(booking.startTime) !== +new Date(slot.startTime) || +new Date(booking.endTime) !== +new Date(slot.endTime) || bookingKeys.has(key) || !s.slots.some(s => s.id === booking.id && s.applicationId === app.id)) invalid()
+      bookingKeys.add(key)
+      if (slot && (s.roomBookings ?? []).filter(b => b.slotId === slot.id).length > slot.capacity) invalid()
     }
     for (const slot of s.slots) {
       if (slot.endTime <= slot.startTime || !s.memberships.some(m => m.id === slot.interviewerId && m.clubId === slot.clubId) || (slot.applicationId && !s.applications.some(a => a.id === slot.applicationId && a.clubId === slot.clubId))) invalid()
