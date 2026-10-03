@@ -11,6 +11,7 @@ import { isUvaEmail, signInReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
+import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
 
 /** Standard Microsoft 4-square logo — no extra dependency. */
 function MicrosoftIcon({ className }: { className?: string }) {
@@ -40,6 +41,12 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"email" | "verify">("email")
   const [error, setError] = useState(initialError)
+  const [resendSeconds, setResendSeconds] = useState(0)
+  useEffect(() => {
+    if (resendSeconds <= 0) return
+    const timer = setTimeout(() => setResendSeconds(value => Math.max(0, value - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [resendSeconds])
   const [notice, setNotice] = useState("")
 
   // Sync initialError prop (may arrive after mount if AppShell reads URL params)
@@ -73,7 +80,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
 
   async function signIn(event: FormEvent) {
     event.preventDefault()
-    if (isImpersonating) return
+    if (isImpersonating || loading) return
     if (!isUvaEmail(email)) { setError("Use your UVA email ending in @virginia.edu."); return }
     setLoading(true)
     setError("")
@@ -86,15 +93,17 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   }
 
   async function requestCode() {
-    if (isImpersonating) return
+    if (isImpersonating || loading || resendSeconds > 0) return
     if (!isUvaEmail(email)) { setError("Enter your UVA email first."); return }
     setLoading(true)
     setError("")
     try {
       const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } })
-      if (error) { setError(error.message); return }
+      if (error) { setError(authEmailError(error, "send")); if (error.status === 429) setResendSeconds(60); return }
+      setEmail(email.trim().toLowerCase())
+      setResendSeconds(60)
       setStep("verify")
-      setNotice(`We sent a verification code to ${email}.`)
+      setNotice(`Code sent. We sent a 6-digit code to ${email}.`)
     } catch { setError("Unable to send a code. Try signing in with your password.") }
     finally { setLoading(false) }
   }
@@ -102,16 +111,22 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   async function verifyCode(event: FormEvent) {
     event.preventDefault()
     if (isImpersonating) return
-    if (loading) return
+    if (loading || !/^\d{6}$/.test(code)) return
     setLoading(true)
     setError("")
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
+      const { data: verified, error: verifyError } = await supabase.auth.verifyOtp({
         email: email.trim().toLowerCase(),
         token: code,
         type: "email",
       })
-      if (verifyError) { setError(verifyError.message); return }
+      if (verifyError) { setError(authEmailError(verifyError, "verify")); return }
+      const { data: current, error: identityError } = await supabase.auth.getUser()
+      if (identityError || !confirmedEmailSession({ session: verified.session, user: current.user }, email)) {
+        await supabase.auth.signOut()
+        setError("Unable to confirm your sign-in. Please try again.")
+        return
+      }
       window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch {
       setError("Unable to verify this code. Please try again.")
@@ -185,7 +200,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                 <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Forgot password?</Link>
                 {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
                 <Button type="submit" disabled={loading || !password || microsoftLoading} className="h-12 w-full">{loading ? "Signing in…" : "Sign in"}<ArrowRight className="size-4" /></Button>
-                <button type="button" disabled={loading || microsoftLoading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead (requires email delivery)</button>
+                <button type="button" disabled={loading || microsoftLoading} onClick={requestCode} className="w-full text-center text-xs text-neutral-500 underline">Use an email code instead</button>
               </form>
             </>
           ) : (
@@ -196,10 +211,10 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
                 <Input key="code" id="verification-code" autoFocus inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "").slice(0, 6)); setError("") }} aria-invalid={!!error} aria-describedby={error ? "auth-error" : undefined} placeholder="000000" className="h-14 text-center text-2xl tracking-[0.4em]" />
               </div>
               {error && <p id="auth-error" role="alert" className="text-sm text-red-600">{error}</p>}
-              <Button type="submit" disabled={code.length !== 6} className="h-12 w-full">Verify and log in<ArrowRight className="size-4" /></Button>
+              <Button type="submit" disabled={loading || code.length !== 6} className="h-12 w-full">Verify and log in<ArrowRight className="size-4" /></Button>
               <div className="flex flex-wrap justify-between gap-3 text-xs">
-                <button type="button" onClick={requestCode} disabled={loading} className="font-medium text-neutral-600 hover:text-neutral-900">Resend code</button>
-                <button type="button" onClick={() => { setStep("email"); setCode(""); setError(""); setNotice("") }} className="font-medium text-neutral-600 hover:text-neutral-900">Use a different email</button>
+                <button type="button" onClick={requestCode} disabled={loading || resendSeconds > 0} className="font-medium text-neutral-600 hover:text-neutral-900">{resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Resend code"}</button>
+                <button type="button" disabled={loading} onClick={() => { setStep("email"); setCode(""); setError(""); setNotice("") }} className="font-medium text-neutral-600 hover:text-neutral-900">Use a different email</button>
               </div>
             </form>
           )}

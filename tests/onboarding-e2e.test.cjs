@@ -3,7 +3,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {PrismaClient}=require('@prisma/client');
-const {Actor,totp,readConfig,randomUUID}=require('./helpers/onboarding-e2e.cjs');
+const {createClient}=require('@supabase/supabase-js');
+const {Actor,totp,readConfig,confirmationMessage,randomUUID}=require('./helpers/onboarding-e2e.cjs');
 const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 
 test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP',{skip:!configFile,timeout:180000},async t=>{
@@ -16,6 +17,41 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
  const call=(actor,file,name,...args)=>actor.action('actions/'+file+'.ts',name,args);
  let clubId,ownerInvitation,preview,importResult,memberInvitation;
  const complete=new Set();async function scenario(title,fn){await t.test(title,async()=>{await fn();complete.add(title);});assert.ok(complete.has(title),`Stop dependent scenarios after ${title} failed`);}
+ await scenario('OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login',async()=>{
+  const actor=new Actor(config),email=`otp${suffix}@virginia.edu`,password='Local-otp-only!2026';
+  const created=await actor.action('actions/onboarding.ts','registerStudent',[{firstName:'OTP',lastName:'Test',email,password}]);
+  assert.equal(created.authenticated,false);assert.ok(!created.error,created.error);
+  const authAdmin=createClient(config.status.API_URL,config.status.SECRET_KEY||config.status.SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+  const before=await authAdmin.auth.admin.listUsers();assert.equal(before.error,null);
+  const pending=before.data.users.find(user=>user.email===email);assert.ok(pending);assert.ok(!pending.email_confirmed_at);
+  assert.equal((await actor.client.auth.getSession()).data.session,null);
+  assert.ok((await actor.client.auth.signInWithPassword({email,password})).error);
+  const first=await confirmationMessage(config,email);assert.ok(/\b\d{6}\b/.test(first.Text));assert.ok(!first.HTML.includes('/auth/v1/verify'));
+  const code=first.Text.match(/\b(\d{6})\b/)[1],wrong=code==='000000'?'000001':'000000';
+  assert.ok((await actor.client.auth.verifyOtp({email,token:wrong,type:'email'})).error);
+  // Respect the production-length resend cooldown rather than weakening it for the test.
+  await new Promise(resolve=>setTimeout(resolve,61000));
+  const resent=await actor.client.auth.resend({type:'signup',email});assert.equal(resent.error,null);
+  const second=await confirmationMessage(config,email);assert.notEqual(second.ID,first.ID);
+  const correct=second.Text.match(/\b(\d{6})\b/)[1];
+  const verified=await actor.client.auth.verifyOtp({email,token:correct,type:'email'});assert.equal(verified.error,null);assert.ok(verified.data.session);
+  actor.user=verified.data.user;assert.ok(actor.user.email_confirmed_at);
+  assert.ok((await actor.client.auth.getUser()).data.user.email_confirmed_at);
+  assert.ok((await actor.client.auth.getSession()).data.session);
+  assert.ok((await actor.client.auth.verifyOtp({email,token:correct,type:'email'})).error);
+  await actor.profile('OTP Test',2028);
+  assert.equal((await actor.request('/')).status,200);
+  assert.equal((await actor.request('/api/users/me')).status,200);
+  await actor.client.auth.signOut();await actor.signIn(email,password);
+  assert.equal((await actor.request('/api/users/me')).status,200);
+  await actor.client.auth.signOut();
+  const login=await actor.client.auth.signInWithOtp({email,options:{shouldCreateUser:false}});assert.equal(login.error,null);
+  const loginMessage=await confirmationMessage(config,email,/Your OutClass sign-in code/);
+  const loginCode=loginMessage.Text.match(/\b(\d{6})\b/)[1];
+  const loginVerified=await actor.client.auth.verifyOtp({email,token:loginCode,type:'email'});assert.equal(loginVerified.error,null);assert.ok(loginVerified.data.session);
+  const absent=await actor.client.auth.signInWithOtp({email:`absent${suffix}@virginia.edu`,options:{shouldCreateUser:false}});assert.ok(absent.error);
+  const after=await authAdmin.auth.admin.listUsers();assert.ok(!after.data.users.some(user=>user.email===`absent${suffix}@virginia.edu`));
+ });
  await scenario('A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard',async()=>{
   const count=await db.user.count();
   const result=await call(admin,'platform-organization-onboarding','createOrganizationAndInvitePresident',{requestId:randomUUID(),identifierTypeId:'school-uva-computing-id',organizationName:name,presidentName:'John Smith',presidentIdentifier:` ${ids.president.toUpperCase()} `,presidentYear:'2027',reason:'Isolated complete onboarding end-to-end validation'});

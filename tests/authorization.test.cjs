@@ -44,7 +44,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
       createClient: async () => ({
         auth: {
           getUser: async () => ({
-            data: { user: { id: "actor", email: "actor@virginia.edu" } },
+            data: { user: { id: "actor", email: "actor@virginia.edu", email_confirmed_at: "2026-01-01" } },
             error: null,
           }),
         },
@@ -149,7 +149,7 @@ function accessHarness(actor, target, invitation, options = {}) {
       "@/utils/verified-email-policy": { ...load('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => {} },
       "@/utils/prisma": { prisma: { $transaction: async (fn) => fn(tx) } },
       "@/utils/auth": {
-        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu" }, supabaseUser: { id: "actor", email: "actor@virginia.edu", confirmation_sent_at: '2026-09-01', email_confirmed_at: options.unverified ? null : "2026-09-25", app_metadata: { email_verification_skipped: !!options.skippedVerification } } }),
+        requireAuth: async () => ({ user: { id: "actor", email: "actor@virginia.edu", email_confirmed_at: "2026-01-01" }, supabaseUser: { id: "actor", email: "actor@virginia.edu", email_confirmed_at: "2026-01-01", confirmation_sent_at: '2026-09-01', email_confirmed_at: options.unverified ? null : "2026-09-25", app_metadata: { email_verification_skipped: !!options.skippedVerification } } }),
       },
       "@/lib/permissions": permissions,
       "@/lib/auth": authPolicy,

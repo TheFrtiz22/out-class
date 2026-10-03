@@ -1,6 +1,6 @@
 export function hasConfirmedUniversityEmail(account: {
   user: { id: string; email: string };
-  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown> };
+  supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown>; identities?: { provider: string; user_id: string; identity_data?: Record<string, unknown> }[] };
 }) {
   const { user, supabaseUser: auth } = account;
   const sent = Date.parse(auth.confirmation_sent_at || "");
@@ -13,8 +13,10 @@ export function hasConfirmedUniversityEmail(account: {
     proof.email === auth.email?.trim().toLowerCase() && proof.emailConfirmedAt === auth.email_confirmed_at &&
     typeof proof.verifiedAt === "string" && Number.isFinite(Date.parse(proof.verifiedAt)) &&
     Date.parse(proof.verifiedAt) >= confirmed && Date.parse(proof.verifiedAt) <= Date.now();
+  const microsoft = auth.identities?.some(identity => identity.provider === "azure" && identity.user_id === auth.id &&
+    typeof identity.identity_data?.email === "string" && identity.identity_data.email.trim().toLowerCase() === auth.email?.trim().toLowerCase());
   return auth.id === user.id && auth.email?.trim().toLowerCase() === user.email.trim().toLowerCase() &&
-    Number.isFinite(confirmed) && (recovered ||
+    Number.isFinite(confirmed) && (microsoft || recovered ||
       (auth.app_metadata?.email_verification_skipped !== true && Number.isFinite(sent) && confirmed >= sent));
 }
 

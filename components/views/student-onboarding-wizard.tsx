@@ -1,10 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
 import { InvitationProfileSuggestions } from "@/components/invitation-profile-suggestions"
 import type { InvitationProfileDefaults } from "@/lib/organization-claiming"
 import { useAuth } from "@/contexts/auth-context"
-import { useState, useRef, useCallback, type DragEvent } from "react"
+import { useState, useRef, useCallback, useEffect, type DragEvent } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
@@ -204,7 +205,7 @@ export function StudentOnboardingWizard({
 }: {
   onComplete: () => void
   embedded?: boolean
-  initialUser?: { email?: string; user_metadata?: Record<string, any> } | null
+  initialUser?: { email?: string; email_confirmed_at?: string | null; user_metadata?: Record<string, any> } | null
   onBack?: () => void
   onSignIn?: () => void
 }) {
@@ -213,7 +214,14 @@ export function StudentOnboardingWizard({
   const [globalError, setGlobalError] = useState("")
   const [loading, setLoading] = useState(false)
   const [codeSent, setCodeSent] = useState(false)
-  const [accountCreated, setAccountCreated] = useState(!!initialUser)
+  const [accountCreated, setAccountCreated] = useState(!!initialUser?.email_confirmed_at)
+  const [resendSeconds, setResendSeconds] = useState(0)
+  const [notice, setNotice] = useState("")
+  useEffect(() => {
+    if (resendSeconds <= 0) return
+    const timer = setTimeout(() => setResendSeconds(value => Math.max(0, value - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [resendSeconds])
   const [resumeFile, setResumeFile] = useState<File | null>(null)
 
   // Accumulated wizard data persisted across step changes
@@ -233,27 +241,21 @@ export function StudentOnboardingWizard({
     defaultValues: { firstName: initialUser?.user_metadata?.first_name ?? "", lastName: initialUser?.user_metadata?.last_name ?? "", email: initialUser?.email ?? "", password: "" },
   })
 
-  function onStep1Submit(data: AccountBasicsData) {
+  async function onStep1Submit(data: AccountBasicsData) {
+    if (isImpersonating || loading) return
     setGlobalError("")
     wizardData.current.accountBasics = { firstName: data.firstName, lastName: data.lastName, email: data.email }
-    setStep(accountCreated ? 3 : 2)
-  }
-
-  async function createAccount(skipVerification: boolean) {
-    if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
-    if (loading) return
+    if (accountCreated) { setStep(3); return }
     setLoading(true)
-    setGlobalError("")
     try {
-      const result = await registerStudent(step1Form.getValues(), skipVerification)
+      const result = await registerStudent(step1Form.getValues())
       if (result.error) { setGlobalError(result.error); return }
-      if (result.authenticated) {
-        setAccountCreated(true)
-        step1Form.setValue("password", "")
-        setStep(3)
-      } else {
-        setCodeSent(true)
-      }
+      setCodeSent(true)
+      setResendSeconds(60)
+      setNotice("")
+      step2Form.reset()
+      step1Form.setValue("password", "")
+      setStep(2)
     } catch {
       setGlobalError("Unable to create your account. Please try again.")
     } finally { setLoading(false) }
@@ -268,36 +270,47 @@ export function StudentOnboardingWizard({
 
   async function onStep2Submit(data: OtpVerifyData) {
     if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
+    if (loading) return
     setGlobalError("")
     setLoading(true)
     try {
       const email = wizardData.current.accountBasics!.email
-      const { error } = await supabase.auth.verifyOtp({
+      const { data: verified, error } = await supabase.auth.verifyOtp({
         email,
         token: data.code,
         type: "email",
       })
       if (error) {
-        setGlobalError(error.message)
+        setGlobalError(authEmailError(error, "verify"))
+        return
+      }
+      const { data: current, error: identityError } = await supabase.auth.getUser()
+      if (identityError || !confirmedEmailSession({ session: verified.session, user: current.user }, email)) {
+        await supabase.auth.signOut()
+        setGlobalError("Unable to confirm your email. Please verify again.")
         return
       }
       setAccountCreated(true)
       step1Form.setValue("password", "")
       setStep(3)
-    } catch (err: any) {
-      setGlobalError(err?.message ?? "Something went wrong")
+    } catch {
+      setGlobalError("Unable to verify this code. Check your connection and try again.")
     } finally {
       setLoading(false)
     }
   }
 
   async function resendCode() {
+    if (loading || resendSeconds > 0) return
     if (isImpersonating) { setGlobalError("Exit impersonation before changing authentication."); return }
     setLoading(true)
     setGlobalError("")
     try {
       const { error } = await supabase.auth.resend({ type: "signup", email: wizardData.current.accountBasics!.email })
-      if (error) setGlobalError(error.message)
+      if (error) {
+        setGlobalError(authEmailError(error, "send"))
+        if (error.status === 429) setResendSeconds(60)
+      } else { setNotice("Code sent"); setResendSeconds(60) }
     } catch { setGlobalError("Unable to resend the code. Please try again.") }
     finally { setLoading(false) }
   }
@@ -529,22 +542,16 @@ export function StudentOnboardingWizard({
             <>
               <div className="mb-6">
                 <h2 className="oc-section-heading text-neutral-900">
-                  {codeSent ? "Check your inbox" : "Email verification"}
+                  Verify your email
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
-                  {codeSent ? "Enter the verification code sent to " : "Create your account for "}
+                  We sent a 6-digit code to{" "}
                   <strong className="break-all font-medium text-neutral-900">
                     {wizardData.current.accountBasics?.email}
                   </strong>
                 </p>
               </div>
 
-              {!codeSent && <div className="space-y-3">
-                <p className="text-sm leading-6 text-neutral-500">Email delivery isn’t connected yet. Skip verification for now and sign in with your password.</p>
-                <Button className="w-full" disabled={loading} onClick={() => createAccount(true)}>{loading ? <Loader2 className="size-4 animate-spin" /> : "Skip verification & create account"}</Button>
-                <Button variant="outline" className="w-full" disabled={loading} onClick={() => createAccount(false)}>Send verification email</Button>
-                <Button variant="ghost" className="w-full" disabled={loading} onClick={() => { setStep(1); setGlobalError("") }}>Edit account details</Button>
-              </div>}
               {codeSent && <form
                 onSubmit={step2Form.handleSubmit(onStep2Submit)}
                 className="space-y-5"
@@ -552,6 +559,10 @@ export function StudentOnboardingWizard({
                 <div className="flex justify-center">
                   <InputOTP
                     maxLength={6}
+                    pattern="[0-9]*"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    aria-label="Six-digit verification code"
                     value={step2Form.watch("code")}
                     onChange={(value) =>
                       step2Form.setValue("code", value, {
@@ -585,25 +596,29 @@ export function StudentOnboardingWizard({
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
                     <>
-                      Verify & continue
+                      Verify email
                       <ArrowRight className="size-4" />
                     </>
                   )}
                 </Button>
 
+                {notice && <p role="status" className="text-center text-sm">{notice}</p>}
                 <div className="flex justify-between text-xs">
                   <button
                     type="button"
                     onClick={resendCode}
-                    disabled={loading}
+                    disabled={loading || resendSeconds > 0}
                     className="font-medium text-neutral-600 hover:text-neutral-900"
                   >
-                    Resend code
+                    {resendSeconds > 0 ? `Resend in ${resendSeconds}s` : "Didn’t receive it? Resend code"}
                   </button>
                   <button
                     type="button"
+                    disabled={loading}
                     onClick={() => {
                       setStep(1)
+                      setCodeSent(false)
+                      setNotice("")
                       step2Form.reset()
                       setGlobalError("")
                     }}

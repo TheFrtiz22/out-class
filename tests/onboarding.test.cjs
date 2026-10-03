@@ -29,53 +29,47 @@ test('validates and normalizes account and academic fields', () => {
   assert.equal(schemas.experienceAssetsSchema.safeParse({ linkedinUrl: 'https://www.linkedin.com/in/student', experiences: [{ title: 'Member', subtitle: 'Club', period: '2026' }] }).success, true)
 })
 
-test('skip creates a new password account and authenticates, without an email request', async () => {
+test('signup never bypasses confirmation, even with obsolete skip arguments and environment flag', async () => {
   process.env.ALLOW_UNVERIFIED_SIGNUP = 'true'
-  process.env.SUPABASE_SECRET_KEY = 'test-only-key'
-  const calls = []
-  const { registerStudent } = load('actions/onboarding.ts', {
-    'next/headers': { cookies: async () => ({ has: () => false }) },
-    '@/lib/onboarding-schemas': schemas,
-    '@/utils/supabase/server': { createClient: async () => ({ auth: {
-      signInWithPassword: async input => { calls.push(['signin', input]); return { error: null } },
-      signUp: async () => { throw new Error('Must not send signup email') },
-    } }) },
-    '@supabase/supabase-js': { createClient: () => ({ auth: { admin: {
-      createUser: async input => { calls.push(['create', input]); return { error: null } },
-    } } }) },
-  })
-  assert.deepEqual(await registerStudent(account, true), { authenticated: true })
-  assert.equal(calls[0][1].email_confirm, true)
-  assert.equal(calls[0][1].app_metadata.email_verification_skipped, true)
-  assert.equal(calls[1][1].password, account.password)
-})
-
-test('duplicate account never signs in or modifies an existing user', async () => {
-  let signedIn = false
-  const { registerStudent } = load('actions/onboarding.ts', {
-    'next/headers': { cookies: async () => ({ has: () => false }) },
-    '@/lib/onboarding-schemas': schemas,
-    '@/utils/supabase/server': { createClient: async () => ({ auth: { signInWithPassword: async () => { signedIn = true } } }) },
-    '@supabase/supabase-js': { createClient: () => ({ auth: { admin: { createUser: async () => ({ error: { message: 'duplicate' } }) } } }) },
-  })
-  assert.match((await registerStudent(account, true)).error, /sign in/i)
-  assert.equal(signedIn, false)
-  assert.ok((await registerStudent({ ...account, email: 'wrong@example.com' }, true)).error)
-})
-
-test('verification remains required when skipping is disabled in both app and Supabase', async () => {
-  process.env.ALLOW_UNVERIFIED_SIGNUP = 'false'
   const originalFetch = global.fetch
-  global.fetch = async () => ({ ok: true, json: async () => ({ mailer_autoconfirm: false }) })
+  let settings = { mailer_autoconfirm: false, external: { email: true } }, result = { data: { user: { id: 'new', identities: [{}] }, session: null }, error: null }
+  const calls = []
+  global.fetch = async () => ({ ok: true, json: async () => settings })
+  const { registerStudent } = load('actions/onboarding.ts', {
+    'next/headers': { cookies: async () => ({ has: () => false }) },
+    '@/lib/onboarding-schemas': schemas,
+    '@/lib/auth-email': load('lib/auth-email.ts', { '@/lib/auth': load('lib/auth.ts') }),
+    '@/utils/supabase/server': { createClient: async () => ({ auth: {
+      signUp: async input => { calls.push(input); return result },
+      signOut: async () => calls.push('signout'),
+    } }) },
+  })
   try {
-    const { registerStudent } = load('actions/onboarding.ts', {
-      'next/headers': { cookies: async () => ({ has: () => false }) },
-      '@/lib/onboarding-schemas': schemas,
-      '@/utils/supabase/server': { createClient: async () => ({ auth: {} }) },
-      '@supabase/supabase-js': { createClient: () => { throw new Error('Admin must not be used') } },
-    })
-    assert.match((await registerStudent(account, true)).error, /still required/)
-  } finally { global.fetch = originalFetch }
+    assert.deepEqual(await registerStudent(account, true), { authenticated: false })
+    assert.deepEqual(calls[0], { email: account.email, password: account.password, options: { data: { first_name: 'Test', last_name: 'Student' } } })
+    for (const unsafe of [{ mailer_autoconfirm: true, external: { email: true } }, {}, { mailer_autoconfirm: false, external: { email: false } }]) {
+      settings = unsafe; assert.ok((await registerStudent(account)).error); assert.equal(calls.length, 1)
+    }
+    settings = { mailer_autoconfirm: false, external: { email: true } }
+    result = { data: { user: { identities: [] }, session: null }, error: null }
+    assert.match((await registerStudent(account)).error, /sign in/i)
+    result = { data: { user: { identities: [{}], email_confirmed_at: '2026-01-01' }, session: {} }, error: null }
+    assert.ok((await registerStudent(account)).error); assert.equal(calls.at(-1), 'signout')
+    global.fetch = async () => { throw Error('offline') }
+    assert.match((await registerStudent(account)).error, /reach/)
+  } finally { global.fetch = originalFetch; delete process.env.ALLOW_UNVERIFIED_SIGNUP }
+})
+
+test('OTP format, confirmed identity/session and safe errors are enforced', () => {
+  const api = load('lib/auth-email.ts', { '@/lib/auth': load('lib/auth.ts') })
+  for (const code of ['12345', '1234567', 'abcdef', '123 45', '１２３４５６']) assert.equal(schemas.otpVerifySchema.safeParse({ code }).success, false)
+  assert.equal(schemas.otpVerifySchema.safeParse({ code: '012345' }).success, true)
+  const user = { id: 'verified', email: account.email, email_confirmed_at: '2026-01-01' }
+  assert.equal(api.confirmedEmailSession({ session: { user }, user }, account.email), true)
+  for (const data of [{ session: null, user }, { session: { user }, user: { ...user, id: 'other' } }, { session: { user }, user: { ...user, email_confirmed_at: null } }, { session: { user }, user: { ...user, email: 'other@virginia.edu' } }]) assert.equal(api.confirmedEmailSession(data, account.email), false)
+  assert.match(api.authEmailError({ status: 429 }, 'send'), /Too many/)
+  assert.match(api.authEmailError({ code: 'otp_expired' }, 'verify'), /expired/)
+  assert.ok(!api.authEmailError({ message: 'internal secret' }, 'verify').includes('internal secret'))
 })
 
 test('profile saving derives identity from session and persists experience', async () => {

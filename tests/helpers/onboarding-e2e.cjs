@@ -17,10 +17,10 @@ function readConfig(filename){
  }
  return config;
 }
-async function confirmationMessage(config,email){
+async function confirmationMessage(config,email,subject=/Verify your UVA email/){
  for(let attempt=0;attempt<30;attempt++){
   const list=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();
-  const match=list.messages.find(m=>m.To.some(to=>to.Address===email)&&/Confirm/.test(m.Subject));
+  const match=list.messages.find(m=>m.To.some(to=>to.Address===email)&&subject.test(m.Subject));
   if(match)return(await fetch(config.status.MAILPIT_URL+'/api/v1/message/'+match.ID)).json();
   await new Promise(resolve=>setTimeout(resolve,100));
  }
@@ -58,9 +58,9 @@ class Actor {
  async signIn(email,password){const result=await this.client.auth.signInWithPassword({email,password});if(result.error)throw result.error;this.user=result.data.user;return this.user;}
  async signUp(name,identifier,year){
   const email=identifier+'@virginia.edu',password='Local-test-only!2026';const [firstName,...last]=name.split(' ');
-  const result=await this.action('actions/onboarding.ts','registerStudent',[{firstName,lastName:last.join(' '),email,password},false]);
+  const result=await this.action('actions/onboarding.ts','registerStudent',[{firstName,lastName:last.join(' '),email,password}]);
   assert.ok(!result.error,result.error);assert.equal(result.authenticated,false);
-  const message=await confirmationMessage(this.config,email),code=message.Text.match(/Your code is\s+(\d{6})/)?.[1];assert.ok(code,'Local confirmation template supplies the OTP used by the existing wizard');
+  const message=await confirmationMessage(this.config,email),code=message.Text.match(/\b(\d{6})\b/)?.[1];assert.ok(code,'Local confirmation template supplies the OTP used by the existing wizard');
   const verified=await this.client.auth.verifyOtp({email,token:code,type:'email'});if(verified.error)throw verified.error;
   this.user=verified.data.user;assert.ok(this.user.confirmation_sent_at&&this.user.email_confirmed_at);
   this.credentials={email,password};this.year=year;return this.user;

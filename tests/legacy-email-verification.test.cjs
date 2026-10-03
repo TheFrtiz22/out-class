@@ -22,3 +22,12 @@ test('only consumed recovery token and successful password change can record pro
   assert.equal(response.status,['invalid-token','password-failure'].includes(variant)?400:200);assert.equal(response.headers.get('set-cookie'),null);assert.equal(calls.includes('record'),['success','record-failure'].includes(variant));
  }}finally{for(const [k,v]of [['NEXT_PUBLIC_SUPABASE_URL',saved.url],['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',saved.key],['SUPABASE_SECRET_KEY',saved.secret]])if(v===undefined)delete process.env[k];else process.env[k]=v;}
 });
+
+test('provider-issued Microsoft identity verifies UVA ownership without signup email OTP',()=>{
+ const check=load('utils/verified-email-policy.ts').hasConfirmedUniversityEmail;
+ const user={id:'azure-user',email:'azure@virginia.edu'};
+ const supabaseUser={...user,email_confirmed_at:'2026-01-01',identities:[{provider:'azure',user_id:user.id,identity_data:{email:user.email}}]};
+ assert.equal(check({user,supabaseUser}),true);
+ for(const identity of [{provider:'email',user_id:user.id,identity_data:{email:user.email}},{provider:'azure',user_id:'different',identity_data:{email:user.email}},{provider:'azure',user_id:user.id,identity_data:{email:'other@virginia.edu'}}])assert.equal(check({user,supabaseUser:{...supabaseUser,identities:[identity]}}),false);
+ assert.equal(check({user,supabaseUser:{...supabaseUser,email_confirmed_at:null}}),false);
+});
