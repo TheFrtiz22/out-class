@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type CSSProperties } from "react"
+import { useState, type ReactNode, type CSSProperties } from "react"
 import Image from "next/image"
 import { CampusRibbon } from "@/components/product/campus-ribbon"
 import { ArrowRight } from "lucide-react"
@@ -8,10 +8,11 @@ import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import type { DirectoryClub } from "@/lib/club-directory"
 
 /** Use club-owned imagery when available; never invent a club photograph. */
-export function DiscoveryCard({ club, entry, onOpen }: {
+export function DiscoveryCard({ club, entry, onOpen, action }: {
   club: DirectoryClub
   entry: string
   onOpen: () => void
+  action?: ReactNode
 }) {
   const [failedBanner, setFailedBanner] = useState<string | null>(null)
   const hasBanner = !!club.bannerUrl && failedBanner !== club.bannerUrl
@@ -31,6 +32,7 @@ export function DiscoveryCard({ club, entry, onOpen }: {
           <span data-available={available}>{club.source === "preview" ? "Sample club" : available ? "Application available" : club.claimed === false ? "Unclaimed profile" : "Explore club"}</span>
           <ArrowRight size={18} aria-hidden="true" />
         </div>
+        {action && <div className="relative z-10 mt-3">{action}</div>}
       </div>
     </article>
   </li>

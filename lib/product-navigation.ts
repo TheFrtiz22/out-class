@@ -1,12 +1,21 @@
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
-export type PersonalSection = "discover" | "categories" | "calendar" | "applications" | "interviews" | "decisions" | "clubs" | "meetings" | "tasks"
+export type PersonalSection = "explore" | "corkboard" | "calendar" | "applications" | "interviews" | "decisions" | "clubs" | "meetings" | "tasks"
 export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean }
-export const personalNavigation: Record<string, ProductNavItem[]> = {
-  explore: [{ id: "discover", label: "Discover" }, { id: "categories", label: "Categories" }, { id: "calendar", label: "Calendar" }],
-  applications: [{ id: "applications", label: "All Applications" }, { id: "interviews", label: "Interviews" }, { id: "decisions", label: "Decisions" }],
-  clubs: [{ id: "clubs", label: "Overview" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
+export const personalModes: ProductNavItem[] = [
+  { id: "explore", label: "Explore" }, { id: "corkboard", label: "Corkboard" },
+  { id: "applications", label: "Applications" }, { id: "clubs", label: "My Clubs" },
+]
+export function personalItems(hasMemberships: boolean): ProductNavItem[] {
+  return [
+    { id: "student-dashboard", label: "Home" }, { id: "explore", label: "Explore" },
+    { id: "corkboard", label: "Corkboard" }, { id: "applications", label: "Applications" },
+    { id: "interviews", label: "Interviews" }, { id: "calendar", label: "Calendar" },
+    { id: "clubs", label: "My Clubs" }, { id: "decisions", label: "Decisions" },
+    ...(hasMemberships ? [{ id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }] : []),
+  ]
 }
 export function personalMode(section: PersonalSection) {
+  if (section === "corkboard") return "corkboard"
   return ["clubs", "meetings", "tasks"].includes(section) ? "clubs" : ["applications", "interviews", "decisions"].includes(section) ? "applications" : "explore"
 }
 export function managerNavigation(member: ClubAccess, clubId: string, mode: string): ProductNavItem[] {

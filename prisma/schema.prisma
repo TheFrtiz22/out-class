@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  corkboardClubs CorkboardClub[]
   reviewObservations ApplicantObservation[]
   schoolIdentities SchoolIdentity[]
   rosterImports    RosterImport[]
@@ -80,6 +81,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  corkboardSaves CorkboardClub[]
   votingSessions VotingSession[]
   schoolId            String           @default("school-uva")
   school              School           @relation(fields: [schoolId], references: [id], onDelete: Restrict)
@@ -866,4 +868,15 @@ model VotingBallot {
   decision String
   createdAt DateTime @default(now())
   @@unique([sessionId, passNumber, applicationId, memberId])
+}
+
+// Personal revisit-later links to the existing club directory, independent of subscriptions/applications.
+model CorkboardClub {
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  savedAt DateTime @default(now())
+  @@id([userId, clubId])
+  @@index([clubId])
 }

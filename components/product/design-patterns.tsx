@@ -32,17 +32,17 @@ const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
   meeting: { id: "reference-meeting", title: "Fall project kickoff", date: new Date("2026-10-06T21:00:00Z"), location: "Newcomb Hall", audience: "MEMBERS" },
   work: [{ id: "reference-assignment", task: { id: "reference-task", title: "Prepare the interview guide", dueAt: new Date("2026-10-05T21:00:00Z"), kind: "TASK" } }],
 }
-const options = ["Discovery", "Club profile", "Applications", "Club overview", "Recruitment", "Scheduling"]
+const options = ["Explore", "Club profile", "Applications", "Club overview", "Recruitment", "Scheduling"]
 
 /** Isolated visual fixtures. Never enables Demo Mode or touches account data. */
 export function DesignPatterns() {
-  const [view, setView] = useState("Discovery")
+  const [view, setView] = useState("Explore")
   const sampleAction = () => toast("Design reference only", { description: "This sample does not change account data." })
   return <section data-product-shell="personal" className="oc-pattern-reference" aria-label="Product pattern reference">
     <PageHeader eyebrow="Populated patterns · fictional reference data" title="One campus. One product." description="Actual product components with isolated visual examples. No account data or demo session is used." />
     <SegmentedControl label="Preview product patterns" options={options.map(label => ({label, value: label}))} value={view} onChange={setView} />
     <div className="oc-pattern-content" key={view} onClickCapture={event => { if ((event.target as HTMLElement).closest("a")) { event.preventDefault(); sampleAction() } }}>
-      {view === "Discovery" && <ul className="oc-explore-grid">{clubs.map(club => <DiscoveryCard key={club.id} club={club} entry={club.id} onOpen={sampleAction} />)}</ul>}
+      {view === "Explore" && <ul className="oc-explore-grid">{clubs.map(club => <DiscoveryCard key={club.id} club={club} entry={club.id} onOpen={sampleAction} />)}</ul>}
       {view === "Club profile" && <MarketingProfile profile={{ ...profileDraft(clubs[0]), tagline: "Design is better together.", marketing: { ...profileDraft(clubs[0]).marketing, benefits: ["Work on a campus project", "Learn from other student designers"], memberCount: 28, showMembers: true }, description: "Fictional visual reference." }} />}
       {view === "Applications" && <div className="oc-applications" data-application-scope="all"><ul className="oc-application-list">{clubs.map((club, index) => <li key={club.id}><ApplicationJourneyCard id={club.id} club={club} status={["DRAFTING", "INTERVIEWING", "ACCEPTED"][index]} round={["Applied", "Interview", "Final Decision"][index]} nextStep={["Your draft is ready. Pick up where you left off.", "Your next conversation is booked. Open your application for the details.", "Your decision is ready. Follow the club’s instructions for joining."][index]} onOpen={sampleAction} /></li>)}</ul></div>}
       {view === "Club overview" && <><PageHeader eyebrow={overview.club.name} title="Overview" description="Your club, in motion." /><ManagerOverview data={managerOverview} showRecaps={false} /></>}

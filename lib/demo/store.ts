@@ -44,6 +44,7 @@ export const demoStore = {
     }
     state = demoSnapshotSchema.safeParse(saved).success ? saved! : seed ? structuredClone(seed) : createDemoSeed()
     state!.applicantDisplay ??= {}
+    state!.corkboard ??= state!.clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${state!.anchor}T12:00:00Z`) }))
     state!.votingSessions ??= []
     state!.votingAudit ??= []
     state!.observations ??= []

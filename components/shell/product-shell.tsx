@@ -6,7 +6,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, LayoutGrid, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
+import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
@@ -25,7 +25,7 @@ import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation
 import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 
-const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, discover: Compass, categories: LayoutGrid, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
+const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
 
 export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, onSelect, onNavigate, onReviewTool }: {
   onReviewTool?: (id: string) => void;

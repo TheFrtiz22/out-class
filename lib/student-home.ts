@@ -107,7 +107,7 @@ export function relevantUpdates(notifications: Notification[]) {
 export type NextAction =
   | { kind: "application"; application: HomeApplication }
   | { kind: "event"; event: ClubEvent }
-  | { kind: "discover" }
+  | { kind: "explore" }
 export function nextHomeAction(
   apps: HomeApplication[],
   agenda: ClubEvent[],
@@ -127,5 +127,5 @@ export function nextHomeAction(
       : { kind: "event", event }
   if (draft) return { kind: "application", application: draft }
   if (event) return { kind: "event", event }
-  return { kind: "discover" }
+  return { kind: "explore" }
 }

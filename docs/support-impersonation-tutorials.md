@@ -30,7 +30,7 @@ All current raw queries in application mutations are parameterized `SELECT ... F
 
 The shared ProductShell presents a small non-modal contextual guide with highlights, progress, Back/Next, Skip, Escape, navigation links, and a persistent Tutorial help restart control. It supports narrow screens and keyboard buttons. Failed saves offer a local dismissal instead of trapping the user. Completed/skipped progress persists across devices; stale progress requests cannot reopen it without an explicit restart.
 
-Support reads the customer's saved progress but previews further steps without changing that customer's completion state. Student and leader guides are independent. The guide describes Corkboard conditionally; there is no Corkboard implementation in this repository. It also distinguishes voting permission from decision publishing and does not invent a ballot service.
+Support reads the customer's saved progress but previews further steps without changing that customer's completion state. Student and leader guides are independent. The student guide introduces Explore and persisted Corkboard saves. Its eight step indices and progress schema version remain unchanged, so existing completion state remains compatible. The leader guide distinguishes persisted ballots from explicit decision publishing.
 
 ## Migration and release
 

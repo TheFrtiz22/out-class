@@ -20,7 +20,7 @@ import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
 
 /**
  * Single source of truth for "did the student apply to this club".
- * Discover's Apply/Save action writes here once, and the Application Hub
+ * Explore's application action writes here once, and the Application Hub
  * (tracker), Notification Center (inbox), and Calendar all read from this
  * same context — so they update together instead of drifting out of sync.
  */

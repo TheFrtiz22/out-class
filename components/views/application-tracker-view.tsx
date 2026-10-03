@@ -348,7 +348,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 <RefreshCw className="size-4" />
                 Refresh status
               </Button>
-              <Button variant="ghost" onClick={() => onNavigate?.("discover")}>
+              <Button variant="ghost" onClick={() => onNavigate?.("explore")}>
                 Explore clubs
                 <ArrowRight className="size-4" />
               </Button>
@@ -382,7 +382,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         { label: "decisions", value: applications.filter(item => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)).length },
       ]} />}
       {!applications.length ? (
-        <EmptyState icon={<FilePenLine />} title="Your next chapter is waiting." description="Start exploring clubs. Your drafts, progress, and decisions will find a home here." action={<Button onClick={() => onNavigate?.("discover")}>Discover clubs<ArrowRight className="size-4" /></Button>} />
+        <EmptyState icon={<FilePenLine />} title="Your next chapter is waiting." description="Start exploring clubs. Your drafts, progress, and decisions will find a home here." action={<Button onClick={() => onNavigate?.("explore")}>Explore clubs<ArrowRight className="size-4" /></Button>} />
       ) : (
         <>
           {scope === "all" && <SegmentedControl label="Filter applications" value={filter} onChange={setFilter} options={["All", "Drafts", "In progress", "Decisions"].map(label => ({ label, value: label }))} />}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { SubscribeButton } from "@/components/clubs/subscribe-button"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"
 import { useClubCustomization } from "@/lib/club-customization"
@@ -197,6 +198,7 @@ export function ClubProfileView({
               {error}
             </p>
           )}
+          {!preview && <CorkboardButton club={club} onNavigate={onNavigate} />}
           <SubscribeButton clubId={club.id} disabled={preview} />
           <div className="oc-club-requirements">
             <h3>Before you apply</h3>

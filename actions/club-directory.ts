@@ -104,3 +104,35 @@ export async function startClubApplication(clubId: string) {
   })
   return { applicationId: application.id }
 }
+
+/** Personal saved items use the same public club projection as Explore. */
+export async function getCorkboard() {
+  const { requireAuth } = await import("@/utils/auth")
+  const { user } = await requireAuth()
+  const records = await prisma.corkboardClub.findMany({
+    where: { userId: user.id },
+    include: { club: { select: publicFields } },
+    orderBy: [{ savedAt: "desc" }, { clubId: "asc" }],
+  })
+  return { items: records.map(record => ({ club: present(record.club), savedAt: record.savedAt.toISOString() })) }
+}
+
+/** Explicit idempotent state, rather than a toggle based on stale browser state. */
+export async function setCorkboardClub(input: unknown) {
+  const { corkboardInput } = await import("@/lib/corkboard")
+  const data = corkboardInput.parse(input)
+  const { requireAuth } = await import("@/utils/auth")
+  const { user } = await requireAuth()
+  if (!data.saved) {
+    await prisma.corkboardClub.deleteMany({ where: { userId: user.id, clubId: data.clubId } })
+    return { saved: false, savedAt: null }
+  }
+  const club = await prisma.club.findUnique({ where: { id: data.clubId }, select: { id: true } })
+  if (!club) throw new Error("This club is no longer available.")
+  const record = await prisma.corkboardClub.upsert({
+    where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
+    create: { userId: user.id, clubId: data.clubId },
+    update: {},
+  })
+  return { saved: true, savedAt: record.savedAt.toISOString() }
+}

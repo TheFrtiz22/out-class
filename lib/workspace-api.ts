@@ -1,4 +1,5 @@
 "use client"
+import { corkboardInput } from "@/lib/corkboard"
 import * as votingApi from "@/actions/voting"
 import * as demoVoting from "@/lib/demo/voting"
 import * as applicantIntelligence from "@/actions/applicant-intelligence"
@@ -472,3 +473,20 @@ export async function seedVotingDemo(clubId: string) {
   if (!demoStore.active()) throw Error("Sample voting is available only in Demo Mode.")
   return demoVoting.seedVotingDemo(clubId)
 }
+
+// One saved-item boundary. Demo saves reference the same deterministic demo directory.
+export const getCorkboard = adapt(directory.getCorkboard, () => {
+  const s = demoStore.get()
+  const clubs = demoDirectory()
+  return { items: [...s.corkboard].sort((a,b) => b.savedAt.getTime()-a.savedAt.getTime() || a.clubId.localeCompare(b.clubId)).map(item => ({ club: clubs.find(c => c.id === item.clubId)!, savedAt: item.savedAt.toISOString() })) }
+})
+export const setCorkboardClub = adapt(directory.setCorkboardClub, input => {
+  const data = corkboardInput.parse(input)
+  return demoStore.mutate(s => {
+    if (!s.clubs.some(c => c.id === data.clubId)) throw new Error("Club unavailable.")
+    if (!data.saved) { s.corkboard = s.corkboard.filter(item => item.clubId !== data.clubId); return { saved: false, savedAt: null } }
+    let item = s.corkboard.find(item => item.clubId === data.clubId)
+    if (!item) { item = { clubId: data.clubId, savedAt: new Date(`${s.anchor}T12:00:00Z`) }; s.corkboard.push(item) }
+    return { saved: true, savedAt: item.savedAt.toISOString() }
+  })
+})

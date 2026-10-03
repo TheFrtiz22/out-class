@@ -6,6 +6,7 @@ import {
   Table2,
   Bell,
   Compass,
+  Bookmark,
   ClipboardList,
   ShieldAlert,
   MessageSquareText,
@@ -25,7 +26,8 @@ export type ViewId =
   | "student-dashboard"
   | "student-profile"
   | "inbox"
-  | "discover"
+  | "explore"
+  | "corkboard"
   | "tracker"
   | "calendar"
   | "leader-dashboard"
@@ -46,7 +48,8 @@ export const adminClubName = "Virginia Venture Fund"
 /** Standard student navigation, shown when appMode === "student". */
 export const studentNav: NavItem[] = [
   { id: "student-dashboard", title: "Home", icon: Home },
-  { id: "discover", title: "Discover", icon: Compass },
+  { id: "explore", title: "Explore", icon: Compass },
+  { id: "corkboard", title: "Corkboard", icon: Bookmark },
   { id: "tracker", title: "Applications", icon: ClipboardList },
   { id: "calendar", title: "Calendar", icon: CalendarDays },
   { id: "student-profile", title: "Profile", icon: UserRound },
@@ -74,7 +77,8 @@ export const navSections: { label: string; items: NavItem[] }[] = [
     label: "Student",
     items: [
       { id: "student-dashboard", title: "Dashboard", icon: Home },
-      { id: "discover", title: "Discover", icon: Compass },
+      { id: "explore", title: "Explore", icon: Compass },
+      { id: "corkboard", title: "Corkboard", icon: Bookmark },
       { id: "tracker", title: "Application Tracker", icon: ClipboardList },
       { id: "inbox", title: "Inbox", icon: Bell },
       { id: "calendar", title: "Calendar", icon: CalendarDays },
@@ -101,7 +105,8 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   "student-dashboard": { title: "Home", subtitle: "Your applications, next steps, and upcoming events." },
   "student-profile": { title: "Profile", subtitle: "Your identity and club memberships at a glance." },
   inbox: { title: "Notifications", subtitle: "Stay on top of club updates, interviews, and deadlines." },
-  discover: { title: "Discover", subtitle: "Explore clubs and find your next opportunity." },
+  explore: { title: "Explore", subtitle: "Browse clubs, interests, and campus opportunities." },
+  corkboard: { title: "Corkboard", subtitle: "Clubs and opportunities you want to revisit." },
   tracker: { title: "Application Tracker", subtitle: "Your drafts, submissions, and decisions in one place." },
   calendar: { title: "Calendar", subtitle: "Deadlines, interviews, and chats for your clubs." },
   "leader-dashboard": { title: "Applicant CRM", subtitle: "Review, score, and advance your applicants." },

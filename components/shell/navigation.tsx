@@ -10,7 +10,7 @@ export function ShellNavigation({ items, view, onNavigate, label, mobile = false
   label: string
   mobile?: boolean
 }) {
-  return <nav aria-label={label} className={cn(mobile ? "grid grid-cols-5 gap-1" : "space-y-1")}>
+  return <nav aria-label={label} className={cn(mobile ? "grid grid-flow-col auto-cols-fr gap-1" : "space-y-1")}>
     {items.map(({ id, title, icon: Icon }) => {
       const active = view === id
       return <button key={id} type="button" onClick={() => onNavigate(id)} aria-current={active ? "page" : undefined}

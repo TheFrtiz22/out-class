@@ -96,7 +96,7 @@ test("the nearest time-sensitive action wins without turning unknown deadlines i
     "application",
   )
   assert.equal(nextHomeAction(homeApplications([app()], [], []), [], now).kind, "application")
-  assert.equal(nextHomeAction([], [], now).kind, "discover")
+  assert.equal(nextHomeAction([], [], now).kind, "explore")
 })
 test("persisted bookings and attendances keep their timestamps, location, and safe calendar identity", () => {
   const source = {

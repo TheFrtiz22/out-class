@@ -91,6 +91,7 @@ export const demoSnapshotSchema = z
     meetingAttendances: z.array(z.object({ id, eventId: id, studentId: id, checkedInAt: z.date() })).optional(),
     tasks: z.array(z.object({ id, clubId: id, projectId: id.nullable(), assignments: z.array(z.object({ id, taskId: id, memberId: id, userId: id }).passthrough()) }).passthrough()).optional(),
     interviews: z.array(z.object({ id, clubId: id, applicationId: id, roundId: id, interviewerId: id }).passthrough()).optional(),
+    corkboard: z.array(z.object({ clubId: id, savedAt: z.date() })).optional(),
     subscriptions: z.array(id),
     readNotifications: z.array(id),
     deletedNotifications: z.array(id),
@@ -111,6 +112,7 @@ export const demoSnapshotSchema = z
       const club = s.clubs.find(c => c.id === app.clubId)
       if (!club?.rounds.some(r => r.id === app.roundId) || app.answers.some(a => !club.questions.some(q => q.id === a.questionId)) || app.evaluations.some(e => !s.memberships.some(m => m.id === e.interviewerId && m.clubId === app.clubId))) invalid()
     }
+    if ((s.corkboard ?? []).some(item => !clubs.has(item.clubId)) || new Set((s.corkboard ?? []).map(item => item.clubId)).size !== (s.corkboard ?? []).length) invalid()
     for (const session of s.votingSessions ?? []) {
       if (!s.clubs.find(c => c.id === session.clubId)?.rounds.some(r => r.id === session.roundId) || session.participants.some(p => !s.memberships.some(m => m.id === p.memberId && m.clubId === session.clubId)) || session.candidates.some(c => !s.applications.some(a => a.id === c.applicationId && a.clubId === session.clubId))) invalid()
       for (const pass of session.passes) for (const candidate of pass.candidates) {

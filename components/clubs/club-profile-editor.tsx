@@ -34,7 +34,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false }: { initial: 
     const result = clubProfileSchema.safeParse(draft)
     if (!result.success) { const issue = result.error.issues[0]; setError(`${issue.path.filter(p => p !== "marketing").map(p => typeof p === "number" ? p + 1 : p.replace(/([A-Z])/g, " $1")).join(" · ")}: ${issue.message}`); return }
     setBusy(true)
-    try { await onSave(result.data); setDraft(result.data); setSaved(result.data); setMessage(demo ? "Profile saved in this demo. Open Discover to see your changes." : "Profile published. Your changes are now visible in Discover.") }
+    try { await onSave(result.data); setDraft(result.data); setSaved(result.data); setMessage(demo ? "Profile saved in this demo. Open Explore to see your changes." : "Profile published. Your changes are now visible in Explore.") }
     catch (error) { setError(error instanceof Error ? error.message : "Could not publish. Your edits are still here.") }
     finally { setBusy(false) }
   }}>

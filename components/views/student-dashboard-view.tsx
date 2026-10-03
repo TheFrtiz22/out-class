@@ -191,7 +191,7 @@ export function StudentDashboardView({
   const agendaUnavailable = realMode && initialData == null
   const agenda = now ? upcomingAgenda(accountEvents, now) : []
   const updates = relevantUpdates(accountNotifications)
-  const next = now ? nextHomeAction(applications, agenda, now) : { kind: "discover" as const }
+  const next = now ? nextHomeAction(applications, agenda, now) : { kind: "explore" as const }
   function openApplication(app: HomeApplication) {
     focusApplication(app.clubId)
     onNavigate("tracker")
@@ -228,14 +228,14 @@ export function StudentDashboardView({
       : next.kind === "event"
         ? `${when(next.event)}${next.event.location ? ` · ${next.event.location}` : ""}`
         : applications.length
-          ? "Your applications are together below. Discover other clubs that interest you."
+          ? "Your applications are together below. Explore other clubs that interest you."
           : "Explore clubs, learn what they do, and start an application when you’re ready."
   const nextLabel =
     next.kind === "application"
       ? "Continue application"
       : next.kind === "event"
         ? "View event details"
-        : "Discover clubs"
+        : "Explore clubs"
 
   return (
     <div className="oc-student-home">
@@ -269,7 +269,7 @@ export function StudentDashboardView({
                   ? openApplication(next.application)
                   : next.kind === "event"
                     ? openEvent(next.event)
-                    : onNavigate("discover")
+                    : onNavigate("explore")
               }
             >
               {nextLabel}

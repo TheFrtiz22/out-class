@@ -359,6 +359,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     interviewRooms: [] as import("@/lib/interview-rooms").InterviewRoom[],
     roomBookings: [] as import("@/lib/interview-rooms").RoomBooking[],
     slots,
+    corkboard: clubs.slice(1, 3).map(club => ({ clubId: club.id, savedAt: new Date(`${anchor}T12:00:00Z`) })),
     subscriptions: clubs.slice(0, 7).map((c) => c.id),
     readNotifications: [] as string[],
     deletedNotifications: [] as string[],

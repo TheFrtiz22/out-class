@@ -20,6 +20,10 @@ export function PublicClubPage({
   authenticated?: boolean
 }) {
   const [view, setView] = useState<ViewId | "profile">("profile")
+  function navigate(next: ViewId) {
+    if (["explore", "corkboard"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
+    setView(next)
+  }
   if (view === "auth")
     return (
       <AuthView
@@ -48,16 +52,16 @@ export function PublicClubPage({
           </Button>
         )}
         {view === "tracker" ? (
-          <ApplicationTrackerView onNavigate={setView} />
+          <ApplicationTrackerView onNavigate={navigate} />
         ) : view === "calendar" ? (
-          <CalendarView onNavigate={setView} />
+          <CalendarView onNavigate={navigate} />
         ) : (
           <ClubProfileView
             club={club}
             onBack={() => {
               window.location.href = "/"
             }}
-            onNavigate={setView}
+            onNavigate={navigate}
           />
         )}
       </main>

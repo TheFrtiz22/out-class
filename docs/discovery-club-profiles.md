@@ -1,8 +1,10 @@
-# Discovery and club profiles
+# Explore and club profiles
+
+Prompt 35 consolidates the directory into Explore and adds persisted Corkboard saves. See [Explore and Corkboard](explore-corkboard.md) for the current architecture and verification. The verification below records the earlier directory implementation.
 
 ## What changed
 
-- `components/views/discover-view.tsx`: prominent multi-keyword search; category browsing with actual counts; optional commitment, acceptance, and fund-size filters; alphabetical/reported-acceptance sorting; removable filters and clear-all; organization rows instead of a repeated card wall; explicit loading, unavailable, and empty states. Selection preserves filters and returns keyboard focus to the club.
+- `components/views/explore-view.tsx`: prominent multi-keyword search; category browsing with actual counts; optional commitment, acceptance, and fund-size filters; alphabetical/reported-acceptance sorting; removable filters and clear-all; organization rows instead of a repeated card wall; explicit loading, unavailable, and empty states. Selection preserves filters and returns keyboard focus to the club.
 - `components/views/club-profile-view.tsx`: professional organization identity, description, optional club-supplied banner, visible application/subscription controls, dates/events, published required questions, self-reported statistics, and supported leadership. Existing customization visibility and branding controls are retained for preview profiles. Database profiles are never overwritten by browser customization fixtures.
 - `components/clubs/`: scoped styles, logo fallbacks without unnecessary missing-image requests, a reusable Applied → Review → Interview → Decision timeline, and a device-local subscription control.
 - `lib/club-directory.ts`: pure filtering and status-to-timeline mapping. Drafts and unknown custom stages are not displayed as submitted applications.

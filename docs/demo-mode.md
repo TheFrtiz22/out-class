@@ -94,3 +94,7 @@ New presentations and **Reset Demo** load the expanded fixtures. Existing saved 
 Regression workflows exercise attendance check-in across all three projections, public meeting creation, anonymous pipeline projections, member edits, task submission/review, safe document downloads, interview completion, decision propagation, refresh and byte-for-byte canonical reset. Saved-graph validation also rejects cross-club slots, rounds, interview sessions, mismatched task recipients and duplicate attendance.
 
 Validation for this expansion: **158/158 Node tests pass**, TypeScript passes, and the production build passes. `npm run lint` remains blocked by the existing missing ESLint dependency. Workflows were exercised through the shared workspace adapters; an authenticated browser walkthrough was not performed in this run.
+
+## Explore and Corkboard
+
+Explore uses the existing demo club directory. Corkboard starts with two deterministically saved clubs and stores add/remove changes in the existing demo store through `workspace-api`. It never calls live Corkboard actions while Demo Mode is enabled. Reset restores the seeded saves; older stored demo states receive the new field without resetting other progress. See [Explore and Corkboard](explore-corkboard.md).

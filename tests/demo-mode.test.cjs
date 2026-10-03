@@ -477,3 +477,13 @@ test("persisted voting demo uses the same boundary, holds and two-pass history s
   const ballot=JSON.stringify(view.session.passes);demoStore.start();assert.equal(JSON.stringify((await api.getVotingWorkspace(clubId,id)).session.passes),ballot);assert.equal(h.calls(),0);
   demoStore.reset();demoStore.mutate(s=>{s.perspective={role:'leader',clubId}});assert.equal((await api.getVotingWorkspace(clubId)).session,null);
 });
+
+test('Explore and Corkboard share deterministic demo clubs; saved items survive refresh/reset and never call production',async()=>{
+ const h=harness(),{demoStore,demoDirectory}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();
+ const initial=await api.getCorkboard();assert.equal(initial.items.length,2);assert.ok(initial.items.every(item=>demoDirectory().some(c=>c.id===item.club.id)));
+ const clubId=demoStore.get().clubs[4].id,applications=JSON.stringify(demoStore.get().applications),subscriptions=JSON.stringify(demoStore.get().subscriptions);
+ await api.setCorkboardClub({clubId,saved:true});await api.setCorkboardClub({clubId,saved:true});assert.equal((await api.getCorkboard()).items.filter(i=>i.club.id===clubId).length,1);
+ demoStore.start();assert.ok((await api.getCorkboard()).items.some(i=>i.club.id===clubId));await api.setCorkboardClub({clubId,saved:false});demoStore.start();assert.ok(!(await api.getCorkboard()).items.some(i=>i.club.id===clubId));
+ assert.equal(JSON.stringify(demoStore.get().applications),applications);assert.equal(JSON.stringify(demoStore.get().subscriptions),subscriptions);assert.equal(h.calls(),0);
+ demoStore.reset();assert.deepEqual((await api.getCorkboard()).items,initial.items);assert.equal(h.calls(),0);
+});

@@ -110,7 +110,7 @@ function DiscoverContent() {
     </>
   )
 }
-function DiscoverPreview() { return <ProductFrame title="Discover"><DiscoverContent /></ProductFrame> }
+function DiscoverPreview() { return <ProductFrame title="Explore"><DiscoverContent /></ProductFrame> }
 function Essay() {
   const progress = useProductProgress()
   const text = "I’d like to put research into practice, working with a team to help a local organization answer a question that matters."
