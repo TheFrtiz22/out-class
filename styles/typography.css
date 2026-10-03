@@ -1,17 +1,18 @@
 /* Shared roles apply to native elements, reusable primitives and portaled UI. */
 @layer base {
-  body { font-family: var(--oc-font-sans); font-size: var(--oc-text-body); line-height: var(--oc-leading-body); }
+  body { font-family: var(--oc-font-sans); font-size: var(--oc-text-body); line-height: var(--oc-leading-body); font-weight: var(--oc-weight-regular); }
   h1, h2, h3, h4, h5, h6 { font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-  h1 { font-size: var(--oc-text-title); }
+  h1 { font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); }
   h2 { font-size: var(--oc-text-section); }
   h3 { font-size: var(--oc-text-card); }
   h4, h5, h6 { font-size: var(--oc-text-small); }
   button, label, nav, th { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
+  button { font-weight: var(--oc-weight-bold); }
   table { font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
   input, textarea, select { font-family: inherit; font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
   small { font-size: var(--oc-text-caption); }
 }
-@utility oc-page-title { font-size: var(--oc-text-title); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
+@utility oc-page-title { font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-section-heading { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-card-heading { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-modal-title { font-size: var(--oc-text-modal); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
@@ -19,6 +20,6 @@
 @utility oc-body-small { font-size: var(--oc-text-small); font-weight: var(--oc-weight-regular); line-height: var(--oc-leading-body); }
 @utility oc-caption { font-size: var(--oc-text-caption); line-height: var(--oc-leading-compact); }
 @utility oc-label { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
-@utility oc-button { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
+@utility oc-button { font-size: var(--oc-text-small); font-weight: var(--oc-weight-bold); line-height: var(--oc-leading-compact); }
 @utility oc-nav { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
 @utility oc-table { font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }

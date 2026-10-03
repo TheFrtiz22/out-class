@@ -4,14 +4,29 @@ import { platformViewSession } from "@/utils/platform-view-as"
 import { PlatformViewBanner } from "@/components/platform-view-banner"
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Geist } from "next/font/google"
+import localFont from "next/font/local"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { ClubCustomizationProvider } from "@/lib/club-customization"
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
+// One family with real faces only; no synthetic 600 or italic face.
+const horshamSerial = localFont({
+  src: [
+    { path: "./fonts/horsham-serial/horsham-serial-xlight.otf", weight: "200", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-light.otf", weight: "300", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-regular.otf", weight: "400", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-medium.otf", weight: "500", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-bold.otf", weight: "700", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-xbold.otf", weight: "800", style: "normal" },
+    { path: "./fonts/horsham-serial/horsham-serial-heavy.otf", weight: "900", style: "normal" },
+  ],
+  variable: "--font-horsham-serial",
+  display: "swap",
+  fallback: ["sans-serif"],
+  adjustFontFallback: false,
+})
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" }
 
@@ -51,8 +66,8 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en">
-      <body className={`${geist.variable} font-sans antialiased`}>
+    <html lang="en" className={horshamSerial.variable}>
+      <body className="font-sans antialiased">
         {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>

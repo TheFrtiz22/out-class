@@ -6,6 +6,8 @@ module.exports = {
       fontFamily: {
         sans: ['var(--oc-font-sans)'],
         mono: ['var(--oc-font-sans)'],
+        serif: ['var(--oc-font-sans)'],
+        display: ['var(--oc-font-sans)'],
       },
       colors: {
         canvas: 'var(--card)',

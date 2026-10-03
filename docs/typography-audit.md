@@ -1,218 +1,93 @@
-# OutClass typography audit
+# OutClass Horsham Serial typography audit
 
-## Original families and locations
+## Current system
 
-- Geist: loaded through next/font in app/layout.tsx; default sans family in app/globals.css and tailwind.config.js, inherited by all routes.
-- Georgia, Times New Roman, generic serif: display stack in styles/tokens.css; used in landing/hero, explore/discovery, recruiting overview, manager overview, shell and interview CSS, and SectionHeading editorial mode.
-- Geist Mono: root font loader; platform-console, interview timer, branding color input, speed review scores/keyboard hints and chart values.
-- Fallbacks: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif and monospace; Tailwind default serif stack is available but was not explicitly used.
-- styles/globals.css was an unused duplicate of the global setup. It now forwards to the canonical entry point.
+Horsham Serial is the single application family, loaded with `next/font/local`
+in `app/layout.tsx`. The font variable is applied to `html`, so all routes and
+body-level portals inherit it. Next.js generates the internal CSS family name
+`horshamSerial`; all seven assets belong to that same family.
 
-Original explicit family declarations/utilities occur in:
+Files live in `app/fonts/horsham-serial/`:
 
-- `app/club-access/[clubId]/page.tsx`
-- `app/club-claims/[clubId]/page.tsx`
-- `app/design-system/page.tsx`
-- `app/error.tsx`
-- `app/globals.css`
-- `app/invitations/[id]/page.tsx`
-- `app/layout.tsx`
-- `app/not-found.tsx`
-- `app/platform/claims/page.tsx`
-- `app/platform/login/page.tsx`
-- `app/platform/page.tsx`
-- `app/settings/organizations/page.tsx`
-- `components/club-announcements.tsx`
-- `components/club-profile-settings.tsx`
-- `components/club-tasks.tsx`
-- `components/club-workspace-settings.tsx`
-- `components/club-workspace.tsx`
-- `components/clubs/club-discovery.css`
-- `components/clubs/explore-directory.css`
-- `components/clubs/manager-overview.css`
-- `components/clubs/recruiting-overview.css`
-- `components/dashboard-layout.tsx`
-- `components/demo-workspace.tsx`
-- `components/interview-kit-session.tsx`
-- `components/landing/hero.css`
-- `components/landing/recruitment-demo.css`
-- `components/live-voting/board-decision-mode.tsx`
-- `components/live-voting/member-voting-pad.tsx`
-- `components/live-voting/proctor-presentation-view.tsx`
-- `components/meeting-workspace.tsx`
-- `components/member-overview.tsx`
-- `components/organization-memberships.tsx`
-- `components/organization-ownership-requests.tsx`
-- `components/organization-setup-checklist.tsx`
-- `components/password-recovery.tsx`
-- `components/personal-clubs.tsx`
-- `components/platform-console.tsx`
-- `components/platform-organization-onboarding.tsx`
-- `components/qr/meeting-check-in.tsx`
-- `components/shell/authenticated-product.css`
-- `components/ui/chart.tsx`
-- `components/ui/section-heading.tsx`
-- `components/views/application-tracker-view.tsx`
-- `components/views/branding/color-picker.tsx`
-- `components/views/calendar-view.tsx`
-- `components/views/inbox-view.tsx`
-- `components/views/interview-workspace-view.tsx`
-- `components/views/interview/interview-mode.css`
-- `components/views/landing.css`
-- `components/views/leader-dashboard/live-leader-workspace.tsx`
-- `components/views/leader-dashboard/speed-review-mode.tsx`
-- `components/views/student-home.css`
-- `components/views/unified-student-profile-view.tsx`
-- `styles/globals.css`
-- `styles/tokens.css`
-- `tailwind.config.js`
+| Face | File | Registered weight |
+| --- | --- | --- |
+| Extra Light | horsham-serial-xlight.otf | 200 |
+| Light | horsham-serial-light.otf | 300 |
+| Regular | horsham-serial-regular.otf | 400 |
+| Medium | horsham-serial-medium.otf | 500 |
+| Bold | horsham-serial-bold.otf | 700 |
+| Extra Bold | horsham-serial-xbold.otf | 800 |
+| Heavy | horsham-serial-heavy.otf | 900 |
 
-## Universal hierarchy
+The provided Extra Light asset internally reports weight 250; its CSS registration
+uses the explicitly requested 200 slot. The files themselves are unchanged.
 
-Geist is the only loaded family. Display and legacy mono aliases resolve to Geist. Numeric alignment uses tabular numerals.
+`styles/tokens.css` and `styles/typography.css` remain the source of truth.
+Tailwind v4 reads `app/globals.css` and `tailwind.config.js`. The sans, serif,
+mono and display aliases all resolve to the same Horsham token. Existing
+component family declarations use that token or inherit it.
 
-| Role | Size | Weight |
-|---|---|---|
-| Page title | 28–36px responsive | 600 |
-| Section heading | 22–28px responsive | 600 |
-| Card / empty title | 18px | 600 |
-| Modal / drawer | 22px | 600 |
-| Body | 16px | 400 |
-| Compact body / table | 14px | 400 |
-| Label / button / navigation | 14px | 500 |
-| Caption | 12px | 400–500 |
-| Form input | 16px mobile / 14px desktop | 400 |
+Body: 400. Labels/navigation: 500. Buttons and section/card/modal headings: 700.
+Page titles: 800. Marketing hero: 900. Existing semibold utilities and the shared
+semibold token resolve to 700; thin resolves to 200. No 600 face is synthesized.
+`font-synthesis: none` disables synthetic bold and italic. The normal font files
+are the only supplied faces. A generic sans fallback is used while loading or
+if the assets fail; no Google Fonts are requested.
 
-Source of truth: styles/tokens.css and styles/typography.css. Shared classes: oc-page-title, oc-section-heading, oc-card-heading, oc-modal-title, oc-body, oc-body-small, oc-caption, oc-label, oc-button, oc-nav and oc-table.
+## Previous font inventory
 
-Marketing hero, miniature previews and presentation metrics retain context-specific scales through tokens. Existing layout, colors, spacing and functionality are outside this migration. Existing Tailwind text utilities remain shared size tokens for supporting copy and responsive contexts.
+Geist Sans was loaded by `next/font/google`; the shared token had system sans
+fallbacks. Component CSS already used shared typography tokens. Historical
+references to Georgia, Times New Roman and Geist Mono in earlier documentation
+were stale. The remaining hardcoded Arial declarations were standalone demo SVG
+monograms and invitation emails.
 
-## Changed files
+Demo SVG monograms now use Horsham Bold outlines, generated into
+`lib/demo/horsham-glyphs.ts`, because image SVGs cannot inherit document fonts.
+Invitation emails retain Arial in `lib/invitation-email.ts`: email-client font
+support differs, and backend code is outside this migration. Existing raster
+logos, preview images and third-party brand artwork are unchanged.
 
-- `app/club-access/[clubId]/page.tsx`
-- `app/club-claims/[clubId]/page.tsx`
-- `app/club/[clubId]/page.tsx`
-- `app/design-system/page.tsx`
-- `app/error.tsx`
-- `app/globals.css`
-- `app/invitations/[id]/page.tsx`
-- `app/layout.tsx`
-- `app/live-voting/page.tsx`
-- `app/not-found.tsx`
-- `app/platform/claims/page.tsx`
-- `app/platform/login/page.tsx`
-- `app/platform/page.tsx`
-- `app/settings/organizations/page.tsx`
-- `components/applications/application-tracker.css`
-- `components/claim-review.tsx`
-- `components/club-access-editor.tsx`
-- `components/club-announcements.tsx`
-- `components/club-members.tsx`
-- `components/club-profile-settings.tsx`
-- `components/club-tasks.tsx`
-- `components/club-workspace-settings.tsx`
-- `components/club-workspace.tsx`
-- `components/clubs/club-discovery.css`
-- `components/clubs/club-profile-editor.tsx`
-- `components/clubs/explore-directory.css`
-- `components/clubs/interview-kit-editor.css`
-- `components/clubs/manager-overview.css`
-- `components/clubs/marketing-profile.tsx`
-- `components/clubs/recruiting-overview.css`
-- `components/customization/profile-builder.tsx`
-- `components/customization/recruitment-pipeline-builder.tsx`
-- `components/dashboard-layout.tsx`
-- `components/demo-workspace.tsx`
-- `components/interview-kit-session.tsx`
-- `components/interviews/booking-link-page.tsx`
-- `components/interviews/booking-picker.tsx`
-- `components/interviews/create-room-dialog.tsx`
-- `components/interviews/room-manager.tsx`
-- `components/interviews/scheduling.css`
-- `components/landing/hero.css`
-- `components/landing/recruitment-demo.css`
-- `components/live-voting/board-decision-mode.tsx`
-- `components/live-voting/live-voting-launcher.tsx`
-- `components/live-voting/member-voting-pad.tsx`
-- `components/live-voting/mobile-join-screen.tsx`
-- `components/live-voting/proctor-presentation-view.tsx`
-- `components/live-voting/voting-lobby.tsx`
-- `components/meeting-workspace.tsx`
-- `components/member-overview.tsx`
-- `components/motion/scroll-motion.css`
-- `components/organization-invitation-card.tsx`
-- `components/organization-member-management.tsx`
-- `components/organization-memberships.tsx`
-- `components/organization-ownership-requests.tsx`
-- `components/organization-setup-checklist.tsx`
-- `components/password-recovery.tsx`
-- `components/personal-clubs.tsx`
-- `components/platform-console.tsx`
-- `components/platform-organization-onboarding.tsx`
-- `components/qr/event-qr-dashboard.tsx`
-- `components/qr/leads-table.tsx`
-- `components/qr/meeting-check-in.tsx`
-- `components/qr/qr-code-card.tsx`
-- `components/roster-csv-importer.tsx`
-- `components/shell/authenticated-product.css`
-- `components/shell/navigation.tsx`
-- `components/shell/product-shell.tsx`
-- `components/shell/responsive-workspace.css`
-- `components/student-profile-card.tsx`
-- `components/tasks.css`
-- `components/tutorial-walkthrough.tsx`
-- `components/ui/alert-dialog.tsx`
-- `components/ui/button.tsx`
-- `components/ui/card.tsx`
-- `components/ui/chart.tsx`
-- `components/ui/dialog.tsx`
-- `components/ui/empty-state.tsx`
-- `components/ui/empty.tsx`
-- `components/ui/label.tsx`
-- `components/ui/section-heading.tsx`
-- `components/ui/sheet.tsx`
-- `components/ui/table.tsx`
-- `components/views/application-tracker-view.tsx`
-- `components/views/auth-view.tsx`
-- `components/views/branding/color-picker.tsx`
-- `components/views/branding/media-uploader.tsx`
-- `components/views/branding/profile-preview-card.tsx`
-- `components/views/calendar-view.tsx`
-- `components/views/club-management-portal-view.tsx`
-- `components/views/club-manager/application-builder-view.tsx`
-- `components/views/club-manager/broadcast-messages-view.tsx`
-- `components/views/club-manager/events-meetings-view.tsx`
-- `components/views/club-manager/interview-pipeline-builder-view.tsx`
-- `components/views/club-manager/interview-room-panel-matrix-view.tsx`
-- `components/views/club-manager/interviewer-availability-view.tsx`
-- `components/views/club-manager/roster-roles-view.tsx`
-- `components/views/inbox-view.tsx`
-- `components/views/interview-scheduler-view.tsx`
-- `components/views/interview-workspace-view.tsx`
-- `components/views/interview/interview-mode.css`
-- `components/views/interview/workspace-question-card.tsx`
-- `components/views/interviewer-dashboard.tsx`
-- `components/views/landing.css`
-- `components/views/leader-dashboard-view.tsx`
-- `components/views/leader-dashboard/live-applicant-views.tsx`
-- `components/views/leader-dashboard/live-leader-workspace.tsx`
-- `components/views/leader-dashboard/pipeline-view.tsx`
-- `components/views/leader-dashboard/speed-review-mode.tsx`
-- `components/views/member-portal-dialog.tsx`
-- `components/views/scheduler/create-schedule-dialog.tsx`
-- `components/views/scheduler/slot-card.tsx`
-- `components/views/scheduler/student-booking-preview.tsx`
-- `components/views/screening-dashboard-view.tsx`
-- `components/views/student-home.css`
-- `components/views/student-onboarding-wizard.tsx`
-- `components/views/unified-student-profile-view.tsx`
-- `docs/typography-audit.md`
-- `lib/design-system.ts`
-- `styles/globals.css`
-- `styles/tokens.css`
-- `styles/typography.css`
-- `tailwind.config.js`
+## Verification (2026-10-02)
 
-## Verification
+- PASS: `npm run typecheck`.
+- PASS: `npm run lint` (0 errors; 31 existing warnings).
+- PASS: `OUTCLASS_PUBLISH_BUILD=1 npm run build`.
+- PASS: focused existing demo-mode and demo-provider tests (20 tests).
+- PASS: production CSS contains seven normal Horsham faces with exactly the
+  requested weights. `font-semibold` and `!font-semibold` compile to 700.
+- PASS: source audit found no old application family overrides. Tailwind's
+  generated default fallback definitions can still mention system fonts, but
+  computed application families resolve to Horsham.
+- PASS: Chrome confirms a custom Horsham Extra Bold face renders page titles.
+- Desktop/mobile browser checks: landing, login, design-system primitives and
+  modal, and public voting form. Onboarding entry was inspected on mobile.
+  Computed typography was Horsham throughout the checked surfaces; no horizontal
+  document overflow was observed. No account forms were submitted.
+- Manual visual review remains: signed-in student/leader dashboards, club pages,
+  applicant review, settings, admin, and later onboarding steps. No authenticated
+  session was available for those screens.
 
-TypeScript type checking passed. ESLint passed with 31 existing warnings. Production build passed. Desktop/mobile scales were checked in source; authenticated screens have not undergone browser visual QA.
+## Asset issue: production visual acceptance FAIL
+
+All seven supplied assets identify themselves as FONTSPRING DEMO internally.
+Browser review shows DEMO watermark glyphs in ordinary content: ampersands,
+email-address symbols, punctuation and some numerals are affected. This is in
+these font files, not a CSS fallback or loading issue. The font integration is
+complete, but production readability cannot pass with these assets. Replace
+the seven files with full Horsham Serial font assets in the same slots, then
+repeat visual QA. No font restrictions or watermarks have been removed.
+
+## Files changed
+
+- app/layout.tsx
+- app/globals.css
+- app/fonts/horsham-serial/ (seven OTF assets)
+- styles/tokens.css
+- styles/typography.css
+- tailwind.config.js
+- components/landing/hero.css
+- lib/demo/assets.ts
+- lib/demo/horsham-glyphs.ts
+- docs/design-system.md
+- docs/typography-audit.md

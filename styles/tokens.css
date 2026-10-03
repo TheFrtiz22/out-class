@@ -51,11 +51,14 @@
   --oc-space-content: 1.5rem;
   --oc-space-section: clamp(2rem, 5vw, 4rem);
   --oc-space-page: clamp(1.25rem, 4vw, 3rem);
-  --oc-font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --oc-font-sans: var(--font-horsham-serial), sans-serif;
   --oc-font-display: var(--oc-font-sans);
   --oc-weight-regular: 400;
   --oc-weight-medium: 500;
-  --oc-weight-semibold: 600;
+  --oc-weight-semibold: 700; /* Compatibility alias for existing components. */
+  --oc-weight-bold: 700;
+  --oc-weight-title: 800;
+  --oc-weight-display: 900;
   --oc-leading-heading: 1.25;
   --oc-leading-compact: 1.5;
   --oc-tracking-heading: -0.025em;

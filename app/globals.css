@@ -10,6 +10,9 @@
   --font-sans: var(--oc-font-sans);
   --font-display: var(--oc-font-display);
   --font-mono: var(--oc-font-sans);
+  --font-serif: var(--oc-font-sans);
+  --font-weight-thin: 200;
+  --font-weight-semibold: 700;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -76,6 +79,8 @@
     color-scheme: light;
   }
   html {
+    font-family: var(--oc-font-sans);
+    font-synthesis: none;
     color-scheme: light;
   }
   * {
@@ -90,6 +95,10 @@
   h1, h2, h3, h4, h5, h6,
   [data-slot="card-title"], [data-slot="dialog-title"], [data-slot="sheet-title"] {
     @apply font-sans font-semibold tracking-tight;
+  }
+
+  h1 {
+    font-weight: var(--oc-weight-title);
   }
 
   p, li, td, th, label, input, textarea, select, button, a {

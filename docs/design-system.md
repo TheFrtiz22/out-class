@@ -29,17 +29,18 @@ changing every screen's spacing in a foundations change.
 
 ## Typography
 
-Geist Sans remains the functional UI face, loaded by the existing next/font setup.
-Geist Mono is available for selective numerical treatments. Editorial headings
-use `font-display` (Georgia, Times New Roman, serif), a system font stack with no
-additional downloads, redistribution, or font service. The exact face varies by
-platform. A licensed, self-hosted display web font can be selected later if
-cross-platform matching is necessary.
+Horsham Serial is the universal application family, self-hosted with `next/font/local`
+in `app/layout.tsx`. Its seven normal faces live in `app/fonts/horsham-serial/`
+and map to 200, 300, 400, 500, 700, 800 and 900. All font utility aliases resolve
+to the same family. No Google Fonts are loaded.
 
-`text-display` scales from 32 to 56px; `text-title` from 24 to 32px. Use the serif
-for marketing and selected major headings, not navigation, table headers, forms,
-or every card. `SectionHeading editorial` opts in; product headings stay sans.
-The OutClass logo assets are unchanged.
+Body uses 400; labels and navigation use 500; buttons and section/card/modal
+headings use 700; page titles use 800; the marketing hero uses 900. Existing
+`font-semibold` utilities resolve to 700. Synthetic bold and italic are disabled.
+Use weight, size, spacing and case for hierarchy. Standalone demo SVG monograms
+use Horsham Bold outlines because SVG images cannot inherit the page font.
+Invitation emails retain their email-compatible Arial stack outside the app.
+The existing OutClass logo and externally supplied image assets remain unchanged.
 
 ## Components
 
