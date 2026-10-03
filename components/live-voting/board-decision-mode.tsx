@@ -59,7 +59,7 @@ export function BoardDecisionMode({
         <DialogContent
           showCloseButton={false}
           aria-describedby={undefined}
-          className="inset-0 flex h-dvh max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-y-auto rounded-none border-0 bg-background p-0 sm:max-w-none"
+          data-workspace-detail className="oc-voting-stage inset-0 flex h-dvh max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-y-auto rounded-none border-0 bg-background p-0 sm:max-w-none"
           onEscapeKeyDown={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >
@@ -200,7 +200,7 @@ function DecisionPresentation({
   clubId={clubId}
   applicationId={app.id}
   mode="voting"
-/> 98cfd3c (Prompt 33)
+/>
         </article>
         <div className="flex flex-wrap items-center justify-between gap-5">
           <Button

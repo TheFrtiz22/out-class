@@ -67,7 +67,7 @@ export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
   ].filter(row => `${row.name} ${row.detail} ${row.year || ""} ${organizationRoleLabels[row.role]} ${row.status}`.toLowerCase().includes(needle)) : [];
   const pages = Math.max(1, Math.ceil(rows.length / 50));
   const visiblePage = Math.min(page, pages - 1);
-  return <div className="min-w-0 max-w-5xl space-y-6" data-saving={busy} data-unsaved={dirty} aria-busy={busy}>
+  return <div className="oc-member-directory min-w-0 max-w-5xl space-y-6" data-saving={busy} data-unsaved={dirty} aria-busy={busy}>
     <p className="text-sm leading-7 text-muted-foreground">Manage memberships and invitations for this organization. Roles grant organization-specific capabilities; groups, cohorts, and custom access remain available in member details.</p>
     <p className="text-xs leading-5 text-muted-foreground">Invitation emails are sent only when requested. Resends have a 15-minute cooldown.</p>
     {notice && <p role="status" className="rounded-lg border bg-muted/40 p-4 text-sm">{notice}</p>}

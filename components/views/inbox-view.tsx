@@ -98,7 +98,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 text-foreground">
+    <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
       <header>
         <h2 className="oc-section-heading ">Your recruiting updates.</h2>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -251,7 +251,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               </div>
             )}
           </div>
-          <div className="space-y-6">
+          <div className="oc-inbox-workspace space-y-6">
             {groups.map((group) => (
               <section key={group.label} aria-label={group.label}>
                 <h3 className="oc-card-heading border-b border-border py-3 uppercase tracking-wider text-muted-foreground">

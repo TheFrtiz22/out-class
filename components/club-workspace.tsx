@@ -1,4 +1,5 @@
 "use client";
+import { PageHeader } from "@/components/product/page-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -121,7 +122,7 @@ export function ClubWorkspace({
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">{membership.club.name}</p><h1 className="oc-page-title ">{manager && section === "overview" ? "Club Overview" : manager && mode === "recruiting" && active === "overview" ? "Recruiting Overview" : nav.find(n => n.id === active)?.label || "Workspace"}</h1></div><Link className="text-sm text-muted-foreground underline underline-offset-4" href={`/club/${clubId}`}>Public club profile ↗</Link></div>
+          <PageHeader eyebrow={membership.club.name} title={manager && section === "overview" ? "Your club, in motion." : manager && mode === "recruiting" && active === "overview" ? "Build your next class." : nav.find(n => n.id === active)?.label || "Workspace"} ribbon action={<Link className="oc-profile-link" href={`/club/${clubId}`}>Public club profile ↗</Link>} />
           {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {section === "overview" && (manager ? <>{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} />}<ManagerOverview data={current} /></> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "team" ? "team" : "mine"} />}

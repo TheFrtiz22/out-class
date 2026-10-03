@@ -139,7 +139,7 @@ export function UnifiedStudentProfileView() {
     )
   }
   return (
-    <article className="mx-auto max-w-5xl text-foreground">
+    <article className="oc-student-profile mx-auto max-w-5xl text-foreground">
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>

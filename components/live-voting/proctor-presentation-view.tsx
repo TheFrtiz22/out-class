@@ -42,7 +42,7 @@ export function ProctorPresentationView({
   }[tally.result]
   return (
     <section
-      className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background font-sans text-foreground"
+      data-workspace-detail className="oc-voting-stage fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background font-sans text-foreground"
       aria-label="Live voting presentation"
     >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 lg:px-10">

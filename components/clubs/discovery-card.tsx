@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type CSSProperties } from "react"
 import Image from "next/image"
+import { CampusRibbon } from "@/components/product/campus-ribbon"
 import { ArrowRight } from "lucide-react"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import type { DirectoryClub } from "@/lib/club-directory"
@@ -15,9 +16,10 @@ export function DiscoveryCard({ club, entry, onOpen }: {
   const [failedBanner, setFailedBanner] = useState<string | null>(null)
   const hasBanner = !!club.bannerUrl && failedBanner !== club.bannerUrl
   const available = club.source !== "preview" && club.applicationAvailable === true
-  return <li className="oc-explore-card">
+  return <li className="oc-explore-card" style={{ "--oc-club-accent": club.color || "var(--primary)" } as CSSProperties}>
     <article>
       <div className="oc-explore-card-cover" data-has-banner={hasBanner}>
+        {!hasBanner && <CampusRibbon />}
         {hasBanner && <Image src={club.bannerUrl!} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw" onError={() => setFailedBanner(club.bannerUrl!)} />}
         <div className="oc-explore-card-logo"><DirectoryLogo club={club} size="lg" /></div>
         <span className="oc-explore-category">{club.category || "Student organization"}</span>

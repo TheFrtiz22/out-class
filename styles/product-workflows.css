@@ -1,0 +1,79 @@
+/* Dense operational views share the campus foundations without losing precision. */
+[data-product-shell] .oc-live-pipeline { padding: 0; border: 0; background: transparent; border-radius: 0; }
+[data-product-shell] .oc-live-pipeline > div:has(> [aria-label="Applicant view"]) { padding: 1rem; border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] { border: 0; background: var(--muted); border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-live-pipeline [aria-label="Applicant view"] [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+[data-product-shell] .oc-live-pipeline > div:has(> table) { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-applicant-board { gap: 1rem; align-items: start; }
+[data-product-shell] .oc-applicant-board > section { border: 0; border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); padding: 1rem; min-height: 14rem; }
+[data-product-shell] .oc-applicant-board > section:nth-child(2) { background: var(--oc-surface-warm); }
+[data-product-shell] .oc-applicant-board > section:nth-child(3) { background: var(--oc-surface-sage); }
+[data-product-shell] .oc-applicant-board > section:nth-child(4) { background: var(--oc-surface-lilac); }
+[data-product-shell] .oc-applicant-board header h3 { font-size: var(--oc-text-small); }
+[data-product-shell] .oc-applicant-board header h3 > span { min-width: 1.5rem; padding: .2rem; border-radius: var(--oc-radius-sm); text-align: center; background: var(--card); }
+[data-product-shell] .oc-applicant-board button[data-applicant-id] { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-micro), box-shadow var(--oc-duration-ui); }
+[data-product-shell] .oc-applicant-board button[data-applicant-id]:hover { transform: translateY(-2px); box-shadow: var(--oc-shadow-popover); }
+[data-product-shell] [data-application-status="ACCEPTED"] { background: var(--success-subtle); color: var(--success); }
+[data-product-shell] [data-application-status="REJECTED"] { background: var(--error-subtle); color: var(--destructive); }
+[data-product-shell] [data-application-status="WAITLISTED"] { background: var(--warning-subtle); color: var(--warning); }
+[data-product-shell] [data-application-status="INTERVIEWING"] { background: var(--interview-subtle); color: var(--interview); }
+[data-product-shell] [data-application-status="IN_REVIEW"] { background: var(--info-subtle); color: var(--info); }
+[data-product-shell] .ir-overview { display: flex; flex-wrap: wrap; gap: 2rem; padding-block: 1.5rem; border-block: 1px solid var(--border); }
+[data-product-shell] .ir-overview > div { padding: 0; border: 0; background: transparent; }
+[data-product-shell] .ir-room-card { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .ir-room-slots > div { border: 0; background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); padding: 1rem .5rem; }
+[data-product-shell] .ir-room-slots .is-full { background: var(--muted); }
+[data-product-shell] .ir-booking { border: 0; box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-xl); }
+[data-product-shell] .ir-booking-intro { background: var(--oc-surface-blue); }
+[data-product-shell] .ir-calendar button[aria-pressed="true"], [data-product-shell] .ir-times button[aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); outline: 2px solid var(--brand-orange); outline-offset: 2px; }
+[data-product-shell] .ir-empty { border: 0; background: var(--oc-surface-blue); }
+[data-product-shell] .oc-scheduling-location { border: 0; background: var(--card); box-shadow: var(--oc-shadow-surface); border-radius: var(--oc-radius-lg); }
+[data-workspace-detail] { font-family: var(--oc-font-sans); }
+[data-workspace-detail] .oc-focused-interview { --oc-focus-header-height: 5rem; background: var(--background); color: var(--foreground); }
+[data-workspace-detail] .oc-focused-interview > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; padding: 1.25rem 2rem; }
+[data-workspace-detail] .oc-focused-interview > header :is(.text-muted-foreground,.text-primary) { color: var(--oc-rail-muted); }
+[data-workspace-detail] .oc-focused-interview > header button { color: var(--oc-rail-text); }
+[data-workspace-detail] .oc-focused-interview > header button:hover { background: var(--oc-rail-selected); }
+[data-workspace-detail] .oc-focused-interview > header [data-slot="button"].border { border-color: var(--oc-rail-muted); background: transparent; }
+[data-workspace-detail] .oc-focused-interview .oc-interview-columns > [aria-label="Candidate context"] { background: var(--oc-surface-blue); border-color: transparent; }
+[data-workspace-detail] .oc-focused-interview .oc-active-question { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); padding: 2rem; }
+[data-workspace-detail] .oc-focused-interview .oc-active-question h2 { font-family: var(--oc-font-display); font-size: clamp(1.5rem,2.2vw,2rem); font-weight: 400; line-height: 1.35; }
+[data-workspace-detail] .oc-focused-interview .oc-active-question textarea { background: var(--background); border-color: var(--input); border-radius: var(--oc-radius-md); padding: 1rem; line-height: 1.75; }
+[data-workspace-detail] .oc-focused-interview .oc-question-agenda { border: 0; background: transparent; padding: 0; }
+[data-workspace-detail] .oc-focused-interview .oc-question-agenda [aria-current="step"] { background: var(--brand-subtle); color: var(--brand-ink); }
+[data-workspace-detail] .oc-focused-interview #interview-library { background: var(--card); border: 0; }
+[data-workspace-detail] .oc-focused-interview #interview-library li { border: 0; background: var(--background); border-radius: var(--oc-radius-md); padding: 1rem; }
+.oc-voting-stage { background: var(--background); }
+.oc-voting-stage > header { background: var(--oc-rail); color: var(--oc-rail-text); border: 0; }
+.oc-voting-stage > header :is(.text-neutral-500,.text-muted-foreground) { color: var(--oc-rail-muted); }
+.oc-voting-stage > header button, .oc-voting-stage > header a { color: var(--oc-rail-text); background: transparent; border-color: var(--oc-rail-muted); }
+.oc-voting-stage > header button:hover, .oc-voting-stage > header a:hover { background: var(--oc-rail-selected); }
+.oc-voting-stage .oc-voting-candidate { border: 0; padding: 2rem; background: var(--card); border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); }
+.oc-voting-stage .oc-voting-candidate h2 { font-family: var(--oc-font-display); font-size: clamp(2rem,4vw,3.25rem); font-weight: 400; }
+.oc-voting-stage .oc-voting-candidate > div:first-child [data-slot="avatar"] { background: var(--oc-surface-blue); border: 0; }
+.oc-voting-stage progress, .oc-voting-stage [data-slot="progress"] { transition: width var(--oc-duration-ui) var(--oc-ease-out); }
+.oc-voting-pad { background: var(--background); font-family: var(--oc-font-sans); }
+.oc-voting-pad button[aria-pressed="true"] { outline: 3px solid var(--brand-orange); outline-offset: 3px; }
+@media (max-width: 639px) {
+  [data-workspace-detail] .oc-focused-interview > header { padding: 1rem; }
+  [data-workspace-detail] .oc-focused-interview .oc-active-question, .oc-voting-stage .oc-voting-candidate { padding: 1.25rem; }
+  [data-product-shell] .oc-applicant-board { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 88%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
+  [data-product-shell] .oc-applicant-board > section { scroll-snap-align: start; }
+}
+[data-product-shell] .oc-interview-slot { border: 0; border-left: 3px solid var(--success); background: var(--oc-surface-sage); border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-interview-slot[data-slot-status="partial"] { background: var(--oc-surface-blue); border-color: var(--info); }
+[data-product-shell] .oc-interview-slot[data-slot-status="full"] { background: var(--muted); border-color: var(--muted-foreground); }
+[data-product-shell] .oc-member-directory > details { border: 0; border-radius: var(--oc-radius-md); background: var(--card); box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-member-directory > ul > li { background: var(--card); border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); padding-inline: 1rem; }
+[data-product-shell] .oc-member-directory > ul { display: grid; gap: .75rem; border: 0; }
+[data-product-shell] .oc-club-settings #related-club-settings + ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+[data-product-shell] .oc-club-settings #related-club-settings + ul li { border: 0; }
+[data-product-shell] .oc-club-settings #related-club-settings + ul a { height: 100%; padding: 1.25rem; border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); }
+@media (max-width: 639px) { [data-product-shell] .oc-club-settings #related-club-settings + ul { grid-template-columns: 1fr; } }
+.oc-applicant-person { display: flex; align-items: center; gap: .7rem; min-width: 0; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
+.oc-applicant-person [data-slot="avatar"] { flex-shrink: 0; width: 2rem; height: 2rem; border-radius: var(--oc-radius-md); }
+.oc-applicant-person [data-slot="avatar-fallback"] { background: var(--oc-surface-blue); color: var(--primary); font-size: var(--oc-size-11); }
+.oc-applicant-person > span:last-child { overflow-wrap: anywhere; }
+.oc-applicant-review { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: .5rem; font-size: var(--oc-text-caption); color: var(--muted-foreground); }
+.oc-applicant-review strong { display: inline-flex; align-items: baseline; gap: .15rem; padding: .2rem .4rem; background: var(--oc-surface-sage); color: var(--success); border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-applicant-review strong > span { font-size: var(--oc-size-10); font-weight: 400; }

@@ -28,3 +28,23 @@
 @container (max-width: 400px) { .oc-recruiting-card, .oc-recruiting-tools { padding: 22px; } .oc-recruiting-card > h2 { font-size: var(--oc-text-section); } }
 @media (max-width: 359px) { [data-product-shell]:has(.oc-recruiting-overview) .oc-product-brand img { max-width: 110px; height: auto; } }
 @media (prefers-reduced-motion: reduce) { .oc-recruiting-overview a { transition: none; } }
+[data-product-shell] .oc-recruiting-overview-grid { grid-template-columns: 1.4fr 1fr; gap: 2rem; }
+[data-product-shell] .oc-recruiting-card, [data-product-shell] .oc-recruiting-tools { border: 0; padding: 1.75rem 0; border-radius: 0; background: transparent; box-shadow: none; }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] { position: relative; isolation: isolate; overflow: hidden; padding: 2rem; border-radius: var(--oc-radius-xl); grid-row: span 2; background: var(--oc-rail); color: var(--oc-rail-text); min-height: 26rem; }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] > .oc-campus-ribbon { position: absolute; z-index: -1; bottom: -3rem; right: -10rem; width: 30rem; opacity: .45; transform: rotate(-20deg); }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] :is(.oc-recruiting-card-label,h2) { color: var(--oc-rail-text); }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] :is(.oc-recruiting-description,.oc-recruiting-context) { color: var(--oc-rail-muted); border-color: var(--oc-rail-selected); }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] > h2 { font-family: var(--oc-font-display); font-size: 2.5rem; font-weight: 400; max-width: 23rem; margin-top: 2.5rem; }
+[data-product-shell] .oc-recruiting-card[data-featured="true"] > a { background: var(--brand-subtle); color: var(--brand-ink); border: 0; }
+[data-product-shell] .oc-recruiting-card:not([data-featured="true"]) { padding-top: .5rem; }
+[data-product-shell] .oc-recruiting-card:not([data-featured="true"]) > h2 { margin-top: 1rem; }
+[data-product-shell] .oc-recruiting-card:not([data-featured="true"]) > a { background: var(--card); border: 0; box-shadow: var(--oc-shadow-surface); }
+[data-product-shell] .oc-recruiting-tools { grid-column: 1 / -1; border-top: 1px solid var(--border); }
+[data-product-shell] .oc-recruiting-tools ul { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+[data-product-shell] .oc-recruiting-tools li + li { border: 0; }
+@container (max-width: 740px) {
+  [data-product-shell] .oc-recruiting-overview-grid { grid-template-columns: 1fr; }
+  [data-product-shell] .oc-recruiting-card[data-featured="true"] { grid-row: auto; min-height: 22rem; padding: 1.5rem; }
+  [data-product-shell] .oc-recruiting-card[data-featured="true"] > h2 { font-size: 2rem; }
+  [data-product-shell] .oc-recruiting-tools ul { grid-template-columns: 1fr; gap: 0; }
+}

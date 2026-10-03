@@ -71,3 +71,36 @@
 @media (prefers-reduced-motion: reduce) {
   .oc-student-home [data-slot="skeleton"] { animation: none; }
 }
+/* Campus OS: attention first, then an open editorial workspace. */
+[data-product-shell] .oc-home-columns { grid-template-columns: minmax(0,1.65fr) minmax(17rem,1fr); gap: 2.5rem; align-items: start; }
+[data-product-shell] .oc-home-columns > section { padding: 0; border: 0; border-radius: 0; background: transparent; }
+[data-product-shell] .oc-home-columns > .oc-home-next { position: relative; overflow: hidden; isolation: isolate; padding: 2rem; border-radius: var(--oc-radius-xl); background: var(--oc-rail); color: var(--oc-rail-text); min-height: 19rem; }
+.oc-home-next > .oc-campus-ribbon { position: absolute; z-index: -1; width: 22rem; right: -9rem; top: 2rem; opacity: .5; transform: rotate(-18deg); }
+[data-product-shell] .oc-home-next .oc-home-section-title h2 { color: var(--oc-rail-muted); font-size: var(--oc-text-caption); letter-spacing: .08em; text-transform: uppercase; font-weight: 500; }
+[data-product-shell] .oc-home-next h3 { max-width: 27rem; font-family: var(--oc-font-display); font-size: clamp(1.65rem,2.2vw,2.25rem); font-weight: 400; }
+[data-product-shell] .oc-home-next p { color: var(--oc-rail-muted); max-width: 24rem; }
+[data-product-shell] .oc-home-next > button { background: var(--brand-subtle); color: var(--brand-ink); border-color: transparent; min-height: var(--oc-control-height); }
+[data-product-shell] .oc-home-next > button:hover { background: var(--card); }
+[data-product-shell] .oc-home-columns > .oc-home-agenda { grid-column: 2; grid-row: 1 / 3; padding: 1.5rem; border-radius: var(--oc-radius-xl); background: var(--oc-surface-blue); }
+[data-product-shell] .oc-home-applications { grid-row: 2; }
+[data-product-shell] .oc-home-updates { grid-column: 1 / -1; border-top: 1px solid var(--border); padding-top: 1.75rem; }
+[data-product-shell] .oc-home-updates .oc-home-list { background: transparent; padding: 0; }
+[data-product-shell] .oc-home-application { grid-template-columns: 42px minmax(0,1fr) auto 16px; padding: 1.2rem .4rem; gap: 1rem; }
+[data-product-shell] .oc-home-application > :first-child { width: 42px; height: 42px; border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-home-row-arrow { display: block; color: var(--muted-foreground); }
+[data-product-shell] .oc-home-date { background: var(--card); border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-home-section-title h2 { font-size: var(--oc-text-section); }
+[data-product-shell] .oc-home-section-title h2 > svg { color: var(--muted-foreground); width: 1rem; }
+[data-product-shell] .oc-home-update { padding: 1rem .5rem; }
+[data-product-shell] .oc-home-application, [data-product-shell] .oc-home-agenda-row { transition: background var(--oc-duration-micro); }
+@media (max-width: 1199px) and (min-width: 1024px), (max-width: 700px) {
+  [data-product-shell] .oc-home-columns { grid-template-columns: minmax(0,1fr); gap: 2rem; }
+  [data-product-shell] .oc-home-columns > .oc-home-next { min-height: 17rem; padding: 1.5rem; }
+  [data-product-shell] .oc-home-columns > .oc-home-agenda { grid-column: 1; grid-row: 2; }
+  [data-product-shell] .oc-home-applications { grid-row: 3; }
+}
+@media (max-width: 380px) {
+  [data-product-shell] .oc-home-application { grid-template-columns: 36px minmax(0,1fr) 16px; gap: .75rem; }
+  [data-product-shell] .oc-home-application [data-slot="badge"] { grid-column: 2; }
+  [data-product-shell] .oc-home-row-arrow { grid-column: 3; grid-row: 1; }
+}

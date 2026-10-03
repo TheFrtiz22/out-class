@@ -307,7 +307,7 @@ function InterviewSession({
         <div key={active.id} className="oc-interview-candidate space-y-6">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
             canManageKit={hasPermission(membership, "interviews.manage")}
-toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span> 98cfd3c (Prompt 33)
+toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>
               <span
                 className="tabular-nums text-lg tabular-nums"
                 aria-label={`Elapsed interview time ${elapsedInterviewTime(seconds)}`}
@@ -328,7 +328,7 @@ toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} on
                 {running ? "Pause timer" : seconds ? "Resume timer" : "Start timer"}
               </Button>
             </div>
-</div></>}
+</>}
 context={
   <div
     className="min-w-0 max-h-72 overflow-y-auto border-b p-5 lg:sticky lg:top-0 lg:max-h-dvh lg:border-r"

@@ -1,5 +1,7 @@
 "use client"
 
+import { MetricStrip } from "@/components/product/metric-strip"
+import { CampusRibbon } from "@/components/product/campus-ribbon"
 import Link from "next/link"
 import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "lucide-react"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
@@ -24,12 +26,19 @@ export function RecruitingOverview({ data }: { data: Overview }) {
   return <div className="oc-recruiting-overview">
     <p className="oc-recruiting-intro">Thoughtful reviews. Better conversations. A clear next step for {club.name}.</p>
     {anonymousOnly && <p className="oc-recruiting-privacy"><ShieldCheck aria-hidden="true" size={17} />Your overview includes only anonymous rounds available to your review access.</p>}
+    {canRead && recruitment && <MetricStrip label="Recruitment status" items={[
+      { label: "to review", value: count("SUBMITTED", "IN_REVIEW") },
+      { label: "interview stage", value: count("INTERVIEWING") },
+      { label: "offers", value: count("ACCEPTED") },
+      { label: "waitlisted", value: count("WAITLISTED") },
+    ]} />}
     <div className="oc-recruiting-overview-grid">
       {destinations.map(destination => {
         const route = navigation.find(item => item.id === destination.id)
         if (!route?.href) return null
         const Icon = destination.icon
         return <section key={destination.id} className="oc-recruiting-card" data-featured={destination.featured} aria-labelledby={`recruiting-${destination.id}`}>
+          {destination.featured && <CampusRibbon />}
           <div className="oc-recruiting-card-label"><Icon aria-hidden="true" size={21} /><span>{route.label}</span></div>
           <h2 id={`recruiting-${destination.id}`}>{destination.title}</h2>
           <p className="oc-recruiting-description">{destination.description}</p>

@@ -1,4 +1,5 @@
 "use client"
+import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
 import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck } from "lucide-react"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
@@ -23,6 +24,10 @@ export function ManagerOverview({ data }: { data: Overview }) {
   ]
   return <div className="oc-manager-overview">
     <p className="oc-overview-intro">The next meeting, your outstanding work, and follow-ups that keep {club.name} moving.</p>
+    {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
+      ...(canReview ? [{ label: "to review", value: pending }, { label: "interview stage", value: interviews }] : []),
+      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions }] : []),
+    ]} />}
     <div className="oc-manager-overview-grid">
       <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
         <header><h2 id="club-next-meeting"><CalendarDays aria-hidden="true" size={20} />Next meeting</h2><Link href={clubWorkspaceHref(club.id, "meetings")} className={linkStyle}>All meetings <ArrowRight aria-hidden="true" size={15} /></Link></header>

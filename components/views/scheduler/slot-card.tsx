@@ -19,9 +19,9 @@ export function SlotCard({
   const isEmpty = bookedCount === 0
 
   return (
-    <div
+    <div data-slot-status={isEmpty ? "available" : isFull ? "full" : "partial"}
       className={cn(
-        "group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-border p-4",
+        "oc-interview-slot group relative flex min-h-[140px] flex-col justify-between rounded-lg border border-border p-4",
         isEmpty ? "border-dashed bg-slate-50/60" : "bg-white",
       )}
     >

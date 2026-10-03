@@ -67,7 +67,7 @@ function BookingManagerPanel({ onNavigate, blocks, onCreate, selectedDate, setSe
           <div className="flex flex-col gap-5">
             {visibleLocations.length === 0 && <div className="rounded-xl border border-dashed bg-slate-50/50 px-6 py-14 text-center"><DoorOpen className="mx-auto mb-4 size-9 text-primary" /><h3 className="oc-card-heading ">Make room for your next members</h3><p className="mb-5 mt-2 text-sm text-muted-foreground">No rooms match this date and location. Create a room to start taking bookings.</p><CreateScheduleDialog selectedDate={selectedDate} onCreate={(block) => { onCreate(block); setLocationFilter("all") }} /></div>}
             {visibleLocations.map((location) => (
-              <div key={location.id} className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <div key={location.id} className="oc-scheduling-location rounded-xl border border-border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center gap-2">
                   <MapPin className="size-4 text-muted-foreground" />
                   <h3 className="oc-card-heading "><a href={location.mapUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">{location.locationName}</a></h3><span className="ml-auto text-xs text-muted-foreground">{location.slots.length} slots · {location.slots.reduce((n, slot) => n + Math.max(0, slot.capacity - slot.bookedCount), 0)} openings</span>

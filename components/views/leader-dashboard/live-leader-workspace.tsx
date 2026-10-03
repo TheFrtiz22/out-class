@@ -711,11 +711,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
               </section>
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
               <section className="space-y-4 border-b border-border pb-6">
-<<<<<<< HEAD
-                <h3 className="oc-card-heading ">Evaluations</h3>
-=======
-                <h3 className="text-sm font-semibold">Canonical evaluations · score and overall feedback</h3>
->>>>>>> 98cfd3c (Prompt 33)
+                <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
                     <p className="text-xs font-medium">

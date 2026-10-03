@@ -9,6 +9,9 @@ import {
   Bell,
   MapPin,
 } from "lucide-react"
+import { PageHeader } from "@/components/product/page-header"
+import { CampusRibbon } from "@/components/product/campus-ribbon"
+import { MetricStrip } from "@/components/product/metric-strip"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
@@ -236,11 +239,12 @@ export function StudentDashboardView({
 
   return (
     <div className="oc-student-home">
-      <header className="oc-home-greeting">
-        <p className="oc-home-eyebrow">Your applicant workspace</p>
-        <h1>Applicant Overview</h1>
-        <p>{user?.profile?.firstName ? `${user.profile.firstName}, here’s` : "Here’s"} everything you need for your next chapter.</p>
-      </header>
+      <PageHeader eyebrow="University of Virginia · Your campus, connected" title={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}.` : "Your next chapter starts here."} description="A little direction. A world of possibility. Here’s what’s next on Grounds." />
+      {!unavailable && <MetricStrip label="Your campus activity" items={[
+        { label: "applications", value: applications.length },
+        { label: "coming up", value: agenda.length },
+        { label: "new updates", value: updates.filter(update => !update.read).length },
+      ]} />}
       <div className="oc-home-columns">
       {unavailable ? (
         <section className="oc-home-next" role="status">
@@ -253,6 +257,7 @@ export function StudentDashboardView({
       ) : (
         <>
           <section className="oc-home-next" aria-labelledby="home-next-title">
+            <CampusRibbon />
             <div className="oc-home-section-title"><h2 id="home-next-title"><ArrowRight size={19} aria-hidden="true" />Your next step</h2></div>
             <div className="oc-home-next-copy">
               <h3>{nextTitle}</h3>
@@ -290,7 +295,7 @@ export function StudentDashboardView({
           ) : (
             <div className="oc-home-empty">
               <FileText size={23} strokeWidth={1.5} aria-hidden="true" />
-              <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
+              <h3>{unavailable ? "Applications are unavailable" : "Your next chapter is waiting"}</h3>
               <p>
                 {unavailable
                   ? "Reload the page to try again."
@@ -319,7 +324,7 @@ export function StudentDashboardView({
           ) : (
             <div className="oc-home-agenda-empty">
               <CalendarDays size={22} strokeWidth={1.5} aria-hidden="true" />
-              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "No upcoming events"}</h3>
+              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "A little breathing room."}</h3>
               <p>
                 {agendaUnavailable
                   ? "Reload the page to check your scheduled events."

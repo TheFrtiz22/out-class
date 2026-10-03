@@ -20,7 +20,7 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
     ...(hasPermission(member,"recruitment.manage") ? [{title:"Review privacy & test requirements",detail:"Round-level anonymous review and required tests for future applications.",href:`${root}?section=recruitment&tool=rounds`,group:"Recruiting"}] : []),
     ...(hasPermission(member,"interviews.manage") ? [{title:"Interview kits & settings",detail:"Manage round questions and guidance in the recruiting workspace.",href:`${root}?section=recruitment&tool=interviews`,group:"Recruiting"}] : []),
   ]
-  return <div className="space-y-10">
+  return <div className="oc-club-settings space-y-10">
     <ClubProfileEditor key={clubId} initial={profileDraft({ ...club, logoUrl: demo.isDemoEnabled && club.logoUrl?.startsWith("data:image/svg") ? null : club.logoUrl })} demo={demo.isDemoEnabled} onSave={async profile => {
       if (demo.isDemoEnabled) demoStore.mutate(state => {
         if (clubId !== state.clubs[0].id || state.perspective.role !== "leader") throw new Error("Demo management is limited to MII leaders.")

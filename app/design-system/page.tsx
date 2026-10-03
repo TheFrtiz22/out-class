@@ -1,9 +1,10 @@
 'use client'
 
+import { DesignPatterns } from "@/components/product/design-patterns"
+import { PageHeader } from "@/components/product/page-header"
 import { useState } from "react"
 import { ArrowRight, Bell, FileText, Plus } from "lucide-react"
 import { toast } from "sonner"
-import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { Input } from "@/components/ui/input"
@@ -29,16 +30,12 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip
 /** Isolated visual reference. No account mutations or fixture persistence. */
 export default function DesignSystemPage() {
   const [progress, setProgress] = useState(40)
-  return <main className="mx-auto max-w-5xl space-y-section px-page py-section">
-    <header className="space-y-6 entrance">
-      <OutClassLogo className="h-12 w-auto" />
-      <p className="text-caption uppercase tracking-widest text-muted-foreground">Design foundations · component reference</p>
-      <h1 className="oc-page-title max-w-2xl">A considered place for your next chapter.</h1>
-      <p className="max-w-xl text-body text-muted-foreground">Editorial character for meaningful moments. Clear, quiet tools for everyday work.</p>
-    </header>
+  return <main data-outclass-design className="mx-auto max-w-5xl space-y-section px-page py-section">
+    <PageHeader eyebrow="OutClass · Campus OS" title="Built for your next chapter." description="Warm, expressive moments. Precise everyday tools. A shared language for students and club leaders." ribbon />
+    <DesignPatterns />
     <Divider />
     <section aria-labelledby="palette" className="space-y-6">
-      <SectionHeading headingId="palette" title="Color & hierarchy" description="White surfaces, warm canvas, navy actions. Orange is a deliberate accent." />
+      <SectionHeading headingId="palette" title="Color & hierarchy" description="Warm canvas, a navy rail, contextual surfaces, and a signature orange campus ribbon." />
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">{[
         ["Canvas", "bg-background"], ["Surface", "bg-card"], ["Primary", "bg-primary"], ["Signature", "bg-brand-orange"],
       ].map(([label, color]) => <div key={label}><div aria-hidden="true" className={`mb-2 h-16 rounded-md border border-border ${color}`} /><p className="text-sm">{label}</p></div>)}</div>

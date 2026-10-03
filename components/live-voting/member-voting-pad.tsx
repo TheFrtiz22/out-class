@@ -35,8 +35,8 @@ export function MemberVotingPad({
     !session.memberIds.includes(memberId) &&
     session.memberIds.length >= session.memberCount
   return (
-    <main
-      className={`${embedded ? "" : "min-h-svh px-5 py-8"} flex items-center justify-center bg-background font-sans text-foreground`}
+    <main data-workspace-detail
+      className={`oc-voting-pad ${embedded ? "" : "min-h-svh px-5 py-8"} flex items-center justify-center bg-background font-sans text-foreground`}
     >
       <div className="w-full max-w-md space-y-7 rounded-2xl border border-neutral-200 bg-white p-6 shadow-none">
         <header className="flex items-center justify-between gap-3">

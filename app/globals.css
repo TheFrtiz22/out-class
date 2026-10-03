@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 @import "../styles/tokens.css";
 @import "../styles/typography.css";
+@import "../styles/product-tokens.css";
+@import "../styles/product-components.css";
+@import "../styles/product-workflows.css";
 @config "../tailwind.config.js";
 
 @custom-variant dark (&:is(.dark *));
@@ -17,7 +20,7 @@
   --font-weight-light: 400;
   --font-weight-extrabold: 700;
   --font-weight-black: 700;
-  --font-weight-semibold: 700;
+  --font-weight-semibold: var(--oc-weight-semibold);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

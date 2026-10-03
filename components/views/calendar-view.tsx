@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link";
 
+import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -152,7 +153,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   return (
-    <div className="space-y-5">
+    <div className="oc-calendar-workspace space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-5">
         <div>
           <h2 className="oc-section-heading ">Make room for what’s next.</h2>
@@ -170,24 +171,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           </Button>
         )}
       </header>
-      <div
-        className="flex flex-wrap items-center gap-2 border-b border-border pb-4"
-        role="group"
-        aria-label="Calendar view"
-      >
-        {(["agenda", "month", "week", "day"] as const).map((mode) => (
-          <Button
-            key={mode}
-            size="sm"
-            variant={view === mode ? "secondary" : "ghost"}
-            aria-pressed={view === mode}
-            onClick={() => setView(mode)}
-            className="capitalize"
-          >
-            {mode}
-          </Button>
-        ))}
-      </div>
+      <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />
       {view !== "agenda" && (
         <div className="flex flex-wrap items-center gap-3">
           <Button

@@ -26,6 +26,7 @@ export function StatusBadge({ status, className }: { status: string; className?:
   const label = labels[status] ?? status
   return (
     <Badge
+      data-status-label={label}
       className={cn(
         "gap-1.5 font-medium",
         dotStatuses.has(label) &&

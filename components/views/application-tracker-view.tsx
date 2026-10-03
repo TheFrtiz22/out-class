@@ -1,9 +1,14 @@
 "use client"
+import { ApplicationJourneyCard } from "@/components/applications/application-journey-card"
+import { PageHeader } from "@/components/product/page-header"
+import { MetricStrip } from "@/components/product/metric-strip"
+import { SegmentedControl } from "@/components/product/segmented-control"
+import { EmptyState } from "@/components/ui/empty-state"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw, FilePenLine, FileCheck2, Clock3 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Check, CalendarDays, RefreshCw, FilePenLine } from "lucide-react"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
@@ -370,48 +375,17 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     )
   return (
     <div ref={content} className="oc-applications mx-auto max-w-5xl space-y-7" data-application-scope={scope}>
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          {scope !== "all" && <p className="mb-3 text-xs tracking-widest uppercase text-muted-foreground">Your next chapter</p>}
-          <h1 className="oc-page-title ">{scope === "all" ? "My Applications" : scope === "interviews" ? "Interviews" : "Decisions"}</h1>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
-            {scope === "all" ? "Pick up a draft, follow your progress, or see what comes next." : scope === "interviews" ? "Your interview-stage applications and recorded bookings, in one place." : "Updates from your clubs. Open an application to read the details and next steps."}
-          </p>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => setRetry((value) => value + 1)}>
-          <RefreshCw className="size-3.5" />Refresh
-        </Button>
-      </header>
+      <PageHeader eyebrow="Your next chapter" title={scope === "all" ? "Every step, together." : scope === "interviews" ? "Make a connection." : "The next chapter."} description={scope === "all" ? "Your applications, from first draft to final decision." : scope === "interviews" ? "Get ready for the conversation. Your interview details live here." : "Updates from your clubs, with a clear next step."} ribbon action={<Button variant="ghost" size="sm" onClick={() => setRetry(value => value + 1)}><RefreshCw className="size-3.5" />Refresh</Button>} />
+      {applications.length > 0 && scope === "all" && <MetricStrip label="Application progress" items={[
+        { label: "drafts", value: applications.filter(item => item.status === "DRAFTING").length },
+        { label: "in progress", value: applications.filter(item => ["SUBMITTED", "IN_REVIEW", "INTERVIEWING"].includes(item.status)).length },
+        { label: "decisions", value: applications.filter(item => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status)).length },
+      ]} />}
       {!applications.length ? (
-        <div className="space-y-4 border-y border-border py-12">
-          <h3 className="oc-card-heading ">No applications yet</h3>
-          <p className="max-w-lg text-sm leading-7 text-muted-foreground">
-            Your drafts, submissions, and decisions will appear here when you start an application.
-          </p>
-          <Button onClick={() => onNavigate?.("discover")}>
-            Discover clubs
-            <ArrowRight className="size-4" />
-          </Button>
-        </div>
+        <EmptyState icon={<FilePenLine />} title="Your next chapter is waiting." description="Start exploring clubs. Your drafts, progress, and decisions will find a home here." action={<Button onClick={() => onNavigate?.("discover")}>Discover clubs<ArrowRight className="size-4" /></Button>} />
       ) : (
         <>
-          {scope === "all" && <div
-            role="group"
-            aria-label="Filter applications"
-            className="flex flex-wrap gap-2 border-b border-border pb-4"
-          >
-            {["All", "Drafts", "In progress", "Decisions"].map((label) => (
-              <Button
-                key={label}
-                size="sm"
-                variant={filter === label ? "secondary" : "ghost"}
-                aria-pressed={filter === label}
-                onClick={() => setFilter(label)}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>}
+          {scope === "all" && <SegmentedControl label="Filter applications" value={filter} onChange={setFilter} options={["All", "Drafts", "In progress", "Decisions"].map(label => ({ label, value: label }))} />}
           <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
           <ul className="oc-application-list">
             {visible.map(item => {
@@ -420,18 +394,8 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
                 : scope === "interviews" && interview ? `${interview.past ? "Last interview" : "Interview"} · ${date(interview.booking.slot.startTime)} · ${interview.booking.slot.location || "Location not provided"}`
                 : item.status === "INTERVIEWING" ? interview && !interview.past ? `Interview · ${date(interview.booking.slot.startTime)}` : "No upcoming interview booking recorded. Check the club’s instructions."
                 : applicationNextStep(item.status)
-              const NextIcon = item.status === "DRAFTING" ? FilePenLine : item.status === "INTERVIEWING" ? CalendarDays : ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(item.status) ? FileCheck2 : Clock3
-              return <li key={item.id}><article className="oc-application-row" data-status={item.status}>
-                <div className="oc-application-identity">
-                  <ClubLogo clubId={item.clubId} logoUrl={item.club.logoUrl} color={item.club.color || "#142d4e"} text={item.club.name.slice(0, 2)} size="lg" />
-                  <div className="min-w-0"><h2><button data-application-id={item.id} onClick={() => { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }}>{item.club.name}<span className="sr-only"> · {item.status === "DRAFTING" ? "Continue draft" : "View application"}</span></button></h2>
-                    <p className="oc-application-round">{item.status === "DRAFTING" ? "Draft · not yet applied" : item.round?.name ? `Club round: ${item.round.name}` : "Club round not provided"}</p>
-                  </div>
-                  <Badge variant="secondary" className="oc-application-status">{applicationStatusLabels[item.status]}</Badge>
-                </div>
-                <div className="oc-application-progress"><RecruitmentTimeline status={item.status} compact /></div>
-                <div className="oc-application-next">{scope === "all" && <NextIcon className="oc-application-next-icon" size={20} aria-hidden="true" />}<p>{nextStep}</p><span aria-hidden="true">{item.status === "DRAFTING" ? "Continue draft" : "View details"}<ArrowRight size={15} /></span></div>
-              </article></li>
+              return <li key={item.id}><ApplicationJourneyCard id={item.id} club={{ ...item.club, id: item.clubId }} status={item.status} round={item.round?.name} nextStep={nextStep} showIcon={scope === "all"} onOpen={() => { lastOpened.current = item.id; setActiveId(item.id); setNotice("") }} /></li>
+
             })}
           </ul>
           {!visible.length && (

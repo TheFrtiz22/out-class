@@ -1,4 +1,6 @@
 "use client"
+import { PageHeader } from "@/components/product/page-header"
+import { CampusRibbon } from "@/components/product/campus-ribbon"
 import Image from "next/image"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Sparkles, Users } from "lucide-react"
@@ -98,14 +100,11 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
     )
   return (
     <div className="oc-discovery" ref={resultsRef}>
-      <header className="oc-explore-heading">
-        <div><p className="oc-club-eyebrow">Explore · University of Virginia</p>
-        <h1>{categoriesOnly ? "Follow your interests." : <>Find your people<br />at UVA.</>}</h1>
-      <p className="oc-directory-intro">
-        {categoriesOnly ? "Choose an interest to browse the club directory by category." : "Explore clubs, communities, and opportunities to make the most of your time on Grounds."}
-      </p></div>
-        <Image src="/images/campus/rotunda-960.webp" alt="" width="960" height="640" sizes="(max-width: 600px) 100vw, 70vw" className="oc-explore-campus" />
-      </header>
+      <div className="oc-explore-heading">
+        <PageHeader eyebrow="Explore · University of Virginia" title={categoriesOnly ? "Follow your interests." : <>Find your people.<br /><em>Make your mark.</em></>} description={categoriesOnly ? "Choose an interest and see where it takes you." : "Big ideas, shared interests, and your kind of people. Discover your place on Grounds."} />
+        <Image src="/images/campus/rotunda-960.webp" alt="" width={960} height={640} sizes="(max-width: 600px) 100vw, 50vw" className="oc-explore-campus" />
+        <CampusRibbon />
+      </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
         <Input
@@ -246,7 +245,7 @@ export function DiscoverView({ onNavigate, categoriesOnly = false }: { onNavigat
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
           {!active.length && !categoriesOnly && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
-              <div className="oc-explore-section-heading"><div><h2 id="curated-title">A few places to start</h2></div>
+              <div className="oc-explore-section-heading"><div><h2 id="curated-title">Worth getting to know</h2></div>
               <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An alphabetical introduction to the directory."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>

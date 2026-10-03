@@ -54,3 +54,12 @@
   [data-product-shell]:has(.oc-manager-overview) .oc-product-brand img { max-width: 110px; height: auto; }
 }
 @media (prefers-reduced-motion: reduce) { .oc-manager-overview a { transition: none; } }
+[data-product-shell] .oc-manager-overview-grid { gap: 2.5rem; }
+[data-product-shell] .oc-overview-panel, [data-product-shell] .oc-overview-recaps > section { border: 0; border-radius: 0; box-shadow: none; padding: 0; background: transparent; }
+[data-product-shell] .oc-overview-panel:first-child { background: var(--oc-surface-blue); padding: 1.75rem; border-radius: var(--oc-radius-xl); }
+[data-product-shell] .oc-overview-meeting h3 { font-family: var(--oc-font-display); font-weight: 400; font-size: 1.75rem; }
+[data-product-shell] .oc-overview-follow-up { grid-column: 1 / -1; padding-block: 1.5rem; border-block: 1px solid var(--border); }
+[data-product-shell] .oc-overview-follow-up li > a { padding: 1.25rem .75rem; border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-overview-recaps li > a { border: 0; background: var(--oc-surface-warm); border-radius: var(--oc-radius-lg); }
+[data-product-shell] .oc-overview-meeting-action { background: var(--primary); border-radius: var(--oc-radius-md); }
+[data-product-shell] .oc-overview-meeting-action:hover { background: var(--oc-rail-selected); }
