@@ -11,12 +11,15 @@ import { useApplicationState } from "@/lib/application-state"
 import type { ViewId } from "@/lib/views"
 import { notificationGroups, notificationPriority } from "@/lib/student-agenda"
 import { toast } from "sonner"
+import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
+import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
 const selectStyle =
   "h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
 
 export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
+  const { invitations } = useOrganizationInvitations()
   const {
     notifications: items,
     markNotificationRead,
@@ -99,6 +102,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
 
   return (
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
+      {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       <header>
         <p className="text-sm text-muted-foreground">
           Notification delivery is not connected yet. Demo and local preview updates stay in this browser.

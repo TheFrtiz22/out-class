@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from 
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useApplicationState } from "@/lib/application-state"
+import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { createClient } from "@/utils/supabase/client"
 import { studentNav, adminNav, type ViewId } from "@/lib/views"
 import { canLeaveWorkspace, type ProductNavItem } from "@/lib/product-navigation"
@@ -47,6 +48,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     return hasPermission(member, "club.settings")
   }) : [...studentNav.filter(i => i.id !== "student-profile"), { id: "my-clubs" as const, title: "My Clubs", icon: Users2 }]
   const unread = notifications.filter(n => !n.read).length
+  const { invitations } = useOrganizationInvitations()
+  const pendingInvitations = invitations.length
   const name = user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.email || "Your account"
   useEffect(() => {
     document.title = `${title} · OutClass`
@@ -95,7 +98,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
         <div className="oc-product-utilities ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <Button variant="ghost" className="oc-global-search hidden text-muted-foreground md:inline-flex" onClick={() => setSearch(true)}><Search />Search OutClass <kbd className="ml-2 text-[length:var(--oc-size-10)]">⌘ K</kbd></Button>
           <IconButton aria-label="Search OutClass" className="md:hidden" onClick={() => setSearch(true)}><Search /></IconButton>
-          <IconButton data-tour="notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className="relative" onClick={() => navigate("inbox")}><Bell />{unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
+          <IconButton data-tour="notifications" aria-label={unread || pendingInvitations ? `Notifications, ${unread} unread${pendingInvitations ? `, ${pendingInvitations} pending invitation${pendingInvitations === 1 ? "" : "s"}` : ""}` : "Notifications"} className="relative" onClick={() => navigate("inbox")}><Bell />{unread + pendingInvitations > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
           {manager && <div className="oc-product-club hidden min-w-0 border-l pl-4 sm:block"><p className="max-w-72 truncate text-sm font-semibold text-primary">{clubName}</p><p className="text-[length:var(--oc-size-11)] text-muted-foreground">Club workspace</p></div>}
           <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" aria-label={`Account menu for ${name}`}><span className="oc-account-initials" aria-hidden="true">{user?.profile ? `${user.profile.firstName.slice(0,1)}${user.profile.lastName.slice(0,1)}` : <UserRound />}</span></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/organizations") }}><Settings />Organization settings</DropdownMenuItem>}<DemoMenuItems />{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>

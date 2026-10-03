@@ -232,3 +232,15 @@ html { scroll-padding-top: 5rem; }
 html:has([aria-label="Administrator view-as session"]) .oc-product-header {
   top: var(--support-banner-height, 120px);
 }
+
+/* Invitations are temporary attention items; their spacing collapses with them. */
+.oc-invitation-attention {
+  max-width: 64rem;
+  overflow: hidden;
+  transition: height 180ms ease, opacity 180ms ease;
+}
+.oc-invitation-attention-inner { padding-bottom: 1.25rem; }
+.oc-invitation-attention[data-collapsing="true"] { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .oc-invitation-attention { transition: none; }
+}

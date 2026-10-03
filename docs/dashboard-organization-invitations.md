@@ -1,44 +1,52 @@
 # Dashboard organization invitations
 
-The existing student dashboard and authenticated onboarding wizard share the
-`OrganizationOwnershipRequests` integration point. It now displays all matched
-identity-bound invitations, including ordinary MEMBER requests and separately
-worded OWNER claims, rather than filtering exclusively to owners. Club branding,
-responsive cards, buttons, typography, and focus states reuse OutClass components.
-Each card has independent busy/error state and prevents overlapping submissions.
+`OrganizationOwnershipRequests` remains the integration point for identity-bound
+MEMBER invitations and separately worded OWNER claims. The dashboard treats these
+as temporary actionable notifications near the top of the page:
 
-The server's `getOrganizationInvitations` discovers requests from verified school
-identities. Profile existence or account age does not affect discovery, so a CSV
-import can invite an existing student or someone who joins later. The browser sends
-only an invitation UUID when responding, never a school/computing ID or requested
-role. Server identity matching, pending/expiry checks, inviter authority, organization
-locking, membership upsert, role preservation, acceptance timestamps, and audit
-entries remain in the existing transaction helper and database constraints.
+- No visible pending requests: return `null`, including while initial discovery is
+  loading or fails. No heading, empty card, placeholder, or invitation spacing.
+- One request: a compact branded attention card with invitation details, Accept
+  (or Claim organization), Not now, and confirmed Decline.
+- Multiple requests: a compact counted disclosure to review each invitation in a
+  bounded scroll area. Handling requests updates the count immediately; the last
+  visible request collapses away, then unmounts. Reduced motion skips transitions.
 
-Member **Accept** removes the request as soon as the server commits and refreshes
-the auth context so club lists/navigation update without leaving the dashboard.
-A refresh failure does not undo acceptance or offer a second acceptance attempt.
-OWNER cards use **Claim organization**, explain management capabilities, and open
-the existing server-returned club workspace after claiming.
+`OrganizationInvitationsProvider` shares one account-scoped session cache between
+the dashboard, Settings, inbox, and notification bell. It uses the existing
+`getOrganizationInvitations(true)` recovery query, including dismissed requests.
+The dashboard filters dismissed requests; the bell counts all pending requests,
+which can be reviewed in the inbox or Settings. No invitation records are copied
+into the local notification store. Discovery runs on account changes, explicit
+Settings refresh/retry, and tab focus/visibility restoration. In-flight discovery
+results reconcile completed responses so they cannot resurrect handled requests.
+Account/demo changes conceal private data immediately and cancel outdated reads
+without remounting the rest of the application. Guests and demo sessions make no
+invitation discovery calls.
 
-**Not now** changes only `dismissedAt`. It creates no membership, changes no invitation
-status, and never calls decline. The dashboard hides the card after the server
-confirms dismissal. A success notice and persistent link lead to
-`/settings/organizations` (**Settings → Organizations → Pending Invitations**).
-This authenticated recovery page includes dismissed requests and offers acceptance
-or **Show on dashboard**, which clears the dismissal timestamp. Explicit decline
-remains available on the existing invitation-link page; the dashboard does not add
-a decline control.
+All responses reuse the existing server actions and send only the invitation ID.
+Verified identity matching, pending/expiry checks, inviter authority, organization
+locking, membership upsert, role preservation, response timestamps, and audit
+entries remain in the existing transaction helper and database constraints. No
+schema, permission, RLS, email, or server action changes are introduced.
 
-Requests load on mount and identity changes, with explicit refresh/retry controls.
-In-flight discovery results reconcile with completed actions so stale responses do
-not resurrect accepted/hidden requests. Empty, loading, success, and error states
-are announced through status/alert regions. Both controls remain disabled while
-that card is submitting; other requests remain independent.
+Accept and confirmed Decline remove a request as soon as the server commits,
+without refreshing the page. Acceptance refreshes the auth context so memberships
+and navigation update. A membership-refresh failure never reverses acceptance.
+OWNER claims retain their existing server-returned club workspace navigation.
+Each card retains independent submission/error state and duplicate-submit guards;
+failed responses leave the invitation available for retry.
 
-No schema/RLS changes, email sending, realtime subscription, or notification-store
-rewrite are introduced. Discovery retains its existing 100-request bound. Tests
-cover multiple requests, existing accounts, owner wording/routing, double clicks,
-accept/dismiss/restore, errors, stale refreshes, membership refresh failure, protected
-Settings access, verified identity checks, explicit terminal decline, and actual
-SQL membership/dismissal transitions against all migrations in PGlite.
+Not now changes only `dismissedAt`, without declining or creating a membership.
+Dismissed invitations remain pending in the shared cache and notification count.
+Settings includes all dismissed requests and can restore their dashboard visibility.
+Settings retains explicit loading, retry, and status UI, and hides the area once
+there are no pending requests. Response feedback
+also appears as a toast, so successful handling does not leave a permanent success
+card on the dashboard.
+
+Regression tests cover conditional rendering, counted review, final collapse,
+notification/inbox integration, guest/demo isolation, account switches, tab-focus
+discovery, stale queries, acceptance/decline/dismissal/restore, failed responses,
+owner routing, duplicate submissions, membership-refresh failure, and protected
+Settings access. Existing backend and SQL membership/invitation tests remain intact.

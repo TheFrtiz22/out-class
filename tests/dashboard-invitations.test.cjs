@@ -1,37 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const ts=require('typescript');
-const nodes=node=>!node||typeof node!=='object'?[]:Array.isArray(node)?node.flatMap(nodes):[node,...nodes(node.props?.children)];
-function harness(api,file,props,auth={user:{id:'user'},refreshUser:async()=>{}}) {
-  const state=[],effects=[],cache={};let cursor=0;
-  const react={
-    useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],next=>{state[i]=typeof next==='function'?next(state[i]):next;}];},
-    useRef:initial=>{const i=cursor++;if(!(i in state))state[i]={current:initial};return state[i];},
-    useEffect:(effect,deps)=>{const i=cursor++;if(!state[i]||deps.some((v,j)=>v!==state[i][j])){state[i]=deps;effects.push(effect);}},
-  };
-  function load(file) {
-    file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;
-    const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
-    new Function('require','module','exports',compiled)(name=>{
-      if(name==='react')return react;if(name==='next/link')return{default:'Link'};
-      if(name==='@/contexts/auth-context')return{useAuth:()=>auth};
-      if(name==='@/utils/auth')return{requireAuth:api.requireAuth};
-      if(name==='@/utils/profile-onboarding')return{requireCompletedStudentProfile:api.requireCompletedStudentProfile};
-      if(name==='@/components/organization-memberships')return{OrganizationMemberships:'OrganizationMemberships'};
-      if(name==='@/components/outclass-logo')return{OutClassLogo:'OutClassLogo'};
-      if(name==='@/actions/club-onboarding')return api;
-      if(name==='@/components/ui/button')return{Button:'Button'};
-      if(name==='@/components/club-logo')return{ClubLogo:'ClubLogo'};
-      if(name==='@/components/organization-invitation-card')return{OrganizationInvitationCard:'OrganizationInvitationCard'};
-      if(name==='@/components/organization-ownership-requests')return{OrganizationOwnershipRequests:'OrganizationOwnershipRequests'};
-      if(name.startsWith('@/'))return load(name.slice(2)+'.ts');return require(name);
-    },mod,mod.exports);return mod.exports;
-  }
-  const Component=Object.values(load(file)).find(value=>typeof value==='function');
-  return{render(){cursor=0;return Component(props);},async flush(){for(const effect of effects.splice(0))effect();for(let i=0;i<10;i++)await Promise.resolve();},auth};
-}
+const {harness,nodes}=require('./helpers/invitations-ui.cjs');
 const invitation=(id='member',role='MEMBER')=>({id,requestedRole:role,invitedName:'John Smith',invitedYear:'2028',permissions:[],expiresAt:new Date(Date.now()+86400000),dismissedAt:null,club:{id:'club-'+id,name:'Madison Investment Fund',logoUrl:null,color:'#142d4e'}});
 const container=(api,props={},auth)=>harness(api,'components/organization-ownership-requests.tsx',{enabled:true,...props},auth);
 const card=(api,props={})=>harness(api,'components/organization-invitation-card.tsx',{invitation:invitation(),onChanged:async()=>{},...props});
@@ -41,14 +10,14 @@ test('multiple member/owner requests render for existing users; accepting remove
   let resolveRefresh,refreshes=0;const h=container({getOrganizationInvitations:async()=>[invitation(),invitation('other'),invitation('owner','OWNER')]},{},{user:{id:'existing-user',profile:{firstName:'John'}},refreshUser:()=>{refreshes++;return new Promise(resolve=>resolveRefresh=resolve);}});
   h.render();await h.flush();let tree=h.render();assert.equal(cards(tree).length,3);
   const pending=cards(tree)[0].props.onChanged({id:'member',kind:'accepted',clubName:'Madison Investment Fund'});
-  tree=h.render();assert.deepEqual(cards(tree).map(node=>node.props.invitation.id),['other','owner']);assert.equal(refreshes,1);assert.ok(JSON.stringify(tree).includes('joined Madison Investment Fund'));
+  tree=h.render();assert.deepEqual(cards(tree).map(node=>node.props.invitation.id),['other','owner']);assert.equal(refreshes,1);assert.ok(h.toasts.some(message=>message.includes('joined Madison Investment Fund')));
   resolveRefresh();await pending;
 });
 
 test('Not now removes the dashboard card without rejection and links to Settings recovery',async()=>{
   const h=container({getOrganizationInvitations:async()=>[invitation()]});h.render();await h.flush();let tree=h.render();
   await cards(tree)[0].props.onChanged({id:'member',kind:'dismissed',clubName:'Madison Investment Fund'});tree=h.render();assert.equal(cards(tree).length,0);
-  assert.ok(JSON.stringify(tree).includes('still pending'));assert.ok(nodes(tree).some(node=>node.type==='Link'&&node.props.href==='/settings/organizations'));
+  assert.ok(h.toasts.some(message=>message.includes('still pending')));await h.flush();await h.finishCollapse();assert.equal(h.render(),null);assert.equal(h.context().invitations.length,1);
 });
 
 test('Settings reads dismissed requests and restores without accepting or removing pending requests',async()=>{
@@ -62,7 +31,7 @@ test('member Accept validates only invitation ID, blocks repeated clicks, and do
   let resolve,calls=0,changed=0,navigations=0;const previous=global.window;global.window={location:{assign:()=>navigations++}};
   try {
     const h=card({acceptIdentityClubInvitation:id=>{assert.equal(id,'member');calls++;return new Promise(done=>resolve=done);}},{onChanged:async value=>{assert.equal(value.kind,'accepted');changed++;}});
-    let tree=h.render();assert.ok(JSON.stringify(tree).includes('added you as a member'));
+    let tree=h.render();assert.ok(JSON.stringify(tree).includes('invited you as a member'));
     const button=nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Accept');button.props.onClick();button.props.onClick();assert.equal(calls,1);
     tree=h.render();assert.ok(nodes(tree).filter(node=>node.type==='Button').every(node=>node.props.disabled));
     resolve({clubId:'club-member'});await h.flush();assert.equal(changed,1);assert.equal(navigations,0);
@@ -94,13 +63,13 @@ test('stale, revoked, expired and wrong-account errors retain the card and allow
 test('a delayed refresh cannot resurrect a request accepted while the query was running',async()=>{
   let resolve;const h=container({getOrganizationInvitations:()=>new Promise(done=>resolve=done)});h.render();await h.flush();
   resolve([invitation()]);await h.flush();let tree=h.render();const changed=cards(tree)[0].props.onChanged;
-  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Refresh requests').props.onClick();h.render();await h.flush();
+  h.context().refresh();h.render();await h.flush();
   await changed({id:'member',kind:'accepted',clubName:'Madison Investment Fund'});resolve([invitation()]);await h.flush();assert.equal(cards(h.render()).length,0);
 });
 
 test('a membership refresh failure never reverses committed acceptance or invites the user to accept again',async()=>{
   const h=container({getOrganizationInvitations:async()=>[invitation()]},{},{user:{id:'user'},refreshUser:async()=>{throw Error('Refresh failed');}});h.render();await h.flush();
-  await cards(h.render())[0].props.onChanged({id:'member',kind:'accepted',clubName:'Madison Investment Fund'});const tree=h.render();assert.equal(cards(tree).length,0);assert.ok(JSON.stringify(tree).includes('joined Madison Investment Fund'));assert.ok(JSON.stringify(tree).includes('Refresh the page'));
+  await cards(h.render())[0].props.onChanged({id:'member',kind:'accepted',clubName:'Madison Investment Fund'});const tree=h.render();assert.equal(cards(tree).length,0);assert.ok(h.toasts.some(message=>message.includes('joined Madison Investment Fund')));assert.ok(h.toasts.some(message=>message.includes('Refresh the page')));await h.flush();await h.finishCollapse();assert.equal(h.render(),null);
 });
 
 test('organization Settings is protected by server authentication before rendering recovery controls',async()=>{
@@ -150,4 +119,74 @@ test('Settings memberships handle loading, empty, and failed authenticated data'
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='status'));auth.loading=false;
   assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));nodes(h.render()).find(node=>node.props?.children==='Retry organizations').props.onClick();assert.equal(retries,1);
   auth.user={memberships:[]};assert.ok(JSON.stringify(h.render()).includes('haven’t joined'));
+});
+
+test('zero requests render literally nothing before and after discovery, including failed discovery',async()=>{
+  for(const getOrganizationInvitations of [async()=>[],async()=>{throw Error('Unavailable');}]) {
+    const h=container({getOrganizationInvitations});assert.equal(h.render(),null);await h.flush();assert.equal(h.render(),null);
+    assert.equal(h.context().invitations.length,0);
+  }
+});
+
+test('one invitation is a compact action card; two or more have a counted review disclosure',async()=>{
+  const one=container({getOrganizationInvitations:async()=>[invitation()]});one.render();await one.flush();let tree=one.render();
+  assert.equal(cards(tree).length,1);assert.equal(cards(tree)[0].props.compact,true);assert.equal(cards(tree)[0].props.allowDecline,true);
+  assert.equal(nodes(tree).some(node=>node.type==='details'),false);assert.ok(!JSON.stringify(tree).includes('Club Invitations'));
+  const many=container({getOrganizationInvitations:async()=>[invitation(),invitation('other')]});many.render();await many.flush();tree=many.render();
+  assert.equal(cards(tree).length,2);assert.ok(JSON.stringify(tree).includes('invitations need your response'));
+  assert.equal(nodes(tree).find(node=>node.type==='details').props.open,undefined);
+  await cards(tree)[0].props.onChanged({id:'member',kind:'declined',clubName:'Fund'});tree=many.render();
+  assert.equal(cards(tree).length,1);assert.equal(nodes(tree).some(node=>node.type==='details'),false);assert.equal(many.context().invitations.length,1);
+});
+
+test('the final accepted or declined invitation collapses, unmounts and clears the shared notification count',async()=>{
+  for(const kind of ['accepted','declined']) {
+    const h=container({getOrganizationInvitations:async()=>[invitation()]});h.render();await h.flush();
+    let tree=h.render();tree.props.ref.current={getBoundingClientRect:()=>({height:110}),offsetHeight:110};
+    await cards(tree)[0].props.onChanged({id:'member',kind,clubName:'Fund'});tree=h.render();
+    assert.equal(h.context().invitations.length,0);assert.equal(tree.props['data-collapsing'],true);assert.equal(tree.props.style.height,110);
+    await h.flush();await h.finishCollapse();assert.equal(h.render(),null);
+  }
+});
+
+test('compact cards expose invitation details and confirmed decline, while failed decline retains the card',async()=>{
+  let declines=0;const h=card({declineIdentityClubInvitation:async()=>{declines++;throw Error('Expired');}},{compact:true,allowDecline:true});
+  assert.equal(nodes(h.render()).find(node=>node.type==='Link').props.href,'/invitations/member');
+  nodes(h.render()).find(node=>node.props?.children==='Decline').props.onClick();
+  nodes(h.render()).find(node=>node.props?.children==='Confirm decline').props.onClick();await h.flush();
+  assert.equal(declines,1);assert.ok(nodes(h.render()).some(node=>node.props?.role==='alert'));
+});
+
+test('refresh retains actionable cards, reconciles dismissal, and cannot resurrect terminal responses',async()=>{
+  let resolve;const h=container({getOrganizationInvitations:()=>new Promise(done=>resolve=done)});
+  h.render();await h.flush();resolve([invitation(),invitation('other')]);await h.flush();let tree=h.render();const changed=cards(tree)[0].props.onChanged;
+  h.context().refresh();h.render();await h.flush();assert.equal(cards(h.render()).length,2);
+  await changed({id:'member',kind:'declined',clubName:'Fund'});await changed({id:'other',kind:'dismissed',clubName:'Other'});
+  resolve([invitation(),invitation('other')]);await h.flush();tree=h.render();
+  assert.equal(cards(tree).length,0);assert.deepEqual(h.context().invitations.map(item=>item.id),['other']);assert.ok(h.context().invitations[0].dismissedAt);
+});
+
+test('guests and demo mode make no invitation calls; account switches cancel reads and conceal previous requests',async()=>{
+  let calls=0,resolve;const auth={user:null,refreshUser:async()=>{}};
+  const h=container({getOrganizationInvitations:()=>{calls++;return new Promise(done=>resolve=done);}},{},auth);
+  assert.equal(h.render(),null);await h.flush();assert.equal(calls,0);
+  auth.user={id:'student'};h.demo.isDemoEnabled=true;h.render();await h.flush();assert.equal(calls,0);
+  h.demo.isDemoEnabled=false;h.render();await h.flush();const oldResolve=resolve;assert.equal(calls,1);
+  auth.user={id:'other-student'};assert.equal(h.render(),null);await h.flush();oldResolve([invitation()]);await h.flush();assert.equal(h.render(),null);
+  resolve([invitation('other')]);await h.flush();assert.equal(cards(h.render())[0].props.invitation.id,'other');
+  auth.user=null;assert.equal(h.render(),null);assert.equal(h.context().invitations.length,0);
+});
+
+test('returning to the tab discovers new requests without reloading the page',async()=>{
+  let records=[],calls=0;const h=container({getOrganizationInvitations:async()=>{calls++;return records;}});
+  h.render();await h.flush();assert.equal(h.render(),null);
+  records=[invitation()];h.focus();h.render();await h.flush();assert.equal(cards(h.render()).length,1);assert.equal(calls,2);
+});
+
+test('responses finishing together still collapse the final request',async()=>{
+  const h=container({getOrganizationInvitations:async()=>[invitation(),invitation('other')]});h.render();await h.flush();
+  const tree=h.render();tree.props.ref.current={getBoundingClientRect:()=>({height:80}),offsetHeight:80};
+  const respond=cards(tree)[0].props.onChanged;
+  await Promise.all([respond({id:'member',kind:'declined',clubName:'Fund'}),respond({id:'other',kind:'declined',clubName:'Other'})]);
+  assert.equal(h.render().props['data-collapsing'],true);await h.flush();await h.finishCollapse();assert.equal(h.render(),null);
 });

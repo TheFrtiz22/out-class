@@ -1,51 +1,23 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const fs=require('node:fs');
-const path=require('node:path');
-const ts=require('typescript');
-const nodes=node=>!node||typeof node!=='object'?[]:Array.isArray(node)?node.flatMap(nodes):[node,...nodes(node.props?.children)];
-function harness(api,file,props) {
-  const state=[],effects=[],cache={};let cursor=0;
-  const react={
-    useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],next=>{state[i]=typeof next==='function'?next(state[i]):next;}];},
-    useRef:initial=>{const i=cursor++;if(!(i in state))state[i]={current:initial};return state[i];},
-    useEffect:(effect,deps)=>{const i=cursor++;if(!state[i]||deps.some((v,j)=>v!==state[i][j])){state[i]=deps;effects.push(effect);}},
-  };
-  function load(file) {
-    file=path.resolve(file);if(cache[file])return cache[file].exports;
-    const mod={exports:{}};cache[file]=mod;
-    const compiled=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
-    new Function('require','module','exports',compiled)(name=>{
-      if(name==='react')return react;
-      if(name==='next/link')return{default:'Link'};
-      if(name==='@/actions/club-onboarding'||name==='@/actions/club-access')return api;
-      if(name==='@/components/ui/button')return{Button:'Button'};
-      if(name==='@/components/organization-invitation-card')return{OrganizationInvitationCard:'OrganizationInvitationCard'};
-      if(name==='@/contexts/auth-context')return{useAuth:()=>({user:{id:'user'},refreshUser:async()=>{}})};
-      if(name.startsWith('@/'))return load(name.slice(2)+'.ts');
-      return require(name);
-    },mod,mod.exports);return mod.exports;
-  }
-  const Component=Object.values(load(file)).find(value=>typeof value==='function');
-  return{render(){cursor=0;return Component(props);},async flush(){for(const effect of effects.splice(0))effect();for(let i=0;i<8;i++)await Promise.resolve();},load};
-}
+const {harness,nodes}=require('./helpers/invitations-ui.cjs');
 const invite={id:'invite',invitedName:'John Smith',invitedYear:'2027',requestedRole:'OWNER',club:{id:'club',name:'Madison Investment Fund'}};
 
 test('authenticated discovery surfaces ownership requests and editable profile suggestions; disabled discovery makes no calls',async()=>{
   let calls=0,defaults;
   const api={getOrganizationInvitations:async()=>{calls++;return[invite,{...invite,id:'member',requestedRole:'MEMBER'}];}};
   const h=harness(api,'components/organization-ownership-requests.tsx',{enabled:true,onProfileDefaults:value=>{defaults=value;}});
-  assert.ok(JSON.stringify(h.render()).includes('Checking organization'));await h.flush();const tree=h.render();
+  assert.equal(h.render(),null);await h.flush();const tree=h.render();await h.flush();
   assert.equal(calls,1);assert.deepEqual(defaults,{firstName:'John',lastName:'Smith',gradYear:'2027'});
   assert.ok(JSON.stringify(tree).includes('Madison Investment Fund'));
   const cards=nodes(tree).filter(node=>node.type==='OrganizationInvitationCard');assert.equal(cards.length,2);assert.equal(cards[0].props.invitation.requestedRole,'OWNER');assert.equal(cards[1].props.invitation.requestedRole,'MEMBER');
-  const disabled=harness(api,'components/organization-ownership-requests.tsx',{enabled:false});assert.equal(disabled.render(),null);await disabled.flush();assert.equal(calls,1);
+  const disabled=harness(api,'components/organization-ownership-requests.tsx',{enabled:false},{user:null});assert.equal(disabled.render(),null);await disabled.flush();assert.equal(calls,1);
 });
 
 test('failed discovery offers retry and successful empty discovery is unobtrusive',async()=>{
-  let calls=0;const h=harness({getOrganizationInvitations:async()=>{if(++calls===1)throw Error('Unavailable');return[];}},'components/organization-ownership-requests.tsx',{enabled:true});
+  let calls=0;const h=harness({getOrganizationInvitations:async()=>{if(++calls===1)throw Error('Unavailable');return[];}},'components/organization-ownership-requests.tsx',{enabled:true,includeDismissed:true});
   h.render();await h.flush();let tree=h.render();assert.ok(nodes(tree).some(node=>node.props?.role==='alert'));
-  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry invitations').props.onClick();h.render();await h.flush();assert.ok(JSON.stringify(h.render()).includes('all caught up'));assert.equal(calls,2);
+  nodes(tree).find(node=>node.type==='Button'&&node.props.children==='Retry invitations').props.onClick();h.render();await h.flush();assert.equal(h.render(),null);assert.equal(calls,2);
 });
 
 test('claim button blocks repeated clicks, sends only invitation ID, and routes to existing club workspace',async()=>{

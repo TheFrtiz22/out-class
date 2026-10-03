@@ -36,6 +36,7 @@ import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { CorkboardProvider } from "@/contexts/corkboard-context"
 import { AuthProvider } from "@/contexts/auth-context"
+import { OrganizationInvitationsProvider } from "@/contexts/organization-invitations-context"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { prisma } from "@/utils/prisma"
 import { readDemoTemplate } from "@/lib/demo/validate"
@@ -68,9 +69,11 @@ export default async function RootLayout({
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
           <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)}>
+            <OrganizationInvitationsProvider>
             <CorkboardProvider><ClubCustomizationProvider>
               <div style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
             </ClubCustomizationProvider></CorkboardProvider>
+            </OrganizationInvitationsProvider>
           </AuthProvider>
           <Toaster />
           <Analytics />
@@ -80,4 +83,3 @@ export default async function RootLayout({
     </html>
   )
 }
-
