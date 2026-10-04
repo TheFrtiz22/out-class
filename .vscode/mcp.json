@@ -7,10 +7,6 @@
 			"url": "https://mcp.supabase.com/mcp?project_ref=htlgjluegmdwfjkzzwic&read_only=true",
 			"type": "http"
 		},
-		"supabase-staging-readonly": {
-			"url": "https://mcp.supabase.com/mcp?project_ref=zodtfiracorqusizixgw",
-			"type": "http"
-		}
 	},
 	"inputs": []
 }
