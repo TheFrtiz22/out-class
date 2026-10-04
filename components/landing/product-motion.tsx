@@ -41,7 +41,7 @@ export function ProductMotion({ children, duration = 14000 }: { children: ReactN
   }, [duration, paused])
   return <div ref={ref} className="oc-product-motion">
     <ProgressContext.Provider value={progress}>{children}</ProgressContext.Provider>
-    {!reduced && <button type="button" className="oc-demo-control" disabled={progress === 1} onClick={() => setPaused(value => !value)}>{progress === 1 ? "Example complete" : paused ? "Resume example" : "Pause example"}</button>}
+    {!reduced && duration > 5000 && <button type="button" className="oc-demo-control" disabled={progress === 1} onClick={() => setPaused(value => !value)}>{progress === 1 ? "Example complete" : paused ? "Resume example" : "Pause example"}</button>}
   </div>
 }
 

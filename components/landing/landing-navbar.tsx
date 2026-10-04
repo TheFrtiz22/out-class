@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 
 export function LandingNavbar({
   onSignIn,
-  onCreateProfile,
+  onGetStarted,
 }: {
   onSignIn: () => void
-  onCreateProfile: () => void
+  onGetStarted: () => void
 }) {
   const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -35,13 +35,13 @@ export function LandingNavbar({
           }}
         >
           <a href="#top" aria-label="OutClass home">
-            <OutClassLogo className="h-10 w-auto" />
+            <OutClassLogo variant={scrolled || menu ? "light" : "dark"} className="h-10 w-auto" />
           </a>
           <nav id="public-navigation" aria-label="Public navigation" className={menu ? "open" : ""}>
             {[
-              ["#students", "For students"],
-              ["#clubs", "For clubs"],
-              ["#about", "About"],
+              ["#students", "Students"],
+              ["#club-leaders", "Club Leaders"],
+              ["#about", "How it works"],
             ].map(([href, label]) => (
               <a key={href} href={href} onClick={() => setMenu(false)}>
                 {label}
@@ -52,7 +52,7 @@ export function LandingNavbar({
             <button type="button" className="nav-cta" onClick={onSignIn}>
               Sign in
             </button>
-            <Button className="oc-nav-primary" onClick={onCreateProfile}>
+            <Button className="oc-nav-primary" onClick={onGetStarted}>
               Get started
               <ArrowRight size={14} aria-hidden="true" />
             </Button>
