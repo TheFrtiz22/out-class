@@ -58,14 +58,14 @@ export function LandingPageView({
           className="oc-final-invitation"
           aria-labelledby="invitation-title"
         >
-          <p data-motion="context" className="oc-story-eyebrow">
+          <p data-motion="context" className="oc-story-eyebrow oc-invitation-campus">
             Beginning at {campusName}
           </p>
           <TextReveal asChild>
             <h2 id="invitation-title">{perspective === "student" ? "Your next chapter starts here." : "Your next class starts here."}</h2>
           </TextReveal>
           <p data-motion="body">{perspective === "student" ? "A little more possibility." : "Good people. A clearer process."}</p>
-          <Button size="lg" onClick={start}>
+          <Button size="lg" className="oc-invitation-cta" aria-describedby="pricing" onClick={start}>
             {perspective === "student" ? "Create your profile" : "Explore club workspace"}
             <ArrowRight aria-hidden="true" size={16} />
           </Button>
