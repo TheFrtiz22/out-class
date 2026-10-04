@@ -1,0 +1,28 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+function load(file,mocks={}){const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/lib/')?load(n.replace('@/','')+'.ts',mocks):require(n),mod,mod.exports);return mod.exports}
+const engine=load('lib/voting-engine.ts');
+const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`,clubId=uuid(1),roundId=uuid(2),ids=[uuid(3),uuid(4),uuid(5)],sessionId=uuid(6),memberId=uuid(7),otherId=uuid(8);
+function harness(){
+ let state={sessions:[],apps:ids.map(id=>({id,clubId,roundId,status:'IN_REVIEW'})),audit:[]};
+ let actor=memberId;const members=[{id:memberId,userId:memberId,clubId,status:'ACTIVE',permissions:['applications.review','applicants.identify','decisions.vote','decisions.manage','decisions.publish','decisions.start','decisions.reopen','decisions.finish'],user:{email:'leader@virginia.edu'}},{id:otherId,userId:otherId,clubId,status:'ACTIVE',permissions:['applications.review','applicants.identify','decisions.vote'],user:{email:'member@virginia.edu'}}];
+ const matches=(v,w)=>Object.entries(w).every(([k,x])=>x&&typeof x==='object'?'in'in x?x.in.includes(v[k]):'not'in x?v[k]!==x.not:true:v[k]===x);
+ const tx={$queryRaw:async()=>[],
+ clubMember:{findFirst:async({where})=>members.find(m=>matches(m,where)),findMany:async({where})=>members.filter(m=>matches(m,where))},
+ pipelineRound:{findFirst:async({where})=>where.id===roundId&&where.clubId===clubId?{id:roundId,clubId,anonymousReview:false}:null,findMany:async()=>[{id:roundId,name:'Review'}]},
+ application:{findMany:async({where})=>state.apps.filter(a=>matches(a,where)).map(a=>({...a,student:{studentProfile:{gradYear:2028}}})),updateMany:async({where,data})=>{const a=state.apps.find(a=>matches(a,where));if(!a)return{count:0};Object.assign(a,data);return{count:1}}},
+ votingSession:{findFirst:async({where,include})=>{const s=state.sessions.find(s=>matches(s,where));return s&&include?.round?{...s,round:{anonymousReview:false},club:{name:'Club'}}:s},findMany:async()=>state.sessions.map(({id,state,currentPass,createdAt})=>({id,state,currentPass,createdAt})),create:async({data})=>{const s={...data,id:sessionId,state:'DRAFT',currentPass:0,revision:0,createdAt:new Date(),startedAt:null,publishedAt:null,endedAt:null,participants:data.participants.create,candidates:data.candidates.create,passes:[]};state.sessions.push(s);return s},update:async({where,data})=>{const s=state.sessions.find(s=>s.id===where.id);for(const[k,v]of Object.entries(data))s[k]=k==='revision'?s[k]+v.increment:v;return s}},
+ votingParticipant:{upsert:async({where,create,update})=>{const s=state.sessions.find(s=>s.id===where.sessionId_memberId.sessionId);let p=s.participants.find(p=>p.memberId===where.sessionId_memberId.memberId);if(p)Object.assign(p,update);else{s.participants.push(create);p=create}return p}},
+ votingPass:{create:async({data})=>{const s=state.sessions.find(s=>s.id===data.sessionId),p={...data,state:'OPEN',candidates:data.candidates.create.map(c=>({...c,override:null,ballots:[]}))};s.passes.push(p);return p},update:async({where,data})=>{const w=where.sessionId_number,p=state.sessions.find(s=>s.id===w.sessionId).passes.find(p=>p.number===w.number);Object.assign(p,data);return p}},
+ votingBallot:{create:async({data})=>{const s=state.sessions.find(s=>s.id===data.sessionId),c=s.passes.find(p=>p.number===data.passNumber).candidates.find(c=>c.applicationId===data.applicationId);if(c.ballots.some(b=>b.memberId===data.memberId))throw Error('unique ballot');c.ballots.push({...data,id:uuid(20+c.ballots.length),createdAt:new Date()});return data}},
+ votingPassCandidate:{update:async({where,data})=>{const w=where.sessionId_passNumber_applicationId,c=state.sessions.find(s=>s.id===w.sessionId).passes.find(p=>p.number===w.passNumber).candidates.find(c=>c.applicationId===w.applicationId);Object.assign(c,data);return c}},
+ votingCandidate:{update:async({where,data})=>{const w=where.sessionId_applicationId,c=state.sessions.find(s=>s.id===w.sessionId).candidates.find(c=>c.applicationId===w.applicationId);Object.assign(c,data);return c}},
+ auditLog:{create:async({data})=>state.audit.push(data)}};
+ let chain=Promise.resolve();const prisma={...tx,$transaction:f=>{const operation=chain.then(async()=>{const before=structuredClone(state);try{return structuredClone(await f(tx))}catch(e){state=before;throw e}});chain=operation.catch(()=>{});return operation}};
+ const api=load('actions/voting.ts',{'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>{if(!actor)throw Error('Unauthenticated');return{user:{id:actor}}},requireClubPermission:async(c,caps)=>{const m=members.find(m=>m.id===actor);if(c!==clubId||m.status!=='ACTIVE'||!caps.every(p=>m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:m}}}});
+ const create=(participants=[memberId])=>api.createVotingSession({clubId,roundId,applicationIds:ids,participantIds:participants,targetSize:1});
+ const command=(action,extra={})=>api.commandVotingSession({clubId,sessionId,revision:state.sessions[0]?.revision??0,action,...extra});
+ const vote=(id,decision,passNumber=state.sessions[0].currentPass)=>api.submitVotingBallot({clubId,sessionId,passNumber,applicationId:id,decision});
+ return{api,create,command,vote,members,as:id=>actor=id,state:()=>state,read:()=>api.getVotingWorkspace(clubId,sessionId)};
+}
+
+module.exports={harness,load,engine,uuid,clubId,roundId,ids,sessionId,memberId,otherId};

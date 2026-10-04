@@ -39,6 +39,7 @@ import {
   demoNotifications,
   presentDemoMeeting,
 } from "@/lib/demo/store"
+import { readVotingDisplay } from "@/lib/voting-presentation"
 import { applicationInputSchema, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
@@ -433,9 +434,17 @@ export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRo
 
 
 export const getApplicantDisplay = adapt(applicantIntelligence.getApplicantDisplay, input => {
-  const app = scopedApplication(input.clubId, input.applicationId), s = demoStore.get();
+  const s = demoStore.get();
+  const joinedSession=input.sessionId?s.votingSessions?.find(v=>v.id===input.sessionId&&v.clubId===input.clubId&&v.candidates.some(c=>c.applicationId===input.applicationId)):undefined
+  if(input.sessionId&&!joinedSession)throw Error("Voting presentation unavailable.")
+  if(s.perspective.role!=="leader"&&joinedSession&&!joinedSession.participants.some(p=>p.joinedAt))throw Error("Join the Demo session first.")
+  const app=joinedSession?s.applications.find(a=>a.id===input.applicationId&&a.clubId===s.clubs[0].id)!:scopedApplication(input.clubId,input.applicationId);
+  if(!app)throw Error("Demo applicant unavailable.");
   const round = s.clubs[0].rounds.find(r => r.id === app.roundId)!;
-  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig, (s.observations || []).filter(o => o.applicationId === app.id));
+  let config=s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig
+  if(input.previewConfig)config=input.previewConfig
+  if(input.sessionId){const session=s.votingSessions?.find(v=>v.id===input.sessionId&&v.clubId===input.clubId&&v.candidates.some(c=>c.applicationId===app.id));if(!session)throw Error("Voting presentation unavailable.");config=readVotingDisplay(session.displayConfig)}
+  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, config, (s.observations || []).filter(o => o.applicationId === app.id));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
   if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
     display.links = display.links.filter(link => link.field !== "resume")
@@ -526,3 +535,17 @@ export const saveTutorial = adapt(tutorials.saveTutorial, input => {
     return s.tutorials[kind] = { status: data.action === "skip" ? "SKIPPED" : data.action === "complete" ? "COMPLETED" : "IN_PROGRESS", step: data.action === "restart" ? 0 : data.step, version: 1 }
   })
 })
+
+export const getVotingJoinInfo = adapt(votingApi.getVotingJoinInfo, demoVoting.getVotingJoinInfo)
+export async function joinVotingSession(sessionId:string,demoMemberId?:string){
+  if(demoStore.active())return demoVoting.joinVotingSession(sessionId,demoMemberId)
+  if(demoMemberId)throw Error("Demo identities are not valid in production.")
+  return votingApi.joinVotingSession(sessionId)
+}
+export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:string){
+  if(demoStore.active())return demoVoting.getJoinedVotingWorkspace(sessionId,demoMemberId)
+  if(demoMemberId)throw Error("Demo identities are not valid in production.")
+  const info=await votingApi.getVotingJoinInfo(sessionId)
+  if(!("clubId" in info)||!info.clubId)throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
+  return votingApi.getVotingWorkspace(info.clubId,sessionId)
+}

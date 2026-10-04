@@ -5,3 +5,18 @@
 @media (prefers-reduced-motion: no-preference) {
   .oc-voting-candidate { animation: oc-voting-resolve 420ms cubic-bezier(.22,1,.36,1) both; }
 }
+
+/* Durable projector: identity, eight information cells and controls share a desktop viewport. */
+.oc-voting-projector { display:flex; flex-direction:column; height:100dvh; width:100%; padding:24px; gap:16px; background:var(--background); }
+.oc-voting-slide { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.oc-voting-identity { display:flex; align-items:center; gap:28px; min-width:0; }
+.oc-voting-facts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.oc-voting-projector .oc-voting-slide { flex:1; justify-content:center; }
+.oc-voting-preview { border:1px solid var(--border); padding:20px; border-radius:12px; }
+@media (max-width: 767px) {
+  .oc-voting-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .oc-voting-identity { gap:16px; }
+  .oc-voting-projector { height:auto; min-height:100dvh; padding:16px; }
+}
+.oc-voting-stage:has(.oc-voting-projector) { padding:0; gap:0; overflow:visible; }
+.oc-voting-stage:has(.oc-voting-projector) > [data-slot="dialog-title"] { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }

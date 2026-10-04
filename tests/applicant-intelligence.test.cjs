@@ -66,7 +66,7 @@ test('configuration updates reject unknown fields, duplicate fields, stale versi
 });
 test('Interview and Voting consume the same server-filtered panel; legacy voting transport never receives production data',()=>{
  for(const file of ['components/views/interview-workspace-view.tsx','components/live-voting/board-decision-mode.tsx'])assert.match(fs.readFileSync(file,'utf8'),/ApplicantDisplayPanel/);
- assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId \}\)/);
+ assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId, sessionId, previewConfig:/);
  assert.doesNotMatch(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/useProctorSession|localStorage|BroadcastChannel/);
 });
 test('migration preserves historical feedback and links canonical evaluations, constraints and browser isolation',async()=>{

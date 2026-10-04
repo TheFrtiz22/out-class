@@ -1,4 +1,5 @@
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
+import { defaultVotingDisplay } from "@/lib/voting-presentation"
 import { defaultDisplayConfig } from "@/lib/applicant-display"
 import { readMarketing } from "@/lib/club-marketing"
 import { seedTasks } from "./task-seed"
@@ -357,8 +358,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     const id = uid(32, n), started = at(published ? -5 : -1), decisions = ["PASS", "PASS", "HOLD", "NOT_PASS", "HOLD", "HOLD"] as const
     const choice = (app: typeof applications[number], i: number) => published ? app.status === "ACCEPTED" ? "PASS" : app.status === "WAITLISTED" ? "HOLD" : "NOT_PASS" : decisions[i]
     const entries = pool.map((app, position) => ({ sessionId: id, passNumber: 1, applicationId: app.id, position, override: null, overrideBy: null, overrideAt: null, ballots: [{ id: uid(33, n * 20 + position), sessionId: id, passNumber: 1, applicationId: app.id, memberId: manager.id, decision: choice(app, position), createdAt: started }] }))
-    return { id, clubId: mii.id, roundId: pool[0].roundId, state: published ? "COMPLETED" : "OPEN", targetSize: 2, autoAdvance: "UNANIMOUS", threshold: 100, currentPass: published ? 1 : 2, revision: published ? 5 : 12, createdBy: manager.userId, startedAt: started, endedAt: published ? at(-4) : null, publishedAt: published ? at(-4) : null, publishedBy: published ? manager.userId : null, createdAt: started, updatedAt: published ? at(-4) : at(0),
-      participants: [{ sessionId: id, memberId: manager.id }],
+    return { id, clubId: mii.id, roundId: pool[0].roundId, state: published ? "COMPLETED" : "OPEN", displayConfig:structuredClone(defaultVotingDisplay),joinOpenedAt:started,activeApplicationId:published?null:pool[2]?.id??null, targetSize: 2, autoAdvance: "UNANIMOUS", threshold: 100, currentPass: published ? 1 : 2, revision: published ? 5 : 12, createdBy: manager.userId, startedAt: started, endedAt: published ? at(-4) : null, publishedAt: published ? at(-4) : null, publishedBy: published ? manager.userId : null, createdAt: started, updatedAt: published ? at(-4) : at(0),
+      participants: [{ sessionId: id, memberId: manager.id, joinedAt:started }],
       candidates: pool.map((app, position) => ({ sessionId: id, applicationId: app.id, position, expectedStatus: published ? "INTERVIEWING" : app.status, publishedStatus: published ? app.status : null })),
       passes: [{ sessionId: id, number: 1, state: "COMPLETED", startedAt: started, completedAt: at(published ? -4 : -1, 17), candidates: entries }, ...(published ? [] : [{ sessionId: id, number: 2, state: "OPEN" as const, startedAt: at(0), completedAt: null, candidates: pool.map((app, i) => ({ app, i })).filter(({i}) => i >= 2 && i !== 3).map(({app, i}, position) => ({ sessionId: id, passNumber: 2, applicationId: app.id, position, override: null, overrideBy: null, overrideAt: null, ballots: i === 2 ? [{ id: uid(33, n * 20 + 10), sessionId: id, passNumber: 2, applicationId: app.id, memberId: manager.id, decision: "HOLD" as const, createdAt: at(0) }] : [] })) }])],
     }

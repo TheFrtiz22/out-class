@@ -50,6 +50,12 @@ function ensurePresentation(value: DemoState) {
     student.profile.actScore ??= null
     student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
   }
+  for(const session of value.votingSessions??[]){
+    session.displayConfig??={version:1,fields:["photo","name","major","graduationYear","gpa","resume","linkedin"]}
+    session.joinOpenedAt??=session.startedAt??null
+    if(session.activeApplicationId===undefined)session.activeApplicationId=session.passes.find(p=>p.number===session.currentPass)?.candidates[0]?.applicationId??null
+    for(const participant of session.participants)participant.joinedAt??=null
+  }
   // Upgrade saved presentations without resetting applications or evaluations.
   const mii = value.clubs[0]
   const manager = value.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
