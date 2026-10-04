@@ -21,7 +21,7 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
       <span id="club-leaders" className="oc-perspective-anchor" tabIndex={-1} aria-label="Club leader product overview" />
       <span id="clubs" className="oc-perspective-anchor" tabIndex={-1} aria-label="Club leader product overview" />
       <div className="oc-journey-controls">
-        <p>One experience. Your perspective.</p>
+        <h2 id="perspective-title">One experience. Two perspectives.</h2>
         <PerspectiveSwitcher perspective={perspective} onChange={onPerspectiveChange} />
       </div>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>

@@ -1,14 +1,17 @@
 /* One set of chapter frames; the selected perspective changes their contents. */
 .oc-product-stories { position: relative; }
 .oc-perspective-anchor { position: absolute; top: 0; left: 0; }
-.oc-journey-controls { position: sticky; top: 88px; z-index: 25; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; background: rgb(255 255 255 / 97%); border-bottom: 1px solid var(--border); }
-.oc-journey-controls > p { color: var(--muted-foreground); font-size: var(--oc-text-small); }
-.oc-perspective-switcher { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; padding: 4px; min-width: 300px; border: 1px solid var(--border); background: var(--background); border-radius: var(--oc-radius-md); }
-.oc-perspective-indicator { position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: var(--oc-radius-sm); background: var(--card); box-shadow: 0 1px 4px #14243a12; border-bottom: 2px solid var(--brand-orange); transition: transform 320ms var(--oc-ease-out); }
+.oc-journey-controls { position: sticky; top: 88px; z-index: 25; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; background: var(--card); }
+.oc-journey-controls > h2 { margin: 0; color: var(--primary); font-size: var(--oc-size-20); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
+.oc-perspective-switcher { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; flex-shrink: 0; width: 360px; max-width: 100%; padding: 4px; border: 1px solid var(--primary); background: var(--primary); border-radius: var(--oc-radius-md); }
+.oc-perspective-indicator { position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: var(--oc-radius-sm); background: #fff7ec; box-shadow: 0 2px 8px #07152926; border-bottom: 3px solid var(--brand-orange); transition: transform 320ms var(--oc-ease-out); }
 .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
-.oc-perspective-switcher button { min-height: 44px; padding: 8px 16px; font-size: var(--oc-text-small); color: var(--muted-foreground); }
+.oc-perspective-switcher button { min-height: 48px; padding: 10px 12px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); color: #fff7ec; white-space: nowrap; }
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: var(--oc-weight-semibold); }
+.oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--brand-orange); outline-offset: -4px; }
 .oc-landing[data-scroll-motion] .oc-product-story { padding-block: 48px; }
+.oc-landing[data-scroll-motion] .oc-product-story:first-child { border-top: 0; }
+.oc-landing[data-scroll-motion] .oc-product-story:first-child::before { display: none; }
 .oc-perspective-copy > p:last-child { margin-top: 20px; max-width: 345px; color: var(--muted-foreground); font-size: var(--oc-size-14); line-height: var(--oc-leading-body); }
 .oc-story-interface { min-height: 486px; }
 .oc-perspective-scene { min-width: 0; }
@@ -55,18 +58,20 @@
   .oc-perspective-copy, .oc-perspective-scene { animation: oc-perspective-resolve 320ms var(--oc-ease-out) both; }
 }
 @keyframes oc-perspective-resolve { from { opacity: .55; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (min-width: 1100px) {
+  /* Keep pinned chapter copy below the navbar and perspective control. */
+  .oc-landing .oc-product-story > .oc-story-copy { top: 218px; }
+}
 @media (max-width: 800px) {
-  .oc-journey-controls { top: 76px; padding-block: 12px; }
-  .oc-journey-controls > p { font-size: var(--oc-size-12); }
-  .oc-perspective-switcher { min-width: 270px; }
+  .oc-journey-controls { top: 76px; flex-direction: column; gap: 12px; padding-block: 18px; text-align: center; }
+  .oc-journey-controls > h2 { font-size: var(--oc-size-18); }
   .oc-landing[data-scroll-motion] .oc-product-story { padding-block: 36px; }
   .oc-perspective-copy > p:last-child { max-width: 500px; }
   .oc-story-copy { position: static; }
 }
 @media (max-width: 540px) {
-  .oc-journey-controls { justify-content: center; }
-  .oc-journey-controls > p { display: none; }
-  .oc-perspective-switcher { width: 100%; min-width: 0; max-width: 360px; }
+  .oc-journey-controls > h2 { font-size: var(--oc-size-16); }
+  .oc-perspective-switcher { width: 100%; }
   .oc-story-interface { min-height: 0; }
   .oc-journey-club { flex-wrap: wrap; }
   .oc-journey-club > div { min-width: 150px; }

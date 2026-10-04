@@ -38,15 +38,9 @@ export function LandingNavbar({
             <OutClassLogo variant={scrolled || menu ? "light" : "dark"} className="h-10 w-auto" />
           </a>
           <nav id="public-navigation" aria-label="Public navigation" className={menu ? "open" : ""}>
-            {[
-              ["#students", "Students"],
-              ["#club-leaders", "Club Leaders"],
-              ["#about", "How it works"],
-            ].map(([href, label]) => (
-              <a key={href} href={href} onClick={() => setMenu(false)}>
-                {label}
-              </a>
-            ))}
+            <a href="#about" onClick={() => setMenu(false)}>
+              How it works
+            </a>
           </nav>
           <div className="nav-actions">
             <button type="button" className="nav-cta" onClick={onSignIn}>
