@@ -11,9 +11,11 @@ The first frame pairs the project-supplied football photo on the left and autumn
 trees on the right, with one centered H1: “One profile. Every opportunity.” There is no timed
 entrance. Scroll opens subtly angled, clipped photographic panels outward and
 reveals the supplied sunset Rotunda photograph behind that same hero and its
-existing CTA beneath. White headline/support copy and a cream CTA keep the
-revealed photograph readable. The heading fades upward,
-then returns beneath the panels as they uncover it; it is never duplicated.
+existing CTA beneath. The opening headline fades upward once and stays hidden.
+A large existing OutClass wordmark is revealed between “The recruiting platform…”
+and “Discover, apply…”, so the campaign statement never repeats. The wordmark’s
+transparent margins are clipped in CSS without altering the brand asset. White
+support copy and a cream CTA keep the revealed photograph readable.
 One fixed navigation fades in near completion. The walkthrough selector remains
 after the opening.
 
@@ -23,7 +25,7 @@ CSS view timeline with explicit zero inset keeps the intact first frame independ
 of the document's anchor scroll padding. No wheel listeners, scroll snapping,
 JavaScript scroll loop, animation dependency, or new package was added.
 Reduced motion and browsers without the required CSS timeline support get a
-static split-image headline, with the original hero support and CTA immediately
+static split-image headline, with the logo, hero support, and CTA immediately
 below in normal flow. Native skip and opening links keep the content accessible.
 
 `ProductJourney` (in `product-stories.tsx`) renders exactly six chapters for the
@@ -76,8 +78,8 @@ listings and live signup/sign-in were not exercised. No database configuration
 was changed.
 
 The three supplied photographs use local WebPs with responsive variants for the
-football and sunset Rotunda images. The 300 × 381 tree source is preserved at its
-native resolution and is visibly softer at full height. Source filenames,
+football, autumn Lawn, and sunset Rotunda images. The supplied 2074 × 2092 autumn
+Lawn photo replaces the earlier low-resolution tree source. Source filenames,
 transformations, and legacy credits are documented in
 `public/images/campus/README.md`; the former footer credits were removed because
 they described different photographs. No animation stack was added. LCP was not

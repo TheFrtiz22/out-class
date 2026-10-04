@@ -10,17 +10,21 @@ the legacy Creative Commons credits below do not apply to these images.
 | Local asset | Supplied source | Original dimensions |
 | --- | --- | --- |
 | `football-{960,1600,2500}.webp` | `header_uva_football_vs._william_mary_090421_0613.jpg` | 2500 × 1666 |
-| `trees-300.webp` | `55c97e28cde8e786c5b8d2caf3a283cb.jpg` | 300 × 381 |
+| `autumn-lawn-{960,1600,2074}.webp` | `il_fullxfull.3489818577_jiun.jpeg` | 2074 × 2092 |
 | `sunset-rotunda-{960,1600,2500}.webp` | `Header-SF-Sunset-Rotunda-Big-Pic-EE.jpg` | 2500 × 1667 |
 
 Adaptations: converted to WebP at quality 83, with downscaled responsive variants
-for the larger sources, CSS cropping, and translucent navy overlays. The tree
-source is kept at its native resolution; no artificial upscaling or generative
-alteration was applied. It will be softer when displayed at full viewport height.
+for all three sources, CSS cropping, and translucent navy overlays. The current
+right-hand photo replaces the former 300 × 381 tree image with the newly supplied
+2074 × 2092 autumn Lawn photograph. No artificial upscaling or generative
+alteration was applied.
 The revealed Rotunda loads at normal priority while the opening panels load at
 high priority. All assets are served locally.
 
 ## Retained legacy assets and credits
+
+`trees-300.webp` is the earlier project-supplied `55c97e28cde8e786c5b8d2caf3a283cb.jpg`
+(300 × 381); it is no longer used in the opening.
 
 **Rotunda UVa from the south east** by **terren in Virginia**, photographed November 3, 2007.
 

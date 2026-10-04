@@ -14,6 +14,10 @@ export function LandingIntro({ children }: { children: ReactNode }) {
         <div className="oc-opening-underlay" aria-hidden="true">
           <CampusBackdrop view="sunset-rotunda" priority="auto" />
         </div>
+        <h1 id="outclass-intro-title" className="oc-intro-headline">
+          <span>One profile.</span>
+          <span>Every opportunity.</span>
+        </h1>
         {children}
         <div className="oc-opening-panels" aria-hidden="true">
           <div className="oc-opening-panel oc-opening-left">

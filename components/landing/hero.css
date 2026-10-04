@@ -13,9 +13,6 @@
 .oc-landing .oc-hero-editorial { padding: 78px 32px 64px; color: var(--foreground); background: var(--background); border-bottom: 1px solid var(--border); }
 .oc-hero-introduction { max-width: 860px; margin: 0 auto; text-align: center; }
 .oc-hero-context { margin: 0 0 24px; font-size: var(--oc-size-11); font-weight: var(--oc-weight-semibold); letter-spacing: .15em; text-transform: uppercase; color: var(--muted-foreground); line-height: 1.8; }
-.oc-landing .oc-hero-editorial h1 { margin: 0; font-family: var(--oc-font-sans); font-weight: var(--oc-weight-display); font-size: var(--oc-text-hero); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-.oc-hero-editorial h1 > span { display: block; }
-.oc-hero-editorial h1 > span:last-child { color: var(--brand-ink); }
 .oc-hero-support > p:first-child { margin: 24px auto 0; max-width: 570px; color: var(--muted-foreground); font-size: var(--oc-size-16); line-height: var(--oc-leading-body); text-wrap: pretty; }
 .oc-hero-ctas { display: flex; justify-content: center; margin-top: 24px; }
 .oc-hero-ctas [data-slot="button"] { min-height: 48px; padding-inline: 27px; font-size: var(--oc-text-small); }
@@ -31,7 +28,6 @@
 @media (max-width: 540px) {
   .oc-nav-shell[data-scrolled="false"] .oc-hero-header > a img { height: 48px; }
   .oc-landing .oc-hero-editorial { padding: 48px 20px; }
-  .oc-landing .oc-hero-editorial h1 { font-size: var(--oc-text-hero-mobile); }
   .oc-hero-context { font-size: var(--oc-size-10); letter-spacing: .1em; }
   .oc-hero-support > p:first-child { font-size: var(--oc-size-14); }
 }

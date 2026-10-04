@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { OutClassLogo } from "@/components/outclass-logo"
 import type { LandingPerspective } from "./journey-content"
 import "./hero.css"
 
@@ -12,7 +13,9 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
     <section className="oc-hero-editorial" aria-labelledby="outclass-hero-title">
       <div className="oc-hero-introduction">
         <p className="oc-hero-context">The recruiting platform for selective student organizations</p>
-        <h1 id="outclass-hero-title"><span>One profile.</span><span>Every opportunity.</span></h1>
+        <h2 id="outclass-hero-title" className="oc-hero-brand">
+          <OutClassLogo variant="dark" className="oc-hero-wordmark" />
+        </h2>
         <div className="oc-hero-support">
           <p>Discover, apply, interview, and keep every next step in one place.</p>
           <div className="oc-hero-ctas">

@@ -1,16 +1,18 @@
 /* Static split composition is the baseline, including reduced motion and older browsers. */
 .oc-landing-intro { --oc-seam: clamp(4px, 1vw, 12px); position: relative; background: var(--background); }
-.oc-intro-visual { position: relative; }
+.oc-intro-visual { position: relative; padding-top: 100svh; }
 .oc-landing .oc-landing-intro .oc-hero-editorial { position: relative; padding: 0; background: transparent; border-bottom: 0; }
 .oc-opening-underlay { position: absolute; inset: 100svh 0 0; z-index: 0; overflow: clip; background: #14243a; }
 .oc-opening-underlay .oc-campus-backdrop { position: absolute; inset: 0; }
 .oc-opening-underlay .oc-campus-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; filter: saturate(.85); }
 .oc-opening-underlay::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(12 25 43 / 42%), rgb(12 25 43 / 64%) 42%, rgb(12 25 43 / 55%) 70%, rgb(12 25 43 / 35%)); }
 .oc-landing-intro .oc-hero-introduction { display: flex; flex-direction: column; max-width: none; }
-.oc-landing .oc-landing-intro h1 { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; min-height: 100svh; padding: 88px 24px; color: #fff7ec; font-size: clamp(3rem, 7.2vw, 6.75rem); line-height: 1.12; letter-spacing: -.045em; }
-.oc-landing-intro h1 > span:last-child { color: inherit; }
-.oc-landing-intro .oc-hero-context { position: relative; z-index: 1; order: 1; margin: 0; padding: 36px 24px 0; color: #fff7ec; }
-.oc-landing-intro .oc-hero-support { position: relative; z-index: 1; order: 2; padding: 0 24px 48px; }
+.oc-landing .oc-landing-intro h1 { position: absolute; inset: 0 0 auto; z-index: 3; display: flex; flex-direction: column; justify-content: center; height: 100svh; margin: 0; padding: 88px 24px; color: #fff7ec; text-align: center; font-weight: var(--oc-weight-display); font-size: clamp(3rem, 7.2vw, 6.75rem); line-height: 1.12; letter-spacing: -.045em; }
+.oc-landing-intro .oc-hero-context { position: relative; z-index: 1; margin: 0; padding: 36px 24px 0; color: #fff7ec; }
+/* Crop only the transparent margins of the existing wordmark (789×316, ink 660×187). */
+.oc-hero-brand { position: relative; z-index: 1; width: min(760px, calc(100% - 48px)); aspect-ratio: 660 / 187; margin: 24px auto 0; overflow: clip; }
+.oc-hero-brand .oc-hero-wordmark { position: absolute; left: -9.697%; top: -64.706%; display: block; width: 119.545%; height: auto; max-width: none; border-radius: 0; }
+.oc-landing-intro .oc-hero-support { position: relative; z-index: 1; padding: 0 24px 48px; }
 .oc-landing-intro .oc-hero-support > p:first-child { color: #fff7ec; }
 .oc-landing-intro .oc-hero-ctas [data-slot="button"] { background: #fff7ec; color: var(--primary); }
 .oc-landing-intro .oc-hero-ctas [data-slot="button"]:hover { background: white; }
@@ -39,23 +41,25 @@
   @supports (animation-timeline: view()) and (timeline-scope: --oc-opening) {
     .oc-landing { timeline-scope: --oc-opening; }
     .oc-landing-intro { height: 190svh; view-timeline: --oc-opening block; view-timeline-inset: 0; }
-    .oc-intro-visual { position: sticky; top: 0; height: 100svh; }
+    .oc-intro-visual { position: sticky; top: 0; height: 100svh; padding-top: 0; }
     .oc-opening-underlay { inset: 0; }
     .oc-landing .oc-landing-intro .oc-hero-editorial { height: 100%; padding: 96px 32px; }
     .oc-landing-intro .oc-hero-introduction { height: 100%; max-width: 1100px; display: grid; grid-template-rows: 1fr auto 1fr; }
-    .oc-landing .oc-landing-intro h1 { min-height: 0; display: block; padding: 0; animation: oc-opening-title linear both; }
-    .oc-landing-intro .oc-hero-context { order: initial; align-self: end; margin: 0 0 24px; padding: 0; animation: oc-opening-content linear both; }
-    .oc-landing-intro .oc-hero-support { order: initial; align-self: start; padding: 0; animation: oc-opening-content linear both; }
+    .oc-landing .oc-landing-intro h1 { animation: oc-opening-title linear both; }
+    .oc-landing-intro .oc-hero-context { align-self: end; margin: 0 0 32px; padding: 0; animation: oc-opening-content linear both; }
+    .oc-landing-intro .oc-hero-brand { width: min(760px, 100%); margin: 0 auto; animation: oc-opening-content linear both; }
+    .oc-landing-intro .oc-hero-support { align-self: start; padding: 0; animation: oc-opening-content linear both; }
     .oc-opening-left { animation: oc-opening-left linear both; }
     .oc-opening-right { animation: oc-opening-right linear both; }
     .oc-intro-scroll { animation: oc-opening-cue linear both; }
     .oc-landing .oc-nav-shell { animation: oc-opening-nav linear both; }
-    .oc-landing .oc-landing-intro :is(h1, .oc-hero-context, .oc-hero-support, .oc-opening-panel, .oc-intro-scroll),
+    .oc-landing .oc-landing-intro :is(h1, .oc-hero-context, .oc-hero-brand, .oc-hero-support, .oc-opening-panel, .oc-intro-scroll),
     .oc-landing .oc-nav-shell { animation-timeline: --oc-opening; animation-range: contain 0% contain 100%; }
     .oc-opening-destination { top: calc(100% - 100svh); }
     /* Keyboard access to a hero control immediately removes its visual covering. */
     .oc-intro-visual:has(.oc-hero-editorial :focus-visible) .oc-opening-panels { visibility: hidden; }
-    .oc-intro-visual:has(.oc-hero-editorial :focus-visible) h1 { animation: none; color: #fff7ec; }
+    .oc-intro-visual:has(.oc-hero-editorial :focus-visible) h1 { animation: none; visibility: hidden; }
+    .oc-intro-visual:has(.oc-hero-editorial :focus-visible) :is(.oc-hero-context, .oc-hero-brand, .oc-hero-support) { animation: none; opacity: 1; visibility: visible; }
     @media (max-width: 800px) {
       .oc-landing-intro { height: 160svh; }
       .oc-landing .oc-landing-intro .oc-hero-editorial { padding: 88px 24px; }
@@ -69,10 +73,8 @@
 @keyframes oc-opening-left { 0%, 4% { transform: translateX(0); } 92%, 100% { transform: translateX(-100%); } }
 @keyframes oc-opening-right { 0%, 4% { transform: translateX(0); } 92%, 100% { transform: translateX(100%); } }
 @keyframes oc-opening-title {
-  0%, 4% { opacity: 1; transform: none; color: #fff7ec; z-index: 3; }
-  28% { opacity: 0; transform: translateY(-18px); color: #fff7ec; z-index: 3; }
-  29% { opacity: 0; transform: none; color: #fff7ec; z-index: 1; }
-  45%, 100% { opacity: 1; transform: none; color: #fff7ec; z-index: 1; }
+  0%, 4% { opacity: 1; transform: none; visibility: visible; }
+  28%, 100% { opacity: 0; transform: translateY(-18px); visibility: hidden; }
 }
 @keyframes oc-opening-content { 0%, 38% { opacity: 0; visibility: hidden; } 39% { opacity: 0; visibility: visible; } 70%, 100% { opacity: 1; visibility: visible; } }
 @keyframes oc-opening-cue { 0%, 4% { opacity: 1; visibility: visible; } 20%, 100% { opacity: 0; visibility: hidden; } }
