@@ -7,6 +7,7 @@ import { PerspectiveSwitcher } from "./perspective-switcher"
 import { JourneyScenePreview } from "./journey-scenes"
 import { journeyChapters, type LandingPerspective } from "./journey-content"
 import "./journey.css"
+import "./journey-atmosphere.css"
 
 export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter }: {
   perspective: LandingPerspective
