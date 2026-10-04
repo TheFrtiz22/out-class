@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight, Menu, X } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
 
@@ -12,10 +12,8 @@ export function LandingNavbar({
   onSignIn: () => void
   onGetStarted: () => void
 }) {
-  const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const sentinel = useRef<HTMLDivElement>(null)
-  const toggle = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting))
     if (sentinel.current) observer.observe(sentinel.current)
@@ -24,43 +22,19 @@ export function LandingNavbar({
   return (
     <>
       <div ref={sentinel} className="oc-nav-sentinel" aria-hidden="true" />
-      <div className="oc-nav-shell" data-scrolled={scrolled || menu}>
-        <header
-          className="oc-header oc-hero-header"
-          onKeyDown={(event) => {
-            if (event.key === "Escape" && menu) {
-              setMenu(false)
-              toggle.current?.focus()
-            }
-          }}
-        >
+      <div className="oc-nav-shell" data-scrolled={scrolled}>
+        <header className="oc-header oc-hero-header">
           <a href="#top" aria-label="OutClass home">
-            <OutClassLogo variant={scrolled || menu ? "light" : "dark"} className="h-10 w-auto" />
+            <OutClassLogo variant={scrolled ? "light" : "dark"} className="h-10 w-auto" />
           </a>
-          <nav id="public-navigation" aria-label="Public navigation" className={menu ? "open" : ""}>
-            <a href="#about" onClick={() => setMenu(false)}>
-              How it works
-            </a>
-          </nav>
           <div className="nav-actions">
-            <button type="button" className="nav-cta" onClick={onSignIn}>
+            <Button variant="outline" size="lg" className="nav-cta" onClick={onSignIn}>
               Sign in
-            </button>
-            <Button className="oc-nav-primary" onClick={onGetStarted}>
-              Get started
-              <ArrowRight size={14} aria-hidden="true" />
             </Button>
-            <button
-              ref={toggle}
-              type="button"
-              className="mobile-menu"
-              aria-label={menu ? "Close navigation" : "Open navigation"}
-              aria-expanded={menu}
-              aria-controls="public-navigation"
-              onClick={() => setMenu(!menu)}
-            >
-              {menu ? <X /> : <Menu />}
-            </button>
+            <Button size="lg" className="oc-nav-primary" onClick={onGetStarted}>
+              Get started
+              <ArrowRight size={16} aria-hidden="true" />
+            </Button>
           </div>
         </header>
       </div>

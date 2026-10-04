@@ -51,9 +51,7 @@
     .oc-opening-left { animation: oc-opening-left linear both; }
     .oc-opening-right { animation: oc-opening-right linear both; }
     .oc-intro-scroll { animation: oc-opening-cue linear both; }
-    .oc-landing .oc-nav-shell { animation: oc-opening-nav linear both; }
-    .oc-landing .oc-landing-intro :is(h1, .oc-hero-context, .oc-hero-brand, .oc-hero-support, .oc-opening-panel, .oc-intro-scroll),
-    .oc-landing .oc-nav-shell { animation-timeline: --oc-opening; animation-range: contain 0% contain 100%; }
+    .oc-landing .oc-landing-intro :is(h1, .oc-hero-context, .oc-hero-brand, .oc-hero-support, .oc-opening-panel, .oc-intro-scroll) { animation-timeline: --oc-opening; animation-range: contain 0% contain 100%; }
     .oc-opening-destination { top: calc(100% - 100svh); }
     /* Keyboard access to a hero control immediately removes its visual covering. */
     .oc-intro-visual:has(.oc-hero-editorial :focus-visible) .oc-opening-panels { visibility: hidden; }
@@ -77,4 +75,3 @@
 }
 @keyframes oc-opening-content { 0%, 38% { opacity: 0; visibility: hidden; } 39% { opacity: 0; visibility: visible; } 70%, 100% { opacity: 1; visibility: visible; } }
 @keyframes oc-opening-cue { 0%, 4% { opacity: 1; visibility: visible; } 20%, 100% { opacity: 0; visibility: hidden; } }
-@keyframes oc-opening-nav { 0%, 68% { opacity: 0; visibility: hidden; } 69% { opacity: 0; visibility: visible; } 92%, 100% { opacity: 1; visibility: visible; } }
