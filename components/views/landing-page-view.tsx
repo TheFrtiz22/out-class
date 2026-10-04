@@ -92,14 +92,6 @@ export function LandingPageView({
         <small>© {new Date().getFullYear()} OutClass</small>
       </footer>
       <p className="oc-photo-credit">
-        Campus photographs:{" "}
-        <a href="https://commons.wikimedia.org/wiki/File:Rotunda_UVa_from_the_south_east.jpg">
-          terren in Virginia
-        </a>{" "}
-        (<a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>) and{" "}
-        <a href="https://commons.wikimedia.org/wiki/File:Colonnade_UVa_academical_village.jpg">Eli Pousson</a>{" "}
-        (<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC BY-SA 2.0</a>).
-        Resized, cropped, and visually treated; colonnade adaptations retain CC BY-SA 2.0.
         OutClass is an independent platform.
       </p>
       <Dialog open={signup} onOpenChange={setSignup}>

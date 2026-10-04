@@ -7,10 +7,12 @@ https://bosefellows.mit.edu/; its assets, wording, and composition are OutClass�
 ## Composition
 
 `LandingIntro` wraps the existing `LandingHero` in a single opening canvas.
-The first frame pairs two licensed UVA photographs, colonnade left and Rotunda
-right, with one centered H1: “One profile. Every opportunity.” There is no timed
+The first frame pairs the project-supplied football photo on the left and autumn
+trees on the right, with one centered H1: “One profile. Every opportunity.” There is no timed
 entrance. Scroll opens subtly angled, clipped photographic panels outward and
-reveals that same hero and its existing CTA beneath. The heading fades upward,
+reveals the supplied sunset Rotunda photograph behind that same hero and its
+existing CTA beneath. White headline/support copy and a cream CTA keep the
+revealed photograph readable. The heading fades upward,
 then returns beneath the panels as they uncover it; it is never duplicated.
 One fixed navigation fades in near completion. The walkthrough selector remains
 after the opening.
@@ -73,8 +75,10 @@ The existing public-club loader returned its empty fallback; real organization
 listings and live signup/sign-in were not exercised. No database configuration
 was changed.
 
-Both photographs use local responsive WebPs with high-priority loading and a
-shared navy/cream treatment. The added colonnade variants are 74 KB (960px) and
-156 KB (1600px); licensing, sources, and adaptations are documented in
-`public/images/campus/README.md` and credited in the footer. No animation stack
-was added. LCP was not benchmarked against the old build.
+The three supplied photographs use local WebPs with responsive variants for the
+football and sunset Rotunda images. The 300 × 381 tree source is preserved at its
+native resolution and is visibly softer at full height. Source filenames,
+transformations, and legacy credits are documented in
+`public/images/campus/README.md`; the former footer credits were removed because
+they described different photographs. No animation stack was added. LCP was not
+benchmarked against the old build.

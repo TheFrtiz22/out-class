@@ -1,17 +1,27 @@
-/** Licensed photograph; source and attribution in public/images/campus/README.md. */
-export function CampusBackdrop({ view = "rotunda" }: { view?: "rotunda" | "colonnade" }) {
-  const width = view === "rotunda" ? 1592 : 1600
-  const height = view === "rotunda" ? 1062 : 1200
+/** Supplied and licensed photography; provenance in public/images/campus/README.md. */
+const photographs = {
+  rotunda: { width: 1592, height: 1062, src: "rotunda-1600.webp", srcSet: "rotunda-960.webp 960w, rotunda-1600.webp 1592w" },
+  colonnade: { width: 1600, height: 1200, src: "colonnade-1600.webp", srcSet: "colonnade-960.webp 960w, colonnade-1600.webp 1600w" },
+  football: { width: 2500, height: 1666, src: "football-1600.webp", srcSet: "football-960.webp 960w, football-1600.webp 1600w, football-2500.webp 2500w" },
+  trees: { width: 300, height: 381, src: "trees-300.webp", srcSet: "trees-300.webp 300w" },
+  "sunset-rotunda": { width: 2500, height: 1667, src: "sunset-rotunda-1600.webp", srcSet: "sunset-rotunda-960.webp 960w, sunset-rotunda-1600.webp 1600w, sunset-rotunda-2500.webp 2500w" },
+} as const
+
+export function CampusBackdrop({ view = "rotunda", priority = "high" }: {
+  view?: keyof typeof photographs
+  priority?: "high" | "auto"
+}) {
+  const photo = photographs[view]
   return (
     <div className="oc-campus-backdrop" aria-hidden="true">
       <img
-        src={`/images/campus/${view}-1600.webp`}
-        srcSet={`/images/campus/${view}-960.webp 960w, /images/campus/${view}-1600.webp ${width}w`}
+        src={`/images/campus/${photo.src}`}
+        srcSet={photo.srcSet.split(", ").map(source => `/images/campus/${source}`).join(", ")}
         sizes="100vw"
-        width={width}
-        height={height}
+        width={photo.width}
+        height={photo.height}
         alt=""
-        fetchPriority="high"
+        fetchPriority={priority}
         decoding="async"
         className="oc-campus-photo"
       />

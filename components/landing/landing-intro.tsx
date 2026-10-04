@@ -11,13 +11,16 @@ export function LandingIntro({ children }: { children: ReactNode }) {
         <span className="sr-only">OutClass overview</span>
       </div>
       <div className="oc-intro-visual">
+        <div className="oc-opening-underlay" aria-hidden="true">
+          <CampusBackdrop view="sunset-rotunda" priority="auto" />
+        </div>
         {children}
         <div className="oc-opening-panels" aria-hidden="true">
           <div className="oc-opening-panel oc-opening-left">
-            <CampusBackdrop view="colonnade" />
+            <CampusBackdrop view="football" />
           </div>
           <div className="oc-opening-panel oc-opening-right">
-            <CampusBackdrop />
+            <CampusBackdrop view="trees" />
           </div>
         </div>
         <a className="oc-intro-scroll" href="#landing-content">
