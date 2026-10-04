@@ -9,9 +9,8 @@
 .oc-landing-intro .oc-hero-introduction { display: flex; flex-direction: column; max-width: none; }
 .oc-landing .oc-landing-intro h1 { position: absolute; inset: 0 0 auto; z-index: 3; display: flex; flex-direction: column; justify-content: center; height: 100svh; margin: 0; padding: 88px 24px; color: #fff7ec; text-align: center; font-weight: var(--oc-weight-display); font-size: clamp(3rem, 7.2vw, 6.75rem); line-height: 1.12; letter-spacing: -.045em; }
 .oc-landing-intro .oc-hero-context { position: relative; z-index: 1; margin: 0; padding: 36px 24px 0; color: #fff7ec; }
-/* Crop only the transparent margins of the existing wordmark (789×316, ink 660×187). */
-.oc-hero-brand { position: relative; z-index: 1; width: min(760px, calc(100% - 48px)); aspect-ratio: 660 / 187; margin: 24px auto 0; overflow: clip; }
-.oc-hero-brand .oc-hero-wordmark { position: absolute; left: -9.697%; top: -64.706%; display: block; width: 119.545%; height: auto; max-width: none; border-radius: 0; }
+.oc-hero-brand { position: relative; z-index: 1; width: min(760px, calc(100% - 48px)); margin: 24px auto 0; }
+.oc-hero-brand .oc-hero-wordmark { display: block; width: 100%; height: auto; border-radius: 0; }
 .oc-landing-intro .oc-hero-support { position: relative; z-index: 1; padding: 0 24px 48px; }
 .oc-landing-intro .oc-hero-support > p:first-child { color: #fff7ec; }
 .oc-landing-intro .oc-hero-ctas [data-slot="button"] { background: #fff7ec; color: var(--primary); }

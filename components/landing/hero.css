@@ -4,7 +4,7 @@
 .oc-nav-shell[data-scrolled="true"] { background: rgb(255 255 255 / 96%); border-color: #dfe3e899; backdrop-filter: blur(12px); }
 .oc-landing .oc-hero-header { position: relative; background: transparent; }
 .oc-hero-header > a { display: flex; align-items: center; width: 140px; }
-.oc-nav-shell[data-scrolled="false"] .oc-hero-header > a img { height: 60px; }
+.oc-hero-header > a img { width: 100%; height: auto; }
 .oc-nav-shell[data-scrolled="false"] :is(nav, .nav-cta, .mobile-menu) { color: #fff7ec; }
 .oc-nav-shell[data-scrolled="false"] nav a:hover { color: #ffc192; }
 .oc-nav-shell[data-scrolled="false"] .oc-nav-primary { background: #fff7ec; color: var(--primary); }
@@ -26,7 +26,6 @@
   .oc-nav-primary { display: none; }
 }
 @media (max-width: 540px) {
-  .oc-nav-shell[data-scrolled="false"] .oc-hero-header > a img { height: 48px; }
   .oc-landing .oc-hero-editorial { padding: 48px 20px; }
   .oc-hero-context { font-size: var(--oc-size-10); letter-spacing: .1em; }
   .oc-hero-support > p:first-child { font-size: var(--oc-size-14); }

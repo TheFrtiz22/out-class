@@ -12,9 +12,11 @@ trees on the right, with one centered H1: “One profile. Every opportunity.” 
 entrance. Scroll opens subtly angled, clipped photographic panels outward and
 reveals the supplied sunset Rotunda photograph behind that same hero and its
 existing CTA beneath. The opening headline fades upward once and stays hidden.
-A large existing OutClass wordmark is revealed between “The recruiting platform…”
-and “Discover, apply…”, so the campaign statement never repeats. The wordmark’s
-transparent margins are clipped in CSS without altering the brand asset. White
+A large OutClass wordmark is revealed between “The recruiting platform…”
+and “Discover, apply…”, so the campaign statement never repeats. The shared logo
+component uses the supplied transparent navy/orange and white/orange SVGs across
+the site. Intrinsic dimensions preserve their proportions as they scale; the hero
+uses the white/orange SVG directly, without raster-specific cropping. White
 support copy and a cream CTA keep the revealed photograph readable.
 One fixed navigation fades in near completion. The walkthrough selector remains
 after the opening.
