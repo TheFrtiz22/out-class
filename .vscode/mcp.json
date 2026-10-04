@@ -2,7 +2,7 @@
 	"servers": {
 		"supabase-production-readonly": {
 		  "headers": {
-		    "Authorization": "${env:SUPABASE_PRODUCTION_MCP_TOKEN}"
+		    "Authorization": "Bearer ${env:SUPABASE_PRODUCTION_MCP_TOKEN}"
 		  },
 			"url": "https://mcp.supabase.com/mcp?project_ref=htlgjluegmdwfjkzzwic&read_only=true",
 			"type": "http"
