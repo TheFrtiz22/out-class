@@ -14,9 +14,11 @@ reveals the supplied sunset Rotunda photograph behind that same hero and its
 existing CTA beneath. The opening headline fades upward once and stays hidden.
 A large OutClass wordmark is revealed between “The recruiting platform…”
 and “Discover, apply…”, so the campaign statement never repeats. The shared logo
-component uses the supplied transparent navy/orange and white/orange SVGs across
-the site. Intrinsic dimensions preserve their proportions as they scale; the hero
-uses the white/orange SVG directly, without raster-specific cropping. White
+component uses the supplied sharp navy/orange and white/orange SVGs across
+the site (`outclass_navy_orange_sharp.svg` and `outclass_white_orange_sharp.svg`).
+Only their SVG canvas bounds are trimmed to remove empty margins; artwork paths
+and colors are unchanged. Intrinsic dimensions preserve their proportions as they
+scale; the hero uses the white/orange SVG directly. White
 support copy and a cream CTA keep the revealed photograph readable.
 One fixed navigation fades in near completion. The walkthrough selector remains
 after the opening.

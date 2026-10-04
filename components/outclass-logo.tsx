@@ -29,10 +29,10 @@ export function OutClassLogo({ variant = "light", className }: OutClassLogoProps
 
   return (
     <Image
-      src={variant === "dark" ? "/outclass_white_orange.svg" : "/outclass_navy_orange.svg"}
+      src={variant === "dark" ? "/outclass_white_orange_sharp.svg" : "/outclass_navy_orange_sharp.svg"}
       alt="OutClass"
-      width={variant === "dark" ? 660 : 897}
-      height={variant === "dark" ? 190 : 255}
+      width={variant === "dark" ? 658 : 894}
+      height={variant === "dark" ? 188 : 253}
       className={cn("h-8 w-auto rounded-sm object-contain", className)}
       priority
       unoptimized
