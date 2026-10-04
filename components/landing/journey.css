@@ -21,6 +21,7 @@
 .oc-journey-club h3 { font-size: var(--oc-text-small); }
 .oc-journey-club p { margin-top: 4px; color: var(--muted-foreground); font-size: var(--oc-size-11); }
 .oc-journey-club > [data-slot="badge"] { flex-shrink: 0; }
+.oc-sample-club-logo { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; object-fit: contain; }
 .oc-journey-rows { margin-block: 20px; }
 .oc-journey-rows > div { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; padding: 13px 0; border-bottom: 1px solid var(--border); font-size: var(--oc-size-12); }
 .oc-journey-rows dt { color: var(--muted-foreground); }
@@ -48,6 +49,7 @@
 .oc-journey-stages li[data-complete="true"] > span { background: var(--brand-subtle); color: var(--brand-ink); border-color: #e85b1966; }
 .oc-journey-stages li[aria-current="step"] { color: var(--foreground); }
 .oc-journey-secondary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0; padding-block: 18px; border-block: 1px solid var(--border); }
+.oc-journey-secondary-club { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .oc-journey-welcome { display: flex; align-items: center; gap: 14px; padding: 22px 18px; background: var(--success-subtle); color: var(--success); border-radius: var(--oc-radius-md); }
 .oc-journey-welcome > svg { flex-shrink: 0; }
 .oc-journey-welcome p { margin-top: 8px; font-size: var(--oc-size-12); line-height: var(--oc-leading-body); }

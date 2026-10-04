@@ -1,8 +1,9 @@
 "use client"
 
 import type { ReactNode } from "react"
+import Image from "next/image"
 import { CalendarDays, Check, FileText, MessageSquare, Users } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Fill, useProductProgress } from "./product-motion"
@@ -10,14 +11,14 @@ import { journeyExample as example, type JourneyScene } from "./journey-content"
 
 function Person({ subtitle }: { subtitle: string }) {
   return <div className="oc-profile-person">
-    <Avatar className="size-12"><AvatarFallback>{example.initials}</AvatarFallback></Avatar>
+    <Avatar className="size-12"><AvatarImage src={example.headshot} alt="" loading="lazy" /><AvatarFallback>{example.initials}</AvatarFallback></Avatar>
     <div><h3>{example.person}</h3><p>{subtitle}</p></div>
   </div>
 }
 
 function Club({ status }: { status?: string }) {
   return <div className="oc-journey-club">
-    <span className="oc-sample-monogram" aria-hidden="true">{example.clubMark}</span>
+    <Image className="oc-sample-club-logo" src={example.clubLogo} alt="" width={48} height={48} />
     <div><h3>{example.club}</h3><p>Fall recruitment</p></div>
     {status && <Badge variant="outline">{status}</Badge>}
   </div>
@@ -34,10 +35,10 @@ function DiscoverScene() {
     <div className="oc-discover-intro"><h3>Find your kind of curious.</h3><p>Explore clubs by what interests you.</p></div>
     <div className="oc-example-filters" aria-label="Example categories"><Badge>All interests</Badge><span>Finance</span><span>Consulting</span><span>Technology</span></div>
     {[
-      { mark: example.clubMark, name: example.club, category: "Finance", copy: "Learn to invest with a team that shares your curiosity." },
-      { mark: "IC", name: "Impact Consulting · sample", category: "Consulting", copy: "Bring fresh thinking to organizations creating social impact." },
+      { mark: example.clubMark, name: example.club, logo: example.clubLogo, category: "Finance", copy: "Learn to invest with a team that shares your curiosity." },
+      { mark: example.consultingClubMark, name: example.consultingClub, logo: example.consultingClubLogo, category: "Consulting", copy: "Bring fresh thinking to organizations creating social impact." },
     ].map(club => <div key={club.mark} className="oc-discover-row">
-      <span className="oc-sample-monogram" aria-hidden="true">{club.mark}</span>
+      <Image className="oc-sample-club-logo" src={club.logo} alt="" width={48} height={48} />
       <div><h4>{club.name}</h4><p>{club.copy}</p><Badge variant="outline">{club.category}</Badge></div>
     </div>)}
   </>
@@ -85,7 +86,7 @@ function StatusScene() {
     <Club status="Interview" />
     <ol className="oc-journey-stages" aria-label="Sample application stages">{["Applied", "Review", "Interview", "Decision"].map((stage, i) => <li key={stage} data-complete={i < 3} aria-current={i === 2 ? "step" : undefined}><span aria-hidden="true">{i < 2 ? <Check size={12} /> : i + 1}</span>{stage}</li>)}</ol>
     <p className="oc-journey-confirmation"><CalendarDays size={15} aria-hidden="true" /> {example.interview} · Scheduled</p>
-    <div className="oc-journey-secondary"><h4>Impact Consulting · sample</h4><Badge variant="secondary">In review</Badge></div>
+    <div className="oc-journey-secondary"><div className="oc-journey-secondary-club"><Image className="oc-sample-club-logo" src={example.consultingClubLogo} alt="" width={48} height={48} /><h4>{example.consultingClub}</h4></div><Badge variant="secondary">In review</Badge></div>
     <p className="oc-interface-note">Every update. One place to look.</p>
   </>
 }
@@ -111,7 +112,7 @@ function BuildScene() {
 function ReviewScene() {
   return <>
     <div className="oc-example-heading"><h3>Applicant pipeline</h3><Badge variant="secondary">In review</Badge></div>
-    <Person subtitle="Application ready for review · MII" />
+    <Person subtitle={`Application ready for review · ${example.clubMark}`} />
     <p className="oc-scene-note">“I want to turn research into a clear recommendation…”</p>
     <div className="oc-review-rubric">{[["Motivation & fit", "4.5"], ["Problem solving", "4.8"], ["Collaboration", "4.3"]].map(([label, score], i) => <div key={label}><span>{label}</span><strong><Fill at={.15 + i * .15}>{score} / 5</Fill></strong></div>)}</div>
     <p className="oc-scene-note">Reviewer note · Clear curiosity. Thoughtful research experience.</p>
@@ -129,7 +130,7 @@ function ScheduleScene() {
 
 function DecideScene() {
   return <>
-    <Person subtitle="MII · Final round" />
+    <Person subtitle={`${example.clubMark} · Final round`} />
     <div className="oc-review-rubric">{[["Accept", "4 votes"], ["Waitlist", "1 vote"], ["Decline", "0 votes"]].map(([label, votes], i) => <div key={label}><span>{label}</span><strong><Fill at={.15 + i * .15}>{votes}</Fill></strong></div>)}</div>
     <p className="oc-scene-note">Round 1 → Interview → Final decision</p>
     <div className="oc-journey-welcome"><Check size={22} aria-hidden="true" /><div><h4>Decision recorded</h4><p>{example.person} · Accepted</p></div></div>

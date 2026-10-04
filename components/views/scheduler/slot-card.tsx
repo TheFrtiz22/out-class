@@ -1,7 +1,7 @@
 "use client"
 
 import { Video } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -42,6 +42,7 @@ export function SlotCard({
           {slot.candidates.map((student) => (
             <div key={student.email} className="flex items-center gap-2">
               <Avatar className="size-6">
+                <AvatarImage src={student.headshotUrl} alt="" />
                 <AvatarFallback className="text-[length:var(--oc-size-10)] font-medium">{student.initials}</AvatarFallback>
               </Avatar>
               <div className="grid min-w-0 leading-tight">

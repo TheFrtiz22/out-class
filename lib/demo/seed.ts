@@ -126,7 +126,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
           : `Fictional UVA student exploring ${majors[i % majors.length].toLowerCase()}. Interested in ${skills[i % skills.length].toLowerCase()} and practical, collaborative projects.`,
       linkedinUrl: `https://linkedin.com/in/outclass-demo-${i + 1}`,
       resumeUrl: i % 3 !== 2 ? "/demo/sample-resume.pdf" : null,
-      headshotUrl: i % 5 === 4 ? null : "/demo/sample-headshot.svg",
+      headshotUrl: i === 0 ? "/images/landing/jordan-avery.jpg" : i % 5 === 4 ? null : "/demo/sample-headshot.svg",
       experiences: Array.from({ length: i % 5 === 4 ? 1 : 3 }, (_, j) => ({
         id: uid(3, i * 3 + j),
         studentProfileId: uid(2, i),

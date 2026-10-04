@@ -47,6 +47,9 @@ function ensurePresentation(value: DemoState) {
   }
   for (const student of value.students) {
     if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
+    if (student.profile.firstName === "Jordan" && student.profile.lastName === "Avery" && student.profile.headshotUrl === "/demo/sample-headshot.svg") {
+      student.profile.headshotUrl = "/images/landing/jordan-avery.jpg"
+    }
     student.profile.actScore ??= null
     student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
   }

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Camera, FileText, GraduationCap, Linkedin, Plus, ShieldCheck, Trash2, Upload } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,7 @@ export function StudentProfileCard() {
           <div className="flex flex-wrap items-start gap-4">
             <div className="group relative">
               <Avatar className="size-18 border-4 border-card shadow-none">
+                <AvatarImage src={currentStudent.headshotUrl} alt="" />
                 <AvatarFallback className="bg-secondary text-lg font-semibold text-foreground">
                   {currentStudent.initials}
                 </AvatarFallback>

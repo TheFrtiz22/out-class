@@ -12,6 +12,7 @@ import { demoMonogram } from "@/lib/demo/assets"
 import { profileDraft } from "@/lib/club-marketing"
 import { MarketingProfile } from "@/components/clubs/marketing-profile"
 import type { DirectoryClub } from "@/lib/club-directory"
+import { currentStudent } from "@/lib/data"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
 import "@/components/applications/application-tracker.css"
@@ -47,7 +48,7 @@ export function DesignPatterns() {
       {view === "Applications" && <div className="oc-applications" data-application-scope="all"><ul className="oc-application-list">{clubs.map((club, index) => <li key={club.id}><ApplicationJourneyCard id={club.id} club={club} status={["DRAFTING", "INTERVIEWING", "ACCEPTED"][index]} round={["Applied", "Interview", "Final Decision"][index]} nextStep={["Your draft is ready. Pick up where you left off.", "Your next conversation is booked. Open your application for the details.", "Your decision is ready. Follow the club’s instructions for joining."][index]} onOpen={sampleAction} /></li>)}</ul></div>}
       {view === "Club overview" && <><PageHeader eyebrow={overview.club.name} title="Overview" description="Your club, in motion." /><ManagerOverview data={managerOverview} showRecaps={false} /></>}
       {view === "Recruitment" && <><PageHeader eyebrow={overview.club.name} title="Recruitment" description="Build your next class." /><RecruitingOverview data={overview} /></>}
-      {view === "Scheduling" && <div><PageHeader title="Interviews" eyebrow="Sample interview day" description="Availability, capacity, and the next action in a single glance." /><div className="oc-slot-reference">{[0,1,2].map(index => <SlotCard key={index} onLaunch={sampleAction} slot={{ id: `reference-${index}`, time: ["2:00 PM", "2:30 PM", "3:00 PM"][index], capacity: 2, bookedCount: index, candidates: index ? [{ name: "Jordan Avery", email: "student@demo.invalid", initials: "JA" }, ...(index === 2 ? [{ name: "Amara Park", email: "sample@demo.invalid", initials: "AP" }] : [])] : [] }} />)}</div></div>}
+      {view === "Scheduling" && <div><PageHeader title="Interviews" eyebrow="Sample interview day" description="Availability, capacity, and the next action in a single glance." /><div className="oc-slot-reference">{[0,1,2].map(index => <SlotCard key={index} onLaunch={sampleAction} slot={{ id: `reference-${index}`, time: ["2:00 PM", "2:30 PM", "3:00 PM"][index], capacity: 2, bookedCount: index, candidates: index ? [{ name: currentStudent.name, email: "student@demo.invalid", initials: currentStudent.initials, headshotUrl: currentStudent.headshotUrl }, ...(index === 2 ? [{ name: "Amara Park", email: "sample@demo.invalid", initials: "AP" }] : [])] : [] }} />)}</div></div>}
     </div>
   </section>
 }
