@@ -8,6 +8,7 @@ function load(file, mocks = {}) {
   return mod.exports;
 }
 const contract = load('lib/resume-import.ts'), pdf = load('lib/resume-pdf.ts');
+async function rejected(result, pattern) { const value = await result; assert.equal(value.ok, false); assert.equal(typeof value.code, 'string'); if (pattern) assert.match(value.message, pattern); }
 const owner = '123e4567-e89b-12d3-a456-426614174000';
 const fixture = fs.readFileSync('tests/fixtures/resume-import/representative.pdf');
 const text = fs.readFileSync('tests/fixtures/resume-import/representative.txt', 'utf8');
@@ -49,16 +50,16 @@ test('extraction rejects oversized text and malformed structured results', () =>
 test('prepare authenticates and rejects non-PDF, oversized, invalid signature, arbitrary owner/path without storage or profile writes', async () => {
   await assert.rejects(harness({ deny: true }).api.prepareResumeImport(form()), /Unauthenticated/);
   for (const input of [form(fixture, 'image/png'), form(Buffer.from('not pdf')), form(new Uint8Array(10*1024*1024+1)), form(fixture, 'application/pdf', 'resume.txt')]) {
-    const h = harness(); await assert.rejects(h.api.prepareResumeImport(input)); assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
+    const h = harness(); await rejected(h.api.prepareResumeImport(input)); assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
   }
-  for (const key of ['path', 'userId', 'bucket']) { const h = harness(), input = form(); input.set(key, 'forged'); await assert.rejects(h.api.prepareResumeImport(input)); assert.equal(h.uploads.length, 0); }
+  for (const key of ['path', 'userId', 'bucket']) { const h = harness(), input = form(); input.set(key, 'forged'); await rejected(h.api.prepareResumeImport(input)); assert.equal(h.uploads.length, 0); }
 });
 test('valid prepare stores through the hardened private upload action but never updates profile', async () => {
   const h = harness(), before = structuredClone(h.current()), review = await h.api.prepareResumeImport(form());
   assert.equal(review.reference, owner + '/new.pdf'); assert.equal(h.uploads.length, 1); assert.deepEqual(h.current(), before); assert.equal(h.writes.length, 0);
 });
 test('extraction failure does not upload or expose parser/database details', async () => {
-  const h = harness({ parse: async () => { throw Error('/internal/path stack'); } }); await assert.rejects(h.api.prepareResumeImport(form()), /Could not import/); assert.equal(h.uploads.length, 0);
+  const h = harness({ parse: async () => { throw Error('/internal/path stack'); } }); await rejected(h.api.prepareResumeImport(form()), /Could not read/); assert.equal(h.uploads.length, 0);
 });
 test('explicit edited selection updates atomically, rejected values stay, experiences append and duplicates skip', async () => {
   const h = harness(), baseline = h.baseline();
@@ -73,12 +74,12 @@ test('confirmed attachment replaces only selected reference and selected values'
 test('final boundary rejects unauthorized saves, forged fields, invalid values and foreign references', async () => {
   const h = harness(), base = { patch: { major: 'Economics' }, experiences: [], baseline: h.baseline() };
   await assert.rejects(harness({ deny: true }).api.confirmResumeImport(base), /Unauthenticated/);
-  for (const input of [{ ...base, patch: { gpa: 9 } }, { ...base, userId: 'forged' }, { ...base, patch: { bio: 'hidden' } }, { ...base, resumeReference: '123e4567-e89b-12d3-a456-426614174111/new.pdf' }]) await assert.rejects(h.api.confirmResumeImport(input));
+  for (const input of [{ ...base, patch: { gpa: 9 } }, { ...base, userId: 'forged' }, { ...base, patch: { bio: 'hidden' } }, { ...base, resumeReference: '123e4567-e89b-12d3-a456-426614174111/new.pdf' }]) await rejected(h.api.confirmResumeImport(input));
   assert.equal(h.writes.length, 0);
 });
 test('stale replacement and save failure never partially apply proposed fields', async () => {
-  const h = harness(), baseline = h.baseline(); h.current().major = 'Changed elsewhere'; await assert.rejects(h.api.confirmResumeImport({ patch: { major: 'Import', firstName: 'Jordan' }, experiences: [], baseline }), /changed since extraction/); assert.equal(h.writes.length, 0);
-  const fail = harness({ fail: true }); await assert.rejects(fail.api.confirmResumeImport({ patch: { major: 'Import' }, experiences: [], baseline: fail.baseline() }), /No imported profile changes/); assert.equal(fail.current().major, 'Math');
+  const h = harness(), baseline = h.baseline(); h.current().major = 'Changed elsewhere'; await rejected(h.api.confirmResumeImport({ patch: { major: 'Import', firstName: 'Jordan' }, experiences: [], baseline }), /changed since extraction/); assert.equal(h.writes.length, 0);
+  const fail = harness({ fail: true }); await rejected(fail.api.confirmResumeImport({ patch: { major: 'Import' }, experiences: [], baseline: fail.baseline() }), /No imported profile changes/); assert.equal(fail.current().major, 'Math');
 });
 test('review builds only accepted edited values; invalid edits cannot become a save payload', () => {
   assert.deepEqual(contract.reviewPatch({ major: 'Edited', gpa: '3.9', firstName: 'Rejected' }, ['major', 'gpa']), { major: 'Edited', gpa: 3.9 });
@@ -116,4 +117,14 @@ test('parser concurrency is bounded and terminated workers release their slot', 
   await assert.rejects(parser.extractPdfText(fixture), /busy/);
   const results = await Promise.allSettled([first, second]); assert.ok(results.every(r=>r.status==='rejected')); assert.equal(terminated, 2);
   await assert.rejects(parser.extractPdfText(fixture), /took too long/); assert.equal(terminated, 3);
+});
+
+test('real malformed and empty PDFs return structured action failures without uploads', async () => {
+  for (const bytes of [Buffer.from('%PDF-malformed'), fs.readFileSync('tests/fixtures/resume-import/empty.pdf')]) {
+    const h = harness({ parse: pdf.extractPdfText });
+    const result = await h.api.prepareResumeImport(form(bytes));
+    assert.equal(result.ok, false); assert.match(result.message, /malformed|unreadable|meaningful|Scanned/i);
+    assert.doesNotMatch(result.message, /node_modules|SQL|stack|Server Components/);
+    assert.equal(h.uploads.length, 0); assert.equal(h.writes.length, 0);
+  }
 });

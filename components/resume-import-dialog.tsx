@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-type Review = Awaited<ReturnType<typeof prepareResumeImport>>
+type Review = Extract<Awaited<ReturnType<typeof prepareResumeImport>>, { ok: true }>
 export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentProfile; onSaved: (profile: FullStudentProfile) => void }) {
   const demo = useDemoMode(), { refreshUser } = useAuth()
   const [open, setOpen] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("")
@@ -23,10 +23,11 @@ export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentP
     try {
       const form = new FormData(); form.set("file", file)
       const result = await prepareResumeImport(form)
+      if (!result.ok) { setError(result.message); return }
       setReview(result); setSelected([]); setAttach(false)
       setValues(Object.fromEntries(result.proposal.fields.map(v => [v.field, v.value || ""])))
       setEntries(result.proposal.experiences.map(v => ({ ...v, accepted: false })))
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not extract this PDF. Try another text-based résumé.") }
+    } catch { setError("Could not process this résumé. Please try again.") }
     finally { setBusy(false) }
   }
   async function confirm() {
@@ -37,9 +38,10 @@ export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentP
     setBusy(true)
     try {
       const result = await confirmResumeImport({ patch, baseline: review.baseline, experiences: entries.filter(v => v.accepted).map(({ title, subtitle, period }) => ({ title, subtitle, period })), ...(attach ? { resumeReference: review.reference } : {}) })
+      if (!result.ok) { setError(result.message); return }
       onSaved(result.profile); setOpen(false); setReview(null)
       await refreshUser().catch(() => {})
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not save. Your proposed changes remain here.") }
+    } catch { setError("Could not save. Your proposed changes remain here; please try again.") }
     finally { setBusy(false) }
   }
   return <Dialog open={open} onOpenChange={close}>

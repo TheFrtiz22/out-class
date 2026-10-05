@@ -1,14 +1,14 @@
 const { test } = require('node:test'), assert = require('node:assert/strict'), fs = require('node:fs'), ts = require('typescript');
 const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)];
 const text = n => typeof n === 'string' ? n : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : '';
-function harness({ demo = false, saveError = false } = {}) {
+function harness({ demo = false, saveError = false, extractionError = false } = {}) {
   const slots = [], calls = []; let cursor = 0;
   const fields = ['firstName', 'lastName', 'major', 'gradYear', 'gpa', 'satScore', 'actScore'];
   const review = { baseline: { major: 'Math' }, reference: 'owner/new.pdf', proposal: { fields: fields.map(field => ({ field, status: field === 'major' ? 'found' : 'missing', value: field === 'major' ? 'Economics' : null, note: 'Review before accepting.' })), experiences: [{ title: 'Intern', subtitle: 'Company', period: '2024' }], warnings: [] } };
   const react = { useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; } };
   const api = {
-    prepareResumeImport: async input => { calls.push(['prepare', input]); return review; },
-    confirmResumeImport: async input => { calls.push(['confirm', input]); if (saveError) throw Error('Save failed'); return { profile: { userId: 'owner', major: input.patch.major } }; },
+    prepareResumeImport: async input => { calls.push(['prepare', input]); return extractionError ? { ok: false, code: 'INVALID_PDF', message: 'Choose a valid PDF résumé.' } : { ok: true, ...review }; },
+    confirmResumeImport: async input => { calls.push(['confirm', input]); if (saveError) return { ok: false, code: 'SAVE_FAILED', message: 'Save failed' }; return { ok: true, profile: { userId: 'owner', major: input.patch.major } }; },
   };
   const contract = { resumeLabels: Object.fromEntries(fields.map(f => [f, f])), reviewPatch: (values, selected) => Object.fromEntries(selected.map(f => [f, values[f]])) };
   const mod = { exports: {} };
@@ -34,3 +34,5 @@ test('Demo import entry is disabled without action calls', () => { const h = har
 test('failed confirmation preserves editable proposal and reports an error', async () => {
   const h = harness({ saveError: true }); let tree = await prepare(h); const label = nodes(tree).find(n => n.type === 'label' && text(n) === 'Change major'); nodes(label).find(n => n.props?.type === 'checkbox').props.onChange({ target: { checked: true } }); tree = h.render(); button(tree, 'Confirm selected changes').props.onClick(); await new Promise(r => setImmediate(r)); tree = h.render(); assert.match(text(tree), /Save failed/); assert.ok(nodes(tree).some(n => n.props?.id === 'import-major')); assert.equal(h.calls.some(c => c[0] === 'saved'), false);
 });
+
+test('structured extraction errors remain actionable with a retry input and no generic Next wording', async () => { const h = harness({ extractionError: true }), tree = await prepare(h); assert.match(text(tree), /Choose a valid PDF/); assert.doesNotMatch(text(tree), /Server Components|digest/); assert.equal(nodes(tree).find(n => n.props?.id === 'resume-import-file').props.disabled, false); assert.equal(h.calls.some(c => c[0] === 'confirm'), false); });

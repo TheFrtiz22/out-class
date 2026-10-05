@@ -1,15 +1,15 @@
 import { Worker } from "node:worker_threads"
-import { createRequire } from "node:module"
-import { pathToFileURL } from "node:url"
 import { MAX_RESUME_TEXT } from "@/lib/resume-import"
 
-const requirePdf = createRequire(`${process.cwd()}/package.json`)
 export const PDF_TIMEOUT_MS = 8_000
 // Keep PDF.js outside the Next bundle. The worker has no browser rendering or URL input.
 const workerCode = `
 const { parentPort, workerData } = require('node:worker_threads');
 (async () => {
-  const { getDocument } = await import(workerData.moduleUrl);
+  const { createRequire } = require('node:module');
+  const { pathToFileURL } = require('node:url');
+  const runtimeRequire = createRequire(workerData.packagePath);
+  const { getDocument } = await import(pathToFileURL(runtimeRequire.resolve('pdfjs-dist/legacy/build/pdf.mjs')).href);
   const loading = getDocument({ data: new Uint8Array(workerData.bytes), isEvalSupported: false,
     disableFontFace: true, useSystemFonts: false, useWorkerFetch: false, stopAtErrors: true, verbosity: 0 });
   try {
@@ -42,7 +42,8 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(workerCode, { eval: true, workerData: {
       bytes, maxText: MAX_RESUME_TEXT,
-      moduleUrl: pathToFileURL(requirePdf.resolve("pdfjs-dist/legacy/build/pdf.mjs")).href,
+      // Resolution runs in the native worker, outside Next/Webpack rewriting.
+      packagePath: `${process.cwd()}/package.json`,
     }, resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16, stackSizeMb: 4 } })
     activeWorkers++
     let settled = false
