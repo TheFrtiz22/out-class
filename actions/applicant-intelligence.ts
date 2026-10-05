@@ -3,8 +3,9 @@ import { z } from "zod";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
+import { votingDisplaySchema, readVotingDisplay } from "@/lib/voting-presentation";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
-const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid() });
+const scope = z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: votingDisplaySchema.optional() });
 async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>, membershipId: string) {
   const member = await tx.clubMember.findFirst({ where: { id: membershipId, clubId: input.clubId } });
   if (!hasPermission(member, "applications.review")) throw new Error("Review access required.");
@@ -20,8 +21,19 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     const app = await authorized(tx, data, membership.id);
+    const reviewer = await tx.clubMember.findFirst({where:{id:membership.id,clubId:data.clubId}});
+    let config=readDisplayConfig(app.round.applicantDisplay);
+    if(data.previewConfig){
+      if(!hasPermission(reviewer,"decisions.manage"))throw Error("Voting setup permission required.");
+      config=data.previewConfig;
+    }
+    if(data.sessionId){
+      const voting = await tx.votingSession.findFirst({where:{id:data.sessionId,clubId:data.clubId},include:{participants:true,candidates:true}});
+      if(!voting || !voting.candidates.some(c=>c.applicationId===app.id) || (!hasPermission(reviewer,"decisions.manage")&&!hasPermission(reviewer,"decisions.view")&&!(hasPermission(reviewer,"decisions.vote")&&voting.participants.some(p=>p.memberId===membership.id)))) throw Error("Voting presentation unavailable.");
+      config=readVotingDisplay(voting.displayConfig);
+    }
     const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
-    return projectApplicantDisplay(app, app.round, readDisplayConfig(app.round.applicantDisplay), observations.map(o => ({
+    return projectApplicantDisplay(app, app.round, config, observations.map(o => ({
       id: o.id, kind: o.kind, body: o.body, author: o.author.studentProfile ? `${o.author.studentProfile.firstName} ${o.author.studentProfile.lastName}` : "Club reviewer", own: o.authorId === user.id, createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(),
     })));
   }, { isolationLevel: "RepeatableRead" });

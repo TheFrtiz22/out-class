@@ -1,0 +1,32 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 513 >>
+stream
+BT /F1 12 Tf 50 760 Td (Jordan Avery) Tj 0 -18 Td (Education) Tj 0 -18 Td (University of Virginia) Tj 0 -18 Td (Major: Economics) Tj 0 -18 Td (Graduation year: 2028) Tj 0 -18 Td (GPA: 3.75 / 4.0) Tj 0 -18 Td (SAT: 1480) Tj 0 -18 Td (ACT composite: 33) Tj 0 -18 Td (Experience) Tj 0 -18 Td (Research Assistant | Economics Lab | 2025 - Present) Tj 0 -18 Td (Software Intern) Tj 0 -18 Td (Example Company) Tj 0 -18 Td (June 2024 - August 2024) Tj 0 -18 Td (Skills) Tj 0 -18 Td (Research, Python, communication) Tj ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+875
+%%EOF

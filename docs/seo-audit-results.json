@@ -1,0 +1,629 @@
+{
+  "auditedAt": "2026-10-04T21:01:16.165790-04:00",
+  "environment": "Local Next.js production build, localhost:3115, warmed public cache; Chrome headless; Lighthouse 13.5.0",
+  "performance": {
+    "mobile": {
+      "before": {
+        "scores": {
+          "performance": 69,
+          "accessibility": 97,
+          "best-practices": 96,
+          "seo": 100
+        },
+        "metrics": {
+          "largest-contentful-paint": {
+            "value": 13640.122,
+            "display": "13.6\u00a0s"
+          },
+          "cumulative-layout-shift": {
+            "value": 0,
+            "display": "0"
+          },
+          "total-blocking-time": {
+            "value": 28,
+            "display": "30\u00a0ms"
+          },
+          "server-response-time": {
+            "value": 2573,
+            "display": "Root document took 2,570\u00a0ms"
+          },
+          "total-byte-weight": {
+            "value": 2426640,
+            "display": "Total size was 2,370\u00a0KiB"
+          }
+        }
+      },
+      "after": {
+        "scores": {
+          "performance": 85,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "largest-contentful-paint": {
+            "value": 4374.889475,
+            "display": "4.4\u00a0s"
+          },
+          "cumulative-layout-shift": {
+            "value": 0,
+            "display": "0"
+          },
+          "total-blocking-time": {
+            "value": 3.5,
+            "display": "0\u00a0ms"
+          },
+          "server-response-time": {
+            "value": 7,
+            "display": "Root document took 10\u00a0ms"
+          },
+          "total-byte-weight": {
+            "value": 646572,
+            "display": "Total size was 631\u00a0KiB"
+          }
+        }
+      }
+    },
+    "desktop": {
+      "before": {
+        "scores": {
+          "performance": 77,
+          "accessibility": 97,
+          "best-practices": 96,
+          "seo": 100
+        },
+        "metrics": {
+          "largest-contentful-paint": {
+            "value": 3412.2005499999987,
+            "display": "3.4\u00a0s"
+          },
+          "cumulative-layout-shift": {
+            "value": 0,
+            "display": "0"
+          },
+          "total-blocking-time": {
+            "value": 0,
+            "display": "0\u00a0ms"
+          },
+          "server-response-time": {
+            "value": 3163,
+            "display": "Root document took 3,160\u00a0ms"
+          },
+          "total-byte-weight": {
+            "value": 3379967,
+            "display": "Total size was 3,301\u00a0KiB"
+          }
+        }
+      },
+      "after": {
+        "scores": {
+          "performance": 96,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "largest-contentful-paint": {
+            "value": 1372.1336499999998,
+            "display": "1.4\u00a0s"
+          },
+          "cumulative-layout-shift": {
+            "value": 0,
+            "display": "0"
+          },
+          "total-blocking-time": {
+            "value": 0,
+            "display": "0\u00a0ms"
+          },
+          "server-response-time": {
+            "value": 5,
+            "display": "Root document took 10\u00a0ms"
+          },
+          "total-byte-weight": {
+            "value": 1306769,
+            "display": "Total size was 1,276\u00a0KiB"
+          }
+        }
+      }
+    }
+  },
+  "bundleFirstLoadKB": {
+    "before": 536,
+    "after": 148
+  },
+  "fontBytes": {
+    "before": 303076,
+    "after": 120488
+  },
+  "faviconBytes": {
+    "before": 722625,
+    "after": 1410
+  },
+  "crawler": [
+    {
+      "path": "/",
+      "status": 200,
+      "canonical": [
+        "https://www.out-class.net"
+      ],
+      "robots": [
+        "index, follow"
+      ],
+      "xRobots": null,
+      "location": null,
+      "type": "text/html; charset=utf-8",
+      "h1": 1,
+      "description": [
+        "Discover student organizations, create one profile, apply to college clubs, and track recruitment. OutClass brings clarity to students and club leaders."
+      ],
+      "descriptionLength": 152,
+      "structuredData": [
+        {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://www.out-class.net/#organization",
+              "name": "OutClass",
+              "url": "https://www.out-class.net"
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://www.out-class.net/#website",
+              "name": "OutClass",
+              "url": "https://www.out-class.net",
+              "description": "Discover student organizations, create one profile, apply to college clubs, and track recruitment. OutClass brings clarity to students and club leaders.",
+              "inLanguage": "en",
+              "publisher": {
+                "@id": "https://www.out-class.net/#organization"
+              }
+            }
+          ]
+        }
+      ],
+      "security": {
+        "nosniff": "nosniff",
+        "referrer": "strict-origin-when-cross-origin"
+      }
+    },
+    {
+      "path": "/?utm_source=audit",
+      "status": 200,
+      "canonical": [
+        "https://www.out-class.net"
+      ],
+      "robots": [
+        "index, follow"
+      ],
+      "xRobots": null,
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/?workspace=student",
+      "status": 200,
+      "canonical": [
+        "https://www.out-class.net"
+      ],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/?view=student-profile",
+      "status": 200,
+      "canonical": [
+        "https://www.out-class.net"
+      ],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/?next=%2Fclub%2Fmii%2Fworkspace",
+      "status": 200,
+      "canonical": [
+        "https://www.out-class.net"
+      ],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/robots.txt",
+      "status": 200,
+      "canonical": [],
+      "robots": null,
+      "xRobots": null,
+      "location": null,
+      "type": "text/plain",
+      "body": "User-Agent: *\nAllow: /\nDisallow: /api/\nDisallow: /auth/\nDisallow: /login\nDisallow: /forgot-password\nDisallow: /reset-password\nDisallow: /platform\nDisallow: /settings/\nDisallow: /club-access/\nDisallow: /club-claims/\nDisallow: /invitations/\nDisallow: /club/*/workspace\nDisallow: /club/*/tasks\nDisallow: /meetings\nDisallow: /check-in\nDisallow: /interviews\nDisallow: /decisions\nDisallow: /vote\nDisallow: /live-voting\nDisallow: /voting/\nDisallow: /preview\nDisallow: /design-system\nDisallow: /*?*workspace=\nDisallow: /*?*view=\nDisallow: /*?*demoClub=\nDisallow: /*?*next=\nDisallow: /*?*error=\n\nSitemap: https://www.out-class.net/sitemap.xml\n"
+    },
+    {
+      "path": "/sitemap.xml",
+      "status": 200,
+      "canonical": [],
+      "robots": null,
+      "xRobots": null,
+      "location": null,
+      "type": "application/xml",
+      "urls": [
+        "https://www.out-class.net/"
+      ]
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "status": 200,
+      "canonical": [],
+      "robots": null,
+      "xRobots": null,
+      "location": null,
+      "type": "application/manifest+json",
+      "manifest": {
+        "name": "OutClass",
+        "short_name": "OutClass",
+        "description": "Student organization applications and recruitment.",
+        "start_url": "/",
+        "display": "browser",
+        "background_color": "#fff7ec",
+        "theme_color": "#14243b",
+        "icons": [
+          {
+            "src": "/apple-icon",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/forgot-password",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/reset-password",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/preview",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/platform",
+      "status": 307,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": "/platform/login",
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/platform/login",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/settings/organizations",
+      "status": 307,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": "/",
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/club/mii",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": null,
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/club/mii/workspace",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/club/mii/tasks",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/club-access/mii",
+      "status": 307,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": "/",
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/club-claims/mii",
+      "status": 307,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": "/?next=%2Fclub-claims%2Fmii",
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/invitations/seo-invalid-id",
+      "status": 307,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": "/?next=%2Finvitations%2Fseo-invalid-id",
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/meetings",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/check-in",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/interviews/book",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/vote",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/voting/seo-invalid-id/join",
+      "status": 200,
+      "canonical": [],
+      "robots": [
+        "noindex, nofollow"
+      ],
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/api/users/me",
+      "status": 401,
+      "canonical": [],
+      "robots": null,
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "application/json"
+    },
+    {
+      "path": "/api/resumes",
+      "status": 400,
+      "canonical": [],
+      "robots": null,
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/plain;charset=UTF-8"
+    },
+    {
+      "path": "/api/application-attachments",
+      "status": 400,
+      "canonical": [],
+      "robots": null,
+      "xRobots": "noindex, nofollow",
+      "location": null,
+      "type": "text/plain;charset=UTF-8"
+    },
+    {
+      "path": "/login/",
+      "status": 308,
+      "canonical": [],
+      "robots": null,
+      "xRobots": null,
+      "location": "/login",
+      "type": null
+    },
+    {
+      "path": "/seo-audit-missing-page",
+      "status": 404,
+      "canonical": [],
+      "robots": [
+        "noindex",
+        "noindex, nofollow"
+      ],
+      "xRobots": null,
+      "location": null,
+      "type": "text/html; charset=utf-8"
+    }
+  ],
+  "browser": {
+    "results": [
+      {
+        "name": "desktop",
+        "signIn": true,
+        "signup": true,
+        "escapeClosesDialog": true,
+        "studentPerspective": true,
+        "leaderPerspective": true,
+        "animation": true,
+        "reducedMotion": "no-preference",
+        "overflow": false,
+        "errors": [],
+        "violations": []
+      },
+      {
+        "name": "mobile",
+        "signIn": true,
+        "signup": true,
+        "escapeClosesDialog": true,
+        "studentPerspective": true,
+        "leaderPerspective": true,
+        "animation": true,
+        "reducedMotion": "no-preference",
+        "overflow": false,
+        "errors": [],
+        "violations": []
+      },
+      {
+        "name": "small-mobile",
+        "signIn": true,
+        "signup": true,
+        "escapeClosesDialog": true,
+        "studentPerspective": true,
+        "leaderPerspective": true,
+        "animation": true,
+        "reducedMotion": "no-preference",
+        "overflow": false,
+        "errors": [],
+        "violations": []
+      },
+      {
+        "name": "reduced-mobile",
+        "signIn": true,
+        "signup": true,
+        "escapeClosesDialog": true,
+        "studentPerspective": true,
+        "leaderPerspective": true,
+        "animation": true,
+        "reducedMotion": "reduce",
+        "overflow": false,
+        "errors": [],
+        "violations": []
+      }
+    ],
+    "noJavaScript": {
+      "h1": true,
+      "productCopy": true,
+      "loginLink": true
+    }
+  },
+  "verification": {
+    "productionBuild": "pass",
+    "buildWithoutEnvironmentFiles": "pass",
+    "typecheck": "pass",
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 30
+    },
+    "unitTests": {
+      "total": 530,
+      "pass": 528,
+      "skip": 2,
+      "fail": 0
+    },
+    "isolatedOnboardingE2E": {
+      "pass": 11,
+      "fail": 0
+    },
+    "migrationChecks": {
+      "migrations": 22,
+      "rlsTables": 43,
+      "status": "pass"
+    },
+    "deployment": "not performed",
+    "productionAtFinalCheck": {
+      "homepage": 200,
+      "robots": 404,
+      "sitemap": 404,
+      "httpsApexRedirect": 308,
+      "httpApexHops": 2
+    }
+  }
+}

@@ -255,7 +255,7 @@ test('tutorial UI advances, goes back, skips with Escape, restarts, highlights c
 test('support uploads sign only fresh effective-user paths and fail closed before issuance if audit fails', async () => {
   const oldKey = process.env.SUPABASE_SECRET_KEY; process.env.SUPABASE_SECRET_KEY = 'fixture';
   let signed, auditFailure = false;
-  const admin = { storage: { getBucket: async () => ({ data: { public: false } }), from: () => ({ createSignedUploadUrl: async path => { signed = path; return { data: { signedUrl: 'https://fixture.invalid/upload', token: 'fixture' } }; } }) } };
+  const admin = { storage: { getBucket: async () => ({ data: { public: false } }), from: () => ({ createSignedUploadUrl: async path => { signed = path; return { data: { signedUrl: 'https://fixture.invalid/upload', token: 'fixture' } }; }, uploadToSignedUrl: async () => ({ error: null }) }) } };
   try {
     const api = loader({
       '@/utils/auth': { requireAuth: async () => ({ user: { id: target }, impersonation: { actorId: actor } }) },
@@ -264,10 +264,11 @@ test('support uploads sign only fresh effective-user paths and fail closed befor
       '@supabase/supabase-js': { createClient: () => admin },
       '@/utils/support-audit': { auditSupportAction: async (action, id) => { assert.equal(id, target); if (auditFailure) throw Error('audit unavailable'); } },
     })('actions/storage.ts');
-    await api.getSignedUploadUrl({ bucket: 'resumes', fileName: 'resume.pdf' });
-    assert.match(signed, new RegExp(`^${target}/[0-9]+-resume.pdf$`));
+    const form = new FormData(); form.set('kind', 'resume'); form.set('file', new Blob(['%PDF-fixture'], {type:'application/pdf'}), 'resume.pdf');
+    await api.uploadProfileFile(form);
+    assert.match(signed, new RegExp(`^${target}/[a-f0-9-]+\\.pdf$`));
     signed = undefined; auditFailure = true;
-    await assert.rejects(api.getSignedUploadUrl({ bucket: 'resumes', fileName: 'resume.pdf' }), /audit unavailable/);
+    await assert.rejects(api.uploadProfileFile(form), /audit unavailable/);
     assert.equal(signed, undefined);
   } finally { if (oldKey === undefined) delete process.env.SUPABASE_SECRET_KEY; else process.env.SUPABASE_SECRET_KEY = oldKey; }
 });

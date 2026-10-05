@@ -47,8 +47,17 @@ function ensurePresentation(value: DemoState) {
   }
   for (const student of value.students) {
     if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
+    if (student.profile.firstName === "Jordan" && student.profile.lastName === "Avery" && student.profile.headshotUrl === "/demo/sample-headshot.svg") {
+      student.profile.headshotUrl = "/images/landing/jordan-avery.jpg"
+    }
     student.profile.actScore ??= null
     student.profile.actEnglish ??= null; student.profile.actMath ??= null; student.profile.actReading ??= null; student.profile.actScience ??= null
+  }
+  for(const session of value.votingSessions??[]){
+    session.displayConfig??={version:1,fields:["photo","name","major","graduationYear","gpa","resume","linkedin"]}
+    session.joinOpenedAt??=session.startedAt??null
+    if(session.activeApplicationId===undefined)session.activeApplicationId=session.passes.find(p=>p.number===session.currentPass)?.candidates[0]?.applicationId??null
+    for(const participant of session.participants)participant.joinedAt??=null
   }
   // Upgrade saved presentations without resetting applications or evaluations.
   value.interviewFoundation ??= { assignments: [], documents: [], annotations: [], history: [], audit: [] };

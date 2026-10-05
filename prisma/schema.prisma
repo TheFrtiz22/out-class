@@ -817,6 +817,9 @@ model VotingSession {
   targetSize Int
   autoAdvance String @default("NONE")
   threshold Int @default(100)
+  displayConfig Json @default("{}")
+  joinOpenedAt DateTime?
+  activeApplicationId String?
   currentPass Int @default(0)
   revision Int @default(0)
   createdBy String
@@ -836,6 +839,7 @@ model VotingParticipant {
   session VotingSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
   memberId String
   member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  joinedAt DateTime?
   ballots VotingBallot[]
   @@id([sessionId, memberId])
 }

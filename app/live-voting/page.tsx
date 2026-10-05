@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { MemberVotingPad } from "@/components/live-voting/member-voting-pad"
 import { MobileJoinScreen } from "@/components/live-voting/mobile-join-screen"
 import { findVotingSession } from "@/lib/use-live-voting"
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
 export default function LiveVotingPage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -20,7 +21,7 @@ export default function LiveVotingPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not find that session. Please retry.") }
     finally { setPending(false) }
   }
-  if (sessionId === null) return <main className="p-8 font-sans" role="status">Opening voting pad…</main>
+  if (sessionId === null) return <OutClassLoadingScreen />
   if (sessionId && !/^[a-zA-Z0-9-]{1,80}$/.test(sessionId)) return <main className="mx-auto max-w-md space-y-4 p-8 font-sans"><h1 className="oc-page-title ">Invalid session link</h1><a href="/vote/" className="text-sm underline">Join with your Session PIN</a></main>
   if (!sessionId) return <main className="flex min-h-svh items-center justify-center bg-white px-5 py-8 font-sans"><div className="w-full max-w-md space-y-7 rounded-2xl border border-neutral-200 bg-white p-6 shadow-none"><p className="text-sm font-semibold">OutClass / Voting preview</p><MobileJoinScreen onJoin={joinByPin} pending={pending} error={error} /><p className="text-xs leading-5 text-neutral-500">Simulated session · keep the proctor’s tab open in this browser. Separate-device connections need a server.</p></div></main>
   return <MemberVotingPad key={sessionId} sessionId={sessionId} initialJoin={initialJoin} />

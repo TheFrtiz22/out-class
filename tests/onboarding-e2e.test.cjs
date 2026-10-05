@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {PrismaClient}=require('@prisma/client');
 const {createClient}=require('@supabase/supabase-js');
-const {Actor,totp,readConfig,confirmationMessage,randomUUID}=require('./helpers/onboarding-e2e.cjs');
+const {Actor,totp,readConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect}=require('./helpers/onboarding-e2e.cjs');
 const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 
 test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP',{skip:!configFile,timeout:180000},async t=>{
@@ -63,10 +63,16 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const pending=await call(president,'club-onboarding','getOrganizationInvitations',true);assert.equal(pending.length,1);assert.equal(pending[0].invitedName,'John Smith');assert.equal(pending[0].invitedYear,'2027');
   assert.equal((await db.schoolIdentity.findUniqueOrThrow({where:{id:invitation.schoolIdentityId}})).userId,president.user.id);
   // Email invitation entry points must guide first-time users through the existing profile wizard.
+  assert.equal(await db.studentProfile.count({where:{userId:president.user.id}}),0);
   for(const target of [`/invitations/${ownerInvitation}`,'/settings/organizations']){
-   const page=await president.request(target);assert.equal(page.status,307,`${target} must not bypass profile completion`);assert.ok(page.headers.get('location').includes('/?next='));
+   await assertProfileCompletionRedirect(await president.request(target),config.appUrl,target,[name,'Your organization access','Settings → Organizations']);
   }
   await president.profile('John Smith',2027);assert.equal((await db.studentProfile.findUniqueOrThrow({where:{userId:president.user.id}})).computingId,ids.president);
+  const invitationPage=await president.request(`/invitations/${ownerInvitation}`);
+  assert.equal(invitationPage.status,200);
+  const invitationHtml=await invitationPage.text();
+  assert.ok(invitationHtml.includes(name)&&invitationHtml.includes('Your organization access'),'Completed profile can access the invitation flow');
+  assert.ok(!invitationHtml.includes('id="__next-page-redirect"'),'Completed profile must not redirect away from the invitation');
   await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation);
   invitation=await db.clubInvitation.findUniqueOrThrow({where:{id:ownerInvitation}});assert.equal(invitation.status,'ACCEPTED');assert.equal(invitation.claimedUserId,president.user.id);assert.ok(invitation.claimedAt);
   const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:president.user.id,clubId}}});assert.equal(membership.isOwner,true);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.status,'ACTIVE');

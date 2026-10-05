@@ -6,6 +6,23 @@ import { getPublicClub } from "@/actions/club-directory"
 import { getStudentDashboardData } from "@/actions/applications"
 import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
+import type { Metadata } from "next"
+import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
+import { publicPageMetadata, privateRobots } from "@/lib/seo"
+import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
+
+export async function generateMetadata({ params }: { params: Promise<{ clubId: string }> }): Promise<Metadata> {
+  const { clubId } = await params
+  const club = await getPublicClubSeo(clubId)
+  if (!club || !isIndexableClub(club)) return { title: club?.name ?? "Club profile", robots: privateRobots }
+  const jar = await cookies()
+  const accountPage = jar.has(PLATFORM_VIEW_COOKIE) || jar.get(DEMO_COOKIE)?.value === "1" ||
+    jar.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
+  return {
+    ...publicPageMetadata(`${club.name} | OutClass`, club.description.trim().replace(/\s+/g, " ").slice(0, 160), `/club/${encodeURIComponent(club.id)}`),
+    ...(accountPage ? { robots: privateRobots } : {}),
+  }
+}
 export default async function ClubPage({ params }: { params: Promise<{ clubId: string }> }) {
   const { clubId } = await params
   const jar = await cookies()

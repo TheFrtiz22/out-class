@@ -180,7 +180,7 @@ test('demo publication enforces production conflict rules and atomically rejects
 test('Demo profile photos/PDF/LinkedIn survive reload and reset with no production uploads', async () => {
   const h=setup(), initial=structuredClone(h.store.get());
   assert.equal(initial.students[0].profile.resumeUrl,'/demo/sample-resume.pdf');
-  assert.equal(initial.students[0].profile.headshotUrl,'/demo/sample-headshot.svg');
+  assert.equal(initial.students[0].profile.headshotUrl,'/images/landing/jordan-avery.jpg');
   assert.match(initial.students[0].profile.linkedinUrl,/^https:\/\/linkedin\.com\//);
   assert.ok(initial.students.some(s=>!s.profile.headshotUrl));
   const data=new FormData();data.set('kind','resume');data.set('file',new Blob(['%PDF-']), 'resume.pdf');
@@ -198,5 +198,29 @@ test('browser-origin Demo projection has one résumé link and a working photo U
   const student=h.store.get().students[0];const app=h.store.get().applications.find(a=>a.studentId===student.id&&a.clubId===h.store.get().clubs[0].id);
   h.store.mutate(s=>{const round=s.clubs[0].rounds.find(r=>r.id===app.roundId);round.anonymousReview=false});
   const view=await h.api.getApplicantDisplay({clubId:app.clubId,applicationId:app.id});
-  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/demo/sample-headshot.svg');
+  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/images/landing/jordan-avery.jpg');
+});
+
+test('Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated',async()=>{
+ const h=setup(),state=h.store.get(),clubId=state.clubs[0].id,leader=state.memberships.find(m=>m.clubId===clubId&&m.role==='PRESIDENT'),member=state.memberships.find(m=>m.clubId===clubId&&m.id!==leader.id);
+ h.store.mutate(s=>{s.perspective.role='leader'});
+ const pool=state.applications.filter(a=>a.clubId===clubId&&a.status==='INTERVIEWING'),roundId=pool[0].roundId,candidates=pool.filter(a=>a.roundId===roundId).slice(0,2);
+ const initial=structuredClone(state),config={version:1,fields:['name','photo','gpa','act','resume']};
+ const id=await h.api.createVotingSession({clubId,roundId,applicationIds:candidates.map(a=>a.id),participantIds:[leader.id],targetSize:1,displayConfig:config});
+ const command=(action,extra={})=>h.api.commandVotingSession({clubId,sessionId:id,revision:h.store.get().votingSessions.find(s=>s.id===id).revision,action,...extra});
+ assert.equal((await h.api.getVotingJoinInfo(id)).status,'NOT_JOINABLE');await command('OPEN_JOIN');await h.api.joinVotingSession(id,member.id);await h.api.joinVotingSession(id,leader.id);
+ assert.equal((await h.api.joinVotingSession(id,member.id)).alreadyJoined,true);assert.equal(h.store.get().votingSessions.find(s=>s.id===id).participants.length,2);
+ await assert.rejects(command('CONFIGURE',{displayConfig:{version:1,fields:['gpa']}}),/locked/);
+ await command('START_PASS');let joined=await h.api.getJoinedVotingWorkspace(id,member.id);assert.equal(joined.canManage,false);assert.equal(joined.session.activeApplicationId,candidates[0].id);
+ const round=state.clubs[0].rounds.find(r=>r.id===roundId);h.store.mutate(s=>{s.applicantDisplay[round.id].config={version:1,fields:[]}});
+ const view=await h.api.getApplicantDisplay({clubId,applicationId:candidates[0].id,sessionId:id});assert.deepEqual(view.configured,config.fields);
+ for(const [i,app]of candidates.entries()){
+  await command('SET_CANDIDATE',{applicationId:app.id});joined=await h.api.getJoinedVotingWorkspace(id,member.id);assert.equal(joined.session.activeApplicationId,app.id);
+  for(const demoMemberId of [leader.id,member.id])await h.api.submitVotingBallot({clubId,sessionId:id,passNumber:1,applicationId:app.id,decision:i?'HOLD':'PASS',demoMemberId});
+ }
+ assert.equal(h.store.get().applications.find(a=>a.id===candidates[0].id).status,'INTERVIEWING');await command('COMPLETE_PASS');await command('START_PASS');
+ for(const demoMemberId of [leader.id,member.id])await h.api.submitVotingBallot({clubId,sessionId:id,passNumber:2,applicationId:candidates[1].id,decision:'PASS',demoMemberId});
+ await command('COMPLETE_PASS');await command('FINISH');assert.equal((await h.api.getVotingJoinInfo(id)).status,'FINISHED');await command('REOPEN');await h.api.joinVotingSession(id,member.id);await command('FINISH');await command('PUBLISH',{applicationIds:candidates.map(a=>a.id)});
+ assert.equal(h.store.get().votingSessions.find(s=>s.id===id).passes.length,2);assert.ok(candidates.every(a=>h.store.get().applications.find(v=>v.id===a.id).status==='ACCEPTED'));
+ h.store.reset();h.store.mutate(s=>{s.perspective.role='leader'});assert.deepEqual(h.store.get().votingSessions,initial.votingSessions);assert.equal(h.calls(),0);
 });

@@ -1,0 +1,284 @@
+/* One editorial palette follows chapter position in both product perspectives. */
+.oc-landing:has(.oc-product-stories) {
+  --oc-journey-linen: #eee7da;
+  --oc-journey-cool: #edf1f4;
+  --oc-journey-blue: #dce8f1;
+  --oc-journey-navy: #142d4e;
+  --oc-journey-fade: clamp(240px, 42svh, 420px);
+  /* Cosine-spaced stops ease into each surface instead of ending in a stripe. */
+  --oc-journey-navy-fade:
+    var(--oc-journey-navy) 0%,
+    color-mix(in oklab, var(--oc-journey-navy) 99%, var(--oc-journey-cool)) 6.25%,
+    color-mix(in oklab, var(--oc-journey-navy) 96.2%, var(--oc-journey-cool)) 12.5%,
+    color-mix(in oklab, var(--oc-journey-navy) 91.6%, var(--oc-journey-cool)) 18.75%,
+    color-mix(in oklab, var(--oc-journey-navy) 85.4%, var(--oc-journey-cool)) 25%,
+    color-mix(in oklab, var(--oc-journey-navy) 77.8%, var(--oc-journey-cool)) 31.25%,
+    color-mix(in oklab, var(--oc-journey-navy) 69.1%, var(--oc-journey-cool)) 37.5%,
+    color-mix(in oklab, var(--oc-journey-navy) 59.8%, var(--oc-journey-cool)) 43.75%,
+    color-mix(in oklab, var(--oc-journey-navy) 50%, var(--oc-journey-cool)) 50%,
+    color-mix(in oklab, var(--oc-journey-navy) 40.2%, var(--oc-journey-cool)) 56.25%,
+    color-mix(in oklab, var(--oc-journey-navy) 30.9%, var(--oc-journey-cool)) 62.5%,
+    color-mix(in oklab, var(--oc-journey-navy) 22.2%, var(--oc-journey-cool)) 68.75%,
+    color-mix(in oklab, var(--oc-journey-navy) 14.6%, var(--oc-journey-cool)) 75%,
+    color-mix(in oklab, var(--oc-journey-navy) 8.4%, var(--oc-journey-cool)) 81.25%,
+    color-mix(in oklab, var(--oc-journey-navy) 3.8%, var(--oc-journey-cool)) 87.5%,
+    color-mix(in oklab, var(--oc-journey-navy) 1%, var(--oc-journey-cool)) 93.75%,
+    var(--oc-journey-cool) 100%;
+  background: var(--oc-journey-cool);
+}
+
+.oc-landing main {
+  background: var(--oc-journey-linen);
+}
+
+/* Blend the photograph into the first reading surface, above the content. */
+.oc-landing .oc-landing-intro::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: auto 0 0;
+  height: clamp(48px, 7vw, 104px);
+  background: linear-gradient(180deg, transparent, var(--oc-journey-linen));
+  pointer-events: none;
+}
+
+.oc-landing .oc-launch-clubs {
+  background: var(--oc-journey-linen);
+}
+
+.oc-landing .oc-product-stories {
+  --oc-journey-gutter: max(40px, calc((100% - 1080px) / 2));
+  --oc-journey-reading-space: 64px;
+  max-width: none;
+  padding: 0;
+  background: var(--oc-journey-linen);
+}
+
+/* Keep the existing content width and sticky selector on a full-width linen canvas. */
+.oc-landing .oc-journey-controls {
+  padding-inline: var(--oc-journey-gutter);
+  background: var(--oc-journey-linen);
+}
+
+.oc-landing .oc-perspective-indicator {
+  background: var(--oc-journey-cool);
+}
+
+.oc-landing .oc-perspective-switcher button[aria-pressed="false"] {
+  color: var(--oc-journey-cool);
+}
+
+.oc-landing[data-scroll-motion] .oc-product-story {
+  isolation: isolate;
+  padding: 64px var(--oc-journey-gutter);
+  border-top: 0;
+  background: var(--oc-journey-linen);
+}
+
+.oc-landing[data-scroll-motion] .oc-product-story::before {
+  display: none;
+}
+
+.oc-landing .oc-product-story:nth-child(2) {
+  background: linear-gradient(180deg, var(--oc-journey-linen), var(--oc-journey-cool) 65%);
+}
+
+.oc-landing .oc-product-story:nth-child(3) {
+  background: var(--oc-journey-cool);
+}
+
+.oc-landing[data-scroll-motion] .oc-product-story:nth-child(4) {
+  /* One painted surface with soft edges; copy remains on the solid navy center. */
+  border: 0;
+  padding-block: calc(var(--oc-journey-reading-space) + var(--oc-journey-fade));
+  background-color: var(--oc-journey-navy);
+  background-image:
+    linear-gradient(0deg in oklab, var(--oc-journey-navy-fade)),
+    linear-gradient(180deg in oklab, var(--oc-journey-navy-fade));
+  background-position: center top, center bottom;
+  background-size: 100% var(--oc-journey-fade);
+  background-repeat: no-repeat;
+}
+
+.oc-landing .oc-product-story:nth-child(5) {
+  background: var(--oc-journey-cool);
+}
+
+.oc-landing .oc-product-story:nth-child(6) {
+  background: linear-gradient(180deg, var(--oc-journey-cool), var(--oc-journey-linen) 75%);
+}
+
+/* Short orange rules belong to the chapter numbers, rather than spanning the page. */
+.oc-landing .oc-product-story .oc-story-eyebrow > span {
+  display: inline-block;
+  padding-bottom: 7px;
+  border-bottom: 2px solid var(--brand-orange);
+  font-size: var(--oc-size-14);
+  font-weight: var(--oc-weight-medium);
+}
+
+.oc-landing .oc-product-story:nth-child(4) .oc-story-copy h2 {
+  color: #f4f7fa;
+}
+
+.oc-landing .oc-product-story:nth-child(4) .oc-story-eyebrow,
+.oc-landing .oc-product-story:nth-child(4) .oc-perspective-copy > p:last-child {
+  color: #d8e0e8;
+}
+
+.oc-landing .oc-product-story:nth-child(4) .oc-story-eyebrow > span {
+  color: #f2ad83;
+}
+
+/* The software keeps its own light surface, including inside the navy chapter. */
+.oc-landing .oc-product-story .oc-story-frame {
+  background: #ffffff;
+  color: var(--foreground);
+  border-color: rgb(20 45 78 / 12%);
+  box-shadow: 0 16px 36px rgb(20 45 78 / 6%), 0 2px 6px rgb(20 45 78 / 4%);
+}
+
+.oc-landing .oc-product-story .oc-story-toolbar {
+  background: #f4f6f8;
+}
+
+.oc-landing .oc-product-story:nth-child(4) .oc-story-frame {
+  border-color: rgb(237 241 244 / 28%);
+  box-shadow: 0 24px 56px rgb(5 16 31 / 28%), 0 3px 10px rgb(5 16 31 / 18%);
+}
+
+/* A faint architectural elevation rewards attention without competing with copy. */
+.oc-landing .oc-product-story:is(:nth-child(1), :nth-child(4), :nth-child(6))::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: max(12px, calc((100% - 1460px) / 2));
+  bottom: 32px;
+  width: clamp(280px, 30vw, 460px);
+  height: 290px;
+  background: url("/images/landing/rotunda-lines.svg") center / contain no-repeat;
+  opacity: .06;
+  pointer-events: none;
+}
+
+.oc-landing .oc-product-story:nth-child(4)::after {
+  left: auto;
+  right: max(12px, calc((100% - 1460px) / 2));
+  filter: brightness(0) invert(1);
+  bottom: calc(var(--oc-journey-fade) + 32px);
+}
+
+.oc-landing .oc-final-invitation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 680px;
+  padding: 120px 24px;
+  background: linear-gradient(180deg,
+    var(--oc-journey-linen),
+    var(--oc-journey-blue) 38%,
+    var(--oc-journey-blue) 70%,
+    var(--oc-journey-cool));
+  border: 0;
+}
+
+.oc-landing .oc-invitation-campus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 28px;
+  color: var(--oc-journey-navy);
+  font-size: clamp(1rem, 1.4vw, 1.125rem);
+  font-weight: var(--oc-weight-semibold);
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.oc-invitation-campus::before {
+  content: "";
+  width: 48px;
+  height: 3px;
+  background: var(--brand-orange);
+}
+
+.oc-landing .oc-final-invitation h2 {
+  max-width: 16ch;
+  color: var(--oc-journey-navy);
+  font-size: clamp(2.25rem, 5.4vw, 4.5rem);
+  font-weight: var(--oc-weight-medium);
+  line-height: 1.12;
+  letter-spacing: -.035em;
+}
+
+.oc-landing .oc-final-invitation > p[data-motion="body"] {
+  margin: 24px 0 36px;
+  color: #3e526b;
+  font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+  line-height: 1.6;
+}
+
+.oc-landing .oc-final-invitation .oc-invitation-cta {
+  width: min(100%, 320px);
+  min-height: 64px;
+  height: auto;
+  padding: 18px 28px;
+  background: var(--oc-journey-navy);
+  border-color: var(--oc-journey-navy);
+  color: #fff;
+  font-size: var(--oc-size-18);
+  font-weight: var(--oc-weight-semibold);
+  box-shadow: 0 3px 0 var(--brand-orange), 0 12px 28px rgb(20 45 78 / 14%);
+}
+
+.oc-landing .oc-final-invitation .oc-invitation-cta:hover {
+  background: #234569;
+  border-color: #234569;
+}
+
+.oc-landing .oc-final-invitation .oc-invitation-cta svg {
+  width: 20px;
+  height: 20px;
+}
+
+.oc-landing .oc-invitation-note {
+  max-width: 42ch;
+  margin-top: 26px;
+  color: #3e526b;
+  font-size: var(--oc-size-14);
+  line-height: 1.7;
+  text-wrap: balance;
+}
+
+@media (max-width: 800px) {
+  .oc-landing .oc-product-stories {
+    --oc-journey-gutter: 24px;
+    --oc-journey-reading-space: 44px;
+  }
+  .oc-landing[data-scroll-motion] .oc-product-story {
+    padding-block: 44px;
+  }
+  .oc-landing[data-scroll-motion] .oc-product-story:nth-child(4) {
+    padding-block: calc(var(--oc-journey-reading-space) + var(--oc-journey-fade));
+  }
+  .oc-landing .oc-product-story::after {
+    display: none;
+  }
+  .oc-landing .oc-product-story .oc-story-frame {
+    box-shadow: 0 8px 22px rgb(20 45 78 / 7%);
+  }
+  .oc-landing .oc-product-story:nth-child(4) .oc-story-frame {
+    box-shadow: 0 12px 28px rgb(5 16 31 / 26%);
+  }
+  .oc-landing .oc-final-invitation {
+    min-height: 600px;
+    padding-block: 88px;
+  }
+}
+
+@media (max-width: 420px) {
+  .oc-landing .oc-product-stories {
+    --oc-journey-gutter: 18px;
+  }
+}

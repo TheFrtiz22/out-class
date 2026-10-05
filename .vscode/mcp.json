@@ -1,16 +1,19 @@
 {
-	"servers": {
-		"supabase-production-readonly": {
-		  "headers": {
-		    "Authorization": "${env:SUPABASE_PRODUCTION_MCP_TOKEN}"
-		  },
-			"url": "https://mcp.supabase.com/mcp?project_ref=htlgjluegmdwfjkzzwic&read_only=true",
-			"type": "http"
-		},
-		"supabase-staging-readonly": {
-			"url": "https://mcp.supabase.com/mcp?project_ref=zodtfiracorqusizixgw",
-			"type": "http"
-		}
-	},
-	"inputs": []
+  "servers": {
+    "supabase-production-readonly": {
+      "headers": {
+        "Authorization": "Bearer ${env:SUPABASE_PRODUCTION_MCP_TOKEN}"
+      },
+      "url": "https://mcp.supabase.com/mcp?project_ref=htlgjluegmdwfjkzzwic&read_only=true",
+      "type": "http"
+    }
+  },
+  "inputs": [
+    {
+      "id": "supabase-production-token",
+      "type": "promptString",
+      "description": "Supabase production read-only MCP token",
+      "password": true
+    }
+  ]
 }

@@ -2,7 +2,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
-function provider() {
+function provider({ storageFails = false } = {}) {
   const states = [], effects = [], pending = []
   let cursor = 0
   const requests = []
@@ -21,10 +21,12 @@ function provider() {
       }
     },
   }
-  const changes = [], store = { subscribe: () => () => {}, stop() {}, active: () => false, mutate(fn) { const state = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }; fn(state); changes.push(state) }, reset() { changes.push('reset') } }
+  let active = false
+  const listeners = new Set(), demoState = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }
+  const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { const state = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }; fn(state); changes.push(state) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  const mocks = { react, '@/lib/demo/store': { demoStore: store }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
+  const mocks = { react, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
   const fetch = (...args) => new Promise((resolve, reject) => requests.push({ args, resolve, reject }))
   const window = { addEventListener() {}, removeEventListener() {}, location: { href: 'http://localhost/preview?workspace=student&view=corkboard&section=decisions&demoClub=mii', reload() {}, assign(url) { window.location.href = String(url) } }, history: { replaceState(_state, _title, url) { window.location.href = String(url) } } }
   new Function('require', 'module', 'exports', 'fetch', 'window', 'localStorage', code)(name => mocks[name] || require(name), mod, mod.exports, fetch, window, {removeItem(){}})
@@ -37,12 +39,13 @@ function provider() {
 const settle = () => new Promise(resolve => setImmediate(resolve))
 test('failed stale-cookie cleanup keeps live account children gated; retry clears rather than enables demo', async () => {
   const h = provider()
-  assert.equal(h.render().props.children[1].type, 'p')
+  assert.equal(h.render().props.children[1].type, 'OutClassLoadingScreen')
   h.effects()
   h.requests[0].reject(new Error('Offline'))
   await settle()
   const failure = h.render()
-  assert.equal(failure.props.children[1].type, 'p', 'Live account must not mount with a blocking cookie')
+  assert.equal(failure.props.children[1], null, 'Show the failure alert without a permanent loader or live account children')
+  assert.equal(failure.props.children[0].props.role, 'alert')
   failure.props.children[0].props.children[1].props.onClick()
   h.render()
   h.effects()
@@ -63,10 +66,29 @@ test('normal users mount without demo calls; successful stale cleanup precedes a
   const stale = provider()
   stale.render()
   stale.effects()
-  assert.equal(stale.render().props.children[1].type, 'p')
+  assert.equal(stale.render().props.children[1].type, 'OutClassLoadingScreen')
   stale.requests[0].resolve({ ok: true })
   await settle()
   assert.equal(stale.render().props.children[1].props.children, 'NORMAL_ACCOUNT')
+})
+
+test('demo initialization uses the branded fallback only until isolated data is ready', () => {
+  const h = provider(), props = { clearStaleSession: false, enabled: true, allowed: true }
+  assert.equal(h.render(props).props.children[1].type, 'OutClassLoadingScreen')
+  h.effects()
+  const ready = h.render(props)
+  assert.equal(ready.props.children[1].props.children, 'NORMAL_ACCOUNT')
+  assert.equal(ready.props.value.state.perspective.clubId, 'mii')
+  assert.equal(h.requests.length, 0)
+})
+
+test('demo storage failures expose the existing exit action without an indefinite loader', () => {
+  const h = provider({ storageFails: true }), props = { clearStaleSession: false, enabled: true, allowed: true }
+  h.render(props); h.effects()
+  const failed = h.render(props)
+  assert.equal(failed.props.children[0].props.role, 'alert')
+  assert.equal(failed.props.children[0].props.children[1].props.children, 'Exit demo')
+  assert.equal(failed.props.children[1], null)
 })
 
 test('demo perspective changes and reset clear obsolete student view/section routing without touching live data', () => {

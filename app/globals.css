@@ -5,6 +5,7 @@
 @import "../styles/product-tokens.css";
 @import "../styles/product-components.css";
 @import "../styles/product-workflows.css";
+@import "../styles/loading.css";
 @config "../tailwind.config.js";
 
 @custom-variant dark (&:is(.dark *));

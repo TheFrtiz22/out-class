@@ -49,6 +49,7 @@ export const currentStudent = {
   bio: "Junior focused on markets and product. Prior internship in equity research; building a personal options-analytics project. Looking to contribute to a rigorous, collaborative team.",
   gpa: "3.87",
   initials: "JA",
+  headshotUrl: "/images/landing/jordan-avery.jpg",
   location: "Boston, MA",
   resumeFileName: "Jordan_Avery_Resume.pdf",
 }
@@ -307,7 +308,7 @@ export type BuilderQuestion = {
 
 export const initialBuilderQuestions: BuilderQuestion[]  = []
 
-export type ScheduleStudent = { name: string; email: string; initials: string }
+export type ScheduleStudent = { name: string; email: string; initials: string; headshotUrl?: string }
 
 export type ScheduleSlot = {
   id: string

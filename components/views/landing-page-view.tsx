@@ -1,4 +1,5 @@
 "use client"
+import dynamic from "next/dynamic"
 
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
@@ -16,10 +17,11 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollMotion, SectionReveal, TextReveal } from "@/components/motion/scroll-motion"
 import { LandingHero } from "@/components/landing/landing-hero"
+import { LandingIntro } from "@/components/landing/landing-intro"
 import { LandingNavbar } from "@/components/landing/landing-navbar"
-import { ProcessTimeline } from "@/components/landing/process-timeline"
-import { ProductStories } from "@/components/landing/product-stories"
-import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
+import { ProductJourney } from "@/components/landing/product-stories"
+import { useLandingPerspective } from "@/hooks/use-landing-perspective"
+const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: () => <p role="status" className="p-6">Opening your student profile…</p> })
 import "./landing.css"
 
 interface LandingPageViewProps {
@@ -35,33 +37,37 @@ export function LandingPageView({
 }: LandingPageViewProps) {
   const [signup, setSignup] = useState(false)
   const [info, setInfo] = useState<string | null>(null)
+  const { perspective, switchPerspective } = useLandingPerspective()
+  const enterLeader = () => onNavigateToApp("leader")
+  const start = () => perspective === "student" ? setSignup(true) : enterLeader()
   return (
     <ScrollMotion className="oc-landing" id="top">
       <LandingNavigation />
-      <a className="oc-skip-link" href="#students">Skip to product overview</a>
+      <a className="oc-skip-link" href="#about">Skip to product overview</a>
       <LandingNavbar
-        onSignIn={() => onNavigateToApp("student")}
-        onCreateProfile={() => setSignup(true)}
+        onSignIn={() => onNavigateToApp(perspective)}
+        onGetStarted={start}
       />
       <main>
-        <LandingHero campusName={campusName} onCreateProfile={() => setSignup(true)} />
+        <LandingIntro>
+          <LandingHero perspective={perspective} onCreateProfile={() => setSignup(true)} onLeaderEnter={enterLeader} />
+        </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
-        <ProcessTimeline />
-        <ProductStories onLeaderEnter={() => onNavigateToApp("leader")} />
+        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={() => setSignup(true)} onLeaderEnter={enterLeader} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"
           aria-labelledby="invitation-title"
         >
-          <p data-motion="context" className="oc-story-eyebrow">
+          <p data-motion="context" className="oc-story-eyebrow oc-invitation-campus">
             Beginning at {campusName}
           </p>
           <TextReveal asChild>
-            <h2 id="invitation-title">Your next chapter starts here.</h2>
+            <h2 id="invitation-title">{perspective === "student" ? "Your next chapter starts here." : "Your next class starts here."}</h2>
           </TextReveal>
-          <p data-motion="body">One profile. A little more possibility.</p>
-          <Button size="lg" onClick={() => setSignup(true)}>
-            Create your profile
+          <p data-motion="body">{perspective === "student" ? "A little more possibility." : "Good people. A clearer process."}</p>
+          <Button size="lg" className="oc-invitation-cta" aria-describedby="pricing" onClick={start}>
+            {perspective === "student" ? "Create your profile" : "Explore club workspace"}
             <ArrowRight aria-hidden="true" size={16} />
           </Button>
           <p id="pricing" className="oc-invitation-note">
@@ -87,12 +93,7 @@ export function LandingPageView({
         <small>© {new Date().getFullYear()} OutClass</small>
       </footer>
       <p className="oc-photo-credit">
-        Campus photograph:{" "}
-        <a href="https://commons.wikimedia.org/wiki/File:Rotunda_UVa_from_the_south_east.jpg">
-          terren in Virginia
-        </a>{" "}
-        · <a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a> · Resized and
-        visually treated. OutClass is an independent platform.
+        OutClass is an independent platform.
       </p>
       <Dialog open={signup} onOpenChange={setSignup}>
         <DialogContent className="sm:max-w-xl">

@@ -1,0 +1,46 @@
+.oc-loading-screen {
+  --oc-loading-top-inset: 0px;
+  display: grid;
+  place-items: center;
+  min-block-size: calc(100dvh - var(--oc-loading-top-inset));
+  inline-size: 100%;
+  padding:
+    max(var(--oc-space-content), env(safe-area-inset-top))
+    max(var(--oc-space-content), env(safe-area-inset-right))
+    max(var(--oc-space-content), env(safe-area-inset-bottom))
+    max(var(--oc-space-content), env(safe-area-inset-left));
+  background: var(--background);
+  color: var(--foreground);
+}
+.oc-loading-screen[data-variant="navy"] { background: var(--primary); color: var(--primary-foreground); }
+html:has([aria-label="Administrator view-as session"]) .oc-route-content .oc-loading-screen {
+  --oc-loading-top-inset: var(--support-banner-height, 120px);
+}
+/* Demo setup can wait outside the route container that normally reserves this space. */
+body > .oc-loading-screen {
+  padding-block-start: calc(max(var(--oc-space-content), env(safe-area-inset-top)) + var(--support-banner-height, 0px));
+}
+.oc-loading-mark {
+  display: block;
+  inline-size: clamp(3.5rem, 5vw, 4.5rem);
+  block-size: auto;
+  aspect-ratio: 1;
+  animation: oc-loading-resolve var(--oc-duration-signature) var(--oc-ease-out) both;
+}
+@keyframes oc-loading-resolve {
+  from { opacity: .4; transform: translateY(2px) scale(.94); }
+  60% { opacity: 1; transform: translateY(-1px) scale(1.008); }
+  to { opacity: 1; transform: none; }
+}
+/* Ready content mounts immediately. The fade adds no timer or extra render gate. */
+.oc-route-content > :not(.oc-loading-screen):not([hidden]) {
+  animation: oc-loading-ready clamp(150ms, var(--oc-duration-micro), 250ms) var(--oc-ease-out) both;
+}
+@keyframes oc-loading-ready { from { opacity: .82; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-loading-mark, .oc-route-content > :not(.oc-loading-screen):not([hidden]) {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
