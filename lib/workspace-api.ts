@@ -214,11 +214,6 @@ export const updateStudentProfileSection = adapt(profile.updateStudentProfileSec
 export const uploadProfileFile = adapt(storage.uploadProfileFile, () => {
   throw new Error("Uploads are disabled in Demo Mode. The sample PDF and photos stay isolated from production.")
 })
-export const getSignedUploadUrl = adapt(storage.getSignedUploadUrl, () => {
-  throw new Error(
-    "Uploads are disabled in Demo Mode. Sample résumé links are provided; no files are sent to production.",
-  )
-})
 export const searchWorkspace = adapt(search.searchWorkspace, (query, leader = false) => {
   const s = demoStore.get(),
     text = query.trim().toLowerCase()

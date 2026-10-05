@@ -78,7 +78,7 @@ test("adapter isolates demo mutations, cross-view scores/decisions, conflicts, r
     }),
   )
   await assert.rejects(
-    api.getSignedUploadUrl({ fileName: "test.pdf", bucket: "resumes" }),
+    api.uploadProfileFile(new FormData()),
     /disabled/,
   )
   assert.equal(h.calls(), 0)

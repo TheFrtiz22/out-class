@@ -59,14 +59,15 @@ test('resume upload refuses public buckets and issues only an owner-scoped priva
   const api=load('actions/storage.ts',{
    '@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},
    'next/headers':{cookies:async()=>({})},
-   '@/utils/supabase/server':{createClient:async()=>({storage:{from:()=>({createSignedUploadUrl:async path=>{signed=path;return{data:{signedUrl:'https://upload.test',token:'token'}}}})}})},
+   '@/utils/supabase/server':{createClient:async()=>({storage:{from:()=>({createSignedUploadUrl:async path=>{signed=path;return{data:{signedUrl:'https://upload.test',token:'token'}}},uploadToSignedUrl:async()=>({error:null})})}})},
    '@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:isPublic}})}})},
   })
-  if(isPublic){await assert.rejects(api.getSignedUploadUrl({bucket:'resumes',fileName:'application.pdf'}),/unavailable/);assert.equal(signed,undefined)}
+  const form=new FormData();form.set('kind','resume');form.set('file',new Blob(['%PDF-fixture'],{type:'application/pdf'}),'application.pdf');
+  if(isPublic){await assert.rejects(api.uploadProfileFile(form),/unavailable/);assert.equal(signed,undefined)}
   else{
-   const result=await api.getSignedUploadUrl({bucket:'resumes',fileName:'application.pdf'})
-   assert.match(result.path,new RegExp('^'+owner+'/[0-9]+-application.pdf$'));assert.equal(result.publicUrl,result.path)
-   await assert.rejects(api.getSignedUploadUrl({bucket:'resumes',fileName:'%2e%2e.pdf'}))
+   const result=await api.uploadProfileFile(form)
+   assert.match(result.reference,new RegExp('^'+owner+'/[a-f0-9-]+\\.pdf$'));assert.equal(result.reference,signed)
+   form.set('file',new Blob(['%PDF-fixture'],{type:'application/pdf'}),'%2e%2e.pdf');await assert.rejects(api.uploadProfileFile(form))
   }
  }
 })
