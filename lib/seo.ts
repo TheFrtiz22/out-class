@@ -6,9 +6,8 @@ export const SITE_DESCRIPTION = "Discover student organizations, create one prof
 export const privateRobots: Metadata["robots"] = { index: false, follow: false }
 export const publicRobots: Metadata["robots"] = { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } }
 
-// Set this only after adding the finished 1200 × 630 raster asset to public/.
-// No placeholder image or invented social account is published.
-const imagePath = process.env.OUTCLASS_OG_IMAGE_PATH
+// Use the bundled 1200 × 630 social card unless a deployment overrides its public path.
+const imagePath = process.env.OUTCLASS_OG_IMAGE_PATH || "/images/outclass-social.jpg"
 const socialImage = imagePath?.startsWith("/") && !imagePath.startsWith("//")
   ? { url: `${SITE_URL}${imagePath}`, width: 1200, height: 630, alt: "OutClass — Student club applications and recruitment" }
   : undefined

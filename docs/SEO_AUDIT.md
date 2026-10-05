@@ -2,7 +2,7 @@
 
 Audited October 4, 2026 (America/New_York). Implementation is local and has not been deployed.
 
-The updated build rates **Good**. The homepage is crawlable, has consistent head metadata, and preserves its existing design, copy, photography, demos, animation, and Caslon typography. Mobile loading improved substantially but simulated mobile LCP still needs attention. The currently deployed site remains **Fair** until these fixes are released; social image completion also requires a finished brand asset.
+The updated build rates **Good**. The homepage is crawlable, has consistent head metadata, and preserves its existing design, copy, photography, demos, animation, and Caslon typography. Mobile loading improved substantially but simulated mobile LCP still needs attention. The currently deployed site remains **Fair** until these fixes are released. The supplied branded social image is now bundled and enabled by default.
 
 ## Architecture inspected
 
@@ -21,7 +21,9 @@ The updated build rates **Good**. The homepage is crawlable, has consistent head
 
 **Important, fixed:** Production robots.txt and sitemap.xml returned 404; canonical, Open Graph, Twitter, and structured metadata were missing; most product routes inherited indexable metadata; the homepage initially loaded 536 kB of product JavaScript; original image optimization was globally disabled; the favicon alone transferred over 700 kB; fonts were served as TTF; three perspective anchors had prohibited ARIA labels; asynchronous metadata could appear outside the head in ordinary browsers.
 
-**Important, remaining:** No suitable 1200 × 630 social image exists. Open Graph/Twitter text is ready, but image tags are intentionally omitted until a real asset is supplied. Simulated mobile LCP is 4.4 seconds; measure real users after deployment before making further tradeoffs.
+**Social image, completed:** The supplied 1200 × 630 JPEG is bundled at `public/images/outclass-social.jpg`. The existing metadata helper defaults both `og:image` and `twitter:image` to `https://www.out-class.net/images/outclass-social.jpg`; `OUTCLASS_OG_IMAGE_PATH` remains an optional deployment override.
+
+**Important, remaining:** Simulated mobile LCP is 4.4 seconds; measure real users after deployment before making further tradeoffs.
 
 **Nice to have:** The existing HTTP apex request takes two permanent redirects because Vercel upgrades HTTPS before redirecting the host. Contact/Privacy/Terms dialogs still contain the existing launch placeholders; actual policies require owner-supplied business facts. No obvious accidental Impact Consulting duplication exists in this checkout; repeated club appearances belong to distinct demo scenes, and accessibility text duplicates serve the existing animated controls. Demo figures are already labeled as illustrative/sample information.
 
@@ -35,7 +37,7 @@ The updated build rates **Good**. The homepage is crawlable, has consistent head
 | Canonical | Missing | YES: one www canonical; tracking variants consolidate |
 | Private routes protected from indexing | Auth checks exist, index directives incomplete | YES: default noindex metadata, product headers, query/cookie protection, crawler exclusions |
 | Structured data | Missing | YES: parsed and validated Organization + WebSite graph |
-| Social sharing | Metadata missing | Text ready; image needs finished asset |
+| Social sharing | Metadata missing | Text and supplied 1200 × 630 image ready |
 | HTTPS / apex | HTTPS www is the destination; apex HTTPS redirects 308 | Existing behavior retained; permanent host redirect added as a code backstop |
 | Unknown route | 404 | 404, noindex |
 
@@ -99,6 +101,7 @@ Before SEO already scored 100 despite missing important infrastructure. These ch
 ## Verification
 
 - `OUTCLASS_PUBLISH_BUILD=1 npm run build`: **PASS**. Uses the repository's isolated production directory; the existing development build remains separate.
+- Social-image follow-up: production build and 10 existing SEO tests **PASS**. Browser, Twitterbot, and Facebook requests each emit exactly one `og:image` and `twitter:image` in the homepage head, both `https://www.out-class.net/images/outclass-social.jpg`. The local production server returns the image as HTTP 200 `image/jpeg`, byte-identical to the supplied asset.
 - A second production build in an isolated copy without application environment files: **PASS**, validating the credential-free CI build path.
 - `npm run typecheck`: **PASS**.
 - `npm run lint`: **PASS**, zero errors, 30 existing warnings (existing hook dependency and direct-image warnings). No new warning count was introduced.
@@ -113,7 +116,7 @@ Before SEO already scored 100 despite missing important infrastructure. These ch
 
 ## Exact remaining manual actions
 
-1. **Social asset:** Add a finished branded **1200 × 630 JPEG or PNG** at `public/images/outclass-social.jpg`. Use the existing logo, typography, and visual language. Set Vercel Production environment variable `OUTCLASS_OG_IMAGE_PATH=/images/outclass-social.jpg`, then redeploy. This activates `og:image` and `twitter:image`; no placeholder or invented social handle is used.
+1. **Social asset, completed:** The supplied branded **1200 × 630 JPEG** is committed at `public/images/outclass-social.jpg` and enabled by default through the existing SEO helper. No Vercel environment variable is required. If `OUTCLASS_OG_IMAGE_PATH` is already configured, it should be `/images/outclass-social.jpg` to use this card.
 2. **Vercel:** Deploy these changes through the existing project/Git integration using the Next.js framework preset and server build (`pnpm build` or the existing equivalent). Keep `www.out-class.net` as the production domain and the apex as its permanent redirect. Do not deploy `out/`. Verify `/`, `/robots.txt`, `/sitemap.xml`, `/icon`, and `/apple-icon`, plus login and student/club flows on the deployed release. Retain the existing Supabase URLs/keys and allowed authentication callback configuration. The residual HTTP-apex two-hop upgrade is upstream Vercel behavior; review it in Domains if desired, without changing DNS or removing HTTPS enforcement.
 3. **Google Search Console:** Add the **Domain property `out-class.net`** and verify ownership with Google's actual supplied DNS TXT value. Alternatively use a URL-prefix property for `https://www.out-class.net/`, supply the real HTML verification token as `GOOGLE_SITE_VERIFICATION` in Vercel, and redeploy. Submit `https://www.out-class.net/sitemap.xml`; inspect the homepage, run Test Live URL, request indexing, and check Google's selected canonical/index status. No verification values were fabricated. [Google ownership verification](https://support.google.com/webmasters/answer/9008080?hl=en), [URL Inspection](https://support.google.com/webmasters/answer/9012289?hl=en).
 4. **Bing Webmaster Tools:** Add `https://www.out-class.net/` (or import the verified Search Console property), verify ownership, and submit the same sitemap. If using Bing's meta-tag verification, set its real token as `BING_SITE_VERIFICATION` in Vercel and redeploy; the code emits `msvalidate.01`. [Bing site verification](https://www2.bing.com/webmasters/help/add-and-verify-site-12184f8b), [sitemap submission](https://www.bing.com/webmasters/help/sitemaps-3b5cf6ed).
