@@ -5,5 +5,5 @@ export const contentType = "image/png"
 
 export default function Icon() {
   // Keep the artwork name here so replacing it also changes Next's icon URL.
-  return brandIcon(size.width, "outclass-favicon-circle.png")
+  return brandIcon(size.width, "outclass-favicon-interlocking.png")
 }
