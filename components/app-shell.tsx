@@ -1,41 +1,47 @@
 "use client"
+
 import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
-const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests))
 import { clubWorkspaceHref } from "@/lib/club-workspace"
-
-const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs))
 import type { PersonalSection } from "@/lib/product-navigation"
-const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings))
-const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule))
 import { useDemoMode } from "@/contexts/demo-context"
 import { signInReturnPath } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
-const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings))
 import { demoDashboard } from "@/lib/demo/store"
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { type AppMode, type ViewId } from "@/lib/views"
 import { ApplicationStateProvider } from "@/lib/application-state"
-
+import { AuthSessionBoundary } from "@/components/auth-session-boundary"
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
+import { WorkspaceLoading } from "@/components/workspace-loading"
 import { LandingPageView } from "@/components/views/landing-page-view"
-const AuthView = dynamic(() => import("@/components/views/auth-view").then(module => module.AuthView))
-const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView))
-const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView))
-const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView))
-const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView))
-const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView))
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
-const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView))
-const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView))
-const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView))
-const ClubManagerView = dynamic(() => import("@/components/views/club-manager-view").then(module => module.ClubManagerView))
-const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView))
-const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView))
-const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView))
-const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView))
-const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView))
-const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard))
+
+const renderWorkspaceLoading = () => <WorkspaceLoading />
+const renderDestinationLoading = () => <OutClassLoadingScreen />
+
+const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests))
+const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs), { loading: renderWorkspaceLoading })
+const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings), { loading: renderWorkspaceLoading })
+const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule), { loading: renderWorkspaceLoading })
+const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings), { loading: renderWorkspaceLoading })
+const AuthView = dynamic(() => import("@/components/views/auth-view").then(module => module.AuthView), { loading: renderDestinationLoading })
+const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView), { loading: renderWorkspaceLoading })
+const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView), { loading: renderWorkspaceLoading })
+const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView), { loading: renderWorkspaceLoading })
+const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView), { loading: renderWorkspaceLoading })
+const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView), { loading: renderWorkspaceLoading })
+const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: renderWorkspaceLoading })
+const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: renderWorkspaceLoading })
+const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: renderWorkspaceLoading })
+const ClubManagerView = dynamic(() => import("@/components/views/club-manager-view").then(module => module.ClubManagerView), { loading: renderWorkspaceLoading })
+const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: renderWorkspaceLoading })
+const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: renderWorkspaceLoading })
+const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: renderWorkspaceLoading })
+const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView), { loading: renderDestinationLoading })
+const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView), { loading: renderWorkspaceLoading })
+const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: renderDestinationLoading })
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
@@ -173,7 +179,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
 
   return (
     <ApplicationStateProvider initialData={initialData ?? (initialSession ? { applications: [], attendances: [] } : null)} persistLocalState={!demo.isDemoEnabled && !initialSession && initialData == null}>
-      {view === "interview-workspace" ? <InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
+      {view === "interview-workspace" ? <AuthSessionBoundary><InterviewWorkspaceView onExit={() => navigate("leader-dashboard")} /></AuthSessionBoundary> : <DashboardLayout view={view} appMode={appMode} onNavigate={navigate} onModeChange={switchMode} personalSection={personalSection} onPersonalSection={setPersonalSection}>
             {view === "student-dashboard" && <><OrganizationOwnershipRequests enabled={!!initialSession && !demo.isDemoEnabled} /><StudentDashboardView onNavigate={navigate} initialData={initialData} authenticated={!!initialSession} /></>}
             {view === "student-profile" && <UnifiedStudentProfileView />}
             {view === "inbox" && <InboxView onNavigate={navigate} />}

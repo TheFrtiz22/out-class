@@ -5,11 +5,12 @@ import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { LandingPageView } from "@/components/views/landing-page-view"
 import type { AppShellProps } from "@/components/app-shell"
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
 // Marketing HTML is rendered immediately. The authenticated product bundle is
 // requested only when a visitor enters an account view or follows a workspace URL.
 const AppShell = dynamic(() => import("@/components/app-shell").then(module => module.AppShell), {
-  loading: () => <p className="p-8" role="status">Opening OutClass…</p>,
+  loading: () => <OutClassLoadingScreen />,
 })
 
 export function HomeEntry(props: AppShellProps) {

@@ -4,8 +4,9 @@ import { AuthView } from "@/components/views/auth-view";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { signInReturnPath } from "@/lib/auth";
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen";
 
-const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard));
+const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: () => <OutClassLoadingScreen /> });
 
 export default function LoginPage() {
   const [creatingAccount, setCreatingAccount] = useState(false);

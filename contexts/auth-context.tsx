@@ -19,6 +19,8 @@ interface AuthContextType {
   isImpersonating: boolean;
   user: PopulatedUser | null;
   loading: boolean;
+  /** Known server session awaiting its initial /api/users/me identity. */
+  sessionPending: boolean;
   mutateUser: (newUser: PopulatedUser) => void;
   refreshUser: () => Promise<void>;
   activeClubId: string;
@@ -73,7 +75,7 @@ export function AuthProvider({ children, isImpersonating = false, hasSession = t
     else setSelectedClubId(clubId);
   };
   return (
-    <AuthContext.Provider value={{ isImpersonating, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : loading, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+    <AuthContext.Provider value={{ isImpersonating, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : loading, sessionPending: hasSession && !isDemoEnabled && loading && !user, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
       {children}
     </AuthContext.Provider>
   );

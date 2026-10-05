@@ -79,7 +79,7 @@ export default async function RootLayout({
           <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={(!authError && !!user) || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider><ClubCustomizationProvider>
-              <div style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
+              <div className="oc-route-content" style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
             </ClubCustomizationProvider></CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>

@@ -8,12 +8,17 @@ import { useAuth } from "@/contexts/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useApplicationState } from "@/lib/application-state"
 import { hasWorkspace } from "@/lib/permissions"
+import { AuthSessionBoundary } from "@/components/auth-session-boundary"
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 export interface DashboardLayoutProps {
   children: ReactNode; view: ViewId; appMode: AppMode; onNavigate: (view: ViewId, section?: PersonalSection) => void;
   onModeChange: (mode: AppMode, clubId?: string) => void;
   personalSection?: PersonalSection; onPersonalSection?: (section: PersonalSection) => void;
 }
-export function DashboardLayout({ children, view, appMode, onNavigate, personalSection = "explore", onPersonalSection }: DashboardLayoutProps) {
+export function DashboardLayout(props: DashboardLayoutProps) {
+  return <AuthSessionBoundary><DashboardContent {...props} /></AuthSessionBoundary>
+}
+function DashboardContent({ children, view, appMode, onNavigate, personalSection = "explore", onPersonalSection }: DashboardLayoutProps) {
   const { user, activeClubId } = useAuth()
   const router = useRouter()
   const { leaderFocus, focusApplication } = useApplicationState()
@@ -39,7 +44,7 @@ export function DashboardLayout({ children, view, appMode, onNavigate, personalS
     onNavigate(destination.view, destination.section)
     if (destination.section) onPersonalSection?.(destination.section)
   }
-  if (leaderView && managed) return <p role="status" className="p-8">Opening club workspace…</p>
+  if (leaderView && managed) return <OutClassLoadingScreen />
   if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p>{children}</ProductShell>
   const title = ["student-dashboard", "student-profile", "inbox"].includes(view) ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
   return <ProductShell mode={mode} modes={personalModes} items={items} active={view === "student-profile" || view === "inbox" || view === "student-dashboard" ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>

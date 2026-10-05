@@ -1,4 +1,5 @@
 import { ClubWorkspace } from "@/components/club-workspace";
+import { AuthSessionBoundary } from "@/components/auth-session-boundary";
 export default async function Page({
   params,
   searchParams,
@@ -9,12 +10,14 @@ export default async function Page({
   const { clubId } = await params,
     { section, taskView, tool } = await searchParams;
   return (
-    <ClubWorkspace
-      key={clubId}
-      clubId={clubId}
-      section={section ?? "overview"}
-      taskView={taskView}
-      tool={tool}
-    />
+    <AuthSessionBoundary>
+      <ClubWorkspace
+        key={clubId}
+        clubId={clubId}
+        section={section ?? "overview"}
+        taskView={taskView}
+        tool={tool}
+      />
+    </AuthSessionBoundary>
   );
 }

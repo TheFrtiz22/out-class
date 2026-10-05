@@ -96,14 +96,16 @@ test('legacy applicant path redirects preserve repeated parameters and leave the
   const C=load(file,{'next/navigation':{redirect:value=>{throw Error(value)}}}).default;
   await assert.rejects(C({searchParams:Promise.resolve({applicationId:'application',tag:['a','b']})}),error=>{const params=new URL(error.message,'http://outclass.test').searchParams;assert.equal(params.get('view'),'status');assert.equal(params.get('applicationId'),'application');assert.deepEqual(params.getAll('tag'),['a','b']);return true});
  }
- const bookingPage=load('app/interviews/book/page.tsx').default();assert.equal(bookingPage.props.children.type,'BookingLinkPage');
+ const bookingPage=load('app/interviews/book/page.tsx').default();assert.equal(bookingPage.props.children.type,'AuthSessionBoundary');assert.equal(bookingPage.props.children.props.children.type,'BookingLinkPage');
 });
 
 test('personal shell keeps page headings in content once, with universal and contextual navigation',()=>{
  const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
  const {DashboardLayout}=load('components/dashboard-layout.tsx',mocks),{ProductShell}=load('components/shell/product-shell.tsx',mocks);
  for(const [view,section,own] of [['student-dashboard','explore',true],['explore','explore',true],['explore','categories',true],['tracker','applications',true],['status','status',true],['my-clubs','clubs',false],['student-profile','explore',false],['inbox','explore',false],['calendar','calendar',false]]){
-  const layout=h.render(()=>DashboardLayout({view,personalSection:section,appMode:'student',children:own?{type:'h1',props:{children:'Page title'}}:null,onNavigate(){}}));
+  const boundary=h.render(()=>DashboardLayout({view,personalSection:section,appMode:'student',children:own?{type:'h1',props:{children:'Page title'}}:null,onNavigate(){}}));
+  assert.equal(boundary.type,'AuthSessionBoundary');
+  const layout=h.render(()=>boundary.props.children.type(boundary.props.children.props));
   assert.equal(nodes(layout).filter(node=>node.type==='PageHeader').length,own?0:1,view);
   const shell=h.render(()=>ProductShell(layout.props));
   const context=nodes(shell).find(node=>node.props?.className==='oc-header-context');assert.equal(text(context),'Personal workspace',view);

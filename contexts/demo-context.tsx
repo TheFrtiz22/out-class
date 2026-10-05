@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { resolveStudentView } from "@/lib/student-navigation"
 import { demoStore } from "@/lib/demo/store"
 import type { DemoState } from "@/lib/demo/seed"
+import { OutClassLoadingScreen } from "@/components/outclass-loading-screen"
 
 type DemoContextValue = {
   isDemoEnabled: boolean
@@ -162,11 +163,7 @@ export function DemoDataProvider({
         <div key={epoch} style={{ display: "contents" }}>
           {children}
         </div>
-      ) : (
-        <p role="status" className="p-8 text-sm">
-          Preparing the OutClass demo…
-        </p>
-      )}
+      ) : error ? null : <OutClassLoadingScreen />}
     </Context.Provider>
   )
 }
