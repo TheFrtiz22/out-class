@@ -5,5 +5,5 @@ export const contentType = "image/png"
 
 export default function AppleIcon() {
   // Keep the artwork name here so replacing it also changes Next's icon URL.
-  return brandIcon(size.width, "outclass-favicon-monogram.png")
+  return brandIcon(size.width, "outclass-favicon-circle.png")
 }
