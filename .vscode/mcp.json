@@ -8,5 +8,12 @@
       "type": "http"
     }
   },
-  "inputs": []
+  "inputs": [
+    {
+      "id": "supabase-production-token",
+      "type": "promptString",
+      "description": "Supabase production read-only MCP token",
+      "password": true
+    }
+  ]
 }
