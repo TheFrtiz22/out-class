@@ -765,7 +765,7 @@ export async function inspectPlatformUser(userId: string, reason: string) {
     include: {
       studentProfile: { include: { experiences: true } },
       memberships: true,
-      applications: { include: { answers: true, evaluations: true } },
+      applications: { include: { answers: true, evaluations: { select: { id: true, round: true, roundId: true, score: true, submittedAt: true } } } },
       attendances: true,
     },
   });
@@ -804,9 +804,9 @@ export async function inspectPlatformRecord(
       where: { id: recordId },
       include: {
         answers: { include: { question: true } },
-        evaluations: true,
+        evaluations: { select: { id: true, round: true, roundId: true, score: true, submittedAt: true } },
         // Evaluation is canonical; draft remains preserved historical interview evidence.
-        interviewRecords: { include: { evaluation: true } },
+        interviewRecords: { select: { id: true, roundId: true, interviewerId: true, completedAt: true } },
         round: true,
         club: { select: { name: true } },
         student: {

@@ -1,0 +1,80 @@
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { InterviewResumeLoader as InterviewResumeViewer } from "@/components/interview-resume-loader";
+import { getInterviewApplicantPanel, pinInterviewResume } from "@/lib/workspace-api";
+import { useDemoMode } from "@/contexts/demo-context";
+import { scholarNames } from "@/lib/scholar-status";
+import type { InterviewScope } from "@/lib/interview-access";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FileText, UserRound } from "lucide-react";
+
+export function InterviewApplicantPanel({ clubId, applicationId, roundId }: InterviewScope) {
+  const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
+  const { isDemoEnabled } = useDemoMode();
+  const [panel, setPanel] = useState<Awaited<ReturnType<typeof getInterviewApplicantPanel>> | null>(null);
+  const [documentId, setDocumentId] = useState("");
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
+  const [resumeError, setResumeError] = useState("");
+  const [open, setOpen] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [imageFailed, setImageFailed] = useState(false);
+  const resumeTrigger = useRef<HTMLButtonElement>(null);
+  const resumeRequest = useRef<AbortController | null>(null);
+  const resumeObjectUrl = useRef("");
+  const [resumeReload, setResumeReload] = useState(0);
+  const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
+  useEffect(() => {
+    let current = true;
+    setLoading(true); setError(""); setResumeError(""); setPanel(null); setDocumentId(""); setImageFailed(false);
+    getInterviewApplicantPanel(scope).then(async value => {
+      if (!current) return;
+      setPanel(value);
+      try {
+        const document = value.document || await pinInterviewResume(scope);
+        if (current) { setDocumentId(document.id); if ("source" in document) setDemoSource(document.source === "/demo/sample-scanned-resume.pdf" ? "/demo/sample-scanned-resume.pdf" : "/demo/sample-resume.pdf"); }
+      } catch { if (current) setResumeError("No interview résumé is available. A private PDF upload is needed."); }
+    }).catch(() => { if (current) { setError("Applicant panel unavailable. Your access may have changed."); setOpen(false); } }).finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [scope, retry]);
+  useEffect(() => {
+    if (!documentId) return;
+    const controller = new AbortController(); let objectUrl = "";
+    resumeRequest.current = controller;
+    setUrl("");
+    const path = isDemoEnabled ? demoSource : `/api/interview-resumes?${new URLSearchParams({ ...scope, documentId })}`;
+    fetch(path, { signal: controller.signal, cache: "no-store" }).then(async response => {
+      if (!response.ok) throw new Error("Unavailable");
+      const blob = await response.blob();
+      if (controller.signal.aborted) return;
+      objectUrl = URL.createObjectURL(blob); resumeObjectUrl.current = objectUrl; setUrl(objectUrl); setResumeError("");
+    }).catch(() => { if (!controller.signal.aborted) { setResumeError("Résumé unavailable. Retry to check your current access."); setUrl(""); setOpen(false); } });
+    return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl); if (resumeRequest.current === controller) { resumeRequest.current = null; resumeObjectUrl.current = ""; } };
+  }, [documentId, scope, isDemoEnabled, demoSource, resumeReload, retry]);
+  const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
+  const scholarships = scholarNames(panel?.profile?.scholarStatus);
+  return <aside id="interview-context" className="min-w-0 space-y-5 border-b p-5 lg:sticky lg:top-0 lg:border-b-0 lg:border-r" aria-label="Applicant panel">
+    {loading && <p role="status" className="text-sm text-muted-foreground">Loading applicant…</p>}
+    {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
+      {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={96} height={96} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="size-24 rounded-lg object-cover" /> : <div className="flex size-24 items-center justify-center rounded-lg bg-muted" role="img" aria-label="No headshot provided"><UserRound className="size-10 text-muted-foreground" aria-hidden="true" /></div>}
+      <h1 className="oc-section-heading break-words">{name}</h1>
+      {!!scholarships.length && <ul aria-label="Scholar status" className="flex flex-wrap gap-2">{scholarships.map((s,i) => <li key={`${s}-${i}`} className="rounded-md bg-accent px-2 py-1 text-xs">{s}</li>)}</ul>}
+      <Dialog open={open} onOpenChange={value => { setOpen(value); if (value) setResumeReload(v => v + 1); }}>
+        <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="outline" disabled={!documentId} className="h-auto w-full flex-col gap-3 overflow-hidden p-3" aria-label={`Open résumé for ${name}`}>
+          {url ? <div className="oc-resume-preview pointer-events-none h-48 w-full overflow-hidden bg-muted" aria-hidden="true"><iframe tabIndex={-1} title="Résumé thumbnail" src={`${url}#page=1&toolbar=0&navpanes=0`} className="h-80 w-full" /></div> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
+          <span>Résumé</span>
+        </Button></DialogTrigger>
+        <DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); resumeTrigger.current?.focus(); }}>
+          <DialogHeader className="pr-10"><DialogTitle>{name} · Résumé</DialogTitle><DialogDescription>The document version saved for this interview round.</DialogDescription></DialogHeader>
+          <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setOpen(false)}>Minimize to questions</Button>
+          {open && documentId && <InterviewResumeViewer scope={scope} documentId={documentId} isDemo={isDemoEnabled} onAccessLost={() => { resumeRequest.current?.abort(); if (resumeObjectUrl.current) URL.revokeObjectURL(resumeObjectUrl.current); resumeObjectUrl.current = ""; setUrl(""); setResumeError("Document access could not be verified. Retry to check access."); }} />}
+        </DialogContent>
+      </Dialog>
+      {resumeError && <p role="status" className="text-xs text-muted-foreground">{resumeError}</p>}
+    </>}
+    {(error || resumeError) && <Button type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Retry applicant panel</Button>}
+  </aside>;
+}

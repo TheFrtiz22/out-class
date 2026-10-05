@@ -35,6 +35,7 @@ export function anonymousApplication(
         firstName: "Applicant",
         lastName: label,
         computingId: "",
+        scholarStatus: null,
         major: "",
         gradYear: p?.gradYear ?? 0,
         gpa: p?.gpa ?? null,
@@ -62,6 +63,9 @@ export function anonymousApplication(
       round: e.round,
       score: e.score,
       notes: null,
+      applicantQuestions: null,
+      roundId: null,
+      submittedAt: null,
       createdAt: new Date(0),
     })),
   };

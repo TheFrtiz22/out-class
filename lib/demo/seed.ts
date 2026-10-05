@@ -114,6 +114,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       lastName: last[Math.floor(i / 20)],
       computingId: `sample${i + 1}`,
       major: majors[i % majors.length],
+      scholarStatus: null as import("@prisma/client").Prisma.JsonValue | null,
       gradYear: year + 1 + (i % 4),
       gpa: i === 0 ? 3.72 : i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),
       actScore: i === 0 ? 33 : i % 3 ? 24 + (i % 13) : null,
@@ -218,6 +219,10 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   const memberships = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
       id: uid(7, c * 30 + m),
+      interviewOffices: (m === 0 ? ["PRESIDENT"] : []) as string[],
+      status: "ACTIVE",
+      isOwner: m === 0,
+      permissions: ["applications.review", "applicants.identify"],
       groups: m % 2 === 0 ? ["Equity research", "Presentations"] : ["Market research"],
       cohort: m < 6 ? "Fall 2026" : "Spring 2026" as string | null,
       clubId: club.id,
@@ -284,6 +289,9 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
                 interviewerId: memberships.find(
                   (m) => m.clubId === club.id && m.role === "PRESIDENT",
                 )!.id,
+                roundId: club.rounds[Math.min(e + 1, club.rounds.length - 1)].id as string | null,
+                submittedAt: null as Date | null,
+                applicantQuestions: null as string | null,
                 round: club.rounds[Math.min(e + 1, club.rounds.length - 1)].name,
                 score: 5 + ((a + e + c) % 6),
                 notes: `Sample review: ${["Clear reasoning and thoughtful follow-up questions.", "Strong collaboration example; explore ownership in the next round.", "Promising preparation; ask for a more specific trade-off."][(a + e) % 3]}`,
@@ -322,7 +330,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       const priorEvaluation = app.evaluations.find(e => e.interviewerId === interviewer.id && e.round === round.name)
       if (priorEvaluation) { draft.score = priorEvaluation.score; draft.overallReview = priorEvaluation.notes || draft.overallReview }
       const completedAt = i === 0 ? at(-1).toISOString() : null
-      if (completedAt && !app.evaluations.some(e => e.interviewerId === interviewer.id && e.round === round.name)) app.evaluations.push({ id: uid(16, clubs.indexOf(club)), applicationId: app.id, interviewerId: interviewer.id, round: round.name, score: 8, notes: draft.overallReview, createdAt: at(-1) })
+      if (completedAt && !app.evaluations.some(e => e.interviewerId === interviewer.id && e.round === round.name)) app.evaluations.push({ id: uid(16, clubs.indexOf(club)), applicationId: app.id, interviewerId: interviewer.id, roundId: round.id, submittedAt: at(-1), applicantQuestions: null, round: round.name, score: 8, notes: draft.overallReview, createdAt: at(-1) })
       return { id: uid(14, clubs.indexOf(club) * 2 + i), applicationId: app.id, interviewerId: interviewer.id, roundId: round.id, clubId: club.id, anonymousReview: false, revision: 1, questions: sampleInterviewKit(), draft, completedAt }
     })
   })
@@ -389,6 +397,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   return {
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
+    interviewFoundation: { assignments: applications.filter(a => a.studentId !== students[0].id).map(a => ({ applicationId: a.id, roundId: a.roundId, memberId: memberships.find(m => m.clubId === a.clubId && m.isOwner)!.id, revokedAt: null as string | null })), documents: [], annotations: [], history: [], audit: [] } as import("./interview-foundation").DemoInterviewFoundation,
     interviews,
     tutorials: { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } } as Record<import("@/lib/tutorials").TutorialExperience, import("@/lib/tutorials").TutorialProgress>,
     applicantDisplay,

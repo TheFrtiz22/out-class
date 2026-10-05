@@ -13,6 +13,9 @@ export const kitSchema = z
   );
 export type KitQuestion = z.infer<typeof kitQuestionSchema>;
 export const interviewDraftSchema = z.object({
+  applicantQuestions: z.string().max(20000).optional(),
+  additionalNotes: z.string().max(20000).optional(),
+  completedQuestionIds: z.array(z.string().uuid()).max(80).optional(),
   questionNotes: z
     .array(
       z.object({ questionId: z.string().uuid(), notes: z.string().max(10000) }),
@@ -28,7 +31,8 @@ export const interviewDraftSchema = z.object({
     )
     .max(30),
   overallReview: z.string().max(20000),
-  score: z.number().min(1).max(10).nullable(),
+  // Reading old records preserves historical decimals and out-of-range evidence.
+  score: z.number().finite().nullable(),
 });
 export type InterviewDraft = z.infer<typeof interviewDraftSchema>;
 export const emptyInterviewDraft: InterviewDraft = {
@@ -41,6 +45,10 @@ export function validateQuestionNotes(
   questions: KitQuestion[],
   draft: InterviewDraft,
 ) {
+  const ids = [...questions.map(q => q.id), ...draft.additionalQuestions.map(q => q.id)];
+  const completed = draft.completedQuestionIds || [];
+  if (new Set(ids).size !== ids.length || new Set(completed).size !== completed.length || completed.some(id => !ids.includes(id)))
+    throw new Error("Invalid completed question IDs.");
   if (
     new Set(draft.questionNotes.map((n) => n.questionId)).size !==
       draft.questionNotes.length ||

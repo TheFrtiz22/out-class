@@ -75,11 +75,10 @@ test('publishing anonymous content requires manager permission, explicit review,
   await api.saveAnonymousReviewContent(clubId,id,'Research experience.',true)
   assert.equal(written,true);assert.equal(audit,true)
 })
-test('anonymous evaluation updates preserve withheld notes and never return them in mutation responses',async()=>{
-  let update
-  const api=load('actions/evaluations.ts',{'@/utils/auth':{requireClubPermission:async()=>({membership:{id:'reviewer',permissions:['applications.review']}})},'@/utils/prisma':{prisma:{application:{findFirst:async()=>({id,roundId:'round'})},pipelineRound:{findFirst:async()=>({id:'round',anonymousReview:true})},evaluation:{upsert:async args=>{update=args.update;return {id:'evaluation',score:8,notes:'SECRET old identity',createdAt:new Date()}}}}},'next/cache':{revalidatePath:()=>{}}})
-  const result=await api.submitEvaluation({clubId,applicationId:id,roundName:'Review',score:8,notes:''})
-  assert.equal(update.notes,undefined)
-  assert.equal(result.evaluation.notes,null)
-  assert.ok(!JSON.stringify(result).includes('SECRET'))
-})
+
+test('anonymous evaluation submission conceals notes and cannot later overwrite a submitted score',async()=>{
+ const h=require('./helpers/interview-harness.cjs').harness();h.round.anonymousReview=true;h.members[0].permissions=['applications.review'];
+ const api=h.load('actions/evaluations.ts');const result=await api.submitEvaluation({...h.scope,roundName:'Interview',score:8,notes:'SECRET identity'});
+ assert.equal(result.evaluation.notes,null);assert.equal(result.evaluation.applicantQuestions,null);assert.ok(!JSON.stringify(result).includes('SECRET'));
+ await assert.rejects(api.submitEvaluation({...h.scope,roundName:'Interview',score:9}),/submitted/i);
+});

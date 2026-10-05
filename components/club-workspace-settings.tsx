@@ -5,6 +5,7 @@ import { ClubManagerView } from "@/components/views/club-manager-view"
 import { useEffect, useState } from "react"
 import { getClubMembers, addClubMember, removeClubMember } from "@/actions/club-access"
 import { useAuth } from "@/contexts/auth-context"
+import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions"
 import { updateClubSettings } from "@/actions/club-workspace"
 import { Button } from "@/components/ui/button"
@@ -45,7 +46,7 @@ export function ClubWorkspaceSettings({ section = "legacy" }: { section?: "legac
   }
   return (
     <div className="max-w-3xl space-y-8" key={member.id}>
-      {section === "legacy" && hasPermission(member, "interviews.manage") && <ClubInterviewKitSettings clubId={activeClubId} />}
+      {section === "legacy" && (interviewCapabilities(member).editKit || interviewCapabilities(member).participate) && <ClubInterviewKitSettings clubId={activeClubId} />}
       {section === "legacy" && <h1 className="oc-page-title ">{member.club.name}</h1>}
       {section === "legacy" && <MeetingList key={activeClubId} clubId={activeClubId} />}
       {section !== "settings" && hasPermission(member, "leaders.manage") && (

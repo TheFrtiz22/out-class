@@ -318,7 +318,7 @@ export async function removeClubMember(clubId: string, memberId: string) {
       throw new Error("Access denied.");
     // Preserve reviewer references: revoke capabilities instead of deleting evaluation history.
     if (
-      target.isOwner ||
+      target.isOwner || target.interviewOffices?.length ||
       target.permissions.length ||
       (await tx.evaluation.count({ where: { interviewerId: target.id } })) ||
       (await tx.interviewRecord.count({ where: { interviewerId: target.id } }))

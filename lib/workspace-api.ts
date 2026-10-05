@@ -17,6 +17,9 @@ import * as demoTasks from "@/lib/demo/tasks"
 // The sole client data boundary: demo operations never invoke a server action.
 import { anonymousApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
+import * as interviewResumes from "@/actions/interview-resumes"
+import * as interviewGrants from "@/actions/organization-members"
+import * as demoInterviews from "@/lib/demo/interview-foundation"
 import * as interviewKits from "@/actions/interview-kits"
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes } from "@/lib/interview-kits"
 import * as meetingsApi from "@/actions/meetings"
@@ -107,36 +110,7 @@ export const setApplicationStatus = adapt(crm.setApplicationStatus, (input) => {
     return { success: true, application: app }
   })
 })
-export const submitEvaluation = adapt(evaluation.submitEvaluation, (input) => {
-  scopedApplication(input.clubId, input.applicationId)
-  if (!Number.isFinite(input.score) || input.score < 1 || input.score > 10)
-    throw new Error("Choose a score from 1 to 10.")
-  if (
-    !demoStore
-      .get()
-      .clubs.find((c) => c.id === input.clubId)
-      ?.rounds.some((r) => r.name === input.roundName)
-  )
-    throw new Error("Round unavailable.")
-  const member = demoMember()
-  return demoStore.mutate((s) => {
-    const app = s.applications.find((a) => a.id === input.applicationId)!
-    const old = app.evaluations.find(
-      (e) => e.interviewerId === member.id && e.round === input.roundName,
-    )
-    const value = {
-      id: old?.id || `demo-eval-${app.id}-${input.roundName}`,
-      applicationId: app.id,
-      interviewerId: member.id,
-      round: input.roundName,
-      score: input.score,
-      notes: input.notes || "",
-      createdAt: old?.createdAt || new Date(),
-    }
-    app.evaluations = [...app.evaluations.filter((e) => e.id !== value.id), value]
-    return { success: true, evaluation: value }
-  })
-})
+export const submitEvaluation = adapt(evaluation.submitEvaluation, demoInterviews.submitEvaluation)
 export const startClubApplication = adapt(directory.startClubApplication, (clubId) => {
   const s = demoStore.get(),
     old = s.applications.find((a) => a.studentId === s.students[0].id && a.clubId === clubId)
@@ -282,47 +256,23 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
   return demoStore.mutate(s => { s.applications.find(a => a.id === applicationId)!.anonymousReviewText = content.trim() || null; return { success: true } })
 })
 
-export const getInterviewKit = adapt(interviewKits.getInterviewKit, (clubId, roundId) => {
-  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
-  const round = demoStore.get().clubs[0].rounds.find(r => r.id === roundId)
-  if (!round) throw new Error("Round unavailable.")
-  return { questions: round.interviewKit, version: round.kitVersion }
-})
-export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, (clubId, roundId, version, questions) => {
-  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
-  return demoStore.mutate(s => { const round = s.clubs[0].rounds.find(r => r.id === roundId); if (!round || round.kitVersion !== version) throw new Error("Kit changed. Reload before editing."); round.interviewKit = kitSchema.parse(questions); round.kitVersion++; return { questions: round.interviewKit, version: round.kitVersion } })
-})
-export const openInterviewSession = adapt(interviewKits.openInterviewSession, input => {
-  const app = scopedApplication(input.clubId, input.applicationId), member = demoMember()
-  if (app.roundId !== input.roundId) throw new Error("Applicant round changed.")
-  return demoStore.mutate(s => {
-    const round = s.clubs[0].rounds.find(r => r.id === input.roundId)!
-    let record = s.interviews.find(r => r.applicationId === app.id && r.interviewerId === member.id && r.roundId === round.id)
-    if (!record) { record = { id: crypto.randomUUID(), ...input, interviewerId: member.id, anonymousReview: round.anonymousReview, revision: 0, questions: structuredClone(round.interviewKit), draft: structuredClone(emptyInterviewDraft), completedAt: null }; s.interviews.push(record) }
-    if (record.anonymousReview !== round.anonymousReview) throw new Error("Interview privacy settings changed.")
-    const canonical = record.completedAt ? app.evaluations.find(e => e.interviewerId === member.id && e.round === round.name) : null
-    return { ...record, draft: canonical ? { ...record.draft, score: canonical.score, overallReview: canonical.notes || "" } : record.draft, feedbackSource: record.completedAt ? canonical ? "evaluation" : "historical-snapshot" : "draft" }
-  })
-})
-export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, input => {
-  const app = scopedApplication(input.clubId, input.applicationId), member = demoMember()
-  return demoStore.mutate(s => {
-    const round = s.clubs[0].rounds.find(r => r.id === input.roundId)
-    const record = s.interviews.find(r => r.applicationId === app.id && r.interviewerId === member.id && r.roundId === input.roundId)
-    if (!round || app.roundId !== round.id || !record || record.completedAt || record.revision !== input.revision || record.anonymousReview !== round.anonymousReview) throw new Error("Interview changed. Reload before saving.")
-    const draft = interviewDraftSchema.parse(input.draft); validateQuestionNotes(record.questions, draft)
-    if (input.complete && draft.score === null) throw new Error("Choose an overall score.")
-    record.draft = draft; record.revision++; record.completedAt = input.complete ? new Date().toISOString() : null
-    let evaluation = null
-    if (input.complete) {
-      const target = s.applications.find(a => a.id === app.id)!
-      const old = target.evaluations.find(e => e.interviewerId === member.id && e.round === round.name)
-      evaluation = { id: old?.id || crypto.randomUUID(), applicationId: app.id, interviewerId: member.id, round: round.name, score: draft.score!, notes: draft.overallReview, createdAt: old?.createdAt || new Date() }
-      target.evaluations = [...target.evaluations.filter(e => e.id !== evaluation!.id), evaluation]
-    }
-    return { session: record, evaluation: evaluation && round.anonymousReview ? { ...evaluation, notes: null, createdAt: new Date(0) } : evaluation }
-  })
-})
+export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
+export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
+export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, demoInterviews.saveInterviewKit)
+export const openInterviewSession = adapt(interviewKits.openInterviewSession, demoInterviews.openInterviewSession)
+export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, demoInterviews.saveInterviewSession)
+export const getSubmittedInterviewReview = adapt(interviewKits.getSubmittedInterviewReview, demoInterviews.getSubmittedInterviewReview)
+export const getSubmittedInterviewReviews = adapt(interviewKits.getSubmittedInterviewReviews, demoInterviews.getSubmittedInterviewReviews)
+export const getPreviousInterviewScores = adapt(interviewKits.getPreviousInterviewScores, demoInterviews.getPreviousInterviewScores)
+export const getInterviewApplicantPanel = adapt(interviewResumes.getInterviewApplicantPanel, demoInterviews.getInterviewApplicantPanel)
+export const getInterviewResumeModerationQueue = adapt(interviewResumes.getInterviewResumeModerationQueue, demoInterviews.getInterviewResumeModerationQueue)
+export const pinInterviewResume = adapt(interviewResumes.pinInterviewResume, demoInterviews.pinInterviewResume)
+export const getInterviewResumeAnnotations = adapt(interviewResumes.getInterviewResumeAnnotations, demoInterviews.getInterviewResumeAnnotations)
+export const saveInterviewResumeAnnotation = adapt(interviewResumes.saveInterviewResumeAnnotation, demoInterviews.saveInterviewResumeAnnotation)
+export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInterviewResumeAnnotation, demoInterviews.deleteInterviewResumeAnnotation)
+export const getInterviewAnnotationHistory = adapt(interviewResumes.getInterviewAnnotationHistory, demoInterviews.getInterviewAnnotationHistory)
+export const setMemberInterviewOffices = adapt(interviewGrants.setMemberInterviewOffices, demoInterviews.setMemberInterviewOffices)
+export const setInterviewPanelAssignment = adapt(interviewGrants.setInterviewPanelAssignment, demoInterviews.setInterviewPanelAssignment)
 export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, clubId => {
   demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
   return demoStore.get().clubs[0].rounds.map(r => ({ id: r.id, name: r.name }))
@@ -404,7 +354,7 @@ export const getClubWorkspaceOverview = adapt(clubOverview.getClubWorkspaceOverv
  if(!membership||!club)throw new Error("Club workspace access unavailable.")
  const manage=clubId===s.clubs[0].id,now=new Date()
  return {
-  club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions},
+  club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions,interviewOffices:membership.interviewOffices,status:membership.status},
   meeting:s.meetings.filter(m=>m.clubId===clubId&&m.date>=now).sort((a,b)=>+a.date-+b.date).map(m=>({id:m.id,title:m.title,date:m.date,location:m.location,audience:m.audience}))[0]??null,
   work:s.tasks.filter(t=>t.clubId===clubId&&t.status!=="DONE").flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&!a.submittedAt&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
   awaitingReview:manage?s.tasks.filter(t=>t.clubId===clubId).flatMap(t=>t.assignments).filter(a=>a.submittedAt&&!a.reviewedAt).length:null,

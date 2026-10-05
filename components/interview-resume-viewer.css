@@ -1,0 +1,12 @@
+/* PDF.js text-layer rules adapted from Mozilla (Apache-2.0); see docs/interview-resume-ui.md. */
+.oc-pdf-page { position:relative; background:white; color:black; flex:none; }
+.oc-pdf-page canvas { display:block; }
+.oc-pdf-text { position:absolute; inset:0; overflow:clip; line-height:1; letter-spacing:normal; word-spacing:normal; text-size-adjust:none; forced-color-adjust:none; transform-origin:0 0; caret-color:CanvasText; }
+.oc-pdf-text :is(span,br) { color:transparent; position:absolute; white-space:pre; cursor:text; transform-origin:0 0; user-select:text; }
+.oc-pdf-text { --min-font-size:1; --text-scale-factor:calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv:calc(1 / var(--min-font-size)); }
+.oc-pdf-text > :not(.markedContent), .oc-pdf-text .markedContent span:not(.markedContent) { z-index:1; --font-height:0; font-size:calc(var(--text-scale-factor) * var(--font-height)); --scale-x:1; --rotate:0deg; transform:rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv)); }
+.oc-pdf-text .markedContent { display:contents; }
+.oc-pdf-text span[role=img] { user-select:none; }
+.oc-pdf-text ::selection { background:rgb(65 120 225 / 35%); }
+.oc-pdf-highlight { position:absolute; pointer-events:none; background:rgb(250 204 21 / 35%); border-bottom:1px solid rgb(161 98 7 / 70%); }
+.oc-pdf-highlight[data-active=true] { background:rgb(250 204 21 / 55%); outline:1px solid rgb(161 98 7); }

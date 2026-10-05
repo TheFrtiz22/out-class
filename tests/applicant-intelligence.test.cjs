@@ -41,9 +41,9 @@ for(const kind of ['PRO','CON']) test(`${kind} creation, attribution, own edit/d
  h.otherAuthor();await assert.rejects(h.api.saveApplicantObservation({...h.scope,id:observationId,kind,body:'Overwrite'}),/author/);await assert.rejects(h.api.deleteApplicantObservation({...h.scope,id:observationId}),/author/);
  const own=harness();await own.api.saveApplicantObservation({...own.scope,kind,body:'Own observation'});await own.api.deleteApplicantObservation({...own.scope,id:observationId});assert.equal(own.observations().length,0);
 });
-test('normal authorized reviewer gets configured fields and canonical feedback; unselected fields are absent',async()=>{
+test('ordinary applicant display omits closing feedback; authorized closing endpoints are separate',async()=>{
  const h=harness();await h.api.saveApplicantDisplayConfiguration({clubId,roundId,version:0,config:{version:1,fields:['name','major','gpa','score','feedback']}});
- const data=await h.api.getApplicantDisplay(h.scope);assert.equal(data.anonymous,false);assert.deepEqual(data.visible,['name','major','gpa','score','feedback']);assert.match(JSON.stringify(data),/HiddenFirst/);assert.match(JSON.stringify(data),/Secret feedback/);assert.doesNotMatch(JSON.stringify(data),/secret-photo|Secret essay|Hidden biography|secret-resume|private@/);
+ const data=await h.api.getApplicantDisplay(h.scope);assert.equal(data.anonymous,false);assert.deepEqual(data.visible,['name','major','gpa','score','feedback']);assert.match(JSON.stringify(data),/HiddenFirst/);assert.doesNotMatch(JSON.stringify(data),/Secret feedback/);assert.doesNotMatch(JSON.stringify(data),/secret-photo|Secret essay|Hidden biography|secret-resume|private@/);
 });
 test('anonymous reviewer with the same configuration cannot recover identity, free text, observations, or files',async()=>{
  const h=harness();await h.api.saveApplicantDisplayConfiguration({clubId,roundId,version:0,config:{version:1,fields:['name','major','gpa','score','feedback']}});await h.api.saveApplicantObservation({...h.scope,kind:'PRO',body:'Secret observation'});h.app.round.anonymousReview=true;h.member.permissions=['applications.review'];
@@ -64,8 +64,8 @@ test('configuration updates reject unknown fields, duplicate fields, stale versi
  await assert.rejects(h.api.saveApplicantDisplayConfiguration({clubId:roundId,roundId,version:1,config:defaultDisplayConfig}),/Denied/);
  h.member.permissions=['applications.review'];await assert.rejects(h.api.getApplicantDisplayConfiguration(clubId,roundId),/Denied/);
 });
-test('Interview and Voting consume the same server-filtered panel; legacy voting transport never receives production data',()=>{
- for(const file of ['components/views/interview-workspace-view.tsx','components/live-voting/board-decision-mode.tsx'])assert.match(fs.readFileSync(file,'utf8'),/ApplicantDisplayPanel/);
+test('Interview uses a narrow panel and Voting retains its server-filtered panel; legacy voting transport never receives production data',()=>{
+ assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);assert.doesNotMatch(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/getClubPipeline|ApplicantDisplayPanel/);
  assert.match(fs.readFileSync('components/applicant-intelligence.tsx','utf8'),/getApplicantDisplay\(\{ clubId, applicationId \}\)/);
  assert.doesNotMatch(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/useProctorSession|localStorage|BroadcastChannel/);
 });

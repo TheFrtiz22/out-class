@@ -20,9 +20,10 @@ export function organizationCapabilities(actor: ClubAccess | null | undefined) {
   };
 }
 
-export function canControlOrganizationAccess(actor: ClubAccess | null | undefined, target: ClubAccess & { accessRole?: string }) {
+export function canControlOrganizationAccess(actor: ClubAccess | null | undefined, target: ClubAccess & { accessRole?: string; interviewOffices?: readonly string[] }) {
   if (!isActiveMembership(actor)) return false;
   if (actor?.isOwner) return true;
+  if (target.interviewOffices?.length) return false;
   return !target.isOwner && target.accessRole !== "OWNER" &&
     (target.permissions || []).every(p => hasPermission(actor, p as ClubPermission));
 }

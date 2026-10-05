@@ -69,6 +69,8 @@ export async function getClubWorkspaceOverview(clubId: string) {
       id: membership.id,
       isOwner: membership.isOwner,
       permissions: membership.permissions,
+      interviewOffices: membership.interviewOffices,
+      status: membership.status,
     },
     meeting,
     work,

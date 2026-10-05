@@ -7,7 +7,7 @@ function load(file, mocks = {}) {
   mocks = { "@/utils/support-audit": { auditSupportAction: async () => {} }, ...mocks };
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2) + ".ts", mocks) : require(name), mod, mod.exports)
   return mod.exports
 }
 
@@ -80,7 +80,7 @@ test('API denies owner requesting a different/old object under own UUID', async 
   assert.equal(getCreatedSignedUrl(), false)
 })
 
-test('API allows authorized reviewer current resume', async () => {
+test('legacy path route cannot bypass context-scoped interview authorization', async () => {
   const reqPath = `${OTHER_UUID}/current.pdf`
   const { api, getCreatedSignedUrl } = setupApi({
     authUserId: MY_UUID,
@@ -88,8 +88,8 @@ test('API allows authorized reviewer current resume', async () => {
     mockHasAccess: { id: 'app1' }
   })
   const res = await api.GET({ url: `http://localhost/api/resumes?path=${reqPath}` })
-  assert.equal(res.status, 302)
-  assert.equal(getCreatedSignedUrl(), true)
+  assert.equal(res.status, 403)
+  assert.equal(getCreatedSignedUrl(), false)
 })
 
 test('API denies authorized reviewer guessed old resume under same student UUID', async () => {

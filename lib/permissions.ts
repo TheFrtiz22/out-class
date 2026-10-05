@@ -18,7 +18,7 @@ export const clubPermissions = [
   "leaders.manage",
 ] as const
 export type ClubPermission = (typeof clubPermissions)[number]
-export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string }
+export type ClubAccess = { isOwner?: boolean; permissions?: readonly string[]; status?: string; interviewOffices?: readonly string[] }
 export function isActiveMembership(member: ClubAccess | null | undefined) {
   return !!member && (!member.status || member.status === "ACTIVE")
 }
@@ -29,6 +29,7 @@ export function hasWorkspace(member: ClubAccess) {
   return (
     isActiveMembership(member) && (
       member.isOwner === true ||
+      member.interviewOffices?.some(office => ["PRESIDENT", "VICE_PRESIDENT", "BOARD"].includes(office)) === true ||
       clubPermissions.some((permission) => hasPermission(member, permission))
     )
   )

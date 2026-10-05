@@ -5,6 +5,8 @@ const nextConfig = {
     ? ".next-publish"
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  outputFileTracingIncludes: { "/*": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**"] },
   eslint: {
     ignoreDuringBuilds: false,
   },
