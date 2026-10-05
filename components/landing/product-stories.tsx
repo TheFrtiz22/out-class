@@ -1,11 +1,11 @@
 "use client"
 
 import { ArrowUpRight } from "lucide-react"
-import { StickyStory, PreviewReveal } from "@/components/motion/scroll-motion"
-import { ProductMotion } from "./product-motion"
+import { StickyStory } from "@/components/motion/scroll-motion"
+import { ProductMotion, ProductMotionControl } from "./product-motion"
 import { PerspectiveSwitcher } from "./perspective-switcher"
 import { JourneyScenePreview } from "./journey-scenes"
-import { journeyChapters, type LandingPerspective } from "./journey-content"
+import { journeyChapters, journeySceneDurations, type LandingPerspective } from "./journey-content"
 import "./journey.css"
 import "./journey-atmosphere.css"
 
@@ -39,15 +39,15 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
                 {perspective === "student" ? "Create your profile" : "Explore club workspace"}<ArrowUpRight size={16} aria-hidden="true" />
               </button>}
             </div>
-            <PreviewReveal className="oc-story-visual">
-              <ProductMotion duration={2400}>
+            <div className="oc-story-visual">
+              <ProductMotion duration={journeySceneDurations[chapter.scene]} resetKey={`${perspective}-${chapter.scene}`}>
                 <figure className="oc-story-frame">
-                  <div className="oc-story-toolbar"><span>OutClass</span><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span>Preview</span></div>
-                  <div className="oc-story-interface"><div key={perspective} className="oc-perspective-scene"><JourneyScenePreview scene={chapter.scene} /></div></div>
+                  <div className="oc-story-toolbar"><span>OutClass</span><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span><ProductMotionControl /></span></div>
+                  <div className="oc-story-interface"><div key={perspective} className="oc-perspective-scene" data-scene={chapter.scene}><JourneyScenePreview scene={chapter.scene} /></div></div>
                   <figcaption>Illustrative interface · sample information</figcaption>
                 </figure>
               </ProductMotion>
-            </PreviewReveal>
+            </div>
           </StickyStory>
         ))}
       </div>
