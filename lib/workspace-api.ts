@@ -1,4 +1,5 @@
 "use client"
+import * as resumeImport from "@/actions/resume-import"
 import * as tutorials from "@/actions/tutorials"
 import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
 import { corkboardInput } from "@/lib/corkboard"
@@ -544,3 +545,6 @@ export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:st
   if(!("clubId" in info)||!info.clubId)throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
   return votingApi.getVotingWorkspace(info.clubId,sessionId)
 }
+
+export const prepareResumeImport = adapt(resumeImport.prepareResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })
+export const confirmResumeImport = adapt(resumeImport.confirmResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })

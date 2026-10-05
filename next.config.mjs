@@ -6,6 +6,8 @@ const nextConfig = {
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
+  serverExternalPackages: ["pdfjs-dist"],
+  outputFileTracingIncludes: { "/*": ["./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
   trailingSlash: false,
   // Consistent head metadata for browsers, crawlers, and every link-preview bot.
   // Homepage metadata only reads cookies/query parameters, so this adds no DB wait.

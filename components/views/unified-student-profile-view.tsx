@@ -14,6 +14,7 @@ import type { StudentMembership } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
 
 export type ProfileMembership = StudentMembership
@@ -252,10 +253,10 @@ export function UnifiedStudentProfileView() {
               {edit("links")}
             </div>
             <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Add your LinkedIn link and a résumé document. Automatic profile import is not
-              available.
+              Store your résumé, or import a text-based PDF and review proposed profile changes.
             </p>
           </div>
+          <ResumeImportDialog key={profile.userId} profile={profile} onSaved={value => { setProfile(value); setSaved(true) }} />
           <div className="mt-4">{edit("experience")}</div>
         </aside>
       </div>
