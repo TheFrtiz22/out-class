@@ -3,6 +3,7 @@ const path=require('node:path');
 const {createHmac,randomUUID}=require('node:crypto');
 const {createServerClient}=require('@supabase/ssr');
 const assert=require('node:assert/strict');
+const {encodeReply}=require('next/dist/compiled/react-server-dom-webpack/client.node');
 
 function totp(secret){
  const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';const bits=[...secret.toUpperCase().replace(/=+$/,'')].map(c=>alphabet.indexOf(c).toString(2).padStart(5,'0')).join('');
@@ -26,6 +27,30 @@ async function confirmationMessage(config,email,subject=/Verify your UVA email/)
  }
  throw Error('Local confirmation email was not captured');
 }
+// A loading boundary may flush HTTP 200 before Next emits its redirect meta tag.
+async function assertProfileCompletionRedirect(response,appUrl,returnPath,protectedContent=[]){
+ const body=await response.text();
+ for(const content of protectedContent)assert.ok(!body.includes(content),`Protected content rendered before profile completion: ${content}`);
+ let destination;
+ if(response.status===307){
+  destination=response.headers.get('location');
+ }else{
+  assert.equal(response.status,200,'Expected an HTTP or streamed temporary redirect');
+  const tags=body.match(/<meta\b[^>]*>/gi)||[];
+  const attributes=tag=>Object.fromEntries([...tag.matchAll(/([\w-]+)\s*=\s*["']([^"']*)["']/g)].map(([,key,value])=>[key.toLowerCase(),value]));
+  const redirects=tags.map(attributes).filter(a=>a.id==='__next-page-redirect'&&a['http-equiv']?.toLowerCase()==='refresh');
+  assert.equal(redirects.length,1,'Expected exactly one Next streamed redirect');
+  const match=/^1;url=(.+)$/.exec(redirects[0].content||'');
+  assert.ok(match,'Missing temporary redirect destination');
+  destination=match[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+ }
+ assert.ok(destination,'Missing redirect destination');
+ const url=new URL(destination,appUrl),expected=new URL(appUrl);
+ assert.equal(url.origin,expected.origin,'Profile completion must stay on the local app');
+ assert.equal(url.pathname,'/','Expected the onboarding entry point');
+ assert.deepEqual([...url.searchParams],[['next',returnPath]],'Expected the exact preserved return destination');
+ assert.equal(url.hash,'');
+}
 class Actor {
  constructor(config){
   this.config=config;this.cookies=new Map();
@@ -45,7 +70,8 @@ class Actor {
   const [actionId,definition]=entry;const worker=Object.keys(definition.workers).find(w=>w==='app/page')||Object.keys(definition.workers)[0];
   // Next forwards the action to its owning worker. No handler or Auth/DB mock is used.
   const route=worker==='app/platform/page'?'/platform':worker==='app/page'?'/':worker==='app/settings/organizations/page'?'/settings/organizations':'/';
-  const response=await this.request(route,{method:'POST',headers:{origin:this.config.appUrl,'content-type':'text/plain;charset=UTF-8','next-action':actionId,accept:'text/x-component'},body:JSON.stringify(args)});
+  const body=args.some(value=>value instanceof FormData)?await encodeReply(args):JSON.stringify(args);
+  const response=await this.request(route,{method:'POST',headers:{origin:this.config.appUrl,...(typeof body==='string'?{'content-type':'text/plain;charset=UTF-8'}:{}),'next-action':actionId,accept:'text/x-component'},body});
   const text=await response.text();
   const rows=new Map();for(const line of text.split('\n')){const match=line.match(/^([0-9a-f]+):(.*)$/);if(match)rows.set(match[1],match[2]);}
   const root=rows.get('0');if(!root)throw Error(`Server action ${name} returned HTTP ${response.status} without an action result`);
@@ -67,4 +93,4 @@ class Actor {
  }
  async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,experiences:[]}]);}
 }
-module.exports={Actor,totp,readConfig,confirmationMessage,randomUUID};
+module.exports={Actor,totp,readConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect};
