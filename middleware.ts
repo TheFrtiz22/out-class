@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Metadata routes contain only public content and need no session refresh.
+  if (["GET", "HEAD"].includes(request.method) && ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest", "/icon", "/apple-icon"].includes(request.nextUrl.pathname)) return NextResponse.next()
   // Static GETs can skip auth refresh; POSTs must never bypass read-only guards by using an image-like URL.
   if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
 
@@ -17,7 +19,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.json({ error: "Live account access and production writes are disabled in Demo Mode." }, { status: 403 })
   }
   // Update session
-  return await createClient(request)
+  const response = await createClient(request)
+  // Product views share the homepage URL. Preserve their query parameters and
+  // authentication while explicitly keeping those responses out of search.
+  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error"].some(key => request.nextUrl.searchParams.has(key))
+  const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
+  if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
+  return response
 }
 
 export const config = {

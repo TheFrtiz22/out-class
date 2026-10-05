@@ -27,15 +27,19 @@ export function LandingNavbar({
           <a href="#top" aria-label="OutClass home">
             <OutClassLogo variant={scrolled ? "light" : "dark"} className="h-10 w-auto" />
           </a>
-          <div className="nav-actions">
-            <Button variant="outline" size="lg" className="nav-cta" onClick={onSignIn}>
-              Sign in
+          <nav className="nav-actions" aria-label="Main navigation">
+            <Button variant="outline" size="lg" className="nav-cta" asChild>
+              <a href="/login" onClick={event => {
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                event.preventDefault()
+                onSignIn()
+              }}>Sign in</a>
             </Button>
             <Button size="lg" className="oc-nav-primary" onClick={onGetStarted}>
               Get started
               <ArrowRight size={16} aria-hidden="true" />
             </Button>
-          </div>
+          </nav>
         </header>
       </div>
     </>

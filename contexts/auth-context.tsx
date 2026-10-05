@@ -30,7 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 import { demoUser } from "@/lib/demo/store";
 import { useDemoMode } from "@/contexts/demo-context";
 
-export function AuthProvider({ children, isImpersonating = false }: { children: React.ReactNode; isImpersonating?: boolean }) {
+export function AuthProvider({ children, isImpersonating = false, hasSession = true }: { children: React.ReactNode; isImpersonating?: boolean; hasSession?: boolean }) {
   const [user, setUser] = useState<PopulatedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { isDemoEnabled, state, viewAs } = useDemoMode();
@@ -55,8 +55,10 @@ export function AuthProvider({ children, isImpersonating = false }: { children: 
   }, [isDemoEnabled]);
 
   useEffect(() => {
-    if (!isDemoEnabled) void fetchUser();
-  }, [fetchUser, isDemoEnabled]);
+    if (isDemoEnabled) return;
+    if (hasSession) void fetchUser();
+    else { setUser(null); setLoading(false); }
+  }, [fetchUser, isDemoEnabled, hasSession]);
 
   const mutateUser = (newUser: PopulatedUser) => {
     setUser(newUser);
@@ -84,4 +86,3 @@ export function useAuth() {
   }
   return context;
 }
-

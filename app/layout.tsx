@@ -10,12 +10,13 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { ClubCustomizationProvider } from "@/lib/club-customization"
+import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, privateRobots } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
 const libreCaslonText = localFont({
   src: [
-    { path: "./fonts/libre-caslon-text/libre-caslon-text-variable.ttf", weight: "400 700", style: "normal" },
-    { path: "./fonts/libre-caslon-text/libre-caslon-text-italic-variable.ttf", weight: "400 700", style: "italic" },
+    { path: "./fonts/libre-caslon-text/libre-caslon-text-variable.woff2", weight: "400 700", style: "normal" },
+    { path: "./fonts/libre-caslon-text/libre-caslon-text-italic-variable.woff2", weight: "400 700", style: "italic" },
   ],
   variable: "--font-libre-caslon-text",
   display: "swap",
@@ -26,10 +27,17 @@ const libreCaslonText = localFont({
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" }
 
 export const metadata: Metadata = {
-  title: "OutClass — One profile. Every selective club.",
-  description:
-    "OutClass is the recruitment platform for selective college clubs. Students track applications; club leaders review and score applicants.",
-  generator: "v0.app",
+  metadataBase: new URL(SITE_URL),
+  title: { default: SITE_TITLE, template: "%s | OutClass" },
+  description: SITE_DESCRIPTION,
+  applicationName: "OutClass",
+  // Public pages opt in explicitly; new product routes stay out of search by default.
+  robots: privateRobots,
+  manifest: "/manifest.webmanifest",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.BING_SITE_VERIFICATION ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION } : undefined,
+  },
 }
 
 import { createClient } from "@/utils/supabase/server"
@@ -68,7 +76,7 @@ export default async function RootLayout({
         {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
-          <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)}>
+          <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={(!authError && !!user) || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider><ClubCustomizationProvider>
               <div style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>
@@ -76,8 +84,7 @@ export default async function RootLayout({
             </OrganizationInvitationsProvider>
           </AuthProvider>
           <Toaster />
-          <Analytics />
-          <SpeedInsights />
+          {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
         </DemoDataProvider>
       </body>
     </html>

@@ -1,7 +1,7 @@
 "use client"
 
 import type { CSSProperties, ReactNode } from "react"
-import Image from "next/image"
+import Image, { getImageProps } from "next/image"
 import { CalendarDays, Check, FileText, MessageSquare, Users } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -35,8 +35,9 @@ function StateLabel({ steps }: { steps: ReadonlyArray<readonly [number, string]>
 }
 
 function Person({ subtitle, at = 0 }: { subtitle: string; at?: number }) {
+  const { props: headshot } = getImageProps({ src: example.headshot, alt: "", width: 48, height: 48 })
   return <div className="oc-profile-person" {...revealAt(useProductProgress(), at)}>
-    <Avatar className="size-12"><AvatarImage src={example.headshot} alt="" loading="lazy" /><AvatarFallback>{example.initials}</AvatarFallback></Avatar>
+    <Avatar className="size-12"><AvatarImage {...headshot} /><AvatarFallback>{example.initials}</AvatarFallback></Avatar>
     <div><h3>{example.person}</h3><p>{subtitle}</p></div>
   </div>
 }

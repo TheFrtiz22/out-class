@@ -1,15 +1,17 @@
 "use client"
+import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
-import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
+const OrganizationOwnershipRequests = dynamic(() => import("@/components/organization-ownership-requests").then(module => module.OrganizationOwnershipRequests))
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 
-import { PersonalClubs } from "@/components/personal-clubs"
+const PersonalClubs = dynamic(() => import("@/components/personal-clubs").then(module => module.PersonalClubs))
 import type { PersonalSection } from "@/lib/product-navigation"
-import { DemoClubSettings, DemoInterviewSchedule } from "@/components/demo-workspace"
+const DemoClubSettings = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoClubSettings))
+const DemoInterviewSchedule = dynamic(() => import("@/components/demo-workspace").then(module => module.DemoInterviewSchedule))
 import { useDemoMode } from "@/contexts/demo-context"
 import { signInReturnPath } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
-import { ClubWorkspaceSettings } from "@/components/club-workspace-settings"
+const ClubWorkspaceSettings = dynamic(() => import("@/components/club-workspace-settings").then(module => module.ClubWorkspaceSettings))
 import { demoDashboard } from "@/lib/demo/store"
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -17,23 +19,23 @@ import { type AppMode, type ViewId } from "@/lib/views"
 import { ApplicationStateProvider } from "@/lib/application-state"
 
 import { LandingPageView } from "@/components/views/landing-page-view"
-import { AuthView } from "@/components/views/auth-view"
-import { StudentDashboardView } from "@/components/views/student-dashboard-view"
-import { UnifiedStudentProfileView } from "@/components/views/unified-student-profile-view"
-import { InboxView } from "@/components/views/inbox-view"
-import { ExploreView } from "@/components/views/explore-view"
-import { CorkboardView } from "@/components/views/corkboard-view"
+const AuthView = dynamic(() => import("@/components/views/auth-view").then(module => module.AuthView))
+const StudentDashboardView = dynamic(() => import("@/components/views/student-dashboard-view").then(module => module.StudentDashboardView))
+const UnifiedStudentProfileView = dynamic(() => import("@/components/views/unified-student-profile-view").then(module => module.UnifiedStudentProfileView))
+const InboxView = dynamic(() => import("@/components/views/inbox-view").then(module => module.InboxView))
+const ExploreView = dynamic(() => import("@/components/views/explore-view").then(module => module.ExploreView))
+const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").then(module => module.CorkboardView))
 import { resolveStudentView, sectionForStudentView, canonicalStudentParams } from "@/lib/student-navigation"
-import { ApplicationTrackerView } from "@/components/views/application-tracker-view"
-import { CalendarView } from "@/components/views/calendar-view"
-import { LeaderDashboardView } from "@/components/views/leader-dashboard-view"
-import { ClubManagerView } from "@/components/views/club-manager-view"
-import { ClubManagementPortalView } from "@/components/views/club-management-portal-view"
-import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view"
-import { InterviewSchedulerView } from "@/components/views/interview-scheduler-view"
-import { InterviewWorkspaceView } from "@/components/views/interview-workspace-view"
-import { BroadcastMessagesView } from "@/components/views/club-manager/broadcast-messages-view"
-import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
+const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView))
+const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView))
+const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView))
+const ClubManagerView = dynamic(() => import("@/components/views/club-manager-view").then(module => module.ClubManagerView))
+const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView))
+const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView))
+const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView))
+const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(module => module.InterviewWorkspaceView))
+const BroadcastMessagesView = dynamic(() => import("@/components/views/club-manager/broadcast-messages-view").then(module => module.BroadcastMessagesView))
+const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard))
 
 const adminViewIds: ViewId[] = [
   "leader-dashboard",
@@ -51,7 +53,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
-export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false }: { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean, initialSession?: any, initialData?: any, hasProfile?: boolean }) {
+export type AppShellProps = { launchClubs?: import("@/lib/launch-clubs").LaunchClub[]; initialView?: ViewId; embedded?: boolean; initialSession?: any; initialData?: any; hasProfile?: boolean; initialAuthRole?: "student" | "leader" }
+
+export function AppShell({ launchClubs = [], initialView = "landing", embedded = false, initialSession = null, initialData: realInitialData = null, hasProfile = false, initialAuthRole }: AppShellProps) {
   const demo = useDemoMode()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -76,13 +80,13 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [])
 
   const [view, setView] = useState<ViewId>(
-    showLanding ? "landing" : demo.isDemoEnabled ? (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
+    initialAuthRole ? "auth" : showLanding ? "landing" : demo.isDemoEnabled ? (searchParams.has("demoClub") ? "explore" : !wantsStudent && demo.state?.perspective.role === "leader" ? "leader-dashboard" : "student-dashboard") : initialSession
       ? hasProfile
         ? "student-dashboard"
         : "student-onboarding"
       : initialView
   )
-  const [appMode, setAppMode] = useState<AppMode>(demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
+  const [appMode, setAppMode] = useState<AppMode>(initialAuthRole ? initialAuthRole === "leader" ? "admin" : "student" : demo.isDemoEnabled ? (!wantsStudent && demo.state?.perspective.role === "leader" ? "admin" : "student") : adminViewIds.includes(initialView) ? "admin" : "student")
   function navigate(next: ViewId, section?: PersonalSection) {
     if (isImpersonating && next === "auth") return
     if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return }
@@ -104,14 +108,14 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   }, [authError, initialSession])
 
   useEffect(() => {
-    if (showLanding) { setView("landing"); return }
+    if (showLanding && !initialAuthRole) { setView("landing"); return }
     const route = canonicalStudentParams(new URLSearchParams(searchParams.toString()))
     if (route) {
       setView(route.view)
       setPersonalSection(route.section)
       if (route.params.toString() !== searchParams.toString()) router.replace(`${embedded ? "/preview" : "/"}?${route.params}`)
     }
-  }, [searchParams, showLanding, embedded, router])
+  }, [searchParams, showLanding, embedded, router, initialAuthRole])
 
   function handleEnter(next: ViewId) {
     if (!adminViewIds.includes(next)) {

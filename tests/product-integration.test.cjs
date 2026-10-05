@@ -180,7 +180,7 @@ test('demo publication enforces production conflict rules and atomically rejects
 test('Demo profile photos/PDF/LinkedIn survive reload and reset with no production uploads', async () => {
   const h=setup(), initial=structuredClone(h.store.get());
   assert.equal(initial.students[0].profile.resumeUrl,'/demo/sample-resume.pdf');
-  assert.equal(initial.students[0].profile.headshotUrl,'/demo/sample-headshot.svg');
+  assert.equal(initial.students[0].profile.headshotUrl,'/images/landing/jordan-avery.jpg');
   assert.match(initial.students[0].profile.linkedinUrl,/^https:\/\/linkedin\.com\//);
   assert.ok(initial.students.some(s=>!s.profile.headshotUrl));
   const data=new FormData();data.set('kind','resume');data.set('file',new Blob(['%PDF-']), 'resume.pdf');
@@ -198,7 +198,7 @@ test('browser-origin Demo projection has one résumé link and a working photo U
   const student=h.store.get().students[0];const app=h.store.get().applications.find(a=>a.studentId===student.id&&a.clubId===h.store.get().clubs[0].id);
   h.store.mutate(s=>{const round=s.clubs[0].rounds.find(r=>r.id===app.roundId);round.anonymousReview=false});
   const view=await h.api.getApplicantDisplay({clubId:app.clubId,applicationId:app.id});
-  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/demo/sample-headshot.svg');
+  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/images/landing/jordan-avery.jpg');
 });
 
 test('Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated',async()=>{

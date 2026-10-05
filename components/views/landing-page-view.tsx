@@ -1,4 +1,5 @@
 "use client"
+import dynamic from "next/dynamic"
 
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
@@ -20,7 +21,7 @@ import { LandingIntro } from "@/components/landing/landing-intro"
 import { LandingNavbar } from "@/components/landing/landing-navbar"
 import { ProductJourney } from "@/components/landing/product-stories"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
-import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
+const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: () => <p role="status" className="p-6">Opening your student profile…</p> })
 import "./landing.css"
 
 interface LandingPageViewProps {

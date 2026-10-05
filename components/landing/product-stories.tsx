@@ -18,9 +18,9 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
   const chapters = journeyChapters[perspective]
   return (
     <section id="about" className="oc-product-stories" aria-label="How OutClass works">
-      <span id="students" className="oc-perspective-anchor" tabIndex={-1} aria-label="Student product overview" />
-      <span id="club-leaders" className="oc-perspective-anchor" tabIndex={-1} aria-label="Club leader product overview" />
-      <span id="clubs" className="oc-perspective-anchor" tabIndex={-1} aria-label="Club leader product overview" />
+      <span id="students" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Student product overview" />
+      <span id="club-leaders" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Club leader product overview" />
+      <span id="clubs" className="oc-perspective-anchor" tabIndex={-1} role="group" aria-label="Club leader product overview" />
       <div className="oc-journey-controls">
         <h2 id="perspective-title">One experience. Two perspectives.</h2>
         <PerspectiveSwitcher perspective={perspective} onChange={onPerspectiveChange} />
