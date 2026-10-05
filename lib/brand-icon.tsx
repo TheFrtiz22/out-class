@@ -3,8 +3,8 @@ import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
 /** Render the supplied mark at icon size; never replace or redraw the artwork. */
-export async function brandIcon(size: number) {
-  const artwork = await readFile(join(process.cwd(), "public/outclass-favicon.png"))
+export async function brandIcon(size: number, artworkFile: string) {
+  const artwork = await readFile(join(process.cwd(), "public", artworkFile))
   return new ImageResponse(
     <div style={{ display: "flex", width: size, height: size }}>
       {/* A data URL embeds the existing artwork in the native metadata renderer. */}
