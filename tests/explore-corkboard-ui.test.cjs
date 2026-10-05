@@ -18,12 +18,12 @@ test('Corkboard has loading, sign-in, empty, populated and retry states, reusing
 test('desktop and mobile share contextual modes with Corkboard in Explore',()=>{
  const {personalItems,personalModes}=load('lib/product-navigation.ts');
  assert.deepEqual(personalModes.map(item=>item.label),['Explore','Apply','My Clubs']);
- assert.deepEqual(personalItems('explore').map(item=>item.label),['Discover','Categories','Corkboard']);
+ assert.deepEqual(personalItems('explore').map(item=>item.label),['Discover','Corkboard']);
  assert.deepEqual(personalItems('apply').map(item=>item.label),['Applications','Status','Calendar']);
  assert.deepEqual(personalItems('clubs').map(item=>item.label),['Clubs','Meetings','Tasks']);
  const selections=[],{MobileNavigation}=load('components/shell/mobile-navigation.tsx',{'next/link':{default:'Link'}});
  const tree=MobileNavigation({items:personalItems('explore'),active:'corkboard',manager:false,onSelect:id=>selections.push(id),onLink(){},onMore(){}});
- const buttons=nodes(tree).filter(node=>node.type==='button');assert.deepEqual(buttons.map(label),['Home','Discover','Categories','Corkboard','More']);
+ const buttons=nodes(tree).filter(node=>node.type==='button');assert.deepEqual(buttons.map(label),['Home','Discover','Corkboard','More']);
  buttons.find(node=>label(node)==='Corkboard').props.onClick();assert.deepEqual(selections,['corkboard']);assert.equal(buttons.find(node=>label(node)==='Corkboard').props['aria-current'],'page');
 });
 test('student tutorials keep their eight-step indices/version contract while replacing the existing Corkboard placeholder',()=>{const {tutorialSteps,tutorialInput}=load('lib/tutorials.ts');assert.equal(tutorialSteps.student.length,8);assert.equal(tutorialSteps.student[1].view,'explore');assert.equal(tutorialSteps.student[6].view,'corkboard');assert.equal(tutorialSteps.student[6].anchor,'nav-corkboard');assert.equal(tutorialInput.parse({experience:'student',action:'progress',step:6}).step,6);assert.doesNotMatch(JSON.stringify(tutorialSteps.student),/when available|view":"discover"|Categories/)});

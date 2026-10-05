@@ -5,7 +5,7 @@ import { clubPermissions, hasPermission, type ClubAccess, type ClubPermission } 
 export const onboardingRolePermissions: Record<MembershipAccessRole, ClubPermission[]> = {
   OWNER: [...clubPermissions],
   ADMIN: [...clubPermissions],
-  RECRUITING_ADMIN: ["recruitment.manage", "applications.review", "applicants.identify", "interviews.manage", "decisions.manage", "meetings.manage", "meetings.attendance"],
+  RECRUITING_ADMIN: ["application.manage", "recruitment.manage", "applications.review", "applicants.identify", "interviews.manage", "decisions.manage", "meetings.manage", "meetings.attendance"],
   INTERVIEWER: ["applications.review", "applicants.identify"],
   MEMBER: [],
 };

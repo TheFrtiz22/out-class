@@ -101,7 +101,11 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
       setPersonalSection(nextSection)
       const params = new URLSearchParams({ workspace: "student", view: next })
       if (!["explore", "corkboard"].includes(nextSection)) params.set("section", nextSection)
-      router.push(`${embedded ? "/preview" : "/"}?${params}`)
+      const href = `${embedded ? "/preview" : "/"}?${params}`
+      // Already-open student workspaces share a persistent client shell. Native
+      // history keeps URL/back navigation in sync without reloading homepage data.
+      if (user && resolveStudentView(view)) window.history.pushState(null, "", href)
+      else router.push(href)
     }
     setView(embedded && next === "landing" ? initialView : next)
   }

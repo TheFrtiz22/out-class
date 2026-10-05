@@ -1,5 +1,6 @@
 "use server"
 
+import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
@@ -11,6 +12,9 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const { user } = await requireAuth()
   const parsed = applicationInputSchema.parse(input)
   const applicationId = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`
+    const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
+    if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")
     if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {
       throw new Error("You must complete your unified profile before applying.")
     }
@@ -19,13 +23,13 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
       const profile = await tx.studentProfile.findUnique({ where: { userId: user.id } })
       if (!club || !meetsTestRequirement(club.testRequirement, profile)) throw new Error("Update your profile to meet this club's SAT/ACT requirement before submitting.")
     }
-    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId } })
+    const questions = await tx.applicationQuestion.findMany({ where: { clubId: parsed.clubId, archivedAt: null } })
     parsed.answers = normalizeApplicationAttachments(questions, parsed.answers)
     assertApplicationAttachmentOwnership(questions, parsed.answers, user.id)
     const errors = answerErrors(questions, parsed.answers, submit)
     if (Object.keys(errors).length) throw new Error(Object.values(errors)[0])
     const firstRound = await tx.pipelineRound.findFirst({
-      where: { clubId: parsed.clubId },
+      where: { clubId: parsed.clubId, archivedAt: null },
       orderBy: { order: "asc" },
     })
     if (!firstRound) throw new Error("This club has not set up their application pipeline yet.")
@@ -77,7 +81,7 @@ export async function saveApplicationDraft(data: z.infer<typeof applicationInput
 
 export async function getStudentApplications() {
   const { user } = await requireAuth()
-  return prisma.application.findMany({
+  const applications = await prisma.application.findMany({
     where: { studentId: user.id },
     select: {
       id: true,
@@ -86,14 +90,16 @@ export async function getStudentApplications() {
       submittedAt: true,
       club: {
         select: {
+          applicationOpen: true,
+          applicationDeadline: true,
           testRequirement: true,
           name: true,
           logoUrl: true,
           color: true,
-          pipelineRounds: { select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
+          pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
           questions: {
-            select: { id: true, prompt: true, type: true, required: true, wordLimit: true },
-            orderBy: { id: "asc" },
+            select: { id: true, prompt: true, type: true, required: true, wordLimit: true, options: true, archivedAt: true },
+            orderBy: [{ order: "asc" }, { id: "asc" }],
           },
         },
       },
@@ -106,12 +112,14 @@ export async function getStudentApplications() {
     },
     orderBy: [{ submittedAt: "desc" }, { id: "asc" }],
   })
+  return applications.map(app => ({ ...app, club: { ...app.club, questions: app.club.questions.filter(q => !q.archivedAt || app.status !== "DRAFTING" && app.answers.some(a => a.questionId === q.id)) } }))
 }
 
 export async function getStudentDashboardData() {
   const { user } = await requireAuth()
 
-  const applications = await prisma.application.findMany({
+  const [applications, attendances, meetings] = await Promise.all([
+prisma.application.findMany({
     where: { studentId: user.id },
     omit: { anonymousReviewText: true },
     include: {
@@ -127,17 +135,18 @@ export async function getStudentDashboardData() {
       },
     },
     orderBy: { submittedAt: "desc" },
-  })
+  }),
 
-  const attendances = await prisma.eventAttendance.findMany({
+prisma.eventAttendance.findMany({
     where: { studentId: user.id, event: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] } },
     include: {
       event: {
         include: { club: { select: { name: true } } },
       },
     },
-  })
+  }),
 
-  const meetings = await prisma.meeting.findMany({ where: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
+prisma.meeting.findMany({ where: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
+  ])
   return { applications, attendances, meetings }
 }

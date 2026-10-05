@@ -13,7 +13,7 @@ export function sectionForStudentView(view: ViewId, section: string | null): Per
   if (view === "tracker") return ["status", "interviews", "decisions"].includes(section || "") ? "status" : "applications"
   if (view === "my-clubs") return ["clubs", "meetings", "tasks"].includes(section || "") ? section as PersonalSection : "clubs"
   if (view === "calendar") return "calendar"
-  return view === "corkboard" ? "corkboard" : section === "categories" ? "categories" : "explore"
+  return view === "corkboard" ? "corkboard" : "explore"
 }
 export function studentRoute(value: string | null, section: string | null) {
   let view = resolveStudentView(value)

@@ -4,14 +4,14 @@ const fs = require('node:fs')
 const ts = require('typescript')
 const clubId='00000000-0000-4000-8000-000000000001', applicationId='00000000-0000-4000-8000-000000000002', newRoundId='00000000-0000-4000-8000-000000000003'
 function load(file, prisma, roles) {
- prisma.$transaction = async fn => fn(prisma); prisma.auditLog = {create: async () => ({})};
+ prisma.clubMember ||= {findFirst:async()=>({id:"reviewer",status:"ACTIVE",permissions:["applications.review","applicants.identify"]})}; prisma.$queryRaw ||= async()=>[]; prisma.$transaction = async fn => fn(prisma); prisma.auditLog = {create: async () => ({})};
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
  const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async(id,allowed)=>{roles.push([id,allowed]);return {user:{id:'actor'},membership:{id:'reviewer',permissions:['applications.review','applicants.identify']}}}},'next/cache':{revalidatePath:()=>{}}}
  new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:name.startsWith("@/lib/")?load(name.replace("@/", "")+".ts", {}, []):require(name),mod,mod.exports);return mod.exports
 }
 test('round moves reject foreign rounds before any mutation',async()=>{
- let written=false;const roles=[];const action=load('actions/crm.ts',{pipelineRound:{findFirst:async args=>{assert.deepEqual(args.where,{id:newRoundId,clubId});return null}},application:{updateMany:async()=>{written=true}}},roles)
+ let written=false;const roles=[];const action=load('actions/crm.ts',{pipelineRound:{findFirst:async args=>{assert.deepEqual(args.where,{id:newRoundId,clubId,archivedAt:null});return null}},application:{updateMany:async()=>{written=true}}},roles)
  await assert.rejects(action.moveApplicantRound({clubId,applicationId,newRoundId}),/Round/);assert.equal(written,false)
  assert.deepEqual(roles[0],[clubId,['recruitment.manage','applicants.identify']])
 })

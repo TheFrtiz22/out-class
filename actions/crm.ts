@@ -21,8 +21,9 @@ export async function getClubPipeline(clubId: string) {
     throw new Error("Applicant access denied.");
 
   const rounds = await prisma.pipelineRound.findMany({
-    where: { clubId },
+    where: { clubId, archivedAt: null },
     orderBy: { order: "asc" },
+    select: { id: true, name: true, order: true, anonymousReview: true },
   });
 
   const applications = await prisma.application.findMany({
@@ -71,8 +72,10 @@ export async function moveApplicantRound(
   ]);
 
   const application = await prisma.$transaction(async (tx) => {
+    // Serialize progression with pipeline reordering/archive.
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`;
     const round = await tx.pipelineRound.findFirst({
-      where: { id: parsed.newRoundId, clubId: parsed.clubId },
+      where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
     if (!round) throw new Error("Round is not available for this club.");
     const result = await tx.application.updateMany({
@@ -225,8 +228,9 @@ export async function setRoundAnonymousReview(
     "applicants.identify",
   ]);
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
     const result = await tx.pipelineRound.updateMany({
-      where: { id: roundId, clubId },
+      where: { id: roundId, clubId, archivedAt: null },
       data: { anonymousReview: enabled },
     });
     if (result.count !== 1) throw new Error("Round unavailable.");

@@ -31,13 +31,13 @@ test('sitemap candidates exclude unclaimed listings, empty profiles, and seed bo
   const h = publicClubs([club, { ...club, id: 'unclaimed', claimedAt: null }, { ...club, id: 'empty', description: '' }, { ...club, id: 'seed', description: 'Basic directory listing provided by OutClass. Club leadership has not yet claimed this profile.' }])
   assert.deepEqual((await h.api.getIndexableClubs()).map(c => c.id), ['real-club'])
   assert.deepEqual(h.queries[0].where, { claimedAt: { not: null } })
-  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'name'])
+  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
 })
 test('club metadata lookup selects public identity and copy, never recruitment or account relations', async () => {
   const h = publicClubs([club])
   assert.equal((await h.api.getPublicClubSeo('alias')).id, 'real-club')
   assert.deepEqual(h.queries[0].where, { OR: [{ id: 'alias' }, { slug: 'alias' }] })
-  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'name'])
+  assert.deepEqual(Object.keys(h.queries[0].select).sort(), ['claimedAt', 'description', 'id', 'isDiscoverable', 'name'])
 })
 test('public SEO fails closed during a database outage without loading sample clubs', async () => {
   const api = load('lib/public-club-seo.ts', { react: { cache: fn => fn }, 'next/cache': { unstable_cache: fn => fn }, '@/utils/prisma': { prisma: { club: { findMany: async () => { throw Error('offline') }, findFirst: async () => { throw Error('offline') } } } } })

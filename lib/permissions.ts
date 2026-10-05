@@ -4,6 +4,7 @@ export const clubPermissions = [
   "meetings.manage",
   "meetings.attendance",
   "tasks.manage",
+  "application.manage",
   "recruitment.manage",
   "applications.review",
   "applicants.identify",
@@ -36,7 +37,8 @@ export function hasWorkspace(member: ClubAccess) {
 export const permissionTemplates = {
   manager: [...clubPermissions],
   recruiter: [
-    "recruitment.manage",
+    "application.manage",
+  "recruitment.manage",
     "applications.review",
     "applicants.identify",
     "interviews.manage",
@@ -52,6 +54,7 @@ export const permissionLabels: Record<ClubPermission, string> = {
   "meetings.manage": "Manage meetings",
   "meetings.attendance": "View meeting attendance",
   "tasks.manage": "Manage tasks",
+  "application.manage": "Manage application questions and availability",
   "recruitment.manage": "Manage recruitment rounds",
   "applications.review": "Review applications",
   "applicants.identify": "View identified applicants",

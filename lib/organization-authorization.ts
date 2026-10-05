@@ -4,7 +4,7 @@ import { hasPermission, isActiveMembership, type ClubAccess, type ClubPermission
 
 export const organizationRoles = ["OWNER", "ADMIN", "RECRUITING_ADMIN", "INTERVIEWER", "MEMBER"] as const;
 export const organizationRoleLabels: Record<MembershipAccessRole, string> = {
-  OWNER: "Owner", ADMIN: "Admin", RECRUITING_ADMIN: "Recruiting admin", INTERVIEWER: "Interviewer", MEMBER: "Member",
+  OWNER: "Owner", ADMIN: "Admin", RECRUITING_ADMIN: "Recruiting Lead", INTERVIEWER: "Interviewer", MEMBER: "Member",
 };
 export const organizationRolePermissions = onboardingRolePermissions;
 

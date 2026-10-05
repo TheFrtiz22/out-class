@@ -23,6 +23,8 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
   return { ...publicPageMetadata(SITE_TITLE, SITE_DESCRIPTION, "/"), ...(accountPage ? { robots: privateRobots } : {}) }
 }
 
+export const maxDuration = 60
+
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeReturnPath((await searchParams).next)
   const cookieStore = await cookies()

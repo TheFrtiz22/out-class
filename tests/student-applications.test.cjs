@@ -15,6 +15,7 @@ const question = { id: questionId, prompt: 'Why this club?', type: 'ESSAY', requ
 function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL', userId = 'student' } = {}) {
   const calls = []
   const tx = {
+    $queryRaw: async()=>[],
     club: { findUnique: async () => ({ testRequirement }) },
     studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
@@ -121,7 +122,7 @@ test('student status projection remains owned and exposes only public round name
   })
   await actions.getStudentApplications()
   assert.deepEqual(query.where, { studentId: 'authenticated-student' })
-  assert.deepEqual(query.select.club.select.pipelineRounds, { select: { id: true, name: true, order: true }, orderBy: { order: 'asc' } })
+  assert.deepEqual(query.select.club.select.pipelineRounds, { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: 'asc' } })
   assert.deepEqual(query.select.round.select, { id: true, name: true, order: true })
   assert.deepEqual(query.select.bookings.select, { id: true, roundId: true, slot: { select: { startTime: true, endTime: true, location: true } } })
   assert.equal(query.select.scores, undefined)

@@ -1,6 +1,6 @@
 "use server";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { RosterImportRow, RosterRowStatus } from "@prisma/client";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
@@ -27,19 +27,26 @@ async function classify(tx: AppTransactionClient, clubId: string, inputs: Roster
   const emails = identifiers.map(identifier => `${identifier}@${config.emailDomain}`);
   const [identities, users, members, invitations] = await Promise.all([
     tx.schoolIdentity.findMany({ where: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: { in: identifiers } } }),
-    tx.user.findMany({ where: { email: { in: emails, mode: "insensitive" } }, select: { id: true, email: true, disabledAt: true } }),
+    tx.$queryRaw<{ id: string; email: string; disabledAt: Date | null }[]>`SELECT id, email, "disabledAt" FROM "User" WHERE lower(email) = ANY(${emails.map(email => email.toLowerCase())}::text[])`,
     tx.clubMember.findMany({ where: { clubId, status: "ACTIVE" }, select: { userId: true } }),
     tx.clubInvitation.findMany({ where: { clubId, status: "PENDING", expiresAt: { gt: new Date() }, OR: [{ schoolIdentity: { identifierTypeId: config.id, normalizedIdentifier: { in: identifiers } } }, { schoolIdentityId: null, email: { in: emails, mode: "insensitive" } }] } }),
   ]);
+  const identityByIdentifier = new Map(identities.map(i => [i.normalizedIdentifier, i]));
+  const usersByEmail = new Map<string, typeof users>();
+  for (const user of users) { const email = user.email.toLowerCase(); usersByEmail.set(email, [...(usersByEmail.get(email) || []), user]); }
+  const memberIds = new Set(members.map(m => m.userId));
+  const invitationsByIdentity = new Map(invitations.filter(i => i.schoolIdentityId).map(i => [i.schoolIdentityId, i]));
+  const invitationsByEmail = new Map(invitations.filter(i => !i.schoolIdentityId).map(i => [i.email.toLowerCase(), i]));
   return rows.map(row => {
-    const identity = identities.find(identity => identity.normalizedIdentifier === row.normalizedIdentifier);
-    const matches = users.filter(user => user.email.toLowerCase() === `${row.normalizedIdentifier}@${config.emailDomain}`.toLowerCase());
+    const identity = identityByIdentifier.get(row.normalizedIdentifier!);
+    const email = `${row.normalizedIdentifier}@${config.emailDomain}`.toLowerCase();
+    const matches = usersByEmail.get(email) || [];
     const user = matches[0];
     const matchedUserId = identity?.userId ?? user?.id ?? null;
-    const invitation = invitations.find(invite => identity && invite.schoolIdentityId === identity.id || !invite.schoolIdentityId && invite.email.toLowerCase() === `${row.normalizedIdentifier}@${config.emailDomain}`.toLowerCase());
+    const invitation = (identity && invitationsByIdentity.get(identity.id)) || invitationsByEmail.get(email);
     if (row.status === "READY") {
       if (matches.length > 1 || identity?.userId && user && identity.userId !== user.id || user?.disabledAt) { row.status = "INVALID"; row.errors.push("Account identity requires manual review"); }
-      else if (members.some(member => member.userId === matchedUserId)) row.status = "ALREADY_MEMBER";
+      else if (memberIds.has(matchedUserId!)) row.status = "ALREADY_MEMBER";
       else if (invitation) row.status = "ALREADY_INVITED";
     }
     return { ...row, existingUser: !!matchedUserId, matchedUserId, schoolIdentityId: invitation ? invitation.schoolIdentityId : identity?.id ?? null, invitationId: invitation?.id ?? null };
@@ -121,6 +128,38 @@ function rowDataError(error: unknown) {
   return ["P2000", "P2002", "P2003", "P2011", "P2014", "P2020", "23502", "23503", "23505", "23514", "22001", "22003", "22P02"].includes(code) ? code : null;
 }
 
+/** Normal import path has a fixed number of DB writes, independent of row count.
+ * A row constraint failure rolls back this savepoint and uses the isolated fallback below. */
+async function bulkReadyRows(tx: AppTransactionClient, record: { id: string; clubId: string }, entries: { saved: RosterImportRow; row: Awaited<ReturnType<typeof classify>>[number] }[], config: Awaited<ReturnType<typeof authorize>>, userId: string) {
+  if (!entries.length) return new Set<string>();
+  await tx.$executeRaw`SAVEPOINT roster_bulk`;
+  let expired: { id: string }[] = [];
+  let invitations: { id: string; rowId: string; rowNumber: number }[] = [];
+  try {
+    await tx.schoolIdentity.createMany({ data: entries.map(({ row }) => ({ id: randomUUID(), schoolId: config.schoolId, identifierTypeId: config.id, identifier: row.identifier, normalizedIdentifier: row.normalizedIdentifier! })), skipDuplicates: true });
+    const identities = await tx.schoolIdentity.findMany({ where: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: { in: entries.map(({ row }) => row.normalizedIdentifier!) } } });
+    const identityMap = new Map(identities.map(i => [i.normalizedIdentifier, i.id]));
+    expired = await tx.clubInvitation.findMany({ where: { clubId: record.clubId, schoolIdentityId: { in: identities.map(i => i.id) }, status: "PENDING", expiresAt: { lte: new Date() } }, select: { id: true } });
+    if (expired.length) await tx.clubInvitation.updateMany({ where: { id: { in: expired.map(i => i.id) }, clubId: record.clubId }, data: { status: "EXPIRED", expiredAt: new Date() } });
+    invitations = entries.map(({ saved }) => ({ id: randomUUID(), rowId: saved.id, rowNumber: saved.rowNumber }));
+    await tx.clubInvitation.createMany({ data: entries.map(({ row }, index) => ({ id: invitations[index].id, clubId: record.clubId, schoolId: config.schoolId, schoolIdentityId: identityMap.get(row.normalizedIdentifier!)!, invitedName: row.name, invitedYear: row.year || null, requestedRole: "MEMBER", purpose: "MEMBERSHIP", authoritySource: "CLUB_MEMBER", email: `${row.normalizedIdentifier}@${config.emailDomain}`, invitedBy: userId, permissions: [], expiresAt: new Date(Date.now() + 7 * 86400000) })) });
+    const payload = JSON.stringify(entries.map(({ saved, row }, index) => ({ id: saved.id, identity: identityMap.get(row.normalizedIdentifier!)!, invitation: invitations[index].id, user: row.matchedUserId })));
+    await tx.$executeRaw`UPDATE "RosterImportRow" r SET status = 'INVITATION_CREATED', "schoolIdentityId" = x.identity, "invitationId" = x.invitation, "matchedUserId" = x."user"
+      FROM jsonb_to_recordset(${payload}::jsonb) AS x(id text, identity text, invitation text, "user" text)
+      WHERE r.id = x.id AND r."importId" = ${record.id} AND r."clubId" = ${record.clubId} AND r.status = 'VALID'`;
+  } catch (error) {
+    const code = rowDataError(error);
+    if (!code) throw error;
+    await tx.$executeRaw`ROLLBACK TO SAVEPOINT roster_bulk`;
+    await tx.$executeRaw`RELEASE SAVEPOINT roster_bulk`;
+    return new Set<string>();
+  }
+  await tx.$executeRaw`RELEASE SAVEPOINT roster_bulk`;
+  if (expired.length) await tx.auditLog.create({ data: { actorId: userId, clubId: record.clubId, targetId: record.id, action: "club.invite.expire", details: { invitationIds: expired.map(i => i.id), importId: record.id } } });
+  await tx.auditLog.create({ data: { actorId: userId, clubId: record.clubId, targetId: record.id, action: "club.identity-invite.create", details: { importId: record.id, invitations } } });
+  return new Set(entries.map(({ saved }) => saved.id));
+}
+
 /** One resumable transaction of at most 50 ready rows. Creates MEMBER invitations only; no email. */
 export async function confirmRosterImport(importId: string) {
   z.string().uuid().parse(importId);
@@ -141,8 +180,15 @@ export async function confirmRosterImport(importId: string) {
     const inputs = record.rows.map(row => importRowInput.safeParse(row.input));
     const classified = await classify(tx, record.clubId, inputs.map(parsed => parsed.success ? parsed.data : { name: "", year: "", computing_id: "" }), config);
     const selected = record.rows.filter(row => row.status === "VALID").slice(0, IMPORT_BATCH_SIZE);
-    for (const saved of selected) {
-      const index = record.rows.findIndex(row => row.id === saved.id);
+    const indexById = new Map(record.rows.map((row, index) => [row.id, index]));
+    const ready = selected.flatMap(saved => {
+      const index = indexById.get(saved.id)!;
+      const row = classified[index];
+      return inputs[index].success && row.status === "READY" && saved.normalizedIdentifier === row.normalizedIdentifier ? [{ saved, row }] : [];
+    });
+    const completedIds = await bulkReadyRows(tx, record, ready, config, user.id);
+    for (const saved of selected.filter(row => !completedIds.has(row.id))) {
+      const index = indexById.get(saved.id)!;
       const row = classified[index];
       if (!inputs[index].success) { row.status = "INVALID"; row.errors = ["Malformed saved roster input; reupload this row"]; }
       if (saved.normalizedIdentifier !== row.normalizedIdentifier && row.status === "READY") {

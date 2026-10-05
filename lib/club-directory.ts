@@ -1,5 +1,7 @@
 import type { DiscoverClub } from "@/lib/data"
 export type DirectoryClub = DiscoverClub & {
+  applicationDeadline?: string | null
+  rounds?: { id: string; name: string; order: number }[]
   marketing?: unknown
   testRequirement?: string
   claimed?: boolean
@@ -42,7 +44,7 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
         .join(" ")
         .toLocaleLowerCase()
       if (!words.every((word) => text.includes(word))) return false
-      if (filters.category !== "all" && club.category !== filters.category) return false
+      if (filters.category !== "all" && club.category.toLowerCase() !== filters.category.toLowerCase()) return false
       if (filters.time !== "all" && club.timeCommitment !== filters.time) return false
       if (
         filters.acceptance !== "all" &&

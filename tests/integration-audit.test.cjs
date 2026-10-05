@@ -35,7 +35,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
   const membership=access?{...access,id:uuid(4),clubId,userId:actorId}:null
   const privateApp={id:uuid(5),clubId,roundId:uuid(6),status:'IN_REVIEW',studentId:'SECRET',submittedAt:new Date(),round:{anonymousReview:true},student:{email:'SECRET@virginia.edu',studentProfile:{firstName:'SECRET',lastName:'PERSON',gradYear:2028}},evaluations:[],answers:[],bookings:[]}
   const prisma={
-    user:{upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
+    user:{findUnique:async()=>null,upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
     clubMember:{findUnique:async({where})=>where.userId_clubId.clubId===clubId?membership:null,findMany:async()=>[]},
     pipelineRound:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return [privateApp.round]}},
     application:{findMany:async({where})=>{assert.equal(where.clubId,clubId);if(name==='anonymous reviewer')assert.deepEqual(where.round,{anonymousReview:true});return [privateApp]}},
@@ -86,7 +86,7 @@ test('account endpoint independently denies demo cookies',async()=>{
 })
 
  test('OAuth callback ignores forged forwarded hosts and rejects external return paths',async()=>{
-  const load=loader({'next/headers':{cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
+  const load=loader({'next/headers':{cookies:async()=>({has:()=>false})},'@/utils/supabase/server':{createClient:async()=>({auth:{exchangeCodeForSession:async()=>({data:{user:{id:actorId,email:'ACTOR@virginia.edu'}}})}})},'@/utils/prisma':{prisma:{user:{findUnique:async()=>null,upsert:async query=>{assert.equal(query.update.email,'actor@virginia.edu')}}}}})
   const route=load('app/auth/callback/route.ts')
   for(const [next,expected] of [['/meetings','/meetings'],['//evil.example','/?workspace=student'],['/\\evil.example','/?workspace=student'],['https://evil.example','/?workspace=student']]) {
     const result=await route.GET(new Request(`https://outclass.example/auth/callback?code=test&next=${encodeURIComponent(next)}`,{headers:{'x-forwarded-host':'evil.example'}}))

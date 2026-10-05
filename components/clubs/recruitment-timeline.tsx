@@ -2,8 +2,9 @@
 import { Check } from "lucide-react"
 import { recruitmentStage } from "@/lib/club-directory"
 import "./club-discovery.css"
-export function RecruitmentTimeline({ status, compact = false }: { status: string; compact?: boolean }) {
-  const current = recruitmentStage(status)
+export function RecruitmentTimeline({ status, compact = false, rounds, roundId }: { status: string; compact?: boolean; rounds?: {id:string;name:string}[]; roundId?: string }) {
+  const labels = rounds?.length ? rounds.map(r=>r.name) : ["Applied", "Review", "Interview", "Decision"]
+  const current = rounds?.length ? (/ACCEPTED|REJECTED/.test(status) ? labels.length-1 : rounds.findIndex(r=>r.id===roundId)) : recruitmentStage(status)
   const label = status === status.toUpperCase()
     ? status.replaceAll("_", " ").toLowerCase().replace(/^./, character => character.toUpperCase())
     : status
@@ -13,7 +14,7 @@ export function RecruitmentTimeline({ status, compact = false }: { status: strin
         Your application <strong>{label}</strong>
       </p>}
       <ol aria-label="Application recruitment timeline">
-        {["Applied", "Review", "Interview", "Decision"].map((label, index) => (
+        {labels.map((label, index) => (
           <li
             key={label}
             aria-current={index === current ? "step" : undefined}

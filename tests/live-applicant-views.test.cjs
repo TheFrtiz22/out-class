@@ -41,11 +41,11 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
   tree=h.render();assert.equal(view(tree),undefined)
   button(tree,'List').props.onClick();tree=h.render();assert.equal(view(tree),undefined)
 })
-test('drawer status writes send expectedStatus, reject stale outcomes, and reload the sanitized pipeline on success', async () => {
+test('drawer status writes send expectedStatus, reject stale outcomes, and reconcile optimistic status without reloading identity', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
-  h.setServerStatus('IN_REVIEW');button(tree,'Confirm status').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2)
+  h.setServerStatus('IN_REVIEW');button(tree,'Confirm status').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,1)
 })
 test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()

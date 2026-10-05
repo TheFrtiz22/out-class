@@ -200,6 +200,7 @@ export function InterviewKitSession({
         {context}
         <div className="min-w-0 space-y-7 px-5 py-7 sm:px-8">
           <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-muted-foreground">{session.completedAt ? "Interview record" : "Interview"}</p><Button type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-library" onClick={() => setLibraryOpen(v => !v)}>{libraryOpen ? "Hide library" : "Question library"}</Button></div>
+        {session.instructions && <section aria-label="Round instructions" className="mb-5 space-y-2 rounded-md bg-muted/40 p-4"><h2 className="text-sm font-medium">Round instructions · {session.duration || 30} minutes</h2><p className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{session.instructions}</p></section>}
           <fieldset disabled={disabled} className="min-w-0 space-y-6">
             <section className="oc-active-question space-y-4" aria-label="Active question">
               <p className="text-sm text-muted-foreground">Active Question {active ? `· ${activeIndex + 1} of ${questions.length}` : ""}</p>

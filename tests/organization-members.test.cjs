@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
 const clubId='00000000-0000-4000-8000-000000000001',otherClub='00000000-0000-4000-8000-000000000002',memberId='00000000-0000-4000-8000-000000000003',actorId='00000000-0000-4000-8000-000000000004',inviteId='00000000-0000-4000-8000-000000000005';
 function load(file,mocks={}){
- const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ mocks={"next/server":{after:()=>{}},...mocks};const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts',mocks):require(n),mod,mod.exports);return mod.exports;
 }
 const rules=load('lib/organization-authorization.ts');
@@ -12,7 +12,7 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
  const state={members:[member(actorId,actorRole),member(memberId,targetRole)],invitation:{id:inviteId,clubId,status:'PENDING',requestedRole:'MEMBER',permissions:[],expiresAt:new Date(Date.now()+86400000),email:'member@virginia.edu'},deliveries:[],audits:[],reads:[],locks:0,failAudit:false};
  const tx={
   $queryRaw:async()=>{state.locks++;},
-  club:{findUniqueOrThrow:async()=>({schoolId:'school-uva'})},
+  club:{findUnique:async()=>({invitationEmailEnabled:true}),findUniqueOrThrow:async()=>({schoolId:'school-uva'})},
   schoolIdentifierType:{findMany:async args=>{state.reads.push(args);return[];}},
   user:{findUnique:async()=>({disabledAt:null}),findUniqueOrThrow:async({where})=>state.members.find(m=>m.userId===where.id).user},
   clubMember:{
@@ -56,7 +56,7 @@ test('directory reads are organization-scoped and include only brief profiles an
  const h=harness();await h.api.getOrganizationMemberManagement(clubId);
  for(const query of h.state.reads.filter(q=>q.where.clubId))assert.equal(query.where.clubId,clubId);
  const memberRead=h.state.reads.find(q=>q.include?.user);assert.deepEqual(Object.keys(memberRead.include.user.select.studentProfile.select).sort(),['firstName','gradYear','lastName','major']);
- const invitationRead=h.state.reads.find(q=>q.include?.deliveries);assert.deepEqual(Object.keys(invitationRead.include.deliveries.select).sort(),['createdAt','status']);
+ const invitationRead=h.state.reads.find(q=>q.include?.deliveries);assert.deepEqual(Object.keys(invitationRead.include.deliveries.select).sort(),['createdAt','failureCode','status']);
  await assert.rejects(h.api.getOrganizationMemberManagement(otherClub),/denied/);
 });
 
@@ -140,4 +140,18 @@ test('revoke and resend enforce invitation scope, state, expiry, role and capabi
 
 test('an enabled owner can remove a disabled owner when another enabled owner remains',async()=>{
   const h=harness('OWNER','OWNER');h.state.members[1].user.disabledAt=new Date();await h.api.removeOrganizationMember({clubId,memberId});assert.equal(h.state.members[1].status,'LEFT');assert.equal(h.state.members[0].isOwner,true);
+});
+
+test('bulk selection protects all owners together, rejects stale versions and escalation, and updates granted capabilities atomically',async()=>{
+ const targetId=memberId,otherId=require('node:crypto').randomUUID();const a=member(actorId,'OWNER'),b=member(targetId,'OWNER');
+ // Add real bulk-model semantics to this fixture through a separate action harness.
+ const state={members:[a,b,member(otherId,'MEMBER')],audits:[]};for(const m of state.members)m.updatedAt=new Date('2026-10-05T12:00:00Z');
+ let actor=actorId,writes=0;const tx={$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>state.members.find(m=>m.userId===actor),findMany:async({where})=>state.members.filter(m=>where.id.in.includes(m.id)),count:async({where})=>state.members.filter(m=>m.isOwner&&m.status==='ACTIVE'&&!where.id.notIn.includes(m.id)).length,updateMany:async({where,data})=>{writes++;for(const m of state.members.filter(m=>where.id.in.includes(m.id)))Object.assign(m,data);}},invitationDelivery:{updateMany:async()=>{}},clubInvitation:{updateMany:async()=>{}},auditLog:{create:async({data})=>state.audits.push(data)}};
+ const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actor}})},'@/utils/prisma':{prisma:{$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}}},'@/actions/club-onboarding':{}});
+ const targets=ids=>state.members.filter(m=>ids.includes(m.userId)).map(m=>({id:m.id,updatedAt:m.updatedAt}));
+ await assert.rejects(api.bulkOrganizationMembers({clubId,targets:targets([actorId,targetId]),action:'REMOVE'}),/active owner/);assert.equal(writes,0);
+ const stale=targets([otherId]);stale[0].updatedAt=new Date(0);await assert.rejects(api.bulkOrganizationMembers({clubId,targets:stale,action:'ROLE',role:'ADMIN'}),/changed/);assert.equal(writes,0);
+ await api.bulkOrganizationMembers({clubId,targets:targets([otherId]),action:'ROLE',role:'ADMIN'});assert.equal(writes,1);assert.ok(state.members[2].permissions.includes('application.manage'));
+ actor=otherId;await assert.rejects(api.bulkOrganizationMembers({clubId,targets:targets([targetId]),action:'ROLE',role:'MEMBER'}),/cannot grant/);
+ actor=actorId;await api.bulkOrganizationMembers({clubId,targets:targets([otherId]),action:'PERMISSIONS',permissions:['applications.review']});assert.deepEqual(state.members[2].permissions,['applications.review']);assert.equal(state.audits.length,2);
 });

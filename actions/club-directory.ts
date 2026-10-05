@@ -1,10 +1,14 @@
 "use server"
 
+import { unstable_cache } from "next/cache"
+import { applicationAvailability } from "@/lib/club-settings"
 import { prisma } from "@/utils/prisma"
 import type { DirectoryClub } from "@/lib/club-directory"
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
+  applicationOpen: true,
+  applicationDeadline: true,
   marketing: true,
   testRequirement: true,
   claimedAt: true,
@@ -20,10 +24,10 @@ const publicFields = {
   color: true,
   acceptanceRate: true,
   aumValue: true,
-  pipelineRounds: { select: { id: true }, take: 1 },
-  questions: { where: { required: true }, select: { prompt: true } },
+  pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" as const } },
+  questions: { where: { required: true, archivedAt: null }, select: { prompt: true } },
   events: {
-    where: { isPublic: true },
+    where: { isPublic: true, audience: "RECRUITMENT", date: { gte: new Date() } },
     select: { id: true, title: true, date: true, location: true, description: true },
     orderBy: { date: "asc" as const },
   },
@@ -53,14 +57,14 @@ function present(club: Awaited<ReturnType<typeof readClubs>>[number]): Directory
     aumValue: (club.marketing as { showAum?: boolean } | null)?.showAum === false ? null : club.aumValue,
     timeCommitment: null,
     source: "database",
-    applicationAvailable: club.pipelineRounds.length > 0,
+    applicationAvailable: club.pipelineRounds.length > 0 && applicationAvailability(club),
+    applicationDeadline: club.applicationDeadline?.toISOString() ?? null,
+    rounds: club.pipelineRounds,
     requirements: club.questions.map((question) => question.prompt),
     publicEvents: club.events.map((event) => ({ ...event, date: event.date.toISOString() })),
   }
 }
-async function readClubs() {
-  return prisma.club.findMany({ select: publicFields, orderBy: { name: "asc" } })
-}
+const readClubs = unstable_cache(async () => prisma.club.findMany({ where: { isDiscoverable: true }, select: publicFields, orderBy: { name: "asc" } }), ["public-club-directory"], { revalidate: 60, tags: ["club-directory"] })
 export async function getClubDirectory(): Promise<{ clubs: DirectoryClub[]; error?: string }> {
   try {
     return { clubs: (await readClubs()).map(present) }
@@ -86,23 +90,17 @@ export async function getPublicClub(
 export async function startClubApplication(clubId: string) {
   const { requireAuth } = await import("@/utils/auth")
   const { user } = await requireAuth()
-  const existing = await prisma.application.findUnique({
-    where: { studentId_clubId: { studentId: user.id, clubId } },
-    select: { id: true },
+  return prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`
+    const existing = await tx.application.findUnique({ where: { studentId_clubId: { studentId: user.id, clubId } }, select: { id: true } })
+    if (existing) return { applicationId: existing.id }
+    const club = await tx.club.findUnique({ where: { id: clubId }, select: { applicationOpen: true, applicationDeadline: true } })
+    if (!club || !applicationAvailability(club)) throw new Error("Applications are closed for this club.")
+    const round = await tx.pipelineRound.findFirst({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" } })
+    if (!round) throw new Error("Applications are not available for this club.")
+    const application = await tx.application.upsert({ where: { studentId_clubId: { studentId: user.id, clubId } }, update: {}, create: { studentId: user.id, clubId, roundId: round.id, status: "DRAFTING" }, select: { id: true } })
+    return { applicationId: application.id }
   })
-  if (existing) return { applicationId: existing.id }
-  const round = await prisma.pipelineRound.findFirst({
-    where: { clubId },
-    orderBy: { order: "asc" },
-  })
-  if (!round) throw new Error("Applications are not available for this club.")
-  const application = await prisma.application.upsert({
-    where: { studentId_clubId: { studentId: user.id, clubId } },
-    update: {},
-    create: { studentId: user.id, clubId, roundId: round.id, status: "DRAFTING" },
-    select: { id: true },
-  })
-  return { applicationId: application.id }
 }
 
 /** Personal saved items use the same public club projection as Explore. */

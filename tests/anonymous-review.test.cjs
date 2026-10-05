@@ -31,7 +31,7 @@ test('pipeline redacts even owners; anonymous-only reviewers receive only anonym
 })
 test('identity reveal requires permission and a reason, writes audit before returning identity', async () => {
   let denied=true, audited=false
-  const tx={application:{findFirst:async()=>app},auditLog:{create:async({data})=>{assert.equal(data.action,'applicant.identity.reveal');audited=true}}}
+  const tx={$queryRaw:async()=>[],application:{findFirst:async()=>app},auditLog:{create:async({data})=>{assert.equal(data.action,'applicant.identity.reveal');audited=true}}}
   const api=load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['applicants.identify']);if(denied)throw Error('Denied');return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}})
   await assert.rejects(api.revealApplicantIdentity(clubId,id,'Resolve an application issue'),/Denied/)
   denied=false
@@ -65,7 +65,7 @@ test('anonymous narrative must be explicitly prepared; raw essays are never copi
 })
 test('publishing anonymous content requires manager permission, explicit review, and prior audited reveal', async () => {
   let revealed=false, written=false, audit=false
-  const tx={application:{findFirst:async()=>({id,student:{email:'student@virginia.edu',studentProfile:{firstName:'Alice',lastName:'Smith',computingId:'as123'}}}),update:async()=>{written=true}},auditLog:{findFirst:async()=>revealed?{id:'audit'}:null,create:async()=>{audit=true}}}
+  const tx={$queryRaw:async()=>[],application:{findFirst:async()=>({id,student:{email:'student@virginia.edu',studentProfile:{firstName:'Alice',lastName:'Smith',computingId:'as123'}}}),update:async()=>{written=true}},auditLog:{findFirst:async()=>revealed?{id:'audit'}:null,create:async()=>{audit=true}}}
   const api=load('actions/crm.ts',{'@/utils/auth':{requireClubPermission:async(_,caps)=>{assert.deepEqual(caps,['recruitment.manage','applicants.identify']);return {user:{id:'manager'}}}},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath:()=>{}}})
   await assert.rejects(api.saveAnonymousReviewContent(clubId,id,'Research experience.',false))
   await assert.rejects(api.saveAnonymousReviewContent(clubId,id,'Research experience.',true),/reveal/)
@@ -76,8 +76,8 @@ test('publishing anonymous content requires manager permission, explicit review,
   assert.equal(written,true);assert.equal(audit,true)
 })
 test('anonymous evaluation updates preserve withheld notes and never return them in mutation responses',async()=>{
-  let update
-  const api=load('actions/evaluations.ts',{'@/utils/auth':{requireClubPermission:async()=>({membership:{id:'reviewer',permissions:['applications.review']}})},'@/utils/prisma':{prisma:{application:{findFirst:async()=>({id,roundId:'round'})},pipelineRound:{findFirst:async()=>({id:'round',anonymousReview:true})},evaluation:{upsert:async args=>{update=args.update;return {id:'evaluation',score:8,notes:'SECRET old identity',createdAt:new Date()}}}}},'next/cache':{revalidatePath:()=>{}}})
+  let update,apiTx
+  const api=load('actions/evaluations.ts',{'@/utils/auth':{requireClubPermission:async()=>({membership:{id:'reviewer',permissions:['applications.review']}})},'@/utils/prisma':{prisma:apiTx={$queryRaw:async()=>[],$transaction:async fn=>fn(apiTx),clubMember:{findFirst:async()=>({id:'reviewer',permissions:['applications.review']})},application:{findFirst:async()=>({id,roundId:'round'})},pipelineRound:{findFirst:async()=>({id:'round',anonymousReview:true})},evaluation:{upsert:async args=>{update=args.update;return {id:'evaluation',score:8,notes:'SECRET old identity',createdAt:new Date()}}}}},'next/cache':{revalidatePath:()=>{}}})
   const result=await api.submitEvaluation({clubId,applicationId:id,roundName:'Review',score:8,notes:''})
   assert.equal(update.notes,undefined)
   assert.equal(result.evaluation.notes,null)

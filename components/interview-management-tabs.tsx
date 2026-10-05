@@ -8,8 +8,8 @@ import { RoomManager } from "@/components/interviews/room-manager"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import "@/components/clubs/interview-kit-editor.css"
 
-export function InterviewManagementTabs({ clubId }: { clubId: string; onInterview: () => void }) {
-  const [tab, setTab] = useState("schedule")
+export function InterviewManagementTabs({ clubId, initialTab = "schedule" }: { clubId: string; initialTab?: string }) {
+  const [tab, setTab] = useState(initialTab)
   return <Tabs className="oc-interview-management" value={tab} onValueChange={value => { if (value !== tab && canLeaveWorkspace()) setTab(value) }} activationMode="manual">
     <TabsList aria-label="Interview management"><TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview Kits</TabsTrigger><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Rooms & Booking</TabsTrigger></TabsList>
     <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} /></TabsContent>

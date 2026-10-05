@@ -1,5 +1,6 @@
 "use server";
 import type { AppTransactionClient } from "@/utils/prisma";
+import { roundConfigurationSchema } from "@/lib/club-settings";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -52,7 +53,7 @@ export async function saveInterviewKit(
   const { user } = await requireClubPermission(clubId, ["interviews.manage"]);
   return prisma.$transaction(async (tx) => {
     const result = await tx.pipelineRound.updateMany({
-      where: { id: roundId, clubId, kitVersion: version },
+      where: { id: roundId, clubId, archivedAt: null, kitVersion: version },
       data: { interviewKit: parsed, kitVersion: { increment: 1 } },
     });
     if (result.count !== 1)
@@ -74,7 +75,9 @@ async function authorize(
   input: z.infer<typeof scope>,
   membershipId: string,
 ) {
-  // Serialize against round changes; reload membership and privacy inside the transaction.
+  // Serialize against pipeline changes before locking the application.
+  await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${input.clubId} FOR UPDATE`;
+  // Reload membership and privacy inside the transaction.
   await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
   const membership = await tx.clubMember.findFirst({
     where: { id: membershipId, clubId: input.clubId },
@@ -90,6 +93,7 @@ async function authorize(
     },
     include: { round: true },
   });
+  if (app?.round.archivedAt) throw new Error("Archived rounds retain their interview history and cannot start or edit interviews.");
   if (!app)
     throw new Error("Applicant or round changed. Reload the workspace.");
   if (
@@ -129,7 +133,8 @@ export async function openInterviewSession(
       throw new Error(
         "This interview was recorded under different privacy settings. Its notes remain protected; restore the original round privacy to access it.",
       );
-    return present(record, tx);
+    const settings = roundConfigurationSchema.parse(round.configuration || {});
+    return { ...await present(record, tx), instructions: settings.instructions, duration: settings.duration };
   });
 }
 export async function saveInterviewSession(

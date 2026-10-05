@@ -1,4 +1,5 @@
 "use server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { clubProfileSchema } from "@/lib/club-marketing";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -13,7 +14,7 @@ export async function updateClubSettings(input: {
   }).parse(input);
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, ...fields } = data;
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.club.update({ where: { id: clubId }, data: fields });
     await tx.auditLog.create({
       data: {
@@ -25,6 +26,9 @@ export async function updateClubSettings(input: {
     });
     return { success: true };
   });
+  revalidateTag("club-directory");
+  revalidatePath(`/club/${clubId}`);
+  return result;
 }
 export async function getClubTasks(clubId: string) {
   await requireClubPermission(clubId, ["tasks.manage"]);

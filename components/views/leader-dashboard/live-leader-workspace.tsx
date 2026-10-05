@@ -5,7 +5,6 @@ import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/
 import { LiveApplicantList, LiveApplicantKanban, LiveDecisionList } from "./live-applicant-views"
 import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
-import { InterviewKitEditor } from "@/components/interview-kit-editor"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
 
@@ -134,6 +133,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
   const [baseline, setBaseline] = useState("")
   const [decision, setDecision] = useState("")
   const [targetRound, setTargetRound] = useState("")
+  const mutating = useRef(false)
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const dirty = JSON.stringify([score, notes]) !== baseline && !!activeId
@@ -276,11 +276,14 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
       })
   }
   async function mutate(kind: "review" | "round" | "decision") {
-    if (!active || busy) return
+    if (!active || mutating.current) return
     if (kind === "review" && (!score || Number(score) < 1 || Number(score) > 10)) {
       setMessage("Enter a score from 1 to 10 before saving your evaluation.")
       return
     }
+    mutating.current = true
+    const previous = data
+    if (kind === "decision") setData(current => current ? { ...current, applications: current.applications.map(app => app.id === active.id ? { ...app, status: decision as "ACCEPTED" } : app) } : current)
     setBusy(true)
     setMessage("")
     try {
@@ -340,17 +343,17 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
           status: decision as "ACCEPTED",
           expectedStatus: active.status === "DRAFTING" ? undefined : active.status,
         })
-        // Re-read the server projection; do not merge stale identity/round data into either view.
-        try { setData(await getClubPipeline(membership.clubId)) }
-        catch { setData(null); setActiveId(null); setError("Status saved, but the pipeline could not reload. Refresh to see current data.") }
+        // Only the status field is optimistic; identity and privacy projections stay server-owned.
         setDecision("")
         setMessage("Application status updated.")
       }
     } catch {
+      if (kind === "decision") setData(previous)
       setMessage(
         "This change could not be saved. The applicant may have changed or your access may have changed. Your entries are still here; save or copy your review, then reload before retrying.",
       )
     } finally {
+      mutating.current = false
       setBusy(false)
     }
   }
@@ -516,7 +519,6 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         </Button>
       </div>
       <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
-      {!decisionsOnly && data && hasPermission(membership, "interviews.manage") && <InterviewKitEditor clubId={membership.clubId} rounds={data.rounds} />}
       <p className="text-xs leading-6 text-muted-foreground">Recruitment voting saves immutable ballots across multiple passes. Leadership reviews and explicitly publishes application decisions when ready.</p>
       <BoardDecisionMode
         applicants={filtered}

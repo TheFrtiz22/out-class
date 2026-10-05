@@ -84,7 +84,7 @@ export async function getWorkspaceRounds(clubId: string) {
   z.string().uuid().parse(clubId);
   await requireClubPermission(clubId, ["recruitment.manage"]);
   return prisma.pipelineRound.findMany({
-    where: { clubId },
+    where: { clubId, archivedAt: null },
     orderBy: { order: "asc" },
     select: { id: true, name: true, anonymousReview: true },
   });

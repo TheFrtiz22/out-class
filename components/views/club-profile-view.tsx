@@ -1,4 +1,6 @@
 "use client"
+import Link from "next/link"
+import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
 import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -145,15 +147,11 @@ export function ClubProfileView({
         <ArrowLeft size={15} />
         Back to clubs
       </Button>
-      {real && !demo.isDemoEnabled && (
-        <div className="my-4 flex flex-wrap items-center gap-3 border-y py-4 text-sm">
-          <span>{club.claimed ? "Club-managed profile" : "Unclaimed · Basic information provided by OutClass"}</span>
-          {club.directorySource && <a className="underline" href={club.directorySource} target="_blank" rel="noreferrer">Directory source</a>}
-          {!club.claimed && <a className="font-medium underline" href={`/club-claims/${club.id}`}>Claim this club</a>}
-        </div>
-      )}
-      {real && <a className="my-3 block text-sm underline" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps</a>}
-      {user?.memberships.some(m=>m.clubId===club.id) && <a className="my-3 block text-sm underline" href={`/club/${club.id}/workspace`}>Open club workspace</a>}
+      {real && !demo.isDemoEnabled && <UnclaimedProfileNotice club={club} />}
+      <nav aria-label="Club profile links" className="my-4 flex flex-wrap gap-x-6 gap-y-2">
+        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps ↗</Link>}
+        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace ↗</Link>}
+      </nav>
       {real && club.testRequirement && <p className="my-3 text-sm">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores are provided through your student profile.</p>}
       {!real && (
         <p className="oc-club-preview-note">
@@ -169,11 +167,11 @@ export function ClubProfileView({
           <p className="oc-club-eyebrow">Your next step</p>
           <h2 id="club-recruitment">Recruitment</h2>
           <p>
-            {sampleDeadline ? `Sample application deadline: ${sampleDeadline.toLocaleString()}` : deadline
+            {club.applicationDeadline ? `Application deadline: ${new Date(club.applicationDeadline).toLocaleString()}` : sampleDeadline ? `Sample application deadline: ${sampleDeadline.toLocaleString()}` : deadline
               ? `Application deadline: ${deadline.date} · ${deadline.time}`
               : "Recruitment dates have not been published."}
           </p>
-          {application && <RecruitmentTimeline status={application.status} />}
+          {application && <RecruitmentTimeline status={application.status} rounds={real ? club.rounds : undefined} roundId={actualApplication?.roundId} />}
           <Button
             style={customized ? { backgroundColor: accent, color: contrast } : undefined}
             className="oc-club-apply"

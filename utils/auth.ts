@@ -44,7 +44,8 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
   }
 
   // Fetch the Prisma user to get global roles
-  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await prisma.user.findUnique({ where: { id: user.id } }) : await prisma.user.upsert({
+  const existingUser = await prisma.user.findUnique({ where: { id: user.id } });
+  const prismaUser = cookieStore.has(PLATFORM_VIEW_COOKIE) || existingUser?.email === user.email ? existingUser : await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email },
     create: { id: user.id, email: user.email!, role: "STUDENT" },

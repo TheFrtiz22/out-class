@@ -1,3 +1,4 @@
+import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
 export const clubSections = [
   "overview",
@@ -18,7 +19,7 @@ export function clubWorkspaceSections(
         hasPermission(member, "members.manage") ||
         hasPermission(member, "leaders.manage")
       );
-    if (section === "settings") return hasPermission(member, "club.settings");
+    if (section === "settings") return availableSettings(member).length > 0;
     if (section === "recruitment") return recruitmentTools(member).length > 0;
     return true;
   });

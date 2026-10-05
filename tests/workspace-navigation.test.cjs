@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const navigationModule={exports:{}}
 new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/student-navigation.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(navigationModule,navigationModule.exports)
 function shell(routeSearch,windowSearch='') {
- const effects=[],changes=[],redirects=[],stateChanges=[]
+ const effects=[],changes=[],redirects=[],stateChanges=[],historyChanges=[]
  const demo={isDemoEnabled:true,state:{perspective:{role:'leader',clubId:'mii'}},viewAs:(...args)=>changes.push(args)}
  const router={replace:path=>redirects.push(path),push:path=>redirects.push(path)}
  const mocks={
@@ -16,10 +16,10 @@ function shell(routeSearch,windowSearch='') {
  }
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync('components/app-shell.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
- new Function('require','module','exports','window',code)(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{location:{search:windowSearch}})
+ new Function('require','module','exports','window',code)(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{location:{search:windowSearch},history:{pushState:(_state,_title,url)=>historyChanges.push(url)}})
  const tree=mod.exports.AppShell({})
  effects.forEach(effect=>effect())
- return {view:tree.type === "LandingPageView" ? "landing" : tree.props.children.props.view,mode:tree.props.children?.props.appMode,changes,redirects,stateChanges,enter:tree.props.onNavigateToApp}
+ return {view:tree.type === "LandingPageView" ? "landing" : tree.props.children.props.view,mode:tree.props.children?.props.appMode,changes,redirects,stateChanges,historyChanges,navigate:tree.props.children?.props.onNavigate,enter:tree.props.onNavigateToApp}
 }
 test('Student workspace navigation uses the incoming route, even before the browser URL commits',()=>{
  const result=shell('?workspace=student','')
@@ -49,12 +49,16 @@ test("landing Sign in opens authentication despite a saved demo session",()=>{
 
 test('legacy Discovery/Categories bookmarks resolve into one canonical Explore destination',()=>{
  for(const alias of ['discover','discovery','categories']){
-  const result=shell(`?workspace=student&view=${alias}`);assert.ok(result.stateChanges.includes('explore'));assert.deepEqual(result.redirects,[alias==='categories'?'/?workspace=student&view=explore&section=categories':'/?workspace=student&view=explore']);
+  const result=shell(`?workspace=student&view=${alias}`);assert.ok(result.stateChanges.includes('explore'));assert.deepEqual(result.redirects,['/?workspace=student&view=explore']);
  }
  const current=shell('?workspace=student&view=explore');assert.ok(current.stateChanges.includes('explore'));assert.deepEqual(current.redirects,[]);
  const board=shell('?workspace=student&view=corkboard');assert.ok(board.stateChanges.includes('corkboard'));assert.deepEqual(board.redirects,[]);
 });
 test('student route scope preserves existing interviews, decisions, membership tasks and rejects unrelated sections',()=>{
  const {resolveStudentView,sectionForStudentView}=navigationModule.exports;
- assert.equal(resolveStudentView('bad'),null);assert.equal(resolveStudentView('Categories'),'explore');assert.equal(sectionForStudentView('tracker','interviews'),'status');assert.equal(sectionForStudentView('tracker','decisions'),'status');assert.equal(sectionForStudentView('my-clubs','tasks'),'tasks');assert.equal(sectionForStudentView('explore','categories'),'categories');assert.equal(sectionForStudentView('corkboard','tasks'),'corkboard');
+ assert.equal(resolveStudentView('bad'),null);assert.equal(resolveStudentView('Categories'),'explore');assert.equal(sectionForStudentView('tracker','interviews'),'status');assert.equal(sectionForStudentView('tracker','decisions'),'status');assert.equal(sectionForStudentView('my-clubs','tasks'),'tasks');assert.equal(sectionForStudentView('explore','categories'),'explore');assert.equal(sectionForStudentView('corkboard','tasks'),'corkboard');
+});
+
+test('student tab changes retain the client shell and update browser history without a server navigation',()=>{
+ const result=shell('?workspace=student');result.navigate('explore','explore');result.navigate('tracker','applications');assert.deepEqual(result.redirects,[]);assert.deepEqual(result.historyChanges,['/?workspace=student&view=explore','/?workspace=student&view=tracker&section=applications']);assert.ok(result.stateChanges.includes('explore'));assert.ok(result.stateChanges.includes('tracker'));
 });
