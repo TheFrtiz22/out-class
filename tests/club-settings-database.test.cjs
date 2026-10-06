@@ -18,6 +18,23 @@ test('additive settings migration retains application history, backfills order/c
  UPDATE "User" SET "disabledAt"=CURRENT_TIMESTAMP WHERE id='disabled-settings-owner';`);
  // A malformed historical kit must not make unrelated additive migration fail.
  await db.exec(`UPDATE \"PipelineRound\" SET \"interviewKit\"='{}' WHERE id='settings-r2'`);
+ // Concrete dependencies on the first round must win over application-review fallback.
+ await db.exec(`INSERT INTO "Club"(id,slug,name,tagline,description,color,category)
+ SELECT id,id,id,'','','#ffffff','Academic' FROM unnest(ARRAY['kit','room','record','vote','both','concrete','names']) id;
+ INSERT INTO "PipelineRound"(id,"clubId",name,"order")
+ SELECT c.id||'-'||r.id,c.id,'Interview Vote Application',r.position
+ FROM "Club" c CROSS JOIN (VALUES('0',0),('1',1),('2',1)) r(id,position)
+ WHERE c.id IN ('kit','room','record','vote','both','concrete','names');
+ UPDATE "PipelineRound" SET "interviewKit"='[{}]' WHERE id IN ('kit-0','both-0','concrete-0');
+ INSERT INTO "InterviewRoom"(id,"clubId","roundId",name,location,kind,timezone,duration)
+ VALUES('legacy-room','room','room-0','Room','Hall','IN_PERSON','America/New_York',30);
+ INSERT INTO "InterviewRecord"(id,"applicationId","interviewerId","roundId",questions,draft,"anonymousReview","updatedAt")
+ VALUES('legacy-record','settings-app','settings-member','record-0','[]','{}',false,CURRENT_TIMESTAMP);
+ INSERT INTO "VotingSession"(id,"clubId","roundId","targetSize","createdBy","updatedAt")
+ VALUES('legacy-vote','vote','vote-0',1,'settings-owner',CURRENT_TIMESTAMP),
+ ('legacy-both','both','both-0',1,'settings-owner',CURRENT_TIMESTAMP),
+ ('legacy-concrete-1','concrete','concrete-1',1,'settings-owner',CURRENT_TIMESTAMP),
+ ('legacy-concrete-2','concrete','concrete-2',1,'settings-owner',CURRENT_TIMESTAMP);`);
  await migrate('20261005000000_club_settings');
  const one=async(sql,params=[]) => (await db.query(sql,params)).rows[0];
  const club=await one(`SELECT * FROM "Club" WHERE id='settings-club'`);assert.equal(club.applicationOpen,true);assert.equal(club.isDiscoverable,true);assert.equal(club.invitationEmailEnabled,true);assert.equal(club.applicationVersion,0);
@@ -27,9 +44,26 @@ test('additive settings migration retains application history, backfills order/c
  assert.deepEqual((await one(`SELECT permissions FROM "ClubMember" WHERE id='disabled-settings-member'`)).permissions,['recruitment.manage']);
  await assert.rejects(db.exec(`UPDATE "ClubInvitation" SET permissions=ARRAY['recruitment.manage','application.manage'] WHERE id='settings-invite'`),/immutable/);
  assert.equal((await one(`SELECT type FROM "PipelineRound" WHERE id='settings-r1'`)).type,'APPLICATION_REVIEW');assert.equal((await one(`SELECT type FROM "PipelineRound" WHERE id='settings-r2'`)).type,'CUSTOM');
+ for(const club of ['kit','room','record','vote','both','concrete','names']) {
+  const expected=club==='concrete'?['INTERVIEW','VOTE','VOTE']:club==='names'?['APPLICATION_REVIEW','CUSTOM','CUSTOM']:[club==='vote'?'VOTE':'INTERVIEW','APPLICATION_REVIEW','CUSTOM'];
+  assert.deepEqual((await db.query(`SELECT type FROM "PipelineRound" WHERE "clubId"=$1 ORDER BY "order",id`,[club])).rows.map(r=>r.type),expected,club);
+ }
  await db.exec(`UPDATE "ApplicationQuestion" SET "archivedAt"=CURRENT_TIMESTAMP WHERE id='settings-q1'`);assert.equal((await one(`SELECT response FROM "ApplicationAnswer" WHERE id='settings-answer'`)).response,'Keep this answer');
  await assert.rejects(db.exec(`UPDATE "PipelineRound" SET type='INVALID' WHERE id='settings-r1'`),/check constraint/);
- for(const table of ['ApplicationQuestion','PipelineRound']){await db.exec(`GRANT ALL ON "${table}" TO authenticated;CREATE POLICY fixture_permissive ON "${table}" FOR ALL TO authenticated USING(true) WITH CHECK(true);SET ROLE authenticated;`);assert.equal((await db.query(`SELECT * FROM "${table}"`)).rows.length,0);await db.exec('RESET ROLE;');}
+ for(const table of ['ApplicationQuestion','PipelineRound']) {
+  await db.exec(`GRANT ALL ON "${table}" TO anon,authenticated;CREATE POLICY fixture_permissive ON "${table}" FOR ALL TO PUBLIC USING(true) WITH CHECK(true);`);
+  for(const role of ['anon','authenticated']) {
+   await db.exec(`SET ROLE ${role};`);
+   assert.equal((await db.query(`SELECT * FROM "${table}"`)).rows.length,0);
+   const field=table==='ApplicationQuestion'?'prompt':'name';
+   assert.equal((await db.query(`UPDATE "${table}" SET "${field}"='Denied' RETURNING id`)).rows.length,0);
+   assert.equal((await db.query(`DELETE FROM "${table}" RETURNING id`)).rows.length,0);
+   const insert=table==='ApplicationQuestion'?`INSERT INTO "ApplicationQuestion"(id,"clubId",prompt,type) VALUES('denied-q','settings-club','Denied','ESSAY')`:`INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('denied-r','settings-club','Denied',3)`;
+   await assert.rejects(db.exec(insert),/row-level security/);
+   await db.exec('RESET ROLE;');
+  }
+  assert.ok((await db.query(`UPDATE "${table}" SET "archivedAt"="archivedAt" RETURNING id`)).rows.length>0,'trusted owner can still write');
+ }
  // Synthetic identities only. This measures the actual planned SQL shape, not production latency.
  await db.exec(`INSERT INTO "User"(id,email) SELECT 'perf-user-'||i,'Perf'||i||'@virginia.edu' FROM generate_series(1,15000) i; ANALYZE "User";`);
  const plan=await one(`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT id,email,"disabledAt" FROM "User" WHERE lower(email)=ANY(ARRAY['perf7000@virginia.edu'])`);const serialized=JSON.stringify(plan);assert.ok(serialized.includes('User_email_lower_idx'));t.diagnostic(serialized);

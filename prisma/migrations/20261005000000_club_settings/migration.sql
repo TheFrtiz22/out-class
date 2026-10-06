@@ -22,11 +22,12 @@ ALTER TABLE "PipelineRound"
   ADD CONSTRAINT "PipelineRound_type_check" CHECK (type IN ('APPLICATION_REVIEW','INTERVIEW','GROUP_INTERVIEW','CASE_TASK','VOTE','CUSTOM','FINAL_DECISION')),
   ADD CONSTRAINT "PipelineRound_configuration_check" CHECK (jsonb_typeof(configuration) = 'object');
 -- Infer only from actual dependencies, not round names. Legacy custom rounds remain usable.
-UPDATE "PipelineRound" r SET type = 'APPLICATION_REVIEW'
-WHERE r.id IN (SELECT DISTINCT ON ("clubId") id FROM "PipelineRound" ORDER BY "clubId", "order", id);
 UPDATE "PipelineRound" r SET type = 'INTERVIEW' WHERE r.type = 'CUSTOM' AND
   (CASE WHEN jsonb_typeof(r."interviewKit") = 'array' THEN jsonb_array_length(r."interviewKit") ELSE 0 END > 0 OR EXISTS (SELECT 1 FROM "InterviewRoom" x WHERE x."roundId" = r.id) OR EXISTS (SELECT 1 FROM "InterviewRecord" x WHERE x."roundId" = r.id));
 UPDATE "PipelineRound" r SET type = 'VOTE' WHERE r.type = 'CUSTOM' AND EXISTS (SELECT 1 FROM "VotingSession" x WHERE x."roundId" = r.id);
+-- Only the first remaining custom round in each club becomes application review.
+UPDATE "PipelineRound" r SET type = 'APPLICATION_REVIEW'
+WHERE r.type = 'CUSTOM' AND r.id IN (SELECT DISTINCT ON ("clubId") id FROM "PipelineRound" WHERE type = 'CUSTOM' ORDER BY "clubId", "order", id);
 -- Retain every prior recruiter's ability to configure applications while permitting separate future grants.
 UPDATE "ClubMember" m SET permissions = array_append(m.permissions, 'application.manage')
 WHERE 'recruitment.manage' = ANY(m.permissions) AND NOT 'application.manage' = ANY(m.permissions)
