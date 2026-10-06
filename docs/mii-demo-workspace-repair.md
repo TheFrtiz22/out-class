@@ -1,0 +1,33 @@
+# MII Demo Mode interview workspace repair - October 6, 2026
+
+## Confirmed cause and scope
+
+The exact production MII route displayed the workspace load error; its existing catch intentionally suppresses the exception. Replaying the repository's pre-interview version-1 membership shape reproduced `Interview access unavailable.` in the demo adapter's `actor` function before any change. The old fixtures lacked `status`, `isOwner`, `permissions` and explicit interview offices. `demoUser` projected workspace rights for the fictional MII presenter, while `demoMember` returned the unchanged stored membership; the adapter requires an ACTIVE membership. The previous hydration added an empty interview foundation, leaving no usable panel assignments. Fresh canonical fixtures already worked.
+
+`lib/demo/store.ts` now fills missing access fields only for memberships matching canonical fictional IDs, club and user. For the legacy MII presenter it adds missing applicant/current-round assignments, excluding self, drafts and anonymous rounds. Existing assignments, including revocations, remain untouched. Explicit permissions, owner denials, offices and membership status are preserved. Subsequent hydration is idempotent. Applications, evaluations, question snapshots, drafts, document versions and annotations are retained, without clearing browser storage.
+
+This is a browser Demo Mode fixture upgrade. Live actions, authentication, authorization, middleware, database schema, credentials and production applicant records are unchanged. The existing adapter remains the isolation boundary; the focused journeys and denied cross-club calls record zero live-action invocations. The résumé uses the local fictional PDF and the existing demo document/annotation adapter.
+
+Live acceptance of the first patch exposed a second old fixture shape: canonical sample evaluations lacked `roundId`, causing `Historical evaluation requires reconciliation.` during submission. That exception was independently reproduced against the first deployed patch. Hydration now resolves only recognized canonical evaluation IDs, application/student/club identity and interviewer identity to the seed's stable round ID, with the historical label as an additional consistency check. It never resolves a review solely by its displayed round name. Historical scores/notes remain exact, including 8.25. Explicit null mappings and unknown review IDs retain the existing reconciliation guard.
+
+## Verification
+
+- Six targeted regressions cover fresh, legacy and previously hydrated legacy sessions (including old evaluation shapes); prepared applicants; question banks; pinned résumé/comments; private notes/completion; reload recovery; half-point submission and duplicate retries; explicit denials; revoked assignments; preservation and idempotence; exact historical-score preservation and ambiguous-record denial.
+- All 38 focused and neighboring checks passed: 29 demo/interview/setup checks on the final application revision plus nine retained performance checks whose implementation did not change. The six targeted checks include fresh and old fixtures; initial assertions about the panel shape, date revival and self-applicant selection were corrected rather than treating failing tests as passed.
+- Type checking and lint of the changed application/test files passed. The local production build passes with unchanged existing lint warnings and the existing sitemap fallback when no local DATABASE_URL is supplied. Production credentials are not loaded into development or tests. Hosted build and exact live-route acceptance are recorded below once complete.
+
+## Release and recovery
+
+Use the existing Git/Vercel release path for this application-only patch. No migration, production database mutation or credential/environment change is required. The compatible interview deployment and retired-writer firewall remain in place; no new migration maintenance gate is needed. Restore the preceding compatible application artifact if this patch fails acceptance. Do not reset the demo, remove its saved snapshot or enable live writes to repair fictional access.
+
+## Live acceptance
+
+**PASSED** on https://www.out-class.net/club/de000000-0000-4000-8000-000000400000/workspace?section=recruitment&tool=interviews at application source `739eb6b86ebf80c11ec8342d1090451958171f3c`, READY production deployment `dpl_AcsRmnqy8GkfepkKDXGY9uCNoJwh`, https://out-class-dn6wpco4z-outclassuva.vercel.app. All three production aliases matched that artifact. Its verified Preview was `dpl_BmeWLYYLSw3PBKz2cg8xKfxYcpoK`, https://out-class-cw5uncd7j-outclassuva.vercel.app.
+
+The existing Chrome session was upgraded without reset. Its customized Shannon 318 schedule and 29 slots remained present. Enter interview mode opened the assigned queue; Interview had nine candidates. Sample applicant Arjun Avery's three preserved questions and question bank opened. Typing private notes left completion zero; saving and closing persisted the note and moved the question to completed. The résumé overlay rendered its local fictional PDF with selectable text; a page-1 “University of Virginia” highlight/comment showed Jordan Avery as author and persisted after reload. Opening/minimizing the overlay retained the question draft.
+
+End interview initially showed Not scored and disabled submission. Keyboard End followed by three Left presses selected exactly 8.5. After the legacy-evaluation correction, the retained questions/notes/score submitted successfully and reopened locked after another reload. A second applicant's closing review showed Arjun Avery's 8.5 in previous history and remained unscored; it was not submitted. Final Chrome error/warning capture was empty. Only fictional local demo records were edited; no production applicant or leadership assignment was changed.
+
+Fresh and legacy fixture journeys were verified through the isolated adapter regression harness; the live browser test deliberately reused the owner's existing saved session. No fresh production browser reset or real applicant-document test is claimed. Unknown/custom historical evaluation IDs or explicit null mappings remain guarded for reconciliation; the fix does not guess their rounds or discard their history.
+
+Protected receipts and screenshots: `mii-demo-deployment-evidence.json`, `mii-demo-live-verification.json`, `mii-demo-before.jpg`, `mii-demo-resume-live.jpg`, `mii-demo-submitted-live.jpg`, `mii-demo-verified-live.jpg` in the established local verification directory. Later documentation-only commits retain the tested application tree; their deployment identity is recorded in the final provider receipt.
