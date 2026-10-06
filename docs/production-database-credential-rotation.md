@@ -1,5 +1,7 @@
 # Production database credential rotation - October 6, 2026
 
+**Current verification correction, 06:55 UTC:** The successful checks recorded below describe the incident cutover at that time. A later fresh strict-TLS check retrieved the saved replacement from CurrentUser DPAPI but production rejected it as `postgres` on direct and both pooler endpoints; a protected SCRAM comparison also did not match. Do not represent the receipt as proof that this credential currently authenticates the root account, or send the user back to the same URI-entry helper. No further root password rotation was performed. Supported temporary operator access now works, and a prepared bounded application role authenticated using that same securely saved replacement password. It has not yet received application-data privileges or been deployed. Follow the current [release checkpoint](interview-release-handoff.md) for the coordinated production connection repair and release; retain this incident evidence and original encrypted material.
+
 The user reported the production PostgreSQL URI/password exposed through a browser and explicitly authorized coordinated rotation and replacement of affected production connections. No credential is included here. This incident operation preserved the existing live application; it did not release the interview redesign or apply migrations.
 
 ## Completed operation
