@@ -4,11 +4,11 @@ import { prisma } from "@/utils/prisma"
 
 // Separate from recruitment projections: SEO never selects questions, applicants,
 // memberships, contact details, events, or any other account data.
-const publicSeoFields = { id: true, name: true, description: true, claimedAt: true } as const
-export type PublicClubSeo = { id: string; name: string; description: string; claimedAt: Date | null }
+const publicSeoFields = { id: true, name: true, description: true, claimedAt: true, isDiscoverable: true } as const
+export type PublicClubSeo = { id: string; name: string; description: string; claimedAt: Date | null; isDiscoverable?: boolean }
 
 export function isIndexableClub(club: PublicClubSeo | null): boolean {
-  return !!club?.claimedAt && club.description.trim().length >= 80 &&
+  return !!club?.claimedAt && club.isDiscoverable !== false && club.description.trim().length >= 80 &&
     !club.description.includes("Club leadership has not yet claimed this profile.")
 }
 
@@ -28,4 +28,4 @@ export const getIndexableClubs = unstable_cache(async () => {
     // Database outages must never cause fictional fixtures to enter the sitemap.
     return []
   }
-}, ["public-club-sitemap"], { revalidate: 600 })
+}, ["public-club-sitemap"], { revalidate: 600, tags: ["club-directory"] })

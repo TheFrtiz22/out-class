@@ -1,6 +1,12 @@
 "use server";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
+import { clubPermissions, hasPermission } from "@/lib/permissions";
+import { canControlOrganizationAccess } from "@/lib/organization-authorization";
+import { enqueueInvitationEmails } from "@/utils/invitation-delivery";
+import { invitationEmailConfig } from "@/utils/email";
+import { scheduleInvitationDelivery } from "@/utils/invitation-background";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { resendOrganizationInvitation } from "@/actions/invitation-emails";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -45,9 +51,11 @@ export async function setInterviewPanelAssignment(input: unknown) {
     return { ...key, assigned: data.assigned };
   });
 }
-async function actorFor(tx: AppTransactionClient, clubId: string, userId: string) {
-  await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
-  await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
+  if (lock) {
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+  }
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   const caps = organizationCapabilities(actor);
@@ -73,14 +81,14 @@ export async function getOrganizationMemberManagement(clubId: string) {
   id.parse(clubId);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const actor = await actorFor(tx, clubId, user.id);
+    const actor = await actorFor(tx, clubId, user.id, false);
     const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true } });
-    return {
-      actor,
-      members: await tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } }, orderBy: { joinedAt: "asc" } }),
-      invitations: await tx.clubInvitation.findMany({ where: { clubId }, include: { schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
-      identifierTypes: await tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
-    };
+    const [members, invitations, identifierTypes] = await Promise.all([
+      await tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } }, orderBy: { joinedAt: "asc" } }),
+      await tx.clubInvitation.findMany({ where: { clubId }, include: { schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
+      await tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
+    ]);
+    return { actor, members, invitations, identifierTypes };
   });
 }
 
@@ -148,4 +156,51 @@ export async function manageOrganizationInvitation(input: unknown) {
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: invitation.id, action: data.action === "REVOKE" ? "club.invite.revoke" : "club.invite.resend.request" } });
     return { queued: data.action === "RESEND", reused: false };
   });
+}
+
+/** One atomic mutation: authorization and sole-owner checks cover the complete selection. */
+export async function bulkOrganizationMembers(input: unknown) {
+  const data = z.object({ clubId: id, targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100), action: z.enum(["ROLE", "PERMISSIONS", "REMOVE"]), role: z.enum(organizationRoles).optional(), permissions: z.array(z.enum(clubPermissions)).max(clubPermissions.length).optional() }).strict().parse(input);
+  if (new Set(data.targets.map(t => t.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
+  const { user } = await requireAuth();
+  return prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    const targets = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(t => t.id) } }, include: { user: { select: { disabledAt: true, email: true } } } });
+    if (targets.length !== data.targets.length || targets.some(t => t.status !== "ACTIVE" || t.user.disabledAt || +t.updatedAt !== +data.targets.find(x => x.id === t.id)!.updatedAt)) throw new Error("Selected memberships changed. Refresh before trying again.");
+    if (data.action === "ROLE" && (!data.role || targets.some(t => !canChangeOrganizationRole(actor, t, data.role!)))) throw new Error("You cannot grant this role to the complete selection.");
+    if (data.action === "REMOVE" && targets.some(t => !canRemoveOrganizationMember(actor, t))) throw new Error("You cannot remove the complete selection.");
+    if (data.action === "PERMISSIONS" && (!data.permissions || !hasPermission(actor, "leaders.manage") || targets.some(t => t.isOwner || !canControlOrganizationAccess(actor, t)) || data.permissions.some(p => !hasPermission(actor, p)))) throw new Error("These permissions exceed your authority, or the selection contains an owner.");
+    const ids = targets.map(t => t.id);
+    if ((data.action === "REMOVE" || data.action === "ROLE" && data.role !== "OWNER") && targets.some(t => t.isOwner) && !await tx.clubMember.count({ where: { clubId: data.clubId, isOwner: true, status: "ACTIVE", id: { notIn: ids }, user: { disabledAt: null } } })) throw new Error("Assign another active owner before changing all selected owners.");
+    const fields = data.action === "REMOVE" ? { status: "LEFT" as const, accessRole: "MEMBER" as const, isOwner: false, permissions: [] } : data.action === "ROLE" ? { accessRole: data.role!, isOwner: data.role === "OWNER", permissions: organizationRolePermissions[data.role!] } : { permissions: [...new Set(data.permissions!)] };
+    await tx.clubMember.updateMany({ where: { clubId: data.clubId, id: { in: ids } }, data: fields });
+    const grants = { clubId: data.clubId, status: "PENDING" as const, OR: [{ email: { in: targets.map(t => t.user.email.toLowerCase()), mode: "insensitive" as const } }, { schoolIdentity: { userId: { in: targets.map(t => t.userId) } } }] };
+    await tx.invitationDelivery.updateMany({ where: { status: "QUEUED", invitation: grants }, data: { status: "CANCELLED" } });
+    await tx.clubInvitation.updateMany({ where: grants, data: { status: "REVOKED", revokedAt: new Date() } });
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: `club.members.bulk.${data.action.toLowerCase()}`, details: { before: targets.map(t => ({ id: t.id, role: t.accessRole, isOwner: t.isOwner, permissions: t.permissions, status: t.status })), after: fields } } });
+    return { count: targets.length };
+  });
+}
+export async function bulkOrganizationInvitations(input: unknown) {
+  const data = z.object({ clubId: id, invitationIds: z.array(id).min(1).max(100), action: z.enum(["REVOKE", "RESEND"]) }).strict().parse(input);
+  if (new Set(data.invitationIds).size !== data.invitationIds.length) throw new Error("Duplicate invitations in selection.");
+  const { user } = await requireAuth();
+  if (data.action === "RESEND") invitationEmailConfig();
+  const result = await prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    const invitations = await tx.clubInvitation.findMany({ where: { id: { in: data.invitationIds }, clubId: data.clubId } });
+    if (invitations.length !== data.invitationIds.length || invitations.some(i => i.status !== "PENDING" || i.revokedAt || i.acceptedAt || i.declinedAt || !canManageOrganizationInvitation(actor, i))) throw new Error("Selection contains unavailable invitations or grants above your authority.");
+    let queued = 0;
+    if (data.action === "REVOKE") {
+      await tx.invitationDelivery.updateMany({ where: { invitationId: { in: data.invitationIds }, status: "QUEUED" }, data: { status: "CANCELLED" } });
+      await tx.clubInvitation.updateMany({ where: { clubId: data.clubId, id: { in: data.invitationIds } }, data: { status: "REVOKED", revokedAt: new Date() } });
+    } else {
+      // Cooldown, grant scope, and send limits are enforced by the shared outbox.
+      queued = (await enqueueInvitationEmails(tx, data.clubId, user.id, invitations.map(i => ({ invitationId: i.id, key: randomUUID() })))).queued;
+    }
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: `club.invites.bulk.${data.action.toLowerCase()}`, details: { invitationIds: data.invitationIds, queued } } });
+    return { count: invitations.length, queued };
+  }, { timeout: 30000 });
+  if (result.queued) scheduleInvitationDelivery(data.clubId);
+  return result;
 }

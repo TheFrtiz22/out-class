@@ -64,6 +64,8 @@ export function validateQuestionNotes(
     throw new Error("Additional question IDs must be unique.");
 }
 export type InterviewSessionData = {
+  instructions?: string;
+  duration?: number;
   feedbackSource?: "draft" | "evaluation" | "historical-snapshot";
   id: string;
   revision: number;

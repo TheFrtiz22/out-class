@@ -32,7 +32,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string) {
     const sessions = await tx.votingSession.findMany({where:{clubId,...(!leadershipView?{participants:{some:{memberId:m.id}}}:{})},select:{id:true,state:true,currentPass:true,createdAt:true},orderBy:{createdAt:"desc"}})
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
-    const rounds = await tx.pipelineRound.findMany({where:{clubId}})
+    const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
     return { sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), graduationYears: s ? await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true}}}}}}):[] }
   },{isolationLevel:"RepeatableRead"})
 }
@@ -41,8 +41,9 @@ export async function createVotingSession(input: unknown) {
   if(new Set(d.applicationIds).size!==d.applicationIds.length || new Set(d.participantIds).size!==d.participantIds.length) throw Error("Duplicate selection.")
   const {user,membership}=await requireClubPermission(d.clubId,["applications.review","decisions.manage"])
   return prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.clubId} FOR UPDATE`
     await member(tx,d.clubId,membership.id,["applications.review","decisions.manage"])
-    const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId}})
+    const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}})
     if(!round) throw Error("Round unavailable.")
     const apps=await tx.application.findMany({where:{id:{in:d.applicationIds},clubId:d.clubId,roundId:d.roundId,status:{not:"DRAFTING"}}})
     if(apps.length!==d.applicationIds.length) throw Error("Select submitted candidates from one round.")
@@ -83,8 +84,10 @@ export async function commandVotingSession(input: unknown) {
   if(d.action==="PUBLISH") caps.push("applicants.identify")
   const {user,membership}=await requireClubPermission(d.clubId,caps)
   return prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.clubId} FOR UPDATE`
     await member(tx,d.clubId,membership.id,caps)
     const s=await session(tx,d.clubId,d.sessionId)
+    if(!await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:d.clubId,archivedAt:null}})) throw Error("Archived voting rounds are read-only.")
     if(s.revision!==d.revision) throw Error("Session changed. Refresh and review before trying again.")
     if(s.publishedAt) throw Error("Published sessions are sealed. Create a new session to review again.")
     const active=s.passes.find(p=>p.number===s.currentPass)

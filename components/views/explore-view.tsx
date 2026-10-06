@@ -1,4 +1,5 @@
 "use client"
+import { useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/product/page-header"
 import { CampusRibbon } from "@/components/product/campus-ribbon"
 import Image from "next/image"
@@ -35,7 +36,10 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [retry, setRetry] = useState(0)
-  const [filters, setFilters] = useState(emptyDirectoryFilters)
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get("category") || "all"
+  const [filters, setFilters] = useState({ ...emptyDirectoryFilters, category: categoryParam })
+  useEffect(() => { setFilters(previous => ({ ...previous, category: categoryParam })) }, [categoryParam])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -81,6 +85,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   )
   function change(key: keyof typeof filters, value: string) {
     setFilters((previous) => ({ ...previous, [key]: value }))
+    if (key === "category") { const next = new URLSearchParams(window.location.search); if (value === "all") next.delete("category"); else next.set("category", value); next.delete("section"); window.history.replaceState(null,"",`${window.location.pathname}?${next}`) }
   }
   function open(club: DirectoryClub, entry = club.id) {
     lastClub.current = entry
@@ -101,7 +106,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="University of Virginia" title={section === "categories" ? "Categories" : "Discover"} description={section === "categories" ? "Browse the club directory by interest. Choose a category to see its organizations." : "Find your people. Compare clubs and save what catches your eye."} />
+        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." />
         <Image src="/images/campus/rotunda-960.webp" alt="" width={960} height={640} sizes="(max-width: 600px) 100vw, 50vw" className="oc-explore-campus" />
         <CampusRibbon />
       </div>
@@ -138,8 +143,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             <button
               key={category}
               aria-label={`${category}, ${clubs.filter(club => club.category === category).length} clubs`}
-              aria-pressed={filters.category === category}
-              onClick={() => change("category", filters.category === category ? "all" : category)}
+              aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
+              onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
             >
               <CategoryIcon size={18} aria-hidden="true" />{category}
               <span>{clubs.filter((club) => club.category === category).length}</span>
@@ -218,7 +223,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
               <X size={12} />
             </button>
           ))}
-          <button onClick={() => setFilters(emptyDirectoryFilters)}>Clear all</button>
+          <button onClick={() => { setFilters(emptyDirectoryFilters); change("category", "all") }}>Clear all</button>
         </div>
       )}
       {loading ? (
@@ -243,14 +248,14 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       ) : (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
-          {section !== "categories" && !active.length && highlights.length > 0 && (
+          {!active.length && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Worth getting to know</h2></div>
               <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An alphabetical introduction to the directory."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {section !== "categories" && !active.length && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
+          {!active.length && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
             <div><h2 id="available-title">Applications on OutClass</h2><p>An A–Z selection of clubs with applications available. Check their profiles for recruitment details.</p></div>
             <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Application available</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
           </section>}
@@ -277,7 +282,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                     : "Clubs will appear here as they join OutClass."}
                 </p>
                 {active.length > 0 && (
-                  <Button variant="outline" onClick={() => setFilters(emptyDirectoryFilters)}>
+                  <Button variant="outline" onClick={() => { setFilters(emptyDirectoryFilters); change("category", "all") }}>
                     Clear search and filters
                   </Button>
                 )}

@@ -1,4 +1,5 @@
 import { interviewCapabilities } from "@/lib/interview-access"
+import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
@@ -12,7 +13,7 @@ export const personalUniversalItems: ProductNavItem[] = [
   { id: "student-profile", label: "Profile" },
 ]
 const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
-  explore: [{ id: "explore", label: "Discover" }, { id: "categories", label: "Categories" }, { id: "corkboard", label: "Corkboard" }],
+  explore: [{ id: "explore", label: "Discover" }, { id: "corkboard", label: "Corkboard" }],
   apply: [{ id: "applications", label: "Applications" }, { id: "status", label: "Status" }, { id: "calendar", label: "Calendar" }],
   clubs: [{ id: "clubs", label: "Clubs" }, { id: "meetings", label: "Meetings" }, { id: "tasks", label: "Tasks" }],
 }
@@ -26,7 +27,7 @@ export function personalDestination(id: string): { view: import("@/lib/views").V
   if (id === "status") return { view: "status", section: "status" }
   if (["clubs", "meetings", "tasks"].includes(id)) return { view: "my-clubs", section: id as PersonalSection }
   if (id === "calendar" || id === "corkboard") return { view: id, section: id }
-  return { view: "explore", section: id === "categories" ? "categories" : "explore" }
+  return { view: "explore", section: "explore" }
 }
 export function managerNavigation(member: ClubAccess, clubId: string, mode: string): ProductNavItem[] {
   const href = (section: string, tool?: string) => `/club/${encodeURIComponent(clubId)}/workspace?section=${section}${tool ? `&tool=${tool}` : ""}`
@@ -42,7 +43,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(hasPermission(member, "meetings.manage") ? [item("announcements", "Announcements", "announcements", { preview: true })] : []),
-    ...(hasPermission(member, "club.settings") ? [item("settings", "Settings")] : [])]
+    ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
 }
 /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */
 export function canLeaveWorkspace() {

@@ -238,6 +238,7 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) setClosing(true); }}>
     <header className="flex flex-wrap items-center justify-between gap-4 border-b bg-card px-5 py-4 sm:px-8">
       {toolbar?.(!!session.completedAt)}
+      {session.instructions && <p className="w-full whitespace-pre-wrap text-sm text-muted-foreground">{session.instructions}</p>}
       <div className="flex flex-wrap items-center gap-3"><span role="status" aria-live="polite" className="text-xs text-muted-foreground">{session.completedAt ? "Submitted · Read only" : error ? "Save needs attention" : saving ? "Saving…" : dirty || newQuestion.trim() ? "Unsaved changes" : "Draft saved"}</span>{!session.completedAt && <Button type="button" disabled={saving} onClick={() => setClosing(true)}>End interview</Button>}</div>
     </header>
     {error && <div role="alert" className="space-y-2 border-b px-5 py-3 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry save and finish" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}

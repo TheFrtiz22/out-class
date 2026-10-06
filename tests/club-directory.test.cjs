@@ -5,12 +5,14 @@ const ts = require("typescript")
 const Module = require("node:module")
 const path = require("node:path")
 function load(file, dependencies = {}) {
+  dependencies = { "next/cache": { unstable_cache: fn => fn }, ...dependencies }
+  if (dependencies["@/utils/prisma"]?.prisma) { const db=dependencies["@/utils/prisma"].prisma; db.$queryRaw ||= async()=>[]; db.$transaction ||= async fn=>fn(db); db.club ||= {}; db.club.findUnique ||= async()=>({applicationOpen:true}); }
   const filename = path.resolve(__dirname, "..", file)
   const output = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const mod = new Module(filename, module)
-  mod.require = (name) => dependencies[name] || require(name)
+  mod.require = (name) => dependencies[name] || (name.startsWith("@/lib/") ? load(name.slice(2)+".ts",dependencies) : require(name))
   mod._compile(output, filename)
   return mod.exports
 }
@@ -162,3 +164,7 @@ test("concurrent starts use an empty update branch and session-derived identity"
   assert.equal(args.create.status, "DRAFTING")
   assert.equal(args.create.answers, undefined)
 })
+
+test('category URL filters are case-insensitive without introducing a second directory',()=>{
+ assert.deepEqual(filterDirectory(clubs,{...emptyDirectoryFilters,category:'consulting'}).map(c=>c.id),['a']);
+});

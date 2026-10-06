@@ -11,7 +11,7 @@ import type { z } from "zod"
 
 async function scopedRound(tx: AppTransactionClient, scope: z.infer<typeof ruleScopeSchema>) {
   const round = await tx.pipelineRound.findFirst({
-    where: { id: scope.roundId, clubId: scope.clubId },
+    where: { id: scope.roundId, clubId: scope.clubId, archivedAt: null },
     include: { screeningRule: true, club: { select: { testRequirement: true } } },
   })
   if (!round) throw new Error("Round is not available for this club.")
@@ -22,7 +22,7 @@ export async function getRecruitingRules(clubId: string) {
   ruleScopeSchema.shape.clubId.parse(clubId)
   const { membership } = await requireClubPermission(clubId, ["recruitment.manage"])
   const rounds = await prisma.pipelineRound.findMany({
-    where: { clubId }, orderBy: { order: "asc" },
+    where: { clubId, archivedAt: null }, orderBy: { order: "asc" },
     select: { id: true, name: true, anonymousReview: true, screeningRule: true },
   })
   const club = await prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { testRequirement: true } })

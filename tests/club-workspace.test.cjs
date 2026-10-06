@@ -50,6 +50,7 @@ test("workspace navigation follows explicit capabilities and never changes ident
     "members",
     "meetings",
     "tasks",
+    "settings",
   ]);
   assert.deepEqual(clubWorkspaceSections({ permissions: ["club.settings"] }), [
     "overview",
@@ -176,7 +177,7 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
 test("product modes preserve scoped URLs and limit manager destinations by capability", () => {
   const { managerNavigation, personalMode } = load("lib/product-navigation.ts");
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
-  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members"]);
+  assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members", "settings"]);
   assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "interviews", "decisions"]);
   assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
   assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "rounds", "rules"]);

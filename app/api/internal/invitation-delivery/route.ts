@@ -13,6 +13,9 @@ export async function POST(request: Request) {
   try {
     const pending = await prisma.invitationDelivery.findFirst({ where: { status: 'QUEUED', nextAttemptAt: { lte: new Date() } }, include: { invitation: { select: { clubId: true } } }, orderBy: { createdAt: 'asc' } });
     if (!pending) return Response.json({ sent: 0, remaining: 0 });
-    return Response.json(await processInvitationEmails(pending.invitation.clubId, 2));
+    return Response.json(await processInvitationEmails(pending.invitation.clubId, 25));
   } catch { return Response.json({ error: 'Delivery unavailable; queued invitations are retained.' }, { status: 503 }); }
 }
+
+// Vercel Cron invokes GET with the same bearer-secret check as POST.
+export const GET = POST;

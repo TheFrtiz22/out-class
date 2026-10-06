@@ -1,4 +1,6 @@
 "use client"
+import { QuestionField } from "@/components/applications/question-field"
+import { applicationAvailability } from "@/lib/club-settings"
 import { testRequirementLabels } from "@/lib/test-scores"
 
 import { useEffect, useState, type FormEvent } from "react"
@@ -12,7 +14,6 @@ import { uploadProfileFile } from "@/lib/workspace-api"
 import { answerErrors, wordCount } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function ApplicationForm({
   onDirty: (dirty: boolean) => void
   onProfile: () => void
 }) {
+  const closed = !applicationAvailability(application.club)
   const questions = application.club.questions
   const [responses, setResponses] = useState<Record<string, string>>(() =>
     Object.fromEntries(application.answers.map((answer) => [answer.questionId, answer.response])),
@@ -119,7 +121,7 @@ export function ApplicationForm({
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : ""
       setError(
-        /already|profile|pipeline|questions|words|response|URL/.test(message)
+        /already|profile|pipeline|questions|words|response|URL|closed|option/.test(message)
           ? message
           : "We couldn’t save your application. Your responses are still here. Please try again.",
       )
@@ -193,6 +195,7 @@ export function ApplicationForm({
         </p>
       )}
       <form onSubmit={review} noValidate className="space-y-8">
+        {closed && <p role="status" className="text-sm text-muted-foreground">Applications are closed. You can still save your draft.</p>}
         <fieldset disabled={busy} className="min-w-0 space-y-9">
           {questions.map((question, index) => (
             <div key={question.id} className="space-y-3">
@@ -207,30 +210,7 @@ export function ApplicationForm({
               >
                 {question.prompt}
               </Label>
-              {question.type === "ESSAY" ? (
-                <Textarea
-                  id={`answer-${question.id}`}
-                  rows={7}
-                  className="min-h-44 text-base leading-7"
-                  value={responses[question.id] || ""}
-                  onChange={(event) => change(question.id, event.target.value)}
-                  aria-required={question.required}
-                  aria-invalid={!!errors[question.id]}
-                  aria-describedby={`help-${question.id}`}
-                  placeholder="Take your time. Write in your own voice."
-                />
-              ) : (
-                <Input
-                  id={`answer-${question.id}`}
-                  type="text"
-                  value={responses[question.id] || ""}
-                  onChange={(event) => change(question.id, event.target.value)}
-                  aria-required={question.required}
-                  aria-invalid={!!errors[question.id]}
-                  aria-describedby={`help-${question.id}`}
-                  placeholder={question.type === "FILE_UPLOAD" ? "https://…" : "Your response"}
-                />
-              )}
+              <QuestionField question={question} value={responses[question.id] || ""} onChange={value => change(question.id, value)} invalid={!!errors[question.id]} />
               {question.type === "FILE_UPLOAD" && (
                 <div className="space-y-2">
                   <Label htmlFor={`upload-${question.id}`} className="text-xs">
@@ -284,7 +264,7 @@ export function ApplicationForm({
             >
               Save draft
             </Button>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || closed}>
               Review & submit
             </Button>
           </div>

@@ -1,392 +1,479 @@
-"use client"
-
-import { useState } from "react"
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "lucide-react";
 import {
-  Lock,
-  Plus,
-  Trash2,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
-  User,
-  GraduationCap,
-  FileText,
-  Award,
-  FileType2,
-  ListChecks,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+  getApplicationSettings,
+  saveApplicationSettings,
+} from "@/actions/club-settings";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { initialBuilderQuestions, type BuilderQuestion, type BuilderQuestionType } from "@/lib/data"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-
-const FILE_TYPE_OPTIONS = ["Video Files (.mp4, .mov)", "PDF Documents (.pdf)", "Audio Files (.mp3, .wav)"]
-
-const TYPE_META: Record<BuilderQuestionType, { label: string; icon: typeof FileType2 }> = {
-  essay: { label: "Essay Question", icon: FileText },
-  "file-upload": { label: "Video / Portfolio File Upload", icon: FileType2 },
-  "multiple-choice": { label: "Multiple Choice / Checkbox Grid", icon: ListChecks },
-}
-
-function newQuestion(type: BuilderQuestionType): BuilderQuestion {
-  const id = `bq-${Date.now()}`
-  if (type === "essay") {
-    return { id, type, prompt: "", required: true, enforceWordCount: false, minWords: 100, maxWords: 300 }
-  }
-  if (type === "file-upload") {
-    return { id, type, prompt: "", required: true, allowedFileTypes: FILE_TYPE_OPTIONS[0], maxFileSizeMb: 500 }
-  }
-  return { id, type, prompt: "", required: false, options: ["Option 1", "Option 2"] }
-}
-
-export function ApplicationBuilderView() {
-  const [questions, setQuestions] = useState<BuilderQuestion[]>(initialBuilderQuestions)
-
-  function updateQuestion(id: string, patch: Partial<BuilderQuestion>) {
-    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)))
-  }
-
-  function addQuestion(type: BuilderQuestionType) {
-    setQuestions((prev) => [...prev, newQuestion(type)])
-  }
-
-  function removeQuestion(id: string) {
-    setQuestions((prev) => prev.filter((q) => q.id !== id))
-  }
-
-  function moveQuestion(id: string, dir: -1 | 1) {
-    setQuestions((prev) => {
-      const index = prev.findIndex((q) => q.id === id)
-      const target = index + dir
-      if (index < 0 || target < 0 || target >= prev.length) return prev
-      const next = [...prev]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return next
-    })
-  }
-
-  function updateOption(qid: string, optIndex: number, value: string) {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === qid && q.options
-          ? { ...q, options: q.options.map((o, i) => (i === optIndex ? value : o)) }
-          : q,
-      ),
-    )
-  }
-
-  function addOption(qid: string) {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === qid && q.options ? { ...q, options: [...q.options, `Option ${q.options.length + 1}`] } : q,
-      ),
-    )
-  }
-
-  function removeOption(qid: string, optIndex: number) {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === qid && q.options ? { ...q, options: q.options.filter((_, i) => i !== optIndex) } : q)),
-    )
-  }
-
-  return (
-    <div className="space-y-5">
-      <Card>
-        <CardHeader>
-          <CardTitle className="oc-card-heading ">Application Question Customizer — Fall 2026 Cycle</CardTitle>
-          <CardDescription>Build the custom questions applicants answer beyond their base OutClass profile.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="rounded-md border border-dashed bg-muted/40 p-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Lock className="size-3.5 text-muted-foreground" />
-              Standard Base OutClass Profile (Auto-Attached)
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Every applicant automatically includes these fields — they cannot be removed.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                <User className="size-3.5" /> Name
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                <GraduationCap className="size-3.5" /> Major & Year
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                <FileText className="size-3.5" /> Resume PDF
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                <Award className="size-3.5" /> SAT / GPA
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {questions.map((q, i) => (
-              <QuestionBlockCard
-                key={q.id}
-                index={i}
-                question={q}
-                isFirst={i === 0}
-                isLast={i === questions.length - 1}
-                onMove={(dir) => moveQuestion(q.id, dir)}
-                onUpdate={(patch) => updateQuestion(q.id, patch)}
-                onRemove={() => removeQuestion(q.id)}
-                onUpdateOption={(idx, val) => updateOption(q.id, idx, val)}
-                onAddOption={() => addOption(q.id)}
-                onRemoveOption={(idx) => removeOption(q.id, idx)}
-              />
-            ))}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-                >
-                  <Plus className="size-4" /> Add New Question
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-64">
-                {(Object.keys(TYPE_META) as BuilderQuestionType[]).map((type) => {
-                  const Icon = TYPE_META[type].icon
-                  return (
-                    <DropdownMenuItem key={type} onClick={() => addQuestion(type)} className="gap-2">
-                      <Icon className="size-4" /> {TYPE_META[type].label}
-                    </DropdownMenuItem>
-                  )
-                })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="sticky bottom-0 -mx-4 flex justify-end border-t bg-background/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6">
-        <Button
-          size="lg"
-          onClick={() => toast.success("Application published", { description: "Live for Fall 2026 Recruitment." })}
-        >
-          Publish Application for Fall Recruitment
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function QuestionBlockCard({
-  index,
-  question: q,
-  isFirst,
-  isLast,
-  onMove,
-  onUpdate,
-  onRemove,
-  onUpdateOption,
-  onAddOption,
-  onRemoveOption,
+  applicationSettingsSchema,
+  type QuestionDraft,
+} from "@/lib/club-settings";
+import { QuestionField } from "@/components/applications/question-field";
+import { useAuth } from "@/contexts/auth-context";
+import { useDemoMode } from "@/contexts/demo-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import "@/components/clubs/club-settings.css";
+const localDate = (date: Date | string | null) => {
+  if (!date) return "";
+  const d = new Date(date);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+};
+export function ApplicationBuilderView({
+  clubId: provided,
 }: {
-  index: number
-  question: BuilderQuestion
-  isFirst: boolean
-  isLast: boolean
-  onMove: (dir: -1 | 1) => void
-  onUpdate: (patch: Partial<BuilderQuestion>) => void
-  onRemove: () => void
-  onUpdateOption: (index: number, value: string) => void
-  onAddOption: () => void
-  onRemoveOption: (index: number) => void
+  clubId?: string;
 }) {
-  const Icon = TYPE_META[q.type].icon
-  const wordCountPreview =
-    q.enforceWordCount && q.minWords != null && q.maxWords != null
-      ? `0 / ${q.maxWords} words (min ${q.minWords})`
-      : null
-
+  const { activeClubId } = useAuth(),
+    demo = useDemoMode(),
+    clubId = provided || activeClubId;
+  const [questions, setQuestions] = useState<QuestionDraft[]>([]),
+    [open, setOpen] = useState(true),
+    [deadline, setDeadline] = useState("");
+  const [name, setName] = useState(""),
+    [version, setVersion] = useState(0),
+    [baseline, setBaseline] = useState("");
+  const [loaded, setLoaded] = useState(false),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState(""),
+    [retry, setRetry] = useState(0),
+    [preview, setPreview] = useState(false);
+  const [responses, setResponses] = useState<Record<string, string>>({}),
+    working = useRef(false);
+  const snapshot = JSON.stringify({ questions, open, deadline }),
+    dirty = loaded && snapshot !== baseline;
+  useEffect(() => {
+    if (!demo.ready || demo.isDemoEnabled || !clubId) return;
+    let current = true;
+    setLoaded(false);
+    setError("");
+    getApplicationSettings(clubId)
+      .then((data) => {
+        if (current) {
+          const date = localDate(data.applicationDeadline);
+          setName(data.name);
+          setQuestions(data.questions);
+          setOpen(data.applicationOpen);
+          setDeadline(date);
+          setVersion(data.applicationVersion);
+          setBaseline(
+            JSON.stringify({
+              questions: data.questions,
+              open: data.applicationOpen,
+              deadline: date,
+            }),
+          );
+          setLoaded(true);
+        }
+      })
+      .catch(() => {
+        if (current)
+          setError(
+            "Could not load application settings. Check your access and retry.",
+          );
+      });
+    return () => {
+      current = false;
+    };
+  }, [clubId, demo.ready, demo.isDemoEnabled, retry]);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  function edit(id: string, patch: Partial<QuestionDraft>) {
+    setQuestions((items) =>
+      items.map((q) => (q.id === id ? { ...q, ...patch } : q)),
+    );
+    setNotice("");
+  }
+  function move(index: number, direction: number) {
+    setQuestions((items) => {
+      const next = [...items];
+      [next[index], next[index + direction]] = [
+        next[index + direction],
+        next[index],
+      ];
+      return next;
+    });
+  }
+  async function save() {
+    if (working.current) return;
+    const input = {
+      clubId,
+      version,
+      open,
+      deadline: deadline ? new Date(deadline).toISOString() : null,
+      questions,
+    };
+    const parsed = applicationSettingsSchema.safeParse(input);
+    if (!parsed.success) {
+      setError(parsed.error.issues[0].message);
+      return;
+    }
+    working.current = true;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await saveApplicationSettings(input);
+      setVersion(result.version);
+      setBaseline(snapshot);
+      setNotice(
+        "Application settings saved. Students now see this configuration.",
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not save. Your edits are still here.",
+      );
+    } finally {
+      working.current = false;
+      setBusy(false);
+    }
+  }
+  if (!clubId)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Open a club workspace with application-management access to configure
+        its application.
+      </p>
+    );
+  if (demo.isDemoEnabled)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Application configuration is saved to your club outside Demo Mode. Exit
+        Demo Mode to edit the live application.
+      </p>
+    );
   return (
-    <div className="rounded-md border bg-muted/30 p-3">
-      <div className="flex items-start gap-2">
-        <div className="mt-1.5 flex flex-col items-center gap-1 text-muted-foreground">
-          <GripVertical className="size-4" />
-          <button
-            type="button"
-            aria-label="Move question up"
-            disabled={isFirst}
-            onClick={() => onMove(-1)}
-            className={cn("rounded hover:text-foreground", isFirst && "opacity-30")}
-          >
-            <ChevronUp className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label="Move question down"
-            disabled={isLast}
-            onClick={() => onMove(1)}
-            className={cn("rounded hover:text-foreground", isLast && "opacity-30")}
-          >
-            <ChevronDown className="size-3.5" />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <Badge variant="secondary" className="gap-1.5 font-normal">
-              <Icon className="size-3.5" />
-              {index + 1}. {TYPE_META[q.type].label}
-            </Badge>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5">
-                <Switch
-                  id={`required-${q.id}`}
-                  checked={q.required}
-                  onCheckedChange={(v) => onUpdate({ required: v })}
-                />
-                <Label htmlFor={`required-${q.id}`} className="text-xs font-normal text-muted-foreground">
-                  Required Field
-                </Label>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={onRemove}
-                aria-label="Delete question"
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </div>
-          </div>
-
-          <Input
-            value={q.prompt}
-            placeholder="Type the question prompt…"
-            onChange={(e) => onUpdate({ prompt: e.target.value })}
-            className="bg-background"
-          />
-
-          {q.type === "essay" && (
-            <div className="space-y-3 rounded-md border bg-background p-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`wc-${q.id}`} className="text-sm font-medium">
-                  Enforce Word Count
-                </Label>
-                <Switch
-                  id={`wc-${q.id}`}
-                  checked={q.enforceWordCount}
-                  onCheckedChange={(v) => onUpdate({ enforceWordCount: v })}
-                />
-              </div>
-              {q.enforceWordCount && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Min Words</Label>
-                      <Input
-                        type="number"
-                        value={q.minWords ?? 0}
-                        onChange={(e) => onUpdate({ minWords: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">Max Words</Label>
-                      <Input
-                        type="number"
-                        value={q.maxWords ?? 0}
-                        onChange={(e) => onUpdate({ maxWords: Number(e.target.value) })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Textarea
-                      placeholder="Applicant response preview…"
-                      rows={3}
-                      disabled
-                      className="resize-none bg-muted/40 text-muted-foreground"
-                    />
-                    <p className="text-right text-xs text-muted-foreground">{wordCountPreview}</p>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {q.type === "file-upload" && (
-            <div className="space-y-3 rounded-md border bg-background p-3">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Allowed file types</Label>
-                  <Select
-                    value={q.allowedFileTypes}
-                    onValueChange={(v) => onUpdate({ allowedFileTypes: v })}
-                  >
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FILE_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt} value={opt} className="text-xs">
-                          {opt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Max file size (MB)</Label>
-                  <Input
-                    type="number"
-                    value={q.maxFileSizeMb ?? 0}
-                    onChange={(e) => onUpdate({ maxFileSizeMb: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed py-6 text-center text-muted-foreground">
-                <FileType2 className="size-6" />
-                <p className="text-xs">Applicant dropzone preview — {q.allowedFileTypes}, up to {q.maxFileSizeMb} MB</p>
-              </div>
-            </div>
-          )}
-
-          {q.type === "multiple-choice" && (
-            <div className="space-y-2 rounded-md border bg-background p-3">
-              <Label className="text-xs text-muted-foreground">Answer options</Label>
-              {q.options?.map((opt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="size-3.5 shrink-0 rounded-sm border border-muted-foreground/40" />
-                  <Input value={opt} onChange={(e) => onUpdateOption(i, e.target.value)} className="h-8 text-sm" />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-7 shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => onRemoveOption(i)}
-                    aria-label="Remove option"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={onAddOption}>
-                <Plus className="size-3.5" /> Add option
-              </Button>
-            </div>
-          )}
-        </div>
+    <div
+      className="oc-settings-editor space-y-6"
+      data-unsaved={dirty}
+      data-saving={busy}
+    >
+      <div>
+        <h2 className="oc-section-heading">Application</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your shared applicant profile already includes identity, academics,
+          experience, and résumé. Add questions specific to your club.
+        </p>
       </div>
+      {error && (
+        <div role="alert" className="space-y-2 text-sm text-destructive">
+          <p>{error}</p>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => {
+              if (
+                !dirty ||
+                window.confirm(
+                  "Discard unsaved application changes and reload?",
+                )
+              )
+                setRetry((n) => n + 1);
+            }}
+          >
+            Reload configuration
+          </Button>
+        </div>
+      )}
+      {notice && (
+        <p role="status" className="text-sm">
+          {notice}
+        </p>
+      )}
+      {!loaded ? (
+        !error && <p role="status">Loading application…</p>
+      ) : (
+        <>
+          <fieldset
+            disabled={busy}
+            className="grid gap-4 border-b pb-6 sm:grid-cols-2"
+          >
+            <label className="inline-flex min-h-11 items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={open}
+                onChange={(e) => setOpen(e.target.checked)}
+              />
+              Applications open
+            </label>
+            <label className="space-y-2 text-sm">
+              Deadline (optional, your local time)
+              <Input
+                type="datetime-local"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+              />
+            </label>
+          </fieldset>
+          <ol className="space-y-5">
+            {questions.map((q, index) => (
+              <li key={q.id} className="oc-settings-question">
+                <fieldset disabled={busy} className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="oc-card-heading">Question {index + 1}</h3>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Move question ${index + 1} up`}
+                        disabled={busy || index === 0}
+                        onClick={() => move(index, -1)}
+                      >
+                        <ArrowUp size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Move question ${index + 1} down`}
+                        disabled={busy || index === questions.length - 1}
+                        onClick={() => move(index, 1)}
+                      >
+                        <ArrowDown size={16} />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Remove question ${index + 1}`}
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              "Remove this question? Existing submitted answers will be retained.",
+                            )
+                          )
+                            setQuestions((items) =>
+                              items.filter((x) => x.id !== q.id),
+                            );
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                  <label className="block space-y-2 text-sm">
+                    Question
+                    <Textarea
+                      value={q.prompt}
+                      maxLength={3000}
+                      rows={3}
+                      onChange={(e) => edit(q.id, { prompt: e.target.value })}
+                    />
+                  </label>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="space-y-2 text-sm">
+                      Response type
+                      <select
+                        className="oc-settings-select"
+                        value={q.type}
+                        onChange={(e) =>
+                          edit(q.id, {
+                            type: e.target.value as QuestionDraft["type"],
+                            options:
+                              e.target.value === "MULTIPLE_CHOICE" &&
+                              !q.options.length
+                                ? ["Option 1", "Option 2"]
+                                : q.options,
+                          })
+                        }
+                      >
+                        <option value="ESSAY">Written response</option>
+                        <option value="MULTIPLE_CHOICE">Multiple choice</option>
+                        <option value="FILE_UPLOAD">PDF / document link</option>
+                      </select>
+                    </label>
+                    <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={q.required}
+                        onChange={(e) =>
+                          edit(q.id, { required: e.target.checked })
+                        }
+                      />
+                      Required
+                    </label>
+                    {q.type === "ESSAY" && (
+                      <label className="space-y-2 text-sm">
+                        Maximum words (optional)
+                        <Input
+                          className="w-40"
+                          type="number"
+                          min={1}
+                          max={10000}
+                          value={q.wordLimit ?? ""}
+                          onChange={(e) =>
+                            edit(q.id, {
+                              wordLimit: e.target.value
+                                ? Number(e.target.value)
+                                : null,
+                            })
+                          }
+                        />
+                      </label>
+                    )}
+                  </div>
+                  {q.type === "MULTIPLE_CHOICE" && (
+                    <div className="space-y-2">
+                      <p className="text-sm">Answer choices</p>
+                      {q.options.map((option, i) => (
+                        <div className="flex gap-2" key={i}>
+                          <Input
+                            aria-label={`Question ${index + 1} option ${i + 1}`}
+                            maxLength={300}
+                            value={option}
+                            onChange={(e) =>
+                              edit(q.id, {
+                                options: q.options.map((x, j) =>
+                                  i === j ? e.target.value : x,
+                                ),
+                              })
+                            }
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            aria-label={`Remove option ${i + 1}`}
+                            onClick={() =>
+                              edit(q.id, {
+                                options: q.options.filter((_, j) => i !== j),
+                              })
+                            }
+                          >
+                            <Trash2 size={15} />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={q.options.length >= 30}
+                        onClick={() =>
+                          edit(q.id, { options: [...q.options, ""] })
+                        }
+                      >
+                        Add choice
+                      </Button>
+                    </div>
+                  )}
+                  {q.type === "FILE_UPLOAD" && (
+                    <p className="text-xs text-muted-foreground">
+                      Students can upload a PDF up to 10 MB or provide a
+                      document link. Use their shared profile for a résumé.
+                    </p>
+                  )}
+                </fieldset>
+              </li>
+            ))}
+          </ol>
+          {!questions.length && (
+            <p className="text-sm text-muted-foreground">
+              No custom questions. Applications use the shared student profile.
+            </p>
+          )}
+          <div className="oc-settings-actions">
+            <Button
+              variant="outline"
+              disabled={busy || questions.length >= 100}
+              onClick={() =>
+                setQuestions((items) => [
+                  ...items,
+                  {
+                    id: crypto.randomUUID(),
+                    prompt: "",
+                    type: "ESSAY",
+                    required: true,
+                    wordLimit: null,
+                    options: [],
+                  },
+                ])
+              }
+            >
+              <Plus size={16} />
+              Add question
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => setPreview(true)}
+            >
+              <Eye size={16} />
+              Preview as student
+            </Button>
+            <Button disabled={busy || !dirty} onClick={() => void save()}>
+              {busy ? "Saving…" : "Save application"}
+            </Button>
+          </div>
+        </>
+      )}
+      <Dialog open={preview} onOpenChange={setPreview}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{name} application</DialogTitle>
+            <DialogDescription>
+              Preview of your current edits. Save to publish changes to
+              students.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Identity, academics, experience, and résumé come from your shared
+            profile.
+          </p>
+          <div className="space-y-6">
+            {questions.map((q, i) => (
+              <div key={q.id} className="space-y-2">
+                <label
+                  className="block text-sm font-medium"
+                  htmlFor={`answer-${q.id}`}
+                >
+                  {i + 1}. {q.prompt || "Untitled question"} ·{" "}
+                  {q.required ? "Required" : "Optional"}
+                </label>
+                <QuestionField
+                  question={q}
+                  value={responses[q.id] || ""}
+                  onChange={(value) =>
+                    setResponses((r) => ({ ...r, [q.id]: value }))
+                  }
+                />
+                <p
+                  id={`help-${q.id}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  {q.type === "ESSAY" && q.wordLimit
+                    ? `Up to ${q.wordLimit} words`
+                    : q.type === "FILE_UPLOAD"
+                      ? "PDF or document link. Preview does not upload files."
+                      : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }

@@ -53,7 +53,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
     "next/headers": { cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
     "./prisma": {
       prisma: {
-        user: { upsert: async () => ({ id: "actor", role: "CLUB_ADMIN" }) },
+        user: { findUnique: async () => null, upsert: async () => ({ id: "actor", role: "CLUB_ADMIN" }) },
         clubMember: {
           findUnique: async ({ where }) => {
             assert.deepEqual(where, { userId_clubId: { userId: "actor", clubId } })

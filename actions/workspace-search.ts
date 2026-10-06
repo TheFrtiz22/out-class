@@ -77,7 +77,7 @@ export async function searchWorkspace(
       : [],
     clubIds.length
       ? prisma.pipelineRound.findMany({
-          where: { clubId: { in: clubIds }, name: contains },
+          where: { clubId: { in: clubIds }, archivedAt: null, name: contains },
           select: { id: true, clubId: true, name: true, club: { select: { name: true } } },
           take: 6,
           orderBy: { order: "asc" },

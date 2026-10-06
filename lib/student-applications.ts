@@ -12,6 +12,7 @@ export type ApplicationQuestion = {
   prompt: string
   type: "ESSAY" | "FILE_UPLOAD" | "MULTIPLE_CHOICE"
   required: boolean
+  options?: string[]
   wordLimit: number | null
 }
 export const applicationStatusLabels: Record<string, string> = {
@@ -46,6 +47,8 @@ export function answerErrors(
         errors[question.id] = "Use an uploaded PDF or a valid document URL."
       }
     }
+    if (answer.response.trim() && question.type === "MULTIPLE_CHOICE" && question.options?.length && !question.options.includes(answer.response))
+      errors[question.id] = "Choose one of the available options."
     if (
       final &&
       question.type === "ESSAY" &&

@@ -32,7 +32,7 @@ export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const { membership } = await requireClubPermission(clubId, ["interviews.manage"])
   const [club, rounds, members, rooms, bookings] = await Promise.all([
     prisma.club.findUniqueOrThrow({ where: { id: clubId }, select: { name: true } }),
-    prisma.pipelineRound.findMany({ where: { clubId }, orderBy: { order: "asc" }, select: { id: true, name: true } }),
+    prisma.pipelineRound.findMany({ where: { clubId, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, configuration: true, type: true } }),
     prisma.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } } } }),
     prisma.interviewRoom.findMany({ where: { clubId }, include: roomInclude, orderBy: { createdAt: "desc" } }),
     prisma.interviewBooking.findMany({ where: { slot: { clubId, roomId: { not: null } } }, include: { slot: true, round: { select: { anonymousReview: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } }),
@@ -46,7 +46,7 @@ export async function createInterviewRoom(raw: RoomInput) {
   const result = await atomic(async tx => {
     // Serialize competing room creation and overlap checks within this club.
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${input.clubId} FOR UPDATE`
-    const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId } })
+    const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null } })
     if (!round) throw new Error("Choose a recruitment round from this club.")
     const panelIds = [...new Set(input.panelMemberIds)]
     if (await tx.clubMember.count({ where: { id: { in: panelIds }, clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } } }) !== panelIds.length) throw new Error("Choose interviewers who belong to this club.")
@@ -71,6 +71,8 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
   await atomic(async tx => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${room.clubId} FOR UPDATE`
     if (input.open) {
+      const round = await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: room.clubId, archivedAt: null } })
+      if (!round) throw new Error("Archived rounds cannot reopen interview rooms.")
       const slots = await tx.interviewSlot.findMany({ where: { roomId: room.id, startTime: { gt: new Date() } } })
       const others = await tx.interviewSlot.findMany({ where: { clubId: room.clubId, AND: [{ OR: [{ roomId: null }, { roomId: { not: room.id } }] }, { OR: [{ roomId: null }, { room: { isOpen: true } }, { bookings: { some: {} } }] }] }, include: { room: true } })
       if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")

@@ -1,4 +1,5 @@
 "use client";
+import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/product/page-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -8,8 +9,8 @@ import { ManagerOverview } from "@/components/manager-overview";
 import { MemberOverview } from "@/components/member-overview";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation, personalModes, personalDestination } from "@/lib/product-navigation";
-import { ScreeningDashboardView } from "@/components/views/screening-dashboard-view";
-import { ClubAnnouncements } from "@/components/club-announcements";
+const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView));
+const ClubAnnouncements = dynamic(() => import("@/components/club-announcements").then(m => m.ClubAnnouncements));
 import type { ViewId } from "@/lib/views";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -26,13 +27,13 @@ import {
   getWorkspaceRounds,
 } from "@/lib/workspace-api";
 import { ApplicationStateProvider, useApplicationState } from "@/lib/application-state";
-import { ClubMembers } from "@/components/club-members";
-import { ClubProfileSettings } from "@/components/club-profile-settings";
-import { ClubTasks } from "@/components/club-tasks";
+const ClubMembers = dynamic(() => import("@/components/club-members").then(m => m.ClubMembers));
+import { ClubSettingsWorkspace } from "@/components/club-settings-workspace";
+const ClubTasks = dynamic(() => import("@/components/club-tasks").then(m => m.ClubTasks));
 import { MeetingList } from "@/components/meeting-workspace";
-import { LiveLeaderWorkspace } from "@/components/views/leader-dashboard/live-leader-workspace";
-import { InterviewWorkspaceView } from "@/components/views/interview-workspace-view";
-import { InterviewManagementTabs } from "@/components/interview-management-tabs";
+const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace));
+const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView));
+const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs));
 import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,8 @@ export function ClubWorkspace({
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
+  const membershipKey = membership ? `${membership.id}:${membership.status}:${membership.isOwner}:${membership.permissions.join(",")}` : "";
+  const canLoadWorkspace = !!membership;
   const [data, setData] = useState<Overview | null>(null),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0),
@@ -71,7 +74,7 @@ export function ClubWorkspace({
     if (needsSelection) selectClub(clubId);
   }, [clubId, needsSelection]);
   useEffect(() => {
-    if (!demo.ready || loading || !membership || needsSelection) return;
+    if (!demo.ready || loading || !canLoadWorkspace || needsSelection) return;
     let current = true;
     setError("");
     getClubWorkspaceOverview(clubId)
@@ -91,12 +94,12 @@ export function ClubWorkspace({
     };
   }, [
     clubId,
-    section,
     retry,
     loading,
     demo.ready,
     needsSelection,
-    membership?.id,
+    canLoadWorkspace,
+    membershipKey,
   ]);
   const current = data?.club.id === clubId ? data : null;
   const manager = !!membership && hasWorkspace(membership);
@@ -129,7 +132,7 @@ export function ClubWorkspace({
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}
             {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
             {section === "members" && <ClubMembers key={clubId} clubId={clubId} />}
-            {section === "settings" && <ClubProfileSettings key={clubId} clubId={clubId} onSaved={() => setRetry(n => n + 1)} />}
+            {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => setRetry(n => n + 1)} />}
             {section === "announcements" && <ClubAnnouncements key={clubId} />}
             {section === "recruitment" && (active === "overview" ? <RecruitingOverview data={current} /> : active === "interviews" ? <div className="space-y-8">{hasPermission(current.membership, "applications.review") && <div className="border-b pb-6"><p className="mb-4 text-sm text-muted-foreground">Open your round’s candidate queue to take notes and complete reviews.</p><Button onClick={() => setInterviewMode(true)}>Enter interview mode</Button></div>}{(interviewCapabilities(current.membership).editKit || interviewCapabilities(current.membership).participate) && <RecruitmentWorkspace clubId={clubId} member={current.membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Review applications and record decisions. Changes are saved to the application; no automatic email is sent." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped decisionsOnly={active === "decisions"} /></>)}
           </section>}
@@ -200,7 +203,7 @@ function RecruitmentWorkspace({
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}
-      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} onInterview={() => { if (hasPermission(member, "applications.review")) onInterview() }} />}
+      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} />}
     </div>
   );
 }

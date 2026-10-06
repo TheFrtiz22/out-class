@@ -14,7 +14,7 @@ export function invitationEmailConfig() {
 
 export async function sendInvitationEmail(input: { recipient: string; organizationName: string; owner: boolean; deliveryId: string; legacyInvitationId?: string }) {
   const config = invitationEmailConfig();
-  const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000, disableFileAccess: true, disableUrlAccess: true });
+  const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 10000, disableFileAccess: true, disableUrlAccess: true });
   try {
     const message = invitationEmail({ ...input, siteUrl: config.siteUrl });
     const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: { address: z.string().email().parse(input.recipient), name: '' }, ...message, messageId: `<${input.deliveryId}@${new URL(config.siteUrl).hostname}>` });

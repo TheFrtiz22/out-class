@@ -1,6 +1,7 @@
 "use server";
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 
+import { roundConfigurationSchema } from "@/lib/club-settings";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -47,7 +48,7 @@ export async function saveInterviewKit(clubId: string, roundId: string, version:
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     await authorizeQuestionBank(tx, clubId, roundId, user.id, true);
-    const changed = await tx.pipelineRound.updateMany({ where: { id: roundId, clubId, kitVersion: version }, data: { interviewKit: parsed, kitVersion: { increment: 1 } } });
+    const changed = await tx.pipelineRound.updateMany({ where: { id: roundId, clubId, archivedAt: null, kitVersion: version }, data: { interviewKit: parsed, kitVersion: { increment: 1 } } });
     if (changed.count !== 1) throw new Error("Kit changed. Reload before editing.");
     await tx.auditLog.create({ data: { actorId: user.id, clubId, targetId: roundId, action: "interview.kit.update", details: { version: version + 1, questionCount: parsed.length } } });
     return { questions: parsed, version: version + 1 };
@@ -60,12 +61,14 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     const key = { applicationId: app.id, roundId: round.id, interviewerId: member.id };
     let record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: key } });
     if (!record) {
+      if (round.archivedAt) throw new Error("Archived rounds cannot start interviews.");
       if (app.roundId !== round.id) throw new Error("Cannot start an interview in a previous round.");
       record = await tx.interviewRecord.create({ data: { ...key, questions: kitSchema.parse(round.interviewKit), draft: emptyInterviewDraft, anonymousReview: false } });
     }
     if (record.anonymousReview) throw new Error("Historical anonymous interview is protected.");
     if (!record.completedAt && app.roundId !== round.id) throw new Error("Applicant round changed.");
-    return present(record, tx);
+    const settings = roundConfigurationSchema.parse(round.configuration || {});
+    return { ...await present(record, tx), instructions: settings.instructions, duration: settings.duration };
   });
 }
 export async function saveInterviewSession(input: z.infer<typeof scope> & { revision: number; draft: unknown; complete?: boolean }) {
@@ -77,6 +80,7 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: key } });
     if (!record || record.anonymousReview) throw new Error("Interview unavailable under current privacy settings.");
     validateQuestionNotes(kitSchema.parse(record.questions), data.draft);
+    if (!record.completedAt && round.archivedAt) throw new Error("Archived rounds retain history but cannot edit interviews.");
     if (record.completedAt) {
       // A lost success response can be retried, but only with exactly the submitted draft.
       if (!data.complete || data.revision !== record.revision - 1 || JSON.stringify(interviewDraftSchema.parse(record.draft)) !== JSON.stringify(data.draft)) throw new Error("This interview is already completed.");

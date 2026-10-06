@@ -13,6 +13,7 @@ test('member management uses real migrated constraints, atomic transfer, queued 
  let actorId=owner,failAudit=false;
  const update=async(table,id,data)=>{const entries=Object.entries(data);const values=entries.map(([key,value])=>key==='permissions'?'{'+value.join(',')+'}':value);return one(`UPDATE "${table}" SET ${entries.map(([key],i)=>`"${key}"=$${i+2}`).join(',')} WHERE id=$1 RETURNING *`,[id,...values]);};
  const tx={
+  club:{findUnique:async()=>({invitationEmailEnabled:true})},
   $queryRaw:async(_strings,club)=>(await db.query('SELECT id FROM "Club" WHERE id=$1 FOR UPDATE',[club])).rows,
   user:{findUnique:async({where})=>one('SELECT * FROM "User" WHERE id=$1',[where.id]),findUniqueOrThrow:async({where})=>one('SELECT * FROM "User" WHERE id=$1',[where.id])},
   clubMember:{
@@ -36,7 +37,7 @@ test('member management uses real migrated constraints, atomic transfer, queued 
   auditLog:{create:async({data})=>{if(failAudit)throw Error('Audit failure');return one('INSERT INTO "AuditLog" (id,"actorId",action,"targetId","clubId",details) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',[randomUUID(),data.actorId,data.action,data.targetId,data.clubId,JSON.stringify(data.details??null)]);}},
  };
  let tail=Promise.resolve();const prisma={$transaction:fn=>{const result=tail.then(async()=>{await db.exec('BEGIN');try{const value=await fn(tx);await db.exec('COMMIT');return value;}catch(error){await db.exec('ROLLBACK');throw error;}});tail=result.catch(()=>{});return result;}};
- const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>name==='@/utils/email'?{invitationEmailConfig:()=>{}}:name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:actorId}})}:name==='@/actions/club-onboarding'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;}
+ const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>name==='@/utils/email'?{invitationEmailConfig:()=>{}}:name==='next/server'?{after:()=>{}}:name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:actorId}})}:name==='@/actions/club-onboarding'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;}
  const api=load('actions/organization-members.ts');
  await assert.rejects(db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[ownerMember]),/active owner/);
  const queued=await Promise.all([api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'}),api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'})]);

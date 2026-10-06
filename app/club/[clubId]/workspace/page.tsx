@@ -1,5 +1,6 @@
 import { ClubWorkspace } from "@/components/club-workspace";
 import { AuthSessionBoundary } from "@/components/auth-session-boundary";
+export const maxDuration = 60;
 export default async function Page({
   params,
   searchParams,
