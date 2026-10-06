@@ -1,0 +1,34 @@
+# Production database credential rotation - October 6, 2026
+
+The user reported the production PostgreSQL URI/password exposed through a browser and explicitly authorized coordinated rotation and replacement of affected production connections. No credential is included here. This incident operation preserved the existing live application; it did not release the interview redesign or apply migrations.
+
+## Completed operation
+
+- Production Supabase identity: `htlgjluegmdwfjkzzwic`, OutClass, us-west-2. Vercel project `prj_ZL6azRpYgevP8UVL3ela8tOrh4MO`, outclassuva/out-class.
+- Current production had independently advanced to main `8497548eb9846c96de17bad48e303982181b8804` (Corkboard flyer API). The replacement rebuilt that exact SHA, using the production environment. Main and application source were not changed.
+- Replacement deployment: `dpl_5HtXn8jVnshE3VnFLnW3bytjMxWJ`, READY, https://out-class-leacr93oz-outclassuva.vercel.app. All three production aliases resolve to it: out-class.net, www.out-class.net and out-class.vercel.app.
+- Replaced five production-only Sensitive variables in place: DATABASE_URL, POSTGRES_URL, POSTGRES_PRISMA_URL, POSTGRES_URL_NON_POOLING and POSTGRES_PASSWORD. Their IDs, types and scopes remain unchanged. The separate feature-branch staging bindings were not changed.
+- Sensitive existing URLs could not be decrypted through Vercel. Replacement URLs were reconstructed from verified PostgreSQL components and Supabase direct/pooler identities: primary DATABASE_URL and non-pooling URL use the production direct endpoint on 5432; POSTGRES_URL and Prisma alternative use the production transaction pooler on 6543, with the Prisma alternative's pgbouncer flag. All require SSL. Existing hidden extra query parameters were not recoverable; primary application/database behavior was verified after replacement.
+- Generated a strong replacement password in memory and saved it encrypted with Windows CurrentUser DPAPI outside Git. Neither old nor new credential was printed or supplied through shell arguments. The supported Supabase database/password management API confirmed the update at **01:09:40 EDT**.
+- Held automatic domain promotion while preparing the build; all live aliases stayed on the old deployment until the replacement was READY. Following a fresh new-password connection check, promoted the matching build and verified every alias. Restored the original auto-assignment setting. SSO/password protection remained unchanged.
+- Terminated the remaining pre-rotation postgres client session after new application smoke checks passed. Other managed service roles and sessions created after rotation were excluded. Subsequent read-only activity inventory found the oldest remaining postgres client session started after rotation.
+- The scheduled invitation-delivery job points to the new deployment with its original path/schedule and remains enabled.
+
+## Verification and limits
+
+- Homepage and login page returned 200. An uncached GET of the current flyer API with a nonexistent synthetic UUID returned its expected 404/Not found, proving an actual Prisma database read without accessing an applicant or changing data. Repeated after old-session termination.
+- Fresh session and transaction pooler connections on 5432 and 6543 passed certificate-chain and hostname verification using CA certificates from Supabase's official CLI source. A separate read-only Prisma connection passed strict TLS with those certificates.
+- Production remains ACTIVE_HEALTHY, with 23 finished Prisma migrations. Neither interview migration was applied; no schema, recruitment decision, membership, score or document mutation was performed.
+- Auth settings returned 200. Authorized Storage bucket inventory succeeded and resumes remains private; no document was downloaded. These are provider checks, not an end-to-end production user login/upload test.
+- Anonymous REST-root probing returned 401 and had no pre-rotation baseline. It is not counted as a successful check or attributed to rotation. The verified application database path uses Prisma.
+- **A database-backed failure occurred during cutover.** The old deployment's uncached database probe returned 403 after password replacement; recovery probes passed by **01:12:16 EDT**. This was not a demonstrated zero-downtime rotation. Local verification initially encountered BOM parsing and unavailable/default CA bundle issues; these were fixed without disabling certificate verification. Promotion succeeded despite an empty response body initially confusing the private coordinator; actual alias readback established success and its retry handling was corrected.
+- Inventory covered the one accessible Vercel team project, repository and all three GitHub environment secret lists (no database secrets configured), repository workflow, local project/process configuration, database client-session metadata and Supabase Edge Functions (none deployed). The reserved SUPABASE_DB_URL service binding is managed by Supabase. The user was asked about external consumers and has not yet identified any; an undisclosed external client/job cannot be claimed updated.
+- The exposed original password was not available for an explicit old-password rejection attempt. The provider password update, fresh replacement authentication and old-session termination were verified. No comprehensive forensic review or recovery from unauthorized data changes is claimed.
+
+## Private recovery material and next steps
+
+Private encrypted configuration, strict-TLS migration connection and phase evidence reside under `C:\Users\arden\AppData\Local\OutClass-staging-verification`, protected outside Git. Relevant evidence: rotation-state.json, rotation-consumer-inventory.json, rotation-supabase-inventory.json and rotation-provider-health.json. Credential files use DPAPI and must not be copied into the repository or chat.
+
+Retain the healthy matching application and new credential for recovery. Do not roll traffic back to an immutable deployment carrying the exposed password, and do not restore that password. If another database consumer is identified, update it through its secure secret interface and verify a fresh connection. Remove the submitted credential from its destination where possible; deletion does not replace rotation.
+
+Seven completed physical database backups were available; PITR remains disabled. Previously verified encrypted Storage backup and staging restore evidence remain separate. This rotation performed no production restore or destructive recovery. The interview feature's outstanding staging/device/recovery gates remain in [the release handoff](interview-release-handoff.md).
