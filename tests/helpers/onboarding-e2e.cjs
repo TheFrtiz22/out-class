@@ -18,6 +18,21 @@ function readConfig(filename){
  }
  return config;
 }
+// Hosted import needs no SMTP/MFA fixture. This explicit mode never changes
+// the dedicated local onboarding guard and cannot target an arbitrary app URL.
+function readStagingImportConfig(filename){
+ const config=JSON.parse(fs.readFileSync(filename));
+ assert.equal(config.projectId,'outclass-interview-staging');
+ assert.equal(config.projectRef,'omfcozcbpmevwolshibh');
+ assert.equal(config.status.API_URL,'https://omfcozcbpmevwolshibh.supabase.co');
+ const app=new URL(config.appUrl);
+ assert.ok(['localhost','127.0.0.1'].includes(app.hostname));
+ assert.equal(app.port,'3111');
+ assert.equal(app.protocol,'http:');
+ assert.equal(new URL(config.status.DB_URL).hostname,'db.omfcozcbpmevwolshibh.supabase.co');
+ assert.equal(path.resolve(config.buildDir),path.resolve(__dirname,'../../.next-publish'));
+ return config;
+}
 async function confirmationMessage(config,email,subject=/Verify your UVA email/){
  for(let attempt=0;attempt<30;attempt++){
   const list=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();
@@ -94,4 +109,4 @@ class Actor {
  }
  async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,experiences:[]}]);}
 }
-module.exports={Actor,totp,readConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,actionSourceMatches};
+module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,actionSourceMatches};
