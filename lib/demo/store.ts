@@ -85,6 +85,20 @@ function ensurePresentation(value: DemoState) {
     }
   }
   for (const m of value.memberships) m.interviewOffices ??= [];
+  // Historical seeded evaluations have deterministic IDs. Resolve only those
+  // identities, never an arbitrary review by its round display name alone.
+  if (value.applications.some(a => a.evaluations.some(e => e.roundId === undefined))) {
+    const defaults = new Map(createDemoSeed(value.anchor).applications.map(a => [a.id, a]))
+    for (const application of value.applications) {
+      const original = defaults.get(application.id)
+      if (!original || original.clubId !== application.clubId || original.studentId !== application.studentId) continue
+      for (const evaluation of application.evaluations) {
+        if (evaluation.roundId !== undefined) continue
+        const seeded = original.evaluations.find(e => e.id === evaluation.id && e.interviewerId === evaluation.interviewerId && e.round === evaluation.round)
+        if (seeded?.roundId && value.clubs.find(c => c.id === application.clubId)?.rounds.some(r => r.id === seeded.roundId)) evaluation.roundId = seeded.roundId
+      }
+    }
+  }
   for (const s of value.students) s.profile.scholarStatus ??= null;
   if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
   ensureSemesterWork(value)

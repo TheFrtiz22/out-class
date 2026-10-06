@@ -18,6 +18,7 @@ function setup(legacy = false, alreadyHydrated = false) {
       if (!alreadyHydrated) delete member.interviewOffices
       else member.interviewOffices = []
     }
+    for (const application of saved.applications) for (const evaluation of application.evaluations) delete evaluation.roundId
     if (alreadyHydrated) saved.interviewFoundation = { assignments: [], documents: [], annotations: [], history: [], audit: [] }
     else delete saved.interviewFoundation
     localStorage.setItem(store.DEMO_KEY, JSON.stringify(saved))
@@ -110,6 +111,29 @@ test('legacy upgrade preserves revoked grants, application edits, kit snapshots 
   const assignmentCount = restored.interviewFoundation.assignments.length
   demoStore.stop(); demoStore.start()
   assert.equal(demoStore.get().interviewFoundation.assignments.length, assignmentCount)
+  assert.equal(h.calls(), 0)
+  demoStore.stop()
+})
+
+test('legacy score mapping uses canonical identities, preserves exact historical values and leaves ambiguous records blocked', async () => {
+  const { h, demoStore, DEMO_KEY, api } = setup()
+  const saved = structuredClone(demoStore.get()), club = saved.clubs[0]
+  const app = saved.applications.find(a => a.clubId === club.id && a.studentId !== saved.students[0].id && a.evaluations.length > 1 && a.roundId === club.rounds.find(r => r.name === 'Interview').id && !saved.interviews.some(r => r.applicationId === a.id && r.completedAt))
+  const evaluation = app.evaluations[0], roundId = evaluation.roundId
+  evaluation.score = 8.25
+  evaluation.notes = 'Preserve historical notes exactly'
+  delete evaluation.roundId
+  const unknown = { ...evaluation, id: crypto.randomUUID(), roundId: null }
+  app.evaluations.push(unknown)
+  const before = persisted(evaluation)
+  localStorage.setItem(DEMO_KEY, JSON.stringify(saved))
+  demoStore.stop(); demoStore.start()
+  const restored = demoStore.get().applications.find(a => a.id === app.id)
+  assert.deepEqual(persisted(restored.evaluations.find(e => e.id === evaluation.id)), { ...before, roundId })
+  assert.equal(restored.evaluations.find(e => e.id === unknown.id).roundId, null)
+  const scope = { clubId: club.id, applicationId: app.id, roundId: app.roundId }
+  const session = await api.openInterviewSession(scope)
+  await assert.rejects(api.saveInterviewSession({ ...scope, revision: session.revision, draft: { ...session.draft, score: 8.5 }, complete: true }), /Historical evaluation/)
   assert.equal(h.calls(), 0)
   demoStore.stop()
 })
