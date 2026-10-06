@@ -217,7 +217,7 @@ test("middleware allows effective application access but denies provider identit
   for (const path of ["/auth/callback", "/api/auth/password-recovery", "/api/demo", "/platform/login", "/login", "/forgot-password", "/reset-password"]) {
     assert.equal((await middleware(new NextRequest(`https://outclass.test${path}`, { headers }))).status, 403);
   }
-  assert.equal(live, 3);
+  assert.equal(live, 2);
 });
 test("blocked mutation attempts produce attributed audit events and never execute a target mutation", async () => {
   const h = sessionHarness(),

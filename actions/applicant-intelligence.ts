@@ -14,14 +14,13 @@ async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>
     include: { round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
   });
   if (!app || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
-  return { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+  return { app: { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, member };
 }
 export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const data = scope.parse(input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
-    const app = await authorized(tx, data, membership.id);
-    const reviewer = await tx.clubMember.findFirst({where:{id:membership.id,clubId:data.clubId}});
+    const { app, member: reviewer } = await authorized(tx, data, membership.id);
     let config=readDisplayConfig(app.round.applicantDisplay);
     if(data.previewConfig){
       if(!hasPermission(reviewer,"decisions.manage"))throw Error("Voting setup permission required.");
@@ -43,7 +42,7 @@ export async function saveApplicantObservation(input: unknown) {
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
-    const app = await authorized(tx, data, membership.id);
+    const { app } = await authorized(tx, data, membership.id);
     // Free text can identify an applicant. Preserve existing observations without exposing them anonymously.
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
     if (data.id) {
@@ -61,7 +60,7 @@ export async function deleteApplicantObservation(input: unknown) {
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
-    const app = await authorized(tx, data, membership.id);
+    const { app } = await authorized(tx, data, membership.id);
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
     const removed = await tx.applicantObservation.deleteMany({ where: { id: data.id, applicationId: app.id, authorId: user.id } });
     if (removed.count !== 1) throw new Error("Only the author can delete this observation.");

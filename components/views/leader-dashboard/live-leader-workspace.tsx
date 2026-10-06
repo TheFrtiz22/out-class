@@ -53,7 +53,7 @@ const average = (app: Candidate) =>
     ? app.evaluations.reduce((total, item) => total + item.score, 0) / app.evaluations.length
     : null
 
-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: { scoped?: boolean; decisionsOnly?: boolean }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
   const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
@@ -99,17 +99,17 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false }: {
           </select>
         )}
       </div>}
-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} />
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
       {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false }: { membership: ExtendedMembership; decisionsOnly?: boolean }) {
+function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, onData }: { membership: ExtendedMembership; decisionsOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
-  const [data, setData] = useState<Pipeline | null>(null)
+  const [data, setData] = useState<Pipeline | null>(initialData)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialData)
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
   const [round, setRound] = useState("")
@@ -134,12 +134,16 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
   const [decision, setDecision] = useState("")
   const [targetRound, setTargetRound] = useState("")
   const mutating = useRef(false)
+  const retained = useRef(data), publish = useRef(onData)
+  retained.current = data
+  publish.current = onData
+  useEffect(() => { publish.current?.(data) }, [data])
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
   const dirty = JSON.stringify([score, notes]) !== baseline && !!activeId
   useEffect(() => {
     let current = true
-    setLoading(true)
+    setLoading(!retained.current)
     setError("")
     
     getClubPipeline(membership.clubId)
@@ -147,7 +151,7 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
         if (current) setData(result)
       })
       .catch(() => {
-        if (current) setError("Couldn’t load this club’s applicants. Please try again.")
+        if (current) { setData(null); setError("Couldn’t load this club’s applicants. Please try again.") }
       })
       .finally(() => {
         if (current) setLoading(false)

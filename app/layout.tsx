@@ -40,7 +40,9 @@ export const metadata: Metadata = {
   },
 }
 
-import { createClient } from "@/utils/supabase/server"
+import { getSessionUser } from "@/utils/auth"
+import { getCurrentUser } from "@/utils/current-user"
+import { isUvaEmail } from "@/lib/auth"
 import { cookies } from "next/headers"
 import { CorkboardProvider } from "@/contexts/corkboard-context"
 import { AuthProvider } from "@/contexts/auth-context"
@@ -57,11 +59,12 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies()
   const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
-  const supabase = await createClient(cookieStore)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const { data: { user }, error: authError } = await getSessionUser()
   const target = viewSession ? await prisma.user.findUnique({ where: { id: viewSession.targetUserId }, select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } }) : null
   const demoAllowed = !cookieStore.has(PLATFORM_VIEW_COOKIE) && canAccessDemo(authError ? undefined : user?.email)
   const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
+  const initialUser = !demoEnabled && (viewSession || !authError && user?.email_confirmed_at && user.email && isUvaEmail(user.email))
+    ? await getCurrentUser().catch(() => null) : null
   let template
   if (demoEnabled) {
     try {
@@ -76,7 +79,7 @@ export default async function RootLayout({
         {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />
         <DemoDataProvider template={template} allowed={demoAllowed} enabled={demoEnabled} clearStaleSession={!demoAllowed && cookieStore.has(DEMO_COOKIE)}>
-          <AuthProvider isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={(!authError && !!user) || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
+          <AuthProvider initialUser={initialUser} isImpersonating={cookieStore.has(PLATFORM_VIEW_COOKIE)} hasSession={!!initialUser || cookieStore.has(PLATFORM_VIEW_COOKIE)}>
             <OrganizationInvitationsProvider>
             <CorkboardProvider><ClubCustomizationProvider>
               <div className="oc-route-content" style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>

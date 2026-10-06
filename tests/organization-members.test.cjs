@@ -56,7 +56,7 @@ test('directory reads are organization-scoped and include only brief profiles an
  const h=harness();await h.api.getOrganizationMemberManagement(clubId);
  for(const query of h.state.reads.filter(q=>q.where.clubId))assert.equal(query.where.clubId,clubId);
  const memberRead=h.state.reads.find(q=>q.include?.user);assert.deepEqual(Object.keys(memberRead.include.user.select.studentProfile.select).sort(),['firstName','gradYear','lastName','major']);
- const invitationRead=h.state.reads.find(q=>q.include?.deliveries);assert.deepEqual(Object.keys(invitationRead.include.deliveries.select).sort(),['createdAt','failureCode','status']);
+ const invitationRead=h.state.reads.find(q=>q.select?.deliveries);assert.deepEqual(Object.keys(invitationRead.select.deliveries.select).sort(),['createdAt','failureCode','status']);
  await assert.rejects(h.api.getOrganizationMemberManagement(otherClub),/denied/);
 });
 

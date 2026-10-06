@@ -126,11 +126,17 @@ export async function getClubDirectory(): Promise<{
       select: { ...publicFields.events.select, clubId: true },
       orderBy: { date: "asc" },
     });
+    const eventsByClub = new Map<string, typeof events>();
+    for (const event of events) {
+      const group = eventsByClub.get(event.clubId);
+      if (group) group.push(event);
+      else eventsByClub.set(event.clubId, [event]);
+    }
     return {
       clubs: clubs.map((club) =>
         present({
           ...club,
-          events: events.filter((event) => event.clubId === club.id),
+          events: eventsByClub.get(club.id) ?? [],
         }),
       ),
     };

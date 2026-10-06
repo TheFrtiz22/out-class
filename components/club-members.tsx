@@ -15,7 +15,8 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/
 type Member = Omit<Awaited<ReturnType<typeof getClubMembers>>[number], "status" | "accessRole" | "joinedAt" | "updatedAt">
 const name = (m: Member) => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email
 const role = (m: Member) => m.title || m.role.replaceAll("_", " ").toLowerCase()
-export function ClubMembers({ clubId }: { clubId: string }) {
+type Directory = Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>
+export function ClubMembers({ clubId, initialDirectory, onDirectory }: { clubId: string; initialDirectory?: Directory | null; onDirectory?: (data: Directory | null) => void }) {
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
   const actor = user?.memberships.find(m => m.clubId === clubId)
   const { canChangeRoles: canAccess, canManageMembers: canMembers } = organizationCapabilities(actor)
@@ -44,7 +45,7 @@ export function ClubMembers({ clubId }: { clubId: string }) {
   }
   async function run(fn: () => Promise<unknown>) { setBusy(true); setError(""); try { await fn(); await reload() } catch(e) { setError(e instanceof Error ? e.message : "Could not save.") } finally { setBusy(false) } }
   if (!canAccess && !canMembers) return <p role="alert">Member management is not available with your current access.</p>
-  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} />
+  if (demo.ready && !demo.isDemoEnabled) return <OrganizationMemberManagement key={clubId} clubId={clubId} initialData={initialDirectory} onData={onDirectory} />
   return <div className="max-w-5xl space-y-6" data-unsaved={dirty} data-saving={busy}>
     <p className="text-sm leading-7 text-muted-foreground">Club roles describe responsibilities. Management access is granted separately, capability by capability.</p>
     {demo.isDemoEnabled && <p className="text-sm text-muted-foreground">Fictional demo directory. Membership and access changes are available outside Demo Mode.</p>}

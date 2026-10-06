@@ -171,7 +171,7 @@ export function ClubSettingsWorkspace({
           <div hidden={active !== "pipeline"}>
             <PipelineBuilder
               clubId={clubId}
-              onSaved={() => setPipelineRevision((n) => n + 1)}
+              onSaved={() => { setPipelineRevision((n) => n + 1); onSaved?.() }}
             />
           </div>
         )}

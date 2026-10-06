@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { getOrganizationInvitations } from "@/actions/club-onboarding";
+import { getOrganizationInvitations } from "@/lib/workspace-read";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { toast } from "sonner";

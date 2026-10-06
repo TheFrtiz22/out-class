@@ -8,6 +8,14 @@ import { createClient } from "./supabase/server";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
+import { cache } from "react";
+
+// React's request cache is limited to one server render/request. It never shares
+// a verified identity between requests, users, clubs, or support sessions.
+export const getSessionUser = cache(async () => {
+  const supabase = await createClient(await cookies());
+  return supabase.auth.getUser();
+});
 
 /**
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
@@ -35,9 +43,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
     return { user: effective, supabaseUser: { id: effective.id, email: effective.email, email_confirmed_at: undefined, app_metadata: {} }, impersonation: session };
   }
   if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new Error("Live data is unavailable in Demo Mode.");
-  const supabase = await createClient(cookieStore);
-  
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await getSessionUser();
   
   if (error || !user || !user.email || !isUvaEmail(user.email) || !user.email_confirmed_at) {
     redirect("/"); // Redirect to login page

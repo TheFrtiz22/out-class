@@ -1,4 +1,5 @@
 "use client";
+import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
@@ -16,7 +17,6 @@ import { MoreHorizontal, Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
-  getOrganizationMemberManagement,
   changeOrganizationMemberRole,
   removeOrganizationMember,
   transferOrganizationOwnership,
@@ -63,13 +63,13 @@ const statusLabel = (status: string) =>
     : status.charAt(0) + status.slice(1).toLowerCase();
 
 /** Extends the existing club Members route; all authorization comes from the shared layer. */
-export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
+export function OrganizationMemberManagement({ clubId, initialData = null, onData }: { clubId: string; initialData?: Directory | null; onData?: (data: Directory | null) => void }) {
   const { refreshUser } = useAuth();
-  const [data, setData] = useState<Directory | null>(null);
+  const [data, setData] = useState<Directory | null>(initialData);
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false),
-    [loading, setLoading] = useState(true),
+    [loading, setLoading] = useState(!initialData),
     [attempt, setAttempt] = useState(0);
   const [query, setQuery] = useState(""),
     [history, setHistory] = useState(false),
@@ -82,9 +82,13 @@ export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
     [bulkPermissions, setBulkPermissions] = useState<string[]>([]);
   const working = useRef(false),
     trigger = useRef<HTMLElement | null>(null);
+  const retained = useRef(data), publish = useRef(onData);
+  retained.current = data;
+  publish.current = onData;
+  useEffect(() => { publish.current?.(data); }, [data]);
   useEffect(() => {
     let current = true;
-    setLoading(true);
+    setLoading(!retained.current);
     setError("");
     setSelection([]);
     getOrganizationMemberManagement(clubId)
@@ -92,8 +96,10 @@ export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
         if (current) setData(value);
       })
       .catch(() => {
-        if (current)
+        if (current) {
+          setData(null);
           setError("Could not load members. Your access may have changed.");
+        }
       })
       .finally(() => {
         if (current) setLoading(false);
@@ -114,12 +120,14 @@ export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
   const caps = organizationCapabilities(data?.actor);
   const active = data?.members.find((member) => member.id === selectedId);
   async function reload(refreshIdentity = false) {
+    try {
     const [directory] = await Promise.all([
       getOrganizationMemberManagement(clubId),
       refreshIdentity ? refreshUser() : Promise.resolve(),
     ]);
     setData(directory);
     setDirty(false);
+    } catch (error) { setData(null); throw error; }
   }
   async function run(
     action: () => Promise<unknown>,
@@ -1017,7 +1025,14 @@ export function OrganizationMemberManagement({ clubId }: { clubId: string }) {
                             role,
                           }),
                         "Organization role updated.",
-                        undefined,
+                        active.id !== data.actor.id && !active.isOwner && role !== "OWNER" ? {
+                          ...data,
+                          members: data.members.map(member => member.id === active.id ? {
+                            ...member,
+                            accessRole: role as Member["accessRole"],
+                            permissions: organizationRolePermissions[role as Member["accessRole"]],
+                          } : member),
+                        } : undefined,
                         active.id === data.actor.id,
                       );
                     }}

@@ -26,7 +26,7 @@ function harness(api, file, props, auth = { user: { id: 'user' }, refreshUser: a
       if (name === '@/contexts/demo-context') return { useDemoMode: () => demo };
       if (name === '@/utils/auth') return { requireAuth: api.requireAuth };
       if (name === '@/utils/profile-onboarding') return { requireCompletedStudentProfile: api.requireCompletedStudentProfile };
-      if (name === '@/actions/club-onboarding' || name === '@/actions/club-access') return api;
+      if (name === '@/actions/club-onboarding' || name === '@/actions/club-access' || name === '@/lib/workspace-read') return api;
       if (name.startsWith('@/components/')) {
         const key = name.split('/').pop().replace(/(^|-)(\w)/g, (_, _prefix, letter) => letter.toUpperCase());
         return { [key === 'Button' ? 'Button' : key]: key };

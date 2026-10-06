@@ -5,7 +5,7 @@ import { safeReturnPath, isUvaEmail } from "@/lib/auth"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { HomeEntry } from "@/components/home-entry"
 import { getStudentDashboardData } from "@/actions/applications"
-import { createClient } from "@/utils/supabase/server"
+import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
 import { prisma } from "@/utils/prisma"
 import type { Metadata } from "next"
@@ -28,8 +28,7 @@ export const maxDuration = 60
 export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeReturnPath((await searchParams).next)
   const cookieStore = await cookies()
-  const supabase = await createClient(cookieStore)
-  const { data: { user: login }, error: authError } = await supabase.auth.getUser()
+  const { data: { user: login }, error: authError } = await getSessionUser()
   const user = cookieStore.has(PLATFORM_VIEW_COOKIE) ? (await requireAuth()).user : !authError && login?.email_confirmed_at && login.email && isUvaEmail(login.email) ? login : null
 
   if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <HomeEntry launchClubs={await getCachedLaunchClubs()} initialView="landing" />

@@ -22,7 +22,10 @@ export function ClubAccessEditor({
   inviteOnly?: boolean
   onSaved?: () => Promise<void>
   clubId: string
-  initial: Awaited<ReturnType<typeof getClubAccess>>
+  initial: {
+    members: Awaited<ReturnType<typeof getClubAccess>>["members"]
+    invitations: Pick<Awaited<ReturnType<typeof getClubAccess>>["invitations"][number], "id" | "email" | "permissions" | "expiresAt">[]
+  }
 }) {
   const { user, refreshUser } = useAuth()
   const actor = user?.memberships.find(m => m.clubId === clubId)
@@ -36,20 +39,23 @@ export function ClubAccessEditor({
   const target = data.members.find(m => m.id === memberId)
   const higherAuthority = !!target && !actor?.isOwner && (target.isOwner || target.permissions.some(p => !hasPermission(actor, p as ClubPermission)))
   async function run(action: () => Promise<unknown>) {
+    let ownerRefreshed = false
     setBusy(true)
     setMessage("")
     try {
       await action()
-      const updated = await getClubAccess(clubId)
-      setData(updated)
-      if (memberId) { const member = updated.members.find(m => m.id === memberId); setSelected(member?.permissions || []); setOwner(member?.isOwner || false) }
-      await onSaved?.()
+      if (onSaved) { await onSaved(); ownerRefreshed = true }
+      else {
+        const updated = await getClubAccess(clubId)
+        setData(updated)
+        if (memberId) { const member = updated.members.find(m => m.id === memberId); setSelected(member?.permissions || []); setOwner(member?.isOwner || false) }
+      }
       setMessage("Access updated.")
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Could not save.")
     } finally {
       // Refresh self-access even when a successful revocation prevents the subsequent access read.
-      try { await refreshUser() } catch { /* The next server action still rechecks access. */ }
+      if (!ownerRefreshed) try { await refreshUser() } catch { /* The next server action still rechecks access. */ }
       setBusy(false)
     }
   }

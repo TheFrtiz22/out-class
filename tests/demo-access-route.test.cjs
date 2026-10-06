@@ -71,5 +71,5 @@ test('demo cookie blocks live identity reads and mutations without granting a se
   assert.equal(live, 0)
   await middleware(new NextRequest('https://demo.example/api/users/me'))
   await middleware(new NextRequest('https://demo.example/api/demo', { method: 'POST', headers: { cookie: `${access.DEMO_COOKIE}=1` } }))
-  assert.equal(live, 2)
+  assert.equal(live, 1)
 })

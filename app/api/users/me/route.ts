@@ -45,7 +45,7 @@ export async function GET() {
       impersonating: !!impersonation,
       profile: userData.studentProfile, // Map for frontend convenience
       adminRoles,
-    });
+    }, { headers: { "Cache-Control": "private, no-store", Vary: "Cookie" } });
   } catch (error: unknown) {
     if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Impersonation is unavailable. Exit impersonation to continue." }, { status: 403 });
     if (error && typeof error === "object" && "digest" in error && typeof error.digest === "string" && error.digest.startsWith("NEXT_REDIRECT")) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,4 +53,3 @@ export async function GET() {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
-
