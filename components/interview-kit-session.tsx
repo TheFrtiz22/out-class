@@ -151,14 +151,10 @@ export function InterviewKitSession({
         if (complete && result.evaluation) { setClosing(false); onComplete(result.evaluation, next); }
       }
       return true;
-    } catch (e) {
+    } catch {
       if (mounted.current) setFailedFinish(complete);
       if (mounted.current)
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Save failed. Your text is still here; retry before leaving.",
-        );
+        setError("Your interview could not be saved. Retry, or refresh your access and revision.");
       return false;
     } finally {
       savingRef.current = false;
