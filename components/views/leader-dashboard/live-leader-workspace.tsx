@@ -18,7 +18,7 @@ import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoRoundTarget } from "@/components/demo-workspace"
-import { safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile"
+import { safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile"
 import { applicationStatusLabels } from "@/lib/student-applications"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -655,8 +655,8 @@ function ClubWorkspace({ membership, decisionsOnly = false }: { membership: Exte
                     ))}
                     <div className="flex gap-4 text-sm">
                       {[
-                        { label: "Résumé", url: active.student.studentProfile.resumeUrl, resolver: resolveResumeUrl },
-                        { label: "LinkedIn", url: active.student.studentProfile.linkedinUrl, resolver: safeProfileUrl, resolveResumeUrl },
+                        { label: "Résumé", url: active.student.studentProfile.resumeUrl, resolver: (url: string | null | undefined) => resolveRecruitingResumeUrl(url, membership.clubId, active.id) },
+                        { label: "LinkedIn", url: active.student.studentProfile.linkedinUrl, resolver: safeProfileUrl },
                       ].map(
                         ({ label, url, resolver }) =>
                           resolver(url) && (

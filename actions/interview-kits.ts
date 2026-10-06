@@ -1,4 +1,6 @@
-﻿"use server";
+"use server";
+import { anonymousApplicantLabel } from "@/lib/anonymous-review";
+
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -119,23 +121,24 @@ export async function getSubmittedInterviewReviews(clubId: string) {
     const { caps } = await interviewActor(tx, clubId, user.id);
     if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
     const records = await tx.interviewRecord.findMany({
-      where: { completedAt: { not: null }, anonymousReview: false, round: { clubId, anonymousReview: false }, application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } } },
+      where: { completedAt: { not: null }, round: { clubId }, application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
       orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 100,
-      select: { id: true, applicationId: true, roundId: true, interviewerId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
+      select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
-    return records.map(r => ({ id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, roundName: r.round.name, applicantName: r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided" }));
+    return records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided" }; });
   });
 }
 export async function getSubmittedInterviewReview(input: z.infer<typeof scope> & { interviewerId: string }) {
   const data = scope.extend({ interviewerId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member, caps } = await authorizeInterview(tx, data, user.id, "closing");
+    const { member, caps, anonymous: scopeAnonymous } = await authorizeInterview(tx, data, user.id, "closingReview");
     if (data.interviewerId !== member.id && !caps.readClosing) throw new Error("Leadership review access required.");
     const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: data.interviewerId } }, include: { evaluation: true } });
-    if (!record?.completedAt || record.anonymousReview) throw new Error("Submitted review unavailable.");
+    if (!record?.completedAt || (record.anonymousReview && !caps.readClosing)) throw new Error("Submitted review unavailable.");
+    const anonymous = scopeAnonymous || record.anonymousReview;
     const draft = interviewDraftSchema.parse(record.draft);
-    return { id: record.id, interviewerId: record.interviewerId, roundId: record.roundId, submittedAt: record.completedAt.toISOString(), score: record.evaluation?.score ?? draft.score,
-      applicantQuestions: record.evaluation?.applicantQuestions ?? draft.applicantQuestions ?? "", additionalNotes: record.evaluation?.notes ?? draft.additionalNotes ?? draft.overallReview, readOnly: true as const };
+    return { id: record.id, interviewerId: record.interviewerId, roundId: record.roundId, anonymous, textUnavailable: anonymous, submittedAt: anonymous ? null : record.completedAt.toISOString(), score: record.evaluation?.score ?? draft.score,
+      applicantQuestions: anonymous ? "" : record.evaluation?.applicantQuestions ?? draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : record.evaluation?.notes ?? draft.additionalNotes ?? draft.overallReview, readOnly: true as const };
   });
 }
 export async function getPreviousInterviewScores(input: z.infer<typeof scope>) {

@@ -1,5 +1,7 @@
 # Interview résumé viewer
 
+> October 5 audit update: [Current audit repairs and release handoff](interview-audit-fixes.md) supersedes the stage migration counts, missing setup integration and anonymous-review exclusions below.
+
 This stage extends the existing application/round document and annotation actions. It adds no schema or migration and does not deploy anything.
 
 ## Format support and dependencies

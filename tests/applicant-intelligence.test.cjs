@@ -97,6 +97,6 @@ test('migration preserves historical feedback and links canonical evaluations, c
 test('configured résumé/LinkedIn links reuse private download access and disappear anonymously',()=>{
  const app=application();app.student.studentProfile.resumeUrl=`${applicationId}/resume.pdf`;app.student.studentProfile.linkedinUrl='https://www.linkedin.com/in/example';
  const config={version:1,fields:['resume','linkedin']};let view=projectApplicantDisplay(app,app.round,config,[]);
- assert.equal(view.links.length,2);assert.match(view.links[0].href,/^\/api\/resumes\?path=/);assert.doesNotMatch(JSON.stringify(view),/signedUrl/);
+ assert.equal(view.links.length,2);assert.match(view.links[0].href,/^\/api\/recruiting-resumes\?clubId=/);assert.doesNotMatch(JSON.stringify(view),/signedUrl/);
  app.round.anonymousReview=true;view=projectApplicantDisplay(app,app.round,config,[]);assert.deepEqual(view.links,[]);assert.deepEqual(view.visible,[]);
 });

@@ -8,6 +8,8 @@ import * as demoVoting from "@/lib/demo/voting"
 import * as applicantIntelligence from "@/actions/applicant-intelligence"
 import { defaultDisplayConfig, displayConfigSchema, projectApplicantDisplay } from "@/lib/applicant-display"
 import { z } from "zod"
+import * as accessSetup from "@/actions/interview-access-setup"
+import * as demoAccessSetup from "@/lib/demo/interview-access-setup"
 import * as roomApi from "@/actions/interview-rooms"
 import * as demoRoomApi from "@/lib/demo/interview-rooms"
 import * as recruitingRules from "@/actions/recruiting-rules"
@@ -498,3 +500,7 @@ export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:st
 
 export const prepareResumeImport = adapt(resumeImport.prepareResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })
 export const confirmResumeImport = adapt(resumeImport.confirmResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })
+
+export const getInterviewAccessSetup = adapt(accessSetup.getInterviewAccessSetup, demoAccessSetup.getInterviewAccessSetup)
+export const approveInterviewRoomPanel = adapt(accessSetup.approveInterviewRoomPanel, demoAccessSetup.approveInterviewRoomPanel)
+export const changeInterviewRoomPanel = adapt(accessSetup.changeInterviewRoomPanel, demoAccessSetup.changeInterviewRoomPanel)

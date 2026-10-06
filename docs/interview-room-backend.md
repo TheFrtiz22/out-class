@@ -1,5 +1,7 @@
 # Interview-room backend handoff
 
+> October 5 audit update: [Current audit repairs and release handoff](interview-audit-fixes.md) supersedes the stage migration counts, missing setup integration and anonymous-review exclusions below.
+
 Implemented locally on October 4, 2026 against the contract in `interview-room-redesign.md`. This extends the existing InterviewRecord, InterviewKit and Evaluation system. No production deployment or database mutation was performed. The earlier planning document describes its original baseline, not the implementation status below.
 
 The subsequent profile/question UI stage is described in `interview-room-ui.md`; it implements Education scholar controls, workspace questions/completion, the master-kit editor and scoped résumé entry. The rollout list below records the backend stage's original prerequisites; remaining UI and rollout work is clarified in that later handoff.

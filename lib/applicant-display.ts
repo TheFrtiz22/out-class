@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { storagePathSchema, safeProfileUrl, resolveResumeUrl } from "@/lib/student-profile";
+import { storagePathSchema, safeProfileUrl, resolveRecruitingResumeUrl } from "@/lib/student-profile";
 import { anonymousApplication, type ReviewApplication } from "@/lib/anonymous-review";
 
 /** One versioned contract for review, interview and persisted voting. */
@@ -53,7 +53,7 @@ export function projectApplicantDisplay(app: ReviewApplication, round: { id: str
     sections: visible.filter((f): f is Exclude<ApplicantField, "photo" | "resume" | "linkedin"> => !["photo", "resume", "linkedin"].includes(f)).map(field => ({ field, label: fieldLabels[field], items: data[field] })),
     photo: enabled.has("photo") && safeProfileUrl(profile?.headshotUrl) ? profile!.headshotUrl : null,
     links: anonymous ? [] : [
-      ...(enabled.has("resume") && profile?.resumeUrl && (storagePathSchema.safeParse(profile.resumeUrl).success || safeProfileUrl(profile.resumeUrl)) ? [{ field: "resume" as const, label: "Résumé", href: resolveResumeUrl(profile.resumeUrl)! }] : []),
+      ...(enabled.has("resume") && profile?.resumeUrl && (storagePathSchema.safeParse(profile.resumeUrl).success || safeProfileUrl(profile.resumeUrl)) ? [{ field: "resume" as const, label: "Résumé", href: resolveRecruitingResumeUrl(profile.resumeUrl, app.clubId, app.id)! }] : []),
       ...(enabled.has("linkedin") && /^https?:\/\/(?:[a-z0-9-]+\.)*linkedin\.com\//i.test(profile?.linkedinUrl || "") ? [{ field: "linkedin" as const, label: "LinkedIn", href: profile!.linkedinUrl! }] : []),
     ],
     observations: anonymous ? [] : observations.filter(o => enabled.has(o.kind === "PRO" ? "pros" : "cons")),

@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  approvedInterviewPanels InterviewRoom[] @relation("RoomPanelApprover")
   interviewPanelGrants InterviewPanelAssignment[] @relation("InterviewPanelGrantor")
   interviewAnnotationRevisions InterviewAnnotationRevision[] @relation("InterviewAnnotationActor")
   corkboardClubs CorkboardClub[]
@@ -331,6 +332,10 @@ model InterviewRoom {
   buffer         Int             @default(0)
   isOpen         Boolean         @default(true)
   panelMemberIds String[]        @default([])
+  approvedPanelMemberIds String[] @default([])
+  panelApprovedBy String?
+  panelApprover User? @relation("RoomPanelApprover", fields: [panelApprovedBy], references: [id], onDelete: Restrict)
+  panelApprovalRevision Int @default(0)
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
@@ -365,6 +370,7 @@ model InterviewBooking {
   slot          InterviewSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
   applicationId String
   application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  panelAssignments InterviewPanelAssignment[]
 
   @@unique([slotId, applicationId])
   @@unique([applicationId, roundId])
@@ -916,6 +922,10 @@ model InterviewPanelAssignment {
   grantor User @relation("InterviewPanelGrantor", fields: [grantedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
   grantedAt DateTime @default(now())
   revokedAt DateTime?
+  bookingManaged Boolean @default(false)
+  bookingId String?
+  booking InterviewBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  @@index([bookingId])
   @@unique([applicationId, roundId, memberId])
   @@index([memberId, roundId, revokedAt])
 }

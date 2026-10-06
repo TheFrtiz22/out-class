@@ -1,5 +1,7 @@
 # Closing review implementation and release handoff
 
+> October 5 audit update: [Current audit repairs and release handoff](interview-audit-fixes.md) supersedes the stage migration counts, missing setup integration and anonymous-review exclusions below.
+
 October 5, 2026. Implements the final workflow in [the contract](interview-room-redesign.md), using the existing interview records and canonical Evaluations. Production migrations and deployment remain pending explicit authorization.
 
 ## Completed behavior

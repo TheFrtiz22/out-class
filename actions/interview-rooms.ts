@@ -7,6 +7,7 @@ import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type InterviewRoom, type RoomBooking, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 import { revalidatePath } from "next/cache"
+import { syncBookingPanel } from "@/utils/interview-scheduling-access"
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
@@ -94,13 +95,17 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
   const input = z.object({ applicationId: uuid, slotId: uuid }).parse(raw)
   const { user } = await requireAuth()
   const booking = await atomic(async tx => {
+    const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
+    if (!initial) throw new Error("Application unavailable.");
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${initial.clubId} FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
+    await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
     const application = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } })
     if (!application || application.status !== "INTERVIEWING") throw new Error("An interview invitation is required to book a time.")
     const slot = await tx.interviewSlot.findUnique({ where: { id: input.slotId }, include: { room: true, _count: { select: { bookings: true } } } })
     if (!slot?.room || slot.clubId !== application.clubId || slot.room.roundId !== application.roundId) throw new Error("Choose a slot for your invited club and round.")
     const existing = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: application.id, roundId: application.roundId } }, include: { slot: true } })
-    if (existing?.slotId === slot.id) return { id: existing.id }
+    if (existing?.slotId === slot.id) { await syncBookingPanel(tx, application.id, application.roundId, user.id); return { id: existing.id } }
     if (existing && +existing.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new Error("This slot is no longer available.")
     if (slot._count.bookings >= slot.capacity) throw new Error("That time was just booked. Choose another slot.")
@@ -109,6 +114,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have a legacy booking with this club. Contact the club before booking another time.")
     if (existing) await tx.interviewBooking.delete({ where: { id: existing.id } })
     const result = await tx.interviewBooking.create({ data: { ...input, roundId: application.roundId } })
+    await syncBookingPanel(tx, application.id, application.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: application.clubId, targetId: result.id, action: existing ? "interview.booking.reschedule" : "interview.booking.create" } })
     return { id: result.id }
   })
@@ -119,11 +125,16 @@ export async function cancelRoomBooking(bookingId: string) {
   uuid.parse(bookingId)
   const { user } = await requireAuth()
   await atomic(async tx => {
+    const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
+    if (!initial) throw new Error("Booking not found.");
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${initial.slot.clubId} FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
+    await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })
     if (!booking) throw new Error("Booking not found.")
     if (+booking.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     await tx.interviewBooking.delete({ where: { id: bookingId } })
+    if (booking.roundId) await syncBookingPanel(tx, booking.applicationId, booking.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: booking.slot.clubId, targetId: bookingId, action: "interview.booking.cancel" } })
   })
   revalidatePath("/")

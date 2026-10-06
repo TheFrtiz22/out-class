@@ -27,7 +27,7 @@ test('PDF/image validation examines bytes, accepts generic PDF MIME, and enforce
   assert.equal(profile.validateProfileFile(Uint8Array.from([137,80,78,71,13,10,26,10]),'image/png','headshot'),'image/png');
   assert.throws(()=>profile.validateProfileFile(Buffer.from('<svg/>'),'image/svg+xml','headshot'));
 });
-function app(photo='https://example.com/photo.png') { return {id:'app',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
+function app(photo='https://example.com/photo.png') { return {id:'app',clubId:'club',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
 test('canonical interview/voting projection hides historical Bio/subsections and avoids résumé duplication',()=>{
   const round={id:'round',name:'Interview',anonymousReview:false};
   const config=display.displayConfigSchema.parse({version:1,fields:['name','photo','biography','act','resume','experiences']});
@@ -36,7 +36,7 @@ test('canonical interview/voting projection hides historical Bio/subsections and
   assert.deepEqual(view.sections.find(s=>s.field==='act').items,['33']);
   assert.equal(view.sections.some(s=>s.field==='experiences'),false);
   assert.doesNotMatch(JSON.stringify(view),/Historical hidden bio|actEnglish|actReading/);
-  assert.equal(view.links[0].href,`/api/resumes?path=${encodeURIComponent(owner+'/resume.pdf')}`);
+  assert.equal(view.links[0].href,'/api/recruiting-resumes?clubId=club&applicationId=app');
   assert.equal(display.projectApplicantDisplay(app(),round,{version:1,fields:['experiences']},[]).sections[0].items[0],'Research · Lab · 2025');
   for(const photo of [null,'javascript:alert(1)']) assert.equal(display.projectApplicantDisplay(app(photo),round,config,[]).photo,null);
   const anonymous=display.projectApplicantDisplay(app(),{...round,anonymousReview:true},config,[]);

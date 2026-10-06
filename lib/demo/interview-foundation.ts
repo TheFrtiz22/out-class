@@ -1,4 +1,5 @@
-﻿import { demoStore, demoMember } from "./store";
+import { anonymousApplicantLabel } from "@/lib/anonymous-review";
+import { demoStore, demoMember } from "./store";
 import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema, interviewScopeSchema, interviewScoreSchema, type InterviewScope } from "@/lib/interview-access";
 import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionNotes } from "@/lib/interview-kits";
 import { z } from "zod";
@@ -7,7 +8,7 @@ import { demoResumeText } from "./resume-fixture";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
-  assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null }[];
+  assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null; bookingManaged?: boolean; bookingId?: string | null }[];
   documents: { id: string; applicationId: string; roundId: string; source: string; createdAt: string }[];
   annotations: (Content & { id: string; documentId: string; authorId: string; revision: number; deletedAt: string | null })[];
   history: { annotationId: string; revision: number; actorId: string; content: Content }[];
@@ -18,13 +19,13 @@ function actor(clubId: string) {
   if (s.perspective.role !== "leader" || member.clubId !== clubId || member.status !== "ACTIVE") throw new Error("Interview access unavailable.");
   return { s, member, caps: interviewCapabilities(member) };
 }
-function access(input: InterviewScope, mode: "panel" | "resume" | "closing" = "panel") {
+function access(input: InterviewScope, mode: "panel" | "resume" | "closing" | "closingReview" = "panel") {
   const { s, member, caps } = actor(input.clubId);
   const app = s.applications.find(a => a.id === input.applicationId && a.clubId === input.clubId && a.status !== "DRAFTING");
   const round = s.clubs.find(c => c.id === input.clubId)?.rounds.find(r => r.id === input.roundId);
-  if (!app || !round || app.studentId === member.userId || round.anonymousReview || s.clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === app.roundId)?.anonymousReview) throw new Error("Identified interview unavailable.");
+  if (!app || !round || app.studentId === member.userId || ((round.anonymousReview || s.clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === app.roundId)?.anonymousReview) && !(mode === "closingReview" && caps.readClosing))) throw new Error("Identified interview unavailable.");
   const panel = caps.participate && s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === round.id && a.memberId === member.id && !a.revokedAt);
-  if (!panel && !(mode === "resume" && caps.moderateResume) && !(mode === "closing" && caps.readClosing)) throw new Error("Current panel assignment required.");
+  if (!panel && !(mode === "resume" && caps.moderateResume) && !((mode === "closing" || mode === "closingReview") && caps.readClosing)) throw new Error("Current panel assignment required.");
   return { s, member, caps, app, round };
 }
 export function getInterviewKit(clubId: string, roundId: string) {
@@ -97,21 +98,21 @@ export function getSubmittedInterviewReviews(clubId: string) {
   const { s, caps } = actor(clubId);
   if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
   return s.interviews.filter(r => {
-    if (!r.completedAt || r.anonymousReview || r.clubId !== clubId) return false;
-    try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closing"); return true; } catch { return false; }
+    if (!r.completedAt || r.clubId !== clubId) return false;
+    try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
-    return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, roundName: s.clubs.find(c => c.id === clubId)!.rounds.find(round => round.id === r.roundId)!.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" };
+    const club = s.clubs.find(c => c.id === clubId)!; const round = club.rounds.find(round => round.id === r.roundId)!; const anonymous = !!(r.anonymousReview || round.anonymousReview || club.rounds.find(round => round.id === app.roundId)?.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : round.name, applicantName: anonymous ? anonymousApplicantLabel(app.id) : profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" };
   });
 }
 export function getSubmittedInterviewReview(input: InterviewScope & { interviewerId: string }) {
   demoStore.refresh();
-  const { s, member, caps } = access(input, "closing");
+  const { s, member, caps } = access(input, "closingReview");
   if (input.interviewerId !== member.id && !caps.readClosing) throw new Error("Leadership required.");
-  const r = s.interviews.find(r => r.applicationId === input.applicationId && r.roundId === input.roundId && r.interviewerId === input.interviewerId && r.completedAt && !r.anonymousReview);
+  const r = s.interviews.find(r => r.applicationId === input.applicationId && r.roundId === input.roundId && r.interviewerId === input.interviewerId && r.completedAt);
   if (!r) throw new Error("Submitted review unavailable.");
   const e = s.applications.find(a => a.id === input.applicationId)!.evaluations.find(e => e.roundId === input.roundId && e.interviewerId === input.interviewerId);
-  return { id: r.id, interviewerId: r.interviewerId, roundId: r.roundId, submittedAt: r.completedAt, score: e?.score ?? r.draft.score, applicantQuestions: e?.applicantQuestions ?? r.draft.applicantQuestions ?? "", additionalNotes: e?.notes ?? r.draft.additionalNotes ?? r.draft.overallReview, readOnly: true };
+  const club=s.clubs.find(c=>c.id===input.clubId)!;const anonymous=!!(r.anonymousReview||club.rounds.find(round=>round.id===input.roundId)?.anonymousReview||club.rounds.find(round=>round.id===s.applications.find(a=>a.id===input.applicationId)!.roundId)?.anonymousReview);if(anonymous&&!caps.readClosing)throw Error("Leadership required.");return { id: r.id, interviewerId: r.interviewerId, roundId: r.roundId, anonymous,textUnavailable:anonymous,submittedAt: anonymous?null:r.completedAt, score: e?.score ?? r.draft.score, applicantQuestions: anonymous ? "" : e?.applicantQuestions ?? r.draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : e?.notes ?? r.draft.additionalNotes ?? r.draft.overallReview, readOnly: true };
 }
 export function getPreviousInterviewScores(input: InterviewScope) {
   const { s, member } = access(input);
@@ -137,7 +138,7 @@ export function setInterviewPanelAssignment(input: unknown) {
     const target = s.memberships.find(m => m.id === d.memberId && m.clubId === d.clubId), app = s.applications.find(a => a.id === d.applicationId && a.clubId === d.clubId && a.status !== "DRAFTING"), round = s.clubs.find(c => c.id === d.clubId)?.rounds.find(r => r.id === d.roundId);
     if (!target || !app || !round || app.studentId === target.userId || (d.assigned && (!interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview))) throw new Error("Panel scope unavailable.");
     const a = s.interviewFoundation.assignments.find(a => a.applicationId === app.id && a.roundId === round.id && a.memberId === target.id);
-    if (a) a.revokedAt = d.assigned ? null : new Date().toISOString();
+    if (a) { a.revokedAt = d.assigned ? null : new Date().toISOString(); a.bookingManaged=false;a.bookingId=null; }
     else if (d.assigned) s.interviewFoundation.assignments.push({ applicationId: app.id, roundId: round.id, memberId: target.id, revokedAt: null });
     s.interviewFoundation.audit.push({ action: "interview.panel.change", targetId: target.id, actorId: member.userId }); return { ...d };
   });

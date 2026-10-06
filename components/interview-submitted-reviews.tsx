@@ -10,7 +10,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
     let current = true, pending = false;
     const refresh = async () => {
       if (pending) return; pending = true;
-      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value && result.some(r => r.id === value.id) ? value : null); } }
+      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : null); } }
       catch { if (current) { setRows([]); setSelected(null); setReview(null); setError("Submitted reviews unavailable. Check your current leadership access."); } }
       finally { pending = false; if (current) setLoading(false); }
     };
@@ -42,7 +42,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
     <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
     {selected && <section aria-label="Read-only closing review" className="space-y-4 rounded-lg border bg-card p-4">
       <h3 className="font-medium">{selected.applicantName} · {selected.roundName}</h3>
-      {!review ? <p role="status">Loading closing review…</p> : <><p className="text-xs text-muted-foreground">Submitted {new Date(review.submittedAt!).toLocaleString()} · Read only</p><dl className="space-y-4"><div><dt className="font-medium">Questions the applicant asked</dt><dd className="whitespace-pre-wrap break-words">{review.applicantQuestions || "None recorded."}</dd></div><div><dt className="font-medium">Additional notes</dt><dd className="whitespace-pre-wrap break-words">{review.additionalNotes || "None recorded."}</dd></div><div><dt className="font-medium">Overall score</dt><dd>{review.score === null ? "Not scored" : `${review.score} / 10`}</dd></div></dl></>}
+      {!review ? <p role="status">Loading closing review…</p> : <><p className="text-xs text-muted-foreground">{review.submittedAt ? `Submitted ${new Date(review.submittedAt).toLocaleString()} · ` : ""}Read only</p>{review.textUnavailable && <p role="status">Closing text is unavailable under anonymous review rules. Potentially identifying text is withheld.</p>}<dl className="space-y-4"><div><dt className="font-medium">Questions the applicant asked</dt><dd className="whitespace-pre-wrap break-words">{review.textUnavailable ? "Withheld for anonymity." : review.applicantQuestions || "None recorded."}</dd></div><div><dt className="font-medium">Additional notes</dt><dd className="whitespace-pre-wrap break-words">{review.textUnavailable ? "Withheld for anonymity." : review.additionalNotes || "None recorded."}</dd></div><div><dt className="font-medium">Overall score</dt><dd>{review.score === null ? "Not scored" : `${review.score} / 10`}</dd></div></dl></>}
     </section>}
   </section>;
 }

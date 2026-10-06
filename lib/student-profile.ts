@@ -101,6 +101,12 @@ export function resolveResumeUrl(value?: string | null) {
   if (/^https?:\/\//i.test(value) || value.startsWith('/')) return value;
   return `/api/resumes?path=${encodeURIComponent(value)}`;
 }
+/** Recruiter links carry application scope, never caller-selected private object paths. */
+export function resolveRecruitingResumeUrl(value: string | null | undefined, clubId: string, applicationId: string) {
+  if (!value) return undefined;
+  if (isPrivateResume(value)) return `/api/recruiting-resumes?clubId=${encodeURIComponent(clubId)}&applicationId=${encodeURIComponent(applicationId)}`;
+  return safeProfileUrl(value) ? value : undefined;
+}
 export function profileChecklist(profile: FullStudentProfile) {
   return [
     { label: "Name", complete: Boolean(profile.firstName.trim() && profile.lastName.trim()) },

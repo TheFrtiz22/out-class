@@ -1,5 +1,7 @@
 # Profile and question-workflow UI handoff
 
+> October 5 audit update: [Current audit repairs and release handoff](interview-audit-fixes.md) supersedes the stage migration counts, missing setup integration and anonymous-review exclusions below.
+
 Implemented locally October 5, 2026, using the existing backend foundation and OutClass components, type scale, colors and responsive conventions. No production deployment or database mutation was performed.
 
 ## Completed behavior
