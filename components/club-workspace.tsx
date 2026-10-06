@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import { clubCampusIllustration } from "@/lib/campus-illustrations"
 import { PageHeader } from "@/components/product/page-header"
 import { OrganizationSetupChecklist } from "@/components/organization-setup-checklist";
 import { organizationCapabilities } from "@/lib/organization-authorization";
@@ -126,7 +127,7 @@ export function ClubWorkspace({
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
-          <PageHeader eyebrow={membership.club.name} title={manager && mode === "recruiting" && active === "overview" ? "Recruitment" : nav.find(n => n.id === active)?.label || "Workspace"} description={manager && section === "overview" ? "Your club, in motion." : manager && mode === "recruiting" && active === "overview" ? "Build your next class." : undefined} ribbon action={<Link className="oc-profile-link" href={`/club/${clubId}`}>Public club profile ↗</Link>} />
+          <PageHeader eyebrow={membership.club.name} title={manager && mode === "recruiting" && active === "overview" ? "Recruitment" : nav.find(n => n.id === active)?.label || "Workspace"} description={manager && section === "overview" ? "Your club, in motion." : manager && mode === "recruiting" && active === "overview" ? "Build your next class." : undefined} illustration={manager ? { variant: clubCampusIllustration(active), treatment: "quiet" } : "monticello"} action={<Link className="oc-profile-link" href={`/club/${clubId}`}>Public club profile ↗</Link>} />
           {error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {section === "overview" && (manager ? <><ManagerOverview data={current} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}

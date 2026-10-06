@@ -17,7 +17,7 @@ export function CorkboardView({ onNavigate }: { onNavigate: (view: ViewId) => vo
   const [selected, setSelected] = useState<DirectoryClub | null>(null)
   if (selected) return <ClubProfileView club={selected} onBack={() => setSelected(null)} onNavigate={onNavigate} />
   return <div className="oc-corkboard space-y-6">
-    <PageHeader eyebrow="Your campus, collected" title="Corkboard" description="Keep interesting clubs close. Come back when you’re ready to learn more." ribbon />
+    <PageHeader eyebrow="Your campus, collected" title="Corkboard" description="Keep interesting clubs close. Come back when you’re ready to learn more." illustration="lawn-archways" />
     <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground"><p>Saving a club does not apply, subscribe, or join you.</p><Button variant="ghost" disabled={loading || !authenticated} onClick={() => void refresh()}><RefreshCw className="size-4" />Refresh</Button></div>
     {error && items.length > 0 && <p role="alert" className="text-sm text-destructive">{error}<Button variant="ghost" onClick={() => void refresh()}>Retry Corkboard</Button></p>}
     {loading ? <div role="status" aria-label="Loading Corkboard"><span className="sr-only">Loading Corkboard…</span><div className="oc-explore-grid" aria-hidden="true">{[1,2,3].map(n => <Skeleton key={n} className="h-64 rounded-xl" />)}</div></div>

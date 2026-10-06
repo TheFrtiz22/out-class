@@ -126,7 +126,7 @@ export function InterviewerDashboard({
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening"
 
   return <div className="oc-interviewer-hub space-y-5 font-sans text-foreground">
-    <PageHeader eyebrow="Interviewer hub" title="Interviews" description={`${greeting}, ${interviewerName.split(" ")[0]}. Here’s your day at a glance.`} />
+    <PageHeader eyebrow="Interviewer hub" title="Interviews" illustration={{ variant: "columns", treatment: "quiet" }} description={`${greeting}, ${interviewerName.split(" ")[0]}. Here’s your day at a glance.`} />
     <MetricStrip label="Interview overview" items={[
       { label: "Interviews Today", value: today.length, detail: date(current) },
       { label: "Pending Evaluations", value: pending.length, detail: pending.length ? "Needs attention · feedback not submitted" : "All caught up on feedback" },

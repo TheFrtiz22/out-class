@@ -1,4 +1,5 @@
 "use client"
+import { PageHeader } from "@/components/product/page-header"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useState } from "react"
@@ -38,11 +39,11 @@ export default function PlatformLogin() {
       </main>
     )
   return (
-    <main className="mx-auto max-w-md space-y-6 p-8">
+    <main data-workspace-detail className="mx-auto max-w-2xl space-y-6 p-8">
       <Link href="/" className="underline">
         Back to OutClass
       </Link>
-      <h1 className="oc-page-title ">Platform administrator sign-in</h1>
+      <PageHeader title="Platform administrator sign-in" illustration={{ variant: "columns", treatment: "quiet", accent: false }} />
       <p>
         Requires a provisioned platform grant, server allowlist, and authenticator verification.
         Club ownership does not grant access.

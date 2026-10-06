@@ -1,5 +1,6 @@
 'use client'
 
+import { campusIllustrations } from "@/lib/campus-illustrations"
 import { DesignPatterns } from "@/components/product/design-patterns"
 import { PageHeader } from "@/components/product/page-header"
 import { useState } from "react"
@@ -32,6 +33,10 @@ export default function DesignSystemPage() {
   const [progress, setProgress] = useState(40)
   return <main data-outclass-design className="mx-auto max-w-5xl space-y-section px-page py-section">
     <PageHeader eyebrow="OutClass · Campus OS" title="Built for your next chapter." description="Warm, expressive moments. Precise everyday tools. A shared language for students and club leaders." ribbon />
+    <section aria-label="Campus illustration system" className="space-y-6">
+      <SectionHeading title="Grounds, in the margins" description="Shared architectural sketches. Quiet linework, a single orange gesture, and space for the work at hand." />
+      {Object.keys(campusIllustrations).map(variant => <PageHeader key={variant} eyebrow="University of Virginia" title={variant.replaceAll("-", " ")} description="Architectural atmosphere stays in the header, clear of text and controls." illustration={{ variant: variant as keyof typeof campusIllustrations, motion: "entrance" }} />)}
+    </section>
     <DesignPatterns />
     <Divider />
     <section aria-labelledby="palette" className="space-y-6">

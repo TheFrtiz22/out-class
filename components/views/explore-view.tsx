@@ -1,8 +1,6 @@
 "use client"
 import { useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/product/page-header"
-import { CampusRibbon } from "@/components/product/campus-ribbon"
-import Image from "next/image"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Sparkles, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -106,9 +104,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." />
-        <Image src="/images/campus/rotunda-960.webp" alt="" width={960} height={640} sizes="(max-width: 600px) 100vw, 50vw" className="oc-explore-campus" />
-        <CampusRibbon />
+        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." illustration="rotunda" />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
