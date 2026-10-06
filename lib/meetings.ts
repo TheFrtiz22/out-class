@@ -1,3 +1,4 @@
+import { eventIsPublished } from "@/lib/campus-events";
 import { z } from "zod";
 import { isActiveMembership, type ClubAccess } from "@/lib/permissions";
 export const meetingAudiences = ["RECRUITMENT", "MEMBERS"] as const;
@@ -34,15 +35,15 @@ export const meetingInputSchema = z
     "End time must follow the start.",
   );
 export function canReadMeeting(
-  meeting: { audience: string; isPublic: boolean },
+  meeting: { audience: string; isPublic: boolean; revision?: number; publication?: {status:string;approvedRevision:number|null}|null },
   membership: ClubAccess | null,
 ) {
   return (
-    (meeting.audience === "RECRUITMENT" && meeting.isPublic) || isActiveMembership(membership)
+    (meeting.audience === "RECRUITMENT" && meeting.isPublic && (!meeting.publication || eventIsPublished({ ...meeting, revision: meeting.revision ?? -1, publication: meeting.publication }))) || isActiveMembership(membership)
   );
 }
 export function canCheckIn(
-  meeting: { audience: string; isPublic: boolean },
+  meeting: { audience: string; isPublic: boolean; revision?: number; publication?: {status:string;approvedRevision:number|null}|null },
   membership: ClubAccess | null,
 ) {
   return canReadMeeting(meeting, membership);

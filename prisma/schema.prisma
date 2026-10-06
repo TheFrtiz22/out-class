@@ -33,6 +33,7 @@ model User {
   memberships     ClubMember[]
   applications    Application[]
   attendances     EventAttendance[]
+  eventRsvps      EventRsvp[]
   platformAdmin   PlatformAdmin?
   clubInvitations ClubInvitation[]
   clubClaims      ClubClaim[]
@@ -302,6 +303,9 @@ model Meeting {
   recap         String                @default("")
   resources     Json                  @default("[]")
   revision      Int                   @default(0)
+  publication   EventPublication?
+  rsvps         EventRsvp[]
+  flyers        EventFlyer[]
   checkInTokens MeetingCheckInToken[]
   id            String                @id @default(uuid())
   clubId        String
@@ -315,6 +319,7 @@ model Meeting {
   attendances EventAttendance[]
 
   @@index([clubId], map: "Event_clubId_idx")
+  @@index([isPublic, date, endDate], map: "Event_public_date_endDate_idx")
   @@map("Event")
 }
 
@@ -435,6 +440,7 @@ model AuditLog {
 
   @@index([clubId, createdAt])
   @@index([actorId, createdAt])
+  @@index([targetId, action, createdAt], map: "AuditLog_targetId_action_createdAt_idx")
 }
 
 model ClubInvitation {
@@ -988,4 +994,56 @@ model InterviewAnnotationRevision {
   content Json
   createdAt DateTime @default(now())
   @@unique([annotationId, revision])
+}
+
+model EventPublication {
+  eventId          String      @id
+  event            Meeting     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  status           String      @default("DRAFT")
+  category         String      @default("Social")
+  contact          String      @default("")
+  rsvpEnabled      Boolean     @default(true)
+  rsvpRequired     Boolean     @default(false)
+  capacity         Int?
+  rsvpDeadline     DateTime?
+  template         String      @default("academic")
+  flyerId          String?     @unique
+  flyer            EventFlyer? @relation("SelectedFlyer", fields: [flyerId], references: [id], onDelete: Restrict)
+  submittedAt      DateTime?
+  submittedBy      String?
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  rejectionReason  String?
+  approvedRevision Int?
+  publishedAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status, submittedAt])
+  @@index([category, status])
+}
+
+model EventFlyer {
+  id          String            @id @default(uuid())
+  eventId     String
+  event       Meeting           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  path        String            @unique
+  mime        String
+  size        Int
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  publication EventPublication? @relation("SelectedFlyer")
+
+  @@index([eventId])
+}
+
+model EventRsvp {
+  eventId   String
+  event     Meeting  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([eventId, userId])
+  @@index([userId, createdAt])
 }

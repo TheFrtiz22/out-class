@@ -87,10 +87,11 @@ test("timeline does not mark drafts or unknown custom stages as submitted", () =
   assert.equal(recruitmentStage("ACCEPTED"), 3)
 })
 test("public directory selects explicit public fields and preserves missing facts", async () => {
-  let query
+  let query, eventQuery
   const actions = load("actions/club-directory.ts", {
     "@/utils/prisma": {
       prisma: {
+        meeting: { findMany: async q => { eventQuery=q; return [] } },
         club: {
           findMany: async (q) => {
             query = q
@@ -121,7 +122,9 @@ test("public directory selects explicit public fields and preserves missing fact
   assert.equal(result.clubs[0].applicationAvailable, false)
   for (const key of ["members", "applications", "evaluations"])
     assert.equal(query.select[key], undefined)
-  assert.equal(query.select.events.where.isPublic, true)
+  assert.equal(query.select.events, false)
+  assert.equal(eventQuery.where.isPublic, true)
+  assert.ok(eventQuery.where.OR.some(condition => condition.publication.is?.status === "PUBLISHED"))
 })
 test("starting an existing application never updates or deletes its answers", async () => {
   let writes = 0

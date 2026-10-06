@@ -1,4 +1,5 @@
 "use server";
+import { publicMeetingVisibility } from "@/lib/campus-events";
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -11,7 +12,7 @@ import {
   TOKEN_LIFETIME_MS,
   type CheckInResult,
 } from "@/lib/meetings";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 export async function listMeetings(clubId?: string) {
   const { user } = await requireAuth();
   if (clubId) z.string().uuid().parse(clubId);
@@ -19,7 +20,7 @@ export async function listMeetings(clubId?: string) {
     where: {
       ...(clubId ? { clubId } : {}),
       OR: [
-        { audience: "RECRUITMENT", isPublic: true },
+        publicMeetingVisibility,
         { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
       ],
     },
@@ -34,7 +35,7 @@ export async function getMeeting(meetingId: string) {
     where: {
       id: meetingId,
       OR: [
-        { audience: "RECRUITMENT", isPublic: true },
+        publicMeetingVisibility,
         { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } },
       ],
     },
@@ -81,6 +82,8 @@ export async function saveMeeting(input: unknown) {
     });
     revalidatePath("/");
     revalidatePath("/meetings");
+    revalidatePath("/corkboard");
+    revalidateTag("club-directory");
     return meeting!;
   });
 }
@@ -138,7 +141,7 @@ export async function checkInMeeting(
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
-    const meeting = await tx.meeting.findUnique({ where: { id: meetingId } });
+    const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
     if (!meeting) throw new Error("Meeting unavailable.");
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },

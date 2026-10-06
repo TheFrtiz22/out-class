@@ -1,4 +1,5 @@
 "use server";
+import { publicMeetingVisibility } from "@/lib/campus-events";
 import { prisma } from "@/utils/prisma";
 import {
   saveMeeting,
@@ -25,7 +26,7 @@ export async function createEvent(data: {
 export async function getClubEvents(clubId: string) {
   return {
     events: await prisma.meeting.findMany({
-      where: { clubId, isPublic: true, audience: "RECRUITMENT" },
+      where: { clubId, ...publicMeetingVisibility },
       select: {
         id: true,
         clubId: true,

@@ -1,4 +1,6 @@
 "use client"
+import * as campusEvents from "@/actions/campus-events"
+import * as eventFlyers from "@/actions/event-flyers"
 import * as resumeImport from "@/actions/resume-import"
 import * as tutorials from "@/actions/tutorials"
 import { tutorialExperience, tutorialInput } from "@/lib/tutorials"
@@ -504,3 +506,15 @@ export const confirmResumeImport = adapt(resumeImport.confirmResumeImport, () =>
 export const getInterviewAccessSetup = adapt(accessSetup.getInterviewAccessSetup, demoAccessSetup.getInterviewAccessSetup)
 export const approveInterviewRoomPanel = adapt(accessSetup.approveInterviewRoomPanel, demoAccessSetup.approveInterviewRoomPanel)
 export const changeInterviewRoomPanel = adapt(accessSetup.changeInterviewRoomPanel, demoAccessSetup.changeInterviewRoomPanel)
+// Campus publication is never simulated as a live write in Demo Mode.
+export const getPublicCorkboard = adapt(campusEvents.getPublicCorkboard, () => ({events: [], total: 0, hasMore: false, clubs: []}))
+export const getPublicCampusEvent = adapt(campusEvents.getPublicCampusEvent, () => null)
+const noDemoEventWrite = () => { throw new Error("Exit Demo Mode to manage campus events.") }
+export const listClubCampusEvents = adapt(campusEvents.listClubCampusEvents, () => [])
+export const saveCampusEvent = adapt(campusEvents.saveCampusEvent, noDemoEventWrite)
+export const commandCampusEvent = adapt(campusEvents.commandCampusEvent, noDemoEventWrite)
+export const uploadEventFlyer = adapt(eventFlyers.uploadEventFlyer, noDemoEventWrite)
+export const getCampusEventRsvp = adapt(campusEvents.getCampusEventRsvp, () => ({going:false}))
+export const setCampusEventRsvp = adapt(campusEvents.setCampusEventRsvp, noDemoEventWrite)
+export const getCampusEventAttendees = adapt(campusEvents.getCampusEventAttendees, () => [])
+export const getMyCampusEventRsvps = adapt(campusEvents.getMyCampusEventRsvps, () => [])

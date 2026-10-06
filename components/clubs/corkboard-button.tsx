@@ -17,7 +17,7 @@ export function CorkboardButton({ club, onNavigate }: { club: DirectoryClub; onN
   const saved = items.some(item => item.club.id === club.id)
   return <div className="space-y-2">
     <Button type="button" variant="outline" className="w-full" aria-label={`${saved ? "Remove" : "Save"} ${club.name} ${saved ? "from" : "to"} Corkboard`} aria-pressed={saved} disabled={loading || pending.has(club.id)} onClick={() => authenticated ? void save() : onNavigate("auth")}>
-      {saved ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}{authenticated ? saved ? "Remove from Corkboard" : "Save to Corkboard" : "Sign in to save"}
+      {saved ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}{authenticated ? saved ? "Remove from saved clubs" : "Save to saved clubs" : "Sign in to save"}
     </Button>
     {error && <p role="status" className="text-xs text-destructive">{error}<button className="ml-2 underline" onClick={() => void refresh()}>Retry</button></p>}
   </div>

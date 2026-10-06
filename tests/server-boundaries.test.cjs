@@ -13,7 +13,7 @@ function load(file, prisma, role = async () => ({})) {
   return mod.exports
 }
 test('legacy event reads expose public recruitment metadata only', async () => {
-  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,isPublic:true,audience:'RECRUITMENT'});assert.equal(select.resources,undefined);return []}}})
+  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,isPublic:true,audience:'RECRUITMENT',OR:[{publication:{is:null}},{publication:{is:{status:'PUBLISHED'}}}]});assert.equal(select.resources,undefined);return []}}})
   assert.deepEqual(await api.getClubEvents(clubId),{events:[]})
 })
 test('legacy static attendance endpoints fail closed without a current token',async()=>{

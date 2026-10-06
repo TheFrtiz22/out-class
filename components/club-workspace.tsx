@@ -1,4 +1,5 @@
-"use client";
+"use client"
+import { ClubEvents } from "@/components/events/club-events";
 import dynamic from "next/dynamic";
 import { clubCampusIllustration } from "@/lib/campus-illustrations"
 import { PageHeader } from "@/components/product/page-header"
@@ -132,6 +133,7 @@ export function ClubWorkspace({
             {section === "overview" && (manager ? <><ManagerOverview data={current} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}
             {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(current.membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
+            {section === "events" && hasPermission(current.membership, "meetings.manage") && <ClubEvents key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(current.membership, "meetings.attendance")} />}
             {section === "members" && <ClubMembers key={clubId} clubId={clubId} />}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => setRetry(n => n + 1)} />}
             {section === "announcements" && <ClubAnnouncements key={clubId} />}

@@ -27,7 +27,7 @@ const nextConfig = {
   },
   async headers() {
     const noindex = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
-    const privateRoutes = ["api", "auth", "login", "forgot-password", "reset-password", "platform", "settings", "club-access", "club-claims", "invitations", "meetings", "check-in", "interviews", "decisions", "vote", "live-voting", "voting", "preview", "design-system"]
+    const privateRoutes = ["api", "auth", "login", "forgot-password", "reset-password", "platform", "settings", "saved-clubs", "club-access", "club-claims", "invitations", "meetings", "check-in", "interviews", "decisions", "vote", "live-voting", "voting", "preview", "design-system"]
     return [
       { source: "/:path*", headers: [
         { key: "X-Content-Type-Options", value: "nosniff" },

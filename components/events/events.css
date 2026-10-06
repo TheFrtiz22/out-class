@@ -1,0 +1,675 @@
+.oc-event-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.oc-event-periods {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.oc-event-periods button {
+  padding: 9px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--primary);
+}
+.oc-event-periods button[aria-pressed="true"] {
+  background: var(--primary);
+  color: white;
+}
+.oc-event-search {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding-left: 10px;
+  margin-left: auto;
+  max-width: 250px;
+}
+.oc-event-search input {
+  border: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+.oc-event-filter {
+  position: relative;
+  font-size: 13px;
+}
+.oc-event-filter summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+.oc-event-filter-fields {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  z-index: 20;
+  width: 290px;
+  display: grid;
+  gap: 12px;
+  background: var(--background);
+  padding: 18px;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 30px #08243c22;
+  border-radius: 8px;
+}
+.oc-event-filter-fields label,
+.oc-event-editor label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.oc-event-filter-fields select,
+.oc-event-editor select {
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--background);
+  width: 100%;
+}
+.oc-event-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px !important;
+}
+.oc-event-check input {
+  width: 16px;
+  height: 16px;
+}
+.oc-event-result {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin: 12px 0;
+}
+.oc-physical-board {
+  padding: 28px 24px 32px;
+  min-height: 430px;
+  border: 1px solid #aa7449;
+  border-radius: 6px;
+  background-color: #be8e61;
+  background-image: url("/images/events/cork.svg");
+  box-shadow: inset 0 1px 8px #59341833;
+}
+.oc-flyer-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 30px 24px;
+  align-items: start;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.oc-pinned-flyer {
+  width: 100%;
+  position: relative;
+  display: block;
+  text-align: left;
+  container-type: inline-size;
+  transform: rotate(var(--flyer-rotation));
+  transition:
+    transform 0.22s ease,
+    opacity 0.18s ease;
+  box-shadow: 2px 5px 9px #422a1844;
+}
+.oc-pinned-flyer:hover,
+.oc-pinned-flyer:focus-visible {
+  transform: rotate(0deg) translateY(-5px) scale(1.025);
+  z-index: 2;
+}
+.oc-pinned-flyer:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 5px;
+}
+.oc-pinned-flyer[data-selected="true"] {
+  opacity: 0.3;
+  transform: rotate(0) translateY(-12px);
+}
+.oc-flyer-pin {
+  position: absolute;
+  left: 50%;
+  top: -7px;
+  z-index: 3;
+  width: 11px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--pin-color);
+  box-shadow:
+    0 3px 2px #30221670,
+    inset 2px 2px 2px #ffffff99;
+  transform: rotate(12deg);
+  transition:
+    transform 0.15s,
+    opacity 0.15s;
+}
+.oc-flyer-pin:after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 5px;
+  border-radius: 50%;
+  background: inherit;
+  bottom: -3px;
+  left: -2px;
+  box-shadow: 0 2px 2px #30221650;
+}
+.oc-pinned-flyer[data-selected="true"] .oc-flyer-pin {
+  transform: translateY(-20px) rotate(35deg);
+  opacity: 0;
+}
+.oc-event-paper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  padding: 20px 15px 12px;
+  background: #f6eedb;
+  background-image: url("/images/events/paper.svg");
+  color: #0b2b47;
+  border: 1px solid #fff8;
+  box-shadow: inset 0 0 28px #b9985020;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.oc-event-paper h3 {
+  font-family: var(--oc-font-display);
+  font-size: clamp(17px, 12cqw, 27px);
+  font-weight: 400;
+  line-height: 1.05;
+  margin: 6px 0 9px;
+  overflow-wrap: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.oc-paper-club {
+  font-family: var(--oc-font-display);
+  font-size: clamp(10px, 6cqw, 14px);
+  font-weight: 400;
+  line-height: 1.1;
+}
+.oc-paper-rule {
+  width: 100%;
+  height: 2px;
+  background: var(--brand-orange);
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+.oc-paper-date {
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.oc-paper-location {
+  margin: 3px 0 7px;
+}
+.oc-paper-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 10px;
+}
+.oc-paper-art {
+  height: 30%;
+  min-height: 45px;
+  flex: 1;
+  position: relative;
+  margin-top: 10px;
+}
+.oc-paper-art .oc-campus-illustration {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  opacity: 0.7;
+  mask-image: none;
+  display: block;
+}
+.oc-paper-category {
+  font-size: 9px;
+  margin-top: 5px;
+}
+.oc-event-paper[data-template="navy"] {
+  background-color: #0b2b47;
+  color: #fff;
+}
+.oc-event-paper[data-template="navy"] .oc-paper-art {
+  background: #f6eedb;
+  margin-top: 12px;
+}
+.oc-event-paper[data-template="orange"] {
+  background-color: #f7cec0;
+}
+.oc-event-paper[data-template="sage"] {
+  background-color: #e3ead9;
+}
+.oc-uploaded-flyer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f6eedb;
+}
+.oc-events-empty {
+  padding: 65px 20px;
+  text-align: center;
+  background: #faf7eeeb;
+  border-radius: 6px;
+  color: var(--primary);
+}
+.oc-events-empty h2 {
+  font-family: Georgia, serif;
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+.oc-events-empty p {
+  margin-bottom: 18px;
+}
+.oc-event-detail {
+  max-width: 860px !important;
+  width: calc(100% - 64px) !important;
+  padding: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 !important;
+  background: var(--background) !important;
+  border-radius: 8px !important;
+  max-height: 88dvh;
+  overflow: visible !important;
+  animation: none !important;
+}
+.oc-event-detail[data-state="open"] {
+  animation: oc-flyer-lift 0.38s cubic-bezier(0.2, 0.75, 0.25, 1) !important;
+}
+.oc-event-detail[data-state="closed"] {
+  animation: oc-flyer-return 0.2s ease-in !important;
+}
+.oc-event-detail > button {
+  right: -12px !important;
+  top: -16px !important;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--background);
+  opacity: 1;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 6px #0003;
+}
+.oc-pulled-flyer {
+  align-self: center;
+  padding: 25px;
+  transform: rotate(-3deg);
+  background: #f0e5d0;
+  box-shadow: 1px 4px 13px #1b1c2230;
+  margin: -12px 5px -12px -16px;
+}
+.oc-pulled-flyer .oc-event-paper {
+  font-size: 15px;
+  padding: 27px 22px 18px;
+  box-shadow: 4px 8px 12px #40311f44;
+}
+.oc-pulled-flyer .oc-paper-club {
+  font-size: 26px;
+}
+.oc-pulled-flyer .oc-event-paper h3 {
+  font-size: 33px;
+}
+.oc-pulled-flyer .oc-paper-description {
+  font-size: 13px;
+}
+.oc-event-detail-copy {
+  padding: 34px 28px;
+  overflow: auto;
+  max-height: 88dvh;
+}
+.oc-event-title {
+  font-family: var(--oc-font-display) !important;
+  font-size: 30px !important;
+  line-height: 1.1 !important;
+  margin: 10px 0 8px !important;
+}
+.oc-event-facts {
+  display: grid;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+  font-size: 13px;
+}
+.oc-event-facts dt {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+.oc-event-facts dd {
+  font-weight: 500;
+}
+.oc-event-capacity {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--brand-orange);
+  margin-bottom: 16px;
+}
+.oc-event-description {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.oc-event-detail-copy > p {
+  margin-bottom: 12px;
+}
+.oc-event-detail-copy .space-y-2 > button,
+.oc-event-detail-copy > a[data-slot="button"] {
+  width: 100%;
+}
+.oc-youre-going {
+  font-weight: 600;
+  color: var(--success);
+}
+.oc-event-permalink {
+  display: inline-block;
+  font-size: 12px;
+  text-decoration: underline;
+  margin-top: 14px;
+}
+.oc-event-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+.oc-event-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(200px, 1fr);
+  gap: 28px;
+}
+.oc-event-editor-fields {
+  display: grid;
+  gap: 15px;
+}
+.oc-event-editor-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.oc-event-editor textarea {
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--background);
+}
+.oc-event-editor-preview {
+  max-width: 270px;
+  align-self: start;
+  position: sticky;
+  top: 80px;
+}
+.oc-managed-events {
+  display: grid;
+  gap: 12px;
+}
+.oc-managed-event {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.oc-managed-event .oc-event-paper {
+  font-size: 4px;
+  padding: 8px 5px;
+}
+.oc-managed-event .oc-paper-club {
+  font-size: 6px;
+}
+.oc-managed-event .oc-event-paper h3 {
+  font-size: 10px;
+}
+.oc-managed-event .oc-paper-description {
+  font-size: 4px;
+}
+.oc-managed-event .oc-paper-location {
+  margin: 2px 0;
+}
+.oc-managed-event .oc-paper-rule {
+  margin-bottom: 3px;
+}
+.oc-managed-event .oc-paper-category {
+  font-size: 4px;
+}
+.oc-event-status {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 7px;
+  background: var(--muted);
+  border-radius: 4px;
+  margin-top: 5px;
+}
+.oc-event-management-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.oc-event-management-tabs button {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+}
+.oc-event-management-tabs button[aria-pressed="true"] {
+  border-color: var(--primary);
+  font-weight: 600;
+}
+.oc-event-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.oc-attendee-table {
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+}
+.oc-attendee-table td,
+.oc-attendee-table th {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+@keyframes oc-flyer-lift {
+  from {
+    opacity: 0;
+    transform: translateY(18px) rotate(-7deg) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+@keyframes oc-flyer-return {
+  to {
+    opacity: 0;
+    transform: translateY(18px) rotate(-5deg) scale(0.86);
+  }
+}
+@media (max-width: 700px) {
+  .oc-physical-board {
+    padding: 24px 18px;
+  }
+  .oc-flyer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px 18px;
+  }
+  .oc-event-search {
+    margin-left: 0;
+    flex: 1;
+  }
+  .oc-event-detail {
+    width: calc(100% - 32px) !important;
+    max-height: 90dvh;
+    overflow: auto !important;
+    display: block !important;
+  }
+  .oc-pulled-flyer {
+    max-width: 260px;
+    margin: 24px auto 0;
+    padding: 15px;
+  }
+  .oc-event-detail-copy {
+    max-height: none;
+    padding: 28px 22px;
+  }
+  .oc-pulled-flyer .oc-event-paper h3 {
+    font-size: 25px;
+  }
+  .oc-pulled-flyer .oc-event-paper {
+    font-size: 11px;
+    padding: 20px 15px;
+  }
+  .oc-event-editor {
+    grid-template-columns: 1fr;
+  }
+  .oc-event-editor-preview {
+    position: static;
+  }
+  .oc-managed-event {
+    grid-template-columns: 65px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .oc-managed-event .oc-event-actions {
+    grid-column: 1/-1;
+  }
+  .oc-event-editor-pair {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-pinned-flyer,
+  .oc-flyer-pin {
+    transition: none;
+  }
+  .oc-event-detail[data-state="open"],
+  .oc-event-detail[data-state="closed"] {
+    animation: none !important;
+  }
+  .oc-pinned-flyer:hover {
+    transform: rotate(var(--flyer-rotation));
+  }
+  .oc-pinned-flyer[data-selected="true"] {
+    transform: rotate(var(--flyer-rotation));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="dialog-overlay"]:has(+ .oc-event-detail) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.oc-paper-art .oc-campus-illustration svg {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.oc-paper-location {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.oc-paper-art {
+  min-height: 55px;
+}
+.oc-pulled-flyer .oc-paper-art {
+  min-height: 90px;
+}
+.oc-event-paper {
+  font-size: clamp(9px, 5cqw, 12px);
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .oc-flyer-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.oc-event-paper {
+  font-weight: 400;
+}
+.oc-event-paper h3,
+.oc-paper-club,
+.oc-paper-rule,
+.oc-paper-date,
+.oc-paper-location,
+.oc-paper-category {
+  flex-shrink: 0;
+}
+.oc-paper-art {
+  min-height: 25px;
+}
+.oc-event-capacity {
+  appearance: none;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--muted);
+}
+.oc-event-capacity::-webkit-progress-bar {
+  background: var(--muted);
+  border-radius: 8px;
+}
+.oc-event-capacity::-webkit-progress-value {
+  background: var(--brand-orange);
+  border-radius: 8px;
+}
+.oc-event-capacity::-moz-progress-bar {
+  background: var(--brand-orange);
+  border-radius: 8px;
+}
+@media (max-width: 700px) {
+  .oc-pinned-flyer .oc-event-paper {
+    min-height: 230px;
+    padding: 16px 10px 10px;
+  }
+  .oc-pinned-flyer .oc-paper-description {
+    display: none;
+  }
+  .oc-pinned-flyer .oc-paper-art {
+    min-height: 25px;
+    margin-top: 5px;
+  }
+  .oc-event-detail > button {
+    top: 8px !important;
+    right: 8px !important;
+    width: 40px;
+    height: 40px;
+    z-index: 2;
+  }
+}
+.oc-managed-event .oc-event-paper h3 {
+  flex-shrink: 1;
+}
+
+.oc-rsvp-action {
+  background: #c84b19 !important;
+  color: #fff !important;
+  min-height: 44px;
+}
+.oc-rsvp-action:hover {
+  background: var(--brand-ink) !important;
+}

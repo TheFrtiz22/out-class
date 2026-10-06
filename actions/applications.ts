@@ -1,4 +1,5 @@
 "use server"
+import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
 import { meetsTestRequirement } from "@/lib/test-scores"
@@ -138,7 +139,7 @@ prisma.application.findMany({
   }),
 
 prisma.eventAttendance.findMany({
-    where: { studentId: user.id, event: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] } },
+    where: { studentId: user.id, event: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] } },
     include: {
       event: {
         include: { club: { select: { name: true } } },
@@ -146,7 +147,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { OR: [{ audience: "RECRUITMENT", isPublic: true }, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
+prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
   ])
   return { applications, attendances, meetings }
 }
