@@ -1,8 +1,8 @@
 "use client";
+import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "lucide-react";
 import {
-  getApplicationSettings,
   saveApplicationSettings,
 } from "@/actions/club-settings";
 import {

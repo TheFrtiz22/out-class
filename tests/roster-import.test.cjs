@@ -13,7 +13,7 @@ function setup() {
     user:{findUnique:async()=>({disabledAt:null}),findMany:async()=>state.users,create:()=>{throw Error('Fake user forbidden');}},
     schoolIdentity:{createMany:async({data})=>{for(const identity of data)if(!state.identities.some(i=>i.normalizedIdentifier===identity.normalizedIdentifier))state.identities.push(identity);},findMany:async()=>state.identities,upsert:async({create})=>{const existing=state.identities.find(i=>i.normalizedIdentifier===create.normalizedIdentifier);if(existing)return existing;const identity={id:'identity-'+create.normalizedIdentifier,...create};state.identities.push(identity);state.writes.push('identity');return identity;}},
     clubInvitation:{createMany:async({data})=>state.invitations.push(...data.map(d=>({status:"PENDING",...d}))),updateMany:async({where,data})=>state.invitations.filter(i=>where.id.in.includes(i.id)).forEach(i=>Object.assign(i,data)),findMany:async({where})=>state.invitations.filter(invite=>invite.status==='PENDING'&&(!invite.clubId||invite.clubId===where.clubId)&&(where.expiresAt.gt?invite.expiresAt>where.expiresAt.gt:invite.expiresAt<=where.expiresAt.lte)),create:async({data})=>{const invite={id:'invite-'+state.invitations.length,status:'PENDING',...data};state.invitations.push(invite);state.writes.push('invitation');return invite;},update:async({where,data})=>Object.assign(state.invitations.find(i=>i.id===where.id),data)},
-    rosterImport:{findUnique:async()=>state.record,findUniqueOrThrow:async()=>state.record,create:async({data})=>{state.record={id:importId,...data,rows:data.rows.create.map((row,i)=>({id:'row-'+i,importId,clubId:data.clubId,...row}))};state.writes.push('import');return state.record;},update:async({data})=>Object.assign(state.record,data)},
+    rosterImport:{findUnique:async()=>state.record,findUniqueOrThrow:async()=>state.record,create:async({data})=>{state.record={id:importId,...data,rows:(data.rows.createMany?.data || data.rows.create).map((row,i)=>({id:'row-'+i,importId,clubId:data.clubId,...row}))};state.writes.push('import');return state.record;},update:async({data})=>Object.assign(state.record,data)},
     rosterImportRow:{findUniqueOrThrow:async({where})=>state.record.rows.find(row=>row.id===where.id),findMany:async()=>state.record.rows,update:async({where,data})=>Object.assign(state.record.rows.find(row=>row.id===where.id),data)},
     auditLog:{create:async({data})=>state.audits.push(data)},
   };
@@ -26,6 +26,18 @@ function setup() {
   return{state,api:load('actions/roster-import.ts'),config};
 }
 const input=(overrides={})=>({clubId,requestId:'00000000-0000-4000-8000-000000000003',filename:'roster.csv',csv:'name,year,computing_id\nJohn Smith,2028,JMS8XY\nSarah Lee,,sl3ab',...overrides});
+
+test('batch-scoped database checks retain complete-file duplicate semantics after a normalization change',async()=>{
+  const h=setup();h.config.normalization='TRIM';
+  const rows=['name,year,computing_id','First,2028,UPPERID'];
+  for(let i=0;i<49;i++)rows.push(`Student ${i},2028,unique${i}`);
+  rows.push('Later,2028,upperid');
+  await h.api.previewRosterImport(input({csv:rows.join('\n')}));
+  h.config.normalization='TRIM_LOWERCASE';
+  let result;do{result=await h.api.confirmRosterImport(importId);}while(!result.completed);
+  assert.equal(result.created,49);assert.equal(result.invalid,1);assert.equal(result.duplicates,1);
+  assert.ok(!h.state.invitations.some(i=>i.email==='upperid@virginia.edu'));
+});
 
 test('preview enforces server permissions and never creates users, identities, invitations or memberships',async()=>{
   const h=setup();h.state.allowed=false;await assert.rejects(h.api.previewRosterImport(input()),/Denied/);assert.deepEqual(h.state.writes,[]);

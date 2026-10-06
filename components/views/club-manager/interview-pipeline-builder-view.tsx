@@ -1,9 +1,9 @@
 "use client";
+import { getPipelineSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, ArrowDown, Plus, Trash2 } from "lucide-react";
 import {
-  getPipelineSettings,
   savePipelineSettings,
 } from "@/actions/club-settings";
 import {

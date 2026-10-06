@@ -3,8 +3,7 @@ import { redirect, notFound } from "next/navigation"
 import { publicClubs } from "@/lib/public-clubs"
 import { PublicClubPage } from "@/components/qr/public-club-page"
 import { getPublicClub } from "@/actions/club-directory"
-import { getStudentDashboardData } from "@/actions/applications"
-import { createClient } from "@/utils/supabase/server"
+import { getSessionUser } from "@/utils/auth"
 import { cookies } from "next/headers"
 import type { Metadata } from "next"
 import { getPublicClubSeo, isIndexableClub } from "@/lib/public-club-seo"
@@ -27,8 +26,7 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   const { clubId } = await params
   const jar = await cookies()
   if (jar.get(DEMO_COOKIE)?.value === "1") {
-    const client = await createClient(jar)
-    const { data: { user }, error: authError } = await client.auth.getUser()
+    const { data: { user }, error: authError } = await getSessionUser()
     if (canAccessDemo(authError ? undefined : user?.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
   }
   const result = await getPublicClub(clubId)
@@ -47,17 +45,8 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
       )
     notFound()
   }
-  const supabase = await createClient(await cookies())
   const {
     data: { user },
-  } = await supabase.auth.getUser()
-  let initialData = null
-  if (user) {
-    try {
-      initialData = await getStudentDashboardData()
-    } catch {
-      /* The profile remains readable when private application data is unavailable. */
-    }
-  }
-  return <PublicClubPage club={club} initialData={initialData} authenticated={!!user} />
+  } = await getSessionUser()
+  return <PublicClubPage club={club} authenticated={!!user} />
 }

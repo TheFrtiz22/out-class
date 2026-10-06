@@ -17,11 +17,15 @@ export async function middleware(request: NextRequest) {
   }
   // Demo requests cannot invoke any live server action or mutation endpoint.
   // The mode endpoint can disable demo; its own authorization and origin checks apply.
-  if (request.cookies.get(DEMO_COOKIE)?.value === "1" && (request.nextUrl.pathname === "/api/users/me" || (request.method !== "GET" && request.method !== "HEAD" && request.nextUrl.pathname !== "/api/demo"))) {
+  if (request.cookies.get(DEMO_COOKIE)?.value === "1" && (["/api/users/me", "/api/workspace"].includes(request.nextUrl.pathname) || (request.method !== "GET" && request.method !== "HEAD" && request.nextUrl.pathname !== "/api/demo"))) {
     return NextResponse.json({ error: "Live account access and production writes are disabled in Demo Mode." }, { status: 403 })
   }
-  // Update session
-  const response = await createClient(request)
+  // These boundaries verify getUser themselves and can write refreshed cookies.
+  // The demo/support mutation guards above still run before this optimization.
+  // No identity forwarded by a client/header is trusted by downstream loaders.
+  const ownsAuth = request.nextUrl.pathname === "/api/workspace" || request.nextUrl.pathname === "/api/users/me" ||
+    request.method === "POST" && request.headers.has("next-action")
+  const response = ownsAuth ? NextResponse.next() : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
   const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error"].some(key => request.nextUrl.searchParams.has(key))

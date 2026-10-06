@@ -20,13 +20,11 @@ export async function getClubPipeline(clubId: string) {
   )
     throw new Error("Applicant access denied.");
 
-  const rounds = await prisma.pipelineRound.findMany({
+  const [rounds, applications] = await Promise.all([prisma.pipelineRound.findMany({
     where: { clubId, archivedAt: null },
     orderBy: { order: "asc" },
     select: { id: true, name: true, order: true, anonymousReview: true },
-  });
-
-  const applications = await prisma.application.findMany({
+  }), prisma.application.findMany({
     where: {
       clubId,
       status: { not: "DRAFTING" },
@@ -43,7 +41,7 @@ export async function getClubPipeline(clubId: string) {
       answers: { include: { question: true } },
       bookings: { include: { slot: true } },
     },
-  });
+  })]);
 
   return {
     rounds,

@@ -19,6 +19,7 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
   let cursor = 0
   const react = {
     createContext: () => ({ Provider: "AuthProvider" }),
+    useRef(initial) { const i = cursor++; if (!(i in values)) values[i] = { current: initial }; return values[i] },
     useState(initial) {
       const i = cursor++
       if (!(i in values)) values[i] = initial

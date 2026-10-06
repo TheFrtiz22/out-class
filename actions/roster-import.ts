@@ -25,12 +25,13 @@ async function classify(tx: AppTransactionClient, clubId: string, inputs: Roster
   const rows = validateRosterRows(inputs, config);
   const identifiers = rows.filter(row => row.status === "READY").map(row => row.normalizedIdentifier!);
   const emails = identifiers.map(identifier => `${identifier}@${config.emailDomain}`);
-  const [identities, users, members, invitations] = await Promise.all([
+  const [identities, users, invitations] = await Promise.all([
     tx.schoolIdentity.findMany({ where: { schoolId: config.schoolId, identifierTypeId: config.id, normalizedIdentifier: { in: identifiers } } }),
     tx.$queryRaw<{ id: string; email: string; disabledAt: Date | null }[]>`SELECT id, email, "disabledAt" FROM "User" WHERE lower(email) = ANY(${emails.map(email => email.toLowerCase())}::text[])`,
-    tx.clubMember.findMany({ where: { clubId, status: "ACTIVE" }, select: { userId: true } }),
     tx.clubInvitation.findMany({ where: { clubId, status: "PENDING", expiresAt: { gt: new Date() }, OR: [{ schoolIdentity: { identifierTypeId: config.id, normalizedIdentifier: { in: identifiers } } }, { schoolIdentityId: null, email: { in: emails, mode: "insensitive" } }] } }),
   ]);
+  const matchedIds = [...new Set([...identities.flatMap(identity => identity.userId ? [identity.userId] : []), ...users.map(user => user.id)])];
+  const members = matchedIds.length ? await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", userId: { in: matchedIds } }, select: { userId: true } }) : [];
   const identityByIdentifier = new Map(identities.map(i => [i.normalizedIdentifier, i]));
   const usersByEmail = new Map<string, typeof users>();
   for (const user of users) { const email = user.email.toLowerCase(); usersByEmail.set(email, [...(usersByEmail.get(email) || []), user]); }
@@ -95,10 +96,10 @@ export async function previewRosterImport(input: unknown) {
     const record = existing ?? await tx.rosterImport.create({ data: {
       clubId: data.clubId, uploadedById: user.id, filename: data.filename, fileHash, idempotencyKey: data.requestId,
       status: "VALIDATED", rowCount: rows.length, failedRows: summary.invalid,
-      rows: { create: rows.map(row => ({ rowNumber: row.rowNumber, input: row.input,
+      rows: { createMany: { data: rows.map(row => ({ rowNumber: row.rowNumber, input: row.input,
         invitedName: row.name || null, invitedYear: row.year || null, identifier: row.identifier || null, normalizedIdentifier: row.normalizedIdentifier,
         matchedUserId: row.matchedUserId, schoolIdentityId: row.schoolIdentityId, invitationId: row.invitationId,
-        status: databaseStatus(row), errors: [...row.errors, ...row.warnings] })) },
+        status: databaseStatus(row), errors: [...row.errors, ...row.warnings] })) } },
     } });
     if (!existing) await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.preview", targetId: record.id, clubId: data.clubId, details: summary } });
     return { id: record.id, filename: data.filename, rows: publicRows(rows), summary };
@@ -176,11 +177,20 @@ export async function confirmRosterImport(importId: string) {
       await tx.rosterImport.update({ where: { id: importId }, data: { status: "PROCESSING" } });
       await tx.auditLog.create({ data: { actorId: user.id, action: "club.roster.start", targetId: importId, clubId: record.clubId } });
     }
-    // Keep duplicate detection across the complete original input, not individual batches.
-    const inputs = record.rows.map(row => importRowInput.safeParse(row.input));
-    const classified = await classify(tx, record.clubId, inputs.map(parsed => parsed.success ? parsed.data : { name: "", year: "", computing_id: "" }), config);
+    // Preserve full-file duplicate/validation semantics even if configuration
+    // changed since preview. This CPU-only pass is cheap; only the selected batch
+    // needs live database identity/account/membership/invitation rechecks.
+    const originalInputs = record.rows.map(row => importRowInput.safeParse(row.input));
+    const validated = validateRosterRows(originalInputs.map(parsed => parsed.success ? parsed.data : { name: "", year: "", computing_id: "" }), config);
+    const originalIndex = new Map(record.rows.map((row, index) => [row.id, index]));
     const selected = record.rows.filter(row => row.status === "VALID").slice(0, IMPORT_BATCH_SIZE);
-    const indexById = new Map(record.rows.map((row, index) => [row.id, index]));
+    const inputs = selected.map(row => originalInputs[originalIndex.get(row.id)!]);
+    const batch = await classify(tx, record.clubId, inputs.map(parsed => parsed.success ? parsed.data : { name: "", year: "", computing_id: "" }), config);
+    const classified = batch.map((row, index) => {
+      const validation = validated[originalIndex.get(selected[index].id)!];
+      return validation.status === "READY" ? row : { ...row, ...validation };
+    });
+    const indexById = new Map(selected.map((row, index) => [row.id, index]));
     const ready = selected.flatMap(saved => {
       const index = indexById.get(saved.id)!;
       const row = classified[index];

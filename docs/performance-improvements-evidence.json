@@ -1,0 +1,3575 @@
+{
+  "baselineRevision": "3108d80f1a162bd99ebf8b1dbb31c7fa1f9e9a05",
+  "scope": "Local original-function measurements with synthetic/mocked dependencies; PGlite uses real migrated SQL. Not deployed/browser latency.",
+  "before": {
+    "generatedAt": "2026-10-06T15:21:47.155Z",
+    "node": "v26.9.0",
+    "platform": "darwin",
+    "limitations": [
+      "No production mutations, credentials, service calls or SMTP.",
+      "Mock ORM call counts exclude requireAuth/requireClubPermission internals, middleware, generated relation SQL and transaction BEGIN/COMMIT.",
+      "PGlite wall times cannot predict remote service latency."
+    ],
+    "csv": [
+      {
+        "rows": 10,
+        "utf8Bytes": 342,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.006,
+          "p95Ms": 0.023
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.005,
+          "p95Ms": 0.014
+        }
+      },
+      {
+        "rows": 50,
+        "utf8Bytes": 1702,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.014,
+          "p95Ms": 0.077
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.014,
+          "p95Ms": 0.049
+        }
+      },
+      {
+        "rows": 100,
+        "utf8Bytes": 3402,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.025,
+          "p95Ms": 0.091
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.027,
+          "p95Ms": 0.06
+        }
+      },
+      {
+        "rows": 500,
+        "utf8Bytes": 17802,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.094,
+          "p95Ms": 0.189
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.107,
+          "p95Ms": 0.208
+        }
+      },
+      {
+        "rows": 1000,
+        "utf8Bytes": 35802,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.193,
+          "p95Ms": 0.357
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.219,
+          "p95Ms": 0.383
+        }
+      }
+    ],
+    "roster": [
+      {
+        "rows": 10,
+        "previewMs": 2.11,
+        "confirmationMs": 1.332,
+        "classifiedRows": 20,
+        "previewCalls": 12,
+        "confirmationBatches": 1,
+        "confirmationCalls": 24,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubMember.findMany",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 10,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 10,
+        "emailsSent": 0
+      },
+      {
+        "rows": 50,
+        "previewMs": 0.716,
+        "confirmationMs": 1.115,
+        "classifiedRows": 100,
+        "previewCalls": 12,
+        "confirmationBatches": 1,
+        "confirmationCalls": 24,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubMember.findMany",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 50,
+        "emailsSent": 0
+      },
+      {
+        "rows": 100,
+        "previewMs": 0.72,
+        "confirmationMs": 1.805,
+        "classifiedRows": 300,
+        "previewCalls": 12,
+        "confirmationBatches": 2,
+        "confirmationCalls": 46,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubMember.findMany",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 100,
+        "emailsSent": 0
+      },
+      {
+        "rows": 500,
+        "previewMs": 1.483,
+        "confirmationMs": 13.332,
+        "classifiedRows": 5500,
+        "previewCalls": 12,
+        "confirmationBatches": 10,
+        "confirmationCalls": 222,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubMember.findMany",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 150,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 200,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 250,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 300,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 350,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 400,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 450,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 500,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 500,
+        "emailsSent": 0
+      }
+    ],
+    "directoryScheduling": {
+      "measuredMs": 34.557,
+      "injectedDelayMs": 5,
+      "maxConcurrentMockOperations": 1,
+      "timeline": [
+        {
+          "operation": "account",
+          "phase": "start"
+        },
+        {
+          "operation": "account",
+          "phase": "end"
+        },
+        {
+          "operation": "membership",
+          "phase": "start"
+        },
+        {
+          "operation": "membership",
+          "phase": "end"
+        },
+        {
+          "operation": "club",
+          "phase": "start"
+        },
+        {
+          "operation": "club",
+          "phase": "end"
+        },
+        {
+          "operation": "members",
+          "phase": "start"
+        },
+        {
+          "operation": "members",
+          "phase": "end"
+        },
+        {
+          "operation": "invitations",
+          "phase": "start"
+        },
+        {
+          "operation": "invitations",
+          "phase": "end"
+        },
+        {
+          "operation": "identifierTypes",
+          "phase": "start"
+        },
+        {
+          "operation": "identifierTypes",
+          "phase": "end"
+        }
+      ],
+      "note": "Scheduling proof with injected delays; not application or database latency."
+    },
+    "pipelineScheduling": {
+      "samples": 10,
+      "medianMs": 11.385,
+      "p95Ms": 11.628,
+      "injectedQueryDelayMs": 5,
+      "maxConcurrentQueries": 1,
+      "note": "Controlled scheduling measurement, not production latency."
+    },
+    "nextActionScheduling": {
+      "nextVersion": "15.5.26",
+      "source": "node_modules/.pnpm/next@15.5.26_@types+node@22.20.2_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/dist/client/components/app-router-instance.js",
+      "injectedReducerDelayMs": 5,
+      "maxConcurrentReducers": 1,
+      "timeline": [
+        {
+          "action": "invitations",
+          "phase": "start"
+        },
+        {
+          "action": "invitations",
+          "phase": "end"
+        },
+        {
+          "action": "workspaceOverview",
+          "phase": "start"
+        },
+        {
+          "action": "workspaceOverview",
+          "phase": "end"
+        },
+        {
+          "action": "memberDirectory",
+          "phase": "start"
+        },
+        {
+          "action": "memberDirectory",
+          "phase": "end"
+        }
+      ],
+      "note": "Installed Next action queue with synthetic reducer; not browser or HTTP latency. Navigation preemption is a separate branch."
+    },
+    "localSql": {
+      "engine": "PGlite in-memory PostgreSQL",
+      "fixture": "10,000 users, members, invitations, deliveries and events; 20 clubs; 500 rows per club",
+      "migrations": [
+        "20260923000000_baseline",
+        "20260923010000_capabilities",
+        "20260924000000_club_claims",
+        "20260924010000_anonymous_review_tests",
+        "20260924020000_interview_kits",
+        "20260924030000_meetings",
+        "20260924040000_member_tasks",
+        "20260925000000_platform_view_sessions",
+        "20260925010000_marketing_participants",
+        "20260927000000_recruiting_rules",
+        "20260928000000_private_resume_storage",
+        "20260929000000_club_marketing",
+        "20260930000000_interview_rooms",
+        "20261001000000_support_impersonation_tutorials",
+        "20261001010000_club_onboarding",
+        "20261002000000_organization_invitation_emails",
+        "20261002010000_onboarding_security",
+        "20261003000000_applicant_intelligence",
+        "20261003010000_durable_voting",
+        "20261003020000_corkboard",
+        "20261003030000_task_workflows",
+        "20261004000000_interview_foundation",
+        "20261004000000_voting_presentation_join",
+        "20261005000000_club_settings",
+        "20261005000000_interview_scheduling_access",
+        "20261005010000_public_corkboard"
+      ],
+      "queries": {
+        "normalizedEmailLookup": {
+          "samples": 30,
+          "medianMs": 0.11,
+          "p95Ms": 0.126,
+          "resultRows": 2,
+          "jsonBytes": 145,
+          "sql": "SELECT id,email,\"disabledAt\" FROM \"User\" WHERE lower(email)=ANY(ARRAY['audit1@virginia.edu','audit500@virginia.edu'])",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Index Scan",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "User_email_lower_idx",
+                "Relation Name": "User",
+                "Alias": "User",
+                "Startup Cost": 0.29,
+                "Total Cost": 13.94,
+                "Plan Rows": 2,
+                "Plan Width": 45,
+                "Actual Startup Time": 0.01,
+                "Actual Total Time": 0.012,
+                "Actual Rows": 2,
+                "Actual Loops": 1,
+                "Index Cond": "(lower(email) = ANY ('{audit1@virginia.edu,audit500@virginia.edu}'::text[]))",
+                "Rows Removed by Index Recheck": 0,
+                "Shared Hit Blocks": 6,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.015,
+              "Triggers": [],
+              "Execution Time": 0.037
+            }
+          ]
+        },
+        "directoryMembersBase": {
+          "samples": 30,
+          "medianMs": 2.883,
+          "p95Ms": 3.533,
+          "resultRows": 500,
+          "jsonBytes": 155285,
+          "sql": "SELECT * FROM \"ClubMember\" WHERE \"clubId\"='audit-club-1' ORDER BY \"joinedAt\" ASC",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Sort",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 240.82,
+                "Total Cost": 242.07,
+                "Plan Rows": 500,
+                "Plan Width": 177,
+                "Actual Startup Time": 0.297,
+                "Actual Total Time": 0.341,
+                "Actual Rows": 500,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "\"joinedAt\""
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 90,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 13,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "ClubMember",
+                    "Alias": "ClubMember",
+                    "Startup Cost": 8.16,
+                    "Total Cost": 218.41,
+                    "Plan Rows": 500,
+                    "Plan Width": 177,
+                    "Actual Startup Time": 0.009,
+                    "Actual Total Time": 0.191,
+                    "Actual Rows": 500,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Exact Heap Blocks": 11,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 13,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "ClubMember_clubId_status_joinedAt_idx",
+                        "Startup Cost": 0,
+                        "Total Cost": 8.04,
+                        "Plan Rows": 500,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 0.006,
+                        "Actual Total Time": 0.007,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Shared Hit Blocks": 2,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.016,
+              "Triggers": [],
+              "Execution Time": 0.387
+            }
+          ]
+        },
+        "directoryInvitationsBase": {
+          "samples": 30,
+          "medianMs": 3.699,
+          "p95Ms": 4.335,
+          "resultRows": 500,
+          "jsonBytes": 311785,
+          "sql": "SELECT * FROM \"ClubInvitation\" WHERE \"clubId\"='audit-club-1' ORDER BY \"createdAt\" DESC",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Sort",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 268.82,
+                "Total Cost": 270.07,
+                "Plan Rows": 500,
+                "Plan Width": 326,
+                "Actual Startup Time": 0.26,
+                "Actual Total Time": 0.304,
+                "Actual Rows": 500,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "\"createdAt\" DESC"
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 99,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 14,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "ClubInvitation",
+                    "Alias": "ClubInvitation",
+                    "Startup Cost": 8.16,
+                    "Total Cost": 246.41,
+                    "Plan Rows": 500,
+                    "Plan Width": 326,
+                    "Actual Startup Time": 0.011,
+                    "Actual Total Time": 0.125,
+                    "Actual Rows": 500,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Exact Heap Blocks": 12,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 14,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "ClubInvitation_clubId_status_createdAt_idx",
+                        "Startup Cost": 0,
+                        "Total Cost": 8.04,
+                        "Plan Rows": 500,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 0.007,
+                        "Actual Total Time": 0.007,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Shared Hit Blocks": 2,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 1,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.039,
+              "Triggers": [],
+              "Execution Time": 0.354
+            }
+          ]
+        },
+        "latestDeliveryOneInvite": {
+          "samples": 30,
+          "medianMs": 0.112,
+          "p95Ms": 0.138,
+          "resultRows": 1,
+          "jsonBytes": 79,
+          "sql": "SELECT status,\"createdAt\",\"failureCode\" FROM \"InvitationDelivery\" WHERE \"invitationId\"='audit-invite-1' ORDER BY \"createdAt\" DESC LIMIT 1",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Limit",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 0.29,
+                "Total Cost": 8.3,
+                "Plan Rows": 1,
+                "Plan Width": 44,
+                "Actual Startup Time": 0.002,
+                "Actual Total Time": 0.003,
+                "Actual Rows": 1,
+                "Actual Loops": 1,
+                "Shared Hit Blocks": 3,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Index Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Scan Direction": "Backward",
+                    "Index Name": "InvitationDelivery_invitationId_createdAt_idx",
+                    "Relation Name": "InvitationDelivery",
+                    "Alias": "InvitationDelivery",
+                    "Startup Cost": 0.29,
+                    "Total Cost": 8.3,
+                    "Plan Rows": 1,
+                    "Plan Width": 44,
+                    "Actual Startup Time": 0.001,
+                    "Actual Total Time": 0.001,
+                    "Actual Rows": 1,
+                    "Actual Loops": 1,
+                    "Index Cond": "(\"invitationId\" = 'audit-invite-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Shared Hit Blocks": 3,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.014,
+              "Triggers": [],
+              "Execution Time": 0.005
+            }
+          ]
+        },
+        "nextClubMeeting": {
+          "samples": 30,
+          "medianMs": 0.225,
+          "p95Ms": 0.314,
+          "resultRows": 1,
+          "jsonBytes": 141,
+          "sql": "SELECT id,title,date,location,audience FROM \"Event\" WHERE \"clubId\"='audit-club-1' AND date>=now() ORDER BY date ASC LIMIT 1",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Limit",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 192.41,
+                "Total Cost": 192.41,
+                "Plan Rows": 1,
+                "Plan Width": 71,
+                "Actual Startup Time": 0.206,
+                "Actual Total Time": 0.207,
+                "Actual Rows": 1,
+                "Actual Loops": 1,
+                "Shared Hit Blocks": 11,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Sort",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 192.41,
+                    "Total Cost": 193.66,
+                    "Plan Rows": 500,
+                    "Plan Width": 71,
+                    "Actual Startup Time": 0.205,
+                    "Actual Total Time": 0.206,
+                    "Actual Rows": 1,
+                    "Actual Loops": 1,
+                    "Sort Key": [
+                      "date"
+                    ],
+                    "Sort Method": "top-N heapsort",
+                    "Sort Space Used": 17,
+                    "Sort Space Type": "Memory",
+                    "Shared Hit Blocks": 11,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Heap Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "Event",
+                        "Alias": "Event",
+                        "Startup Cost": 8.16,
+                        "Total Cost": 189.91,
+                        "Plan Rows": 500,
+                        "Plan Width": 71,
+                        "Actual Startup Time": 0.008,
+                        "Actual Total Time": 0.111,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Rows Removed by Index Recheck": 0,
+                        "Filter": "(date >= now())",
+                        "Rows Removed by Filter": 0,
+                        "Exact Heap Blocks": 9,
+                        "Lossy Heap Blocks": 0,
+                        "Shared Hit Blocks": 11,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0,
+                        "Plans": [
+                          {
+                            "Node Type": "Bitmap Index Scan",
+                            "Parent Relationship": "Outer",
+                            "Parallel Aware": false,
+                            "Async Capable": false,
+                            "Index Name": "Event_clubId_idx",
+                            "Startup Cost": 0,
+                            "Total Cost": 8.04,
+                            "Plan Rows": 500,
+                            "Plan Width": 0,
+                            "Actual Startup Time": 0.005,
+                            "Actual Total Time": 0.005,
+                            "Actual Rows": 500,
+                            "Actual Loops": 1,
+                            "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                            "Shared Hit Blocks": 2,
+                            "Shared Read Blocks": 0,
+                            "Shared Dirtied Blocks": 0,
+                            "Shared Written Blocks": 0,
+                            "Local Hit Blocks": 0,
+                            "Local Read Blocks": 0,
+                            "Local Dirtied Blocks": 0,
+                            "Local Written Blocks": 0,
+                            "Temp Read Blocks": 0,
+                            "Temp Written Blocks": 0
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.013,
+              "Triggers": [],
+              "Execution Time": 0.211
+            }
+          ]
+        }
+      },
+      "indexes": [
+        {
+          "tablename": "Application",
+          "indexname": "Application_clubId_idx",
+          "indexdef": "CREATE INDEX \"Application_clubId_idx\" ON public.\"Application\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_clubId_status_roundId_idx",
+          "indexdef": "CREATE INDEX \"Application_clubId_status_roundId_idx\" ON public.\"Application\" USING btree (\"clubId\", status, \"roundId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"Application_pkey\" ON public.\"Application\" USING btree (id)"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_roundId_idx",
+          "indexdef": "CREATE INDEX \"Application_roundId_idx\" ON public.\"Application\" USING btree (\"roundId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_studentId_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"Application_studentId_clubId_key\" ON public.\"Application\" USING btree (\"studentId\", \"clubId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_studentId_idx",
+          "indexdef": "CREATE INDEX \"Application_studentId_idx\" ON public.\"Application\" USING btree (\"studentId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_clubId_status_createdAt_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_clubId_status_createdAt_idx\" ON public.\"ClubInvitation\" USING btree (\"clubId\", status, \"createdAt\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_email_clubId_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_email_clubId_idx\" ON public.\"ClubInvitation\" USING btree (email, \"clubId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_id_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_id_clubId_key\" ON public.\"ClubInvitation\" USING btree (id, \"clubId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_pending_identity_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pending_identity_key\" ON public.\"ClubInvitation\" USING btree (\"clubId\", \"schoolIdentityId\") WHERE ((status = 'PENDING'::\"InvitationStatus\") AND (\"schoolIdentityId\" IS NOT NULL))"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pkey\" ON public.\"ClubInvitation\" USING btree (id)"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_schoolIdentityId_status_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_schoolIdentityId_status_idx\" ON public.\"ClubInvitation\" USING btree (\"schoolIdentityId\", status)"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_clubId_idx",
+          "indexdef": "CREATE INDEX \"ClubMember_clubId_idx\" ON public.\"ClubMember\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_clubId_status_joinedAt_idx",
+          "indexdef": "CREATE INDEX \"ClubMember_clubId_status_joinedAt_idx\" ON public.\"ClubMember\" USING btree (\"clubId\", status, \"joinedAt\")"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubMember_pkey\" ON public.\"ClubMember\" USING btree (id)"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_userId_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubMember_userId_clubId_key\" ON public.\"ClubMember\" USING btree (\"userId\", \"clubId\")"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_clubId_idx",
+          "indexdef": "CREATE INDEX \"Event_clubId_idx\" ON public.\"Event\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"Event_pkey\" ON public.\"Event\" USING btree (id)"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_public_date_endDate_idx",
+          "indexdef": "CREATE INDEX \"Event_public_date_endDate_idx\" ON public.\"Event\" USING btree (\"isPublic\", date, \"endDate\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_idempotencyKey_key",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_idempotencyKey_key\" ON public.\"InvitationDelivery\" USING btree (\"idempotencyKey\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_invitationId_createdAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_invitationId_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\", \"createdAt\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_one_active_invitation",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_one_active_invitation\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\") WHERE (status = ANY (ARRAY['QUEUED'::\"InvitationDeliveryStatus\", 'SENDING'::\"InvitationDeliveryStatus\"]))"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_pkey\" ON public.\"InvitationDelivery\" USING btree (id)"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_providerMessageId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_providerMessageId_key\" ON public.\"InvitationDelivery\" USING btree (\"providerMessageId\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_requestedById_createdAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_requestedById_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"requestedById\", \"createdAt\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_status_nextAttemptAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_status_nextAttemptAt_idx\" ON public.\"InvitationDelivery\" USING btree (status, \"nextAttemptAt\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_importId_rowNumber_key",
+          "indexdef": "CREATE UNIQUE INDEX \"RosterImportRow_importId_rowNumber_key\" ON public.\"RosterImportRow\" USING btree (\"importId\", \"rowNumber\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_invitationId_idx",
+          "indexdef": "CREATE INDEX \"RosterImportRow_invitationId_idx\" ON public.\"RosterImportRow\" USING btree (\"invitationId\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"RosterImportRow_pkey\" ON public.\"RosterImportRow\" USING btree (id)"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_email_key",
+          "indexdef": "CREATE UNIQUE INDEX \"User_email_key\" ON public.\"User\" USING btree (email)"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_email_lower_idx",
+          "indexdef": "CREATE INDEX \"User_email_lower_idx\" ON public.\"User\" USING btree (lower(email))"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"User_pkey\" ON public.\"User\" USING btree (id)"
+        }
+      ],
+      "rls": [
+        {
+          "relname": "ClubMember",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "User",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "Event",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "InvitationDelivery",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "ClubInvitation",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        }
+      ],
+      "note": "Base-query SQL equivalents, not Prisma-generated relation SQL. Local owner connection, no Supabase auth/network/pooler/production RLS cost."
+    },
+    "publicProfileRendering": {
+      "samples": 10,
+      "medianMs": 6.335,
+      "p95Ms": 6.373,
+      "calls": 12,
+      "renders": 12,
+      "injectedPrivateReadDelayMs": 5,
+      "note": "Server page execution with controlled private-loader delay; not browser/production route timing."
+    },
+    "directoryEventGrouping": {
+      "samples": 10,
+      "medianMs": 7.929,
+      "p95Ms": 8.28,
+      "clubCount": 250,
+      "eventCount": 5000,
+      "note": "Local original-loader CPU with synthetic data and immediate database mocks, not production latency."
+    },
+    "applicantDisplayReads": {
+      "samples": 10,
+      "medianMs": 18.954,
+      "p95Ms": 19.106,
+      "memberReadsPerDisplay": 2,
+      "injectedQueryDelayMs": 5,
+      "note": "Controlled query scheduling inside original repeatable-read loader; not production latency. Initial external permission guard excluded."
+    }
+  },
+  "after": {
+    "generatedAt": "2026-10-06T16:18:14.233Z",
+    "node": "v26.9.0",
+    "platform": "darwin",
+    "limitations": [
+      "No production mutations, credentials, service calls or SMTP.",
+      "Mock ORM call counts exclude requireAuth/requireClubPermission internals, middleware, generated relation SQL and transaction BEGIN/COMMIT.",
+      "PGlite wall times cannot predict remote service latency."
+    ],
+    "csv": [
+      {
+        "rows": 10,
+        "utf8Bytes": 342,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.005,
+          "p95Ms": 0.018
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.004,
+          "p95Ms": 0.01
+        }
+      },
+      {
+        "rows": 50,
+        "utf8Bytes": 1702,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.014,
+          "p95Ms": 0.034
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.014,
+          "p95Ms": 0.023
+        }
+      },
+      {
+        "rows": 100,
+        "utf8Bytes": 3402,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.022,
+          "p95Ms": 0.042
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.023,
+          "p95Ms": 0.032
+        }
+      },
+      {
+        "rows": 500,
+        "utf8Bytes": 17802,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.09,
+          "p95Ms": 0.172
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.102,
+          "p95Ms": 0.191
+        }
+      },
+      {
+        "rows": 1000,
+        "utf8Bytes": 35802,
+        "parse": {
+          "samples": 100,
+          "medianMs": 0.181,
+          "p95Ms": 0.315
+        },
+        "validate": {
+          "samples": 100,
+          "medianMs": 0.205,
+          "p95Ms": 0.352
+        }
+      }
+    ],
+    "roster": [
+      {
+        "rows": 10,
+        "previewMs": 2.312,
+        "confirmationMs": 1.128,
+        "classifiedRows": 20,
+        "previewCalls": 11,
+        "confirmationBatches": 1,
+        "confirmationCalls": 23,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 10,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 10,
+        "emailsSent": 0
+      },
+      {
+        "rows": 50,
+        "previewMs": 0.581,
+        "confirmationMs": 0.8,
+        "classifiedRows": 100,
+        "previewCalls": 11,
+        "confirmationBatches": 1,
+        "confirmationCalls": 23,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 50,
+        "emailsSent": 0
+      },
+      {
+        "rows": 100,
+        "previewMs": 0.554,
+        "confirmationMs": 1.36,
+        "classifiedRows": 200,
+        "previewCalls": 11,
+        "confirmationBatches": 2,
+        "confirmationCalls": 44,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 100,
+        "emailsSent": 0
+      },
+      {
+        "rows": 500,
+        "previewMs": 1.09,
+        "confirmationMs": 9.856,
+        "classifiedRows": 1000,
+        "previewCalls": 11,
+        "confirmationBatches": 10,
+        "confirmationCalls": 212,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 150,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 200,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 250,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 300,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 350,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 400,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 450,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 500,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 500,
+        "emailsSent": 0
+      }
+    ],
+    "directoryScheduling": {
+      "measuredMs": 25.561,
+      "injectedDelayMs": 5,
+      "maxConcurrentMockOperations": 3,
+      "timeline": [
+        {
+          "operation": "account",
+          "phase": "start"
+        },
+        {
+          "operation": "account",
+          "phase": "end"
+        },
+        {
+          "operation": "membership",
+          "phase": "start"
+        },
+        {
+          "operation": "membership",
+          "phase": "end"
+        },
+        {
+          "operation": "club",
+          "phase": "start"
+        },
+        {
+          "operation": "club",
+          "phase": "end"
+        },
+        {
+          "operation": "members",
+          "phase": "start"
+        },
+        {
+          "operation": "invitations",
+          "phase": "start"
+        },
+        {
+          "operation": "identifierTypes",
+          "phase": "start"
+        },
+        {
+          "operation": "members",
+          "phase": "end"
+        },
+        {
+          "operation": "invitations",
+          "phase": "end"
+        },
+        {
+          "operation": "identifierTypes",
+          "phase": "end"
+        }
+      ],
+      "note": "Scheduling proof with injected delays; not application or database latency."
+    },
+    "pipelineScheduling": {
+      "samples": 10,
+      "medianMs": 6.304,
+      "p95Ms": 6.326,
+      "injectedQueryDelayMs": 5,
+      "maxConcurrentQueries": 2,
+      "note": "Controlled scheduling measurement, not production latency."
+    },
+    "publicProfileRendering": {
+      "samples": 10,
+      "medianMs": 0.007,
+      "p95Ms": 0.013,
+      "calls": 0,
+      "renders": 12,
+      "injectedPrivateReadDelayMs": 5,
+      "note": "Server page execution with controlled private-loader delay; not browser/production route timing."
+    },
+    "directoryEventGrouping": {
+      "samples": 10,
+      "medianMs": 1.913,
+      "p95Ms": 2.856,
+      "clubCount": 250,
+      "eventCount": 5000,
+      "note": "Local original-loader CPU with synthetic data and immediate database mocks, not production latency."
+    },
+    "nextActionScheduling": {
+      "nextVersion": "15.5.26",
+      "source": "node_modules/.pnpm/next@15.5.26_@types+node@22.20.2_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/dist/client/components/app-router-instance.js",
+      "injectedReducerDelayMs": 5,
+      "maxConcurrentReducers": 1,
+      "timeline": [
+        {
+          "action": "invitations",
+          "phase": "start"
+        },
+        {
+          "action": "invitations",
+          "phase": "end"
+        },
+        {
+          "action": "workspaceOverview",
+          "phase": "start"
+        },
+        {
+          "action": "workspaceOverview",
+          "phase": "end"
+        },
+        {
+          "action": "memberDirectory",
+          "phase": "start"
+        },
+        {
+          "action": "memberDirectory",
+          "phase": "end"
+        }
+      ],
+      "note": "Installed Next action queue with synthetic reducer; not browser or HTTP latency. Navigation preemption is a separate branch."
+    },
+    "localSql": {
+      "engine": "PGlite in-memory PostgreSQL",
+      "fixture": "10,000 users, members, invitations, deliveries and events; 20 clubs; 500 rows per club",
+      "migrations": [
+        "20260923000000_baseline",
+        "20260923010000_capabilities",
+        "20260924000000_club_claims",
+        "20260924010000_anonymous_review_tests",
+        "20260924020000_interview_kits",
+        "20260924030000_meetings",
+        "20260924040000_member_tasks",
+        "20260925000000_platform_view_sessions",
+        "20260925010000_marketing_participants",
+        "20260927000000_recruiting_rules",
+        "20260928000000_private_resume_storage",
+        "20260929000000_club_marketing",
+        "20260930000000_interview_rooms",
+        "20261001000000_support_impersonation_tutorials",
+        "20261001010000_club_onboarding",
+        "20261002000000_organization_invitation_emails",
+        "20261002010000_onboarding_security",
+        "20261003000000_applicant_intelligence",
+        "20261003010000_durable_voting",
+        "20261003020000_corkboard",
+        "20261003030000_task_workflows",
+        "20261004000000_interview_foundation",
+        "20261004000000_voting_presentation_join",
+        "20261005000000_club_settings",
+        "20261005000000_interview_scheduling_access",
+        "20261005010000_public_corkboard"
+      ],
+      "queries": {
+        "normalizedEmailLookup": {
+          "samples": 30,
+          "medianMs": 0.184,
+          "p95Ms": 1.998,
+          "resultRows": 2,
+          "jsonBytes": 145,
+          "sql": "SELECT id,email,\"disabledAt\" FROM \"User\" WHERE lower(email)=ANY(ARRAY['audit1@virginia.edu','audit500@virginia.edu'])",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Index Scan",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Scan Direction": "Forward",
+                "Index Name": "User_email_lower_idx",
+                "Relation Name": "User",
+                "Alias": "User",
+                "Startup Cost": 0.29,
+                "Total Cost": 13.94,
+                "Plan Rows": 2,
+                "Plan Width": 45,
+                "Actual Startup Time": 0.015,
+                "Actual Total Time": 0.018,
+                "Actual Rows": 2,
+                "Actual Loops": 1,
+                "Index Cond": "(lower(email) = ANY ('{audit1@virginia.edu,audit500@virginia.edu}'::text[]))",
+                "Rows Removed by Index Recheck": 0,
+                "Shared Hit Blocks": 6,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.032,
+              "Triggers": [],
+              "Execution Time": 0.063
+            }
+          ]
+        },
+        "directoryMembersBase": {
+          "samples": 30,
+          "medianMs": 11.249,
+          "p95Ms": 37.578,
+          "resultRows": 500,
+          "jsonBytes": 155285,
+          "sql": "SELECT * FROM \"ClubMember\" WHERE \"clubId\"='audit-club-1' ORDER BY \"joinedAt\" ASC",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Sort",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 240.82,
+                "Total Cost": 242.07,
+                "Plan Rows": 500,
+                "Plan Width": 177,
+                "Actual Startup Time": 0.779,
+                "Actual Total Time": 0.891,
+                "Actual Rows": 500,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "\"joinedAt\""
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 90,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 13,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "ClubMember",
+                    "Alias": "ClubMember",
+                    "Startup Cost": 8.16,
+                    "Total Cost": 218.41,
+                    "Plan Rows": 500,
+                    "Plan Width": 177,
+                    "Actual Startup Time": 0.04,
+                    "Actual Total Time": 0.515,
+                    "Actual Rows": 500,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Exact Heap Blocks": 11,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 13,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "ClubMember_clubId_status_joinedAt_idx",
+                        "Startup Cost": 0,
+                        "Total Cost": 8.04,
+                        "Plan Rows": 500,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 0.023,
+                        "Actual Total Time": 0.024,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Shared Hit Blocks": 2,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.101,
+              "Triggers": [],
+              "Execution Time": 1.018
+            }
+          ]
+        },
+        "directoryInvitationsBase": {
+          "samples": 30,
+          "medianMs": 7.35,
+          "p95Ms": 19.583,
+          "resultRows": 500,
+          "jsonBytes": 98285,
+          "sql": "SELECT id,email,\"invitedName\",\"invitedYear\",\"requestedRole\",permissions,status,\"expiresAt\" FROM \"ClubInvitation\" WHERE \"clubId\"='audit-club-1' ORDER BY \"createdAt\" DESC",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Sort",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 268.82,
+                "Total Cost": 270.07,
+                "Plan Rows": 500,
+                "Plan Width": 141,
+                "Actual Startup Time": 0.481,
+                "Actual Total Time": 0.588,
+                "Actual Rows": 500,
+                "Actual Loops": 1,
+                "Sort Key": [
+                  "\"createdAt\" DESC"
+                ],
+                "Sort Method": "quicksort",
+                "Sort Space Used": 67,
+                "Sort Space Type": "Memory",
+                "Shared Hit Blocks": 14,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Bitmap Heap Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Relation Name": "ClubInvitation",
+                    "Alias": "ClubInvitation",
+                    "Startup Cost": 8.16,
+                    "Total Cost": 246.41,
+                    "Plan Rows": 500,
+                    "Plan Width": 141,
+                    "Actual Startup Time": 0.032,
+                    "Actual Total Time": 0.267,
+                    "Actual Rows": 500,
+                    "Actual Loops": 1,
+                    "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Exact Heap Blocks": 12,
+                    "Lossy Heap Blocks": 0,
+                    "Shared Hit Blocks": 14,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Index Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Index Name": "ClubInvitation_clubId_status_createdAt_idx",
+                        "Startup Cost": 0,
+                        "Total Cost": 8.04,
+                        "Plan Rows": 500,
+                        "Plan Width": 0,
+                        "Actual Startup Time": 0.02,
+                        "Actual Total Time": 0.02,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Shared Hit Blocks": 2,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 1,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.098,
+              "Triggers": [],
+              "Execution Time": 0.739
+            }
+          ]
+        },
+        "latestDeliveryOneInvite": {
+          "samples": 30,
+          "medianMs": 0.335,
+          "p95Ms": 1.333,
+          "resultRows": 1,
+          "jsonBytes": 79,
+          "sql": "SELECT status,\"createdAt\",\"failureCode\" FROM \"InvitationDelivery\" WHERE \"invitationId\"='audit-invite-1' ORDER BY \"createdAt\" DESC LIMIT 1",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Limit",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 0.29,
+                "Total Cost": 8.3,
+                "Plan Rows": 1,
+                "Plan Width": 44,
+                "Actual Startup Time": 0.008,
+                "Actual Total Time": 0.009,
+                "Actual Rows": 1,
+                "Actual Loops": 1,
+                "Shared Hit Blocks": 3,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Index Scan",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Scan Direction": "Backward",
+                    "Index Name": "InvitationDelivery_invitationId_createdAt_idx",
+                    "Relation Name": "InvitationDelivery",
+                    "Alias": "InvitationDelivery",
+                    "Startup Cost": 0.29,
+                    "Total Cost": 8.3,
+                    "Plan Rows": 1,
+                    "Plan Width": 44,
+                    "Actual Startup Time": 0.006,
+                    "Actual Total Time": 0.007,
+                    "Actual Rows": 1,
+                    "Actual Loops": 1,
+                    "Index Cond": "(\"invitationId\" = 'audit-invite-1'::text)",
+                    "Rows Removed by Index Recheck": 0,
+                    "Shared Hit Blocks": 3,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.054,
+              "Triggers": [],
+              "Execution Time": 0.018
+            }
+          ]
+        },
+        "nextClubMeeting": {
+          "samples": 30,
+          "medianMs": 0.67,
+          "p95Ms": 12.185,
+          "resultRows": 1,
+          "jsonBytes": 141,
+          "sql": "SELECT id,title,date,location,audience FROM \"Event\" WHERE \"clubId\"='audit-club-1' AND date>=now() ORDER BY date ASC LIMIT 1",
+          "plan": [
+            {
+              "Plan": {
+                "Node Type": "Limit",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 192.41,
+                "Total Cost": 192.41,
+                "Plan Rows": 1,
+                "Plan Width": 71,
+                "Actual Startup Time": 0.844,
+                "Actual Total Time": 0.846,
+                "Actual Rows": 1,
+                "Actual Loops": 1,
+                "Shared Hit Blocks": 11,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                  {
+                    "Node Type": "Sort",
+                    "Parent Relationship": "Outer",
+                    "Parallel Aware": false,
+                    "Async Capable": false,
+                    "Startup Cost": 192.41,
+                    "Total Cost": 193.66,
+                    "Plan Rows": 500,
+                    "Plan Width": 71,
+                    "Actual Startup Time": 0.842,
+                    "Actual Total Time": 0.844,
+                    "Actual Rows": 1,
+                    "Actual Loops": 1,
+                    "Sort Key": [
+                      "date"
+                    ],
+                    "Sort Method": "top-N heapsort",
+                    "Sort Space Used": 17,
+                    "Sort Space Type": "Memory",
+                    "Shared Hit Blocks": 11,
+                    "Shared Read Blocks": 0,
+                    "Shared Dirtied Blocks": 0,
+                    "Shared Written Blocks": 0,
+                    "Local Hit Blocks": 0,
+                    "Local Read Blocks": 0,
+                    "Local Dirtied Blocks": 0,
+                    "Local Written Blocks": 0,
+                    "Temp Read Blocks": 0,
+                    "Temp Written Blocks": 0,
+                    "Plans": [
+                      {
+                        "Node Type": "Bitmap Heap Scan",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Relation Name": "Event",
+                        "Alias": "Event",
+                        "Startup Cost": 8.16,
+                        "Total Cost": 189.91,
+                        "Plan Rows": 500,
+                        "Plan Width": 71,
+                        "Actual Startup Time": 0.016,
+                        "Actual Total Time": 0.635,
+                        "Actual Rows": 500,
+                        "Actual Loops": 1,
+                        "Recheck Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                        "Rows Removed by Index Recheck": 0,
+                        "Filter": "(date >= now())",
+                        "Rows Removed by Filter": 0,
+                        "Exact Heap Blocks": 9,
+                        "Lossy Heap Blocks": 0,
+                        "Shared Hit Blocks": 11,
+                        "Shared Read Blocks": 0,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0,
+                        "Plans": [
+                          {
+                            "Node Type": "Bitmap Index Scan",
+                            "Parent Relationship": "Outer",
+                            "Parallel Aware": false,
+                            "Async Capable": false,
+                            "Index Name": "Event_clubId_idx",
+                            "Startup Cost": 0,
+                            "Total Cost": 8.04,
+                            "Plan Rows": 500,
+                            "Plan Width": 0,
+                            "Actual Startup Time": 0.01,
+                            "Actual Total Time": 0.01,
+                            "Actual Rows": 500,
+                            "Actual Loops": 1,
+                            "Index Cond": "(\"clubId\" = 'audit-club-1'::text)",
+                            "Shared Hit Blocks": 2,
+                            "Shared Read Blocks": 0,
+                            "Shared Dirtied Blocks": 0,
+                            "Shared Written Blocks": 0,
+                            "Local Hit Blocks": 0,
+                            "Local Read Blocks": 0,
+                            "Local Dirtied Blocks": 0,
+                            "Local Written Blocks": 0,
+                            "Temp Read Blocks": 0,
+                            "Temp Written Blocks": 0
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "Planning": {
+                "Shared Hit Blocks": 0,
+                "Shared Read Blocks": 0,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+              },
+              "Planning Time": 0.05,
+              "Triggers": [],
+              "Execution Time": 0.86
+            }
+          ]
+        }
+      },
+      "indexes": [
+        {
+          "tablename": "Application",
+          "indexname": "Application_clubId_idx",
+          "indexdef": "CREATE INDEX \"Application_clubId_idx\" ON public.\"Application\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_clubId_status_roundId_idx",
+          "indexdef": "CREATE INDEX \"Application_clubId_status_roundId_idx\" ON public.\"Application\" USING btree (\"clubId\", status, \"roundId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"Application_pkey\" ON public.\"Application\" USING btree (id)"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_roundId_idx",
+          "indexdef": "CREATE INDEX \"Application_roundId_idx\" ON public.\"Application\" USING btree (\"roundId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_studentId_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"Application_studentId_clubId_key\" ON public.\"Application\" USING btree (\"studentId\", \"clubId\")"
+        },
+        {
+          "tablename": "Application",
+          "indexname": "Application_studentId_idx",
+          "indexdef": "CREATE INDEX \"Application_studentId_idx\" ON public.\"Application\" USING btree (\"studentId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_clubId_status_createdAt_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_clubId_status_createdAt_idx\" ON public.\"ClubInvitation\" USING btree (\"clubId\", status, \"createdAt\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_email_clubId_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_email_clubId_idx\" ON public.\"ClubInvitation\" USING btree (email, \"clubId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_id_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_id_clubId_key\" ON public.\"ClubInvitation\" USING btree (id, \"clubId\")"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_pending_identity_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pending_identity_key\" ON public.\"ClubInvitation\" USING btree (\"clubId\", \"schoolIdentityId\") WHERE ((status = 'PENDING'::\"InvitationStatus\") AND (\"schoolIdentityId\" IS NOT NULL))"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pkey\" ON public.\"ClubInvitation\" USING btree (id)"
+        },
+        {
+          "tablename": "ClubInvitation",
+          "indexname": "ClubInvitation_schoolIdentityId_status_idx",
+          "indexdef": "CREATE INDEX \"ClubInvitation_schoolIdentityId_status_idx\" ON public.\"ClubInvitation\" USING btree (\"schoolIdentityId\", status)"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_clubId_idx",
+          "indexdef": "CREATE INDEX \"ClubMember_clubId_idx\" ON public.\"ClubMember\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_clubId_status_joinedAt_idx",
+          "indexdef": "CREATE INDEX \"ClubMember_clubId_status_joinedAt_idx\" ON public.\"ClubMember\" USING btree (\"clubId\", status, \"joinedAt\")"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubMember_pkey\" ON public.\"ClubMember\" USING btree (id)"
+        },
+        {
+          "tablename": "ClubMember",
+          "indexname": "ClubMember_userId_clubId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"ClubMember_userId_clubId_key\" ON public.\"ClubMember\" USING btree (\"userId\", \"clubId\")"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_clubId_idx",
+          "indexdef": "CREATE INDEX \"Event_clubId_idx\" ON public.\"Event\" USING btree (\"clubId\")"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"Event_pkey\" ON public.\"Event\" USING btree (id)"
+        },
+        {
+          "tablename": "Event",
+          "indexname": "Event_public_date_endDate_idx",
+          "indexdef": "CREATE INDEX \"Event_public_date_endDate_idx\" ON public.\"Event\" USING btree (\"isPublic\", date, \"endDate\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_idempotencyKey_key",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_idempotencyKey_key\" ON public.\"InvitationDelivery\" USING btree (\"idempotencyKey\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_invitationId_createdAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_invitationId_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\", \"createdAt\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_one_active_invitation",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_one_active_invitation\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\") WHERE (status = ANY (ARRAY['QUEUED'::\"InvitationDeliveryStatus\", 'SENDING'::\"InvitationDeliveryStatus\"]))"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_pkey\" ON public.\"InvitationDelivery\" USING btree (id)"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_providerMessageId_key",
+          "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_providerMessageId_key\" ON public.\"InvitationDelivery\" USING btree (\"providerMessageId\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_requestedById_createdAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_requestedById_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"requestedById\", \"createdAt\")"
+        },
+        {
+          "tablename": "InvitationDelivery",
+          "indexname": "InvitationDelivery_status_nextAttemptAt_idx",
+          "indexdef": "CREATE INDEX \"InvitationDelivery_status_nextAttemptAt_idx\" ON public.\"InvitationDelivery\" USING btree (status, \"nextAttemptAt\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_importId_rowNumber_key",
+          "indexdef": "CREATE UNIQUE INDEX \"RosterImportRow_importId_rowNumber_key\" ON public.\"RosterImportRow\" USING btree (\"importId\", \"rowNumber\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_invitationId_idx",
+          "indexdef": "CREATE INDEX \"RosterImportRow_invitationId_idx\" ON public.\"RosterImportRow\" USING btree (\"invitationId\")"
+        },
+        {
+          "tablename": "RosterImportRow",
+          "indexname": "RosterImportRow_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"RosterImportRow_pkey\" ON public.\"RosterImportRow\" USING btree (id)"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_email_key",
+          "indexdef": "CREATE UNIQUE INDEX \"User_email_key\" ON public.\"User\" USING btree (email)"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_email_lower_idx",
+          "indexdef": "CREATE INDEX \"User_email_lower_idx\" ON public.\"User\" USING btree (lower(email))"
+        },
+        {
+          "tablename": "User",
+          "indexname": "User_pkey",
+          "indexdef": "CREATE UNIQUE INDEX \"User_pkey\" ON public.\"User\" USING btree (id)"
+        }
+      ],
+      "rls": [
+        {
+          "relname": "ClubMember",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "User",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "Event",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "InvitationDelivery",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        },
+        {
+          "relname": "ClubInvitation",
+          "relrowsecurity": true,
+          "relforcerowsecurity": false,
+          "rolname": "postgres",
+          "rolbypassrls": true
+        }
+      ],
+      "note": "Base-query SQL equivalents, not Prisma-generated relation SQL. Local owner connection, no Supabase auth/network/pooler/production RLS cost."
+    },
+    "applicantDisplayReads": {
+      "samples": 10,
+      "medianMs": 12.647,
+      "p95Ms": 12.759,
+      "memberReadsPerDisplay": 1,
+      "injectedQueryDelayMs": 5,
+      "note": "Controlled query scheduling inside original repeatable-read loader; not production latency. Initial external permission guard excluded."
+    }
+  },
+  "comparison": {
+    "pipelineMs": {
+      "before": 11.385,
+      "after": 6.304,
+      "difference": 5.081
+    },
+    "directoryCpuMs": {
+      "before": 7.929,
+      "after": 1.913,
+      "difference": 6.016
+    },
+    "applicantDetailMs": {
+      "before": 18.954,
+      "after": 12.647,
+      "difference": 6.307
+    },
+    "publicProfileMs": {
+      "before": 6.335,
+      "after": 0.007,
+      "difference": 6.328
+    },
+    "invitationBaseJsonBytes": {
+      "before": 311785,
+      "after": 98285,
+      "difference": 213500
+    },
+    "csv500": {
+      "before": {
+        "rows": 500,
+        "previewMs": 1.483,
+        "confirmationMs": 13.332,
+        "classifiedRows": 5500,
+        "previewCalls": 12,
+        "confirmationBatches": 10,
+        "confirmationCalls": 222,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubMember.findMany",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 150,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 200,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 250,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 300,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 350,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 400,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 450,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 500,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubMember.findMany",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 500,
+        "emailsSent": 0
+      },
+      "after": {
+        "rows": 500,
+        "previewMs": 1.09,
+        "confirmationMs": 9.856,
+        "classifiedRows": 1000,
+        "previewCalls": 11,
+        "confirmationBatches": 10,
+        "confirmationCalls": 212,
+        "previewTrace": [
+          "$queryRaw",
+          "clubMember.findUnique",
+          "user.findUnique",
+          "club.findUniqueOrThrow",
+          "schoolIdentifierType.findMany",
+          "rosterImport.findUnique",
+          "schoolIdentity.findMany",
+          "$queryRaw",
+          "clubInvitation.findMany",
+          "rosterImport.create",
+          "auditLog.create"
+        ],
+        "batchTraces": [
+          {
+            "processed": 50,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "rosterImport.update",
+              "auditLog.create",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 100,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 150,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 200,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 250,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 300,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 350,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 400,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 450,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          },
+          {
+            "processed": 500,
+            "calls": [
+              "rosterImport.findUniqueOrThrow",
+              "$queryRaw",
+              "clubMember.findUnique",
+              "user.findUnique",
+              "club.findUniqueOrThrow",
+              "schoolIdentifierType.findMany",
+              "rosterImport.findUniqueOrThrow",
+              "schoolIdentity.findMany",
+              "$queryRaw",
+              "clubInvitation.findMany",
+              "$executeRaw",
+              "schoolIdentity.createMany",
+              "schoolIdentity.findMany",
+              "clubInvitation.findMany",
+              "clubInvitation.createMany",
+              "$executeRaw",
+              "$executeRaw",
+              "auditLog.create",
+              "rosterImportRow.findMany",
+              "rosterImport.update",
+              "auditLog.create"
+            ]
+          }
+        ],
+        "membershipsCreated": 0,
+        "invitationCount": 500,
+        "emailsSent": 0
+      }
+    }
+  },
+  "structuralProofs": [
+    {
+      "workflow": "Initial identity",
+      "before": 1,
+      "after": 0,
+      "unit": "Browser identity requests when validated server bootstrap succeeds",
+      "test": "root bootstrap starts authenticated content without an identity HTTP waterfall"
+    },
+    {
+      "workflow": "Guarded action/read",
+      "before": 2,
+      "after": 1,
+      "unit": "Explicit Supabase getUser sites (middleware plus loader), not captured HTTP count",
+      "test": "middleware avoids duplicate refresh only after demo/support guards; loaders own authentication"
+    },
+    {
+      "workflow": "Cold Members/Applicants/Settings",
+      "before": 1,
+      "after": 0,
+      "unit": "Unrelated overview loader dependency",
+      "test": "Members mounts without Overview and its resource survives navigation only within the same identity/grants"
+    },
+    {
+      "workflow": "Warm Members",
+      "before": 1,
+      "after": 0,
+      "unit": "Blocking directory reloads; fresh background authorization still runs",
+      "test": "warm members remain usable during revalidation and are cleared on an access failure"
+    },
+    {
+      "workflow": "Advanced self permission save",
+      "before": {
+        "directoryReads": 2,
+        "identityRefreshes": 2
+      },
+      "after": {
+        "directoryReads": 1,
+        "identityRefreshes": 1
+      },
+      "test": "advanced permissions delegate one directory and one self-identity refresh to their owner"
+    }
+  ],
+  "stageTimestamps": {
+    "baseline": "2026-10-06T15:21:47.155Z",
+    "after": "2026-10-06T16:18:14.233Z",
+    "profile_before": "2026-10-06T16:07:54.527Z",
+    "profile_after": "2026-10-06T16:09:01.592Z",
+    "directory_before": "2026-10-06T16:18:01.314Z",
+    "directory_after": "2026-10-06T16:18:13.962Z",
+    "applicant_before": "2026-10-06T16:28:15.405Z",
+    "applicant_after": "2026-10-06T16:28:29.856Z"
+  },
+  "validation": {
+    "typecheck": "passed after production build (route-type regeneration race avoided)",
+    "lint": {
+      "errors": 0,
+      "warnings": 26,
+      "baselineWarnings": 27
+    },
+    "tests": {
+      "passed": 670,
+      "failed": 0,
+      "skipped": 5
+    },
+    "migrationChecks": "26 migrations; 50 tables retain RLS",
+    "productionBuild": "passed on final application source; type/lint checks enabled"
+  }
+}

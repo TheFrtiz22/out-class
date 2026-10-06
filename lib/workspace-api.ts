@@ -1,4 +1,5 @@
 "use client"
+import { readWorkspace } from "@/lib/workspace-read"
 import * as campusEvents from "@/actions/campus-events"
 import * as eventFlyers from "@/actions/event-flyers"
 import * as resumeImport from "@/actions/resume-import"
@@ -71,14 +72,14 @@ function scopedApplication(clubId: string, id: string) {
 export const getStudentApplications = adapt(apps.getStudentApplications, () =>
   studentApplications(),
 )
-export const getStudentDashboardData = adapt(apps.getStudentDashboardData, () => demoDashboard())
-export const getClubDirectory = adapt(directory.getClubDirectory, () => ({
+export const getStudentDashboardData = adapt(() => readWorkspace<Awaited<ReturnType<typeof apps.getStudentDashboardData>>>("studentDashboard"), () => demoDashboard())
+export const getClubDirectory = adapt((...args: Parameters<typeof directory.getClubDirectory>) => readWorkspace<Awaited<ReturnType<typeof directory.getClubDirectory>>>("directory", args), () => ({
   clubs: demoDirectory(),
 }))
-export const getPublicClub = adapt(directory.getPublicClub, (id) => ({
+export const getPublicClub = adapt((...args: Parameters<typeof directory.getPublicClub>) => readWorkspace<Awaited<ReturnType<typeof directory.getPublicClub>>>("publicClub", args), (id) => ({
   club: demoDirectory().find((c) => c.id === id || c.slug === id) || null,
 }))
-export const getClubPipeline = adapt(crm.getClubPipeline, (clubId) => {
+export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipeline>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipeline>>>("pipeline", args), (clubId) => {
   const s = demoStore.get()
   if (s.perspective.role !== "leader" || clubId !== s.perspective.clubId || clubId !== s.clubs[0].id)
     throw new Error("Choose a club leader perspective.")
@@ -323,13 +324,13 @@ export const meetingAttendance=adapt(meetingsApi.meetingAttendance,(clubId,meeti
   demoMeetingManager(clubId);if(demoMeetingAccess(meetingId).clubId!==clubId)throw new Error("Meeting unavailable.")
   const s=demoStore.get();return s.meetingAttendances.filter(a=>a.eventId===meetingId).map(a=>{const student=s.students.find(p=>p.id===a.studentId)!;const anonymous=s.applications.some(app=>app.studentId===student.id&&app.clubId===clubId&&s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===app.roundId)?.anonymousReview);return{id:a.id,checkedInAt:a.checkedInAt.toISOString(),name:anonymous?"Anonymous applicant":`${student.profile.firstName} ${student.profile.lastName}`,email:anonymous?null:student.email}})
 })
-export const recruitmentAttendanceSummary=adapt(meetingsApi.recruitmentAttendanceSummary,(clubId,applicationId)=>{
+export const recruitmentAttendanceSummary=adapt((...args: Parameters<typeof meetingsApi.recruitmentAttendanceSummary>) => readWorkspace<Awaited<ReturnType<typeof meetingsApi.recruitmentAttendanceSummary>>>("attendance", args),(clubId,applicationId)=>{
   const app=scopedApplication(clubId,applicationId),s=demoStore.get(),held=s.meetings.filter(m=>m.clubId===clubId&&m.audience==="RECRUITMENT"&&m.date<=new Date())
   return{held:held.length,attended:s.meetingAttendances.filter(a=>a.studentId===app.studentId&&held.some(m=>m.id===a.eventId)).length}
 })
 
 // Semester work follows the same isolated demo boundary as recruitment.
-export const getTaskNotifications = adapt(tasksApi.getTaskNotifications, () => demoNotifications().filter(notification => "taskHref" in notification && notification.taskHref))
+export const getTaskNotifications = adapt((...args: Parameters<typeof tasksApi.getTaskNotifications>) => readWorkspace<Awaited<ReturnType<typeof tasksApi.getTaskNotifications>>>("taskNotifications", args), () => demoNotifications().filter(notification => "taskHref" in notification && notification.taskHref))
 export const getTaskWorkspace = adapt(tasksApi.getTaskWorkspace, demoTasks.getTaskWorkspace)
 export const saveTask = adapt(tasksApi.saveTask, demoTasks.saveTask)
 export const previewTaskAudience = adapt(tasksApi.previewTaskAudience, demoTasks.previewTaskAudience)
@@ -350,7 +351,7 @@ export const downloadTaskFile = adapt(tasksApi.downloadTaskFile, id => {
   return { url: "/demo/sample-research.txt" }
 })
 
-export const getClubWorkspaceOverview = adapt(clubOverview.getClubWorkspaceOverview, (clubId) => {
+export const getClubWorkspaceOverview = adapt((...args: Parameters<typeof clubOverview.getClubWorkspaceOverview>) => readWorkspace<Awaited<ReturnType<typeof clubOverview.getClubWorkspaceOverview>>>("overview", args), (clubId) => {
  const s=demoStore.get(),user=demoUser(),membership=user.memberships.find(m=>m.clubId===clubId),club=s.clubs.find(c=>c.id===clubId)
  if(!membership||!club)throw new Error("Club workspace access unavailable.")
  const manage=clubId===s.clubs[0].id,now=new Date()
@@ -362,7 +363,7 @@ export const getClubWorkspaceOverview = adapt(clubOverview.getClubWorkspaceOverv
   recruitment:manage?[...new Set(s.applications.filter(a=>a.clubId===clubId&&a.status!=="DRAFTING").map(a=>a.status))].map(status=>({status,count:s.applications.filter(a=>a.clubId===clubId&&a.status===status).length})):null,
  }
 })
-export const getWorkspaceRounds = adapt(clubOverview.getWorkspaceRounds, clubId=>{
+export const getWorkspaceRounds = adapt((...args: Parameters<typeof clubOverview.getWorkspaceRounds>) => readWorkspace<Awaited<ReturnType<typeof clubOverview.getWorkspaceRounds>>>("rounds", args), clubId=>{
  const s=demoStore.get();if(clubId!==s.clubs[0].id)throw new Error("Demo management is limited to MII.")
  return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview}))
 })
@@ -383,7 +384,7 @@ export const cancelRoomBooking = adapt(roomApi.cancelRoomBooking, demoRoomApi.ca
 export const getBookingApplication = adapt(roomApi.getBookingApplication, demoRoomApi.getBookingApplication)
 
 
-export const getApplicantDisplay = adapt(applicantIntelligence.getApplicantDisplay, input => {
+export const getApplicantDisplay = adapt((...args: Parameters<typeof applicantIntelligence.getApplicantDisplay>) => readWorkspace<Awaited<ReturnType<typeof applicantIntelligence.getApplicantDisplay>>>("applicantDisplay", args), input => {
   const s = demoStore.get();
   const joinedSession=input.sessionId?s.votingSessions?.find(v=>v.id===input.sessionId&&v.clubId===input.clubId&&v.candidates.some(c=>c.applicationId===input.applicationId)):undefined
   if(input.sessionId&&!joinedSession)throw Error("Voting presentation unavailable.")
@@ -452,7 +453,7 @@ export async function seedVotingDemo(clubId: string) {
 }
 
 // One saved-item boundary. Demo saves reference the same deterministic demo directory.
-export const getCorkboard = adapt(directory.getCorkboard, () => {
+export const getCorkboard = adapt((...args: Parameters<typeof directory.getCorkboard>) => readWorkspace<Awaited<ReturnType<typeof directory.getCorkboard>>>("corkboard", args), () => {
   const s = demoStore.get()
   const clubs = demoDirectory()
   return { items: [...s.corkboard].sort((a,b) => b.savedAt.getTime()-a.savedAt.getTime() || a.clubId.localeCompare(b.clubId)).map(item => ({ club: clubs.find(c => c.id === item.clubId)!, savedAt: item.savedAt.toISOString() })) }
@@ -473,7 +474,7 @@ function demoTutorialScope(experience: unknown, clubId?: string) {
   if (kind === "leader" && (state.perspective.role !== "leader" || clubId !== state.clubs[0].id)) throw new Error("Choose the MII leader workspace.")
   return kind
 }
-export const getTutorial = adapt(tutorials.getTutorial, (experience, clubId) => {
+export const getTutorial = adapt((...args: Parameters<typeof tutorials.getTutorial>) => readWorkspace<Awaited<ReturnType<typeof tutorials.getTutorial>>>("tutorial", args), (experience, clubId) => {
   const kind = demoTutorialScope(experience, clubId)
   return demoStore.get().tutorials[kind]
 })
