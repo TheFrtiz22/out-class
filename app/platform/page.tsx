@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/product/page-header";
 import Link from "next/link";
 import { requirePlatformAdmin } from "@/utils/platform-admin"
 import { PlatformConsole } from "@/components/platform-console"
@@ -9,12 +10,11 @@ export default async function PlatformPage() {
     redirect("/platform/login")
   }
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
+    <main data-workspace-detail className="mx-auto max-w-6xl space-y-6 p-6">
       <Link className="underline" href="/">
         Personal workspace
       </Link>
-      <h1 className="oc-page-title ">OutClass platform administration</h1>
-      <p className="text-sm text-muted-foreground">Protected platform controls. Changes require a reason and confirmation; every operation is audited.</p>
+      <PageHeader eyebrow="OutClass · Administration" title="OutClass platform administration" description="Protected platform controls. Changes require a reason and confirmation; every operation is audited." illustration={{ variant: "columns", treatment: "quiet", accent: false }} />
       <a className="block underline" href="/platform/claims">Review club claims</a>
       <PlatformConsole />
     </main>

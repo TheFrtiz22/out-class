@@ -1,0 +1,60 @@
+/* Architectural atmosphere is confined to headers, above all board/tool controls. */
+.oc-page-header[data-illustrated="true"] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  min-height: 10.5rem;
+  overflow: hidden;
+  overflow: clip;
+  margin-bottom: var(--oc-space-content);
+}
+.oc-page-header[data-illustrated="true"] .oc-page-header-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 58%;
+}
+.oc-page-header[data-illustrated="true"] .oc-page-header-action {
+  grid-row: 2;
+  justify-self: end;
+  margin-top: .75rem;
+}
+.oc-campus-illustration {
+  position: absolute;
+  inset: 0 -1.5rem 0 auto;
+  width: 43%;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  color: var(--info);
+  opacity: .5;
+  mask-image: linear-gradient(90deg, transparent, #000 25%), linear-gradient(0deg, transparent, #000 15%);
+  mask-composite: intersect;
+}
+.oc-page-header[data-illustrated="true"]:has(.oc-page-header-action) .oc-campus-illustration { bottom: 3.5rem; }
+.oc-campus-illustration svg {
+  position: absolute;
+  width: 115%;
+  height: 115%;
+  right: -2%;
+  bottom: -7%;
+}
+.oc-campus-illustration-accent { color: var(--brand-orange); opacity: .8; }
+.oc-campus-illustration[data-scale="portrait"] { width: 30%; right: 0; mask-image: linear-gradient(0deg, transparent, #000 18%); }
+.oc-campus-illustration[data-scale="portrait"] svg { height: 108%; width: 100%; right: 0; bottom: -8%; }
+.oc-campus-illustration[data-scale="columns"] svg { height: 110%; width: 120%; bottom: -15%; }
+.oc-campus-illustration[data-treatment="quiet"] { opacity: .32; }
+.oc-campus-illustration[data-motion="entrance"] { animation: oc-campus-arrive var(--oc-duration-entrance, 650ms) ease-out both; }
+@keyframes oc-campus-arrive { from { opacity: 0; transform: translateY(4px); } }
+@media (min-width: 640px) and (max-width: 900px) {
+  .oc-page-header[data-illustrated="true"] { min-height: 9rem; }
+  .oc-campus-illustration { opacity: .45; }
+  .oc-campus-illustration[data-treatment="quiet"] { opacity: .3; }
+}
+@media (max-width: 639px) {
+  .oc-page-header[data-illustrated="true"] { min-height: 0; }
+  .oc-page-header[data-illustrated="true"] .oc-page-header-copy { max-width: 100%; }
+  .oc-campus-illustration { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-campus-illustration[data-motion="entrance"] { animation: none; transform: none; }
+}

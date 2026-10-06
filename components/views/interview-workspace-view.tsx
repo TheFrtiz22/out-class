@@ -1,6 +1,7 @@
 "use client"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import "@/components/shell/responsive-workspace.css"
+import { PageHeader } from "@/components/product/page-header"
 import { InterviewKitSession } from "@/components/interview-kit-session"
 import { hasPermission } from "@/lib/permissions"
 
@@ -73,8 +74,8 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
         {loading ? (
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
-          <div className="max-w-xl space-y-3 px-5 py-8">
-            <h1 className="oc-page-title ">A focused space for a better conversation.</h1>
+          <div className="max-w-4xl space-y-3 px-5 py-8">
+            <PageHeader title="A focused space for a better conversation." illustration={{ variant: "columns", treatment: "quiet" }} />
             <p className="text-sm leading-7 text-muted-foreground">
               {user
                 ? "You need club membership to access interview applicants."
@@ -289,8 +290,8 @@ function InterviewSession({
         {message}
       </p>
       {!active ? (
-        <div className="max-w-xl space-y-3 px-5 py-8">
-          <h1 className="oc-page-title ">Ready when you are.</h1>
+        <div className="max-w-4xl space-y-3 px-5 py-8">
+          <PageHeader title="Ready when you are." illustration={{ variant: "columns", treatment: "quiet" }} />
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose a candidate to bring their profile, application, and your evaluation into one focused view."

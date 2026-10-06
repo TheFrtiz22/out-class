@@ -1,10 +1,9 @@
 /* Shared Explore/Corkboard directory surfaces; public profiles and landing keep their styles. */
 .oc-discovery, .oc-corkboard { container-type: inline-size; }
-.oc-discovery .oc-explore-heading { position: relative; isolation: isolate; display: flex; align-items: center; min-height: 265px; margin: -10px 0 22px; padding: 28px 0; }
-.oc-explore-heading > div { position: relative; z-index: 1; max-width: 600px; }
+.oc-discovery .oc-explore-heading { position: relative; isolation: isolate; margin-bottom: var(--oc-space-content); }
+
 .oc-explore-heading h1 { margin: 14px 0 18px; font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-title); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans); letter-spacing: var(--oc-tracking-heading); color: var(--primary); }
 .oc-explore-heading .oc-directory-intro { margin: 0; max-width: 490px; font-size: var(--oc-size-16); line-height: var(--oc-leading-body); text-wrap: pretty; }
-.oc-explore-campus { position: absolute; z-index: -1; right: -20px; top: 0; width: 75%; height: 100%; object-fit: cover; object-position: center 42%; opacity: .3; mask-image: linear-gradient(to right, transparent, #000 65%); border-radius: 16px; }
 .oc-discovery .oc-directory-search { min-height: 60px; padding: 8px 18px; border-radius: 16px; background: var(--card); box-shadow: 0 5px 20px #14243b06; }
 .oc-discovery .oc-directory-search input { min-width: 0; min-height: 44px; font-size: var(--oc-size-16); }
 .oc-discovery .oc-directory-search > button { flex-shrink: 0; }
@@ -65,10 +64,9 @@
   .oc-explore-heading .oc-directory-intro { max-width: 390px; }
 }
 @container (max-width: 520px) {
-  .oc-discovery .oc-explore-heading { min-height: 245px; padding: 18px 0; }
+  .oc-discovery .oc-explore-heading { padding: 0; }
   .oc-explore-heading h1 { font-size: var(--oc-text-title); }
   .oc-explore-heading .oc-directory-intro { font-size: var(--oc-size-14); }
-  .oc-explore-campus { right: 0; width: 100%; opacity: .15; }
   .oc-explore-grid, .oc-explore-available ul { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .oc-explore-section-heading { display: block; }
   .oc-explore-section-heading > p { margin-top: 8px; }
@@ -90,14 +88,11 @@
   [data-product-shell]:has(.oc-discovery) .oc-product-brand img { max-width: 110px; height: auto; }
 }
 /* Explore's expressive moment, inside the universal workspace. */
-[data-product-shell] .oc-discovery .oc-explore-heading { min-height: 0; padding: 1.25rem 1.5rem; margin: 0 0 1rem; overflow: hidden; border-radius: var(--oc-radius-xl); background: var(--oc-rail); color: var(--oc-rail-text); }
-[data-product-shell] .oc-explore-heading > .oc-page-header { position: relative; z-index: 1; margin: 0; max-width: 34rem; background: none; padding: 0; }
-[data-product-shell] .oc-explore-heading h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); color: var(--oc-rail-text); font-weight: 400; margin-block: .375rem; }
-[data-product-shell] .oc-explore-heading h1 em { font-weight: 400; color: #f3bc97; }
-[data-product-shell] .oc-explore-heading .oc-eyebrow { color: var(--oc-rail-muted); font-size: var(--oc-size-10); }
-[data-product-shell] .oc-explore-heading .oc-page-description { max-width: 24rem; color: var(--oc-rail-muted); font-size: var(--oc-text-small); }
-[data-product-shell] .oc-explore-campus { right: 0; width: 55%; border-radius: 0; opacity: .65; mask-image: linear-gradient(to right, transparent, #000); }
-[data-product-shell] .oc-explore-heading > .oc-campus-ribbon { position: absolute; right: -5rem; bottom: -6rem; width: 27rem; z-index: 0; opacity: .6; transform: rotate(-15deg); }
+[data-product-shell] .oc-discovery .oc-explore-heading { margin: 0 0 var(--oc-space-content); color: var(--foreground); }
+[data-product-shell] .oc-explore-heading > .oc-page-header { position: relative; z-index: 1; margin: 0; width: 100%; background: none; padding: 0; }
+[data-product-shell] .oc-explore-heading h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); color: var(--primary); font-weight: var(--oc-weight-title); margin-block: .375rem; }
+[data-product-shell] .oc-explore-heading .oc-eyebrow { color: var(--muted-foreground); font-size: var(--oc-text-caption); }
+[data-product-shell] .oc-explore-heading .oc-page-description { color: var(--muted-foreground); font-size: var(--oc-text-body); }
 [data-product-shell] .oc-discovery .oc-directory-search { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); padding: .5rem 1.25rem; }
 [data-product-shell] .oc-discovery .oc-directory-categories { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; padding-bottom: .5rem; gap: .5rem; }
 [data-product-shell] .oc-discovery .oc-directory-categories button { flex-shrink: 0; border: 0; background: var(--muted); border-radius: var(--oc-radius-md); color: var(--muted-foreground); font-size: var(--oc-text-caption); }
@@ -117,9 +112,8 @@
 [data-product-shell] .oc-explore-available button { border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] :is(.oc-discovery, .oc-corkboard) .oc-directory-empty { border: 0; background: var(--oc-surface-blue); }
 @container (max-width: 520px) {
-  [data-product-shell] .oc-discovery .oc-explore-heading { padding: 1.25rem; min-height: 0; align-items: start; }
+  [data-product-shell] .oc-discovery .oc-explore-heading { padding: 0; }
   [data-product-shell] .oc-explore-heading h1 { font-size: 1.75rem; }
-  [data-product-shell] .oc-explore-campus { width: 100%; mask-image: linear-gradient(to bottom, transparent 20%, #000); opacity: .25; }
   [data-product-shell] .oc-explore-section > .oc-explore-grid { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 85%; overflow-x: auto; padding: .25rem .25rem 1rem; scroll-snap-type: x mandatory; }
   [data-product-shell] .oc-explore-section > .oc-explore-grid > li { scroll-snap-align: start; }
 }

@@ -1,4 +1,5 @@
 "use client"
+import { clubCampusIllustration } from "@/lib/campus-illustrations"
 import { useEffect, type ReactNode } from "react"
 import { PageHeader } from "@/components/product/page-header"
 import { ProductShell } from "@/components/shell/product-shell"
@@ -45,10 +46,10 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
     if (destination.section) onPersonalSection?.(destination.section)
   }
   if (leaderView && managed) return <OutClassLoadingScreen />
-  if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p>{children}</ProductShell>
+  if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p><PageHeader title={viewTitles[view].title} illustration={{ variant: clubCampusIllustration(view), treatment: "quiet" }} />{children}</ProductShell>
   const title = ["student-dashboard", "student-profile", "inbox"].includes(view) ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
   return <ProductShell mode={mode} modes={personalModes} items={items} active={view === "student-profile" || view === "inbox" || view === "student-dashboard" ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
-    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader eyebrow="Your campus, connected" title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} ribbon />}
+    {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader eyebrow="Your campus, connected" title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} illustration={view === "student-profile" ? "jefferson" : view === "my-clubs" ? "monticello" : leaderView ? { variant: clubCampusIllustration(view), treatment: "quiet" } : undefined} ribbon />}
     {(["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}
   </ProductShell>
