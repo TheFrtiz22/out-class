@@ -12,6 +12,9 @@ datasource db {
 // ==========================================
 
 model User {
+  approvedInterviewPanels InterviewRoom[] @relation("RoomPanelApprover")
+  interviewPanelGrants InterviewPanelAssignment[] @relation("InterviewPanelGrantor")
+  interviewAnnotationRevisions InterviewAnnotationRevision[] @relation("InterviewAnnotationActor")
   corkboardClubs CorkboardClub[]
   reviewObservations ApplicantObservation[]
   schoolIdentities SchoolIdentity[]
@@ -44,6 +47,7 @@ enum AppRole {
 }
 
 model StudentProfile {
+  scholarStatus Json?
   actScore   Int?
   actEnglish Int?
   actMath    Int?
@@ -125,6 +129,9 @@ model Club {
 }
 
 model ClubMember {
+  interviewOffices String[] @default([])
+  interviewAssignments InterviewPanelAssignment[]
+  resumeAnnotations InterviewResumeAnnotation[]
   votingParticipants VotingParticipant[]
   accessRole       MembershipAccessRole @default(MEMBER)
   status           MembershipStatus     @default(ACTIVE)
@@ -162,6 +169,9 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  stableEvaluations Evaluation[] @relation("EvaluationRound")
+  interviewAssignments InterviewPanelAssignment[]
+  resumeDocuments InterviewResumeDocument[]
   type String @default("CUSTOM")
   archivedAt DateTime?
   configuration Json @default("{}")
@@ -212,6 +222,8 @@ enum QuestionType {
 }
 
 model Application {
+  interviewAssignments InterviewPanelAssignment[]
+  resumeDocuments InterviewResumeDocument[]
   votingCandidates VotingCandidate[]
   observations ApplicantObservation[]
   recruitingFlags     RecruitingRuleFlag[]
@@ -261,6 +273,10 @@ model ApplicationAnswer {
 }
 
 model Evaluation {
+  roundId String?
+  stableRound PipelineRound? @relation("EvaluationRound", fields: [roundId], references: [id], onDelete: Restrict)
+  submittedAt DateTime?
+  applicantQuestions String?
   interviewRecords InterviewRecord[]
   id            String      @id @default(uuid())
   applicationId String
@@ -273,7 +289,7 @@ model Evaluation {
   notes     String?
   createdAt DateTime @default(now())
 
-  @@unique([applicationId, interviewerId, round])
+  @@unique([applicationId, interviewerId, roundId])
 }
 
 // ==========================================
@@ -337,6 +353,10 @@ model InterviewRoom {
   buffer         Int             @default(0)
   isOpen         Boolean         @default(true)
   panelMemberIds String[]        @default([])
+  approvedPanelMemberIds String[] @default([])
+  panelApprovedBy String?
+  panelApprover User? @relation("RoomPanelApprover", fields: [panelApprovedBy], references: [id], onDelete: Restrict)
+  panelApprovalRevision Int @default(0)
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
@@ -371,6 +391,7 @@ model InterviewBooking {
   slot          InterviewSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
   applicationId String
   application   Application    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  panelAssignments InterviewPanelAssignment[]
 
   @@unique([slotId, applicationId])
   @@unique([applicationId, roundId])
@@ -909,6 +930,70 @@ model CorkboardClub {
   savedAt DateTime @default(now())
   @@id([userId, clubId])
   @@index([clubId])
+}
+
+// Explicit, revocable grants. No legacy role/title inference.
+model InterviewPanelAssignment {
+  id String @id @default(uuid())
+  applicationId String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  roundId String
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  memberId String
+  member ClubMember @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  grantedBy String
+  grantor User @relation("InterviewPanelGrantor", fields: [grantedBy], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  grantedAt DateTime @default(now())
+  revokedAt DateTime?
+  bookingManaged Boolean @default(false)
+  bookingId String?
+  booking InterviewBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  @@index([bookingId])
+  @@unique([applicationId, roundId, memberId])
+  @@index([memberId, roundId, revokedAt])
+}
+model InterviewResumeDocument {
+  id String @id @default(uuid())
+  applicationId String
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  roundId String
+  round PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
+  sourcePath String
+  contentHash String
+  // Immutable snapshot bytes, bounded to the existing 10MB resume limit.
+  // Private PostgreSQL storage avoids a second storage capability/retention policy.
+  content Bytes
+  mimeType String @default("application/pdf")
+  createdAt DateTime @default(now())
+  annotations InterviewResumeAnnotation[]
+  @@unique([applicationId, roundId])
+}
+model InterviewResumeAnnotation {
+  id String @id @default(uuid())
+  documentId String
+  document InterviewResumeDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  authorId String
+  author ClubMember @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  kind String
+  anchor Json?
+  comment String
+  revision Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  history InterviewAnnotationRevision[]
+  @@index([documentId, createdAt])
+}
+model InterviewAnnotationRevision {
+  id String @id @default(uuid())
+  annotationId String
+  annotation InterviewResumeAnnotation @relation(fields: [annotationId], references: [id], onDelete: Restrict)
+  actorId String
+  actor User @relation("InterviewAnnotationActor", fields: [actorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  revision Int
+  content Json
+  createdAt DateTime @default(now())
+  @@unique([annotationId, revision])
 }
 
 model EventPublication {

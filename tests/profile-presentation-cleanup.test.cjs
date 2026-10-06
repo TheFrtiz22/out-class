@@ -27,7 +27,7 @@ test('PDF/image validation examines bytes, accepts generic PDF MIME, and enforce
   assert.equal(profile.validateProfileFile(Uint8Array.from([137,80,78,71,13,10,26,10]),'image/png','headshot'),'image/png');
   assert.throws(()=>profile.validateProfileFile(Buffer.from('<svg/>'),'image/svg+xml','headshot'));
 });
-function app(photo='https://example.com/photo.png') { return {id:'app',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
+function app(photo='https://example.com/photo.png') { return {id:'app',clubId:'club',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
 test('canonical interview/voting projection hides historical Bio/subsections and avoids résumé duplication',()=>{
   const round={id:'round',name:'Interview',anonymousReview:false};
   const config=display.displayConfigSchema.parse({version:1,fields:['name','photo','biography','act','resume','experiences']});
@@ -36,7 +36,7 @@ test('canonical interview/voting projection hides historical Bio/subsections and
   assert.deepEqual(view.sections.find(s=>s.field==='act').items,['33']);
   assert.equal(view.sections.some(s=>s.field==='experiences'),false);
   assert.doesNotMatch(JSON.stringify(view),/Historical hidden bio|actEnglish|actReading/);
-  assert.equal(view.links[0].href,`/api/resumes?path=${encodeURIComponent(owner+'/resume.pdf')}`);
+  assert.equal(view.links[0].href,'/api/recruiting-resumes?clubId=club&applicationId=app');
   assert.equal(display.projectApplicantDisplay(app(),round,{version:1,fields:['experiences']},[]).sections[0].items[0],'Research · Lab · 2025');
   for(const photo of [null,'javascript:alert(1)']) assert.equal(display.projectApplicantDisplay(app(photo),round,config,[]).photo,null);
   const anonymous=display.projectApplicantDisplay(app(),{...round,anonymousReview:true},config,[]);
@@ -69,9 +69,9 @@ test('authenticated PDF uploads retain private owner keys and canonical MIME; re
 test('headshots use the existing owner storage flow and return a reloadable public image URL',async()=>{
   const h=uploads();const result=await h.api.uploadProfileFile(form(Uint8Array.from([137,80,78,71,13,10,26,10]),'headshot','image/png'));assert.match(result.reference,/https:\/\/storage.example.com\//);assert.match(h.writes[0].path,new RegExp(`^${owner}/`));assert.equal(h.writes[0].opts.contentType,'image/png');
 });
-test('all live views reuse the shared panel with an image fallback; profile overview excludes retired sections',()=>{
+test('interview uses a narrow panel while voting retains the shared image fallback; profile overview excludes retired sections',()=>{
   const panel=fs.readFileSync('components/applicant-intelligence.tsx','utf8');assert.match(panel,/AvatarFallback/);assert.match(panel,/AvatarImage/);assert.match(panel,/!data.anonymous/);assert.match(panel,/size-24/);
-  for(const file of ['components/views/interview-workspace-view.tsx','components/live-voting/board-decision-mode.tsx']) assert.match(fs.readFileSync(file,'utf8'),/ApplicantDisplayPanel/);
+  assert.match(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8'),/ApplicantDisplayPanel/);assert.match(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),/InterviewApplicantPanel/);
   const overview=fs.readFileSync('components/views/unified-student-profile-view.tsx','utf8');assert.doesNotMatch(overview,/profile\.bio|actEnglish|actMath|Campus involvement|TestScoreDetail/);assert.match(overview,/size-24/);
 });
 

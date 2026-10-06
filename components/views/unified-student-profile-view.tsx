@@ -1,4 +1,5 @@
 "use client"
+import { scholarNames } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
@@ -192,6 +193,7 @@ export function UnifiedStudentProfileView() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{profile.major}</p>
+              {!!scholarNames(profile.scholarStatus).length && <p className="mt-2 text-sm"><span className="text-muted-foreground">Scholar status: </span>{scholarNames(profile.scholarStatus).join(", ")}</p>}
               {(profile.gpa != null || profile.satScore != null || profile.actScore != null) && (
                 <dl className="mt-4 flex flex-wrap gap-6 text-sm">
                   {profile.gpa != null && (

@@ -39,7 +39,7 @@ export async function getClubPipeline(clubId: string) {
       student: {
         include: { studentProfile: { include: { experiences: true } } },
       },
-      evaluations: true,
+      evaluations: { omit: { notes: true, applicantQuestions: true } },
       answers: { include: { question: true } },
       bookings: { include: { slot: true } },
     },
@@ -47,9 +47,10 @@ export async function getClubPipeline(clubId: string) {
 
   return {
     rounds,
-    applications: applications.map((app) =>
-      !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app) : app,
-    ),
+    applications: applications.map(raw => {
+      const app = { ...raw, evaluations: raw.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+      return !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app) : app;
+    }),
   };
 }
 
@@ -198,7 +199,7 @@ export async function revealApplicantIdentity(
         student: {
           include: { studentProfile: { include: { experiences: true } } },
         },
-        evaluations: true,
+        evaluations: { omit: { notes: true, applicantQuestions: true } },
         answers: { include: { question: true } },
         bookings: { include: { slot: true } },
       },
@@ -213,7 +214,7 @@ export async function revealApplicantIdentity(
         reason: justification,
       },
     });
-    return application;
+    return { ...application, evaluations: application.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
   });
 }
 export async function setRoundAnonymousReview(

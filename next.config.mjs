@@ -6,11 +6,10 @@ const nextConfig = {
     : process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
   poweredByHeader: false,
-  serverExternalPackages: ["pdfjs-dist"],
-  outputFileTracingIncludes: { "/*": ["./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
+  // Native PDF workers resolve the package manifest at runtime, outside the bundle.
+  outputFileTracingIncludes: { "/*": ["./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
   trailingSlash: false,
-  // Consistent head metadata for browsers, crawlers, and every link-preview bot.
-  // Homepage metadata only reads cookies/query parameters, so this adds no DB wait.
   htmlLimitedBots: /.*/,
   images: { formats: ["image/avif", "image/webp"] },
   eslint: {

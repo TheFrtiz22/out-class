@@ -1,5 +1,6 @@
 import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
+import { interviewCapabilities } from "@/lib/interview-access";
 export const clubSections = [
   "overview",
   "members",
@@ -40,8 +41,8 @@ export function recruitmentTools(member: ClubAccess) {
     tools.push({ id: "rounds", label: "Round settings" });
   if (hasPermission(member, "applications.review"))
     tools.push({ id: "interviews", label: "Interview mode" });
-  if (hasPermission(member, "interviews.manage"))
-    tools.push({ id: "kits", label: "Interview kits & scheduling" });
+  if (hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)
+    tools.push({ id: "kits", label: "Interview master kit" });
   return tools;
 }
 export const clubSectionLabels: Record<ClubSection, string> = {

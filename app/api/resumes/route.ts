@@ -36,39 +36,10 @@ export async function GET(request: Request) {
       return new NextResponse('Not found', { status: 404 });
     }
 
-    // 3. AUTHORIZATION ORDER
-    let isAuthorized = false;
-
-    if (user.id === profile.userId) {
-      // Owner
-      isAuthorized = true;
-    } else {
-      // Reviewer
-      const hasAccess = await prisma.application.findFirst({
-        where: {
-          studentId: profile.userId,
-          status: { not: "DRAFTING" },
-          round: { anonymousReview: false },
-          club: {
-            members: {
-              some: {
-                userId: user.id,
-                status: "ACTIVE",
-                OR: [{ isOwner: true }, { permissions: { has: "applicants.identify" } }]
-              }
-            }
-          }
-        }
-      });
-      if (hasAccess) {
-        isAuthorized = true;
-      }
-    }
-
-    if (!isAuthorized) {
-      // Authenticated but unauthorized -> 403
-      return new NextResponse('Forbidden', { status: 403 });
-    }
+    // Self-service current resume only. Interview readers must use the context-scoped
+    // /api/interview-resumes proxy; broad reviewer permission cannot bypass revocation
+    // or obtain a reusable storage URL for another student's document.
+    if (user.id !== profile.userId) return new NextResponse('Forbidden', { status: 403 });
 
     // 4. SERVER SECRET HANDLING
     const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;

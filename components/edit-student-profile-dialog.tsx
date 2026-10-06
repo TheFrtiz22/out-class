@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { scholarSelections, scholarLabels, scholarStatusSchema, toggleScholar } from "@/lib/scholar-status"
 
 const titles = {
   identity: "Name & photo",
@@ -59,6 +60,10 @@ export function EditStudentProfileDialog({
   async function save(event: FormEvent) {
     event.preventDefault()
     if (!draft) return
+    if (section === "education") {
+      const scholar = scholarStatusSchema.safeParse(draft.scholarStatus ?? null)
+      if (!scholar.success) { setError(scholar.error.issues[0].message); return }
+    }
     setBusy(true)
     setError("")
     try {
@@ -70,6 +75,7 @@ export function EditStudentProfileDialog({
                 section,
                 major: draft.major,
                 gradYear: draft.gradYear,
+                scholarStatus: draft.scholarStatus ?? null,
                 gpa: draft.gpa,
                 satScore: draft.satScore,
                 actScore: draft.actScore, actEnglish: draft.actEnglish, actMath: draft.actMath, actReading: draft.actReading, actScience: draft.actScience,
@@ -197,6 +203,20 @@ export function EditStudentProfileDialog({
                       }
                     />
                   </div>
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-medium">Scholar status</legend>
+                    <p id="scholar-help" className="text-xs text-muted-foreground">Choose all that apply. Not Applicable clears other selections.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {scholarSelections.map(selection => <label key={selection} className="flex min-h-11 items-center gap-3 text-sm">
+                        <input type="checkbox" className="size-4 accent-primary" aria-describedby="scholar-help" checked={!!(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes(selection)} onChange={e => setDraft(current => current ? { ...current, scholarStatus: toggleScholar(current.scholarStatus, selection, e.target.checked) } : current)} />
+                        {scholarLabels[selection]}
+                      </label>)}
+                    </div>
+                    {(draft.scholarStatus as { selections?: string[] } | null)?.selections?.includes("OTHER") && <div className="space-y-2">
+                      <Label htmlFor="profile-scholar-other">Scholarship name</Label>
+                      <Input id="profile-scholar-other" required maxLength={200} value={(draft.scholarStatus as { other?: string })?.other || ""} onChange={e => setDraft(current => current ? { ...current, scholarStatus: { ...(current.scholarStatus as { selections: string[]; other: string }), other: e.target.value } } : current)} />
+                    </div>}
+                  </fieldset>
                   <div className="grid grid-cols-2 gap-4">
                     {(
                       [

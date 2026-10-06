@@ -4,7 +4,7 @@ import { FlatCompat } from "@eslint/eslintrc";
 
 const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
 const config = [
-  { ignores: [".next*/**", "node_modules/**", ".pnpm-store/**", "out/**", "build/**", "next-env.d.ts", ".agents/**", ".claude/**", ".codex/**", ".cursor/**", ".devin/**", ".openai/**"] },
+  { ignores: [".next*/**", "node_modules/**", ".pnpm-store/**", "out/**", "build/**", "public/pdfjs/**", "next-env.d.ts", ".agents/**", ".claude/**", ".codex/**", ".cursor/**", ".devin/**", ".openai/**"] },
   ...compat.extends("next/core-web-vitals"),
 ];
 

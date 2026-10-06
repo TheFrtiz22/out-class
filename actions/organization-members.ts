@@ -1,4 +1,5 @@
 "use server";
+import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
 import { clubPermissions, hasPermission } from "@/lib/permissions";
 import { canControlOrganizationAccess } from "@/lib/organization-authorization";
@@ -15,6 +16,41 @@ import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrgani
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 
 const id = z.string().uuid();
+
+/** Explicit attestation by an active owner, never inferred from an access-role template. */
+export async function setMemberInterviewOffices(input: unknown) {
+  const data = z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict().parse(input);
+  const { user } = await requireAuth({ verifyEmail: true });
+  return prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can attest interview offices.");
+    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } });
+    if (!target) throw new Error("Active member required.");
+    await tx.clubMember.update({ where: { id: target.id }, data: { interviewOffices: data.offices } });
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.offices.change", details: { before: target.interviewOffices, after: data.offices } } });
+    return { memberId: target.id, offices: data.offices };
+  });
+}
+
+export async function setInterviewPanelAssignment(input: unknown) {
+  const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
+  const { user } = await requireAuth({ verifyEmail: true });
+  return prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
+    if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can grant panel access.");
+    const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId }, include: { user: { select: { disabledAt: true } } } });
+    const app = await tx.application.findFirst({ where: { id: data.applicationId, clubId: data.clubId, status: { not: "DRAFTING" } } });
+    const round = await tx.pipelineRound.findFirst({ where: { id: data.roundId, clubId: data.clubId } });
+    if (!target || !app || !round || app.studentId === target.userId) throw new Error("Panel scope unavailable.");
+    if (data.assigned && (target.user.disabledAt || !interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview)) throw new Error("Active identified reviewer and current round required.");
+    const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
+    if (data.assigned) await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: user.id }, update: { revokedAt: null, grantedBy: user.id, grantedAt: new Date(), bookingManaged: false, bookingId: null } });
+    else await tx.interviewPanelAssignment.updateMany({ where: key, data: { revokedAt: new Date(), bookingManaged: false, bookingId: null } });
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.panel.change", details: { ...key, assigned: data.assigned } } });
+    return { ...key, assigned: data.assigned };
+  });
+}
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
   if (lock) {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
@@ -62,7 +98,7 @@ export async function changeOrganizationMemberRole(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId }, include: { user: { select: { disabledAt: true } } } });
-    if (!target || !canChangeOrganizationRole(actor, target, data.role)) throw new Error("You cannot change this member's role.");
+    if (!target || (!actor.isOwner && target.interviewOffices?.length) || !canChangeOrganizationRole(actor, target, data.role)) throw new Error("You cannot change this member's role.");
     if (target.user.disabledAt) throw new Error("Role changes require an active account.");
     if (data.role !== "OWNER") await protectLastOwner(tx, data.clubId, target);
     await tx.clubMember.update({ where: { id: target.id }, data: { accessRole: data.role, isOwner: data.role === "OWNER", permissions: organizationRolePermissions[data.role] } });
@@ -77,7 +113,7 @@ export async function removeOrganizationMember(input: unknown) {
   return prisma.$transaction(async tx => {
     const actor = await actorFor(tx, data.clubId, user.id);
     const target = await tx.clubMember.findFirst({ where: { id: data.memberId, clubId: data.clubId } });
-    if (!target || !canRemoveOrganizationMember(actor, target)) throw new Error("You cannot remove this member.");
+    if (!target || (!actor.isOwner && target.interviewOffices?.length) || !canRemoveOrganizationMember(actor, target)) throw new Error("You cannot remove this member.");
     await protectLastOwner(tx, data.clubId, target);
     await tx.clubMember.update({ where: { id: target.id }, data: { status: "LEFT", accessRole: "MEMBER", isOwner: false, permissions: [] } });
     await revokePendingGrants(tx, data.clubId, target.userId);

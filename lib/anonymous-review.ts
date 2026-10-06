@@ -10,11 +10,14 @@ export type ReviewApplication = Prisma.ApplicationGetPayload<{
   };
 }>;
 /** Allowlist projection: never spread applicant/profile/free-text fields into anonymous payloads. */
+export function anonymousApplicantLabel(applicationId: string) {
+  return `Applicant ${applicationId.replaceAll("-", "").slice(-10).toUpperCase()}`;
+}
 export function anonymousApplication(
   app: ReviewApplication,
 ): ReviewApplication {
   const p = app.student.studentProfile;
-  const label = app.id.replaceAll("-", "").slice(-10).toUpperCase();
+  const label = anonymousApplicantLabel(app.id).slice("Applicant ".length);
   return {
     id: app.id,
     clubId: app.clubId,
@@ -35,6 +38,7 @@ export function anonymousApplication(
         firstName: "Applicant",
         lastName: label,
         computingId: "",
+        scholarStatus: null,
         major: "",
         gradYear: p?.gradYear ?? 0,
         gpa: p?.gpa ?? null,
@@ -62,6 +66,9 @@ export function anonymousApplication(
       round: e.round,
       score: e.score,
       notes: null,
+      applicantQuestions: null,
+      roundId: null,
+      submittedAt: null,
       createdAt: new Date(0),
     })),
   };

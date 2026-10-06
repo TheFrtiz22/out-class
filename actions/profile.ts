@@ -1,4 +1,7 @@
 "use server";
+import { Prisma } from "@prisma/client";
+import { scholarStatusSchema } from "@/lib/scholar-status";
+
 
 import { actShape } from "@/lib/test-scores";
 import { resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
@@ -9,6 +12,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 const profileSchema = z.object({
+  scholarStatus: scholarStatusSchema.optional(),
   ...actShape,
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -59,6 +63,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       computingId: parsed.computingId,
       major: parsed.major,
       gradYear: parsed.gradYear,
+      scholarStatus: parsed.scholarStatus === null ? Prisma.DbNull : parsed.scholarStatus,
       gpa: parsed.gpa,
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
@@ -77,6 +82,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       computingId: parsed.computingId,
       major: parsed.major,
       gradYear: parsed.gradYear,
+      scholarStatus: parsed.scholarStatus === null ? Prisma.DbNull : parsed.scholarStatus,
       gpa: parsed.gpa,
       satScore: parsed.satScore,
       actScore: parsed.actScore, actEnglish: parsed.actEnglish, actMath: parsed.actMath, actReading: parsed.actReading, actScience: parsed.actScience,
@@ -112,7 +118,7 @@ export async function updateStudentProfileSection(input: unknown) {
     }
     data = { linkedinUrl: parsed.data.linkedinUrl || null, resumeUrl: parsed.data.resumeUrl || null };
   } else {
-    data = fields;
+    data = { ...fields, ...("scholarStatus" in fields && fields.scholarStatus === null ? { scholarStatus: Prisma.DbNull } : {}) };
   }
   try {
     const profile = await prisma.studentProfile.update({

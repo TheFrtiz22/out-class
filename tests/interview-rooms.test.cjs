@@ -43,11 +43,12 @@ function apiHarness() {
  const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false}
  const tx={
   $queryRaw:async()=>[],
-  application:{findFirst:async({where})=>state.app && where.id===state.app.id && where.studentId===state.app.studentId?state.app:null},
+  application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
   pipelineRound:{findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
   clubMember:{count:async()=>0},
   interviewRoom:{create:async({data})=>{state.created.push(data);return {id:id(3)}},update:async()=>{}},
+  interviewPanelAssignment:{findMany:async()=>[]},
   auditLog:{create:async({data})=>state.audit.push(data)},
   interviewBooking:{findUnique:async()=>state.existing,findMany:async()=>state.others,findFirst:async({where})=>state.existing?.id===where.id&&state.app.studentId===where.application.studentId?state.existing:null,delete:async({where})=>state.deleted.push(where.id),create:async({data})=>{if(state.failCreate)throw Error('Write failed');state.created.push(data);return{id:id(8),...data}}}
  }

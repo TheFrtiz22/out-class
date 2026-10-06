@@ -6,7 +6,7 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name === "@/lib/test-scores" ? load("lib/test-scores.ts") : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2) + ".ts", mocks) : require(name), mod, mod.exports)
   return mod.exports
 }
 
@@ -107,3 +107,16 @@ test('resume ownership authorization during save', async () => {
   const res3 = await upsertStudentProfile({ ...profileData, resumeUrl: myPath })
   assert.ok(res3.success)
 })
+
+test('scholar status section saves persist normalized selections and preserve unanswered legacy profiles', async () => {
+  const a = action();
+  const education = {section:'education',major:'Economics',gradYear:2028,gpa:null,satScore:null};
+  await a.updateStudentProfileSection(education);
+  assert.equal('scholarStatus' in a.calls[0].data,false);
+  await a.updateStudentProfileSection({...education,scholarStatus:{selections:['JEFFERSON','OTHER'],other:' Named award '}});
+  assert.deepEqual(a.calls[1].data.scholarStatus,{selections:['JEFFERSON','OTHER'],other:'Named award'});
+  const bad = await a.updateStudentProfileSection({...education,scholarStatus:{selections:['NOT_APPLICABLE','RODMAN'],other:''}});
+  assert.ok(bad.error);assert.equal(a.calls.length,2);
+  await a.updateStudentProfileSection({...education,scholarStatus:null});
+  assert.equal(a.calls[2].data.scholarStatus,require('@prisma/client').Prisma.DbNull);
+});

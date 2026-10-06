@@ -1,0 +1,11 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {harness,id}=require('./helpers/interview-harness.cjs');
+test('leadership anonymous reopening returns decision labels and scores with explicit unavailable free text, no identity or timestamps',async()=>{
+ const h=harness(),api=h.load('actions/interview-kits.ts');const session=await api.openInterviewSession(h.scope);await api.saveInterviewSession({...h.scope,revision:0,complete:true,draft:{...session.draft,score:8.5,additionalNotes:'SECRET NAME from closing',applicantQuestions:'SECRET applicant identity',questionNotes:[{questionId:id(4),notes:'PRIVATE question notes'}]}});
+ for(const mode of ['current','original','record']){
+  h.round.anonymousReview=mode==='original';h.app.roundId=mode==='current'?id(8):id(3);h.app.round={id:h.app.roundId,anonymousReview:mode==='current'};h.state.records[0].anonymousReview=mode==='record';
+  h.tx.interviewRecord.findMany=async()=>[{id:id(100),applicationId:id(2),roundId:id(3),interviewerId:h.members[0].id,anonymousReview:mode==='record',round:{name:'Identifying round NAME',anonymousReview:mode==='original'},application:{round:{anonymousReview:mode==='current'},student:{studentProfile:{firstName:'SECRET',lastName:'NAME'}}}}];
+  const list=await api.getSubmittedInterviewReviews(id(1)),review=await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id});assert.equal(list[0].applicantName,h.load('lib/anonymous-review.ts').anonymousApplicantLabel(id(2)));assert.equal(list[0].anonymous,true);assert.equal(review.score,8.5);assert.equal(review.textUnavailable,true);assert.equal(review.applicantQuestions,'');assert.equal(review.additionalNotes,'');assert.equal(review.submittedAt,null);assert.equal(review.readOnly,true);assert.doesNotMatch(JSON.stringify({list,review}),/SECRET|NAME|PRIVATE|questionNotes|headshot|scholar|resume|studentId/);
+ }
+ h.as(11);await assert.rejects(api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id}),/Leadership|privacy/);h.members[1].interviewOffices=['BOARD'];assert.equal((await api.getSubmittedInterviewReview({...h.scope,interviewerId:h.members[0].id})).textUnavailable,true);h.members[1].status='LEFT';await assert.rejects(api.getSubmittedInterviewReviews(id(1)),/unavailable/);
+});

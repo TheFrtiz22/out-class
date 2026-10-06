@@ -65,6 +65,9 @@ export function DemoDataProvider({
     } else setReady(true)
     const sync = (event: StorageEvent) => {
       if (event.key === "outclass.demo-mode-change") window.location.reload()
+      if (event.key === "outclass.presentation.v1" && demoStore.active()) {
+        try { demoStore.refresh() } catch { setError("Demo could not refresh. Retry or reset Demo Mode.") }
+      }
     }
     window.addEventListener("storage", sync)
     return () => {

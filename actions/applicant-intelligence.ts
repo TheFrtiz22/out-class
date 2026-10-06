@@ -11,10 +11,10 @@ async function authorized(tx: AppTransactionClient, input: z.infer<typeof scope>
   if (!hasPermission(member, "applications.review")) throw new Error("Review access required.");
   const app = await tx.application.findFirst({
     where: { id: input.applicationId, clubId: input.clubId, status: { not: "DRAFTING" } },
-    include: { round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: true, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
+    include: { round: true, student: { include: { studentProfile: { include: { experiences: true } } } }, evaluations: { omit: { notes: true, applicantQuestions: true } }, answers: { include: { question: true } }, bookings: { include: { slot: true } } },
   });
   if (!app || (!app.round.anonymousReview && !hasPermission(member, "applicants.identify"))) throw new Error("Applicant unavailable for this reviewer.");
-  return app;
+  return { ...app, evaluations: app.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
 }
 export async function getApplicantDisplay(input: z.infer<typeof scope>) {
   const data = scope.parse(input);

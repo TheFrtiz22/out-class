@@ -1,3 +1,4 @@
+import { interviewCapabilities } from "@/lib/interview-access"
 import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
@@ -35,7 +36,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     return [item("overview", "Overview", "recruitment"),
       ...(read ? [item("applicants", "Applicants", "recruitment")] : []),
-      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") ? [item("interviews", "Interviews", "recruitment")] : []),
+      ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(read ? [item("decisions", "Decisions", "recruitment")] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
   }

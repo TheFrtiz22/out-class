@@ -1,5 +1,5 @@
 "use client"
-import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
+import { InterviewApplicantPanel } from "@/components/interview-applicant-panel"
 import "@/components/shell/responsive-workspace.css"
 import { PageHeader } from "@/components/product/page-header"
 import { InterviewKitSession } from "@/components/interview-kit-session"
@@ -9,15 +9,15 @@ import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
-import { getClubPipeline } from "@/lib/workspace-api"
+import { getInterviewWorkspace } from "@/lib/workspace-api"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
-import { interviewProgress, elapsedInterviewTime } from "@/lib/interview-mode"
+import { elapsedInterviewTime } from "@/lib/interview-mode"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import "./interview/interview-mode.css"
 
-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
+type Pipeline = Awaited<ReturnType<typeof getInterviewWorkspace>>
 const selectStyle =
   "h-10 max-w-full rounded-md border border-border bg-card px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
 export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: () => void; scoped?: boolean }) {
@@ -86,7 +86,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={membership.clubId} membership={membership} onLock={handleLock} onExit={exit} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} />
         )}
       </div>
     </main>
@@ -119,21 +119,13 @@ function InterviewSession({
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
   const round = data?.rounds.find((item) => item.id === roundId)
-  const queue = (data?.applications || [])
-    .filter((app) => app.roundId === roundId)
-    .sort((a, b) => {
-      const label = (app: typeof a) =>
-        app.student.studentProfile
-          ? `${app.student.studentProfile.lastName} ${app.student.studentProfile.firstName}`
-          : app.student.email
-      return label(a).localeCompare(label(b)) || a.id.localeCompare(b.id)
-    })
+  const queue = (data?.applications || []).filter(app => app.assignedRoundIds.includes(roundId) && (app.roundId === roundId || app.completedRoundIds.includes(roundId))).sort((a,b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
   const active = queue.find((app) => app.id === activeId)
   const index = queue.findIndex((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
   const handleKitState = useCallback((changed: boolean, pending: boolean) => { setKitDirty(changed); setBusy(pending) }, [])
   const dirty = kitDirty
-  const progress = interviewProgress(queue, membership.id, round?.name || "")
+  const progress = { total: queue.length, completed: queue.filter(app => app.completedRoundIds.includes(roundId)).length }
   useEffect(() => {
     onLock(dirty || busy, busy)
     return () => onLock(false)
@@ -144,7 +136,7 @@ function InterviewSession({
     setLoadError(false)
     
     // In demo mode, intercept the real API with the mock demo-store logic
-    getClubPipeline(membership.clubId)
+    getInterviewWorkspace(membership.clubId)
       .then((result) => {
         if (current) {
           setData(result)
@@ -152,7 +144,7 @@ function InterviewSession({
           const first = result.rounds.find(r => r.id === focused?.roundId) ||
             result.rounds.find((item) =>
               result.applications.some(
-                (app) => app.roundId === item.id && app.status === "INTERVIEWING",
+                (app) => app.roundId === item.id && app.assignedRoundIds.includes(item.id),
               ),
             ) || result.rounds[0]
           setRoundId(first?.id || "")
@@ -269,9 +261,7 @@ function InterviewSession({
               <option value="">Choose a candidate</option>
               {queue.map((app) => (
                 <option key={app.id} value={app.id}>
-                  {app.student.studentProfile
-                    ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}`
-                    : app.student.email}
+                  {app.name}
                 </option>
               ))}
             </select>
@@ -294,8 +284,8 @@ function InterviewSession({
           <PageHeader title="Ready when you are." illustration={{ variant: "columns", treatment: "quiet" }} />
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
-              ? "Choose a candidate to bring their profile, application, and your evaluation into one focused view."
-              : "No submitted applicants are in this round. The list will populate as applicants move through recruitment."}
+              ? "Choose an assigned candidate to open their interview and your private question notes."
+              : "No current panel assignments are available in this round. Ask your club owner to confirm your assignment."}
           </p>
           {queue.length > 0 && (
             <Button onClick={() => choose(queue[0].id)}>
@@ -307,7 +297,7 @@ function InterviewSession({
       ) : (
         <div key={active.id} className="oc-interview-candidate space-y-6">
           {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
-            canManageKit={hasPermission(membership, "interviews.manage")}
+
 toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>
               <span
                 className="tabular-nums text-lg tabular-nums"
@@ -330,24 +320,9 @@ toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} on
               </Button>
             </div>
 </>}
-context={
-  <div
-    className="min-w-0 max-h-72 overflow-y-auto border-b p-5 lg:sticky lg:top-0 lg:max-h-dvh lg:border-r"
-    role="region"
-    aria-label="Candidate context"
-    tabIndex={0}
-  >
-    <ApplicantDisplayPanel
-      key={active.id}
-      clubId={membership.clubId}
-      applicationId={active.id}
-      refreshKey={JSON.stringify(active.evaluations)}
-      mode="interview"
-    />
-  </div>
-}
+context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} />}
             onComplete={(evaluation, next) => {
-              setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, evaluations: [...app.evaluations.filter(e => e.id !== evaluation.id), evaluation] } : app) } : previous)
+              setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
               carried.current = seconds; setRunning(false); setKitDirty(false)
               if (next && queue[index + 1]) { setActiveId(queue[index + 1].id); setSeconds(0); carried.current = 0 }
             }} />}

@@ -18,6 +18,21 @@ function readConfig(filename){
  }
  return config;
 }
+// Hosted import needs no SMTP/MFA fixture. This explicit mode never changes
+// the dedicated local onboarding guard and cannot target an arbitrary app URL.
+function readStagingImportConfig(filename){
+ const config=JSON.parse(fs.readFileSync(filename));
+ assert.equal(config.projectId,'outclass-interview-staging');
+ assert.equal(config.projectRef,'omfcozcbpmevwolshibh');
+ assert.equal(config.status.API_URL,'https://omfcozcbpmevwolshibh.supabase.co');
+ const app=new URL(config.appUrl);
+ assert.ok(['localhost','127.0.0.1'].includes(app.hostname));
+ assert.equal(app.port,'3111');
+ assert.equal(app.protocol,'http:');
+ assert.equal(new URL(config.status.DB_URL).hostname,'db.omfcozcbpmevwolshibh.supabase.co');
+ assert.equal(path.resolve(config.buildDir),path.resolve(__dirname,'../../.next-publish'));
+ return config;
+}
 async function confirmationMessage(config,email,subject=/Verify your UVA email/){
  for(let attempt=0;attempt<30;attempt++){
   const list=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();
@@ -51,6 +66,7 @@ async function assertProfileCompletionRedirect(response,appUrl,returnPath,protec
  assert.deepEqual([...url.searchParams],[['next',returnPath]],'Expected the exact preserved return destination');
  assert.equal(url.hash,'');
 }
+function actionSourceMatches(filename,file){const normalized=String(filename||'').replaceAll('\\','/');return normalized===file||normalized.endsWith('/'+file);}
 class Actor {
  constructor(config){
   this.config=config;this.cookies=new Map();
@@ -66,7 +82,7 @@ class Actor {
  }
  async action(file,name,args){
   const manifest=JSON.parse(fs.readFileSync(path.join(this.config.buildDir,'server/server-reference-manifest.json')));
-  const entry=Object.entries(manifest.node).find(([,value])=>value.filename===file&&value.exportedName===name);assert.ok(entry,`Action ${file}:${name} is in the production manifest`);
+  const entry=Object.entries(manifest.node).find(([,value])=>actionSourceMatches(value.filename,file)&&value.exportedName===name);assert.ok(entry,`Action ${file}:${name} is in the production manifest`);
   const [actionId,definition]=entry;const worker=Object.keys(definition.workers).find(w=>w==='app/page')||Object.keys(definition.workers)[0];
   // Next forwards the action to its owning worker. No handler or Auth/DB mock is used.
   const route=worker==='app/platform/page'?'/platform':worker==='app/page'?'/':worker==='app/settings/organizations/page'?'/settings/organizations':'/';
@@ -93,4 +109,4 @@ class Actor {
  }
  async profile(name,year){const [firstName,...last]=name.split(' ');return this.action('actions/profile.ts','upsertStudentProfile',[{firstName,lastName:last.join(' '),computingId:'browser-spoof',major:'Economics',gradYear:year,experiences:[]}]);}
 }
-module.exports={Actor,totp,readConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect};
+module.exports={Actor,totp,readConfig,readStagingImportConfig,confirmationMessage,randomUUID,assertProfileCompletionRedirect,actionSourceMatches};

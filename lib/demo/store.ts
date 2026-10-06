@@ -60,6 +60,9 @@ function ensurePresentation(value: DemoState) {
     for(const participant of session.participants)participant.joinedAt??=null
   }
   // Upgrade saved presentations without resetting applications or evaluations.
+  value.interviewFoundation ??= { assignments: [], documents: [], annotations: [], history: [], audit: [] };
+  for (const m of value.memberships) m.interviewOffices ??= [];
+  for (const s of value.students) s.profile.scholarStatus ??= null;
   const mii = value.clubs[0]
   const manager = value.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
   if (manager) manager.userId = value.students[0].id
@@ -99,6 +102,16 @@ export const demoStore = {
     enabled = false
     state = null
     listeners.forEach((fn) => fn())
+  },
+  refresh: () => {
+    if (!enabled) return
+    const raw = localStorage.getItem(DEMO_KEY)
+    if (!raw) return
+    const saved = JSON.parse(raw, (_, v) => typeof v === "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(v) ? new Date(v) : v)
+    if (!demoSnapshotSchema.safeParse(saved).success) throw new Error("Demo snapshot unavailable.")
+    state = saved
+    ensurePresentation(state!)
+    listeners.forEach(fn => fn())
   },
   save: () => {
     if (!state) return

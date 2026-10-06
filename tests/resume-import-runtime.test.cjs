@@ -1,8 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
-const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
+const {Actor,readConfig,readStagingImportConfig}=require('./helpers/onboarding-e2e.cjs');
+const stagingFile=process.env.OUTCLASS_STAGING_IMPORT_CONFIG;
+const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG||stagingFile;
 test('isolated built Next action loads PDF.js and its worker, returns proposals and structured failures', {skip:!configFile,timeout:30000},async()=>{
- const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'ui-fixture.json')));
+ assert.ok(!(stagingFile&&process.env.OUTCLASS_ONBOARDING_E2E_CONFIG),'Choose exactly one isolated runtime');
+ const config=stagingFile?readStagingImportConfig(configFile):readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'ui-fixture.json')));
  const actor=new Actor(config);await actor.signIn(fixture.president.email,fixture.president.password);
  const input=(bytes,name='resume.pdf',type='application/pdf')=>{const form=new FormData();form.set('file',new Blob([bytes],{type}),name);return form;};
  const prepare=form=>actor.action('actions/resume-import.ts','prepareResumeImport',[form]);

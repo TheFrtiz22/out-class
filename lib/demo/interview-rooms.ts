@@ -1,3 +1,4 @@
+import { syncDemoBookingPanel } from "./interview-access-setup";
 import { demoStore } from "./store"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 // Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
@@ -32,7 +33,8 @@ export async function setInterviewRoomOpen({ roomId, open }: { roomId: string; o
   if (!room) throw new Error("Room not found.")
   const s = manager(room.clubId)
   if (open && s.interviewRooms.some(r => r.id !== roomId && (r.isOpen || s.roomBookings?.some(b => b.roomId === r.id)) && (r.location.toLowerCase() === room.location.toLowerCase() || r.name.toLowerCase() === room.name.toLowerCase() || r.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && r.slots.some(a => room.slots.some(b => overlaps(a, b, Math.max(r.buffer, room.buffer)))))) throw new Error("Another room now overlaps this schedule.")
-  demoStore.mutate(s => { s.interviewRooms.find(r => r.id === roomId)!.isOpen = open })
+  demoStore.mutate(s => { const r=s.interviewRooms.find(r => r.id === roomId)!;r.isOpen = open;if(!open){r.approvedPanelMemberIds=[];r.panelApprovedBy=null;r.panelApprovalRevision=(r.panelApprovalRevision||0)+1;} })
+  for(const b of demoStore.get().roomBookings.filter(b=>b.roomId===roomId))syncDemoBookingPanel(b.applicationId,b.roundId);
 }
 function ownApplication(id: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.id === id && a.studentId === s.students[0].id)
@@ -48,7 +50,7 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
   const app = ownApplication(applicationId), s = demoStore.get(), room = s.interviewRooms?.find(r => r.slots.some(slot => slot.id === slotId)), slot = room?.slots.find(slot => slot.id === slotId)
   if (!room || !slot || room.clubId !== app.clubId || room.roundId !== app.roundId) throw new Error("Choose a slot from your invited round.")
   const existing = s.roomBookings?.find(b => b.applicationId === app.id && b.roundId === app.roundId)
-  if (existing?.slotId === slotId) return { id: existing.id }
+  if (existing?.slotId === slotId) { syncDemoBookingPanel(app.id, app.roundId); return { id: existing.id } }
   if (existing && +new Date(existing.startTime) <= Date.now()) throw new Error("This interview has already started.")
   if (!room.isOpen || +new Date(slot.startTime) <= Date.now() || (s.roomBookings ?? []).filter(b => b.slotId === slotId).length >= slot.capacity) throw new Error("This slot is no longer available.")
   const owned = s.applications.filter(a => a.studentId === app.studentId).map(a => a.id)
@@ -69,7 +71,8 @@ export async function cancelRoomBooking(id: string) {
   if (!booking) throw new Error("Booking not found.")
   ownApplication(booking.applicationId)
   if (+new Date(booking.startTime) <= Date.now()) throw new Error("This interview has already started.")
-  demoStore.mutate(s => { s.roomBookings = s.roomBookings.filter(b => b.id !== id); s.slots = s.slots.filter(slot => slot.id !== id) })
+  demoStore.mutate(s => { s.roomBookings = s.roomBookings.filter(b => b.id !== id); s.slots = s.slots.filter(slot => slot.id !== id) });
+  syncDemoBookingPanel(booking.applicationId, booking.roundId)
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.clubId === clubId && a.roundId === roundId && a.studentId === s.students[0].id && a.status === "INTERVIEWING")

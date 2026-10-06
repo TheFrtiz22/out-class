@@ -1,5 +1,6 @@
 "use client";
-import { ApplicantDisplaySettings } from "@/components/applicant-intelligence";
+import { useAuth } from "@/contexts/auth-context";
+import { interviewCapabilities } from "@/lib/interview-access";
 import { useEffect, useState } from "react";
 import {
   getInterviewKit,
@@ -18,6 +19,8 @@ export function InterviewKitEditor({
   clubId: string;
   rounds: { id: string; name: string }[];
 }) {
+  const { user } = useAuth();
+  const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
   const [round, setRound] = useState(rounds[0]?.id || ""),
     [questions, setQuestions] = useState<KitQuestion[]>([]),
     [version, setVersion] = useState(0),
@@ -40,7 +43,7 @@ export function InterviewKitEditor({
         }
       })
       .catch(() => {
-        if (current) setMessage("Could not load the kit. Reload to try again.");
+        if (current) setMessage("Could not load the kit. Your access may have changed. Retry below.");
       });
     return () => {
       current = false;
@@ -66,7 +69,7 @@ export function InterviewKitEditor({
   }
   return (
     <section className="oc-kit-editor" data-unsaved={dirty} data-saving={busy} aria-label="Interview kit editor">
-      <header className="oc-kit-heading"><h2>Interview kits</h2>
+      <header className="oc-kit-heading"><h2>Interview master kit</h2>
       <div>
         <p className="text-sm text-muted-foreground">
           Configure questions and guidance for each round. Changes apply to new
@@ -81,9 +84,9 @@ export function InterviewKitEditor({
         </nav>
         <div className="oc-kit-builder">
           <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div><span>{loaded ? `${questions.length} questions` : "Loading…"}</span></header>
-          <ApplicantDisplaySettings key={round} clubId={clubId} roundId={round} />
+          <p className="mb-4 text-sm text-muted-foreground">{canEdit ? "You can edit the selected round master kit." : "Read-only question bank. Use questions in your assigned interview workspace."}</p>
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
-        <fieldset disabled={busy || !loaded} className="space-y-5">
+        <fieldset disabled={busy || !loaded || !canEdit} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">
               <label htmlFor={`prompt-${q.id}`}>Question {i + 1}</label>
@@ -118,7 +121,7 @@ export function InterviewKitEditor({
                 }
               />
               </details>
-              <div className="oc-kit-question-actions flex flex-wrap gap-2">
+              {canEdit && <div className="oc-kit-question-actions flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -144,10 +147,10 @@ export function InterviewKitEditor({
                 >
                   Delete question
                 </Button>
-              </div>
+              </div>}
             </section>
           ))}
-          <div className="flex flex-wrap gap-3">
+          {canEdit && <div className="flex flex-wrap gap-3">
             <Button
               type="button"
               variant="outline"
@@ -188,7 +191,7 @@ export function InterviewKitEditor({
             >
               Save kit
             </Button>
-          </div>
+          </div>}
         </fieldset>
         <p role="status">{message}</p>
         <Button

@@ -41,7 +41,7 @@ test("adapter isolates demo mutations, cross-view scores/decisions, conflicts, r
   const base = JSON.stringify(demoStore.get()),
     s = demoStore.get(),
     club = s.clubs[0],
-    app = s.applications.find((a) => a.clubId === club.id && a.studentId === s.students[0].id)
+    app = s.applications.find((a) => a.clubId === club.id && a.studentId !== s.students[0].id && a.status === "INTERVIEWING" && !s.interviews.some(r => r.applicationId === a.id && r.completedAt))
   demoStore.mutate((s) => {
     s.perspective = { role: "leader", clubId: club.id }
   })
@@ -61,7 +61,7 @@ test("adapter isolates demo mutations, cross-view scores/decisions, conflicts, r
     status: "ACCEPTED",
     expectedStatus: "INTERVIEWING",
   })
-  assert.equal(studentApplications().find((a) => a.id === app.id).status, "ACCEPTED")
+  assert.equal(studentApplications(app.studentId).find((a) => a.id === app.id).status, "ACCEPTED")
   await assert.rejects(
     api.setApplicationStatus({
       clubId: club.id,
@@ -84,7 +84,7 @@ test("adapter isolates demo mutations, cross-view scores/decisions, conflicts, r
   assert.equal(h.calls(), 0)
   demoStore.stop()
   demoStore.start()
-  assert.equal(studentApplications().find((a) => a.id === app.id).status, "ACCEPTED")
+  assert.equal(studentApplications(app.studentId).find((a) => a.id === app.id).status, "ACCEPTED")
   assert.ok(demoStore.get().slots[0].startTime instanceof Date)
   demoStore.reset()
   assert.equal(JSON.stringify(demoStore.get()), base)
