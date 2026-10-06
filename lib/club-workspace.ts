@@ -4,6 +4,7 @@ export const clubSections = [
   "overview",
   "members",
   "meetings",
+  "events",
   "tasks",
   "recruitment",
   "settings",
@@ -14,6 +15,7 @@ export function clubWorkspaceSections(
 ): ClubSection[] {
   if (!member) return [];
   return clubSections.filter((section) => {
+    if (section === "events") return hasPermission(member, "meetings.manage");
     if (section === "members")
       return (
         hasPermission(member, "members.manage") ||
@@ -46,6 +48,7 @@ export const clubSectionLabels: Record<ClubSection, string> = {
   overview: "Overview",
   members: "Members",
   meetings: "Meetings",
+  events: "Events",
   tasks: "Tasks",
   recruitment: "Recruitment",
   settings: "Settings",

@@ -16,6 +16,7 @@ export default async function PlatformPage() {
       </Link>
       <PageHeader eyebrow="OutClass · Administration" title="OutClass platform administration" description="Protected platform controls. Changes require a reason and confirmation; every operation is audited." illustration={{ variant: "columns", treatment: "quiet", accent: false }} />
       <a className="block underline" href="/platform/claims">Review club claims</a>
+      <Link className="block underline" href="/platform/events">Event Approvals</Link>
       <PlatformConsole />
     </main>
   )

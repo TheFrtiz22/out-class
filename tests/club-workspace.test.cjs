@@ -41,6 +41,7 @@ test("workspace navigation follows explicit capabilities and never changes ident
     "overview",
     "members",
     "meetings",
+    "events",
     "tasks",
     "recruitment",
     "settings",

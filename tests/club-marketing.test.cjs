@@ -42,7 +42,7 @@ test('publishing checks club permission and atomically saves every profile field
 })
 test('Discover receives saved marketing while hidden statistics are omitted', async () => {
   const persisted = { ...draft(), id: clubId, pipelineRounds: [], questions: [], events: [], acceptanceRate: 8, aumValue: 100000, marketing: { ...draft().marketing, showAcceptance: false, showAum: false } }
-  const actions = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: { club: { findMany: async q => { assert.equal(q.select.marketing, true); assert.equal(q.select.members, undefined); return [persisted] } } } } })
+  const actions = load('actions/club-directory.ts', { '@/utils/prisma': { prisma: { meeting: {findMany: async()=>[]}, club: { findMany: async q => { assert.equal(q.select.marketing, true); assert.equal(q.select.members, undefined); return [persisted] } } } } })
   const result = await actions.getClubDirectory()
   assert.deepEqual(result.clubs[0].marketing, persisted.marketing)
   assert.equal(result.clubs[0].acceptanceRate, null)

@@ -1,5 +1,6 @@
 "use client"
 import { useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { PageHeader } from "@/components/product/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Sparkles, Users } from "lucide-react"
@@ -104,6 +105,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
+        <Link href="/saved-clubs" className="text-sm underline">Saved clubs</Link>
         <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." illustration="rotunda" />
       </div>
       <div className="oc-directory-search">
