@@ -59,13 +59,33 @@ function ensurePresentation(value: DemoState) {
     if(session.activeApplicationId===undefined)session.activeApplicationId=session.passes.find(p=>p.number===session.currentPass)?.candidates[0]?.applicationId??null
     for(const participant of session.participants)participant.joinedAt??=null
   }
-  // Upgrade saved presentations without resetting applications or evaluations.
-  value.interviewFoundation ??= { assignments: [], documents: [], annotations: [], history: [], audit: [] };
-  for (const m of value.memberships) m.interviewOffices ??= [];
-  for (const s of value.students) s.profile.scholarStatus ??= null;
   const mii = value.clubs[0]
   const manager = value.memberships.find(m => m.clubId === mii.id && m.role === "PRESIDENT")
   if (manager) manager.userId = value.students[0].id
+  // Old fictional memberships predate explicit access fields. Restore only missing
+  // fields from the canonical demo fixtures; explicit denials/revocations survive.
+  const legacyManager = manager && manager.status === undefined && manager.isOwner === undefined && manager.permissions === undefined
+  if (value.memberships.some(m => m.status === undefined || m.isOwner === undefined || m.permissions === undefined)) {
+    const defaults = new Map(createDemoSeed(value.anchor).memberships.map(m => [m.id, m]))
+    for (const member of value.memberships) {
+      const original = defaults.get(member.id)
+      if (!original || original.clubId !== member.clubId || original.userId !== member.userId) continue
+      member.status ??= original.status
+      member.isOwner ??= original.isOwner
+      member.permissions ??= [...original.permissions]
+      member.interviewOffices ??= [...original.interviewOffices]
+    }
+  }
+  // Upgrade saved presentations without resetting applications or evaluations.
+  value.interviewFoundation ??= { assignments: [], documents: [], annotations: [], history: [], audit: [] };
+  if (legacyManager && manager.isOwner && manager.status === "ACTIVE") {
+    for (const app of value.applications.filter(a => a.clubId === mii.id && a.studentId !== manager.userId && a.status !== "DRAFTING" && mii.rounds.some(r => r.id === a.roundId && !r.anonymousReview))) {
+      if (!value.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === app.roundId && a.memberId === manager.id))
+        value.interviewFoundation.assignments.push({ applicationId: app.id, roundId: app.roundId, memberId: manager.id, revokedAt: null })
+    }
+  }
+  for (const m of value.memberships) m.interviewOffices ??= [];
+  for (const s of value.students) s.profile.scholarStatus ??= null;
   if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
   ensureSemesterWork(value)
 }
