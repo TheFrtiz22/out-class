@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import {
   getInterviewKit,
   openInterviewSession,
@@ -201,6 +201,15 @@ export function InterviewKitSession({
   const completed = questions.filter(q => completedIds.includes(q.id));
   const available = questions.filter(q => !completedIds.includes(q.id));
   const disabled = !!session.completedAt || completing || closingQuestion;
+  function scoreKey(event: KeyboardEvent<HTMLInputElement>) {
+    if (disabled || event.altKey || event.ctrlKey || event.metaKey) return;
+    const steps: Record<string, number> = { ArrowLeft: -0.5, ArrowDown: -0.5, ArrowRight: 0.5, ArrowUp: 0.5, PageDown: -1, PageUp: 1 };
+    if (event.key !== "Home" && event.key !== "End" && !(event.key in steps)) return;
+    // Own the keyboard step rather than reading a potentially stale native value
+    // on keyup. Prevent the browser from applying the same step a second time.
+    event.preventDefault();
+    setDraft(current => ({ ...current, score: event.key === "Home" ? 1 : event.key === "End" ? 10 : Math.max(1, Math.min(10, Math.round((current.score ?? 1) * 2) / 2 + steps[event.key])) }));
+  }
   const libraryQuestions = library.filter(q => `${q.prompt} ${q.guidance}`.toLowerCase().includes(search.toLowerCase()));
   function addQuestion(prompt: string, bankId?: string) {
     if (disabled || draft.additionalQuestions.length >= 30 || !prompt.trim()) return;
@@ -268,7 +277,7 @@ export function InterviewKitSession({
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="applicant-questions">Questions the applicant asked</label><Textarea id="applicant-questions" maxLength={20000} value={draft.applicantQuestions || ""} onChange={e => setDraft(d => ({ ...d, applicantQuestions: e.target.value }))} /><label htmlFor="additional-interview-notes">Additional notes</label><Textarea id="additional-interview-notes" rows={5} maxLength={20000} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} />
             {!session.completedAt && <div className="space-y-2 text-sm"><h3>Your previous five interviews in this round</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <p role="status">Loading your scores…</p> : history.length ? <ul>{history.map(h => <li key={h.id} className="flex justify-between gap-3 rounded-md border bg-card px-3 py-2"><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
             <label htmlFor="interview-score" className="block">Overall score · <span aria-live="polite">{draft.score === null ? "Not scored" : `${draft.score} / 10`}</span></label>
-            {session.completedAt ? <p>{draft.score === null ? "Not scored" : `${draft.score} / 10`}</p> : <input id="interview-score" type="range" min={1} max={10} step={0.5} value={draft.score ?? 1} disabled={disabled} aria-valuetext={draft.score === null ? "Not scored; interact to select a score" : `${draft.score} out of 10`} className="min-h-11 w-full accent-foreground cursor-pointer disabled:opacity-50" onChange={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onPointerUp={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onKeyUp={e => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"].includes(e.key)) { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); } }} />}
+            {session.completedAt ? <p>{draft.score === null ? "Not scored" : `${draft.score} / 10`}</p> : <input id="interview-score" type="range" min={1} max={10} step={0.5} value={draft.score ?? 1} disabled={disabled} aria-valuetext={draft.score === null ? "Not scored; interact to select a score" : `${draft.score} out of 10`} className="min-h-11 w-full accent-foreground cursor-pointer disabled:opacity-50" onChange={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onPointerUp={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onKeyDown={scoreKey} />}
             {!session.completedAt && <p className="text-xs text-muted-foreground">1–10 in half-point steps. Select with pointer or touch, or use the arrow keys, Home and End.</p>}
           </fieldset>
           {!session.completedAt && <div className="flex flex-wrap gap-2"><Button type="button" disabled={saving || draft.score === null} onClick={() => void persist(true)}>Save and finish</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => setClosing(false)}>Keep interviewing</Button></div>}

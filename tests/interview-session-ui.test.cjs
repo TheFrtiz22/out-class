@@ -59,9 +59,16 @@ test('discussion has no score or submission; pointer and touch select unchanged 
 });
 test('keyboard focus alone is unscored; Home, End and half-step arrow interactions explicitly score',async()=>{
  for(const [key,value] of [['Home','1'],['End','10'],['ArrowRight','1.5']]){
-  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();scoreInput(t).props.onKeyUp({key:'Tab',currentTarget:{value:'1'}});t=h.render();assert.ok(button(t,'Save and finish').props.disabled);
-  scoreInput(t).props.onKeyUp({key,currentTarget:{value}});t=h.render();assert.equal(scoreInput(t).props['aria-valuetext'],`${value} out of 10`);
+  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();scoreInput(t).props.onKeyDown({key:'Tab',preventDefault(){throw Error('Tab must retain native focus navigation')}});t=h.render();assert.ok(button(t,'Save and finish').props.disabled);
+  let prevented=false;scoreInput(t).props.onKeyDown({key,currentTarget:{value:'1'},preventDefault(){prevented=true}});t=h.render();assert.equal(prevented,true);assert.equal(scoreInput(t).props['aria-valuetext'],`${value} out of 10`);
  }
+});
+test('keyboard scoring clamps endpoints and steps from current draft despite a stale native input value',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();
+ for(const [key,value] of [['ArrowLeft',1],['ArrowRight',1.5],['End',10],['ArrowUp',10],['ArrowLeft',9.5],['ArrowDown',9],['PageDown',8],['PageUp',9],['Home',1],['ArrowDown',1]]){
+  let prevented=false;scoreInput(t).props.onKeyDown({key,currentTarget:{value:'10'},preventDefault(){prevented=true}});t=h.render();assert.equal(prevented,true);assert.equal(scoreInput(t).props.value,value);
+ }
+ scoreInput(t).props.onKeyDown({key:'ArrowRight',ctrlKey:true,preventDefault(){throw Error('Browser shortcut must remain native')}});t=h.render();assert.equal(scoreInput(t).props.value,1);assert.equal(h.record.completedAt,null);
 });
 test('finish flushes latest text after autosave and double clicks create one final request',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Discussion draft'}});t=h.render();h.tick();await flush();t=h.render();

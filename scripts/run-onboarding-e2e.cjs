@@ -6,15 +6,32 @@ const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e');
-const keep=process.argv.includes('--keep');let app;
+const keep=process.argv.includes('--keep');let app,stackTouched=false;
 fs.mkdirSync(path.join(root,'supabase/templates'),{recursive:true});
+// Invoke package CLIs through Node: Windows .cmd shims cannot be launched by
+// spawnSync without a shell. Keep arguments separate and never enable shell mode.
+function invocation(binary,args){
+ if(binary==='supabase')return [process.execPath,[path.join(repo,'node_modules/supabase/dist/supabase.js'),...args]];
+ if(binary==='npm'&&process.platform==='win32'){
+  const cli=path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js');
+  if(!fs.existsSync(cli))throw Error('npm CLI unavailable beside Node; install the supported Node distribution.');
+  return [process.execPath,[cli,...args]];
+ }
+ if(binary==='openssl'&&process.platform==='win32'){
+  const bundled=path.join(process.env.ProgramFiles||'C:\\Program Files','Git/usr/bin/openssl.exe');
+  if(fs.existsSync(bundled))return [bundled,args];
+ }
+ return [binary,args];
+}
 function command(binary,args,env=process.env){
- const result=spawnSync(binary,args,{cwd:repo,env,encoding:'utf8'});
- if(result.status!==0)throw Error(`${binary} ${args.join(' ')} failed: ${result.stderr||result.stdout}`);
+ const [executable,argv]=invocation(binary,args);
+ const result=spawnSync(executable,argv,{cwd:repo,env,encoding:'utf8'});
+ if(result.status!==0)throw Error(`${binary} failed (${result.error?.code||result.status}); inspect the isolated test logs.`);
  return result.stdout;
 }
 function logged(binary,args,log,env=process.env){
- const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(binary,args,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
+ const [executable,argv]=invocation(binary,args);
+ const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(executable,argv,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
  if(result.status!==0)throw Error(`${binary} failed; inspect ${path.join(root,log)}`);
 }
 async function ready(url,headers={}){
@@ -22,6 +39,10 @@ async function ready(url,headers={}){
  throw Error('Dedicated local service did not become ready');
 }
 (async()=>{
+ // Diagnose prerequisites before touching even the disposable stack.
+ command('supabase',['--version']);command('npm',['--version']);command('openssl',['version']);
+ if(command('docker',['info','--format','{{.OSType}}']).trim()!=='linux')throw Error('The isolated Supabase test requires a Linux-container Docker engine.');
+ if(process.argv.includes('--check-prerequisites')){console.log('Node package CLIs, OpenSSL and Docker engine are available.');return;}
  console.log('Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.');
  let config=fs.readFileSync(path.join(repo,'supabase/config.toml'),'utf8').replace('project_id = "out-class"','project_id = "outclass-onboarding-e2e"');
  for(const [from,to] of [['54321','55321'],['54322','55322'],['54323','55323'],['54324','55324'],['54325','55325'],['54327','55327'],['54320','55320'],['54329','55329'],['http://127.0.0.1:3000','http://127.0.0.1:3107'],['https://127.0.0.1:3000','http://127.0.0.1:3107']])config=config.replaceAll(from,to);
@@ -34,6 +55,7 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'supabase/config.toml'),config);
  for(const name of ['confirmation.html','magic-link.html']) fs.copyFileSync(path.join(repo,'supabase/templates',name),path.join(root,'supabase/templates',name));
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.
+ stackTouched=true;
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
  logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,analytics,vector,imgproxy'],'supabase-start.log');
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
@@ -71,6 +93,6 @@ async function ready(url,headers={}){
  if(result.status!==0)throw Error('Complete onboarding E2E failed');
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
- if(!keep){if(app)app.kill('SIGTERM');const result=spawnSync('supabase',['stop','--workdir',root],{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),result.stdout+result.stderr);}
+ if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root]);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));}
 });
 function assertImage(image){if(!/^public\.ecr\.aws\/supabase\/mailpit:/.test(image))throw Error('Unexpected local SMTP image');}
