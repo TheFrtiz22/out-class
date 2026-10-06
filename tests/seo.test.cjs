@@ -46,7 +46,7 @@ test('public SEO fails closed during a database outage without loading sample cl
 })
 test('sitemap emits canonical public pages without query strings or fabricated timestamps', async () => {
   const { default: sitemap } = load('app/sitemap.ts', { '@/lib/seo': seo, '@/lib/public-club-seo': { getIndexableClubs: async () => [club] } })
-  assert.deepEqual(await sitemap(), [{ url: 'https://www.out-class.net/' }, { url: 'https://www.out-class.net/club/real-club' }])
+  assert.deepEqual(await sitemap(), ['/', '/uva', '/about', '/club/real-club'].map(path => ({ url: `https://www.out-class.net${path}` })))
 })
 test('robots permits marketing and public clubs while excluding actual product interfaces', () => {
   const result = load('app/robots.ts', { '@/lib/seo': seo }).default()
@@ -73,7 +73,58 @@ test('structured data identifies only the established organization and website',
   assert.equal(data['@context'], 'https://schema.org')
   assert.deepEqual(data['@graph'].map(item => item['@type']), ['Organization', 'WebSite'])
   assert.equal(data['@graph'][1].publisher['@id'], data['@graph'][0]['@id'])
+  assert.equal(data['@graph'][0].logo.url, 'https://www.out-class.net/outclass-brand-mark.png')
+  assert.deepEqual(data['@graph'][1].alternateName, ['OutClass UVA', 'Out Class'])
+  for (const item of data['@graph']) {
+    assert.equal(item.name, 'OutClass')
+    assert.equal(item.url, 'https://www.out-class.net/')
+    assert.equal(new URL(item['@id']).origin, seo.SITE_URL)
+  }
   for (const item of data['@graph']) for (const key of ['aggregateRating', 'review', 'sameAs', 'address', 'offers']) assert.equal(item[key], undefined)
+})
+test('public information pages render factual content, consistent entity references, and matching visible FAQs', () => {
+  const { renderToStaticMarkup } = require('react-dom/server')
+  const React = require('react')
+  const PublicInformationPage = ({ title, introduction, children }) => React.createElement('main', null, React.createElement('h1', null, title), React.createElement('p', null, introduction), children)
+  for (const path of ['/uva', '/about']) {
+    const page = load(`app${path}/page.tsx`, { '@/lib/seo': seo, '@/components/landing/public-information-page': { PublicInformationPage } })
+    const meta = page.metadata
+    assert.equal(meta.alternates.canonical, `${seo.SITE_URL}${path}`)
+    assert.equal(meta.openGraph.url, meta.alternates.canonical)
+    assert.equal(meta.openGraph.siteName, 'OutClass')
+    assert.equal(meta.openGraph.images[0].url, `${seo.SITE_URL}/images/outclass-social.jpg`)
+    assert.equal(meta.robots.index, true)
+    assert.equal(meta.robots.follow, true)
+    const html = renderToStaticMarkup(React.createElement(page.default))
+    assert.equal((html.match(/<h1/g) || []).length, 1)
+    assert.match(html, /University of Virginia/)
+    assert.match(html, /not an official University of Virginia service/)
+    assert.match(html, /not owned, sponsored, or endorsed/)
+    assert.match(html, /href="\/(uva|about)"/)
+    const data = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])
+    const graph = data['@graph'] || [data]
+    const webpage = graph.find(item => ['WebPage', 'AboutPage'].includes(item['@type']))
+    assert.equal(webpage.url, meta.alternates.canonical)
+    assert.equal(webpage.isPartOf['@id'], `${seo.SITE_URL}/#website`)
+    assert.equal(webpage.about['@id'], `${seo.SITE_URL}/#organization`)
+    assert.equal(graph.some(item => ['Organization', 'WebSite'].includes(item['@type'])), false)
+    if (path === '/uva') {
+      assert.equal(meta.title.absolute, 'OutClass at UVA | Club Recruitment at the University of Virginia')
+      const faq = graph.find(item => item['@type'] === 'FAQPage')
+      assert.equal(faq.mainEntity.length, (html.match(/<details>/g) || []).length)
+      for (const item of faq.mainEntity) {
+        assert.ok(html.includes(`<summary>${item.name}</summary>`))
+        assert.ok(html.includes(`<p>${item.acceptedAnswer.text}</p>`))
+      }
+    } else assert.equal(meta.title.absolute, 'OutClass | About')
+  }
+})
+test('shared public footer connects all public pages with real HTML links', () => {
+  const { renderToStaticMarkup } = require('react-dom/server')
+  const React = require('react')
+  const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/outclass-logo': { OutClassLogo: () => null } })
+  const html = renderToStaticMarkup(React.createElement(PublicFooter))
+  for (const path of ['/', '/about', '/uva']) assert.ok(html.includes(`href="${path}"`))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {
   let role

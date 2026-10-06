@@ -6,7 +6,7 @@ import { LaunchClubs } from "@/components/landing/launch-clubs"
 import type { LaunchClub } from "@/lib/launch-clubs"
 import { useState } from "react"
 import { ArrowRight } from "lucide-react"
-import { OutClassLogo } from "@/components/outclass-logo"
+import { PublicFooter } from "@/components/landing/public-footer"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -75,23 +75,13 @@ export function LandingPageView({
           </p>
         </SectionReveal>
       </main>
-      <footer className="oc-public-footer">
-        <div>
-          <a href="#top" aria-label="OutClass home">
-            <OutClassLogo className="h-8 w-auto" />
-          </a>
-          <p>Find your people. Make your mark.</p>
-        </div>
-        <nav aria-label="Footer navigation">
-          <a href="#about">How it works</a>
-          {["Contact", "Privacy", "Terms"].map((label) => (
-            <button type="button" key={label} onClick={() => setInfo(label)}>
-              {label}
-            </button>
-          ))}
-        </nav>
-        <small>© {new Date().getFullYear()} OutClass</small>
-      </footer>
+      <PublicFooter homeHref="#top" overviewHref="#about">
+        {["Contact", "Privacy", "Terms"].map((label) => (
+          <button type="button" key={label} onClick={() => setInfo(label)}>
+            {label}
+          </button>
+        ))}
+      </PublicFooter>
       <p className="oc-photo-credit">
         OutClass is an independent platform.
       </p>
