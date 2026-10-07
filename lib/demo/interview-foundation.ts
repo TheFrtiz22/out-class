@@ -1,7 +1,7 @@
 import { anonymousApplicantLabel } from "@/lib/anonymous-review";
 import { demoStore, demoMember } from "./store";
 import { annotationContentSchema, interviewCapabilities, interviewOfficesSchema, interviewScopeSchema, interviewScoreSchema, type InterviewScope } from "@/lib/interview-access";
-import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionNotes } from "@/lib/interview-kits";
+import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionNotes, validateAdditionalQuestionSnapshots } from "@/lib/interview-kits";
 import { z } from "zod";
 import { anchorMatchesText } from "@/lib/resume-anchors";
 import { demoResumeText } from "./resume-fixture";
@@ -70,7 +70,7 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
     if (app.roundId !== round.id || record.revision !== input.revision) throw new Error("Interview changed. Reload before saving.");
     validateQuestionNotes(record.questions, draft);
     if (draft.score !== null) interviewScoreSchema.parse(draft.score);
-    if (record.draft.additionalQuestions.some(q => !draft.additionalQuestions.some(n => n.id === q.id && n.question === q.question))) throw new Error("Preserve existing off-script questions.");
+    validateAdditionalQuestionSnapshots(record.draft, draft, kitSchema.parse(round.interviewKit));
     let evaluation = null;
     if (input.complete) {
       const score = interviewScoreSchema.parse(draft.score);

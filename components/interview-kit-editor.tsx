@@ -104,8 +104,8 @@ export function InterviewKitEditor({
                   )
                 }
               />
-              <details className="oc-kit-guidance"><summary>Guidance / rubric{q.guidance?.trim() ? " · Added" : " · Optional"}</summary>
-              <label className="sr-only" htmlFor={`guidance-${q.id}`}>Optional guidance / rubric</label>
+              <details className="oc-kit-guidance"><summary>Answer key / evaluation guidance{q.guidance?.trim() ? " · Added" : " · Optional"}</summary>
+              <label className="sr-only" htmlFor={`guidance-${q.id}`}>Answer key / evaluation guidance</label>
               <Textarea
                 id={`guidance-${q.id}`}
                 value={q.guidance}

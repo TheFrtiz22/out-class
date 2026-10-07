@@ -50,6 +50,19 @@
 .oc-completed-row > span { min-width: 0; }
 .oc-completed-prompt { display: block; }
 .oc-note-preview { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; font-size: .8125rem; font-weight: 400; color: var(--muted-foreground); margin-top: 5px; }
+.oc-miscellaneous-notes { margin-bottom: 26px; }
+.oc-miscellaneous-notes label { margin-bottom: 8px; }
+.oc-interview-room[data-workspace-detail] .oc-miscellaneous-notes textarea { min-height: 120px; }
+.oc-answer-key { font-size: .8125rem; border-top: 1px solid var(--border); padding-top: 10px; }
+.oc-answer-key summary { color: var(--muted-foreground); cursor: pointer; min-height: 36px; padding: 6px 0; }
+.oc-answer-key p { padding: 6px 0 10px; }
+.oc-used-indicator { width: 16px; flex-shrink: 0; text-align: center; color: var(--muted-foreground); }
+.oc-question-review { display: grid; grid-template-rows: 0fr; visibility: hidden; }
+.oc-question-review[data-open="true"] { grid-template-rows: 1fr; visibility: visible; }
+.oc-question-review > div { overflow: hidden; min-height: 0; }
+.oc-question-review-content { padding-bottom: 16px; display: grid; gap: 10px; }
+.oc-question-flight { position: fixed; z-index: 45; pointer-events: none; overflow: hidden; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); background: var(--card); color: var(--foreground); font: .875rem/1.5 var(--oc-font-sans); }
+.oc-question-flight > div { padding: 14px; }
 .oc-score-history { font-size: .8125rem; border-top: 1px solid var(--border); padding-top: 14px; }
 .oc-score-history h3 { font-size: .8125rem; font-weight: 500; margin-bottom: 8px; }
 .oc-score-history li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
@@ -75,4 +88,5 @@
 }
 @media (prefers-reduced-motion: no-preference) {
   .oc-focused-interview :is(button,textarea) { transition: background-color 140ms ease,border-color 140ms ease; }
+  .oc-question-review { transition: grid-template-rows 260ms ease,visibility 260ms; }
 }

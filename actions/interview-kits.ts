@@ -8,7 +8,7 @@ import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, authorizeQuestionBank, interviewActor } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema } from "@/lib/interview-access";
-import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, type InterviewSessionData } from "@/lib/interview-kits";
+import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
@@ -91,8 +91,7 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     if (record.revision !== data.revision) throw new Error("A newer draft exists. Reload before saving.");
     if (data.draft.score !== null) interviewScoreSchema.parse(data.draft.score);
     const oldDraft = interviewDraftSchema.parse(record.draft);
-    // Off-script IDs are durable: a later request cannot change or remove their prompts.
-    if (oldDraft.additionalQuestions.some(q => !data.draft.additionalQuestions.some(n => n.id === q.id && n.question === q.question))) throw new Error("Existing off-script question IDs and prompts must be preserved.");
+    validateAdditionalQuestionSnapshots(oldDraft, data.draft, kitSchema.parse(round.interviewKit));
     let evaluation = null;
     const submittedAt = data.complete ? new Date() : null;
     if (data.complete) {

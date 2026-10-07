@@ -17,7 +17,7 @@ function harness(existing, overrides = {}){
  const props={clubId:'club',applicationId:'app',roundId:'round',formRef:{current:null},onState(){},onComplete(...args){calls.push(['complete',...args])}, ...overrides}
  return {calls,record,fail(value){fail=value},loseResponse(){lost=true},defer(value){defer=value},render(){index=0;const tree=mod.exports.InterviewKitSession(props);while(effects.length)effects.shift()();return tree},tick(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn())}}
 }
-const select=(tree,label)=>nodes(tree).find(n=>n.type==='button'&&text(n).startsWith(label)).props.onClick()
+const select=(tree,label)=>nodes(tree).find(n=>n.type==='button'&&(text(n).startsWith(label)||nodes(n).some(c=>c.props?.className==='oc-completed-prompt'&&text(c).startsWith(label)))).props.onClick()
 const edit=(tree,value)=>nodes(tree).find(n=>n.props?.id==='active-notes-q1').props.onChange({target:{value}})
 test('completion requires acknowledged Save and close; failed text stays open with retry',async()=>{
  const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'Private answer');t=h.render()
@@ -26,23 +26,23 @@ test('completion requires acknowledged Save and close; failed text stays open wi
  assert.match(text(t),/Your interview could not be saved/);assert.doesNotMatch(text(t),/Revision changed/);assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Private answer');assert.deepEqual(h.record.draft.completedQuestionIds,[])
  h.fail(false);button(t,'Save & close').props.onClick();await flush();t=h.render()
  assert.deepEqual(h.record.draft.completedQuestionIds,['q1']);assert.equal(h.record.draft.questionNotes[0].notes,'Private answer');assert.match(text(t),/Question saved and moved/);assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined)
- select(t,'Snapshot question');t=h.render();edit(t,'Revised private answer');t=h.render();button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.questionNotes[0].notes,'Revised private answer')
+ select(t,'Snapshot question');t=h.render();button(t,'Reopen question').props.onClick();t=h.render();edit(t,'Revised private answer');t=h.render();button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.questionNotes[0].notes,'Revised private answer')
 })
 test('two interviewer UIs remain independent and reload restores only acknowledged personal completion',async()=>{
  const a=harness(),b=harness();a.render();b.render();await flush();let t=a.render();select(t,'Snapshot question');t=a.render();edit(t,'Only A');t=a.render();button(t,'Save & close').props.onClick();await flush();a.render()
  assert.deepEqual(b.record.draft.completedQuestionIds,[]);assert.doesNotMatch(text(b.render()),/Only A/)
- const reload=harness(structuredClone(a.record));reload.render();await flush();t=reload.render();assert.match(text(t),/Completed questions\s+1/);select(t,'Snapshot question');t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Only A')
+ const reload=harness(structuredClone(a.record));reload.render();await flush();t=reload.render();assert.match(text(t),/Completed questions\s+1/);select(t,'Snapshot question');t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='review-notes-q1').props.value,'Only A')
 })
 test('assigned interviewer browses current bank without editing; session wording and stable IDs survive kit changes',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();assert.deepEqual(h.calls,[['library']]);assert.equal(button(t,'Save kit'),undefined)
- button(t,'Use question').props.onClick();t=h.render();assert.match(text(t),/Off-script/);button(t,'Save & close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
+ button(t,'Use question').props.onClick();t=h.render();assert.match(text(t),/Club answer key/);assert.doesNotMatch(text(t),/Off-script<|Off-script$/);button(t,'Save & close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
 })
 test('off-script questions persist independently of opening and typing',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'+ Off-script question').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='new-interview-question').props.onChange({target:{value:'Follow-up'}});t=h.render();button(t,'Add question').props.onClick();t=h.render();h.tick();await flush();t=h.render();assert.equal(h.record.draft.additionalQuestions[0].question,'Follow-up');assert.deepEqual(h.record.draft.completedQuestionIds,[])
  button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],h.record.draft.additionalQuestions[0].id)
 })
 test('End interview opens a nullable-score draft, and explicit half-point slider selection enables final submission',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();await flush();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(h.record.draft.score,null);assert.equal(h.record.completedAt,null)
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();await flush();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(h.record.draft.score,null);assert.equal(h.record.completedAt,null)
  nodes(t).find(n=>n.props?.type==='range').props.onChange({currentTarget:{value:'8.5'}});t=h.render();button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.score,8.5);assert.ok(h.record.completedAt);assert.equal(button(t,'End interview'),undefined)
 })
 test('edits during an in-flight autosave use the acknowledged next revision',async()=>{
@@ -52,35 +52,35 @@ test('edits during an in-flight autosave use the acknowledged next revision',asy
 const scoreInput=t=>nodes(t).find(n=>n.props?.type==='range');
 test('discussion has no score or submission; pointer and touch select unchanged lower endpoint and exact upper endpoint',async()=>{
  for(const [event,value] of [['pointer','1'],['touch','10']]){
-  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();await flush();t=h.render();
-  assert.match(text(t),/Not scored/);assert.equal(scoreInput(t).props.value,1);assert.equal(h.calls.filter(c=>c[0]==='save').length,0);
+  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();await flush();t=h.render();
+  assert.match(text(t),/Not scored/);assert.equal(scoreInput(t).props.value,1);assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,0);
   scoreInput(t).props.onPointerUp({pointerType:event,currentTarget:{value}});t=h.render();assert.equal(button(t,'End post-interview').props.disabled,false);button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.score,Number(value));assert.equal(scoreInput(t),undefined);
  }
 });
 test('keyboard focus alone is unscored; Home, End and half-step arrow interactions explicitly score',async()=>{
  for(const [key,value] of [['Home','1'],['End','10'],['ArrowRight','1.5']]){
-  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();scoreInput(t).props.onKeyDown({key:'Tab',preventDefault(){throw Error('Tab must retain native focus navigation')}});t=h.render();assert.ok(button(t,'End post-interview').props.disabled);
+  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onKeyDown({key:'Tab',preventDefault(){throw Error('Tab must retain native focus navigation')}});t=h.render();assert.ok(button(t,'End post-interview').props.disabled);
   let prevented=false;scoreInput(t).props.onKeyDown({key,currentTarget:{value:'1'},preventDefault(){prevented=true}});t=h.render();assert.equal(prevented,true);assert.equal(scoreInput(t).props['aria-valuetext'],`${value} out of 10`);
  }
 });
 test('keyboard scoring clamps endpoints and steps from current draft despite a stale native input value',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();
  for(const [key,value] of [['ArrowLeft',1],['ArrowRight',1.5],['End',10],['ArrowUp',10],['ArrowLeft',9.5],['ArrowDown',9],['PageDown',8],['PageUp',9],['Home',1],['ArrowDown',1]]){
   let prevented=false;scoreInput(t).props.onKeyDown({key,currentTarget:{value:'10'},preventDefault(){prevented=true}});t=h.render();assert.equal(prevented,true);assert.equal(scoreInput(t).props.value,value);
  }
  scoreInput(t).props.onKeyDown({key:'ArrowRight',ctrlKey:true,preventDefault(){throw Error('Browser shortcut must remain native')}});t=h.render();assert.equal(scoreInput(t).props.value,1);assert.equal(h.record.completedAt,null);
 });
 test('finish flushes latest text after autosave and double clicks create one final request',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Discussion draft'}});t=h.render();h.tick();await flush();t=h.render();
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Discussion draft'}});t=h.render();h.tick();await flush();t=h.render();
  nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Latest consensus, own assessment'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'7.5'}});t=h.render();let release;h.defer(new Promise(resolve=>release=resolve));const finish=button(t,'End post-interview');finish.props.onClick();finish.props.onClick();t=h.render();assert.ok(button(t,'Submitting…').props.disabled);h.tick();release();await flush();
  assert.equal(h.record.draft.additionalNotes,'Latest consensus, own assessment');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);assert.equal(h.record.draft.score,7.5);
 });
 test('failed finish retains closing text and exposes explicit final retry',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'What happens next?'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'8.5'}});t=h.render();h.fail(true);button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'What happens next?');assert.equal(h.record.completedAt,null);
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'What happens next?'}});t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'8.5'}});t=h.render();h.fail(true);button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'What happens next?');assert.equal(h.record.completedAt,null);
  h.fail(false);button(t,'Retry end post-interview').props.onClick();await flush();assert.equal(h.record.draft.applicantQuestions,'What happens next?');assert.ok(h.record.completedAt);
 });
 test('lost successful response retries the identical final revision and locks without duplicate completion',async()=>{
- const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'10'}});t=h.render();h.loseResponse();button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Your interview could not be saved/);assert.doesNotMatch(text(t),/Response interrupted/);assert.equal(h.record.revision,1);assert.ok(h.record.completedAt);button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();assert.equal(h.record.revision,1);assert.equal(button(t,'End post-interview'),undefined);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);assert.deepEqual(h.calls.filter(c=>c[0]==='save').map(c=>c[1].revision),[0,0]);
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'10'}});t=h.render();h.loseResponse();button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Your interview could not be saved/);assert.doesNotMatch(text(t),/Response interrupted/);assert.equal(h.record.revision,2);assert.ok(h.record.completedAt);button(t,'Retry end post-interview').props.onClick();await flush();t=h.render();assert.equal(h.record.revision,2);assert.equal(button(t,'End post-interview'),undefined);assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);assert.deepEqual(h.calls.filter(c=>c[0]==='save'&&c[1].complete).map(c=>c[1].revision),[1,1]);
 });
 
 
@@ -89,8 +89,8 @@ test('post-interview replaces only the middle, keeps side nodes and notes, and r
  const h = harness(undefined, {context}); h.render(); await flush(); let t = h.render();
  select(t,'Snapshot question'); t=h.render(); edit(t,'Keep my question draft'); t=h.render();
  const side = nodes(t).find(n=>n.props?.id==='interview-completed');
- button(t,'End interview').props.onClick(); t=h.render();
- assert.ok(nodes(t).includes(context)); assert.equal(text(nodes(t).find(n=>n.props?.id==='interview-completed')),text(side));
+ button(t,'End interview').props.onClick(); await flush(); t=h.render();
+ assert.ok(nodes(t).includes(context)); assert.equal(nodes(t).find(n=>n.props?.id==='interview-completed').type,side.type);assert.equal(nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.value,'');assert.match(text(nodes(t).find(n=>n.props?.id==='interview-completed')),/Used · Not marked complete/);
  assert.equal(nodes(t).some(n=>n.props?.['aria-label']==='Available questions'),false);
  assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined);
  nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Can I join a project?'}}); t=h.render();
@@ -102,7 +102,7 @@ test('post-interview replaces only the middle, keeps side nodes and notes, and r
 test('completion stays locked, next failures retry without duplicate requests, and empty queue is explicit', async () => {
  let attempts=0, fail=true, release;
  const h=harness(undefined,{onNextApplicant:async()=>{attempts++;if(fail)throw Error('access');await new Promise(r=>release=r);return false;},onReturnToList(){}});
- h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
+ h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
  button(t,'End post-interview').props.onClick();await flush();t=h.render();assert.match(text(t),/Interview complete/);assert.equal(scoreInput(t),undefined);assert.equal(nodes(t).find(n=>n.type==='fieldset').props.disabled,true);
  button(t,'Next applicant').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
  fail=false;const next=button(t,'Next applicant');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Checking applicants…').props.disabled);release();await flush();t=h.render();
@@ -131,4 +131,51 @@ test('one header save indicator shows pending, failure and acknowledged retry wi
  assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Keep this');
  h.fail(false);button(t,'Retry').props.onClick();await flush();t=h.render();assert.match(text(header()),/All changes saved/);
  assert.deepEqual(h.record.draft.completedQuestionIds,[]);
+});
+
+test('miscellaneous notes occupy one persistent right-panel slot; used questions keep keys without false completion', async () => {
+ const h=harness();h.render();await flush();let t=h.render();
+ const right=()=>nodes(t).find(n=>n.props?.id==='interview-completed');
+ const field=()=>nodes(t).find(n=>n.props?.id==='additional-interview-notes');
+ assert.ok(nodes(right()).includes(field()));const ref=field().props.ref;
+ field().props.onChange({target:{value:'Keep throughout'}});t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'Used, still unfinished');t=h.render();
+ button(t,'End interview').props.onClick();button(t,'End interview').props.onClick();await flush();t=h.render();
+ assert.equal(field().props.ref,ref);assert.equal(field().props.value,'Keep throughout');assert.equal(nodes(t).filter(n=>n.props?.id==='additional-interview-notes').length,1);
+ assert.deepEqual(h.record.draft.completedQuestionIds,[]);assert.match(text(right()),/Used · Not marked complete/);
+ select(t,'Snapshot question');t=h.render();assert.equal(nodes(t).find(n=>n.props?.id==='review-notes-q1').props.value,'Used, still unfinished');assert.match(text(right()),/Club answer keyListen carefully/);
+ assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Post-interview'));assert.equal(h.calls.filter(c=>c[0]==='save').length,1);
+ const reload=harness(structuredClone(h.record));reload.render();await flush();t=reload.render();assert.equal(field().props.value,'Keep throughout');
+});
+
+test('End interview waits for a pending save, preserves late miscellaneous edits and remains active on failure', async () => {
+ const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'First');t=h.render();
+ let release;h.defer(new Promise(r=>release=r));h.tick();t=h.render();button(t,'End interview').props.onClick();t=h.render();
+ assert.equal(nodes(t).some(n=>n.props?.['aria-label']==='Post-interview'),false);
+ nodes(t).find(n=>n.props?.id==='additional-interview-notes').props.onChange({target:{value:'Latest during pending save'}});t=h.render();release();await flush();h.defer(null);t=h.render();
+ assert.equal(h.record.draft.additionalNotes,'Latest during pending save');assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.completedAt,null);
+ const bad=harness();bad.render();await flush();t=bad.render();bad.fail(true);button(t,'End interview').props.onClick();await flush();t=bad.render();assert.ok(button(t,'End interview'));assert.equal(bad.record.draft.postInterview,undefined);assert.match(text(t),/could not be saved/);
+});
+
+test('finish waits for autosave and submits the latest miscellaneous notes exactly once', async () => {
+ const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();await flush();t=h.render();scoreInput(t).props.onChange({currentTarget:{value:'6.5'}});t=h.render();
+ const field=()=>nodes(t).find(n=>n.props?.id==='additional-interview-notes');field().props.onChange({target:{value:'First'}});t=h.render();let release;h.defer(new Promise(r=>release=r));h.tick();t=h.render();
+ field().props.onChange({target:{value:'Latest'}});t=h.render();const finish=button(t,'End post-interview');assert.equal(finish.props.disabled,false);finish.props.onClick();finish.props.onClick();t=h.render();assert.equal(field().props.disabled,true);release();await flush();h.defer(null);t=h.render();
+ assert.equal(h.record.draft.additionalNotes,'Latest');assert.equal(h.calls.filter(c=>c[0]==='save'&&c[1].complete).length,1);assert.ok(h.record.completedAt);
+});
+
+test('desktop renders an inert flight, preserves notes above its stable landing and uses an unscaled 1040ms crossfade',async()=>{
+ const priorWindow=global.window,priorDocument=global.document;
+ global.window={matchMedia:()=>({matches:true,addEventListener(){},removeEventListener(){}}),addEventListener(){},removeEventListener(){}};
+ global.document={activeElement:null};
+ try {
+  const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'Used');t=h.render();
+  nodes(t).find(n=>n.props?.['aria-label']==='Active question').props.ref({animate(){},getBoundingClientRect:()=>({left:300,top:150,width:600,height:400})});
+  button(t,'End interview').props.onClick();await flush();t=h.render();
+  const flight=nodes(t).find(n=>n.props?.className==='oc-question-flight');assert.ok(flight);assert.equal(flight.props['aria-hidden'],'true');assert.equal(flight.props.inert,true);assert.equal(nodes(flight).some(n=>['button','Button','Textarea','input'].includes(n.type)),false);
+  const calls=[],animate=(frames,options)=>{calls.push({frames,options});return{finished:new Promise(()=>{}),cancel(){}};};
+  flight.props.ref({animate});const row=nodes(t).find(n=>n.type==='li'&&n.props?.style?.opacity===0);row.props.ref({animate,getBoundingClientRect:()=>({left:1000,top:330,width:280,height:150})});
+  await flush();assert.equal(calls[0].options.duration,1040);assert.equal(calls[1].options.duration,320);assert.equal(calls[1].options.delay,720);assert.equal(calls[2].options.delay,720);
+  assert.ok(calls[0].frames.every(frame=>!frame.transform.includes('scale')));assert.equal(calls[0].frames.at(-1).transform,'translate(700px,180px)');assert.equal(calls[0].frames.at(-1).width,'280px');assert.deepEqual(calls[1].frames,[{opacity:1},{opacity:0}]);
+  assert.deepEqual(h.record.draft.completedQuestionIds,[]);assert.equal(h.record.draft.score,null);
+ } finally {global.window=priorWindow;global.document=priorDocument;}
 });
