@@ -8,7 +8,7 @@ const nextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   // Native PDF workers resolve the package manifest at runtime, outside the bundle.
-  outputFileTracingIncludes: { "/*": ["./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
+  outputFileTracingIncludes: { "/*": ["./prisma/certs/supabase-root.crt", "./node_modules/pdfjs-dist/package.json", "./node_modules/pdfjs-dist/legacy/build/*.mjs", "./node_modules/pdfjs-dist/cmaps/**", "./node_modules/pdfjs-dist/standard_fonts/**", "./node_modules/.pnpm/@napi-rs+canvas*/**/*"] },
   trailingSlash: false,
   htmlLimitedBots: /.*/,
   images: { formats: ["image/avif", "image/webp"] },

@@ -43,7 +43,7 @@ function ensurePresentation(value: DemoState) {
     club.claimed ??= true
     club.earlyAdopter ??= value.clubs.indexOf(club) < 3
     club.testRequirement ??= "OPTIONAL"
-    for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); round.kitVersion ??= 0 }
+    for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); for (const q of round.interviewKit) q.guidance ??= ""; round.kitVersion ??= 0 }
   }
   for (const student of value.students) {
     if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
@@ -78,6 +78,8 @@ function ensurePresentation(value: DemoState) {
   }
   // Upgrade saved presentations without resetting applications or evaluations.
   value.interviewFoundation ??= { assignments: [], documents: [], annotations: [], history: [], audit: [] };
+  // Missing guidance is a safe legacy default, never the student's current kit.
+  for (const record of value.interviews) for (const q of record.questions || []) q.guidance ??= "";
   if (legacyManager && manager.isOwner && manager.status === "ACTIVE") {
     for (const app of value.applications.filter(a => a.clubId === mii.id && a.studentId !== manager.userId && a.status !== "DRAFTING" && mii.rounds.some(r => r.id === a.roundId && !r.anonymousReview))) {
       if (!value.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === app.roundId && a.memberId === manager.id))
