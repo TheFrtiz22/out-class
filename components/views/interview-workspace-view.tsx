@@ -7,9 +7,10 @@ import { hasPermission } from "@/lib/permissions"
 
 import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { getInterviewWorkspace } from "@/lib/workspace-api"
+import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel } from "@/lib/workspace-api"
+import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
 import { interviewQueue, nextInterviewApplicant } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
@@ -95,7 +96,15 @@ function InterviewSession({
   const [retry, setRetry] = useState(0)
   const [roundId, setRoundId] = useState("")
   const [activeId, setActiveId] = useState("")
-  const [busy, setBusy] = useState(false)
+  const [kitSaving, setBusy] = useState(false)
+  const [advancing, setAdvancing] = useState(false)
+  const busy = kitSaving || advancing
+  const advancingRef = useRef(false)
+  const navigation = useRef(0)
+  const candidateRoom = useRef<HTMLDivElement>(null)
+  const outgoing = useRef<ReturnType<typeof captureInterviewCandidate> | null>(null)
+  const [prepared, setPrepared] = useState<{ applicationId: string; session: Awaited<ReturnType<typeof openInterviewSession>>; panel: Awaited<ReturnType<typeof getInterviewApplicantPanel>> } | null>(null)
+  const [candidateAnnouncement, setCandidateAnnouncement] = useState("")
   const [message, setMessage] = useState("")
   const [failed, setFailed] = useState(false)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -116,6 +125,24 @@ function InterviewSession({
   const handleKitState = useCallback((changed: boolean, pending: boolean) => { setKitDirty(changed); setBusy(pending) }, [])
   const dirty = kitDirty
   const progress = { total: queue.length, completed: queue.filter(app => app.completedRoundIds.includes(roundId)).length }
+  useEffect(() => () => { navigation.current++ }, [])
+  useEffect(() => { navigation.current++ }, [roundId])
+  useLayoutEffect(() => {
+    const stage = candidateRoom.current?.querySelector<HTMLElement>(".oc-interview-columns")
+    if (!prepared || prepared.applicationId !== activeId || !outgoing.current || !stage) return
+    const old = outgoing.current
+    outgoing.current = null
+    const epoch = navigation.current
+    const motion = animateInterviewCandidate(stage, old)
+    void motion.finished.then(() => {
+      if (epoch !== navigation.current) return
+      setCandidateAnnouncement(`${active?.name || "Candidate"} · Interview ready`)
+      candidateRoom.current?.querySelector<HTMLElement>("[data-candidate-focus]")?.focus({ preventScroll: true })
+      advancingRef.current = false
+      setAdvancing(false)
+    })
+    return () => { motion.cancel() }
+  }, [prepared, activeId, active?.name])
   useEffect(() => {
     onLock(dirty || busy, busy)
     return () => onLock(false)
@@ -188,6 +215,8 @@ function InterviewSession({
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
     setActiveId(id)
+    navigation.current++
+    setPrepared(null)
     rememberApplicant(id)
     setMessage("")
     setFailed(false)
@@ -197,24 +226,42 @@ function InterviewSession({
     if (busy || (dirty && !window.confirm("Return to interviews? Unsaved changes will be lost."))) return
     try { sessionStorage.removeItem(recoveryKey) } catch { /* Selection stays local if storage is unavailable. */ }
     setActiveId("")
+    navigation.current++
+    setPrepared(null)
     setMessage("")
   }
   async function nextApplicant() {
     // Recheck membership, assignments, round and own completion at navigation time.
     // Never navigate using the queue cached before this review was submitted.
-    setBusy(true)
+    if (advancingRef.current) return false
+    advancingRef.current = true
+    setAdvancing(true)
+    const epoch = navigation.current
+    let started = false
     try {
       const fresh = await getInterviewWorkspace(membership.clubId)
       const next = fresh.rounds.some(r => r.id === roundId && !r.archived)
         ? nextInterviewApplicant(fresh.applications, roundId, activeId) : null
       if (!next) return false
+      const scope = { clubId: membership.clubId, applicationId: next.id, roundId }
+      // Both actions enforce current access. Keep the submitted candidate visible
+      // until the destination's own draft, snapshot and identity are all ready.
+      const [session, panel] = await Promise.all([openInterviewSession(scope), getInterviewApplicantPanel(scope)])
+      if (epoch !== navigation.current) return false
+      if (session.completedAt) throw new Error("That interview was completed elsewhere. Retry the queue.")
+      const stage = candidateRoom.current?.querySelector<HTMLElement>(".oc-interview-columns")
+      if (stage) outgoing.current = captureInterviewCandidate(stage)
+      setPrepared({ applicationId: next.id, session, panel })
       setData(fresh)
       setActiveId(next.id) // The keyed subtree resets panel, document, questions and history together.
       rememberApplicant(next.id)
       setMessage("")
       setFailed(false)
+      started = !!stage
       return true
-    } finally { setBusy(false) }
+    } finally {
+      if (!started && epoch === navigation.current) { advancingRef.current = false; setAdvancing(false) }
+    }
   }
   if (loading) return <WorkspaceLoading label="Loading authorized candidates…" rows={3} />
   if (loadError || !data)
@@ -282,6 +329,7 @@ function InterviewSession({
       >
         {message}
       </p>
+      <p className="sr-only" role="status" aria-live="polite">{candidateAnnouncement}</p>
       {!active ? (
         <div className="max-w-4xl space-y-3 px-5 py-8">
           <h1 ref={heading} tabIndex={-1} className="text-xl font-medium">Choose an interview</h1>
@@ -298,11 +346,11 @@ function InterviewSession({
           )}
         </div>
       ) : (
-        <div key={active.id} className="oc-interview-candidate">
-          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
+        <div key={active.id} ref={candidateRoom} className="oc-interview-candidate">
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialSession={prepared?.applicationId === active.id ? prepared.session : undefined} advancing={advancing} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
 
 toolbar={() => <><span className="oc-room-brand">OutClass</span><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button><p className="oc-room-context"><span>{membership.club.name}</span><span aria-hidden="true"> / </span><span>{round.name}</span></p></>}
-context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} />}
+context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} initialPanel={prepared?.applicationId === active.id ? prepared.panel : undefined} />}
             onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
               setKitDirty(false)

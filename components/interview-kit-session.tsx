@@ -26,9 +26,13 @@ export function InterviewKitSession({
   onReturnToList,
   context,
   toolbar,
+  initialSession,
+  advancing = false,
 }: {
   context?: ReactNode;
   toolbar?: (completed: boolean) => ReactNode;
+  initialSession?: InterviewSessionData;
+  advancing?: boolean;
   clubId: string;
   applicationId: string;
   roundId: string;
@@ -43,11 +47,11 @@ export function InterviewKitSession({
   onNextApplicant?: () => Promise<boolean>;
   onReturnToList?: () => void;
 }) {
-  const [session, setSession] = useState<InterviewSessionData | null>(null),
+  const [session, setSession] = useState<InterviewSessionData | null>(initialSession || null),
     [draft, setDraft] = useState<InterviewDraft>(
-      structuredClone(emptyInterviewDraft),
+      structuredClone(initialSession?.draft || emptyInterviewDraft),
     ),
-    [saved, setSaved] = useState(""),
+    [saved, setSaved] = useState(initialSession ? JSON.stringify(initialSession.draft) : ""),
     [saving, setSaving] = useState(false),
     [completing, setCompleting] = useState(false),
     [error, setError] = useState(""),
@@ -141,7 +145,7 @@ export function InterviewKitSession({
   useEffect(() => { if ((closing || session?.completedAt) && !ending && !flights.length && (typeof document === "undefined" || document.activeElement !== miscellaneousNotes.current)) { closingHeading.current?.focus({ preventScroll: true }) } }, [closing, session?.completedAt, flights.length, ending]);
   const savingRef = useRef(false),
     mounted = useRef(true),
-    sessionRef = useRef<InterviewSessionData | null>(null);
+    sessionRef = useRef<InterviewSessionData | null>(initialSession || null);
   const draftRef = useRef(draft);
   const pendingSave = useRef<Promise<boolean | undefined> | null>(null);
   const finishingRef = useRef(false);
@@ -156,6 +160,9 @@ export function InterviewKitSession({
   }, []);
   useEffect(() => {
     let current = true;
+    // The queue already authorized and loaded this exact destination. A keyed
+    // subtree owns its state; do not reopen it and overwrite typing after arrival.
+    if (initialSession && retry === 0) return;
     openInterviewSession({ clubId, applicationId, roundId })
       .then((record) => {
         if (current) {
@@ -175,7 +182,7 @@ export function InterviewKitSession({
     return () => {
       current = false;
     };
-  }, [clubId, applicationId, roundId, retry]);
+  }, [clubId, applicationId, roundId, retry, initialSession]);
   useEffect(() => {
     onState(dirty || !!newQuestion.trim(), saving);
     return () => onState(false, false);
@@ -345,16 +352,17 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
-      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End interview"}</Button>}</div>
+      <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className="oc-interview-columns grid items-start">
       {context}
       <div className="oc-question-workspace min-w-0">
+        <div className="oc-candidate-content">
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
-        <div className="oc-question-heading"><h2>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
+        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
         <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Your completed questions · {completed.length}</a>
         {libraryOpen && <section id="interview-bank" aria-label="Round question bank" className="space-y-3 rounded-lg border bg-card p-4">
           {session.instructions && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{session.instructions}</p>}
@@ -378,7 +386,7 @@ export function InterviewKitSession({
         </section> : null}
         {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => setOffScriptOpen(v => !v)}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Input id="new-interview-question" autoFocus maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); }}>Add question</Button><p className="text-xs text-muted-foreground">Add it to your session before leaving. Its private notes autosave.</p></fieldset>}</div>}
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
-          <h2 ref={closingHeading} tabIndex={-1}>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
+          <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="applicant-questions">Questions the applicant asked</label><Textarea id="applicant-questions" rows={4} maxLength={20000} value={draft.applicantQuestions || ""} onChange={e => setDraft(d => ({ ...d, applicantQuestions: e.target.value }))} />
             {!session.completedAt && <div className="oc-score-history"><h3>Your previous five interviews in this round</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <p role="status">Loading your scores…</p> : history.length ? <ul>{history.map(h => <li key={h.id}><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
@@ -389,12 +397,14 @@ export function InterviewKitSession({
           {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || flights.length > 0 || draft.score === null} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={saving || flights.length > 0} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
             {nextError && <p role="alert" className="text-sm text-destructive">{nextError}</p>}
             {noMoreApplicants && <p role="status" className="font-medium">No more applicants</p>}
-            {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Checking applicants…" : noMoreApplicants ? "Check for new assignments" : "Next applicant"}</Button>}
+            {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Loading next candidate…" : noMoreApplicants ? "Check for new assignments" : "Next candidate →"}</Button>}
             {onReturnToList && <Button type="button" variant="outline" disabled={nextBusy} onClick={onReturnToList}>Return to interview list</Button>}
           </div>}
         </section>}
+        </div>
       </div>
       <aside id="interview-completed" tabIndex={-1} aria-label="Your notes and completed questions" className="min-w-0">
+        <div className="oc-candidate-content">
         <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
         <h2>{closing || session.completedAt ? "Your question notes" : "Completed questions"} <span className="oc-completed-count">{reviewed.length}</span></h2>
         <ul>{reviewed.map(q => { const notes = questionNotes(q.id), open = expandedQuestions.includes(q.id), done = completedIds.includes(q.id); return <li key={q.id} style={flights.some(f => f.id === q.id) ? { opacity: 0 } : undefined} ref={el => { if (el) rowNodes.current.set(q.id, el); else rowNodes.current.delete(q.id); }}>
@@ -409,6 +419,7 @@ export function InterviewKitSession({
           </div></div></div>
         </li>; })}</ul>
         {!reviewed.length && <p className="text-sm text-muted-foreground">{closing || session.completedAt ? "No question notes recorded." : "Saved questions appear here."}</p>}
+        </div>
       </aside>
     </div>
     {flights.map(f => <div key={f.id} ref={el => { if (el) flightNodes.current.set(f.id, el); else flightNodes.current.delete(f.id); }} className="oc-question-flight" aria-hidden="true" inert style={{ left: f.from.left, top: f.from.top, width: f.from.width, height: f.from.height }}><div style={{ width: f.from.width }}><p>{f.prompt}</p>{f.notes && <p className="oc-note-preview">{f.notes}</p>}</div></div>)}

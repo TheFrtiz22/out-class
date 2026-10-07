@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FileText, Maximize2, UserRound } from "lucide-react";
 
-export function InterviewApplicantPanel({ clubId, applicationId, roundId }: InterviewScope) {
+export function InterviewApplicantPanel({ clubId, applicationId, roundId, initialPanel }: InterviewScope & { initialPanel?: Awaited<ReturnType<typeof getInterviewApplicantPanel>> }) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
   const { isDemoEnabled } = useDemoMode();
-  const [panel, setPanel] = useState<Awaited<ReturnType<typeof getInterviewApplicantPanel>> | null>(null);
+  const [panel, setPanel] = useState<Awaited<ReturnType<typeof getInterviewApplicantPanel>> | null>(initialPanel || null);
   const [documentId, setDocumentId] = useState("");
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
@@ -29,8 +29,8 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId }: Inte
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
   useEffect(() => {
     let current = true;
-    setLoading(true); setError(""); setResumeError(""); setPanel(null); setDocumentId(""); setImageFailed(false);
-    getInterviewApplicantPanel(scope).then(async value => {
+    setLoading(true); setError(""); setResumeError(""); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
+    (initialPanel && !retry ? Promise.resolve(initialPanel) : getInterviewApplicantPanel(scope)).then(async value => {
       if (!current) return;
       setPanel(value);
       try {
@@ -39,7 +39,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId }: Inte
       } catch { if (current) setResumeError("No interview résumé is available. A private PDF upload is needed."); }
     }).catch(() => { if (current) { setError("Applicant panel unavailable. Your access may have changed."); setOpen(false); } }).finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
-  }, [scope, retry]);
+  }, [scope, retry, initialPanel]);
   useEffect(() => {
     if (!documentId) return;
     const controller = new AbortController(); let objectUrl = "";
@@ -58,6 +58,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId }: Inte
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
   return <aside id="interview-context" className="oc-room-applicant min-w-0" aria-label="Applicant panel">
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading applicant…</p>}
+    <div className="oc-candidate-content">
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
       <div className="oc-applicant-identity">
         {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={72} height={80} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-7" aria-hidden="true" /></div>}
@@ -77,5 +78,6 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId }: Inte
       {resumeError && <p role="status" className="text-xs text-muted-foreground">{resumeError}</p>}
     </>}
     {(error || resumeError) && <Button type="button" variant="outline" size="sm" onClick={() => setRetry(v => v + 1)}>Retry applicant panel</Button>}
+    </div>
   </aside>;
 }

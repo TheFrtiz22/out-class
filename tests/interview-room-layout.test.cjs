@@ -5,16 +5,18 @@ const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.pro
 function harness(){
  const slots=[],effects=[],cleanups=[],storage=new Map();let index=0,calls=0,denied=false;
  const rows=['a','b','c'].map(id=>({id,name:id.toUpperCase(),roundId:'r',assignedRoundIds:['r'],completedRoundIds:[]}));
- let pipeline={rounds:[{id:'r',name:'Round 1',archived:false}],applications:rows};
+ let pipeline={rounds:[{id:'r',name:'Round 1',archived:false}],applications:rows}, deferred=null, sessionDenied=false;
  const depsChanged=(a,b)=>!a||b.some((v,i)=>v!==a[i]);
  const react={useState(v){const i=index++;if(!(i in slots))slots[i]=v;return[slots[i],x=>slots[i]=typeof x==='function'?x(slots[i]):x]},useRef(v){const i=index++;return slots[i]??={current:v}},useCallback(fn,deps){const i=index++;if(!slots[i]||depsChanged(slots[i].deps,deps))slots[i]={fn,deps};return slots[i].fn},useEffect(fn,deps){const i=index++;if(depsChanged(slots[i],deps)){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
+ react.useLayoutEffect=react.useEffect;
  const queue=require('./helpers/demo-harness.cjs').harness().load('lib/interview-queue.ts');
  const mod={exports:{}};
  const code=ts.transpileModule(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  const clear=()=>{};
- new Function('require','module','exports','window','sessionStorage','requestAnimationFrame',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?{getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)}}:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn());
+ const api={getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
+ new Function('require','module','exports','window','sessionStorage','requestAnimationFrame',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn());
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){}};
- return{storage,calls:()=>calls,deny:()=>denied=true,fresh:p=>pipeline=p,rows,render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
+ return{storage,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
 const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
@@ -26,6 +28,12 @@ test('selection controls exist only on the interview list; active and post-inter
  const toolbar=kit(t).props.toolbar(false);assert.match(text(toolbar),/InterviewsMII/);assert.doesNotMatch(text(toolbar),/timer/i);
  assert.equal(text(kit(t).props.toolbar(true)),text(toolbar));
  nodes(toolbar).find(n=>n.type==='Button').props.onClick();t=h.render();assert.ok(nodes(t).find(n=>n.props?.id==='interview-round'));assert.equal(h.storage.size,0);
+});
+test('advancement waits for destination authorization/data, guards duplicate clicks and preserves current screen on denial',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ let release;h.defer(new Promise(r=>release=r));const next=kit(t).props.onNextApplicant;const pending=next();assert.equal(await next(),false);await flush();t=h.render();assert.equal(kit(t).props.applicationId,'a');assert.ok(kit(t).props.advancing);
+ h.denySession(true);release();await assert.rejects(pending,/panel revoked/);t=h.render();assert.equal(kit(t).props.applicationId,'a');assert.equal(kit(t).props.advancing,false);assert.equal(h.storage.get('outclass-interview:club:member'),'\{"roundId":"r","applicationId":"a"\}');
+ h.defer(null);h.denySession(false);assert.equal(await kit(t).props.onNextApplicant(),true);t=h.render();t=h.render();assert.equal(kit(t).props.applicationId,'b');assert.equal(kit(t).props.initialSession.draft.score,null);assert.equal(kit(t).props.initialSession.draft.postInterview,undefined);assert.equal(kit(t).props.context.props.initialPanel.name,'b');
 });
 test('next applicant refreshes assignments, skips completed/revoked rows and changes the keyed session together',async()=>{
  const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
