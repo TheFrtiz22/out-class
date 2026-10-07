@@ -1,6 +1,7 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
+import { assertClubOperational } from "@/lib/club-suspension";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
@@ -29,6 +30,7 @@ export async function getAvailableSlots(clubId: string) {
   // Anyone authenticated can view public slots for a club
   await requireAuth();
 
+  await assertClubOperational(prisma, clubId);
   const slots = await prisma.interviewSlot.findMany({
     where: { clubId, roomId: null, startTime: { gt: new Date() } },
     include: {
@@ -61,6 +63,7 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
         if (!application || application.studentId !== user.id) {
           throw new Error("Unauthorized to book for this application.");
         }
+        await assertClubOperational(tx, application.clubId);
         const slot = await tx.interviewSlot.findUnique({
           where: { id: parsed.slotId }, include: { bookings: true },
         });

@@ -1,5 +1,6 @@
 "use server";
 import { z } from "zod";
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { hasPermission } from "@/lib/permissions";
@@ -41,6 +42,7 @@ export async function saveApplicantObservation(input: unknown) {
   const data = scope.extend({ id: z.string().uuid().optional(), kind: z.enum(["PRO", "CON"]), body: z.string().trim().min(1).max(3000) }).strict().parse(input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, data.clubId);
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
     const { app } = await authorized(tx, data, membership.id);
     // Free text can identify an applicant. Preserve existing observations without exposing them anonymously.
@@ -59,6 +61,7 @@ export async function deleteApplicantObservation(input: unknown) {
   const data = scope.extend({ id: z.string().uuid() }).strict().parse(input);
   const { user, membership } = await requireClubPermission(data.clubId, ["applications.review"]);
   return prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, data.clubId);
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${data.applicationId} FOR UPDATE`;
     const { app } = await authorized(tx, data, membership.id);
     if (app.round.anonymousReview) throw new Error("Pros and Cons are withheld during anonymous review.");
@@ -79,6 +82,7 @@ export async function saveApplicantDisplayConfiguration(input: unknown) {
   const data = z.object({ clubId: z.string().uuid(), roundId: z.string().uuid(), version: z.number().int().min(0), config: displayConfigSchema }).strict().parse(input);
   const { user } = await requireClubPermission(data.clubId, ["interviews.manage"]);
   return prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, data.clubId);
     const changed = await tx.pipelineRound.updateMany({ where: { id: data.roundId, clubId: data.clubId, displayVersion: data.version }, data: { applicantDisplay: data.config, displayVersion: { increment: 1 } } });
     if (changed.count !== 1) throw new Error("Configuration changed or round unavailable. Reload before saving.");
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.roundId, action: "applicant.display.configure" } });

@@ -27,6 +27,7 @@ test('platform onboarding respects the actual allowlist, grant, MFA and imperson
   let grant=true,aal='aal2',impersonating=false,writes=0;
   try {
     const load=loader({
+      "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
       '@/utils/auth': {requireAuth:async()=>({user:{id:actor,role:'CLUB_ADMIN'}})},
       '@/utils/prisma': {prisma:{platformAdmin:{findUnique:async()=>({active:grant})},$transaction:async()=>{writes++;throw Error('Unexpected transaction');}}},
       '@/utils/supabase/server': {createClient:async()=>({auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:aal}})}}})},

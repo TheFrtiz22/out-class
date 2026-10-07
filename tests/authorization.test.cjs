@@ -53,6 +53,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
     "next/headers": { cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
     "./prisma": {
       prisma: {
+        $queryRaw: async () => [],
         user: { findUnique: async () => null, upsert: async () => ({ id: "actor", role: "CLUB_ADMIN" }) },
         clubMember: {
           findUnique: async ({ where }) => {
@@ -80,6 +81,7 @@ test("platform access requires independent server allowlist, database grant, and
   let grant = null,
     aal = "aal1"
   const guard = load("utils/platform-admin.ts", {
+    "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
     "@/utils/auth": { requireAuth: async () => ({ user: { id: "actor", role: "CLUB_ADMIN" } }) },
     "@/utils/prisma": { prisma: { platformAdmin: { findUnique: async () => grant } } },
     "@/utils/supabase/server": {

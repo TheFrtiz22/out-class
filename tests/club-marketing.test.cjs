@@ -30,7 +30,7 @@ test('publishing checks club permission and atomically saves every profile field
   let stored, audit, allowed = false, writes = 0
   const actions = load('actions/club-workspace.ts', {
     '@/utils/auth': { requireClubPermission: async (id, p) => { assert.equal(id, clubId); assert.deepEqual(p, ['club.settings']); if (!allowed) throw new Error('Denied'); return { user: { id: 'editor' } } } },
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ club: { update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ $queryRaw: async()=>[], club: { update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
   })
   await assert.rejects(actions.updateClubSettings({ clubId, ...draft() }), /Denied/)
   assert.equal(writes, 0)

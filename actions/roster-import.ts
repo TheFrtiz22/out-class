@@ -1,5 +1,7 @@
 "use server";
 
+import { lockOperationalClub } from "@/lib/club-suspension";
+
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { RosterImportRow, RosterRowStatus } from "@prisma/client";
@@ -10,7 +12,7 @@ import { onboardingIdentifierPattern } from "@/lib/platform-organization-onboard
 import { parseRosterCsv, validateRosterRows, rosterSummary, ROSTER_MAX_BYTES, ROSTER_MAX_ROWS, type RosterInputRow, type RosterRow } from "@/lib/roster-csv";
 
 async function authorize(tx: AppTransactionClient, clubId: string, userId: string) {
-  await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+  await lockOperationalClub(tx, clubId);
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
   const actor = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   if (!actor || actor.disabledAt || !hasPermission(member, "members.manage")) throw new Error("Roster upload requires member-management access.");

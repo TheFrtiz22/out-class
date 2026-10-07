@@ -1,5 +1,7 @@
 "use server";
 
+import { lockOperationalClub } from "@/lib/club-suspension";
+
 import { testRequirements } from "@/lib/test-scores";
 import {
   anonymousApplication,
@@ -13,7 +15,7 @@ import { revalidatePath } from "next/cache";
 
 export async function getClubPipeline(clubId: string) {
   // Only members can view the pipeline
-  const { membership } = await requireClubPermission(clubId, []);
+  const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
   if (
     !hasPermission(membership, "applicants.identify") &&
     !hasPermission(membership, "applications.review")
@@ -72,7 +74,7 @@ export async function moveApplicantRound(
 
   const application = await prisma.$transaction(async (tx) => {
     // Serialize progression with pipeline reordering/archive.
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, parsed.clubId);
     const round = await tx.pipelineRound.findFirst({
       where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
@@ -147,6 +149,7 @@ export async function setApplicationStatus(
   ]);
 
   const application = await prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, parsed.clubId);
     const result = await tx.application.updateMany({
       where: {
         id: parsed.applicationId,
@@ -189,7 +192,7 @@ export async function revealApplicantIdentity(
 ) {
   z.string().uuid().parse(applicationId);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
-  const { user } = await requireClubPermission(clubId, ["applicants.identify"]);
+  const { user } = await requireClubPermission(clubId, ["applicants.identify"], { allowSuspendedRead: true });
   return prisma.$transaction(async (tx) => {
     const application = await tx.application.findFirst({
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
@@ -227,7 +230,7 @@ export async function setRoundAnonymousReview(
     "applicants.identify",
   ]);
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     const result = await tx.pipelineRound.updateMany({
       where: { id: roundId, clubId, archivedAt: null },
       data: { anonymousReview: enabled },
@@ -254,6 +257,7 @@ export async function setClubTestRequirement(
   const value = z.enum(testRequirements).parse(requirement);
   const { user } = await requireClubPermission(clubId, ["recruitment.manage"]);
   return prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, clubId);
     await tx.club.update({
       where: { id: clubId },
       data: { testRequirement: value },
@@ -285,6 +289,7 @@ export async function saveAnonymousReviewContent(
     "applicants.identify",
   ]);
   return prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, clubId);
     const application = await tx.application.findFirst({
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
       include: {

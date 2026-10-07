@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/product/page-header";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { redirect } from "next/navigation";
@@ -11,9 +12,9 @@ export default async function Page() {
   }
   return (
     <main data-workspace-detail className="mx-auto max-w-4xl space-y-6 px-5 py-10">
-      <a className="underline" href="/platform">
+      <Link className="underline" href="/platform">
         Platform administration
-      </a>
+      </Link>
       <PageHeader eyebrow="OutClass · Administration" title="Club claims" illustration={{ variant: "rotunda", treatment: "quiet", accent: false }} />
       <ClaimReview initial={await listClubClaims("PENDING")} />
     </main>

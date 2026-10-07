@@ -1,4 +1,5 @@
 "use server";
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
@@ -28,7 +29,7 @@ const eventSelect = {
   isPublic: true,
   audience: true,
   revision: true,
-  club: { select: { name: true } },
+  club: { select: { name: true, suspendedAt: true } },
   publication: true,
   _count: { select: { rsvps: true } },
 } as const;
@@ -95,6 +96,7 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
   const f = eventFiltersSchema.parse(input),
     range = eventDateWindow(f.period, f.date);
   const where: Prisma.MeetingWhereInput = {
+    club: { is: { suspendedAt: null } },
     audience: "RECRUITMENT",
     isPublic: true,
     publication: {
@@ -151,6 +153,7 @@ export async function getPublicCorkboard(input: EventFilters = {}) {
     prisma.meeting.count({ where }),
     prisma.club.findMany({
       where: {
+        suspendedAt: null,
         events: {
           some: {
             isPublic: true,
@@ -193,6 +196,7 @@ export async function saveCampusEvent(input: unknown) {
   const d = eventEditorSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, d.clubId);
     let id = d.id;
     const content = {
       title: d.title,
@@ -260,6 +264,7 @@ export async function commandCampusEvent(input: unknown) {
   const d = eventCommandSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, d.clubId);
     const e = await locked(tx, d.eventId, d.clubId, d.revision),
       p = e.publication!;
     if (d.command === "SUBMIT") {
@@ -441,6 +446,8 @@ export async function setCampusEventRsvp(input: unknown) {
       .parse(input),
     { user } = await requireAuth();
   const result = await prisma.$transaction(async (tx) => {
+    const scope = await tx.meeting.findUniqueOrThrow({ where: { id: d.eventId }, select: { clubId: true } });
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${scope.clubId} FOR SHARE`;
     const e = await locked(tx, d.eventId),
       existing = await tx.eventRsvp.findUnique({
         where: { eventId_userId: { eventId: d.eventId, userId: user.id } },
@@ -534,6 +541,7 @@ export async function getMyCampusEventRsvps() {
       eventId: true,
       event: {
         select: {
+          club: { select: { suspendedAt: true } },
           title: true,
           date: true,
           endDate: true,
@@ -552,4 +560,13 @@ export async function getMyCampusEventRsvps() {
     title: eventIsPublished(r.event) ? r.event.title : "Event unavailable",
     available: eventIsPublished(r.event),
   }));
+}
+
+/** Elevated administrative visibility; public projections still require publication. */
+export async function listAdminCampusEvents(input: unknown) {
+  const actor = await requirePlatformAdmin();
+  const f = z.object({ query: z.string().trim().max(200).default(""), status: z.enum(["", "DRAFT", "PENDING", "PUBLISHED", "REJECTED", "CANCELLED", "ARCHIVED"]).default("") }).strict().parse(input);
+  const events = await prisma.meeting.findMany({ where: { publication: { is: f.status ? { status: f.status } : {} }, ...(f.query ? { OR: [{ title: { contains: f.query, mode: "insensitive" } }, { club: { name: { contains: f.query, mode: "insensitive" } } }] } : {}) }, select: eventSelect, orderBy: [{ date: "desc" }, { id: "asc" }], take: 100 });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.corkboard.read", targetId: "events", details: { result: "success", status: f.status } } });
+  return events.map(managed);
 }

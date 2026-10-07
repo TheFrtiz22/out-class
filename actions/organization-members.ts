@@ -1,4 +1,6 @@
 "use server";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
 import { clubPermissions, hasPermission } from "@/lib/permissions";
@@ -53,7 +55,7 @@ export async function setInterviewPanelAssignment(input: unknown) {
 }
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
   if (lock) {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
   }
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });

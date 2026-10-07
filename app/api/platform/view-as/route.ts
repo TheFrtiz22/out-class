@@ -1,3 +1,4 @@
+import { sameOriginRequest } from "@/lib/request-origin";
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
@@ -18,7 +19,7 @@ const startSchema = z.object({
   confirmation: z.literal("LOG IN AS"),
 });
 export async function POST(request: NextRequest) {
-  if (request.headers.get("origin") !== request.nextUrl.origin)
+  if (!sameOriginRequest(request))
     return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
   const input = await request.json().catch(() => null),
     jar = await cookies();

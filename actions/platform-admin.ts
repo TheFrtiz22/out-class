@@ -60,13 +60,17 @@ export async function readPlatformResource(
                   { email: text },
                   { studentProfile: { firstName: text } },
                   { studentProfile: { lastName: text } },
+                  { memberships: { some: { club: { name: text } } } },
                 ],
               }
             : {}),
           ...(f.userId ? { id: f.userId } : {}),
-          ...(f.status
-            ? { disabledAt: f.status === "ACTIVE" ? null : { not: null } }
-            : {}),
+          ...(f.status === "ACTIVE" ? { disabledAt: null } : f.status === "SUSPENDED" ? { disabledAt: { not: null } }
+            : f.status === "INCOMPLETE" ? { studentProfile: { is: null } }
+            : f.status === "ADMIN" ? { id: { in: (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(v => v.trim()).filter(Boolean) }, platformAdmin: { is: { active: true } } }
+            : f.status === "LEADER" ? { memberships: { some: { status: "ACTIVE", OR: [{ isOwner: true }, { permissions: { isEmpty: false } }] } } }
+            : f.status === "MEMBER" ? { memberships: { some: { status: "ACTIVE" } } }
+            : f.status === "STUDENT" ? { role: "STUDENT" } : {}),
           ...(dates ? { createdAt: dates } : {}),
         },
         select: { id: true, email: true, disabledAt: true, createdAt: true },
@@ -87,10 +91,13 @@ export async function readPlatformResource(
                 ],
               }
             : {}),
-          ...(f.status
-            ? { claimedAt: f.status === "CLAIMED" ? { not: null } : null }
-            : {}),
+          ...(f.status === "SUSPENDED" ? { suspendedAt: { not: null } }
+            : f.status === "ACTIVE" ? { suspendedAt: null, claimedAt: { not: null } }
+            : f.status === "CLAIMED" ? { claimedAt: { not: null } }
+            : f.status === "UNCLAIMED" ? { claimedAt: null, invitations: { none: { status: "PENDING", expiresAt: { gt: new Date() } } } }
+            : f.status === "INVITED" ? { claimedAt: null, invitations: { some: { status: "PENDING", expiresAt: { gt: new Date() } } } } : {}),
         },
+        include: { _count: { select: { invitations: { where: { status: "PENDING", expiresAt: { gt: new Date() } } } } } },
         orderBy: [{ name: "asc" }, { id: "asc" }],
       });
     case "claims":
@@ -775,15 +782,18 @@ export async function inspectPlatformUser(userId: string, reason: string) {
 export async function inspectPlatformRecord(
   resource: PlatformResource,
   recordId: string,
+  reason?: string,
 ) {
   const actor = await requirePlatformAdmin();
   resources.parse(resource);
   id.parse(recordId);
+  if (reason !== undefined) z.string().trim().min(10).max(1000).parse(reason);
   await prisma.auditLog.create({
     data: {
       actorId: actor.id,
       action: "platform.record.inspect",
       targetId: recordId,
+      reason,
       details: { resource },
     },
   });

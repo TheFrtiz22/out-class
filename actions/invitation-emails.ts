@@ -1,5 +1,7 @@
 "use server";
 
+import { lockOperationalClub } from "@/lib/club-suspension";
+
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -15,7 +17,7 @@ export async function sendRosterInvitations(importId: string) {
   invitationEmailConfig();
   const result = await prisma.$transaction(async tx => {
     const record = await tx.rosterImport.findUniqueOrThrow({ where: { id: importId } });
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${record.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, record.clubId);
     await deliveryActor(tx, record.clubId, user.id);
     if (record.status !== 'COMPLETED') throw new Error('Complete and review the import before sending invitations.');
     const rows = await tx.rosterImportRow.findMany({ where: { importId, clubId: record.clubId, status: 'INVITATION_CREATED', invitationId: { not: null } } });
@@ -32,7 +34,7 @@ export async function resendOrganizationInvitation(clubId: string, invitationId:
   const { user } = await requireAuth();
   invitationEmailConfig();
   const result = await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     const result = await enqueueInvitationEmail(tx, invitationId, clubId, user.id, randomUUID());
     if (result.queued) await tx.auditLog.create({ data: { actorId: user.id, clubId, targetId: invitationId, action: 'club.invite.resend.request' } });
     return result;
@@ -46,7 +48,7 @@ export async function deliverOrganizationInvitations(clubId: string) {
   const { user } = await requireAuth();
   invitationEmailConfig();
   await prisma.$transaction(async tx => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     await deliveryActor(tx, clubId, user.id);
   });
   return processInvitationEmails(clubId);

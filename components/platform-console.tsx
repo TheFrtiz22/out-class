@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { notifySupportSessionChanged } from "@/components/support-session-sync";
 import { PlatformOrganizationOnboarding } from "@/components/platform-organization-onboarding";
 import { useEffect, useState } from "react";
@@ -448,12 +449,12 @@ export function PlatformConsole() {
                 </Button>
               )}
               {resource === "claims" && (
-                <a
+                <Link
                   className="self-center text-sm underline"
                   href="/platform/claims"
                 >
                   Review claim
-                </a>
+                </Link>
               )}
             </li>
           ))}

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { notifySupportSessionChanged } from "@/components/support-session-sync";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -38,9 +39,9 @@ export function PlatformViewBanner({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <a href="/platform/view-as" className="self-center text-sm underline">
+          <Link href="/platform/view-as" className="self-center text-sm underline">
             View session
-          </a>
+          </Link>
           <Button
             disabled={busy}
             variant="outline"
@@ -62,7 +63,7 @@ export function PlatformViewBanner({
               }
             }}
           >
-            {busy ? "Exiting…" : "Exit impersonation"}
+            {busy ? "Exiting…" : "Return to Admin"}
           </Button>
         </div>
         {error && (

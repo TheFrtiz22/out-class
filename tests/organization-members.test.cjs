@@ -11,7 +11,7 @@ const member=(id,role='MEMBER')=>({id,userId:id,clubId,accessRole:role,isOwner:r
 function harness(actorRole='OWNER',targetRole='MEMBER'){
  const state={members:[member(actorId,actorRole),member(memberId,targetRole)],invitation:{id:inviteId,clubId,status:'PENDING',requestedRole:'MEMBER',permissions:[],expiresAt:new Date(Date.now()+86400000),email:'member@virginia.edu'},deliveries:[],audits:[],reads:[],locks:0,failAudit:false};
  const tx={
-  $queryRaw:async()=>{state.locks++;},
+  $queryRaw:async()=>{state.locks++;return [];},
   club:{findUnique:async()=>({invitationEmailEnabled:true}),findUniqueOrThrow:async()=>({schoolId:'school-uva'})},
   schoolIdentifierType:{findMany:async args=>{state.reads.push(args);return[];}},
   user:{findUnique:async()=>({disabledAt:null}),findUniqueOrThrow:async({where})=>state.members.find(m=>m.userId===where.id).user},

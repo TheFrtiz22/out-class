@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     const read = () =>
       prisma.meeting.findUnique({
         where: { id: eventId },
-        include: { publication: { include: { flyer: true } } },
+        include: { club: { select: { suspendedAt: true } }, publication: { include: { flyer: true } } },
       });
     const e = await read();
     if (!e?.publication?.flyer || e.revision !== revision)
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
       const m = await prisma.clubMember.findUnique({
         where: { userId_clubId: { userId: user.id, clubId: e.clubId } },
       });
-      if (!hasPermission(m, "meetings.manage")) await requirePlatformAdmin();
+      if (e.club.suspendedAt || !hasPermission(m, "meetings.manage")) await requirePlatformAdmin();
       await auditSupportAction(
         "platform.impersonation.event-flyer-read",
         eventId,
@@ -57,6 +57,7 @@ export async function GET(request: Request) {
       (!preview && !eventIsPublished(current))
     )
       return new Response("Not found", { status: 404, headers });
+    if (preview && current.club.suspendedAt) await requirePlatformAdmin();
     return new Response(await data.arrayBuffer(), {
       headers: {
         ...headers,

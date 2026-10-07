@@ -3,23 +3,20 @@ import { PageHeader } from "@/components/product/page-header"
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useState } from "react"
-import { createClient } from "@/utils/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 export default function PlatformLogin() {
-  const [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
+  const [password, setPassword] = useState(""),
     [code, setCode] = useState(""),
     [factor, setFactor] = useState(""),
     [qr, setQr] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false)
-  const { isImpersonating } = useAuth()
+  const { user, loading, isImpersonating } = useAuth()
   const demo = useDemoMode()
-  const client = createClient()
   async function run(fn: () => Promise<void>) {
-    if (isImpersonating) return
+  if (isImpersonating) return
     setBusy(true)
     setMessage("")
     try {
@@ -30,6 +27,8 @@ export default function PlatformLogin() {
       setBusy(false)
     }
   }
+    if (loading) return <main className="p-8" role="status">Checking your sign-in…</main>
+  if (!user) return <main className="mx-auto max-w-lg space-y-5 p-8"><PageHeader title="Sign in before entering Admin" description="Use your normal OutClass account first, then verify your password and authenticator for Admin." /><Link className="underline" href="/?view=auth&next=%2Fplatform">Sign in to OutClass</Link></main>
   if (isImpersonating) return <main className="p-8">Exit impersonation above to restore platform administration.</main>
   if (demo.isDemoEnabled)
     return (
@@ -44,8 +43,9 @@ export default function PlatformLogin() {
         Back to OutClass
       </Link>
       <PageHeader title="Platform administrator sign-in" illustration={{ variant: "columns", treatment: "quiet", accent: false }} />
+      <p className="text-sm font-semibold">Re-authenticating {user.email}</p>
       <p>
-        Requires a provisioned platform grant, server allowlist, and authenticator verification.
+        Verify your current account with your password and authenticator. Admin elevation expires after 30 minutes. A provisioned platform grant and server allowlist are required.
         Club ownership does not grant access.
       </p>
       <form
@@ -53,42 +53,19 @@ export default function PlatformLogin() {
         onSubmit={(e) => {
           e.preventDefault()
           void run(async () => {
-            if (!factor) {
-              const signed = await client.auth.signInWithPassword({ email, password })
-              if (signed.error) throw signed.error
-              const factors = await client.auth.mfa.listFactors()
-              if (factors.error) throw factors.error
-              const existing = factors.data.totp.find((f) => f.status === "verified")
-              if (existing) setFactor(existing.id)
-              else {
-                const enrolled = await client.auth.mfa.enroll({
-                  factorType: "totp",
-                  friendlyName: "OutClass platform",
-                })
-                if (enrolled.error) throw enrolled.error
-                setFactor(enrolled.data.id)
-                setQr(enrolled.data.totp.qr_code)
-              }
-            } else {
-              const challenge = await client.auth.mfa.challengeAndVerify({ factorId: factor, code })
-              if (challenge.error) throw challenge.error
-              window.location.assign("/platform")
-            }
+            const response = await fetch("/api/platform/elevation", {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(factor ? { action: "verify", code } : { action: "password", password }),
+            })
+            const result = await response.json()
+            if (!response.ok) throw Error(result.error || "Could not authenticate.")
+            if (result.step === "mfa") { setFactor("challenge"); setPassword(""); setQr(result.qr || "") }
+            else window.location.assign("/platform")
           })
         }}
       >
         {!factor ? (
           <>
-            <label className="block">
-              UVA email
-              <Input
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
             <label className="block">
               Password
               <Input
@@ -121,7 +98,7 @@ export default function PlatformLogin() {
         <Button disabled={busy}>{factor ? "Verify and enter" : "Continue securely"}</Button>
       </form>
       {!factor && <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Forgot password?</Link>}
-      <p role="alert">{message}</p>
+      <p role="alert">{message}</p>{factor && <Button variant="outline" disabled={busy} onClick={() => { setFactor(""); setCode(""); setQr(""); setMessage("") }}>Start again</Button>}
     </main>
   )
 }

@@ -13,7 +13,7 @@ function load(file, prisma, role = async () => ({})) {
   return mod.exports
 }
 test('legacy event reads expose public recruitment metadata only', async () => {
-  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,isPublic:true,audience:'RECRUITMENT',OR:[{publication:{is:null}},{publication:{is:{status:'PUBLISHED'}}}]});assert.equal(select.resources,undefined);return []}}})
+  const api=load('actions/events.ts',{meeting:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,club:{is:{suspendedAt:null}},isPublic:true,audience:'RECRUITMENT',OR:[{publication:{is:null}},{publication:{is:{status:'PUBLISHED'}}}]});assert.equal(select.resources,undefined);return []}}})
   assert.deepEqual(await api.getClubEvents(clubId),{events:[]})
 })
 test('legacy static attendance endpoints fail closed without a current token',async()=>{
@@ -23,7 +23,7 @@ test('legacy static attendance endpoints fail closed without a current token',as
 function bookingApi(overrides = {}, status = "INTERVIEWING") {
   const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), capacity: 1, bookings: [], ...overrides }
   let writes = 0
-  const tx = { application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
+  const tx = { $queryRaw:async()=>[], application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
   return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'Serializable'); return fn(tx) } }), writes: () => writes }
 }
 test('booking rejects foreign clubs, past slots, and full slots without writes', async () => {
@@ -43,7 +43,7 @@ test('booking retries are idempotent and normal bookings succeed', async () => {
   assert.equal(second.writes(), 1)
 })
 test('available slots expose counts without leaking applicant identifiers', async () => {
-  const api = load('actions/scheduling.ts', { interviewSlot: { findMany: async ({ include }) => { assert.deepEqual(include, { _count: { select: { bookings: true } } }); return [{ capacity: 1, _count: { bookings: 0 } }, { capacity: 1, _count: { bookings: 1 } }] } } })
+  const api = load('actions/scheduling.ts', { $queryRaw:async()=>[], interviewSlot: { findMany: async ({ include }) => { assert.deepEqual(include, { _count: { select: { bookings: true } } }); return [{ capacity: 1, _count: { bookings: 0 } }, { capacity: 1, _count: { bookings: 1 } }] } } })
   assert.equal((await api.getAvailableSlots(clubId)).slots.length, 1)
 })
 test('interview blocks reject reversed dates before writing', async () => {

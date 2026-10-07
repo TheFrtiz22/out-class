@@ -1,5 +1,7 @@
 "use server";
 
+import { lockOperationalClub } from "@/lib/club-suspension";
+
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -47,7 +49,7 @@ export async function inviteClubManager(
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
     // Serialize grants/revocations/ownership changes on the club, including last-owner checks.
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const actor = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
     });
@@ -91,7 +93,7 @@ export async function acceptClubInvitation(invitationId: string) {
       const { acceptIdentityInvitationInTransaction } = await import("@/utils/club-onboarding");
       return acceptIdentityInvitationInTransaction(tx, id, account);
     }
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${hint.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, hint.clubId);
     const invitation = await tx.clubInvitation.findUnique({ where: { id } });
     if (
       !invitation ||
@@ -167,7 +169,7 @@ export async function updateClubAccess(input: {
     .strict().parse(input);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const actor = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
     });
@@ -240,7 +242,7 @@ export async function revokeClubInvitation(
   z.string().uuid().parse(clubId); z.string().uuid().parse(invitationId);
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
     if (!hasPermission(actor, "leaders.manage")) throw new Error("Access denied.");
     const invitation = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
@@ -282,7 +284,7 @@ export async function addClubMember(clubId: string, email: string) {
     "members.manage",
   ]);
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, parsed.clubId);
     const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId: parsed.clubId } } });
     if (!hasPermission(actor, "members.manage")) throw new Error("Access denied.");
     const person = await tx.user.findUnique({ where: { email: parsed.email } });
@@ -307,7 +309,7 @@ export async function addClubMember(clubId: string, email: string) {
 export async function removeClubMember(clubId: string, memberId: string) {
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     const actor = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId } },
     });
@@ -356,7 +358,7 @@ export async function declineClubInvitation(invitationId: string) {
       await tx.auditLog.create({ data: { actorId: user.id, action: "club.invite.decline", targetId: id, clubId: invitation.clubId } });
       return;
     }
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${hint.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, hint.clubId);
     const result = await tx.clubInvitation.updateMany({
       where: {
         id,

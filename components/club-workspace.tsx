@@ -64,8 +64,9 @@ export function ClubWorkspace({
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
-  const membershipKey = membership ? `${membership.id}:${membership.status}:${membership.accessRole}:${membership.isOwner}:${membership.permissions.join(",")}:${membership.interviewOffices?.join(",") ?? ""}:${membership.club.pipelineVersion}:${membership.club.applicationVersion}` : "";
-  const canLoadWorkspace = !!membership;
+  const suspended = !demo.isDemoEnabled && !!membership?.club.suspendedAt;
+  const membershipKey = membership ? `${membership.id}:${membership.status}:${membership.accessRole}:${membership.isOwner}:${membership.permissions.join(",")}:${membership.interviewOffices?.join(",") ?? ""}:${membership.club.pipelineVersion}:${membership.club.applicationVersion}:${membership.club.suspendedAt ?? ""}` : "";
+  const canLoadWorkspace = !!membership && !suspended;
   // Resource state belongs to this mounted workspace, never a module/global cache.
   // Account, grant or privacy changes immediately hide prior resources.
   const scope = `${demo.isDemoEnabled ? "demo" : "live"}:${user?.id}:${clubId}:${membershipKey}:${privacyRevision}`;
@@ -124,6 +125,7 @@ export function ClubWorkspace({
     scope,
   ]);
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
+  if (suspended) return <main className="mx-auto max-w-2xl p-8"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></main>;
   const manager = !!membership && hasWorkspace(membership);
   const mode = section === "recruitment" ? "recruiting" : "club";
   const active = mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;

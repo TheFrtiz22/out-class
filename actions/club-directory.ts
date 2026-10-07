@@ -1,4 +1,5 @@
 "use server";
+import { assertClubOperational } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import type { Prisma } from "@prisma/client";
@@ -9,6 +10,7 @@ import type { DirectoryClub } from "@/lib/club-directory";
 
 // Explicit public fields only: no applicants, emails, memberships, or evaluations.
 const publicFields = {
+  suspendedAt: true,
   applicationOpen: true,
   applicationDeadline: true,
   marketing: true,
@@ -90,7 +92,7 @@ function present(club: PublicClubRecord): DirectoryClub {
     timeCommitment: null,
     source: "database",
     applicationAvailable:
-      club.pipelineRounds.length > 0 && applicationAvailability(club),
+      !club.suspendedAt && club.pipelineRounds.length > 0 && applicationAvailability(club),
     applicationDeadline: club.applicationDeadline?.toISOString() ?? null,
     rounds: club.pipelineRounds,
     requirements: club.questions.map((question) => question.prompt),
@@ -175,6 +177,7 @@ export async function startClubApplication(clubId: string) {
       select: { id: true },
     });
     if (existing) return { applicationId: existing.id };
+    await assertClubOperational(tx, clubId);
     const club = await tx.club.findUnique({
       where: { id: clubId },
       select: { applicationOpen: true, applicationDeadline: true },

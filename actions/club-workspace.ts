@@ -1,4 +1,6 @@
 "use server";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { clubProfileSchema } from "@/lib/club-marketing";
 import { z } from "zod";
@@ -15,6 +17,7 @@ export async function updateClubSettings(input: {
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, ...fields } = data;
   const result = await prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, data.clubId);
     await tx.club.update({ where: { id: clubId }, data: fields });
     await tx.auditLog.create({
       data: {
@@ -62,7 +65,7 @@ export async function requestClubClaim(clubId: string, explanation: string) {
   if (!(await prisma.club.findUnique({ where: { id: clubId } })))
     throw new Error("Club unavailable.");
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const club = await tx.club.findUnique({ where: { id: data.clubId } });
     if (
       !club ||

@@ -1,4 +1,6 @@
 "use server";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { auditSupportAction } from "@/utils/support-audit";
 import { randomUUID } from "node:crypto";
@@ -73,7 +75,7 @@ async function currentMember(
   userId: string,
   manage = false,
 ) {
-  await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${clubId} FOR UPDATE`;
+  await lockOperationalClub(tx, clubId);
   const member = await tx.clubMember.findUnique({
     where: { userId_clubId: { clubId, userId } },
   });
@@ -254,7 +256,7 @@ export async function updateTaskMember(input: {
     .parse(input);
   const { user } = await requireClubPermission(data.clubId, ["members.manage"]);
   return prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const manager = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: data.clubId } },
     });

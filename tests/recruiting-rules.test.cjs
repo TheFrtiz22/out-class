@@ -37,7 +37,7 @@ test('preview fingerprint captures scores, rules, requirements and eligible coho
 })
 function harness(permissions=['recruitment.manage','applications.review','decisions.manage','applicants.identify']) {
  const calls=[], state={rule:{roundId,...thresholds,revision:1},anonymousReview:true,requirement:'BOTH',apps:[{...candidate,gpa:3}],flags:[],foreign:false}
- const prisma={
+ const prisma={ $queryRaw: async () => [],
   pipelineRound:{findFirst:async({where})=>{assert.deepEqual(where,{id:roundId,clubId,archivedAt:null});return state.foreign?null:{id:roundId,anonymousReview:state.anonymousReview,screeningRule:state.rule,club:{testRequirement:state.requirement}}}},
   application:{findMany:async({where,select})=>{assert.deepEqual(where,{clubId,roundId,status:{in:['SUBMITTED','IN_REVIEW','INTERVIEWING']}});assert.deepEqual(select.student.select.studentProfile.select,{gpa:true,satScore:true,actScore:true});return state.apps.map(app=>({id:app.id,status:app.status,student:{studentProfile:app}}))}},
   recruitingRule:{update:async({data})=>{state.rule={...state.rule,...data};return state.rule},create:async({data})=>{state.rule=data;return data}},

@@ -14,7 +14,7 @@ test('member management uses real migrated constraints, atomic transfer, queued 
  const update=async(table,id,data)=>{const entries=Object.entries(data);const values=entries.map(([key,value])=>key==='permissions'?'{'+value.join(',')+'}':value);return one(`UPDATE "${table}" SET ${entries.map(([key],i)=>`"${key}"=$${i+2}`).join(',')} WHERE id=$1 RETURNING *`,[id,...values]);};
  const tx={
   club:{findUnique:async()=>({invitationEmailEnabled:true})},
-  $queryRaw:async(_strings,club)=>(await db.query('SELECT id FROM "Club" WHERE id=$1 FOR UPDATE',[club])).rows,
+  $queryRaw:async(strings,...values)=>(await db.query(strings.reduce((sql,part,i)=>sql+(i?'$'+i:'')+part,''),values)).rows,
   user:{findUnique:async({where})=>one('SELECT * FROM "User" WHERE id=$1',[where.id]),findUniqueOrThrow:async({where})=>one('SELECT * FROM "User" WHERE id=$1',[where.id])},
   clubMember:{
    findUnique:async({where})=>one('SELECT * FROM "ClubMember" WHERE "userId"=$1 AND "clubId"=$2',[where.userId_clubId.userId,where.userId_clubId.clubId]),
