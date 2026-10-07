@@ -22,24 +22,24 @@ const edit=(tree,value)=>nodes(tree).find(n=>n.props?.id==='active-notes-q1').pr
 test('completion requires acknowledged Save and close; failed text stays open with retry',async()=>{
  const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'Private answer');t=h.render()
  assert.deepEqual(h.record.draft.completedQuestionIds,[])
- h.fail(true);button(t,'Save and close').props.onClick();await flush();t=h.render()
+ h.fail(true);button(t,'Save & close').props.onClick();await flush();t=h.render()
  assert.match(text(t),/Your interview could not be saved/);assert.doesNotMatch(text(t),/Revision changed/);assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Private answer');assert.deepEqual(h.record.draft.completedQuestionIds,[])
- h.fail(false);button(t,'Save and close').props.onClick();await flush();t=h.render()
+ h.fail(false);button(t,'Save & close').props.onClick();await flush();t=h.render()
  assert.deepEqual(h.record.draft.completedQuestionIds,['q1']);assert.equal(h.record.draft.questionNotes[0].notes,'Private answer');assert.match(text(t),/Question saved and moved/);assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined)
- select(t,'Snapshot question');t=h.render();edit(t,'Revised private answer');t=h.render();button(t,'Save and close').props.onClick();await flush();assert.equal(h.record.draft.questionNotes[0].notes,'Revised private answer')
+ select(t,'Snapshot question');t=h.render();edit(t,'Revised private answer');t=h.render();button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.questionNotes[0].notes,'Revised private answer')
 })
 test('two interviewer UIs remain independent and reload restores only acknowledged personal completion',async()=>{
- const a=harness(),b=harness();a.render();b.render();await flush();let t=a.render();select(t,'Snapshot question');t=a.render();edit(t,'Only A');t=a.render();button(t,'Save and close').props.onClick();await flush();a.render()
+ const a=harness(),b=harness();a.render();b.render();await flush();let t=a.render();select(t,'Snapshot question');t=a.render();edit(t,'Only A');t=a.render();button(t,'Save & close').props.onClick();await flush();a.render()
  assert.deepEqual(b.record.draft.completedQuestionIds,[]);assert.doesNotMatch(text(b.render()),/Only A/)
- const reload=harness(structuredClone(a.record));reload.render();await flush();t=reload.render();assert.match(text(t),/Completed questions · 1/);select(t,'Snapshot question');t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Only A')
+ const reload=harness(structuredClone(a.record));reload.render();await flush();t=reload.render();assert.match(text(t),/Completed questions\s+1/);select(t,'Snapshot question');t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Only A')
 })
 test('assigned interviewer browses current bank without editing; session wording and stable IDs survive kit changes',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();assert.deepEqual(h.calls,[['library']]);assert.equal(button(t,'Save kit'),undefined)
- button(t,'Use question').props.onClick();t=h.render();assert.match(text(t),/Off-script/);button(t,'Save and close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
+ button(t,'Use question').props.onClick();t=h.render();assert.match(text(t),/Off-script/);button(t,'Save & close').props.onClick();await flush();t=h.render();assert.equal(h.record.questions[0].prompt,'Snapshot question');assert.equal(h.record.draft.additionalQuestions[0].id,'q2');assert.deepEqual(h.record.draft.completedQuestionIds,['q2'])
 })
 test('off-script questions persist independently of opening and typing',async()=>{
- const h=harness();h.render();await flush();let t=h.render();nodes(t).find(n=>n.props?.id==='new-interview-question').props.onChange({target:{value:'Follow-up'}});t=h.render();button(t,'Add question').props.onClick();t=h.render();button(t,'Save draft').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.additionalQuestions[0].question,'Follow-up');assert.deepEqual(h.record.draft.completedQuestionIds,[])
- button(t,'Save and close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],h.record.draft.additionalQuestions[0].id)
+ const h=harness();h.render();await flush();let t=h.render();button(t,'+ Off-script question').props.onClick();t=h.render();nodes(t).find(n=>n.props?.id==='new-interview-question').props.onChange({target:{value:'Follow-up'}});t=h.render();button(t,'Add question').props.onClick();t=h.render();h.tick();await flush();t=h.render();assert.equal(h.record.draft.additionalQuestions[0].question,'Follow-up');assert.deepEqual(h.record.draft.completedQuestionIds,[])
+ button(t,'Save & close').props.onClick();await flush();assert.equal(h.record.draft.completedQuestionIds[0],h.record.draft.additionalQuestions[0].id)
 })
 test('End interview opens a nullable-score draft, and explicit half-point slider selection enables final submission',async()=>{
  const h=harness();h.render();await flush();let t=h.render();button(t,'End interview').props.onClick();t=h.render();await flush();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(h.record.draft.score,null);assert.equal(h.record.completedAt,null)
@@ -94,7 +94,7 @@ test('post-interview replaces only the middle, keeps side nodes and notes, and r
  assert.equal(nodes(t).some(n=>n.props?.['aria-label']==='Available questions'),false);
  assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined);
  nodes(t).find(n=>n.props?.id==='applicant-questions').props.onChange({target:{value:'Can I join a project?'}}); t=h.render();
- button(t,'Save draft').props.onClick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.draft.score,null);
+ h.tick();await flush();t=h.render();assert.equal(h.record.draft.postInterview,true);assert.equal(h.record.draft.score,null);
  const reload=harness(structuredClone(h.record),{context});reload.render();await flush();t=reload.render();assert.ok(button(t,'End post-interview').props.disabled);assert.equal(nodes(t).find(n=>n.props?.id==='applicant-questions').props.value,'Can I join a project?');
  button(t,'Keep interviewing').props.onClick();t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1'),undefined);select(t,'Snapshot question');t=reload.render();assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Keep my question draft');
 });
@@ -107,4 +107,28 @@ test('completion stays locked, next failures retry without duplicate requests, a
  button(t,'Next applicant').props.onClick();await flush();t=h.render();assert.match(text(t),/Could not load the next applicant/);assert.ok(h.record.completedAt);
  fail=false;const next=button(t,'Next applicant');next.props.onClick();next.props.onClick();t=h.render();assert.ok(button(t,'Checking applicants…').props.disabled);release();await flush();t=h.render();
  assert.equal(attempts,2);assert.match(text(t),/No more applicants/);assert.ok(button(t,'Return to interview list'));assert.equal(h.calls.filter(c=>c[0]==='complete').length,1);
+});
+
+test('bank browsing keeps unsaved personal notes and does not mark completion; autosave is the only routine save', async () => {
+ const h=harness();h.render();await flush();let t=h.render();
+ assert.equal(button(t,'Save draft'),undefined);assert.equal(nodes(t).find(n=>n.props?.id==='new-interview-question'),undefined);
+ select(t,'Snapshot question');t=h.render();edit(t,'Retained while browsing');t=h.render();
+ button(t,'Question bank').props.onClick();h.render();await flush();t=h.render();
+ assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Retained while browsing');
+ assert.deepEqual(h.record.draft.completedQuestionIds,[]);
+ button(t,'Back to question bank').props.onClick();t=h.render();select(t,'Snapshot question');t=h.render();
+ assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Retained while browsing');
+ h.tick();await flush();t=h.render();assert.equal(h.record.draft.questionNotes[0].notes,'Retained while browsing');
+ assert.deepEqual(h.record.draft.completedQuestionIds,[]);assert.match(text(t),/All changes saved/);
+ button(t,'Save & close').props.onClick();await flush();t=h.render();
+ assert.equal(text(nodes(t).find(n=>n.props?.className==='oc-note-preview')),'Retained while browsing');
+});
+
+test('one header save indicator shows pending, failure and acknowledged retry without clearing notes', async () => {
+ const h=harness();h.render();await flush();let t=h.render();select(t,'Snapshot question');t=h.render();edit(t,'Keep this');t=h.render();
+ const header=()=>nodes(t).find(n=>n.type==='header');assert.match(text(header()),/Saving…/);
+ h.fail(true);h.tick();await flush();t=h.render();assert.match(text(header()),/Couldn’t save/);
+ assert.equal(nodes(t).find(n=>n.props?.id==='active-notes-q1').props.value,'Keep this');
+ h.fail(false);button(t,'Retry').props.onClick();await flush();t=h.render();assert.match(text(header()),/All changes saved/);
+ assert.deepEqual(h.record.draft.completedQuestionIds,[]);
 });

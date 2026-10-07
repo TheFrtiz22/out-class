@@ -7,12 +7,11 @@ import { hasPermission } from "@/lib/permissions"
 
 import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
-import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 import { getInterviewWorkspace } from "@/lib/workspace-api"
 import { interviewQueue, nextInterviewApplicant } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
-import { elapsedInterviewTime } from "@/lib/interview-mode"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -43,7 +42,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
       onExit?.()
   }
   return (
-    <main data-workspace-detail className="min-h-dvh bg-background text-foreground">
+    <main data-workspace-detail className="oc-interview-room min-h-dvh bg-background text-foreground">
       {!membership && <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-card px-5 py-4 sm:px-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" disabled={saving} onClick={exit}>
@@ -55,22 +54,6 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
         </div>
       </header>}
       <DemoInterviewGuide />
-      <div className="px-5">        {membership && !scoped && (
-          <select
-            aria-label="Interview club"
-            disabled={locked}
-            className={selectStyle}
-            value={membership.clubId}
-            onChange={(event) => setClubId(event.target.value)}
-          >
-            {memberships.map((item) => (
-              <option key={item.clubId} value={item.clubId}>
-                {item.club.name}
-              </option>
-            ))}
-          </select>
-        )}
-</div>
       <div className="mx-auto max-w-[1800px]">
         {loading ? (
           <p role="status">Loading interview workspace…</p>
@@ -87,7 +70,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
             </Button>
           </div>
         ) : (
-          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} />
+          <InterviewSession key={`${membership.clubId}-${membership.id}-${user?.id}`} membership={membership} onLock={handleLock} onExit={exit} clubSelector={!scoped && <select aria-label="Interview club" disabled={locked} className={selectStyle} value={membership.clubId} onChange={event => setClubId(event.target.value)}>{memberships.map(item => <option key={item.clubId} value={item.clubId}>{item.club.name}</option>)}</select>} />
         )}
       </div>
     </main>
@@ -98,10 +81,12 @@ function InterviewSession({
   membership,
   onLock,
   onExit,
+  clubSelector,
 }: {
   onExit: () => void
   membership: ExtendedMembership
   onLock: (locked: boolean, saving?: boolean) => void
+  clubSelector?: ReactNode
 }) {
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(null)
@@ -113,10 +98,6 @@ function InterviewSession({
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   const [failed, setFailed] = useState(false)
-  const [running, setRunning] = useState(false)
-  const [seconds, setSeconds] = useState(0)
-  const started = useRef(0)
-  const carried = useRef(0)
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
@@ -131,7 +112,6 @@ function InterviewSession({
   const round = data?.rounds.find((item) => item.id === roundId)
   const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
-  const index = queue.findIndex((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
   const handleKitState = useCallback((changed: boolean, pending: boolean) => { setKitDirty(changed); setBusy(pending) }, [])
   const dirty = kitDirty
@@ -178,19 +158,7 @@ function InterviewSession({
     const recovery = recoveredApplicant()
     setActiveId(recovery?.roundId === roundId && interviewQueue(data.applications, roundId).some(a => a.id === recovery.applicationId) ? recovery.applicationId : "")
     setMessage("")
-    setRunning(false)
-    setSeconds(0)
-    carried.current = 0
   }, [roundId, data, recoveredApplicant])
-  useEffect(() => {
-    if (!running) return
-    started.current = Date.now()
-    const timer = window.setInterval(
-      () => setSeconds(carried.current + Math.floor((Date.now() - started.current) / 1000)),
-      1000,
-    )
-    return () => window.clearInterval(timer)
-  }, [running])
   useEffect(() => {
     if (!dirty && !busy) return
     const warn = (event: BeforeUnloadEvent) => {
@@ -223,10 +191,13 @@ function InterviewSession({
     rememberApplicant(id)
     setMessage("")
     setFailed(false)
-    setRunning(false)
-    setSeconds(0)
-    carried.current = 0
     requestAnimationFrame(() => heading.current?.focus())
+  }
+  function returnToList() {
+    if (busy || (dirty && !window.confirm("Return to interviews? Unsaved changes will be lost."))) return
+    try { sessionStorage.removeItem(recoveryKey) } catch { /* Selection stays local if storage is unavailable. */ }
+    setActiveId("")
+    setMessage("")
   }
   async function nextApplicant() {
     // Recheck membership, assignments, round and own completion at navigation time.
@@ -242,9 +213,6 @@ function InterviewSession({
       rememberApplicant(next.id)
       setMessage("")
       setFailed(false)
-      setRunning(false)
-      setSeconds(0)
-      carried.current = 0
       return true
     } finally { setBusy(false) }
   }
@@ -259,11 +227,12 @@ function InterviewSession({
       </div>
     )
   return (
-    <div className="space-y-6">
+    <div>
 
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
+      {!active && <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
         <div className="flex flex-wrap items-end gap-3">
           {!active && <Button variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button>}
+          {clubSelector}
           <div className="space-y-2">
             <Label htmlFor="interview-round">Round</Label>
             <select
@@ -304,7 +273,7 @@ function InterviewSession({
         <p className="text-xs text-muted-foreground">
           {progress.completed} of {progress.total} evaluated by you in this round
         </p>
-      </div>
+      </div>}
       <p
         role={failed ? "alert" : "status"}
         className={
@@ -315,7 +284,7 @@ function InterviewSession({
       </p>
       {!active ? (
         <div className="max-w-4xl space-y-3 px-5 py-8">
-          <PageHeader title="Ready when you are." />
+          <h1 ref={heading} tabIndex={-1} className="text-xl font-medium">Choose an interview</h1>
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose an assigned candidate to open their interview and your private question notes."
@@ -329,38 +298,15 @@ function InterviewSession({
           )}
         </div>
       ) : (
-        <div key={active.id} className="oc-interview-candidate space-y-6">
-          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={onExit}
+        <div key={active.id} className="oc-interview-candidate">
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={returnToList}
 
-toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>
-              <span
-                className="tabular-nums text-lg tabular-nums"
-                aria-label={`Elapsed interview time ${elapsedInterviewTime(seconds)}`}
-              >
-                {elapsedInterviewTime(seconds)}
-              </span>
-              <Button
-                type="button"
-                disabled={completed}
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  if (running) carried.current = seconds
-                  setRunning((value) => !value)
-                }}
-              >
-                {running ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}
-                {running ? "Pause timer" : seconds ? "Resume timer" : "Start timer"}
-              </Button>
-            </div>
-</>}
+toolbar={() => <><span className="oc-room-brand">OutClass</span><Button type="button" variant="ghost" disabled={busy} onClick={returnToList}><ArrowLeft className="size-4" />Interviews</Button><p className="oc-room-context"><span>{membership.club.name}</span><span aria-hidden="true"> / </span><span>{round.name}</span></p></>}
 context={<InterviewApplicantPanel clubId={membership.clubId} applicationId={active.id} roundId={round.id} />}
-            onComplete={(evaluation, next) => {
+            onComplete={() => {
               setData(previous => previous ? { ...previous, applications: previous.applications.map(app => app.id === active.id ? { ...app, completedRoundIds: [...new Set([...app.completedRoundIds, round.id])] } : app) } : previous)
-              carried.current = seconds; setRunning(false); setKitDirty(false)
-              if (next && queue[index + 1]) { setActiveId(queue[index + 1].id); setSeconds(0); carried.current = 0 }
+              setKitDirty(false)
             }} />}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-4"><Button type="button" variant="ghost" disabled={busy || index <= 0} onClick={() => choose(queue[index - 1].id)}>Previous candidate</Button><span className="text-xs">{index + 1} of {queue.length}</span><Button type="button" variant="ghost" disabled={busy || index >= queue.length - 1} onClick={() => choose(queue[index + 1].id)}>Next candidate</Button></div>
         </div>
       )}
     </div>
