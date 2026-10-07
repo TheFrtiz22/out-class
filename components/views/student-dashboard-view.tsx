@@ -10,7 +10,7 @@ import {
   MapPin,
 } from "lucide-react"
 import { PageHeader } from "@/components/product/page-header"
-import { CampusRibbon } from "@/components/product/campus-ribbon"
+import { studentCampusIllustration } from "@/lib/campus-illustrations"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -239,7 +239,7 @@ export function StudentDashboardView({
 
   return (
     <div className="oc-student-home">
-      <PageHeader eyebrow="University of Virginia" title="Home" description={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.` : "Your applications, upcoming events, and next step."} />
+      <PageHeader illustration={studentCampusIllustration("student-dashboard")} eyebrow="University of Virginia" title="Home" description={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.` : "Your applications, upcoming events, and next step."} />
       {!unavailable && <MetricStrip label="Your campus activity" items={[
         { label: "applications", value: applications.length },
         { label: "coming up", value: agenda.length },
@@ -257,7 +257,6 @@ export function StudentDashboardView({
       ) : (
         <>
           <section className="oc-home-next" aria-labelledby="home-next-title">
-            <CampusRibbon />
             <div className="oc-home-section-title"><h2 id="home-next-title"><ArrowRight size={19} aria-hidden="true" />Your next step</h2></div>
             <div className="oc-home-next-copy">
               <h3>{nextTitle}</h3>

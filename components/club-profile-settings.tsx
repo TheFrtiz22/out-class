@@ -11,7 +11,7 @@ export function ClubProfileSettings({ clubId, onSaved }: { clubId: string; onSav
   const { user, refreshUser } = useAuth(), demo = useDemoMode()
   const member = user?.memberships.find(m => m.clubId === clubId)
   const club = demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === clubId) : member?.club
-  if (!club || !hasPermission(member, "club.settings")) return <p role="alert">Club settings are not available with your current access.</p>
+  if (!club || !hasPermission(member, "club.settings")) return <p role="alert">Appearance is not available with your current access.</p>
   return <div className="oc-club-settings space-y-10">
     <ClubProfileEditor key={clubId} initial={profileDraft({ ...club, logoUrl: demo.isDemoEnabled && club.logoUrl?.startsWith("data:image/svg") ? null : club.logoUrl })} demo={demo.isDemoEnabled} onSave={async profile => {
       if (demo.isDemoEnabled) demoStore.mutate(state => {

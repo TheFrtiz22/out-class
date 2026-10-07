@@ -15,7 +15,7 @@ export default async function Page() {
       <Link className="underline" href="/platform">
         Platform administration
       </Link>
-      <PageHeader eyebrow="OutClass · Administration" title="Club claims" illustration={{ variant: "rotunda", treatment: "quiet", accent: false }} />
+      <PageHeader eyebrow="OutClass · Administration" title="Club claims" />
       <ClaimReview initial={await listClubClaims("PENDING")} />
     </main>
   );

@@ -74,7 +74,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, ini
       <div className="space-y-3 py-10">
         <h2 className="oc-section-heading ">No recruitment workspace assigned</h2>
         <p className="text-sm text-muted-foreground">
-          Your club manager can grant applicant access. Use Club settings for your other workspace capabilities.
+          Your club manager can grant applicant access. Use Appearance for your other workspace capabilities.
         </p>
       </div>
     )

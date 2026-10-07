@@ -132,3 +132,10 @@ export function availableSettings(member: ClubAccess) {
         hasPermission(member, "leaders.manage")),
   );
 }
+
+/** One permission-aware tab resolution for both settings content and its decoration. */
+export function resolveSettingsTab(member: ClubAccess | null | undefined, requested: string | null | undefined) {
+  const sections = member ? availableSettings(member) : [];
+  const active = sections.find(section => section.id === requested)?.id ?? sections[0]?.id;
+  return { sections, active };
+}

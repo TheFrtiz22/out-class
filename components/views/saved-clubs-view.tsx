@@ -33,7 +33,6 @@ export function SavedClubsView({
         eyebrow="Your campus, collected"
         title="Saved clubs"
         description="Keep interesting clubs close. Come back when you’re ready to learn more."
-        illustration="monticello"
       />
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <p>Saving a club does not apply, subscribe, or join you.</p>

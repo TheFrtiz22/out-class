@@ -42,7 +42,7 @@ export default function PlatformLogin() {
       <Link href="/" className="underline">
         Back to OutClass
       </Link>
-      <PageHeader title="Platform administrator sign-in" illustration={{ variant: "columns", treatment: "quiet", accent: false }} />
+      <PageHeader title="Platform administrator sign-in" />
       <p className="text-sm font-semibold">Re-authenticating {user.email}</p>
       <p>
         Verify your current account with your password and authenticator. Admin elevation expires after 30 minutes. A provisioned platform grant and server allowlist are required.

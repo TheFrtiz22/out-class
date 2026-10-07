@@ -76,7 +76,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
           <div className="max-w-4xl space-y-3 px-5 py-8">
-            <PageHeader title="A focused space for a better conversation." illustration={{ variant: "columns", treatment: "quiet" }} />
+            <PageHeader title="A focused space for a better conversation." />
             <p className="text-sm leading-7 text-muted-foreground">
               {user
                 ? "You need club membership to access interview applicants."
@@ -315,7 +315,7 @@ function InterviewSession({
       </p>
       {!active ? (
         <div className="max-w-4xl space-y-3 px-5 py-8">
-          <PageHeader title="Ready when you are." illustration={{ variant: "columns", treatment: "quiet" }} />
+          <PageHeader title="Ready when you are." />
           <p className="text-sm leading-7 text-muted-foreground">
             {queue.length
               ? "Choose an assigned candidate to open their interview and your private question notes."
