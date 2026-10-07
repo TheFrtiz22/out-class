@@ -8,7 +8,7 @@ import { scholarNames } from "@/lib/scholar-status";
 import type { InterviewScope } from "@/lib/interview-access";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, UserRound } from "lucide-react";
+import { FileText, Maximize2, UserRound } from "lucide-react";
 
 export function InterviewApplicantPanel({ clubId, applicationId, roundId }: InterviewScope) {
   const scope = useMemo(() => ({ clubId, applicationId, roundId }), [clubId, applicationId, roundId]);
@@ -56,16 +56,17 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId }: Inte
   }, [documentId, scope, isDemoEnabled, demoSource, resumeReload, retry]);
   const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
-  return <aside id="interview-context" className="min-w-0 space-y-5 border-b p-5 lg:sticky lg:top-0 lg:border-b-0 lg:border-r" aria-label="Applicant panel">
+  return <aside id="interview-context" className="oc-room-applicant min-w-0" aria-label="Applicant panel">
     {loading && <p role="status" className="text-sm text-muted-foreground">Loading applicant…</p>}
     {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : panel && <>
-      {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={96} height={96} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="size-24 rounded-lg object-cover" /> : <div className="flex size-24 items-center justify-center rounded-lg bg-muted" role="img" aria-label="No headshot provided"><UserRound className="size-10 text-muted-foreground" aria-hidden="true" /></div>}
-      <h1 className="oc-section-heading break-words">{name}</h1>
-      {!!scholarships.length && <ul aria-label="Scholar status" className="flex flex-wrap gap-2">{scholarships.map((s,i) => <li key={`${s}-${i}`} className="rounded-md bg-accent px-2 py-1 text-xs">{s}</li>)}</ul>}
+      <div className="oc-applicant-identity">
+        {panel.profile?.headshotUrl && !imageFailed ? <Image unoptimized width={72} height={80} src={panel.profile.headshotUrl} alt={`${name} headshot`} onError={() => setImageFailed(true)} className="oc-applicant-photo" /> : <div className="oc-applicant-photo oc-applicant-fallback" role="img" aria-label="No headshot provided"><UserRound className="size-7" aria-hidden="true" /></div>}
+        <div className="min-w-0"><h1>{name}</h1>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
+      </div>
       <Dialog open={open} onOpenChange={value => { setOpen(value); if (value) setResumeReload(v => v + 1); }}>
-        <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="outline" disabled={!documentId} className="h-auto w-full flex-col gap-3 overflow-hidden p-3" aria-label={`Open résumé for ${name}`}>
-          {url ? <div className="oc-resume-preview pointer-events-none h-48 w-full overflow-hidden bg-muted" aria-hidden="true"><iframe tabIndex={-1} title="Résumé thumbnail" src={`${url}#page=1&toolbar=0&navpanes=0`} className="h-80 w-full" /></div> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
-          <span>Résumé</span>
+        <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!documentId} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
+          {url ? <div className="oc-resume-preview pointer-events-none" aria-hidden="true"><iframe tabIndex={-1} title="Résumé thumbnail" src={`${url}#page=1&toolbar=0&navpanes=0&view=FitH`} /></div> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
+          <span className="oc-resume-label">Résumé <Maximize2 className="size-4" aria-hidden="true" /></span>
         </Button></DialogTrigger>
         <DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); resumeTrigger.current?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle>{name} · Résumé</DialogTitle><DialogDescription>The document version saved for this interview round.</DialogDescription></DialogHeader>
