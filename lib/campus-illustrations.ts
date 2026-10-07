@@ -1,24 +1,42 @@
 /** Shared art direction. Sizes and cropping belong here, never in individual pages. */
 export const campusIllustrations = {
-  "lawn-archways": { asset: "lawn-archways", viewBox: "0 0 600 340", scale: "wide" },
-  rotunda: { asset: "rotunda", viewBox: "0 0 600 340", scale: "wide" },
-  jefferson: { asset: "jefferson", viewBox: "175 35 235 300", scale: "portrait" },
-  monticello: { asset: "monticello", viewBox: "0 0 600 340", scale: "wide" },
-  homer: { asset: "homer", viewBox: "185 20 225 320", scale: "portrait" },
-  columns: { asset: "rotunda", viewBox: "165 130 270 155", scale: "columns" },
+  "lawn-archways": { asset: "lawn-archways", viewBox: "0 0 321 185", scale: "wide", aspectRatio: "321 / 185" },
+  "rotunda": { asset: "rotunda", viewBox: "0 0 229 176", scale: "wide", aspectRatio: "229 / 176" },
+  "jefferson": { asset: "jefferson", viewBox: "0 0 157 177", scale: "portrait", aspectRatio: "157 / 177" },
+  "monticello": { asset: "monticello", viewBox: "0 0 247 156", scale: "wide", aspectRatio: "247 / 156" },
+  "homer": { asset: "homer", viewBox: "0 0 186 175", scale: "portrait", aspectRatio: "186 / 175" },
+  "lamp-posts-grounds": { asset: "lamp-posts-grounds", viewBox: "0 0 220 188", scale: "grounds", aspectRatio: "220 / 188" },
+  columns: { asset: "rotunda", viewBox: "53 39 132 115", scale: "columns", aspectRatio: "132 / 115" },
 } as const
 export type CampusIllustrationVariant = keyof typeof campusIllustrations
 export type CampusIllustrationOptions = {
   variant: CampusIllustrationVariant
   treatment?: "standard" | "quiet"
   accent?: boolean
+  presentation?: "standard" | "compact" | "prominent"
   motion?: "none" | "entrance"
 }
 
-/** Legacy leader views and the club workspace share the same motifs. */
-export function clubCampusIllustration(section: string): CampusIllustrationVariant {
-  if (["applicants", "leader-dashboard"].includes(section)) return "homer"
-  if (["interviews", "interview-scheduler", "interviewer-dashboard", "interview-workspace"].includes(section)) return "columns"
-  if (["settings", "members", "club-manager", "club-branding-editor", "club-management-portal"].includes(section)) return "monticello"
-  return "rotunda"
+/** Explicit surface mapping. A workspace or parent section never supplies a fallback. */
+export const studentCampusIllustrations = {
+  "student-dashboard": "lamp-posts-grounds",
+  explore: "rotunda",
+  corkboard: "lawn-archways",
+  inbox: "lamp-posts-grounds",
+  "student-profile": "jefferson",
+} as const satisfies Record<string, CampusIllustrationVariant>
+export const clubCampusIllustrations = {
+  overview: "rotunda",
+  meetings: "lawn-archways",
+  tasks: "monticello",
+  members: "homer",
+  announcements: "lamp-posts-grounds",
+  settings: "monticello",
+} as const satisfies Record<string, CampusIllustrationVariant>
+export function studentCampusIllustration(view: string): CampusIllustrationVariant | undefined {
+  return Object.hasOwn(studentCampusIllustrations, view) ? studentCampusIllustrations[view as keyof typeof studentCampusIllustrations] : undefined
+}
+export function clubCampusIllustration(section: string, mode = "club", setting = "general"): CampusIllustrationVariant | undefined {
+  if (mode !== "club" || section === "settings" && setting !== "general") return undefined
+  return Object.hasOwn(clubCampusIllustrations, section) ? clubCampusIllustrations[section as keyof typeof clubCampusIllustrations] : undefined
 }

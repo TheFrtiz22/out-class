@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
-import { availableSettings } from "@/lib/club-settings";
+import { resolveSettingsTab } from "@/lib/club-settings";
 import { canLeaveWorkspace } from "@/lib/product-navigation";
 import { hasPermission } from "@/lib/permissions";
 import { saveClubPreferences } from "@/actions/club-settings";
@@ -51,10 +51,7 @@ export function ClubSettingsWorkspace({
     [notice, setNotice] = useState("");
   const [visited, setVisited] = useState<string[]>([]);
   const [pipelineRevision, setPipelineRevision] = useState(0);
-  const sections = member ? availableSettings(member) : [],
-    active =
-      sections.find((s) => s.id === params.get("setting"))?.id ||
-      sections[0]?.id;
+  const { sections, active } = resolveSettingsTab(member, params.get("setting"));
   useEffect(() => {
     if (active)
       setVisited((items) =>
@@ -64,7 +61,7 @@ export function ClubSettingsWorkspace({
   const visible = (id: string) =>
     sections.some((s) => s.id === id) &&
     (active === id || visited.includes(id));
-  if (!member) return <p role="alert">Settings access unavailable.</p>;
+  if (!member) return <p role="alert">Appearance access unavailable.</p>;
   async function preference(fields: {
     isDiscoverable?: boolean;
     invitationEmailEnabled?: boolean;
@@ -86,7 +83,7 @@ export function ClubSettingsWorkspace({
     <div className="oc-settings-workspace">
       <nav
         className="oc-settings-navigation"
-        aria-label="Club settings sections"
+        aria-label="Appearance sections"
       >
         {sections.map((s) => (
           <Link

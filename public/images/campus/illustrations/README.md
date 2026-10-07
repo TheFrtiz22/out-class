@@ -1,20 +1,9 @@
-# Grounds illustrations
+# Approved UVA campus artwork
 
-Original vector artwork for OutClass, composed from the supplied UVA UI moodboard's
-visual direction rather than extracted from it. Five motifs: Lawn archways,
-Rotunda, Jefferson profile, Monticello, and the seated Homer statue.
+The six SVG files are exact copies of the final approved October 7, 2026 assets. Do not edit their paths, fills, groups, colors or opacity layers. External `#linework` and `#accent` references preserve decorative semantics. Host colors match the approved defaults: blue `#507b9e`, orange `#f07835`.
 
-`rotunda.svg` references the existing `/images/landing/rotunda-lines.svg` as its
-central building; do not duplicate that building's paths. The columns variant
-crops the same Rotunda composition. No photographs are used.
+The typed registry uses each approved asset's full viewBox and aspect ratio. Columns derives from Rotunda; no separate file or placement is added.
 
-Each SVG exposes `linework` and `accent` groups. `CampusIllustration` references
-these with SVG `use`, inheriting blue-gray and orange from existing UI tokens.
-The registry in `lib/campus-illustrations.ts` owns variant assets and viewBoxes;
-`styles/campus-illustrations.css` owns scale, placement, crop, opacity and motion.
+Only Student Home (lamp posts), Discover (Rotunda), Corkboard (Lawn), Notifications (lamp posts), Profile (Jefferson), and Club leader Overview (Rotunda), Meetings (Lawn), Tasks (Monticello), Members (Homer), Announcements (lamp posts), Appearance (Monticello) receive art. Appearance retains the internal `settings` identifier and URLs.
 
-Use `PageHeader illustration="rotunda"` or an options object with `variant`,
-`treatment`, `accent`, and `motion`. Avoid placing illustrations in filters,
-controls, dialogs, or candidate information panels. They are aria-hidden and
-noninteractive; narrow screens omit them. Motion is opt-in and respects reduced
-motion. `/design-system` provides all variants for visual review.
+Unknown sections and recruiting views receive no art. Non-manager club and personal Meetings/Tasks pages do not inherit leader illustrations. Headers fit full compositions, with compact functional variants and stacked mobile layouts. Portraits use no masks or clipping offsets.

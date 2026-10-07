@@ -43,7 +43,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   return [item("overview", "Overview"), item("meetings", "Meetings"), ...(hasPermission(member, "meetings.manage") ? [item("events", "Events")] : []), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(hasPermission(member, "meetings.manage") ? [item("announcements", "Announcements", "announcements", { preview: true })] : []),
-    ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
+    ...(availableSettings(member).length ? [item("settings", "Appearance")] : [])]
 }
 /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */
 export function canLeaveWorkspace() {

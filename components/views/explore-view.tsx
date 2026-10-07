@@ -106,7 +106,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
         <Link href="/saved-clubs" className="text-sm underline">Saved clubs</Link>
-        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." illustration="rotunda" />
+        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." illustration={{ variant: "rotunda", presentation: "prominent" }} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />

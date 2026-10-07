@@ -1,7 +1,6 @@
 "use client"
 
 import { MetricStrip } from "@/components/product/metric-strip"
-import { CampusRibbon } from "@/components/product/campus-ribbon"
 import Link from "next/link"
 import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "lucide-react"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
@@ -37,7 +36,6 @@ export function RecruitingOverview({ data }: { data: Overview }) {
         if (!route?.href) return null
         const Icon = destination.icon
         return <section key={destination.id} className="oc-recruiting-card" data-featured={destination.featured} aria-labelledby={`recruiting-${destination.id}`}>
-          {destination.featured && <CampusRibbon />}
           <div className="oc-recruiting-card-label"><Icon aria-hidden="true" size={19} /><h2 id={`recruiting-${destination.id}`}>{route.label}</h2></div>
           {canRead && recruitment && <p className="oc-recruiting-context"><strong>{destination.value}</strong> {destination.context}</p>}
           {destination.id === "applicants" && canRead && recruitment && <dl className="oc-recruiting-stage-summary"><div><dt>Submitted</dt><dd>{count("SUBMITTED")}</dd></div><div><dt>In review</dt><dd>{count("IN_REVIEW")}</dd></div></dl>}

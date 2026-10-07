@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { CampusIllustration } from "@/components/product/campus-illustration";
 import {
   eventDateLabel,
   eventTimeLabel,
@@ -28,18 +27,6 @@ export function EventFlyer({ event }: { event: CampusEvent }) {
           </p>
           <p className="oc-paper-location">{event.location}</p>
           <p className="oc-paper-description">{event.description}</p>
-          <div className="oc-paper-art">
-            <CampusIllustration
-              variant={
-                event.category === "Arts"
-                  ? "homer"
-                  : event.category === "Service"
-                    ? "lawn-archways"
-                    : "rotunda"
-              }
-              treatment="quiet"
-            />
-          </div>
           <p className="oc-paper-category">
             {event.category} ·{" "}
             {event.rsvpRequired ? "RSVP required" : "Open to all"}

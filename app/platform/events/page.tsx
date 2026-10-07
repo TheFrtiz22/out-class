@@ -18,7 +18,6 @@ export default async function EventApprovalsPage() {
         eyebrow="OutClass · Administration"
         title="Event Approvals"
         description="Review public campus events before their flyers appear on Corkboard."
-        illustration={{ variant: "columns", treatment: "quiet", accent: false }}
       />
       <EventApprovals />
     </main>
