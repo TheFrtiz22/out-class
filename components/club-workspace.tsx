@@ -57,6 +57,14 @@ export function ClubWorkspace({
   const section = params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
   const tool = params.get("tool") ?? undefined;
+  const interviewMode = section === "recruitment" && tool === "interviews" && params.get("interview") === "1";
+  function setInterviewMode(open: boolean) {
+    const next = new URLSearchParams(params.toString());
+    if (open) { next.set("section", "recruitment"); next.set("tool", "interviews"); next.set("interview", "1") }
+    else next.delete("interview");
+    const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
+    if (!navigateWithinClub(href, true)) router.replace(href);
+  }
   const needsOverview = section === "overview" || section === "recruitment" && (tool === "overview" || tool === "rounds" || tool === "rules");
   const reviewTrigger = useRef<HTMLElement | null>(null);
   const [reviewTool, setReviewTool] = useState<string | null>(tool === "rounds" || tool === "rules" ? tool : null);
@@ -84,8 +92,7 @@ export function ClubWorkspace({
   }
   const [data, setData] = useState<{ scope: string; value: Overview } | null>(null),
     [error, setError] = useState(""),
-    [retry, setRetry] = useState(0),
-    [interviewMode, setInterviewMode] = useState(false);
+    [retry, setRetry] = useState(0);
   // Legacy recruitment components share a selected club. Synchronize before mounting them.
   const needsSelection =
     !!membership &&
@@ -147,7 +154,7 @@ export function ClubWorkspace({
   }
   return <ApplicationStateProvider initialData={{ applications: [], attendances: [] }} persistLocalState={false}>
     <RecruitmentFocus />
-    {interviewMode && membership && hasPermission(membership, "applications.review") ? <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} /> :
+    {interviewMode && membership && !loading && !needsSelection && hasPermission(membership, "applications.review") ? <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} /> :
       <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
         modes={manager ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }, { id: "club", label: "Club", href: clubWorkspaceHref(clubId) }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
