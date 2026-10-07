@@ -38,8 +38,8 @@ export async function getInterviewWorkspace(clubId: string) {
       interviewAssignments: { where: { memberId: member.id, revokedAt: null, round: { anonymousReview: false } }, select: { roundId: true } },
       interviewRecords: { where: { interviewerId: member.id, anonymousReview: false }, select: { roundId: true, completedAt: true } },
     } });
-    const rounds = await tx.pipelineRound.findMany({ where: { clubId, anonymousReview: false, id: { in: applications.flatMap(a => a.interviewAssignments.map(s => s.roundId)) } }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, name: true } });
-    return { rounds, applications: applications.map(a => ({ id: a.id, roundId: a.roundId, name: a.student.studentProfile ? `${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}` : "Profile not provided", assignedRoundIds: a.interviewAssignments.map(s => s.roundId), completedRoundIds: a.interviewRecords.filter(r => r.completedAt).map(r => r.roundId) })) };
+    const rounds = await tx.pipelineRound.findMany({ where: { clubId, anonymousReview: false, id: { in: applications.flatMap(a => a.interviewAssignments.map(s => s.roundId)) } }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, name: true, archivedAt: true } });
+    return { rounds: rounds.map(r => ({ id: r.id, name: r.name, archived: !!r.archivedAt })), applications: applications.map(a => ({ id: a.id, roundId: a.roundId, name: a.student.studentProfile ? `${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}` : "Profile not provided", assignedRoundIds: a.interviewAssignments.map(s => s.roundId), completedRoundIds: a.interviewRecords.filter(r => r.completedAt).map(r => r.roundId) })) };
   });
 }
 export async function saveInterviewKit(clubId: string, roundId: string, version: number, questions: unknown) {
