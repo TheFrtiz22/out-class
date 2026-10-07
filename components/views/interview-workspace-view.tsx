@@ -240,6 +240,7 @@ function InterviewSession({
     let started = false
     try {
       const fresh = await getInterviewWorkspace(membership.clubId)
+      if (epoch !== navigation.current) return false
       const next = fresh.rounds.some(r => r.id === roundId && !r.archived)
         ? nextInterviewApplicant(fresh.applications, roundId, activeId) : null
       if (!next) return false

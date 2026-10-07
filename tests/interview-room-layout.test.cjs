@@ -16,7 +16,7 @@ function harness(){
  const api={getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  new Function('require','module','exports','window','sessionStorage','requestAnimationFrame',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn());
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){}};
- return{storage,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
+ return{storage,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
 const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
@@ -28,6 +28,10 @@ test('selection controls exist only on the interview list; active and post-inter
  const toolbar=kit(t).props.toolbar(false);assert.match(text(toolbar),/InterviewsMII/);assert.doesNotMatch(text(toolbar),/timer/i);
  assert.equal(text(kit(t).props.toolbar(true)),text(toolbar));
  nodes(toolbar).find(n=>n.type==='Button').props.onClick();t=h.render();assert.ok(nodes(t).find(n=>n.props?.id==='interview-round'));assert.equal(h.storage.size,0);
+});
+test('a destination response after leaving the room cannot change selection or recovery state',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ let release;h.defer(new Promise(r=>release=r));const pending=kit(t).props.onNextApplicant();await flush();h.unmount();release();assert.equal(await pending,false);assert.match(h.storage.get('outclass-interview:club:member'),/"applicationId":"a"/);
 });
 test('advancement waits for destination authorization/data, guards duplicate clicks and preserves current screen on denial',async()=>{
  const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
