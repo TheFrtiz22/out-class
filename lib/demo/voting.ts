@@ -1,3 +1,4 @@
+import { academicYear } from "@/lib/recruitment-profile";
 import type * as Live from "@/actions/voting"
 import { demoStore, demoMember } from "./store"
 import { summarizeVoting, createVotingSchema, votingCommandSchema, votingScope, decisionSchema } from "@/lib/voting-engine"
@@ -11,7 +12,7 @@ function audit(action:string,sessionId:string){demoStore.get().votingAudit??=[];
 export async function getVotingWorkspace(clubId:string,sessionId?:string,participantView=false):Promise<Workspace>{
  const d=context(clubId,participantView),m=demoMember()!,club=d.clubs.find(c=>c.id===clubId)!
  const s=sessionId?sessions().find(s=>s.id===sessionId&&s.clubId===clubId):sessions().filter(s=>s.clubId===clubId).at(-1)
- return {joinedParticipants:s?s.participants.map(p=>({id:p.memberId,label:d.students.find(u=>u.id===d.memberships.find(m=>m.id===p.memberId)?.userId)?.profile.firstName??"Demo member",joinedAt:p.joinedAt??null})):[],sessions:sessions().filter(s=>s.clubId===clubId).map(({id,state,currentPass,createdAt})=>({id,state,currentPass,createdAt})),session:s??null,summary:s?summarizeVoting(s):null,memberId:m.id,canManage:true,canStart:true,canFinish:true,canReopen:true,canPublish:true,canVote:!!s?.participants.some(p=>p.memberId===m.id),eligible:d.memberships.filter(m=>m.clubId===clubId).map(m=>({id:m.id,label:d.students.find(u=>u.id===m.userId)?.email??m.id})),rounds:club.rounds.map(r=>({id:r.id,name:r.name})),graduationYears:s?s.candidates.map(c=>{const a=d.applications.find(a=>a.id===c.applicationId)!,p=d.students.find(u=>u.id===a.studentId)?.profile;return{id:c.applicationId,student:{studentProfile:p?{gradYear:p.gradYear}:null}}}):[]}
+ return {joinedParticipants:s?s.participants.map(p=>({id:p.memberId,label:d.students.find(u=>u.id===d.memberships.find(m=>m.id===p.memberId)?.userId)?.profile.firstName??"Demo member",joinedAt:p.joinedAt??null})):[],sessions:sessions().filter(s=>s.clubId===clubId).map(({id,state,currentPass,createdAt})=>({id,state,currentPass,createdAt})),session:s??null,summary:s?summarizeVoting(s):null,memberId:m.id,canManage:true,canStart:true,canFinish:true,canReopen:true,canPublish:true,canVote:!!s?.participants.some(p=>p.memberId===m.id),eligible:d.memberships.filter(m=>m.clubId===clubId).map(m=>({id:m.id,label:d.students.find(u=>u.id===m.userId)?.email??m.id})),rounds:club.rounds.map(r=>({id:r.id,name:r.name})),academicYears:s?s.candidates.map(c=>{const a=d.applications.find(a=>a.id===c.applicationId)!,p=d.students.find(u=>u.id===a.studentId)?.profile;return{id:c.applicationId,academicYear:p?academicYear(p):"Year unavailable"}}):[]}
 }
 function create(input:unknown){
  const d=createVotingSchema.parse(input),state=context(d.clubId),now=new Date()

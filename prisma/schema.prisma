@@ -50,6 +50,10 @@ enum AppRole {
 }
 
 model StudentProfile {
+  highSchool String?
+  gender String?
+  pronouns String?
+  transferStudent Boolean @default(false)
   scholarStatus Json?
   actScore   Int?
   actEnglish Int?

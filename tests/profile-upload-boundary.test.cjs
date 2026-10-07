@@ -24,7 +24,9 @@ function harness({ account = 'active', signingError = false, uploadError = false
     uploadToSignedUrl: async (path, token, bytes, options) => { calls.push({ step: 'upload', path, token, bytes, options }); return { error: uploadError ? {} : null }; },
     getPublicUrl: path => ({ data: { publicUrl: `https://fixture.invalid/storage/headshots/${path}` } }),
   };
+  process.env.SUPABASE_SECRET_KEY = 'test-only-secret';
   const mocks = {
+    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}})}}) },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },

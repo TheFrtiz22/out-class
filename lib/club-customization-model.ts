@@ -1,3 +1,4 @@
+import { gpaSchema } from "@/lib/student-profile"
 import { z } from "zod"
 import { applicants as seedApplicants, type Applicant } from "./data"
 
@@ -9,7 +10,7 @@ export const crmColumns = [
   { id: "events", label: "Events Attended" },
 ] as const
 export type ColumnId = typeof crmColumns[number]["id"]
-const filtersSchema = z.object({ query: z.string(), stage: z.string(), majors: z.array(z.string()), years: z.array(z.string()), minGpa: z.number().min(0).max(4).nullable(), minSat: z.number().min(0).max(1600).nullable() })
+const filtersSchema = z.object({ query: z.string(), stage: z.string(), majors: z.array(z.string()), years: z.array(z.string()), minGpa: gpaSchema.nullable(), minSat: z.number().min(0).max(1600).nullable() })
 export type CRMFilters = z.infer<typeof filtersSchema>
 export const emptyFilters: CRMFilters = { query: "", stage: "All Stages", majors: [], years: [], minGpa: null, minSat: null }
 const profileSchema = z.object({ name: z.string(), tagline: z.string(), about: z.string(), accent: z.string().regex(/^#[0-9a-f]{6}$/i), acceptance: z.string(), aum: z.string(), placements: z.string(), showAcceptance: z.boolean(), showAum: z.boolean(), showPlacements: z.boolean(), showDirectory: z.boolean() })

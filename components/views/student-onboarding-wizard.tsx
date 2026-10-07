@@ -692,7 +692,7 @@ export function StudentOnboardingWizard({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="gpa">
-                      GPA{" "}
+                      GPA out of 4.0{" "}
                       <span className="font-normal text-neutral-400">
                         (optional)
                       </span>

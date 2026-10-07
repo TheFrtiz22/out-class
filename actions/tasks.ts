@@ -1,4 +1,5 @@
 "use server";
+import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -15,6 +16,7 @@ import {
 import { hasPermission, isActiveMembership } from "@/lib/permissions";
 import {
   taskAudienceSchema,
+  projectTaskAudience,
   taskInputSchema,
   resolveTaskRecipients,
   assertRecipientPreview,
@@ -38,12 +40,16 @@ const memberSelect = {
     select: {
       id: true,
       studentProfile: {
-        select: { firstName: true, lastName: true, gradYear: true },
+        select: { firstName: true, lastName: true, gradYear: true, transferStudent: true },
       },
       email: true,
     },
   },
 } as const;
+type TaskMemberRow = import("@prisma/client").Prisma.ClubMemberGetPayload<{ select: typeof memberSelect }>;
+function projectedTaskMember(m: TaskMemberRow) {
+  return { ...m, user: { id: m.user.id, email: m.user.email, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } };
+}
 const assignmentInclude = {
   recipient: { select: memberSelect.user.select },
   member: { select: memberSelect },
@@ -123,23 +129,24 @@ export async function getTaskWorkspace(clubId: string) {
     memberId: membership.id,
     tasks: tasks.map(({project, ...task}) => ({
       ...task,
+      audience: projectTaskAudience(task.audience),
       project: project?.clubId === clubId ? {id:project.id,title:project.title} : null,
       assignments: task.assignments.map(({ recipient, ...assignment }) => ({
         ...assignment,
-        member: assignment.member ?? {
+        member: projectedTaskMember(assignment.member ?? {
           id: assignment.userId,
           groups: [],
           cohort: null,
           role: "GENERAL_MEMBER" as const,
           user: recipient,
-        },
+        }),
       })),
     })),
     members: manage
-      ? await prisma.clubMember.findMany({
+      ? (await prisma.clubMember.findMany({
           where: { clubId, status: "ACTIVE", user: { disabledAt: null } },
           select: memberSelect,
-        })
+        })).map(projectedTaskMember)
       : [],
   };
 }
@@ -159,7 +166,7 @@ export async function previewTaskAudience(input: { clubId: string; audience: Tas
   const { user } = await requireClubPermission(data.clubId, ["tasks.manage"]);
   return prisma.$transaction(async tx => {
     await currentMember(tx, data.clubId, user.id, true);
-    return (await recipientsFor(tx, data.clubId, data.audience)).map(({member,groupLabel}) => ({member,groupLabel}));
+    return (await recipientsFor(tx, data.clubId, data.audience)).map(({member,groupLabel}) => ({member: projectedTaskMember(member),groupLabel}));
   });
 }
 export async function saveTask(input: TaskInput) {
@@ -172,11 +179,13 @@ export async function saveTask(input: TaskInput) {
     if (data.id && !existing) throw new Error("Task unavailable.");
     if (existing && existing.kind !== data.kind) throw new Error("Task type cannot change after creation.");
     if (existing && existing.status !== "DRAFT" && data.status === "DRAFT") throw new Error("An assigned task cannot become a draft.");
-    if (existing && existing.status !== "DRAFT" && JSON.stringify(taskAudienceSchema.parse(existing.audience)) !== JSON.stringify(data.audience)) throw new Error("Audience is fixed after assignment. Create a new task for a different audience.");
+    const unchangedAudience = existing && JSON.stringify(projectTaskAudience(existing.audience)) === JSON.stringify(projectTaskAudience(data.audience));
+    if (existing && existing.status !== "DRAFT" && !unchangedAudience) throw new Error("Audience is fixed after assignment. Create a new task for a different audience.");
     const { id, revision, audience, expectedRecipients, ...fields } = data;
-    const values = { ...fields, dueAt: fields.dueAt ? new Date(fields.dueAt) : null, audience };
+    const persistedAudience = unchangedAudience ? taskAudienceSchema.parse(existing.audience) : audience;
+    const values = { ...fields, dueAt: fields.dueAt ? new Date(fields.dueAt) : null, audience: persistedAudience };
     const assigning = data.status !== "DRAFT" && (!existing || existing.status === "DRAFT");
-    const recipients = assigning ? await recipientsFor(tx, data.clubId, audience) : [];
+    const recipients = assigning ? await recipientsFor(tx, data.clubId, persistedAudience) : [];
     if (assigning) {
       if (!recipients.length) throw new Error("Choose an audience with at least one current member.");
       assertRecipientPreview(recipients, expectedRecipients);

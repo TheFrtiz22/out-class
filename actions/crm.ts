@@ -1,10 +1,13 @@
 "use server";
+import { genderValues } from "@/lib/student-profile";
+import { genderVisibility } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
 import { testRequirements } from "@/lib/test-scores";
 import {
   anonymousApplication,
+  identifiedApplication,
   validateAnonymousText,
 } from "@/lib/anonymous-review";
 import { hasPermission } from "@/lib/permissions";
@@ -13,7 +16,9 @@ import { requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
-export async function getClubPipeline(clubId: string) {
+const pipelineFilter = z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
+export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
+  const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
   if (
@@ -22,36 +27,45 @@ export async function getClubPipeline(clubId: string) {
   )
     throw new Error("Applicant access denied.");
 
-  const [rounds, applications] = await Promise.all([prisma.pipelineRound.findMany({
-    where: { clubId, archivedAt: null },
-    orderBy: { order: "asc" },
-    select: { id: true, name: true, order: true, anonymousReview: true },
-  }), prisma.application.findMany({
-    where: {
-      clubId,
-      status: { not: "DRAFTING" },
-      ...(hasPermission(membership, "applicants.identify")
-        ? {}
-        : { round: { anonymousReview: true } }),
-    },
-    include: {
-      round: true,
-      student: {
-        include: { studentProfile: { include: { experiences: true } } },
+  return prisma.$transaction(async tx => {
+    const rounds = await tx.pipelineRound.findMany({
+      where: { clubId, archivedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, order: true, anonymousReview: true, applicantDisplay: true },
+    });
+    const selectedRound = rounds.find(r => r.id === filter.roundId);
+    if (filter.gender || filter.genderCounts) {
+      if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
+      if (!selectedRound.anonymousReview && !hasPermission(membership, "applicants.identify")) throw new Error("Applicant access denied.");
+    }
+    const where = { clubId, status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
+    const applications = await tx.application.findMany({
+      where: {
+        ...where,
+        ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
       },
-      evaluations: { omit: { notes: true, applicantQuestions: true } },
-      answers: { include: { question: true } },
-      bookings: { include: { slot: true } },
-    },
-  })]);
+      include: {
+        round: true,
+        student: {
+          include: { studentProfile: { include: { experiences: true } } },
+        },
+        evaluations: { omit: { notes: true, applicantQuestions: true } },
+        answers: { include: { question: true } },
+        bookings: { include: { slot: true } },
+      },
+    });
+    const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
+    const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
 
-  return {
-    rounds,
-    applications: applications.map(raw => {
-      const app = { ...raw, evaluations: raw.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
-      return !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app) : app;
-    }),
-  };
+    return {
+      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
+      genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
+      applications: applications.map(raw => {
+        const app = { ...raw, evaluations: raw.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+        return !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+      }),
+    };
+  }, { isolationLevel: "RepeatableRead" });
 }
 
 const moveApplicantSchema = z.object({
@@ -192,11 +206,12 @@ export async function revealApplicantIdentity(
 ) {
   z.string().uuid().parse(applicationId);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
-  const { user } = await requireClubPermission(clubId, ["applicants.identify"], { allowSuspendedRead: true });
+  const { user, membership } = await requireClubPermission(clubId, ["applicants.identify"], { allowSuspendedRead: true });
   return prisma.$transaction(async (tx) => {
     const application = await tx.application.findFirst({
       where: { id: applicationId, clubId, status: { not: "DRAFTING" } },
       include: {
+        round: true,
         student: {
           include: { studentProfile: { include: { experiences: true } } },
         },
@@ -215,7 +230,7 @@ export async function revealApplicantIdentity(
         reason: justification,
       },
     });
-    return { ...application, evaluations: application.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+    return identifiedApplication({ ...application, evaluations: application.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) }, hasPermission(membership, "applications.review") && genderVisibility(application.round?.applicantDisplay));
   });
 }
 export async function setRoundAnonymousReview(

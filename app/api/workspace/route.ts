@@ -1,3 +1,4 @@
+import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
     switch (params.get("kind")) {
       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
-      case "pipeline": data = await getClubPipeline(...clubArgs.parse(args)); break
+      case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break

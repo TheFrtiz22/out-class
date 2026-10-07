@@ -1,4 +1,5 @@
 "use server";
+import { profilePhotoSource } from "@/lib/profile-photo";
 import { z } from "zod";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
@@ -33,9 +34,10 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
       config=readVotingDisplay(voting.displayConfig);
     }
     const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
-    return projectApplicantDisplay(app, app.round, config, observations.map(o => ({
+    const display = projectApplicantDisplay(app, app.round, config, observations.map(o => ({
       id: o.id, kind: o.kind, body: o.body, author: o.author.studentProfile ? `${o.author.studentProfile.firstName} ${o.author.studentProfile.lastName}` : "Club reviewer", own: o.authorId === user.id, createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(),
     })));
+    return { ...display, photo: display.photo ? profilePhotoSource(app.student.studentProfile?.headshotUrl, { clubId: data.clubId, applicationId: data.applicationId, ...(data.sessionId ? { sessionId: data.sessionId } : data.previewConfig ? { mode: "preview" as const } : {}) }) ?? null : null };
   }, { isolationLevel: "RepeatableRead" });
 }
 export async function saveApplicantObservation(input: unknown) {

@@ -44,14 +44,14 @@ export async function uploadProfileFile(input: FormData) {
   const path = storagePathSchema.parse(`${user.id}/${randomUUID()}.${extension}`);
   const cookieStore = await cookies();
   let client = await createClient(cookieStore);
-  if (impersonation || kind === "resume") {
+  if (impersonation || kind === "resume" || kind === "headshot") {
     const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!secret) throw new Error(impersonation ? "Support uploads are unavailable." : "Private document storage is unavailable.");
     const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    if (kind === "resume") {
-      const { data: storedBucket, error } = await admin.storage.getBucket("resumes");
+    {
+      const { data: storedBucket, error } = await admin.storage.getBucket(bucket);
       if (error || !storedBucket || storedBucket.public) throw new Error("Private document storage is unavailable.");
     }
     if (impersonation) client = admin;
@@ -62,5 +62,5 @@ export async function uploadProfileFile(input: FormData) {
   if (signingError || !signed) throw new Error("Could not prepare upload. Your saved profile has not changed.");
   const { error } = await storage.uploadToSignedUrl(path, signed.token, bytes, { contentType });
   if (error) throw new Error("Upload failed. Your saved profile has not changed.");
-  return { reference: kind === "resume" ? path : storage.getPublicUrl(path).data.publicUrl };
+  return { reference: path };
 }

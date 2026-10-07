@@ -754,6 +754,15 @@ export async function changePlatformResource(input: unknown, reason: string) {
   });
 }
 
+// Administrative record inspection retains its established fields. New personal
+// fields are not automatically granted by expanding StudentProfile's schema.
+const administrativeProfileSelect = {
+  id: true, userId: true, firstName: true, lastName: true, computingId: true,
+  major: true, gradYear: true, gpa: true, satScore: true, scholarStatus: true,
+  actScore: true, actEnglish: true, actMath: true, actReading: true, actScience: true,
+  bio: true, resumeUrl: true, linkedinUrl: true, headshotUrl: true, experiences: true,
+} as const;
+
 /** Safe view-as: read-only snapshot, no target cookies/tokens and no delegated mutations. */
 export async function inspectPlatformUser(userId: string, reason: string) {
   const actor = await requirePlatformAdmin();
@@ -770,7 +779,7 @@ export async function inspectPlatformUser(userId: string, reason: string) {
   return prisma.user.findUnique({
     where: { id: userId },
     include: {
-      studentProfile: { include: { experiences: true } },
+      studentProfile: { select: administrativeProfileSelect },
       memberships: true,
       applications: { include: { answers: true, evaluations: { select: { id: true, round: true, roundId: true, score: true, submittedAt: true } } } },
       attendances: true,
@@ -805,7 +814,7 @@ export async function inspectPlatformRecord(
         email: true,
         disabledAt: true,
         createdAt: true,
-        studentProfile: { include: { experiences: true } },
+        studentProfile: { select: administrativeProfileSelect },
         memberships: { include: { club: { select: { name: true } } } },
       },
     });
@@ -822,7 +831,7 @@ export async function inspectPlatformRecord(
         student: {
           select: {
             email: true,
-            studentProfile: { include: { experiences: true } },
+            studentProfile: { select: administrativeProfileSelect },
           },
         },
       },

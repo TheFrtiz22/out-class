@@ -99,7 +99,7 @@ function ensurePresentation(value: DemoState) {
       }
     }
   }
-  for (const s of value.students) s.profile.scholarStatus ??= null;
+  for (const s of value.students) { s.profile.scholarStatus ??= null; s.profile.highSchool ??= null; s.profile.gender ??= null; s.profile.pronouns ??= null; s.profile.transferStudent ??= false; }
   if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
   ensureSemesterWork(value)
 }
@@ -184,7 +184,7 @@ export function demoMember() {
 function presentProfile(profile: DemoState["students"][number]["profile"]) {
   return {
     ...profile,
-    headshotUrl: profile.headshotUrl && typeof window !== "undefined" ? new URL(profile.headshotUrl, window.location.origin).href : profile.headshotUrl,
+    headshotUrl: profile.headshotUrl,
     resumeUrl:
       profile.resumeUrl && typeof window !== "undefined"
         ? new URL(profile.resumeUrl, window.location.origin).href

@@ -549,3 +549,13 @@ test('task notification reads stay scoped to the authenticated active member and
  assert.deepEqual(await api.getTaskNotifications(),[]);
  assert.equal(query.where.userId,'authenticated-student');assert.equal(query.where.member.userId,'authenticated-student');assert.equal(query.where.member.status,'ACTIVE');assert.equal(query.where.member.user.disabledAt,null);assert.equal(query.where.task.kind,'TASK');assert.equal(query.where.task.status.not,'DRAFT');assert.equal(query.take,100);assert.equal(query.select.text,undefined);assert.equal(query.select.files,undefined);assert.equal(query.select.member,undefined);
 });
+
+test('legacy cohort audiences project academic labels without changing stored targeting or assigned recipients',async()=>{
+ const h=setup();h.manager();h.task.audience=rules.taskAudienceSchema.parse({years:[2028]});
+ const projected=rules.projectTaskAudience(h.task.audience);assert.deepEqual(projected.years,[]);assert.equal(projected.academicYears.length,1);assert.ok(!JSON.stringify(projected).includes('2028'));
+ h.tx.clubTask.findMany=async()=>[{...h.task,project:null,assignments:[]}];
+ const workspace=await h.api.getTaskWorkspace(clubId);assert.equal('gradYear' in workspace.members[0].user.studentProfile,false);assert.deepEqual(workspace.tasks[0].audience,projected);
+ const preview=await h.api.previewTaskAudience({clubId,audience:projected});assert.equal(preview.length,2);assert.ok(!JSON.stringify(preview).includes('gradYear'));
+ await h.api.saveTask({clubId,id:taskId,title:'Preserve legacy targeting',kind:'TASK',status:'OPEN',revision:h.task.revision,audience:projected});assert.deepEqual(h.task.audience.years,[2028]);assert.deepEqual(h.task.audience.academicYears,[]);
+ await assert.rejects(h.api.saveTask({clubId,id:taskId,title:'Changed targeting',status:'OPEN',revision:h.task.revision,audience:{everyone:true}}),/fixed/);
+});

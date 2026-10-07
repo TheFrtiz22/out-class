@@ -6,7 +6,7 @@ test('member and access reads retain separate permission gates and project only 
  const api=load('actions/club-access.ts',{'@/utils/auth':{requireClubPermission:async(id,permissions)=>gates.push([id,permissions])},'@/utils/prisma':{prisma:{clubMember:{findMany:async query=>{queries.push(query);return[]}},clubInvitation:{findMany:async()=>[]}}}})
  await api.getClubMembers('club');await api.getClubAccess('club')
  assert.deepEqual(gates,[['club',['members.manage']],['club',['leaders.manage']]])
- for(const query of queries){assert.equal(query.where.clubId,'club');assert.deepEqual(Object.keys(query.include.user.select).sort(),['email','studentProfile']);assert.deepEqual(Object.keys(query.include.user.select.studentProfile.select).sort(),['firstName','gradYear','lastName','major'])}
+ for(const query of queries){assert.equal(query.where.clubId,'club');assert.deepEqual(Object.keys(query.include.user.select).sort(),['email','studentProfile']);assert.deepEqual(Object.keys(query.include.user.select.studentProfile.select).sort(),['firstName','gradYear','lastName','major','transferStudent'])}
 })
 test('member drawer access editor disables higher-authority edits and capabilities outside delegation',()=>{
  const actor={clubId:'club',isOwner:false,permissions:['leaders.manage','applications.review']}

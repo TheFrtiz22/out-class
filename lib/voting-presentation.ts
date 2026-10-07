@@ -4,7 +4,7 @@ import { applicantFields, displayConfigSchema, type ApplicantDisplayConfig } fro
 // Header contains identity/photo; the slide has two rows of four readable information cells.
 // Rendered preview sizing protects readability; selected values are never clipped or truncated.
 export const liveVotingFields = applicantFields
-export const defaultVotingDisplay: ApplicantDisplayConfig = { version: 1, fields: ["photo", "name", "major", "graduationYear", "gpa", "resume", "linkedin"] }
+export const defaultVotingDisplay: ApplicantDisplayConfig = { version: 1, fields: ["photo", "name", "major", "academicYear", "gpa", "resume", "linkedin"] }
 export function votingDisplayWarning(config: ApplicantDisplayConfig) {
   if (config.fields.some(f => !(liveVotingFields as readonly string[]).includes(f))) return "Choose fields supported by Applicant Display."
   if(config.fields.includes("resume")&&config.fields.includes("experiences"))return "Select résumé or structured experience, rather than duplicating résumé content on the live display."

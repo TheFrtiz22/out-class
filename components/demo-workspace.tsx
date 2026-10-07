@@ -1,4 +1,5 @@
 "use client"
+import { academicYear } from "@/lib/recruitment-profile"
 import { useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
 import { demoStore } from "@/lib/demo/store"
@@ -103,7 +104,7 @@ export function DemoClubSettings() {
                   <span>
                     {p.profile.firstName} {p.profile.lastName}
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {p.profile.major} · {p.profile.gradYear}
+                      {p.profile.major} · {academicYear(p.profile)}
                     </span>
                   </span>
                   <span className="text-xs text-muted-foreground">

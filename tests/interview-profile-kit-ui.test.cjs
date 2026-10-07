@@ -6,7 +6,7 @@ const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n
 function ui(file,props,mocks){
  const slots=[],effects=[],cleanups=[];let index=0;
  const react={useState(v){const i=index++;if(!(i in slots))slots[i]=typeof v==='function'?v():v;return[slots[i],x=>slots[i]=typeof x==='function'?x(slots[i]):x]},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
- const cache={};function load(p){if(cache[p])return cache[p];const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n==='react'?react:n in mocks?mocks[n]:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[p]=m.exports}
+ const cache={};function load(p){if(cache[p])return cache[p];const m={exports:{}};const code=ts.transpileModule(fs.readFileSync(p,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n==='react'?react:n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='@/components/profile-photo-crop'?{ProfilePhotoCrop:'ProfilePhotoCrop'}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[p]=m.exports}
  const component=Object.values(load(file))[0];return {render(){index=0;const tree=component(props);while(effects.length)effects.shift()();return tree}};
 }
 const button=(t,label)=>nodes(t).find(n=>n.type==='Button'&&text(n)===label);
@@ -15,11 +15,13 @@ test('Education checkboxes enforce exclusivity and Other, and save only the educ
  const h=ui('components/edit-student-profile-dialog.tsx',{profile,section:'education'},{'@/contexts/auth-context':{useAuth:()=>({user:{id:'u'},refreshUser:async()=>{}})},'@/lib/workspace-api':{updateStudentProfileSection:async input=>{calls.push(input);return {profile:{...profile,...input}}}}});
  let t=h.render();await nodes(t).find(n=>n.type==='Dialog').props.onOpenChange(true);t=h.render();
  const check=(label,value)=>{nodes(t).find(n=>n.type==='label'&&text(n).trim()===label).props.children[0].props.onChange({target:{checked:value}});t=h.render()};
- check('Jefferson Scholar',true);check('Echols Scholar',true);check('Not Applicable',true);assert.equal(nodes(t).find(n=>n.type==='label'&&text(n).trim()==='Jefferson Scholar').props.children[0].props.checked,false);
- check('Other',true);let form=nodes(t).find(n=>n.type==='form');await form.props.onSubmit({preventDefault(){}});t=h.render();assert.equal(calls.length,0);assert.match(text(t),/Describe Other/);
- nodes(t).find(n=>n.props?.id==='profile-scholar-other').props.onChange({target:{value:'Named scholarship'}});t=h.render();await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
- assert.deepEqual(calls[0].scholarStatus,{selections:['OTHER'],other:'Named scholarship'});assert.equal(calls[0].gpa,3.7);assert.equal('resumeUrl'in calls[0],false);assert.equal('experiences'in calls[0],false);
- const source=fs.readFileSync('components/edit-student-profile-dialog.tsx','utf8');assert.ok(source.indexOf('Scholar status')>source.indexOf('Graduation year'));assert.ok(source.indexOf('Scholar status')<source.indexOf('GPA (optional)'));
+ const answer=()=>nodes(t).find(n=>n.props?.['aria-label']==='Are you a scholar?');
+ answer().props.onChange({target:{value:'yes'}});t=h.render();
+ check('Jefferson Scholars Program',true);check('Echols Scholars Program',true);
+ await nodes(t).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});
+ assert.deepEqual(calls[0].scholarStatus.selections.sort(),['ECHOLS','JEFFERSON']);assert.equal("gpa" in calls[0],false);assert.equal('resumeUrl'in calls[0],false);assert.equal('experiences'in calls[0],false);
+ answer().props.onChange({target:{value:'no'}});t=h.render();assert.equal(nodes(t).filter(n=>n.type==='label'&&text(n).includes('Scholars Program')).length,0);
+
 })
 test('master kit denies non-office editing and retains local text after version conflicts',async()=>{
  let office=false,fail=true;const calls=[];

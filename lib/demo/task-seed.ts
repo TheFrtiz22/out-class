@@ -1,3 +1,4 @@
+import { memberAcademicProfile } from "@/lib/recruitment-profile";
 import type { getTaskWorkspace } from "@/actions/tasks";
 import { taskAudienceSchema } from "@/lib/tasks";
 type Task = Omit<Awaited<ReturnType<typeof getTaskWorkspace>>["tasks"][number], "project">;
@@ -69,7 +70,7 @@ export function seedTasks(
         taskId: id(i),
         memberId: member.id,
         userId: member.user.id,
-        member,
+        member: { ...member, user: { ...member.user, studentProfile: memberAcademicProfile(member.user.studentProfile) } },
         groupLabel: null,
         revisionRequestedAt: null,
         assignedAt: new Date(time - 5 * 86400000),

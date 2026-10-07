@@ -170,7 +170,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         ...data.members.map((member) => ({
           id: member.id,
           name: memberName(member),
-          year: member.user.studentProfile?.gradYear,
+          year: member.user.studentProfile?.academicYear,
           role: member.isOwner ? ("OWNER" as const) : member.accessRole,
           status: member.user.disabledAt
             ? "Account disabled"
@@ -988,7 +988,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   ]
                 }{" "}
                 · {statusLabel(active.status)} ·{" "}
-                {active.user.studentProfile?.gradYear || "Year not provided"}
+                {active.user.studentProfile?.academicYear || "Year not provided"}
               </p>
               <p className="text-sm text-muted-foreground">
                 {active.title || active.role.replaceAll("_", " ")} · Groups:{" "}

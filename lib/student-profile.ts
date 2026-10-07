@@ -3,6 +3,21 @@ import { actShape } from "@/lib/test-scores"
 import { z } from "zod"
 import type { Experience, StudentProfile } from "@prisma/client"
 
+export const genderValues = ["Male", "Female", "Other", "Prefer not to say"] as const
+export const pronounValues = ["He/Him", "She/Her", "They/Them", "Other"] as const
+/** Existing importer supports three decimal places; preserve that precision on the 4.0 scale. */
+export const gpaSchema = z.number().finite().min(0).max(4).refine(v => Math.abs(v * 1000 - Math.round(v * 1000)) < 1e-8, "Use at most three decimal places for GPA (out of 4.0).")
+/** Historical incompatible values are retained in storage, never represented as verified 4.0 GPA. */
+export function supportedGpa(value: unknown): number | null {
+  const parsed = gpaSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+export const profileEducationFields = {
+  highSchool: z.string().trim().max(200).nullable().optional(),
+  gender: z.enum(genderValues).nullable().optional(),
+  pronouns: z.enum(pronounValues).nullable().optional(),
+  transferStudent: z.boolean().optional(),
+}
 export type FullStudentProfile = StudentProfile & { experiences: Experience[] }
 /** Shared normalization for profile imports; internal storage keys never become URLs. */
 export function normalizeWebUrl(value: string): string {
@@ -18,7 +33,7 @@ export function normalizeWebUrl(value: string): string {
 export const webUrlSchema = z.string().transform((value, ctx) => {
   try { return normalizeWebUrl(value) } catch { ctx.addIssue({ code: 'custom', message: 'Enter a valid web URL' }); return z.NEVER }
 })
-export const headshotUrlSchema = z.string().url().refine(value => /^https?:\/\//i.test(value), "Use a web image URL")
+export const headshotUrlSchema = z.string().trim().refine(value => !!value && storagePathSchema.safeParse(value).success, "Use an uploaded OutClass profile photo")
 export const linkedinUrlSchema = webUrlSchema.refine(value => { try { return /(^|\.)linkedin\.com$/i.test(new URL(value).hostname) } catch { return false } }, "Use a LinkedIn URL")
 export function validateProfileFile(bytes: Uint8Array, type: string, kind: 'resume' | 'headshot') {
   if (!bytes.length) throw new Error("Choose a file")
@@ -67,11 +82,12 @@ export const profileSectionSchema = z.discriminatedUnion("section", [
   }),
   z.object({
     section: z.literal("education"),
+    ...profileEducationFields,
     scholarStatus: scholarStatusSchema.optional(),
     ...actShape,
     major: z.string().trim().min(1).max(200),
     gradYear: z.number().int().min(2020).max(2030),
-    gpa: z.number().min(0).max(4).nullable(),
+    gpa: gpaSchema.nullable().optional(),
     satScore: z.number().int().min(400).max(1600).nullable(),
   }),
   z.object({

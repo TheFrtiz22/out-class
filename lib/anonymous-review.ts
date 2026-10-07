@@ -1,3 +1,6 @@
+import { profilePhotoSource } from "@/lib/profile-photo";
+import { supportedGpa } from "@/lib/student-profile";
+import { recruitmentProfile, academicYear, type RecruitmentProfile } from "@/lib/recruitment-profile";
 import type { Prisma } from "@prisma/client";
 export type ReviewApplication = Prisma.ApplicationGetPayload<{
   include: {
@@ -9,13 +12,18 @@ export type ReviewApplication = Prisma.ApplicationGetPayload<{
     bookings: { include: { slot: true } };
   };
 }>;
+export type LeaderReviewApplication = Omit<ReviewApplication, "student"> & { student: Omit<ReviewApplication["student"], "studentProfile"> & { studentProfile: RecruitmentProfile | null } };
+export function identifiedApplication(app: ReviewApplication, genderVisible = false, photoMode?: "crm"): LeaderReviewApplication {
+  return { ...app, student: { id: app.student.id, email: app.student.email, role: app.student.role, createdAt: app.student.createdAt, disabledAt: app.student.disabledAt, studentProfile: app.student.studentProfile ? { ...recruitmentProfile(app.student.studentProfile, genderVisible), headshotUrl: profilePhotoSource(app.student.studentProfile.headshotUrl, { clubId: app.clubId, applicationId: app.id, ...(photoMode ? { mode: photoMode } : {}) }) ?? null } : null } };
+}
 /** Allowlist projection: never spread applicant/profile/free-text fields into anonymous payloads. */
 export function anonymousApplicantLabel(applicationId: string) {
   return `Applicant ${applicationId.replaceAll("-", "").slice(-10).toUpperCase()}`;
 }
 export function anonymousApplication(
-  app: ReviewApplication,
-): ReviewApplication {
+  app: ReviewApplication | LeaderReviewApplication,
+  genderVisible = false,
+): LeaderReviewApplication {
   const p = app.student.studentProfile;
   const label = anonymousApplicantLabel(app.id).slice("Applicant ".length);
   return {
@@ -40,8 +48,9 @@ export function anonymousApplication(
         computingId: "",
         scholarStatus: null,
         major: "",
-        gradYear: p?.gradYear ?? 0,
-        gpa: p?.gpa ?? null,
+        academicYear: p ? ("academicYear" in p ? p.academicYear : academicYear(p)) : "Year unavailable",
+        gender: genderVisible ? p?.gender ?? null : null,
+        gpa: supportedGpa(p?.gpa),
         satScore: p?.satScore ?? null,
         actScore: p?.actScore ?? null,
         actEnglish: p?.actEnglish ?? null,

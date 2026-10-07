@@ -4,7 +4,7 @@ import { scholarStatusSchema } from "@/lib/scholar-status";
 
 
 import { actShape } from "@/lib/test-scores";
-import { resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
+import { gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -12,6 +12,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
 const profileSchema = z.object({
+  ...profileEducationFields,
   scholarStatus: scholarStatusSchema.optional(),
   ...actShape,
   firstName: z.string().min(1, "First name is required"),
@@ -19,7 +20,7 @@ const profileSchema = z.object({
   computingId: z.string().min(1, "Computing ID is required"),
   major: z.string().min(1, "Major is required"),
   gradYear: z.number().int().min(2020).max(2030),
-  gpa: z.number().min(0).max(4.0).optional(),
+  gpa: gpaSchema.optional(),
   satScore: z.number().int().min(400).max(1600).optional(),
   linkedinUrl: linkedinUrlSchema.optional().or(z.literal("")),
   resumeUrl: resumeReferenceSchema.optional(),
@@ -54,6 +55,8 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
     throw new Error("You can only save your own resume.");
   }
 
+  if (parsed.headshotUrl && !parsed.headshotUrl.startsWith(`${user.id}/`)) throw new Error("You can only save your own photo.");
+
   // Update or create the profile
   const profile = await prisma.studentProfile.upsert({
     where: { userId: user.id },
@@ -61,6 +64,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       firstName: parsed.firstName,
       lastName: parsed.lastName,
       computingId: parsed.computingId,
+      highSchool: parsed.highSchool, gender: parsed.gender, pronouns: parsed.pronouns, transferStudent: parsed.transferStudent,
       major: parsed.major,
       gradYear: parsed.gradYear,
       scholarStatus: parsed.scholarStatus === null ? Prisma.DbNull : parsed.scholarStatus,
@@ -80,6 +84,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
       firstName: parsed.firstName,
       lastName: parsed.lastName,
       computingId: parsed.computingId,
+      highSchool: parsed.highSchool, gender: parsed.gender, pronouns: parsed.pronouns, transferStudent: parsed.transferStudent,
       major: parsed.major,
       gradYear: parsed.gradYear,
       scholarStatus: parsed.scholarStatus === null ? Prisma.DbNull : parsed.scholarStatus,
@@ -108,6 +113,7 @@ export async function updateStudentProfileSection(input: unknown) {
   const { user } = await requireAuth();
   const parsed = profileSectionSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
+  if (parsed.data.section === "identity" && parsed.data.headshotUrl && !parsed.data.headshotUrl.startsWith(`${user.id}/`)) return { error: "You can only save your own photo." };
   const { section, ...fields } = parsed.data;
   let data;
   if (parsed.data.section === "experience") {

@@ -42,6 +42,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
     clubInvitation:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return []}},
     clubTask:{findMany:async({where,include})=>{assert.equal(where.clubId,clubId);if(!access?.permissions.includes('tasks.manage')) {assert.deepEqual(where.assignments,{some:{memberId:membership.id}});assert.deepEqual(include.assignments.where,{memberId:membership.id})}return []}},
   }
+  prisma.$transaction = async fn => fn(prisma)
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const guardLoad=loader({
     '@/utils/prisma':{prisma},'./prisma':{prisma},

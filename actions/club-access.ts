@@ -1,4 +1,5 @@
 "use server";
+import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
@@ -25,10 +26,10 @@ const invitationSchema = z.object({
 export async function getClubAccess(clubId: string) {
   await requireClubPermission(clubId, ["leaders.manage"]);
   return {
-    members: await prisma.clubMember.findMany({
+    members: (await prisma.clubMember.findMany({
       where: { clubId },
-      include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } },
-    }),
+      include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
+    })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })),
     invitations: await prisma.clubInvitation.findMany({
       where: {
         clubId,
@@ -267,11 +268,11 @@ export async function revokeClubInvitation(
 
 export async function getClubMembers(clubId: string) {
   await requireClubPermission(clubId, ["members.manage"]);
-  return prisma.clubMember.findMany({
+  return (await prisma.clubMember.findMany({
     where: { clubId },
-    include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } },
+    include: { user: { select: { email: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } },
     orderBy: { id: "asc" },
-  });
+  })).map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } }));
 }
 export async function addClubMember(clubId: string, email: string) {
   const parsed = z
