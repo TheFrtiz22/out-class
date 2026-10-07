@@ -10,6 +10,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react"
 import { getInterviewWorkspace } from "@/lib/workspace-api"
+import { interviewQueue, nextInterviewApplicant } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { elapsedInterviewTime } from "@/lib/interview-mode"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
@@ -118,8 +119,17 @@ function InterviewSession({
   const carried = useRef(0)
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
+  const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
+  const recoveredApplicant = useCallback(() => {
+    try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string } | null }
+    catch { return null }
+  }, [recoveryKey])
+  function rememberApplicant(applicationId: string) {
+    try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId, applicationId })) }
+    catch { /* Server drafts remain available if browser storage is unavailable. */ }
+  }
   const round = data?.rounds.find((item) => item.id === roundId)
-  const queue = (data?.applications || []).filter(app => app.assignedRoundIds.includes(roundId) && (app.roundId === roundId || app.completedRoundIds.includes(roundId))).sort((a,b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
+  const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
   const index = queue.findIndex((app) => app.id === activeId)
   const [kitDirty, setKitDirty] = useState(false)
@@ -140,8 +150,10 @@ function InterviewSession({
       .then((result) => {
         if (current) {
           setData(result)
+          const recovery = recoveredApplicant()
           const focused = result.applications.find(a => a.id === leaderFocus?.applicantId)
           const first = result.rounds.find(r => r.id === focused?.roundId) ||
+            result.rounds.find(r => r.id === recovery?.roundId && interviewQueue(result.applications, r.id).some(a => a.id === recovery.applicationId)) ||
             result.rounds.find((item) =>
               result.applications.some(
                 (app) => app.roundId === item.id && app.assignedRoundIds.includes(item.id),
@@ -160,15 +172,16 @@ function InterviewSession({
     return () => {
       current = false
     }
-  }, [membership.clubId, retry])
+  }, [membership.clubId, retry, recoveredApplicant])
   useEffect(() => {
     if (!data) return
-    setActiveId("")
+    const recovery = recoveredApplicant()
+    setActiveId(recovery?.roundId === roundId && interviewQueue(data.applications, roundId).some(a => a.id === recovery.applicationId) ? recovery.applicationId : "")
     setMessage("")
     setRunning(false)
     setSeconds(0)
     carried.current = 0
-  }, [roundId])
+  }, [roundId, data, recoveredApplicant])
   useEffect(() => {
     if (!running) return
     started.current = Date.now()
@@ -207,12 +220,33 @@ function InterviewSession({
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
     setActiveId(id)
+    rememberApplicant(id)
     setMessage("")
     setFailed(false)
     setRunning(false)
     setSeconds(0)
     carried.current = 0
     requestAnimationFrame(() => heading.current?.focus())
+  }
+  async function nextApplicant() {
+    // Recheck membership, assignments, round and own completion at navigation time.
+    // Never navigate using the queue cached before this review was submitted.
+    setBusy(true)
+    try {
+      const fresh = await getInterviewWorkspace(membership.clubId)
+      const next = fresh.rounds.some(r => r.id === roundId && !r.archived)
+        ? nextInterviewApplicant(fresh.applications, roundId, activeId) : null
+      if (!next) return false
+      setData(fresh)
+      setActiveId(next.id) // The keyed subtree resets panel, document, questions and history together.
+      rememberApplicant(next.id)
+      setMessage("")
+      setFailed(false)
+      setRunning(false)
+      setSeconds(0)
+      carried.current = 0
+      return true
+    } finally { setBusy(false) }
   }
   if (loading) return <WorkspaceLoading label="Loading authorized candidates…" rows={3} />
   if (loadError || !data)
@@ -296,7 +330,7 @@ function InterviewSession({
         </div>
       ) : (
         <div key={active.id} className="oc-interview-candidate space-y-6">
-          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState}
+          {round && <InterviewKitSession key={`${active.id}-${round.id}`} clubId={membership.clubId} applicationId={active.id} roundId={round.id} formRef={form} onState={handleKitState} onNextApplicant={nextApplicant} onReturnToList={onExit}
 
 toolbar={completed => <><Button type="button" variant="ghost" disabled={busy} onClick={onExit}><ArrowLeft className="size-4" />Back to interviews</Button><div><p className="text-xs uppercase tracking-widest text-muted-foreground">{round.name}</p><h2 className="font-display text-xl">Interview · Candidate {index + 1}</h2></div><div className="flex flex-wrap items-center gap-3"><span className="text-xs text-muted-foreground">{running ? "Timer running" : "Timer paused"} · Your session</span>
               <span

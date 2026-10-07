@@ -42,7 +42,7 @@ export function getInterviewWorkspace(clubId: string) {
     const p = s.students.find(p => p.id === a.studentId)?.profile;
     return { id: a.id, roundId: a.roundId, name: p ? `${p.firstName} ${p.lastName}` : "Profile not provided", assignedRoundIds: s.interviewFoundation.assignments.filter(x => x.applicationId === a.id && x.memberId === member.id && !x.revokedAt && !club.rounds.find(r => r.id === x.roundId)?.anonymousReview).map(x => x.roundId), completedRoundIds: s.interviews.filter(r => r.applicationId === a.id && r.interviewerId === member.id && r.completedAt && !r.anonymousReview).map(r => r.roundId) };
   }).filter(a => a.assignedRoundIds.length);
-  return { applications, rounds: club.rounds.filter(r => !r.anonymousReview && applications.some(a => a.assignedRoundIds.includes(r.id))).map(r => ({ id: r.id, name: r.name })) };
+  return { applications, rounds: club.rounds.filter(r => !r.anonymousReview && applications.some(a => a.assignedRoundIds.includes(r.id))).map(r => ({ id: r.id, name: r.name, archived: false })) };
 }
 export function saveInterviewKit(clubId: string, roundId: string, version: number, questions: unknown) {
   if (!actor(clubId).caps.editKit) throw new Error("Explicit leadership office required.");
