@@ -1,6 +1,8 @@
 # Post-interview workflow verification
 
-Implemented at `e66c0f6` on `codex/post-interview-workflow`, based on `fffae10`. The October 7 release attempt below supersedes the original local-only status. The feature branch is pushed; the post-interview feature has not been merged or deployed to production.
+**LIVE on https://www.out-class.net/.** PR #2 merged as `7cab4dc5df9f43e4cbd425d99dfe2a89f562ae76`; production deployment `dpl_22pDrXgBk97Rn6Qjf1GXHsBP3Bz1` serves that exact revision. Normal traffic and scheduled delivery are restored. See [the October 7 release receipt](post-interview-release-20261007.md) for migration, recovery, hosted acceptance, and verification limits. The blocked attempt below is historical and superseded.
+
+Implemented at `e66c0f6` on `codex/post-interview-workflow`, based on `fffae10`. Current-main admin/profile changes were preserved in the final integrated tree. The post-interview implementation itself requires no new schema; the three explicitly authorized main prerequisites were applied before promotion.
 
 ## Behavior
 
@@ -36,15 +38,15 @@ Used a temporary local harness outside the repository, importing the actual comp
 
 Screenshots are local verification artifacts under `C:\Users\arden\AppData\Local\OutClass-staging-verification`: `post-interview-desktop.jpg` and `post-interview-mobile.jpg`.
 
-## Limits and release implications
+## Original local verification limits
 
 Browser verification used synthetic local Demo data. Hosted Auth/Storage, real applicant records, and a physical touchscreen were not tested for this change. Pointer/touch semantics and retry/denial cases have targeted test coverage. Existing server authorization, immutable submission, resume annotations, snapshots, and anonymous projections were reused.
 
-No migration is required. Production remains unchanged; a production release is outside this request.
+At the original implementation checkpoint, no migration was required and production was unchanged. The subsequent authorized release is recorded above and in the release receipt.
 
-## Authorized release attempt — October 7, 2026
+## Historical blocked attempt — October 7, 2026
 
-**BLOCKED by current main's unapplied schema prerequisites. The post-interview changes are not live.**
+**Superseded by the completed release above.** This attempt was blocked by current main's unapplied schema prerequisites; they were subsequently explicitly authorized, rehearsed, and applied.
 
 - The user authorized branch push, PR merge, production deployment, and synthetic live acceptance. PR: https://github.com/TheFrtiz22/out-class/pull/2.
 - Initial remote main was `fffae10926bcac55d5b389b87ed268c42f166834`, with a clean working tree. The actual feature diff contains no migration, Prisma model, dependency, environment file, or test-only route change.
