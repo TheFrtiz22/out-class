@@ -20,7 +20,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const [resumeError, setResumeError] = useState("");
   const [open, setOpen] = useState(false);
   const [retry, setRetry] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialPanel);
   const [imageFailed, setImageFailed] = useState(false);
   const resumeTrigger = useRef<HTMLButtonElement>(null);
   const resumeRequest = useRef<AbortController | null>(null);
@@ -29,7 +29,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
   useEffect(() => {
     let current = true;
-    setLoading(true); setError(""); setResumeError(""); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
+    setLoading(!initialPanel || retry > 0); setError(""); setResumeError(""); if (!initialPanel || retry) setPanel(null); setDocumentId(""); setImageFailed(false);
     (initialPanel && !retry ? Promise.resolve(initialPanel) : getInterviewApplicantPanel(scope)).then(async value => {
       if (!current) return;
       setPanel(value);
