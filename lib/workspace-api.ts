@@ -1,4 +1,5 @@
 "use client"
+import { genderVisibility } from "@/lib/recruitment-profile";
 import { readWorkspace } from "@/lib/workspace-read"
 import * as campusEvents from "@/actions/campus-events"
 import * as eventFlyers from "@/actions/event-flyers"
@@ -21,7 +22,7 @@ import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as demoTasks from "@/lib/demo/tasks"
 // The sole client data boundary: demo operations never invoke a server action.
-import { anonymousApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
+import { anonymousApplication, identifiedApplication, validateAnonymousText, type ReviewApplication } from "@/lib/anonymous-review"
 import { meetsTestRequirement, testRequirements } from "@/lib/test-scores"
 import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
@@ -50,7 +51,7 @@ import {
 } from "@/lib/demo/store"
 import { readVotingDisplay } from "@/lib/voting-presentation"
 import { applicationInputSchema, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
-import { profileSectionSchema } from "@/lib/student-profile"
+import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 function adapt<F extends (...args: never[]) => Promise<unknown>>(
   real: F,
@@ -79,15 +80,20 @@ export const getClubDirectory = adapt((...args: Parameters<typeof directory.getC
 export const getPublicClub = adapt((...args: Parameters<typeof directory.getPublicClub>) => readWorkspace<Awaited<ReturnType<typeof directory.getPublicClub>>>("publicClub", args), (id) => ({
   club: demoDirectory().find((c) => c.id === id || c.slug === id) || null,
 }))
-export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipeline>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipeline>>>("pipeline", args), (clubId) => {
+export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipeline>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipeline>>>("pipeline", args), (clubId, filter = {}) => {
   const s = demoStore.get()
   if (s.perspective.role !== "leader" || clubId !== s.perspective.clubId || clubId !== s.clubs[0].id)
     throw new Error("Choose a club leader perspective.")
+  const rounds = s.clubs.find(c => c.id === clubId)!.rounds;
+  const selectedRound = rounds.find(r => r.id === filter.roundId);
+  if ((filter.gender || filter.genderCounts) && (!selectedRound || !genderVisibility(s.applicantDisplay[selectedRound.id]?.config))) throw Error("Gender visibility must be explicitly enabled for this round.");
+  const scoped = s.applications.filter(a => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId));
   return {
-    rounds: s.clubs.find((c) => c.id === clubId)!.rounds,
+    genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
+    rounds: rounds.map(r => ({ ...r, genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
-      .filter((a) => a.clubId === clubId && a.status !== "DRAFTING")
-      .map((a) => { const app = joinedApplication(a.id); return s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication) : app }),
+      .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
+      .map((a) => { const app = joinedApplication(a.id); return s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) }),
   }
 })
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
@@ -176,7 +182,9 @@ export const getStudentProfile = adapt(profile.getStudentProfile, () => ({
   profile: demoUser().profile,
 }))
 export const updateStudentProfileSection = adapt(profile.updateStudentProfileSection, (input) => {
-  const parsed = profileSectionSchema.safeParse(input)
+  // Fictional bundled images are Demo presentation assets, never live attachments.
+  const samplePhoto = input && typeof input === "object" && "section" in input && input.section === "identity" && "headshotUrl" in input && typeof input.headshotUrl === "string" && ["/images/landing/jordan-avery.jpg", "/demo/sample-headshot.svg"].includes(new URL(input.headshotUrl, "http://demo.invalid").pathname) ? input.headshotUrl : undefined;
+  const parsed = profileSectionSchema.safeParse(samplePhoto ? { ...(input as Record<string, unknown>), headshotUrl: undefined } : input)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   return demoStore.mutate((s) => {
     const user = s.students.find((p) => p.id === demoUser().id)!
@@ -187,7 +195,7 @@ export const updateStudentProfileSection = adapt(profile.updateStudentProfileSec
         id: `${user.id}-experience-${i}`,
         studentProfileId: user.profile.id,
       }))
-    else Object.assign(user.profile, fields)
+    else Object.assign(user.profile, fields, samplePhoto ? { headshotUrl: samplePhoto } : {})
     return { profile: user.profile }
   })
 })
@@ -248,7 +256,8 @@ export const setClubTestRequirement = adapt(crm.setClubTestRequirement, (clubId,
 })
 export const revealApplicantIdentity = adapt(crm.revealApplicantIdentity, (clubId, applicationId, reason) => {
   scopedApplication(clubId, applicationId); if (reason.trim().length < 10) throw new Error("Add a reason.")
-  return joinedApplication(applicationId)
+  const app = joinedApplication(applicationId)
+  return identifiedApplication(app as unknown as ReviewApplication, genderVisibility(demoStore.get().applicantDisplay[app.roundId]?.config))
 })
 
 export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, (clubId, applicationId, content, confirmed) => {
@@ -395,7 +404,7 @@ export const getApplicantDisplay = adapt((...args: Parameters<typeof applicantIn
   let config=s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig
   if(input.previewConfig)config=input.previewConfig
   if(input.sessionId){const session=s.votingSessions?.find(v=>v.id===input.sessionId&&v.clubId===input.clubId&&v.candidates.some(c=>c.applicationId===app.id));if(!session)throw Error("Voting presentation unavailable.");config=readVotingDisplay(session.displayConfig)}
-  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, round, config, (s.observations || []).filter(o => o.applicationId === app.id));
+  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id));
   // The bundled fictional résumé is a demo asset, never a live private-download request.
   if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
     display.links = display.links.filter(link => link.field !== "resume")

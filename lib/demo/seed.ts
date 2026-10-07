@@ -115,6 +115,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       lastName: last[Math.floor(i / 20)],
       computingId: `sample${i + 1}`,
       major: majors[i % majors.length],
+      highSchool: null as string | null, gender: null as string | null, pronouns: null as string | null, transferStudent: false,
       scholarStatus: null as import("@prisma/client").Prisma.JsonValue | null,
       gradYear: year + 1 + (i % 4),
       gpa: i === 0 ? 3.72 : i % 7 === 0 ? null : Number((3.1 + (i % 19) * 0.045).toFixed(2)),

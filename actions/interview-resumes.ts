@@ -1,4 +1,5 @@
 ﻿"use server";
+import { profilePhotoSource } from "@/lib/profile-photo";
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { Prisma } from "@prisma/client";
@@ -31,7 +32,7 @@ export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
     const { app } = await authorizeInterview(tx, data, user.id);
     const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { firstName: true, lastName: true, headshotUrl: true, scholarStatus: true } });
     const document = await tx.interviewResumeDocument.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: data.roundId } }, select: documentSelect });
-    return { profile, document };
+    return { profile: profile ? { ...profile, headshotUrl: profilePhotoSource(profile.headshotUrl, data) ?? null } : null, document };
   });
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */

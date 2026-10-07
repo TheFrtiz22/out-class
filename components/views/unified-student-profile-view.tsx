@@ -1,4 +1,5 @@
 "use client"
+import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarNames } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
@@ -6,7 +7,7 @@ import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
-  profileChecklist,
+  gpaSchema, profileChecklist,
   safeProfileUrl, resolveResumeUrl,
   type FullStudentProfile,
   type ProfileSection,
@@ -131,7 +132,7 @@ export function UnifiedStudentProfileView() {
       </p>
       <header className="flex items-start gap-5 pb-9 sm:gap-7 sm:pb-12">
         <Avatar className="size-24 shrink-0 sm:size-32">
-          <AvatarImage src={safeProfileUrl(profile.headshotUrl)} alt="" />
+          <AvatarImage src={profilePhotoSource(profile.headshotUrl)} alt="" />
           <AvatarFallback className="bg-secondary text-xl font-medium text-primary sm:text-3xl">
             {profile.firstName[0]}
             {profile.lastName[0]}
@@ -193,13 +194,16 @@ export function UnifiedStudentProfileView() {
                 </span>
               </div>
               <p className="mt-2 text-sm text-muted-foreground">{profile.major}</p>
+              {profile.highSchool && <p className="mt-2 text-sm">High school: {profile.highSchool}</p>}
+              {(profile.gender || profile.pronouns) && <p className="mt-2 text-sm">{[profile.gender && `Gender: ${profile.gender}`, profile.pronouns && `Pronouns: ${profile.pronouns}`].filter(Boolean).join(" · ")}</p>}
+              {profile.transferStudent && <p className="mt-2 text-sm">Transfer student</p>}
               {!!scholarNames(profile.scholarStatus).length && <p className="mt-2 text-sm"><span className="text-muted-foreground">Scholar status: </span>{scholarNames(profile.scholarStatus).join(", ")}</p>}
               {(profile.gpa != null || profile.satScore != null || profile.actScore != null) && (
                 <dl className="mt-4 flex flex-wrap gap-6 text-sm">
                   {profile.gpa != null && (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">GPA</dt>
-                      <dd>{profile.gpa.toFixed(2)} / 4.00</dd>
+                      <dd>{gpaSchema.safeParse(profile.gpa).success ? `${profile.gpa} / 4.00` : `${profile.gpa} · Confirm a GPA out of 4.0 in Education`}</dd>
                     </div>
                   )}
                   {profile.actScore != null && <div><dt className="text-muted-foreground">ACT</dt><dd>{profile.actScore}</dd></div>}

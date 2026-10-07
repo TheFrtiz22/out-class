@@ -1,9 +1,11 @@
+import { assertClubOperational } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { interviewCapabilities, type InterviewScope } from "@/lib/interview-access";
 
 export async function interviewActor(tx: AppTransactionClient, clubId: string, userId: string) {
   // Membership management serializes on Club. Hold this through authorization and mutation.
   await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR SHARE`;
+  await assertClubOperational(tx, clubId);
   await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR SHARE`;
   await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE "userId" = ${userId} AND "clubId" = ${clubId} FOR SHARE`;
   const member = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } }, include: { user: { select: { disabledAt: true } } } });

@@ -1,7 +1,9 @@
+import { memberAcademicProfile } from "@/lib/recruitment-profile";
 import { demoStore } from "./store";
 import {
   taskInputSchema,
   taskAudienceSchema,
+  projectTaskAudience,
   resolveTaskRecipients,
   assertRecipientPreview,
   reviewTaskSchema,
@@ -32,7 +34,7 @@ export function getTaskWorkspace(clubId: string) {
       user: {
         id: m.userId,
         email: s.students.find((u) => u.id === m.userId)!.email,
-        studentProfile: s.students.find((u) => u.id === m.userId)!.profile,
+        studentProfile: memberAcademicProfile((() => { const p = s.students.find((u) => u.id === m.userId)!.profile; return { firstName:p.firstName,lastName:p.lastName,gradYear:p.gradYear,transferStudent:p.transferStudent } })()),
       },
     }));
   return structuredClone({
@@ -48,6 +50,7 @@ export function getTaskWorkspace(clubId: string) {
       )
       .map((t) => ({
         ...t,
+        audience: projectTaskAudience(t.audience),
         project: t.projectId ? s.tasks.filter(project=>project.id===t.projectId&&project.clubId===clubId&&project.kind==="PROJECT").map(project=>({id:project.id,title:project.title}))[0]??null : null,
         assignments: t.assignments.filter(
           (a) => manage || a.memberId === member.id,
@@ -60,7 +63,7 @@ function recipients(clubId: string, audience: ReturnType<typeof taskAudienceSche
   if ([...audience.members,...audience.excludeMembers].some(id=>!workspace.members.some(member=>member.id===id))) throw new Error("Member unavailable.");
   const excludedTasks=workspace.tasks.filter(task=>audience.excludeTasks.includes(task.id));
   if(excludedTasks.length !== new Set(audience.excludeTasks).size)throw new Error("Choose exclusion tasks in this club.");
-  return resolveTaskRecipients(workspace.members,audience,excludedTasks.flatMap(task=>task.assignments.flatMap(a=>a.memberId?[a.memberId]:[])));
+  return resolveTaskRecipients(workspace.members,projectTaskAudience(audience),excludedTasks.flatMap(task=>task.assignments.flatMap(a=>a.memberId?[a.memberId]:[])));
 }
 export function previewTaskAudience(input: {clubId:string;audience:TaskInput["audience"]}) {
   access(input.clubId,true);
@@ -74,12 +77,13 @@ export function saveTask(input: TaskInput) {
     if(data.projectId && (data.projectId===data.id || data.kind!=="TASK" || !s.tasks.some(task=>task.id===data.projectId && task.clubId===data.clubId && task.kind==="PROJECT")))throw new Error("Choose a project in this club.");
     if(existing && (existing.revision!==data.revision || existing.kind!==data.kind))throw new Error("Task changed. Refresh before saving.");
     if(existing && existing.status!=="DRAFT" && data.status==="DRAFT")throw new Error("An assigned task cannot become a draft.");
-    if(existing && existing.status!=="DRAFT" && JSON.stringify(taskAudienceSchema.parse(existing.audience))!==JSON.stringify(data.audience))throw new Error("Audience is fixed after assignment.");
+    const unchangedAudience=existing && JSON.stringify(projectTaskAudience(existing.audience))===JSON.stringify(projectTaskAudience(data.audience));
+    if(existing && existing.status!=="DRAFT" && !unchangedAudience)throw new Error("Audience is fixed after assignment.");
     const assigning=data.status!=="DRAFT" && (!existing || existing.status==="DRAFT");
     const selected=assigning?recipients(data.clubId,data.audience):[];
     if(assigning){if(!selected.length)throw new Error("Choose an audience with current members.");assertRecipientPreview(selected,data.expectedRecipients)}
     const {expectedRecipients,...fields}=data;
-    if(existing){Object.assign(existing,fields,{dueAt:data.dueAt?new Date(data.dueAt):null,revision:data.revision+1});if(assigning)existing.assignments=selected.map(({member,groupLabel})=>newAssignment(existing.id,member,groupLabel));return{id:existing.id}}
+    if(existing){Object.assign(existing,fields,{audience:unchangedAudience?existing.audience:data.audience,dueAt:data.dueAt?new Date(data.dueAt):null,revision:data.revision+1});if(assigning)existing.assignments=selected.map(({member,groupLabel})=>newAssignment(existing.id,member,groupLabel));return{id:existing.id}}
     const id=crypto.randomUUID();s.tasks.push({...fields,id,assigneeId:null,createdAt:new Date(),dueAt:data.dueAt?new Date(data.dueAt):null,assignments:selected.map(({member,groupLabel})=>newAssignment(id,member,groupLabel))});return{id};
   });
 }

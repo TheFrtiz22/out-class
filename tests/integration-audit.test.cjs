@@ -34,7 +34,7 @@ const personas=[
 for(const [name,access,mode] of personas) test(`${name}: server boundaries ignore forged club IDs and client roles`,async()=>{
   const membership=access?{...access,id:uuid(4),clubId,userId:actorId}:null
   const privateApp={id:uuid(5),clubId,roundId:uuid(6),status:'IN_REVIEW',studentId:'SECRET',submittedAt:new Date(),round:{anonymousReview:true},student:{email:'SECRET@virginia.edu',studentProfile:{firstName:'SECRET',lastName:'PERSON',gradYear:2028}},evaluations:[],answers:[],bookings:[]}
-  const prisma={
+  const prisma={ $queryRaw: async () => [],
     user:{findUnique:async()=>null,upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
     clubMember:{findUnique:async({where})=>where.userId_clubId.clubId===clubId?membership:null,findMany:async()=>[]},
     pipelineRound:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return [privateApp.round]}},
@@ -42,6 +42,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
     clubInvitation:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return []}},
     clubTask:{findMany:async({where,include})=>{assert.equal(where.clubId,clubId);if(!access?.permissions.includes('tasks.manage')) {assert.deepEqual(where.assignments,{some:{memberId:membership.id}});assert.deepEqual(include.assignments.where,{memberId:membership.id})}return []}},
   }
+  prisma.$transaction = async fn => fn(prisma)
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const guardLoad=loader({
     '@/utils/prisma':{prisma},'./prisma':{prisma},

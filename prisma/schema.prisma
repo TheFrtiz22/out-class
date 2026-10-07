@@ -12,6 +12,9 @@ datasource db {
 // ==========================================
 
 model User {
+  adminElevations AdminElevation[]
+  adminElevationChallenges AdminElevationChallenge[]
+  platformReports PlatformReport[]
   approvedInterviewPanels InterviewRoom[] @relation("RoomPanelApprover")
   interviewPanelGrants InterviewPanelAssignment[] @relation("InterviewPanelGrantor")
   interviewAnnotationRevisions InterviewAnnotationRevision[] @relation("InterviewAnnotationActor")
@@ -47,6 +50,10 @@ enum AppRole {
 }
 
 model StudentProfile {
+  highSchool String?
+  gender String?
+  pronouns String?
+  transferStudent Boolean @default(false)
   scholarStatus Json?
   actScore   Int?
   actEnglish Int?
@@ -86,6 +93,8 @@ model Experience {
 // ==========================================
 
 model Club {
+  suspendedAt DateTime?
+
   applicationOpen Boolean @default(true)
   applicationDeadline DateTime?
   applicationVersion Int @default(0)
@@ -1046,4 +1055,53 @@ model EventRsvp {
 
   @@id([eventId, userId])
   @@index([userId, createdAt])
+}
+
+// Independent elevation: opaque HttpOnly capability, bound to verified Auth session.
+model AdminElevation {
+  id String @id @default(uuid())
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId String
+  tokenHash String @unique
+  authSessionId String
+  factorId String
+  passwordVerifiedAt DateTime
+  mfaVerifiedAt DateTime
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  @@index([actorId, expiresAt])
+}
+model AdminElevationChallenge {
+  id String @id @default(uuid())
+  actor User @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId String
+  tokenHash String @unique
+  authSessionId String
+  encryptedCredentials String
+  factorId String
+  providerChallengeId String
+  passwordVerifiedAt DateTime
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  consumedAt DateTime?
+  attempts Int @default(0)
+  @@index([actorId, createdAt])
+}
+model PlatformReport {
+  id String @id @default(uuid())
+  kind String
+  targetId String
+  reporterId String
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Restrict)
+  summary String
+  status String @default("OPEN")
+  resolution String?
+  resolvedBy String?
+  resolvedAt DateTime?
+  revision Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+  @@index([kind, targetId])
 }

@@ -1,3 +1,4 @@
+import { assertClubOperational } from "@/lib/club-suspension";
 import { randomUUID } from 'node:crypto';
 import { prisma, type AppTransactionClient } from '@/utils/prisma';
 import { canManageOrganizationInvitation } from '@/lib/organization-authorization';
@@ -6,11 +7,28 @@ import { invitationEmailConfig, sendInvitationEmail } from '@/utils/email';
 export const EMAIL_COOLDOWN_MS = 15 * 60 * 1000;
 export const EMAIL_HOURLY_LIMIT = 1000;
 
-export async function deliveryActor(tx: AppTransactionClient, clubId: string, userId: string) {
+async function resolveDeliveryActor(tx: AppTransactionClient, clubId: string, userId: string, authorizeRequest: boolean) {
+  await assertClubOperational(tx, clubId);
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
   const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } });
-  if (!account || account.disabledAt || !actor || !canManageOrganizationInvitation(actor, { requestedRole: 'MEMBER', permissions: [] })) throw new Error('Invitation sending access denied.');
+  if (!account || account.disabledAt) throw new Error('Invitation sending access denied.');
+  if ((process.env.OUTCLASS_PLATFORM_ADMIN_IDS || '').split(',').map(value => value.trim()).includes(userId) &&
+      (await tx.platformAdmin.findUnique({ where: { userId } }))?.active) {
+    if (authorizeRequest) {
+      const { requirePlatformAdmin } = await import("@/utils/platform-admin");
+      const admin = await requirePlatformAdmin();
+      if (admin.id !== userId) throw new Error("Invitation sending access denied.");
+    }
+    // Administrative invitation delivery does not grant any club membership.
+    return { isOwner: true, status: 'ACTIVE', permissions: [] };
+  }
+  if (!actor || !canManageOrganizationInvitation(actor, { requestedRole: 'MEMBER', permissions: [] })) throw new Error('Invitation sending access denied.');
   return actor;
+}
+
+/** Request-time Admin authority always requires the full live Admin guard. */
+export async function deliveryActor(tx: AppTransactionClient, clubId: string, userId: string) {
+  return resolveDeliveryActor(tx, clubId, userId, true);
 }
 
 export async function enqueueInvitationEmail(tx: AppTransactionClient, invitationId: string, clubId: string, userId: string, key: string) {
@@ -41,7 +59,9 @@ async function eligible(tx: AppTransactionClient, deliveryId: string) {
   const invitation = delivery.invitation;
   if (invitation.club.invitationEmailEnabled === false) return null;
   if (invitation.status !== 'PENDING' || invitation.expiresAt <= new Date() || invitation.acceptedAt || invitation.revokedAt || invitation.declinedAt || delivery.recipientEmail !== invitation.email) return null;
-  const requester = await deliveryActor(tx, invitation.clubId, delivery.requestedById).catch(() => null);
+  // The durable outbox was authorized at enqueue time. Workers recheck current
+  // account/grant authority without depending on the originating request cookies.
+  const requester = await resolveDeliveryActor(tx, invitation.clubId, delivery.requestedById, false).catch(() => null);
   if (!requester || !canManageOrganizationInvitation(requester, invitation)) return null;
   const inviterAccount = await tx.user.findUnique({ where: { id: invitation.invitedBy }, select: { disabledAt: true } });
   if (!inviterAccount || inviterAccount.disabledAt) return null;
@@ -68,6 +88,8 @@ export async function processInvitationEmails(clubId: string, limit = 5) {
   async function deliver(candidate: { id: string }) {
     const claimed = await prisma.$transaction(async tx => {
       await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+      const paused = await tx.$queryRaw<{ id: string }[]>`SELECT id FROM "Club" WHERE id=${clubId} AND "suspendedAt" IS NOT NULL`;
+      if (paused.length) return null; // Leave queued invitations intact until restoration.
       const current = await tx.invitationDelivery.findUniqueOrThrow({ where: { id: candidate.id } });
       if (current.status !== 'QUEUED') return null;
       const ready = await eligible(tx, current.id);

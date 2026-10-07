@@ -30,7 +30,7 @@ function identityHarness() {
   const accounts = { [actor]: { id: actor, email: 'admin@virginia.edu' }, [target]: { id: target, email: 'target@virginia.edu', role: 'STUDENT' } };
   const session = { id: 'support-session', actorId: actor, targetUserId: target, mode: 'IMPERSONATION', expiresAt: new Date(Date.now() + 60000), endedAt: null };
   let tokenHash;
-  const prisma = {
+  const prisma = { $queryRaw: async () => [],
     user: { upsert: async () => accounts[login], findUnique: async ({ where }) => ({ ...accounts[where.id], disabledAt: where.id === target && disabled ? new Date() : null }) },
     platformAdmin: { findUnique: async ({ where }) => where.userId === actor ? { active: grant } : targetGrant ? { active: true } : null },
     platformViewSession: { findUnique: async ({ where }) => where.tokenHash === tokenHash ? session : null },
@@ -38,6 +38,7 @@ function identityHarness() {
     $transaction: async fn => fn(prisma),
   };
   const load = loader({
+    "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
     '@/utils/prisma': { prisma }, './prisma': { prisma },
     'next/headers': { cookies: async () => ({ has: key => key === cookie && !!token, get: key => key === cookie && token ? { value: token } : undefined }) },
     '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }), mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: aal } }) } } }) },
@@ -118,7 +119,7 @@ test('failed statements remain attempts; ordinary users retain their own audit i
 function tutorialHarness() {
   const rows = new Map(); let leader = true, currentUser = target, impersonation = null;
   const key = q => `${q.userId}:${q.experience}`;
-  const tx = { userTutorial: {
+  const tx = { $queryRaw: async () => [], userTutorial: {
     findUnique: async ({ where }) => rows.get(key(where.userId_experience)) ?? null,
     findUniqueOrThrow: async ({ where }) => rows.get(key(where.userId_experience)),
     upsert: async ({ where, create }) => { const id = key(where.userId_experience); if (!rows.has(id)) rows.set(id, { ...create, version: 1 }); return rows.get(id); },
@@ -162,7 +163,7 @@ test('support banner is a root-level fixed non-dismissable element and exit only
   const root = fs.readFileSync('app/layout.tsx', 'utf8'), banner = fs.readFileSync('components/platform-view-banner.tsx', 'utf8');
   assert.match(root, /cookieStore\.has\(PLATFORM_VIEW_COOKIE\) && <PlatformViewBanner/);
   assert.match(banner, /fixed inset-x-0 top-0 z-\[2147483000\]/);
-  assert.match(banner, /Viewing as/); assert.match(banner, /Exit impersonation/);
+  assert.match(banner, /Viewing as/); assert.match(banner, /Return to Admin/);
   assert.doesNotMatch(banner, /signOut|setSession|hidden|dismiss/i);
   assert.match(banner, /action: "end"/);
 });

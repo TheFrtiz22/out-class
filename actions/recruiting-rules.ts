@@ -1,4 +1,5 @@
 "use server"
+import { lockOperationalClub } from "@/lib/club-suspension"
 import type { AppTransactionClient } from "@/utils/prisma";
 
 import { Prisma } from "@prisma/client"
@@ -33,6 +34,7 @@ export async function saveRecruitingRule(input: z.infer<typeof saveRuleSchema>) 
   const parsed = saveRuleSchema.parse(input)
   const { user } = await requireClubPermission(parsed.clubId, ["recruitment.manage"])
   const saved = await prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, parsed.clubId);
     const round = await scopedRound(tx, parsed)
     validateRuleRequirement(parsed.thresholds, round.club.testRequirement)
     if ((round.screeningRule?.revision ?? 0) !== parsed.expectedRevision) throw new Error("Rules changed. Reload before saving.")
@@ -72,6 +74,7 @@ export async function applyRecruitingRuleFlags(input: z.infer<typeof applyRuleSc
   const parsed = applyRuleSchema.parse(input)
   const { user, membership } = await requireClubPermission(parsed.clubId, ["recruitment.manage", "applications.review", "decisions.manage"])
   const result = await prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, parsed.clubId);
     const fresh = await preview(tx, { clubId: parsed.clubId, roundId: parsed.roundId }, hasPermission(membership, "applicants.identify"))
     if (fresh.fingerprint !== parsed.fingerprint) throw new Error("Applicants or rules changed. Preview again before applying flags.")
     const matches = fresh.results.filter(result => result.outcome === "flag")
@@ -101,6 +104,7 @@ export async function clearRecruitingRuleFlags(input: z.infer<typeof ruleScopeSc
   const scope = ruleScopeSchema.parse(input)
   const { user } = await requireClubPermission(scope.clubId, ["recruitment.manage", "applications.review", "decisions.manage"])
   await prisma.$transaction(async tx => {
+    await lockOperationalClub(tx, scope.clubId);
     await scopedRound(tx, scope)
     await tx.recruitingRuleFlag.deleteMany({ where: { roundId: scope.roundId } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: scope.clubId, targetId: scope.roundId, action: "recruiting.rules.clear", details: { roundId: scope.roundId } } })

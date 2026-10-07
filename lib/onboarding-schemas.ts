@@ -1,4 +1,4 @@
-import { linkedinUrlSchema } from "@/lib/student-profile"
+import { gpaSchema, linkedinUrlSchema } from "@/lib/student-profile"
 import { z } from "zod"
 
 // ─── Step 1: Account Basics ───────────────────────────────────────────────────
@@ -63,7 +63,7 @@ export const academicProfileSchema = z.object({
       (v) => {
         if (!v || v === "") return true
         const n = Number(v)
-        return !isNaN(n) && n >= 0 && n <= 4.0
+        return /^\d(?:\.\d{1,3})?$/.test(v) && gpaSchema.safeParse(n).success
       },
       "GPA must be between 0.0 and 4.0"
     ),

@@ -1,4 +1,7 @@
 "use client"
+import { profilePhotoSource } from "@/lib/profile-photo"
+import { genderValues } from "@/lib/student-profile"
+import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/lib/application-decisions"
@@ -123,6 +126,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
   const [act, setAct] = useState("")
   const [compact, setCompact] = useState(true)
   const [view, setView] = useState<"list" | "kanban">("list")
+  const [gender, setGender] = useState("")
+  const [showGenderCounts, setShowGenderCounts] = useState(false)
   const [sort, setSort] = useState("name")
   const [descending, setDescending] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -146,7 +151,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
     setLoading(!retained.current)
     setError("")
     
-    getClubPipeline(membership.clubId)
+    getClubPipeline(membership.clubId, { ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
       .then((result) => {
         if (current) setData(result)
       })
@@ -159,7 +164,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
     return () => {
       current = false
     }
-  }, [membership.clubId, revision])
+  }, [membership.clubId, revision, round, gender, showGenderCounts])
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const element = event.target as HTMLElement
@@ -198,7 +203,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
             (!status || app.status === status) &&
             (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
             (!major || profile?.major === major) &&
-            (!year || String(profile?.gradYear) === year) &&
+            (!year || String(profile?.academicYear) === year) &&
             (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
             (!act || (profile?.actScore != null && profile.actScore > Number(act))) &&
             (!sat || (profile?.satScore != null && profile.satScore > Number(sat))) &&
@@ -218,7 +223,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
             value = left - right
           } else if (sort === "year")
             value =
-              (a.student.studentProfile?.gradYear || 0) - (b.student.studentProfile?.gradYear || 0)
+              compareAcademicYears(a.student.studentProfile?.academicYear || "", b.student.studentProfile?.academicYear || "")
           else if (sort === "status") value = a.status.localeCompare(b.status)
           else value = name(a).localeCompare(name(b))
           return (descending ? -value : value) || a.id.localeCompare(b.id)
@@ -402,7 +407,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
           aria-label="Filter round"
           className={selectStyle}
           value={round}
-          onChange={(event) => setRound(event.target.value)}
+          onChange={(event) => { setRound(event.target.value); setGender(""); setShowGenderCounts(false) }}
         >
           <option value="">All rounds</option>
           {data.rounds.map((item) => (
@@ -447,6 +452,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
           {compact ? "Compact rows" : "Comfortable rows"}
         </Button>
         </>}
+      {round && data?.rounds.find(r => r.id === round)?.genderVisible && <div className="flex flex-wrap items-center gap-3 text-sm">
+        <label>Gender <select aria-label="Filter gender" className={selectStyle} value={gender} onChange={e => setGender(e.target.value)}><option value="">All</option>{genderValues.map(v => <option key={v}>{v}</option>)}</select></label>
+        <label className="flex gap-2"><input type="checkbox" checked={showGenderCounts} onChange={e => setShowGenderCounts(e.target.checked)} />Show round gender composition</label>
+        {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
+      </div>}
       {!decisionsOnly && <details className="text-sm">
         <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
           Academic filters
@@ -470,7 +480,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
               ))}
           </select>
           <select
-            aria-label="Filter graduation year"
+            aria-label="Filter academic year"
             className={selectStyle}
             value={year}
             onChange={(event) => setYear(event.target.value)}
@@ -479,11 +489,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
             {[
               ...new Set(
                 applicants.flatMap((app) =>
-                  app.student.studentProfile ? [app.student.studentProfile.gradYear] : [],
+                  app.student.studentProfile ? [app.student.studentProfile.academicYear] : [],
                 ),
               ),
             ]
-              .sort()
+              .sort(compareAcademicYears)
               .map((value) => (
                 <option key={value}>{value}</option>
               ))}
@@ -587,7 +597,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
               <SheetHeader className="px-0 pr-10">
                 <Avatar className="size-12">
                   <AvatarImage
-                    src={safeProfileUrl(active.student.studentProfile?.headshotUrl)}
+                    src={profilePhotoSource(active.student.studentProfile?.headshotUrl)}
                     alt=""
                   />
                   <AvatarFallback>
@@ -643,7 +653,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
                 {active.student.studentProfile ? (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Class of {active.student.studentProfile.gradYear}
+                      {active.student.studentProfile.academicYear}
                       {active.student.studentProfile.gpa != null &&
                         ` · GPA ${active.student.studentProfile.gpa}`}
                       {active.student.studentProfile.actScore != null && ` · ACT ${active.student.studentProfile.actScore}`}

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
-export const scholarSelections = ["JEFFERSON", "WALENTAS", "ECHOLS", "RODMAN", "NOT_APPLICABLE", "OTHER"] as const;
-export const scholarLabels = { JEFFERSON: "Jefferson Scholar", WALENTAS: "Walentas Scholar", ECHOLS: "Echols Scholar", RODMAN: "Rodman Scholar", NOT_APPLICABLE: "Not Applicable", OTHER: "Other" };
+export const scholarPrograms = ["ECHOLS", "JEFFERSON", "COLLEGE_SCIENCE", "RODMAN", "MILLER_ARTS", "CORE"] as const;
+// Historical designations remain valid so editing education never destroys existing data.
+export const scholarSelections = [...scholarPrograms, "WALENTAS", "NOT_APPLICABLE", "OTHER"] as const;
+export const scholarLabels = { JEFFERSON: "Jefferson Scholars Program", WALENTAS: "Walentas Scholar", ECHOLS: "Echols Scholars Program", RODMAN: "Rodman Scholars Program", COLLEGE_SCIENCE: "College Science Scholars Program", MILLER_ARTS: "Miller Arts Scholars Program", CORE: "CORE Scholars Program", NOT_APPLICABLE: "Not Applicable", OTHER: "Other" };
 export function scholarNames(value: unknown): string[] {
   const parsed = scholarStatusSchema.safeParse(value);
   return parsed.success && parsed.data ? parsed.data.selections.filter(v => v !== "NOT_APPLICABLE").map(v => v === "OTHER" ? parsed.data!.other : scholarLabels[v]) : [];
@@ -13,7 +15,7 @@ export function toggleScholar(value: unknown, selection: typeof scholarSelection
   return selections.length ? { selections, other: selections.includes("OTHER") ? current.other || "" : "" } : null;
 }
 export const scholarStatusSchema = z.object({
-  selections: z.array(z.enum(scholarSelections)).min(1).max(6),
+  selections: z.array(z.enum(scholarSelections)).min(1).max(9),
   other: z.string().trim().max(200).default(""),
 }).strict().superRefine((v, ctx) => {
   if (new Set(v.selections).size !== v.selections.length || (v.selections.includes("NOT_APPLICABLE") && v.selections.length !== 1))

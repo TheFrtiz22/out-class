@@ -2,15 +2,15 @@ import { z } from "zod"
 import { profileSectionSchema, storagePathSchema, type FullStudentProfile } from "@/lib/student-profile"
 
 export const MAX_RESUME_TEXT = 60_000
-export const resumeFields = ["firstName", "lastName", "major", "gradYear", "gpa", "satScore", "actScore"] as const
+export const resumeFields = ["firstName", "lastName", "highSchool", "major", "gradYear", "gpa", "satScore", "actScore"] as const
 export type ResumeField = typeof resumeFields[number]
-export const resumeLabels: Record<ResumeField, string> = { firstName: "First name", lastName: "Last name", major: "Major", gradYear: "Graduation year", gpa: "GPA", satScore: "SAT", actScore: "ACT composite" }
+export const resumeLabels: Record<ResumeField, string> = { firstName: "First name", lastName: "Last name", highSchool: "High school", major: "Major", gradYear: "Graduation year", gpa: "GPA", satScore: "SAT", actScore: "ACT composite" }
 const identity = profileSectionSchema.options[0].shape
 const education = profileSectionSchema.options[1].shape
 export const importPatchSchema = z.object({
   firstName: identity.firstName.optional(), lastName: identity.lastName.optional(),
-  major: education.major.optional(), gradYear: education.gradYear.optional(),
-  gpa: z.number().min(0).max(4).optional(), satScore: z.number().int().min(400).max(1600).optional(),
+  highSchool: education.highSchool, major: education.major.optional(), gradYear: education.gradYear.optional(),
+  gpa: education.gpa.unwrap().optional(), satScore: z.number().int().min(400).max(1600).optional(),
   actScore: z.number().int().min(1).max(36).optional(),
 }).strict()
 export const importExperienceSchema = profileSectionSchema.options[2].shape.experiences
@@ -30,7 +30,7 @@ export const extractionSchema = z.object({
 })
 export type ResumeExtraction = z.infer<typeof extractionSchema>
 export function importBaseline(profile: FullStudentProfile) {
-  return Object.fromEntries([...resumeFields, "resumeUrl" as const].map(field => [field, profile[field]]))
+  return Object.fromEntries([...resumeFields, "resumeUrl" as const].map(field => [field, profile[field] ?? null]))
 }
 export const confirmImportSchema = z.object({
   patch: importPatchSchema,
@@ -63,9 +63,11 @@ export function extractResumeProposal(text: string): ResumeExtraction {
     const parts = name.split(/\s+/); propose("firstName", [parts[0]], true); propose("lastName", [parts.slice(1).join(" ")], true)
   }
   propose("major", matches(/\bmajor\s*:\s*([^\n|;]{1,200})/gi))
+  propose("highSchool", matches(/\bhigh school\s*[:\-]\s*([^\n]{1,200})/gi))
   propose("gradYear", matches(/\b(?:graduation(?:\s+year)?|expected graduation|class of)\s*[:\-]?\s*(?:[A-Za-z]+\s+)?(20\d{2})\b/gi))
-  propose("gpa", matches(/\bGPA\s*[:\-]?\s*(\d(?:\.\d{1,3})?)\b(?:\s*\/\s*4(?:\.0)?)?/gi))
-  if (/\bGPA\s*[:\-]?\s*\d(?:\.\d+)?\s*\/\s*(?!4(?:\.0)?(?:\D|$))\d/i.test(text)) {
+  propose("gpa", matches(/\bGPA\s*[:\-]?\s*(\d+(?:\.\d+)?)\b(?![\d.])/gi))
+  const scales = [...text.matchAll(/\bGPA\s*[:\-]?\s*\d+(?:\.\d+)?\s*\/\s*(\d+(?:\.\d+)?)/gi)];
+  if (scales.some(match => Number(match[1]) !== 4)) {
     const gpa = fields.find(v => v.field === "gpa")!; gpa.status = "uncertain"; gpa.value = null; gpa.note = "A non-4.0 GPA scale was found. Enter a verified value on the supported scale manually."
   }
   propose("satScore", matches(/\bSAT(?:\s+(?:score|composite))?\s*[:\-]?\s*(\d{3,4})\b/gi))

@@ -43,8 +43,8 @@ export const applicationStates = [
 export const platformStatuses: Partial<
   Record<(typeof platformResources)[number], readonly string[]>
 > = {
-  users: ["ACTIVE", "SUSPENDED"],
-  clubs: ["CLAIMED", "UNCLAIMED"],
+  users: ["ACTIVE", "SUSPENDED", "STUDENT", "LEADER", "MEMBER", "ADMIN", "INCOMPLETE"],
+  clubs: ["CLAIMED", "UNCLAIMED", "INVITED", "ACTIVE", "SUSPENDED"],
   claims: ["PENDING", "APPROVED", "REJECTED"],
   applications: applicationStates,
   tasks: ["OPEN", "IN_PROGRESS", "DONE"],

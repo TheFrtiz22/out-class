@@ -1,4 +1,5 @@
 "use server";
+import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
@@ -50,6 +51,7 @@ export async function saveMeeting(input: unknown) {
     "meetings.manage",
   ]);
   return prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, data.clubId);
     const { id, revision, ...fields } = data;
     const values = { ...fields, isPublic: data.audience === "RECRUITMENT" };
     let meeting;
@@ -90,11 +92,13 @@ export async function saveMeeting(input: unknown) {
 export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
   const { user } = await requireClubPermission(clubId, ["meetings.attendance"]);
   return prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, clubId);
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     const meeting = await tx.meeting.findFirst({
       where: { id: meetingId, clubId },
     });
     if (!meeting) throw new Error("Meeting unavailable.");
+    await assertClubOperational(tx, meeting.clubId);
     const now = new Date();
     if (
       now.getTime() < meeting.date.getTime() - 3600000 ||
@@ -122,6 +126,7 @@ export async function issueMeetingCheckIn(clubId: string, meetingId: string) {
 export async function closeMeetingCheckIn(clubId: string, meetingId: string) {
   await requireClubPermission(clubId, ["meetings.attendance"]);
   return prisma.$transaction(async (tx) => {
+    await lockOperationalClub(tx, clubId);
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     if (!(await tx.meeting.findFirst({ where: { id: meetingId, clubId } })))
       throw new Error("Meeting unavailable.");
@@ -140,9 +145,13 @@ export async function checkInMeeting(
     );
   const { user } = await requireAuth();
   return prisma.$transaction(async (tx) => {
+    const scope = await tx.meeting.findUnique({ where: { id: meetingId }, select: { clubId: true } });
+    if (!scope) throw new Error("Meeting unavailable.");
+    await assertClubOperational(tx, scope.clubId);
     await tx.$queryRaw`SELECT id FROM "Event" WHERE id = ${meetingId} FOR UPDATE`;
     const meeting = await tx.meeting.findUnique({ where: { id: meetingId }, include: { publication: true } });
     if (!meeting) throw new Error("Meeting unavailable.");
+    await assertClubOperational(tx, meeting.clubId);
     const membership = await tx.clubMember.findUnique({
       where: { userId_clubId: { userId: user.id, clubId: meeting.clubId } },
     });

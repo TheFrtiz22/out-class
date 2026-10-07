@@ -137,3 +137,11 @@ test('legacy score mapping uses canonical identities, preserves exact historical
   assert.equal(h.calls(), 0)
   demoStore.stop()
 })
+
+test('profile additions preserve historical GPA and saved Demo work instead of resetting the snapshot',async()=>{
+ const {h,demoStore,DEMO_KEY}=setup(),saved=structuredClone(demoStore.get());
+ saved.students[0].profile.gpa=3.1234;saved.students[1].profile.gpa=4.6;saved.students[0].profile.major='Preserve customized education';
+ saved.students[0].profile.highSchool='Example school';saved.students[0].profile.gender='Female';saved.students[0].profile.pronouns='She/Her';saved.students[0].profile.transferStudent=true;
+ const interviews=persisted(saved.interviews);localStorage.setItem(DEMO_KEY,JSON.stringify(saved));demoStore.stop();demoStore.start();demoStore.refresh();
+ const restored=demoStore.get();assert.equal(restored.students[0].profile.gpa,3.1234);assert.equal(restored.students[1].profile.gpa,4.6);assert.equal(restored.students[0].profile.major,'Preserve customized education');assert.equal(restored.students[0].profile.highSchool,'Example school');assert.equal(restored.students[0].profile.gender,'Female');assert.equal(restored.students[0].profile.pronouns,'She/Her');assert.equal(restored.students[0].profile.transferStudent,true);assert.deepEqual(persisted(restored.interviews),interviews);assert.equal(h.calls(),0);demoStore.stop();
+});

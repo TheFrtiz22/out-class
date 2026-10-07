@@ -23,7 +23,7 @@ test('anonymous wire payload uses an allowlist and removes every identity-bearin
 })
 test('pipeline redacts even owners; anonymous-only reviewers receive only anonymous-round applications', async () => {
   let permission = 'applicants.identify', captured
-  const api = load('actions/crm.ts', { '@/utils/auth': { requireClubPermission: async () => ({ membership: { permissions:[permission] } }) }, '@/utils/prisma': { prisma: { pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } } }, 'next/cache':{revalidatePath:()=>{}} })
+  const api = load('actions/crm.ts', { '@/utils/auth': { requireClubPermission: async () => ({ membership: { permissions:[permission] } }) }, '@/utils/prisma': { prisma: { $transaction: async fn => fn({ pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } }), pipelineRound: { findMany: async () => [{id:'round',anonymousReview:true}] }, application: { findMany: async args => { captured=args.where; return [{...app,round:{anonymousReview:true}}] } } } }, 'next/cache':{revalidatePath:()=>{}} })
   assert.ok(!JSON.stringify(await api.getClubPipeline(clubId)).includes('SECRET'))
   permission='applications.review'
   await api.getClubPipeline(clubId)

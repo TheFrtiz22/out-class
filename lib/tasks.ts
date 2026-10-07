@@ -1,3 +1,4 @@
+import { academicYear } from "@/lib/recruitment-profile";
 import { z } from "zod";
 const uuid = z.string().uuid();
 export const safeTaskLink = z
@@ -26,12 +27,18 @@ export const taskAudienceSchema = z.object({
   members: z.array(uuid).max(1000).default([]),
   groups: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
   cohorts: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
+  academicYears: z.array(z.string().min(1).max(30)).max(20).default([]),
   years: z.array(z.number().int().min(2000).max(2200)).max(20).default([]),
   roles: z
     .array(z.enum(["PRESIDENT", "RECRUITMENT_LEAD", "GENERAL_MEMBER"]))
     .max(3)
     .default([]),
 });
+/** Legacy graduation cohorts remain stored unchanged; readers receive academic labels. */
+export function projectTaskAudience(value: unknown): z.infer<typeof taskAudienceSchema> {
+  const audience = taskAudienceSchema.parse(value);
+  return { ...audience, years: [], academicYears: [...new Set([...audience.academicYears, ...audience.years.map(gradYear => academicYear({ gradYear }))])] };
+}
 export const taskInputSchema = z.object({
   clubId: uuid,
   id: uuid.optional(),
@@ -65,7 +72,8 @@ export function matchesTaskAudience(
     groups: string[];
     cohort: string | null;
     role: string;
-    gradYear: number | null;
+    gradYear?: number | null;
+    academicYear?: string | null;
   },
   audience: z.infer<typeof taskAudienceSchema>,
 ) {
@@ -75,7 +83,8 @@ export function matchesTaskAudience(
     audience.members.length ? audience.members.includes(member.id) : null,
     audience.groups.length ? member.groups.some(g => audience.groups.includes(g)) : null,
     audience.cohorts.length ? !!member.cohort && audience.cohorts.includes(member.cohort) : null,
-    audience.years.length ? member.gradYear !== null && audience.years.includes(member.gradYear) : null,
+    audience.years.length ? member.gradYear != null && audience.years.includes(member.gradYear) : null,
+    audience.academicYears.length ? !!member.academicYear && audience.academicYears.includes(member.academicYear.replace(/\*$/, "")) : null,
     audience.roles.length ? audience.roles.includes(member.role as "GENERAL_MEMBER") : null,
   ].filter(value => value !== null);
   return conditions.length > 0 && (audience.match === "ALL" ? conditions.every(Boolean) : conditions.some(Boolean));
@@ -143,10 +152,10 @@ export const taskFileSchema = z.object({
 });
 
 export type TaskAudience = z.infer<typeof taskAudienceSchema>;
-export type AudienceMember = { id: string; groups: string[]; cohort: string | null; role: string; user: { id: string; studentProfile: { gradYear: number | null } | null } };
+export type AudienceMember = { id: string; groups: string[]; cohort: string | null; role: string; user: { id: string; studentProfile: { gradYear?: number | null; academicYear?: string } | null } };
 /** Stable seeded shuffle over sorted IDs; the resulting assignments are saved once. */
 export function resolveTaskRecipients<T extends AudienceMember>(members: readonly T[], audience: TaskAudience, excludedByTasks: readonly string[] = []) {
-  let selected = members.filter(member => !excludedByTasks.includes(member.id) && matchesTaskAudience({ ...member, gradYear: member.user.studentProfile?.gradYear ?? null }, audience)).sort((a,b) => a.id.localeCompare(b.id));
+  let selected = members.filter(member => !excludedByTasks.includes(member.id) && matchesTaskAudience({ ...member, gradYear: member.user.studentProfile?.gradYear ?? null, academicYear: member.user.studentProfile?.academicYear ?? (member.user.studentProfile?.gradYear != null ? academicYear({ gradYear: member.user.studentProfile.gradYear }) : null) }, audience)).sort((a,b) => a.id.localeCompare(b.id));
   if (audience.random) {
     let state = 2166136261;
     for (const char of audience.random.seed) state = Math.imul(state ^ char.charCodeAt(0), 16777619) >>> 0;

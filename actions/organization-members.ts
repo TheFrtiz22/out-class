@@ -1,4 +1,7 @@
 "use server";
+import { memberAcademicProfile } from "@/lib/recruitment-profile";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
 import { clubPermissions, hasPermission } from "@/lib/permissions";
@@ -53,7 +56,7 @@ export async function setInterviewPanelAssignment(input: unknown) {
 }
 async function actorFor(tx: AppTransactionClient, clubId: string, userId: string, lock = true) {
   if (lock) {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
   }
   const account = await tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } });
@@ -84,11 +87,11 @@ export async function getOrganizationMemberManagement(clubId: string) {
     const actor = await actorFor(tx, clubId, user.id, false);
     const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { schoolId: true } });
     const [members, invitations, identifierTypes] = await Promise.all([
-      tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true } } } } }, orderBy: { joinedAt: "asc" } }),
+      tx.clubMember.findMany({ where: { clubId }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true, major: true, gradYear: true, transferStudent: true } } } } }, orderBy: { joinedAt: "asc" } }),
       tx.clubInvitation.findMany({ where: { clubId }, select: { id: true, email: true, invitedName: true, invitedYear: true, requestedRole: true, permissions: true, status: true, expiresAt: true, schoolIdentity: { select: { normalizedIdentifier: true } }, deliveries: { select: { status: true, createdAt: true, failureCode: true }, orderBy: { createdAt: "desc" }, take: 1 } }, orderBy: { createdAt: "desc" } }),
       tx.schoolIdentifierType.findMany({ where: { schoolId: club.schoolId, school: { active: true }, verification: "EMAIL_LOCAL_PART" }, select: { id: true, label: true }, orderBy: { id: "asc" } }),
     ]);
-    return { actor, members, invitations, identifierTypes };
+    return { actor, members: members.map(m => ({ ...m, user: { ...m.user, studentProfile: m.user.studentProfile ? memberAcademicProfile(m.user.studentProfile) : null } })), invitations, identifierTypes };
   });
 }
 

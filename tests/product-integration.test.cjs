@@ -198,7 +198,7 @@ test('browser-origin Demo projection has one résumé link and a working photo U
   const student=h.store.get().students[0];const app=h.store.get().applications.find(a=>a.studentId===student.id&&a.clubId===h.store.get().clubs[0].id);
   h.store.mutate(s=>{const round=s.clubs[0].rounds.find(r=>r.id===app.roundId);round.anonymousReview=false});
   const view=await h.api.getApplicantDisplay({clubId:app.clubId,applicationId:app.id});
-  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'http://localhost:3000/images/landing/jordan-avery.jpg');
+  assert.equal(view.links.filter(l=>l.field==='resume').length,1);assert.equal(view.photo,'/images/landing/jordan-avery.jpg');
 });
 
 test('Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated',async()=>{

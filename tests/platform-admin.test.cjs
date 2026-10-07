@@ -371,6 +371,7 @@ test("invalid support context and platform mutations fail closed even if middlew
   process.env.OUTCLASS_PLATFORM_ADMIN_IDS = actor;
   try {
     const guard = load("utils/platform-admin.ts", {
+    "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
       "@/utils/auth": { requireAuth: async () => ({ user: { id: actor } }) },
       "@/utils/prisma": {
         prisma: {

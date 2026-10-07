@@ -1,4 +1,6 @@
 "use server";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
@@ -14,7 +16,7 @@ async function authorize(
   userId: string,
   permission: ClubPermission,
 ) {
-  await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${clubId} FOR UPDATE`;
+  await lockOperationalClub(tx, clubId);
   const [member, user] = await Promise.all([
     tx.clubMember.findUnique({ where: { userId_clubId: { userId, clubId } } }),
     tx.user.findUnique({ where: { id: userId }, select: { disabledAt: true } }),

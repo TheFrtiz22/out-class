@@ -15,7 +15,7 @@ function loadTs(relative) {
   const model = new Module(filename, module)
   model.paths = Module._nodeModulePaths(path.dirname(filename))
   const standardRequire = model.require.bind(model)
-  model.require = name => name === "./data" ? { applicants } : standardRequire(name)
+  model.require = name => name === "./data" ? { applicants } : name.startsWith("@/lib/") ? loadTs("../" + name.slice(2) + ".ts") : standardRequire(name)
   const compiled = ts.transpileModule(fs.readFileSync(filename, "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   model._compile(compiled, filename)
   return model.exports

@@ -219,6 +219,7 @@ export const eventTimeLabel = (value: string) =>
   }).format(new Date(value));
 /** Ordinary legacy meetings remain visible. Moderated events require published approval. */
 export const publicMeetingVisibility = {
+  club: { is: { suspendedAt: null } },
   audience: "RECRUITMENT",
   isPublic: true,
   OR: [
@@ -227,12 +228,14 @@ export const publicMeetingVisibility = {
   ],
 } satisfies Prisma.MeetingWhereInput;
 export function eventIsPublished(event: {
+  club?: { suspendedAt?: Date | string | null };
   isPublic: boolean;
   audience: string;
   revision: number;
   publication: { status: string; approvedRevision: number | null } | null;
 }) {
   return (
+    !event.club?.suspendedAt &&
     event.isPublic &&
     event.audience === "RECRUITMENT" &&
     event.publication?.status === "PUBLISHED" &&

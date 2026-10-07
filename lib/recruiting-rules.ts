@@ -1,8 +1,9 @@
+import { gpaSchema, supportedGpa } from "@/lib/student-profile"
 import { z } from "zod"
 import { testRequirements } from "./test-scores"
 
 export const ruleThresholdSchema = z.object({
-  minGpa: z.number().finite().min(0).max(4).nullable(),
+  minGpa: gpaSchema.nullable(),
   minSat: z.number().int().min(400).max(1600).multipleOf(10).nullable(),
   minAct: z.number().int().min(1).max(36).nullable(),
 }).strict()
@@ -35,7 +36,7 @@ export function evaluateRule(thresholds: RuleThresholds, requirement: string, ca
     if (score === null || !Number.isFinite(score) || score < min || score > max) return "missing"
     return score < threshold ? "below" : "meets"
   }
-  const gpa = compare(candidate.gpa, thresholds.minGpa, 0, 4)
+  const gpa = compare(supportedGpa(candidate.gpa), thresholds.minGpa, 0, 4)
   if (gpa === "below") reasons.push(`GPA below ${thresholds.minGpa}`)
   if (gpa === "missing") missing.push("GPA")
   const sat = compare(candidate.satScore, thresholds.minSat, 400, 1600)

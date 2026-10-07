@@ -1,4 +1,6 @@
 "use server"
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
 
 import { applicationAvailability } from "@/lib/club-settings"
@@ -13,7 +15,7 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
   const { user } = await requireAuth()
   const parsed = applicationInputSchema.parse(input)
   const applicationId = await prisma.$transaction(async (tx) => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${parsed.clubId} FOR UPDATE`
+    await lockOperationalClub(tx, parsed.clubId)
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
     if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")
     if (submit && !(await tx.studentProfile.findUnique({ where: { userId: user.id } }))) {

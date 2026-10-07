@@ -1,4 +1,7 @@
 "use server"
+import { academicYear } from "@/lib/recruitment-profile";
+
+import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
@@ -8,6 +11,7 @@ import { ballotOutcome, summarizeVoting, createVotingSchema, votingScope, voting
 import { readVotingDisplay } from "@/lib/voting-presentation"
 const include = { participants: true, candidates: { orderBy: { position: "asc" as const } }, passes: { orderBy: { number: "asc" as const }, include: { candidates: { orderBy: { position: "asc" as const }, include: { ballots: true } } } } }
 async function member(tx: AppTransactionClient, clubId: string, id: string, caps: ClubPermission[]) {
+  await assertClubOperational(tx, clubId);
   // Serialize membership revocation with writes and recheck inside the transaction.
   await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE id=${id} FOR SHARE`
   const m = await tx.clubMember.findFirst({ where: { id, clubId } })
@@ -33,7 +37,7 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string) {
     const eligible = hasPermission(m,"decisions.manage") ? (await tx.clubMember.findMany({where:{clubId,status:"ACTIVE"},include:{user:{select:{email:true}}}})).filter(v=>hasPermission(v,"applications.review")&&hasPermission(v,"decisions.vote")) : []
     const joinedParticipants = hasPermission(m,"decisions.manage") && s ? await tx.clubMember.findMany({where:{clubId,id:{in:s.participants.map(p=>p.memberId)}},include:{user:{select:{studentProfile:{select:{firstName:true,lastName:true}}}}}}) : []
     const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
-    return { sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), graduationYears: s ? await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true}}}}}}):[] }
+    return { sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
 }
 export async function createVotingSession(input: unknown) {
@@ -41,7 +45,7 @@ export async function createVotingSession(input: unknown) {
   if(new Set(d.applicationIds).size!==d.applicationIds.length || new Set(d.participantIds).size!==d.participantIds.length) throw Error("Duplicate selection.")
   const {user,membership}=await requireClubPermission(d.clubId,["applications.review","decisions.manage"])
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.clubId} FOR UPDATE`
+    await lockOperationalClub(tx, d.clubId)
     await member(tx,d.clubId,membership.id,["applications.review","decisions.manage"])
     const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}})
     if(!round) throw Error("Round unavailable.")
@@ -84,7 +88,7 @@ export async function commandVotingSession(input: unknown) {
   if(d.action==="PUBLISH") caps.push("applicants.identify")
   const {user,membership}=await requireClubPermission(d.clubId,caps)
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.clubId} FOR UPDATE`
+    await lockOperationalClub(tx, d.clubId)
     await member(tx,d.clubId,membership.id,caps)
     const s=await session(tx,d.clubId,d.sessionId)
     if(!await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:d.clubId,archivedAt:null}})) throw Error("Archived voting rounds are read-only.")

@@ -1,3 +1,4 @@
+import { assertClubOperational } from "@/lib/club-suspension";
 import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
 import { platformViewSession } from "@/utils/platform-view-as";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
@@ -66,12 +67,13 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
 }
 
 /** Every sensitive club operation checks the current database membership. */
-export async function requireClubPermission(clubId: string, permissions: ClubPermission[]) {
+export async function requireClubPermission(clubId: string, permissions: ClubPermission[], options: { allowSuspendedRead?: boolean } = {}) {
   const { user } = await requireAuth();
   const membership = await prisma.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
   if (!membership || !isActiveMembership(membership) || !permissions.every(permission => hasPermission(membership, permission))) {
     throw new Error("You do not have permission for this club action.");
   }
+  if (!options.allowSuspendedRead) await assertClubOperational(prisma, clubId);
   return { user, membership };
 }
 export async function requireClubMembership(clubId: string) {

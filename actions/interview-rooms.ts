@@ -1,4 +1,6 @@
 "use server"
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
@@ -45,7 +47,7 @@ export async function createInterviewRoom(raw: RoomInput) {
   const slots = roomSlots(input)
   const result = await atomic(async tx => {
     // Serialize competing room creation and overlap checks within this club.
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${input.clubId} FOR UPDATE`
+    await lockOperationalClub(tx, input.clubId)
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null } })
     if (!round) throw new Error("Choose a recruitment round from this club.")
     const panelIds = [...new Set(input.panelMemberIds)]
@@ -69,7 +71,7 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
   if (!room) throw new Error("Room not found.")
   const { user } = await requireClubPermission(room.clubId, ["interviews.manage"])
   await atomic(async tx => {
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${room.clubId} FOR UPDATE`
+    await lockOperationalClub(tx, room.clubId)
     if (input.open) {
       const round = await tx.pipelineRound.findFirst({ where: { id: room.roundId, clubId: room.clubId, archivedAt: null } })
       if (!round) throw new Error("Archived rounds cannot reopen interview rooms.")
@@ -99,7 +101,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
   const booking = await atomic(async tx => {
     const initial = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } });
     if (!initial) throw new Error("Application unavailable.");
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${initial.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, initial.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${input.applicationId} FOR UPDATE`;
     const application = await tx.application.findFirst({ where: { id: input.applicationId, studentId: user.id } })
@@ -129,7 +131,7 @@ export async function cancelRoomBooking(bookingId: string) {
   await atomic(async tx => {
     const initial = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } });
     if (!initial) throw new Error("Booking not found.");
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id = ${initial.slot.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, initial.slot.clubId);
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`
     await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${initial.applicationId} FOR UPDATE`;
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })

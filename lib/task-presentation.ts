@@ -1,3 +1,4 @@
+import { academicYear } from "@/lib/recruitment-profile"
 import type { getTaskWorkspace } from "@/actions/tasks"
 import { taskState, taskAudienceSchema, type TaskAudience } from "@/lib/tasks"
 export type TaskWorkspace = Awaited<ReturnType<typeof getTaskWorkspace>>
@@ -10,14 +11,13 @@ export function taskAudienceMode(audience:TaskAudience) {
   if(audience.random)return "random"
   if(audience.everyone)return "everyone"
   if(audience.match==="ALL"||audience.excludeMembers.length||audience.excludeGroups.length||audience.excludeTasks.length)return "advanced"
-  const dimensions=[{id:"members",selected:audience.members.length},{id:"years",selected:audience.years.length},{id:"groups",selected:audience.groups.length+audience.cohorts.length},{id:"roles",selected:audience.roles.length}].filter(dimension=>dimension.selected)
+  const dimensions=[{id:"members",selected:audience.members.length},{id:"years",selected:audience.years.length+audience.academicYears.length},{id:"groups",selected:audience.groups.length+audience.cohorts.length},{id:"roles",selected:audience.roles.length}].filter(dimension=>dimension.selected)
   return dimensions.length===1?dimensions[0].id:"advanced"
 }
 export function taskMemberName(member: TaskMember) { const profile=member.user.studentProfile; return profile ? `${profile.firstName} ${profile.lastName}` : member.user.email }
 export const taskRoleLabels: Record<string,string> = { PRESIDENT:"President", RECRUITMENT_LEAD:"Recruitment lead", GENERAL_MEMBER:"General member" }
 export function taskYearLabel(year: number, now=Date.now()) {
-  const date=new Date(now),academicYear=date.getFullYear()-(date.getMonth()<7?1:0),level=academicYear+5-year
-  return level>=1 && level<=4 ? `${["First","Second","Third","Fourth"][level-1]} year · ${year}` : `Class of ${year}`
+  return academicYear({ gradYear: year }, new Date(now))
 }
 export function taskDate(value: Date|string|null) { return value ? new Date(value).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "No due date" }
 export function taskLocalDate(value: Date|string|null) { if(!value)return ""; const date=new Date(value);date.setMinutes(date.getMinutes()-date.getTimezoneOffset());return date.toISOString().slice(0,16) }
@@ -37,7 +37,7 @@ export function taskManagerSummary(tasks: readonly ClubTask[],now=Date.now()) {
 }
 export function taskAudienceLabel(task: ClubTask, now=Date.now()) {
   const audience=taskAudienceSchema.parse(task.audience)
-  const parts=[...audience.years.map(year=>taskYearLabel(year,now)),...audience.groups,...audience.cohorts,...audience.roles.map(role=>taskRoleLabels[role]),...(audience.members.length?["Selected members"]:[])]
+  const parts=[...audience.years.map(year=>taskYearLabel(year,now)),...audience.academicYears,...audience.groups,...audience.cohorts,...audience.roles.map(role=>taskRoleLabels[role]),...(audience.members.length?["Selected members"]:[])]
   return audience.random ? audience.random.groups ? `Random groups · ${audience.random.groups} groups` : "Random selection" : audience.everyone ? "Everyone at assignment" : parts.join(audience.match === "ALL" ? " + " : " or ") || "Assigned members"
 }
 export function memberTaskCounts(tasks: readonly ClubTask[],memberId:string,now=Date.now()) {

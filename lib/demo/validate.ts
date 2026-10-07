@@ -1,3 +1,4 @@
+import { profileEducationFields } from "@/lib/student-profile"
 import { votingDisplaySchema } from "@/lib/voting-presentation"
 import { z } from "zod"
 import { displayConfigSchema } from "@/lib/applicant-display"
@@ -9,6 +10,9 @@ const profile = z
     lastName: z.string(),
     major: z.string(),
     gradYear: z.number(),
+    // Preserve historical numeric values; new edits use canonical GPA validation.
+    gpa: z.number().finite().nullable().optional(),
+    ...profileEducationFields,
     experiences: z.array(
       z.object({ id, title: z.string(), subtitle: z.string(), period: z.string() }),
     ),

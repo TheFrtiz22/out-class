@@ -1,4 +1,6 @@
 "use server";
+
+import { lockOperationalClub } from "@/lib/club-suspension";
 import { roomPanelApprovalSchema, roomPanelChangeSchema } from "@/lib/interview-setup";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
@@ -23,7 +25,7 @@ export async function getInterviewAccessSetup(clubId: string) {
 export async function approveInterviewRoomPanel(input: unknown) {
   const data=roomPanelApprovalSchema.parse(input);const {user}=await requireAuth({verifyEmail:true});
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const {caps}=await interviewActor(tx,data.clubId,user.id);if(!caps.manageGrants)throw Error("Only an owner can approve panel access.");
     const room=await tx.interviewRoom.findFirst({where:{id:data.roomId,clubId:data.clubId},include:{round:true,slots:{include:{bookings:true}}}});
     if(!room||!room.isOpen||room.round.anonymousReview||room.panelApprovalRevision!==data.revision||JSON.stringify([...room.panelMemberIds].sort())!==JSON.stringify([...new Set(data.panelMemberIds)].sort()))throw Error("Room panel changed or requires identified-round review. Refresh before approval.");
@@ -43,7 +45,7 @@ export async function approveInterviewRoomPanel(input: unknown) {
 export async function changeInterviewRoomPanel(input: unknown) {
   const data=roomPanelChangeSchema.parse(input);const {user}=await requireAuth();
   return prisma.$transaction(async tx=>{
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${data.clubId} FOR UPDATE`;
+    await lockOperationalClub(tx, data.clubId);
     const {member}=await interviewActor(tx,data.clubId,user.id);
     if(!member.isOwner&&!member.permissions.includes("interviews.manage"))throw Error("Scheduling access required.");
     const room=await tx.interviewRoom.findFirst({where:{id:data.roomId,clubId:data.clubId}});if(!room||room.panelApprovalRevision!==data.revision)throw Error("Room panel changed.");

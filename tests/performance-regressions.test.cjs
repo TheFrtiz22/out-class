@@ -87,7 +87,7 @@ test('verified Supabase identity is reused only inside the same React request; m
     'next/navigation': { redirect: () => { throw Error('Unauthenticated'); } },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     './supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { id: 'user', email: 'user@virginia.edu', email_confirmed_at: '2026-01-01' } }, error: null }; } } }) },
-    './prisma': { prisma: { user: { findUnique: async () => ({ id: 'user', email: 'user@virginia.edu', disabledAt: null }) }, clubMember: { findUnique: async ({ where }) => { memberReads++; assert.equal(where.userId_clubId.clubId, clubId); return { isOwner: allowed, status: 'ACTIVE', permissions: [] }; } } } },
+    './prisma': { prisma: { $queryRaw: async () => [], user: { findUnique: async () => ({ id: 'user', email: 'user@virginia.edu', disabledAt: null }) }, clubMember: { findUnique: async ({ where }) => { memberReads++; assert.equal(where.userId_clubId.clubId, clubId); return { isOwner: allowed, status: 'ACTIVE', permissions: [] }; } } } },
   });
   const auth = load('utils/auth.ts');
   await auth.getSessionUser(); await auth.requireClubPermission(clubId, ['members.manage']);

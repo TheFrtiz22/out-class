@@ -27,12 +27,12 @@ test('PDF/image validation examines bytes, accepts generic PDF MIME, and enforce
   assert.equal(profile.validateProfileFile(Uint8Array.from([137,80,78,71,13,10,26,10]),'image/png','headshot'),'image/png');
   assert.throws(()=>profile.validateProfileFile(Buffer.from('<svg/>'),'image/svg+xml','headshot'));
 });
-function app(photo='https://example.com/photo.png') { return {id:'app',clubId:'club',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
+function app(photo=`${owner}/photo.png`) { return {id:'app',clubId:'club',roundId:'round',student:{id:owner,studentProfile:{firstName:'Jordan',lastName:'Avery',headshotUrl:photo,bio:'Historical hidden bio',actScore:33,actEnglish:34,actMath:35,actReading:36,actScience:32,experiences:[{title:'Research',subtitle:'Lab',period:'2025'}],resumeUrl:`${owner}/resume.pdf`,linkedinUrl:'https://linkedin.com/in/example'}},answers:[],evaluations:[],status:'IN_REVIEW'} }
 test('canonical interview/voting projection hides historical Bio/subsections and avoids résumé duplication',()=>{
   const round={id:'round',name:'Interview',anonymousReview:false};
   const config=display.displayConfigSchema.parse({version:1,fields:['name','photo','biography','act','resume','experiences']});
   const view=display.projectApplicantDisplay(app(),round,config,[]);
-  assert.equal(view.photo,'https://example.com/photo.png');
+  assert.equal(view.photo,`/api/profile-photos?path=${owner}%2Fphoto.png&clubId=club&applicationId=app`);
   assert.deepEqual(view.sections.find(s=>s.field==='act').items,['33']);
   assert.equal(view.sections.some(s=>s.field==='experiences'),false);
   assert.doesNotMatch(JSON.stringify(view),/Historical hidden bio|actEnglish|actReading/);
@@ -45,8 +45,8 @@ test('canonical interview/voting projection hides historical Bio/subsections and
 test('identity updates persist the headshot while leaving historical bio and academic data untouched',async()=>{
   let stored={headshotUrl:null,bio:'Historical',actEnglish:34};
   const api=load('actions/profile.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:owner}})},'@/utils/prisma':{prisma:{studentProfile:{update:async({where,data})=>{assert.equal(where.userId,owner);stored={...stored,...data};return stored},findUnique:async()=>stored}}},'next/cache':{revalidatePath(){}}});
-  await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:'https://example.com/new.png',bio:'Forged'});
-  assert.equal(stored.headshotUrl,'https://example.com/new.png');assert.equal(stored.bio,'Historical');assert.equal(stored.actEnglish,34);
+  await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:`${owner}/new.png`,bio:'Forged'});
+  assert.equal(stored.headshotUrl,`${owner}/new.png`);assert.equal(stored.bio,'Historical');assert.equal(stored.actEnglish,34);
   const refreshed=await api.getStudentProfile();assert.equal(refreshed.profile.headshotUrl,stored.headshotUrl);
   await api.updateStudentProfileSection({section:'identity',firstName:'Jordan',lastName:'Avery',headshotUrl:null});assert.equal(stored.headshotUrl,null);
 });
@@ -66,8 +66,8 @@ test('authenticated PDF uploads retain private owner keys and canonical MIME; re
   await assert.rejects(uploads({publicBucket:true}).api.uploadProfileFile(form()),/Private document/);
   await assert.rejects(uploads({error:true}).api.uploadProfileFile(form()),/Upload failed/);
 });
-test('headshots use the existing owner storage flow and return a reloadable public image URL',async()=>{
-  const h=uploads();const result=await h.api.uploadProfileFile(form(Uint8Array.from([137,80,78,71,13,10,26,10]),'headshot','image/png'));assert.match(result.reference,/https:\/\/storage.example.com\//);assert.match(h.writes[0].path,new RegExp(`^${owner}/`));assert.equal(h.writes[0].opts.contentType,'image/png');
+test('headshots use the existing owner storage flow and return a private owner reference',async()=>{
+  const h=uploads();const result=await h.api.uploadProfileFile(form(Uint8Array.from([137,80,78,71,13,10,26,10]),'headshot','image/png'));assert.match(result.reference,new RegExp(`^${owner}/`));assert.match(h.writes[0].path,new RegExp(`^${owner}/`));assert.equal(h.writes[0].opts.contentType,'image/png');
 });
 test('interview uses a narrow panel while voting retains the shared image fallback; profile overview excludes retired sections',()=>{
   const panel=fs.readFileSync('components/applicant-intelligence.tsx','utf8');assert.match(panel,/AvatarFallback/);assert.match(panel,/AvatarImage/);assert.match(panel,/!data.anonymous/);assert.match(panel,/size-24/);
