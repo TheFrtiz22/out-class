@@ -18,6 +18,7 @@ function harness() {
   let app=application(), permission=true, actor='author'; let observations=[];
   const member={id:'membership',permissions:['applications.review','applicants.identify','interviews.manage'],status:'ACTIVE'};
   const tx={
+    evaluation:{findMany:async()=>app.evaluations.filter(e=>e.submittedAt)},
     $queryRaw:async()=>[],
     clubMember:{findFirst:async({where})=>permission&&where.clubId===clubId?member:null},
     application:{findFirst:async({where})=>where.id===applicationId&&where.clubId===clubId&&app.status!=='DRAFTING'?app:null},
@@ -99,4 +100,26 @@ test('configured résumé/LinkedIn links reuse private download access and disap
  const config={version:1,fields:['resume','linkedin']};let view=projectApplicantDisplay(app,app.round,config,[]);
  assert.equal(view.links.length,2);assert.match(view.links[0].href,/^\/api\/recruiting-resumes\?clubId=/);assert.doesNotMatch(JSON.stringify(view),/signedUrl/);
  app.round.anonymousReview=true;view=projectApplicantDisplay(app,app.round,config,[]);assert.deepEqual(view.links,[]);assert.deepEqual(view.visible,[]);
+});
+
+for (const office of ['PRESIDENT','VICE_PRESIDENT','BOARD']) test(`configured submitted feedback reaches explicit ${office} with review/identify access`,async()=>{
+ const h=harness();h.member.interviewOffices=[office];h.app.evaluations[0].submittedAt=new Date();h.app.evaluations[0].stableRound={clubId,anonymousReview:false};h.app.evaluations[0].interviewRecords=[];
+ const view=await h.api.getApplicantDisplay(h.scope);assert.match(view.sections.find(s=>s.field==='feedback').items[0],/Secret feedback/);assert.equal(view.withheld.includes('feedback'),false);
+});
+test('authorized absent feedback is absent; withheld feedback is explicit without existence disclosure',async()=>{
+ const h=harness();h.member.interviewOffices=['BOARD'];h.app.evaluations=[];
+ let view=await h.api.getApplicantDisplay(h.scope);assert.deepEqual(view.sections.find(s=>s.field==='feedback').items,[]);assert.equal(view.withheld.includes('feedback'),false);
+ h.member.interviewOffices=[];view=await h.api.getApplicantDisplay(h.scope);assert.equal(view.sections.find(s=>s.field==='feedback').withheld,true);assert.ok(view.withheld.includes('feedback'));
+});
+test('feedback never discloses drafts, unresolved legacy rounds, historical anonymous evidence, self-review, or owner-only rights',async()=>{
+ for(const edit of [h=>{h.app.evaluations[0].submittedAt=null},h=>{h.app.evaluations[0].stableRound=null},h=>{h.app.evaluations[0].stableRound.anonymousReview=true},h=>{h.app.evaluations[0].interviewRecords=[{anonymousReview:true}]},h=>{h.app.studentId='author'},h=>{h.member.interviewOffices=[];h.member.isOwner=true}]){
+  const h=harness();h.member.interviewOffices=['BOARD'];h.app.evaluations[0].submittedAt=new Date();h.app.evaluations[0].stableRound={clubId,anonymousReview:false};h.app.evaluations[0].interviewRecords=[];
+  edit(h);
+  const view=await h.api.getApplicantDisplay(h.scope);assert.doesNotMatch(JSON.stringify(view),/Secret feedback/);assert.ok(view.withheld.includes('feedback'));
+ }
+});
+test('configuration cannot override feedback disclosure in voting or preview',async()=>{
+ const h=harness();h.member.permissions.push('decisions.manage');
+ const view=await h.api.getApplicantDisplay({...h.scope,previewConfig:{version:1,fields:['feedback']}});assert.equal(view.sections[0].withheld,true);assert.deepEqual(view.sections[0].items,[]);
+ h.deny();await assert.rejects(h.api.getApplicantDisplay(h.scope),/Denied/);
 });

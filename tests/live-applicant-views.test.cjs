@@ -22,13 +22,13 @@ function nodes(node) {
 const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
 const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false) {
-  const slots = [], effects = [], calls = []
+  const slots = [], effects = [], calls = [], lookups = []
   let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
   const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
   const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);if(input.expectedStatus!==pipeline.applications[0].status)throw Error('stale');pipeline.applications[0].status=input.status;return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly});while(effects.length)effects.shift()();return tree}}
+  return {calls,api,lookups,addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly});while(effects.length)effects.shift()();return tree}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
@@ -117,3 +117,15 @@ test('Kanban decisions use expected status and appear in List after server reloa
   button(tree,'List').props.onClick();tree=h.render()
   assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
 })
+
+for(const name of ['Panel','Review'])test(`drawer renders stable-ID review with historical label when current name is ${name}`,async()=>{
+ const h=harness();h.renameRound(name);h.setEvaluations([{id:'legacy',interviewerId:'member',roundId:null,round:name,score:2,notes:null},{id:'submitted',interviewerId:'member',roundId:'round',round:'Review',score:8.5,notes:null}]);
+ h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.value,'8.5');assert.match(text(tree),/Saved review/);assert.ok(nodes(tree).some(n=>Array.isArray(n.props?.children)&&n.props.children.includes('Review')&&n.props.children.includes(8.5)));
+});
+for(const roundId of [null,undefined,'different-round'])test(`drawer legacy label compatibility, roundId=${roundId}`,async()=>{
+ const h=harness();h.setEvaluations([{id:'evaluation',interviewerId:'member',roundId,round:'Review',score:7,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.value,roundId==='different-round'?'':'7');
+});
+
+test('moving from the drawer locates the target-round review by stable ID despite an old label',async()=>{
+ const h=harness();h.addRound({id:'target',name:'Panel',order:1});h.setEvaluations([{id:'submitted',interviewerId:'member',roundId:'target',round:'Interview',score:8.5,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'target'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();assert.equal(h.lookups.at(-1).round.id,'target');assert.equal(h.lookups.at(-1).result.id,'submitted');
+});

@@ -23,11 +23,11 @@ export function readDisplayConfig(value: unknown): ApplicantDisplayConfig {
   return displayConfigSchema.parse(value);
 }
 export type ObservationView = { id: string; kind: string; body: string; author: string; own: boolean; createdAt: string; updatedAt: string };
-export type DisplaySection = { field: ApplicantField; label: string; items: string[] };
+export type DisplaySection = { field: ApplicantField; label: string; items: string[]; withheld?: boolean };
 export type ApplicantDisplay = { applicationId: string; roundId: string; anonymous: boolean; configured: ApplicantField[]; visible: ApplicantField[]; withheld: ApplicantField[]; sections: DisplaySection[]; photo: string | null; observations: ObservationView[]; links: { field: "resume" | "linkedin"; label: string; href: string }[] };
 const anonymousFields = new Set<ApplicantField>(["academicYear", "gpa", "sat", "act", "applicationContext", "score"]);
 /** Call only after authorizing the application. Config removes fields; it never grants access. */
-export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApplication, round: { id: string; name: string; anonymousReview: boolean; applicantDisplay?: unknown }, config: ApplicantDisplayConfig, observations: ObservationView[]): ApplicantDisplay {
+export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApplication, round: { id: string; name: string; anonymousReview: boolean; applicantDisplay?: unknown }, config: ApplicantDisplayConfig, observations: ObservationView[], feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true }): ApplicantDisplay {
   const anonymous = round.anonymousReview;
   const safe = anonymous ? anonymousApplication(app, genderVisibility(round.applicantDisplay)) : app;
   const profile = safe.student.studentProfile;
@@ -49,12 +49,12 @@ export function projectApplicantDisplay(app: ReviewApplication | LeaderReviewApp
     pros: anonymous ? [] : observations.filter(o => o.kind === "PRO").map(o => `${o.body}\n— ${o.author}`),
     cons: anonymous ? [] : observations.filter(o => o.kind === "CON").map(o => `${o.body}\n— ${o.author}`),
     score: safe.evaluations.map(e => `${e.round}: ${e.score} / 10 · Reviewer ${e.interviewerId}`),
-    feedback: anonymous ? [] : safe.evaluations.filter(e => e.notes).map(e => `${e.round} · Reviewer ${e.interviewerId}\n${e.notes}`),
+    feedback: anonymous ? [] : feedback.items,
   };
   return {
     applicationId: app.id, roundId: round.id, anonymous, configured: config.fields, visible,
-    withheld: config.fields.filter(f => !enabled.has(f)),
-    sections: visible.filter((f): f is Exclude<ApplicantField, "photo" | "resume" | "linkedin"> => !["photo", "resume", "linkedin"].includes(f)).map(field => ({ field, label: fieldLabels[field], items: data[field] })),
+    withheld: config.fields.filter(f => !enabled.has(f) || (f === "feedback" && feedback.withheld)),
+    sections: visible.filter((f): f is Exclude<ApplicantField, "photo" | "resume" | "linkedin"> => !["photo", "resume", "linkedin"].includes(f)).map(field => ({ field, label: fieldLabels[field], items: data[field], ...(field === "feedback" && feedback.withheld ? { withheld: true } : {}) })),
     photo: enabled.has("photo") ? profilePhotoSource(profile?.headshotUrl, { clubId: app.clubId, applicationId: app.id }) ?? null : null,
     links: anonymous ? [] : [
       ...(enabled.has("resume") && profile?.resumeUrl && (storagePathSchema.safeParse(profile.resumeUrl).success || safeProfileUrl(profile.resumeUrl)) ? [{ field: "resume" as const, label: "Résumé", href: resolveRecruitingResumeUrl(profile.resumeUrl, app.clubId, app.id)! }] : []),

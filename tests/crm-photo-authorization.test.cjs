@@ -10,13 +10,13 @@ function load(file, mocks = {}) {
 const id = n => `123e4567-e89b-12d3-a456-${String(n).padStart(12, '0')}`;
 const owner = id(1), reader = id(2), clubId = id(3), applicationId = id(4), roundId = id(5);
 function fixture() {
-  const state = { actor: reader, permissions: ['applicants.identify'], anonymous: false, clubAccess: true, downloads: 0 };
+  const state = { actor: reader, permissions: ['applicants.identify'], anonymous: false, clubAccess: true, downloads: 0, status: 'ACTIVE', disabled: false, narrowReads: 0, pipelineReads: 0 };
   const app = { id: applicationId, clubId, studentId: owner, status: 'SUBMITTED', roundId,
     round: { id: roundId, name: 'Review', anonymousReview: false, applicantDisplay: { version: 1, fields: ['name'] } },
     student: { id: owner, email: 'owner@virginia.edu', studentProfile: { id: id(6), userId: owner, firstName: 'Student', lastName: 'Fixture', computingId: 'fixture', major: 'Math', gradYear: 2028, headshotUrl: `${owner}/photo.png`, experiences: [] } },
     evaluations: [], answers: [], bookings: [] };
   const permissions = load('lib/permissions.ts');
-  const membership = () => ({ id: id(7), status: 'ACTIVE', permissions: state.permissions });
+  const membership = () => ({ id: id(7), status: state.status, permissions: state.permissions });
   const auth = {
     requireAuth: async () => { if (state.anonymous) throw { digest: 'NEXT_REDIRECT' }; return { user: { id: state.actor } }; },
     requireClubPermission: async (club, required) => {
@@ -27,12 +27,14 @@ function fixture() {
   };
   const matches = where => where.clubId === app.clubId && (!where.id || where.id === app.id) && app.status !== 'DRAFTING';
   const tx = {
+    $queryRaw: async()=>[],
+    user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {
-      findMany: async ({ where }) => matches(where) && (!where.round || app.round.anonymousReview) ? [app] : [],
-      findFirst: async ({ where }) => matches(where) ? app : null
+      findMany: async ({ where }) => (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : [],
+      findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
-    clubMember: { findFirst: async () => membership() },
+    clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
     applicantObservation: { findMany: async () => [] }
   };
   const mocks = { '@/utils/auth': auth, '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } }, 'next/cache': { revalidatePath() {} } };
@@ -114,4 +116,10 @@ test('CRM context rejects conflicting scopes and mismatched stored photo paths',
   const originalSource = f.app.student.studentProfile.headshotUrl;
   f.app.student.studentProfile.headshotUrl = `${owner}/replacement.png`;
   assert.equal((await f.getUrl(f.photo.profilePhotoSource(originalSource, { clubId, applicationId, mode: 'crm' }))).status, 403);
+});
+
+test('CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor', async()=>{
+ const f=fixture(); assert.equal((await f.get('crm')).status,200);assert.equal(f.state.narrowReads,1);assert.equal(f.state.pipelineReads,0);
+ f.state.status='SUSPENDED';assert.equal((await f.get('crm')).status,403);
+ f.state.status='ACTIVE';f.state.disabled=true;assert.equal((await f.get('crm')).status,403);assert.equal(f.state.downloads,1);
 });

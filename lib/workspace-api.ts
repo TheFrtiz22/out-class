@@ -1,4 +1,6 @@
 "use client"
+import { interviewCapabilities } from "@/lib/interview-access";
+import { hasPermission } from "@/lib/permissions";
 import { genderVisibility } from "@/lib/recruitment-profile";
 import { readWorkspace } from "@/lib/workspace-read"
 import * as campusEvents from "@/actions/campus-events"
@@ -404,7 +406,21 @@ export const getApplicantDisplay = adapt((...args: Parameters<typeof applicantIn
   let config=s.applicantDisplay?.[round.id]?.config || defaultDisplayConfig
   if(input.previewConfig)config=input.previewConfig
   if(input.sessionId){const session=s.votingSessions?.find(v=>v.id===input.sessionId&&v.clubId===input.clubId&&v.candidates.some(c=>c.applicationId===app.id));if(!session)throw Error("Voting presentation unavailable.");config=readVotingDisplay(session.displayConfig)}
-  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id));
+  // Match live disclosure: explicit leadership, final evidence, both anonymity contexts.
+  const feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true };
+  const member = s.memberships.find(m => m.clubId === input.clubId && m.userId === s.students[0].id);
+  if (config.fields.includes("feedback") && s.perspective.role === "leader" && member
+    && app.studentId !== member.userId && !round.anonymousReview
+    && hasPermission(member, "applications.review") && hasPermission(member, "applicants.identify") && interviewCapabilities(member).readClosing) {
+    feedback.withheld = false;
+    for (const evaluation of app.evaluations) {
+      const historical = s.clubs[0].rounds.find(r => r.id === evaluation.roundId);
+      if (!evaluation.submittedAt || !historical || historical.anonymousReview
+        || s.interviews.some(r => r.applicationId === app.id && r.roundId === evaluation.roundId && r.interviewerId === evaluation.interviewerId && r.anonymousReview)) feedback.withheld = true;
+      else if (evaluation.notes) feedback.items.push(`${evaluation.round} · Reviewer ${evaluation.interviewerId}\n${evaluation.notes}`);
+    }
+  }
+  const display = projectApplicantDisplay(joinedApplication(app.id) as unknown as ReviewApplication, { ...round, applicantDisplay: s.applicantDisplay[round.id]?.config }, config, (s.observations || []).filter(o => o.applicationId === app.id), feedback);
   // The bundled fictional résumé is a demo asset, never a live private-download request.
   if (!display.anonymous && display.visible.includes("resume") && s.students.find(u => u.id === app.studentId)?.profile.resumeUrl === "/demo/sample-resume.pdf") {
     display.links = display.links.filter(link => link.field !== "resume")

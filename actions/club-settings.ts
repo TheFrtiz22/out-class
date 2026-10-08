@@ -223,30 +223,23 @@ export async function savePipelineSettings(input: unknown) {
       // Never let a different round reuse a label and overwrite an evaluation.
       const historicalLabels = await tx.evaluation.findMany({
         where: { application: { clubId: data.clubId } },
-        select: { round: true },
-        distinct: ["round"],
+        select: { round: true, roundId: true },
+        distinct: ["round", "roundId"],
       });
       const historicalNames = new Set(
         historicalLabels.map((e) => e.round.toLowerCase()),
       );
       for (const proposed of data.rounds) {
-        const existing = current.find((r) => r.id === proposed.id);
-        if (
-          existing &&
-          existing.name !== proposed.name &&
-          historicalLabels.some((e) => e.round === proposed.name)
-        )
-          throw new Error(
-            "That round name belongs to existing review history. Choose a new name.",
-          );
         const named = current.find(
           (r) => r.name.toLowerCase() === proposed.name.toLowerCase(),
         );
-        if (
-          (named && named.id !== proposed.id) ||
-          (historicalNames.has(proposed.name.toLowerCase()) &&
-            named?.id !== proposed.id)
-        )
+        const historyConflict = historicalLabels.some(e =>
+          e.round.toLowerCase() === proposed.name.toLowerCase() &&
+          // Resolved history belongs to its stable round. Unresolved legacy
+          // labels may retain their current owner, but cannot be reassigned.
+          (e.roundId ? e.roundId !== proposed.id : named?.id !== proposed.id),
+        );
+        if ((named && named.id !== proposed.id) || historyConflict)
           throw new Error(
             "That round name belongs to existing review history. Choose a new name.",
           );
@@ -306,23 +299,8 @@ export async function savePipelineSettings(input: unknown) {
             throw new Error(
               `The type of ${saved.name} is protected by its interview or voting history.`,
             );
-          if (saved.name !== r.name) {
-            // Retain IDs, scores, notes and dates while following a renamed stage.
-            // Ambiguous legacy labels without a canonical interview link stay intact.
-            const uniqueLabel =
-              current.filter((x) => x.name === saved.name).length === 1;
-            await tx.evaluation.updateMany({
-              where: {
-                application: { clubId: data.clubId },
-                round: saved.name,
-                interviewRecords: {
-                  ...(uniqueLabel ? {} : { some: { roundId: saved.id } }),
-                  every: { roundId: saved.id },
-                },
-              },
-              data: { round: r.name },
-            });
-          }
+          // roundId is canonical. Evaluation.round is immutable historical evidence,
+          // including legacy evaluations whose stable relationship is unresolved.
           await tx.pipelineRound.update({
             where: { id: r.id },
             data: {

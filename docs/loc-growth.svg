@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="title description">
+  <title id="title">OutClass lines of code growth</title>
+  <desc id="description">Tracked-file line growth from September 18 to October 7, 2026, excluding the initial 31,808-line baseline. The repository grew to 103,598 lines above baseline.</desc>
+  <rect width="960" height="560" fill="#fff"/>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" fill="#172033">
+    <text x="90" y="42" font-size="24" font-weight="700">OutClass code growth</text>
+    <text x="90" y="68" font-size="13" fill="#566176">Tracked-file lines above the initial repository baseline</text>
+    <text x="90" y="92" font-size="12" fill="#566176">+103,598 lines by Oct 7, 2026</text>
+    <text x="495" y="516" text-anchor="middle" font-size="13" fill="#566176">Date (daily end-of-day repository snapshot)</text>
+    <text x="24" y="258" text-anchor="middle" font-size="13" fill="#566176" transform="rotate(-90 24 258)">Lines above baseline</text>
+  </g>
+
+  <g stroke="#e5e9f0" stroke-width="1">
+    <line x1="90" y1="425" x2="900" y2="425"/>
+    <line x1="90" y1="348.9" x2="900" y2="348.9"/>
+    <line x1="90" y1="272.7" x2="900" y2="272.7"/>
+    <line x1="90" y1="196.6" x2="900" y2="196.6"/>
+    <line x1="90" y1="120.5" x2="900" y2="120.5"/>
+  </g>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" fill="#566176" text-anchor="end">
+    <text x="78" y="429">0</text>
+    <text x="78" y="353">25k</text>
+    <text x="78" y="277">50k</text>
+    <text x="78" y="201">75k</text>
+    <text x="78" y="125">100k</text>
+  </g>
+
+  <path d="M 90,424.6 L 175.3,407.8 L 217.9,376.1 L 260.5,348.1 L 303.2,334.7 L 345.8,307.6 L 388.4,295.4 L 431.1,284.7 L 473.7,282.9 L 516.3,279.3 L 558.9,279.5 L 601.6,276.6 L 644.2,261.2 L 686.8,248.9 L 729.5,242.7 L 772.1,180.3 L 814.7,160.2 L 857.4,116.6 L 900,109.5 L 900,425 L 90,425 Z" fill="#3273dc" opacity="0.12"/>
+  <path d="M 90,424.6 L 175.3,407.8 L 217.9,376.1 L 260.5,348.1 L 303.2,334.7 L 345.8,307.6 L 388.4,295.4 L 431.1,284.7 L 473.7,282.9 L 516.3,279.3 L 558.9,279.5 L 601.6,276.6 L 644.2,261.2 L 686.8,248.9 L 729.5,242.7 L 772.1,180.3 L 814.7,160.2 L 857.4,116.6 L 900,109.5" fill="none" stroke="#3273dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fff" stroke="#3273dc" stroke-width="2">
+    <circle cx="90" cy="424.6" r="4"/>
+    <circle cx="175.3" cy="407.8" r="4"/>
+    <circle cx="217.9" cy="376.1" r="4"/>
+    <circle cx="260.5" cy="348.1" r="4"/>
+    <circle cx="303.2" cy="334.7" r="4"/>
+    <circle cx="345.8" cy="307.6" r="4"/>
+    <circle cx="388.4" cy="295.4" r="4"/>
+    <circle cx="431.1" cy="284.7" r="4"/>
+    <circle cx="473.7" cy="282.9" r="4"/>
+    <circle cx="516.3" cy="279.3" r="4"/>
+    <circle cx="558.9" cy="279.5" r="4"/>
+    <circle cx="601.6" cy="276.6" r="4"/>
+    <circle cx="644.2" cy="261.2" r="4"/>
+    <circle cx="686.8" cy="248.9" r="4"/>
+    <circle cx="729.5" cy="242.7" r="4"/>
+    <circle cx="772.1" cy="180.3" r="4"/>
+    <circle cx="814.7" cy="160.2" r="4"/>
+    <circle cx="857.4" cy="116.6" r="4"/>
+    <circle cx="900" cy="109.5" r="5"/>
+  </g>
+
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="11" fill="#566176" text-anchor="middle">
+    <text x="90" y="448">Sep 18</text>
+    <text x="260.5" y="448">Sep 22</text>
+    <text x="431.1" y="448">Sep 26</text>
+    <text x="601.6" y="448">Sep 30</text>
+    <text x="772.1" y="448">Oct 4</text>
+    <text x="900" y="448">Oct 7</text>
+  </g>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" fill="#172033">
+    <text x="900" y="94" text-anchor="end" font-size="13" font-weight="700">103,598</text>
+    <text x="90" y="482" font-size="12" fill="#566176">Initial baseline: 31,808 lines (excluded)</text>
+    <text x="90" y="500" font-size="12" fill="#566176">Daily snapshots count newline-terminated lines in tracked files; chart starts after the baseline commit.</text>
+  </g>
+</svg>

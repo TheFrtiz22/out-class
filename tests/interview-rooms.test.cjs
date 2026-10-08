@@ -122,3 +122,10 @@ test('SQL migration preserves legacy data and enforces capacity, round, overlap 
   await db.exec('RESET ROLE')
  }finally{await db.close()}
 })
+
+for(const historical of [false,true])for(const current of [false,true])for(const identify of [false,true])test(`room names: historical anonymous=${historical}, current anonymous=${current}, identify=${identify}`,async()=>{
+ const member={status:'ACTIVE',permissions:['interviews.manage',...(identify?['applicants.identify']:[])]};
+ const booking={id:id(8),slotId:id(4),applicationId:id(5),roundId:id(2),round:{anonymousReview:historical},application:{round:{anonymousReview:current},student:{studentProfile:{firstName:'Private',lastName:'Student'}}},slot:{roomId:id(3),startTime:new Date(),endTime:new Date(),location:'Room'}};
+ const load=loader({'@/utils/auth':{requireClubPermission:async()=>({membership:member})},'@/utils/prisma':{prisma:{club:{findUniqueOrThrow:async()=>({name:'Club'})},pipelineRound:{findMany:async()=>[]},clubMember:{findMany:async()=>[]},interviewRoom:{findMany:async()=>[]},interviewBooking:{findMany:async({include})=>{assert.equal(include.application.select.round.select.anonymousReview,true);return[booking]}}}},'next/cache':{revalidatePath(){}}});
+ const view=await load('actions/interview-rooms.ts').getRoomWorkspace(id(1));assert.equal(view.bookings[0].candidate,identify&&!historical&&!current?'Private Student':`Applicant ${id(5).slice(-6)}`);
+});

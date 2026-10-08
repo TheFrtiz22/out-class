@@ -4,6 +4,7 @@ import { z } from "zod";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
+import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { votingDisplaySchema, readVotingDisplay } from "@/lib/voting-presentation";
 import { displayConfigSchema, readDisplayConfig, projectApplicantDisplay } from "@/lib/applicant-display";
@@ -34,9 +35,30 @@ export async function getApplicantDisplay(input: z.infer<typeof scope>) {
       config=readVotingDisplay(voting.displayConfig);
     }
     const observations = app.round.anonymousReview ? [] : await tx.applicantObservation.findMany({ where: { applicationId: app.id }, include: { author: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
+    // Config selects content; it cannot grant closing-review rights. Only explicit
+    // interview leadership may disclose submitted final feedback in this panel.
+    // Owners/recruiters/voting participants gain no implicit private-evidence access.
+    const feedback: { items: string[]; withheld: boolean } = { items: [], withheld: true };
+    if (config.fields.includes("feedback") && !app.round.anonymousReview && app.studentId !== user.id
+      && hasPermission(reviewer, "applicants.identify") && interviewCapabilities(reviewer).readClosing) {
+      const finals = await tx.evaluation.findMany({
+        where: { applicationId: app.id, submittedAt: { not: null } },
+        select: { id: true, round: true, interviewerId: true, notes: true,
+          stableRound: { select: { clubId: true, anonymousReview: true } },
+          interviewRecords: { select: { anonymousReview: true } } },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      });
+      feedback.withheld = app.evaluations.some(e => !e.submittedAt);
+      for (const final of finals) {
+        if (!final.stableRound || final.stableRound.clubId !== data.clubId || final.stableRound.anonymousReview
+          || final.interviewRecords.some(record => record.anonymousReview)) {
+          feedback.withheld = true;
+        } else if (final.notes) feedback.items.push(`${final.round} · Reviewer ${final.interviewerId}\n${final.notes}`);
+      }
+    }
     const display = projectApplicantDisplay(app, app.round, config, observations.map(o => ({
       id: o.id, kind: o.kind, body: o.body, author: o.author.studentProfile ? `${o.author.studentProfile.firstName} ${o.author.studentProfile.lastName}` : "Club reviewer", own: o.authorId === user.id, createdAt: o.createdAt.toISOString(), updatedAt: o.updatedAt.toISOString(),
-    })));
+    })), feedback);
     return { ...display, photo: display.photo ? profilePhotoSource(app.student.studentProfile?.headshotUrl, { clubId: data.clubId, applicationId: data.applicationId, ...(data.sessionId ? { sessionId: data.sessionId } : data.previewConfig ? { mode: "preview" as const } : {}) }) ?? null : null };
   }, { isolationLevel: "RepeatableRead" });
 }

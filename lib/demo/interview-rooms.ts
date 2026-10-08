@@ -1,5 +1,6 @@
 import { syncDemoBookingPanel } from "./interview-access-setup";
-import { demoStore } from "./store"
+import { hasPermission } from "@/lib/permissions";
+import { demoStore, demoMember } from "./store"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 // Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
 function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
@@ -16,7 +17,12 @@ function manager(clubId: string) {
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const s = manager(clubId), club = s.clubs.find(c => c.id === clubId)!
   const bookings = (s.roomBookings ?? []).filter(b => (s.interviewRooms ?? []).some(r => r.id === b.roomId && r.clubId === clubId))
-  return { clubName: club.name, rounds: club.rounds.map(r => ({ id: r.id, name: r.name })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(presentBooking) }
+  return { clubName: club.name, rounds: club.rounds.map(r => ({ id: r.id, name: r.name })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
+    const app = s.applications.find(a => a.id === b.applicationId && a.clubId === clubId);
+    const historical = club.rounds.find(r => r.id === b.roundId), current = club.rounds.find(r => r.id === app?.roundId);
+    const identified = hasPermission(demoMember(), "applicants.identify") && historical?.anonymousReview === false && current?.anonymousReview === false;
+    return { ...presentBooking(b), candidate: identified ? b.candidate : `Applicant ${b.applicationId.slice(-6)}` };
+  }) }
 }
 export async function createInterviewRoom(raw: RoomInput) {
   const input = roomInputSchema.parse(raw), s = manager(input.clubId)

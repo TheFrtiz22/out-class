@@ -5,7 +5,8 @@ import { requireAuth } from "@/utils/auth";
 import { auditSupportAction } from "@/utils/support-audit";
 import { storagePathSchema } from "@/lib/student-profile";
 import { profilePhotoSource } from "@/lib/profile-photo";
-import { getClubPipeline } from "@/actions/crm";
+import { prisma } from "@/utils/prisma";
+import { authorizeCrmPhoto } from "@/lib/crm-photo-authorization";
 import { getApplicantDisplay } from "@/actions/applicant-intelligence";
 import { getInterviewApplicantPanel } from "@/actions/interview-resumes";
 import { getEvaluations } from "@/actions/evaluations";
@@ -23,11 +24,8 @@ export async function GET(request: Request) {
       const expected = profilePhotoSource(d.path, scope);
       let permitted = false;
       if (d.mode === "crm") {
-        // Reuse the canonical CRM projection: only identified, non-anonymous,
-        // non-draft applicants in this club can supply this exact reference.
         if (d.roundId || d.sessionId) return new NextResponse("Forbidden", { status: 403, headers });
-        const result = await getClubPipeline(d.clubId);
-        permitted = result.applications.some(app => app.id === d.applicationId && app.student.studentProfile?.headshotUrl === expected);
+        permitted = await prisma.$transaction(tx => authorizeCrmPhoto(tx, user.id, d.clubId!, d.applicationId!, d.path));
       } else if (d.mode === "evaluation") {
         const result = await getEvaluations(d.clubId, d.applicationId);
         permitted = result.evaluations.some(e => e.interviewer.user.studentProfile?.headshotUrl === expected);

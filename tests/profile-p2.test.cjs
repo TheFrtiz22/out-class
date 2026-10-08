@@ -23,7 +23,7 @@ test('private photo proxy authenticates owner and context, denies students/anony
     getBucket: async () => ({ data: { public: publicBucket } }),
     from: () => ({ download: async p => { assert.equal(p,path); downloads++; return { data: new Blob([new Uint8Array([1,2,3])], { type:'image/png' }) }; } })
   } }) },
-  '@/actions/crm':{getClubPipeline:async()=>{throw Error('Denied')}},
+  '@/utils/prisma':{prisma:{$transaction:async()=>{throw Error('Denied')}}},
   '@/actions/applicant-intelligence':{getApplicantDisplay:async()=>{if(!allowed)throw Error('Denied');return{photo:photo.profilePhotoSource(path,scope)}}},
   '@/actions/interview-resumes':{getInterviewApplicantPanel:async()=>{if(!allowed)throw Error('Denied');return{profile:{headshotUrl:photo.profilePhotoSource(path,{...scope,roundId})}}}},
   '@/actions/evaluations':{getEvaluations:async()=>{throw Error('Denied')}}

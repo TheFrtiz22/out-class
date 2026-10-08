@@ -1,4 +1,5 @@
 "use client"
+import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
@@ -263,10 +264,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
     setMessage("")
     setDecision("")
     if (app) {
-      const roundName = data?.rounds.find((item) => item.id === app.roundId)?.name
-      const mine = app.evaluations.find(
-        (item) => item.interviewerId === membership.id && item.round === roundName,
-      )
+      const mine = findReviewerEvaluation(app.evaluations, membership.id, data?.rounds.find(item => item.id === app.roundId))
       const value = mine ? String(mine.score) : ""
       setScore(value)
       setNotes(mine?.notes || "")
@@ -336,11 +334,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
         setData(null)
         setActiveId(null)
         setRevision(v => v + 1)
-        const mine = active.evaluations.find(
-          (item) =>
-            item.interviewerId === membership.id &&
-            item.round === data?.rounds.find((item) => item.id === targetRound)?.name,
-        )
+        const mine = findReviewerEvaluation(active.evaluations, membership.id, data?.rounds.find(item => item.id === targetRound))
         setScore(mine ? String(mine.score) : "")
         setNotes(mine?.notes || "")
         setBaseline(JSON.stringify([mine ? String(mine.score) : "", mine?.notes || ""]))
