@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
+import { animateQuestionCompletion, captureQuestionCompletion, type QuestionCompletionOrigin } from "@/lib/interview-question-motion";
 import {
   getInterviewKit,
   openInterviewSession,
@@ -62,6 +63,9 @@ export function InterviewKitSession({
   const activeHeading = useRef<HTMLHeadingElement>(null);
   const bankControl = useRef<HTMLButtonElement>(null);
   const [closingQuestion, setClosingQuestion] = useState(false);
+  const closingQuestionRef = useRef(false);
+  const completionSource = useRef<HTMLDivElement>(null);
+  const [completionMotion, setCompletionMotion] = useState<{ id: string; origin: QuestionCompletionOrigin } | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const miscellaneousNotes = useRef<HTMLTextAreaElement>(null);
   const [expandedQuestions, setExpandedQuestions] = useState<string[]>([]);
@@ -72,6 +76,18 @@ export function InterviewKitSession({
   const flightNodes = useRef(new Map<string, HTMLDivElement>());
   const questionNodes = useRef(new Map<string, HTMLElement>());
   const rowNodes = useRef(new Map<string, HTMLLIElement>());
+  useLayoutEffect(() => {
+    if (!completionMotion) return;
+    let current = true;
+    const source = completionSource.current, row = rowNodes.current.get(completionMotion.id);
+    const finish = () => {
+      closingQuestionRef.current = false;
+      if (current && mounted.current) { setCompletionMotion(null); setClosingQuestion(false); bankControl.current?.focus({ preventScroll: true }); }
+    };
+    if (!source || !row) { finish(); return; }
+    const cancel = animateQuestionCompletion(completionMotion.origin, source, row, finish);
+    return () => { current = false; cancel(); };
+  }, [completionMotion]);
   useEffect(() => {
     if (!flights.length) return;
     const animations: Animation[] = [];
@@ -184,9 +200,9 @@ export function InterviewKitSession({
     };
   }, [clubId, applicationId, roundId, retry, initialSession]);
   useEffect(() => {
-    onState(dirty || !!newQuestion.trim(), saving);
+    onState(dirty || !!newQuestion.trim(), saving || closingQuestion);
     return () => onState(false, false);
-  }, [dirty, saving, newQuestion, onState]);
+  }, [dirty, saving, closingQuestion, newQuestion, onState]);
   async function persist(complete = false, next = false, patch?: Partial<InterviewDraft>): Promise<boolean | undefined> {
     if (complete && finishingRef.current) return;
     if (complete) { finishingRef.current = true; setCompleting(true); }
@@ -316,13 +332,20 @@ export function InterviewKitSession({
     setActiveQuestion(id);
   }
   async function closeQuestion() {
-    if (!active || disabled) return;
+    if (!active || disabled || closingQuestionRef.current) return;
+    closingQuestionRef.current = true;
     setClosingQuestion(true);
+    const origin = !completedIds.includes(active.id) ? captureQuestionCompletion(completionSource.current) : null;
     const ok = await persist(false, false, { completedQuestionIds: [...new Set([...(draft.completedQuestionIds || []), active.id])] });
     if (mounted.current) {
+      if (ok) {
+        setActiveQuestion(""); setLibraryOpen(false); setAnnouncement("Question saved and moved to your completed questions.");
+        if (origin) { setCompletionMotion({ id: active.id, origin }); return; }
+        bankControl.current?.focus({ preventScroll: true });
+      }
       setClosingQuestion(false);
-      if (ok) { setActiveQuestion(""); setAnnouncement("Question saved and moved to your completed questions."); bankControl.current?.focus(); }
     }
+    closingQuestionRef.current = false;
   }
   async function refreshRevision() {
     if (savingRef.current) return;
@@ -362,7 +385,7 @@ export function InterviewKitSession({
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
-        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
+        <div className="oc-question-heading"><h2 tabIndex={-1} data-candidate-focus>Interview questions</h2><Button ref={bankControl} type="button" variant="ghost" disabled={closingQuestion || ending} aria-expanded={libraryOpen} aria-controls="interview-bank" onClick={() => setLibraryOpen(v => !v)}>Question bank</Button></div>
         <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Your completed questions · {completed.length}</a>
         {libraryOpen && <section id="interview-bank" aria-label="Round question bank" className="space-y-3 rounded-lg border bg-card p-4">
           {session.instructions && <p className="whitespace-pre-wrap text-xs text-muted-foreground">{session.instructions}</p>}
@@ -373,7 +396,8 @@ export function InterviewKitSession({
           <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={!existing && (disabled || draft.additionalQuestions.length >= 30)} onClick={() => existing ? setActiveQuestion(existing.id) : addQuestion(q.prompt, q.id, q.guidance)}>{existing ? "Open saved question" : "Use question"}</Button></li>; })}</ul>
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
         </section>}
-        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending} onClick={() => setActiveQuestion(q.id)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
+        <div ref={completionSource} className="oc-question-completion-source">
+        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => setActiveQuestion(q.id)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">
           <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(""); setLibraryOpen(false); bankControl.current?.focus(); }}>Back to question bank</Button>
           <h3 ref={activeHeading} tabIndex={-1} className="break-words">{active.prompt}</h3>
@@ -384,6 +408,7 @@ export function InterviewKitSession({
           <p className="text-xs text-muted-foreground">Only your interview session stores these notes. Typing does not mark a question complete.</p>
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
+        </div>
         {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => setOffScriptOpen(v => !v)}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Input id="new-interview-question" autoFocus maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); }}>Add question</Button><p className="text-xs text-muted-foreground">Add it to your session before leaving. Its private notes autosave.</p></fieldset>}</div>}
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>

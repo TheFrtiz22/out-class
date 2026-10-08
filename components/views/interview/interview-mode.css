@@ -19,9 +19,10 @@
 .oc-candidate-outgoing { z-index: 2; pointer-events: none; }
 .oc-interview-room[data-workspace-detail] :is(.oc-question-heading h2,#interview-completed h2,.oc-post-interview h2) { font-family: var(--oc-font-sans); font-size: 1.125rem; font-weight: 500; letter-spacing: -.015em; line-height: 1.4; }
 .oc-question-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
-.oc-interview-room[data-workspace-detail] .oc-focused-interview button { min-height: 36px; font-weight: 500; }
-.oc-interview-room[data-workspace-detail] .oc-focused-interview label { display: block; font-size: .875rem; font-weight: 500; color: var(--muted-foreground); }
-.oc-interview-room[data-workspace-detail] .oc-focused-interview textarea { background: var(--card); border: 1px solid var(--input); border-radius: var(--oc-radius-sm); padding: 14px; line-height: 1.65; font-size: .9375rem; box-shadow: none; }
+.oc-interview-room[data-workspace-detail] .oc-focused-interview button { min-height: 36px; font-weight: 400; }
+.oc-interview-room[data-workspace-detail] .oc-focused-interview [data-slot="button"] { padding: 6px 12px; height: auto; }
+.oc-interview-room[data-workspace-detail] .oc-focused-interview label { display: block; font-size: .875rem; font-weight: 400; color: var(--muted-foreground); }
+.oc-interview-room[data-workspace-detail] .oc-focused-interview textarea { background: var(--card); border: 1px solid var(--input); border-radius: var(--oc-radius-sm); padding: 12px; line-height: 1.65; font-size: .9375rem; box-shadow: none; }
 .oc-interview-room[data-workspace-detail] .oc-active-question { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .oc-interview-room[data-workspace-detail] .oc-active-question textarea { min-height: clamp(200px,28vh,320px); }
 .oc-active-question > [data-slot="button"]:last-child { display: flex; margin-left: auto; }
@@ -33,19 +34,24 @@
 .oc-question-row { display: block; width: 100%; padding: 12px 0; text-align: left; font-size: .9375rem; line-height: 1.5; }
 .oc-question-row:hover,.oc-completed-row:hover { background: var(--accent); }
 .oc-question-kind { display: block; color: var(--muted-foreground); font-size: .75rem; font-weight: 400; }
-.oc-off-script { border-top: 1px solid var(--border); padding-top: 12px; }
+.oc-off-script { padding-top: 6px; }
 .oc-off-script > button { padding-left: 0; color: var(--muted-foreground); }
 .oc-room-applicant { border-bottom: 1px solid var(--border); }
 .oc-room-applicant > .oc-candidate-content { display: flex; flex-direction: column; gap: 20px; }
 .oc-applicant-identity { display: flex; align-items: center; gap: 14px; }
-.oc-applicant-photo { width: 72px; height: 80px; flex-shrink: 0; object-fit: cover; border-radius: var(--oc-radius-sm); }
+.oc-applicant-photo { width: 120px; height: 128px; flex-shrink: 0; object-fit: cover; border-radius: var(--oc-radius-sm); }
 .oc-applicant-fallback { display: flex; align-items: center; justify-content: center; background: var(--accent); color: var(--muted-foreground); }
 .oc-interview-room[data-workspace-detail] .oc-room-applicant h1 { font-family: var(--oc-font-sans); font-size: 1.125rem; font-weight: 500; line-height: 1.4; letter-spacing: -.015em; }
 .oc-applicant-scholars { margin-top: 5px; font-size: .8125rem; line-height: 1.5; color: var(--muted-foreground); }
-.oc-interview-room[data-workspace-detail] .oc-resume-trigger { height: auto; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 0 0; border-radius: 0; border-top: 1px solid var(--border); white-space: normal; }
-.oc-interview-room[data-workspace-detail] .oc-resume-trigger:hover { background: transparent; }
-.oc-resume-preview { height: clamp(180px,25vw,320px); width: 100%; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); overflow: hidden; background: var(--card); }
-.oc-resume-preview iframe { height: 100%; width: 100%; border: 0; }
+.oc-resume-document { width: 100%; min-width: 0; }
+.oc-interview-room[data-workspace-detail] .oc-resume-trigger { width: 100%; justify-content: stretch; padding: 4px 0; background: transparent; white-space: normal; }
+.oc-resume-trigger .oc-resume-label { width: 100%; }
+.oc-resume-mini > p { font-size: .75rem; color: var(--muted-foreground); margin-bottom: 6px; }
+.oc-resume-preview { height: clamp(260px,52dvh,520px); width: 100%; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); overflow: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; background: var(--card); }
+.oc-resume-preview:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.oc-resume-sheet { width: 100%; background: white; }
+.oc-resume-sheet + .oc-resume-sheet { border-top: 8px solid var(--background); }
+.oc-resume-sheet canvas { display: block; width: 100%; height: 100%; }
 .oc-resume-label { display: flex; align-items: center; justify-content: space-between; font-size: .8125rem; color: var(--muted-foreground); font-weight: 400; }
 .oc-interview-room[data-workspace-detail] #interview-completed { background: transparent; border-top: 1px solid var(--border); }
 #interview-completed h2 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
@@ -68,6 +74,9 @@
 .oc-question-review-content { padding-bottom: 16px; display: grid; gap: 10px; }
 .oc-question-flight { position: fixed; z-index: 45; pointer-events: none; overflow: hidden; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); background: var(--card); color: var(--foreground); font: .875rem/1.5 var(--oc-font-sans); }
 .oc-question-flight > div { padding: 14px; }
+.oc-question-completion-source { min-width: 0; }
+.oc-question-completion-flight { position: fixed; z-index: 45; pointer-events: none; display: flex; align-items: flex-start; gap: 10px; padding: 14px 0; overflow: hidden; background: var(--background); color: var(--foreground); font: .875rem/1.5 var(--oc-font-sans); text-align: left; border: 0; border-radius: var(--oc-radius-sm); }
+.oc-question-completion-flight > span { min-width: 0; }
 .oc-score-history { font-size: .8125rem; border-top: 1px solid var(--border); padding-top: 14px; }
 .oc-score-history h3 { font-size: .8125rem; font-weight: 500; margin-bottom: 8px; }
 .oc-score-history li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
@@ -79,17 +88,17 @@
   .oc-interview-room[data-workspace-detail] .oc-question-workspace { padding: 24px 28px; }
 }
 @media (max-width: 1023px) {
-  .oc-interview-room[data-workspace-detail] .oc-room-applicant > .oc-candidate-content { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .oc-interview-room[data-workspace-detail] .oc-room-applicant > .oc-candidate-content { gap: 16px; }
   .oc-applicant-identity { flex: 1; min-width: 170px; }
-  .oc-interview-room[data-workspace-detail] .oc-resume-trigger { width: 110px; padding: 0; border: 0; }
-  .oc-resume-preview { height: 100px; }
+  .oc-applicant-photo { width: 104px; height: 112px; }
+  .oc-resume-preview { height: clamp(220px,42dvh,360px); }
   .oc-interview-room[data-workspace-detail] .oc-focused-interview button { min-height: 44px; }
   .oc-interview-room[data-workspace-detail] .oc-focused-interview textarea { font-size: 1rem; }
 }
 @media (max-width: 639px) {
   .oc-interview-room[data-workspace-detail] :is(.oc-room-header,.oc-room-applicant,#interview-completed,.oc-question-workspace) { padding: 16px; }
   .oc-room-save { width: 100%; justify-content: space-between; margin-left: 0; }
-  .oc-applicant-photo { width: 52px; height: 60px; }
+  .oc-applicant-photo { width: 88px; height: 96px; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .oc-focused-interview :is(button,textarea) { transition: background-color 140ms ease,border-color 140ms ease; }
