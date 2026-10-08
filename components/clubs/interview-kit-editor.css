@@ -1,26 +1,26 @@
 .oc-interview-management { gap: 26px; }
-.oc-interview-management [data-slot="tabs-list"] { height: auto; max-width: 100%; flex-wrap: wrap; justify-content: start; gap: 4px; padding: 5px; border-radius: 12px; background: #edf1f6; }
-.oc-interview-management [data-slot="tabs-trigger"] { min-height: 44px; padding: 10px 15px; border-radius: 9px; white-space: normal; flex: 0 1 auto; color: #153052; }
+.oc-interview-management [data-slot="tabs-list"] { height: auto; max-width: 100%; flex-wrap: wrap; justify-content: start; gap: 4px; padding: 5px; border-radius: var(--oc-radius-lg); background: #edf1f6; }
+.oc-interview-management [data-slot="tabs-trigger"] { min-height: 44px; padding: 10px 15px; border-radius: var(--oc-radius-md); white-space: normal; flex: 0 1 auto; color: #153052; }
 .oc-interview-management [data-slot="tabs-trigger"][data-state="active"] { background: #fff; box-shadow: 0 1px 4px #14243b12; }
 .oc-kit-editor { container-type: inline-size; }
 .oc-kit-heading { margin-bottom: 26px; }
 .oc-kit-heading h2 { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); color: var(--primary); margin-bottom: 8px; }
 .oc-kit-heading p { max-width: 730px; line-height: var(--oc-leading-body); }
 .oc-kit-layout { display: grid; grid-template-columns: 245px minmax(0,1fr); gap: 24px; align-items: start; }
-.oc-kit-rounds { padding: 12px; border: 1px solid var(--border); background: var(--card); border-radius: 12px; }
+.oc-kit-rounds { padding: 12px; border: 1px solid var(--border); background: var(--card); border-radius: var(--oc-radius-lg); }
 .oc-kit-rounds h3 { font-size: var(--oc-text-card); text-transform: uppercase; letter-spacing: .08em; color: var(--muted-foreground); margin: 6px 12px 14px; }
-.oc-kit-rounds button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 14px 12px; border-radius: 9px; text-align: left; font-size: var(--oc-text-small); }
+.oc-kit-rounds button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 14px 12px; border-radius: var(--oc-radius-md); text-align: left; font-size: var(--oc-text-small); }
 .oc-kit-rounds button > span { display: grid; place-items: center; width: 27px; height: 27px; flex-shrink: 0; border-radius: 50%; background: #eaf0f7; color: #173052; }
 .oc-kit-rounds strong { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: var(--oc-weight-medium); }
 .oc-kit-rounds button[aria-current="true"] { background: #102c54; color: #fff; }
 .oc-kit-rounds button[aria-current="true"] > span { background: #ffffff25; color: #fff; }
 .oc-kit-rounds button:hover:not([aria-current="true"]) { background: var(--muted); }
-.oc-kit-builder { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 26px; }
+.oc-kit-builder { min-width: 0; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); padding: 26px; }
 .oc-kit-builder > header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
 .oc-kit-builder > header p, .oc-kit-builder > header > span { font-size: var(--oc-size-12); color: var(--muted-foreground); }
 .oc-kit-builder > header h3 { margin-top: 7px; font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); overflow-wrap: anywhere; }
 .oc-kit-builder-label { display: flex; align-items: center; gap: 10px; font-size: var(--oc-size-14); font-weight: var(--oc-weight-semibold); margin-bottom: 20px; }
-.oc-kit-question { padding: 18px; border: 1px solid var(--border); border-radius: 10px; }
+.oc-kit-question { padding: 18px; border: 1px solid var(--border); border-radius: var(--oc-radius-md); }
 .oc-kit-question > label { display: block; font-size: var(--oc-size-12); color: var(--muted-foreground); margin-bottom: 10px; }
 .oc-kit-question textarea { min-height: 72px; font-size: var(--oc-size-14); line-height: var(--oc-leading-body); }
 .oc-kit-guidance summary { padding: 12px 0; cursor: pointer; font-size: var(--oc-size-12); color: var(--muted-foreground); min-height: 44px; }

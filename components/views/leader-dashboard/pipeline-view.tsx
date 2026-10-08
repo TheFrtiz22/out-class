@@ -1,4 +1,5 @@
 "use client"
+import { NativeSelect } from "@/components/ui/native-select"
 
 import { useState } from "react"
 import { MoreHorizontal, Mail, UserRound, XCircle, ChevronRight, ChevronLeft, GripVertical } from "lucide-react"
@@ -186,9 +187,9 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                       </div>
                     </div>
 
-                    <select aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => onMove(a.id, event.target.value)} className="mt-3 w-full rounded-md border border-neutral-200 bg-white p-1.5 text-xs">
+                    <NativeSelect aria-label={`Recruitment stage for ${a.name}`} value={a.status} onClick={event => event.stopPropagation()} onChange={event => onMove(a.id, event.target.value)} className="mt-3 w-full rounded-md border border-neutral-200 bg-white p-1.5 text-xs">
                       {columns.map(stage => <option key={stage.id} value={stage.id}>{stage.title}</option>)}
-                    </select>
+                    </NativeSelect>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button

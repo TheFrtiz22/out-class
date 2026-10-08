@@ -98,8 +98,8 @@
 [data-product-shell] .oc-discovery .oc-directory-categories button { flex-shrink: 0; border: 0; background: var(--muted); border-radius: var(--oc-radius-md); color: var(--muted-foreground); font-size: var(--oc-text-caption); }
 [data-product-shell] .oc-discovery .oc-directory-categories button[aria-pressed="true"] { color: var(--oc-rail-text); background: var(--oc-rail); }
 [data-product-shell] .oc-discovery .oc-directory-categories button[aria-pressed="true"] svg { color: var(--brand-orange); }
-[data-product-shell] .oc-explore-card article { overflow: hidden; border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
-[data-product-shell] .oc-explore-card article:hover { transform: translateY(-4px); box-shadow: var(--oc-shadow-popover); }
+[data-product-shell] .oc-explore-card article { overflow: hidden; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); transition: transform var(--oc-duration-ui) var(--oc-ease-out), box-shadow var(--oc-duration-ui); }
+[data-product-shell] .oc-explore-card article:hover { transform: translateY(-2px); box-shadow: var(--oc-shadow-surface-hover); }
 [data-product-shell] .oc-explore-card-cover { position: relative; isolation: isolate; height: 7rem; background: color-mix(in srgb, var(--oc-club-accent) 9%, var(--oc-surface-blue)); }
 [data-product-shell] .oc-explore-card-cover > .oc-campus-ribbon { position: absolute; z-index: -1; inset: -.5rem -3rem auto auto; width: 17rem; color: var(--oc-club-accent); opacity: .3; transform: rotate(-15deg); }
 [data-product-shell] .oc-explore-category { background: var(--card); color: var(--foreground); font-size: var(--oc-size-10); border-radius: var(--oc-radius-sm); }

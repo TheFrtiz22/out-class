@@ -7,6 +7,7 @@
 @import "../styles/campus-illustrations.css";
 @import "../styles/product-workflows.css";
 @import "../styles/loading.css";
+@import "../styles/interface-primitives.css";
 @config "../tailwind.config.js";
 
 @custom-variant dark (&:is(.dark *));

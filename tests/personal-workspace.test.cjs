@@ -75,7 +75,7 @@ test('application deep links focus only an owned submitted application in Status
  const denied=trackerHarness([app('Owned')],'status','applicationId=foreign');denied.render();await denied.flush();denied.render();await denied.flush();assert.equal(nodes(denied.render()).some(node=>node.type==='ApplicationStatusDetail'),false);
 });
 test('empty, loading, failed and signed-out status states preserve retry and sign-in behavior',async()=>{
- const h=trackerHarness([]);assert.match(text(h.render()),/Loading/);await h.flush();assert.ok(nodes(h.render()).some(node=>node.type==='EmptyState'));
+ const h=trackerHarness([]);assert.match(nodes(h.render()).find(n=>n.type==='LoadingState').props.label,/Loading/);await h.flush();assert.ok(nodes(h.render()).some(node=>node.type==='EmptyState'));
  const failed=trackerHarness([]);failed.fail();failed.render();await failed.flush();assert.ok(nodes(failed.render()).some(node=>node.props?.role==='alert'));
  const guest=trackerHarness([]);guest.auth.user=null;guest.render();await guest.flush();assert.match(text(guest.render()),/Sign in/);assert.equal(guest.calls.length,0);
 });

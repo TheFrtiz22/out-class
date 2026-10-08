@@ -20,13 +20,13 @@
 .oc-segmented-control button { min-height: var(--oc-control-height); padding: .5rem 1rem; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); color: var(--muted-foreground); transition: background var(--oc-duration-micro), color var(--oc-duration-micro), box-shadow var(--oc-duration-micro); cursor: pointer; }
 .oc-segmented-control [aria-pressed="true"] { background: var(--card); box-shadow: var(--oc-shadow-surface); color: var(--foreground); }
 :root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) :is([data-slot="dialog-content"], [data-slot="sheet-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="select-content"], [data-slot="alert-dialog-content"]) { background: var(--popover); border-color: var(--border); box-shadow: var(--oc-shadow-popover); }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) :is([data-slot="dialog-title"], [data-slot="sheet-title"]) { font-family: var(--oc-font-display); font-weight: 500; font-size: var(--oc-text-modal); }
-[data-product-shell] [data-slot="card"] { border-color: transparent; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) :is([data-slot="dialog-title"], [data-slot="sheet-title"]) { font-family: var(--oc-font-display); font-weight: var(--oc-weight-title); font-size: var(--oc-text-modal); }
+[data-product-shell] [data-slot="card"] { border-color: var(--border); border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] :is([data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"]) { background: var(--card); border-color: var(--input); border-radius: var(--oc-radius-md); }
-[data-product-shell] [data-slot="button"] { min-height: 2.5rem; border-radius: var(--oc-radius-md); font-weight: var(--oc-weight-semibold); }
+[data-product-shell] [data-slot="button"] { border-radius: var(--oc-radius-md); font-weight: var(--oc-weight-semibold); }
 [data-product-shell] [data-slot="tabs-list"] { background: var(--muted); border-radius: var(--oc-radius-md); }
 [data-product-shell] [data-slot="tabs-trigger"][data-state="active"] { box-shadow: var(--oc-shadow-surface); }
-[data-product-shell] [data-slot="empty-state"] { position: relative; border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); padding: var(--oc-space-section) var(--oc-space-content); }
+[data-product-shell] [data-slot="empty-state"][data-tone="subtle"] { background: var(--oc-surface-blue); }
 [data-slot="empty-state"] .oc-campus-ribbon { width: 7rem; height: 3rem; opacity: .7; }
 [data-product-shell] table { font-variant-numeric: tabular-nums; }
 [data-product-shell] table thead { background: var(--muted); }
@@ -44,17 +44,17 @@
   .oc-segmented-control button { flex: 1; padding-inline: .75rem; }
 }
 .oc-profile-link { display: inline-flex; align-items: center; min-height: var(--oc-control-height); font-size: var(--oc-text-caption); color: var(--muted-foreground); text-decoration: underline; text-underline-offset: .25em; }
-[data-product-shell] .oc-club-identity { position: relative; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); background: var(--oc-surface-blue); margin-bottom: 1.5rem; }
+[data-product-shell] .oc-club-identity { position: relative; padding: var(--oc-density-inset); border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); margin-bottom: 1.5rem; }
 [data-product-shell] .oc-club-identity h1 { font-family: var(--oc-font-display); font-weight: 500; }
-[data-product-shell] .oc-club-recruitment { border: 0; border-radius: var(--oc-radius-xl); box-shadow: var(--oc-shadow-surface); padding: var(--oc-density-inset); }
-[data-product-shell] .oc-club-banner { height: 9rem; border-radius: var(--oc-radius-xl); }
+[data-product-shell] .oc-club-recruitment { border: 0; border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); padding: var(--oc-density-inset); }
+[data-product-shell] .oc-club-banner { height: 9rem; border-radius: var(--oc-radius-lg); }
 [data-product-shell] .oc-club-profile-grid { border: 0; gap: 1.5rem; padding-top: 1rem; }
 [data-product-shell] .oc-membership-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1.25rem; }
 [data-product-shell] .oc-membership-card { min-width: 0; padding: var(--oc-density-inset); border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] .oc-membership-card h2 { font-size: var(--oc-text-section); }
 [data-product-shell] .oc-membership-card article > a { text-decoration: none; background: var(--muted); padding-inline: 1rem; border-radius: var(--oc-radius-md); }
 [data-product-shell] .oc-membership-card article > a:hover { background: var(--brand-subtle); color: var(--brand-ink); }
-[data-product-shell] .oc-student-profile > header { padding: var(--oc-density-inset); margin-bottom: var(--oc-density-gap); border-radius: var(--oc-radius-xl); background: var(--oc-surface-blue); }
+[data-product-shell] .oc-student-profile > header { padding: var(--oc-density-inset); margin-bottom: var(--oc-density-gap); border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); }
 [data-product-shell] .oc-student-profile > header h2 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 400; }
 [data-product-shell] .oc-student-profile > header [data-slot="avatar"] { border-radius: var(--oc-radius-lg); }
 [data-product-shell] .oc-inbox-workspace [aria-label="Notification list"] { border-radius: var(--oc-radius-lg); background: var(--card); box-shadow: var(--oc-shadow-surface); }
@@ -71,13 +71,13 @@
   [data-product-shell] .oc-club-identity { padding: 1.25rem; flex-direction: column; }
   [data-product-shell] .oc-club-banner { height: 6rem; }
 }
-[data-product-shell] [data-slot="badge"][data-status-label="Accepted"] { background: var(--success-subtle); color: var(--success); }
-[data-product-shell] [data-slot="badge"][data-status-label="Rejected"] { background: var(--error-subtle); color: var(--destructive); }
-[data-product-shell] [data-slot="badge"][data-status-label="Waitlisted"] { background: var(--warning-subtle); color: var(--warning); }
-[data-product-shell] [data-slot="badge"][data-status-label="In Review"] { background: var(--info-subtle); color: var(--info); }
-[data-product-shell] [data-slot="badge"][data-status-label="Interviewing"] { background: var(--interview-subtle); color: var(--interview); }
-[data-product-shell] .oc-marketing-profile { border: 0; border-radius: var(--oc-radius-xl); box-shadow: none; background: transparent; }
-[data-product-shell] .oc-marketing-cover { border-radius: var(--oc-radius-xl); height: 7rem; }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="ACCEPTED"] { background: var(--success-subtle); color: var(--success); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="REJECTED"] { background: var(--error-subtle); color: var(--destructive); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="WAITLISTED"] { background: var(--warning-subtle); color: var(--warning); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="IN_REVIEW"] { background: var(--info-subtle); color: var(--info); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="INTERVIEWING"] { background: var(--interview-subtle); color: var(--interview); }
+[data-product-shell] .oc-marketing-profile { border: 0; border-radius: var(--oc-radius-lg); box-shadow: none; background: transparent; }
+[data-product-shell] .oc-marketing-cover { border-radius: var(--oc-radius-lg); height: 7rem; }
 [data-product-shell] .oc-marketing-profile h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 500; letter-spacing: var(--oc-tracking-heading); }
 [data-product-shell] .oc-marketing-profile dl { border: 0; border-radius: 0; background: transparent; border-block: 1px solid var(--border); padding-block: .75rem; text-align: left; }
 [data-product-shell] .oc-marketing-profile dl > div { text-align: left; }
@@ -88,7 +88,7 @@
   [data-product-shell] .oc-marketing-profile > div:nth-child(2) { padding-inline: .25rem; }
   [data-product-shell] .oc-marketing-profile dd { font-size: 1.5rem; }
 }
-.oc-pattern-reference { container-type: inline-size; padding: 0; border-radius: var(--oc-radius-xl); }
+.oc-pattern-reference { container-type: inline-size; padding: 0; border-radius: var(--oc-radius-lg); }
 .oc-pattern-content { margin-top: var(--oc-density-gap); animation: oc-section-enter var(--oc-duration-ui) var(--oc-ease-out) both; }
 .oc-slot-reference { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
 @media (max-width: 639px) { .oc-pattern-reference { container-type: inline-size; padding: 0; } .oc-slot-reference { grid-template-columns: 1fr; } }

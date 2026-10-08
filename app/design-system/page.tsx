@@ -19,7 +19,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { SectionHeading } from "@/components/ui/section-heading"
 import { EmptyState } from "@/components/ui/empty-state"
 import { Divider } from "@/components/ui/divider"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingState } from "@/components/ui/loading-state"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
@@ -45,11 +46,12 @@ export default function DesignSystemPage() {
     <Divider />
     <section aria-labelledby="controls" className="space-y-6">
       <SectionHeading headingId="controls" title="Actions & inputs" />
-      <div className="flex flex-wrap items-center gap-3"><Button>Continue<ArrowRight /></Button><Button variant="outline">Save draft</Button><Button variant="secondary">Secondary</Button><Button variant="ghost">Cancel</Button><Button variant="accent">Explore UVA</Button><Button variant="destructive">Remove</Button><Button disabled>Unavailable</Button><IconButton aria-label="Add example item" onClick={() => toast("Example item added")}><Plus /></IconButton></div>
+      <div className="flex flex-wrap items-center gap-3"><Button>Continue<ArrowRight /></Button><Button variant="outline">Save draft</Button><Button variant="secondary">Secondary</Button><Button variant="ghost">Cancel</Button><Button variant="accent">Explore UVA</Button><Button variant="destructive">Remove</Button><Button size="sm" variant="outline">Compact action</Button><Button disabled>Unavailable</Button><IconButton aria-label="Add example item" onClick={() => toast("Example item added")}><Plus /></IconButton></div>
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2"><Label htmlFor="ds-name">Preferred name</Label><Input id="ds-name" placeholder="Your name" autoComplete="given-name" /></div>
         <div className="space-y-2"><Label htmlFor="ds-search">Search clubs</Label><Search id="ds-search" aria-label="Search example clubs" placeholder="Search by name or interest" /></div>
         <div className="space-y-2"><Label htmlFor="ds-select">Recruitment term</Label><Select defaultValue="fall"><SelectTrigger id="ds-select" className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="fall">Fall semester</SelectItem><SelectItem value="spring">Spring semester</SelectItem></SelectContent></Select></div>
+        <div className="space-y-2"><Label htmlFor="ds-native">Application status</Label><NativeSelect id="ds-native" defaultValue="all" className="w-full"><option value="all">All applications</option><option value="review">Under review</option></NativeSelect></div>
         <div className="space-y-2"><Label htmlFor="ds-error">Email</Label><Input id="ds-error" aria-invalid="true" aria-describedby="ds-error-message" defaultValue="student@example.com" /><p id="ds-error-message" className="text-sm text-destructive">Use your UVA email address.</p></div>
         <div className="space-y-2 sm:col-span-2"><Label htmlFor="ds-bio">Introduction</Label><Textarea id="ds-bio" placeholder="A little about your interests…" /></div>
       </div>
@@ -60,7 +62,9 @@ export default function DesignSystemPage() {
       <Tabs defaultValue="overview"><TabsList variant="underline" aria-label="Example sections"><TabsTrigger value="overview">Overview</TabsTrigger><TabsTrigger value="details">Details</TabsTrigger></TabsList><TabsContent value="overview" className="pt-4"><Surface><div className="flex items-center gap-3"><Avatar aria-label="Sample student"><AvatarFallback>ST</AvatarFallback></Avatar><div><p className="text-sm font-medium">Student profile</p><p className="text-sm text-muted-foreground">A simple row, without another card.</p></div></div></Surface></TabsContent><TabsContent value="details" className="pt-4"><Surface tone="subtle">Supporting information lives here.</Surface></TabsContent></Tabs>
       <Card><CardHeader><CardTitle>One meaningful container</CardTitle><CardDescription>Use when content needs a distinct boundary.</CardDescription></CardHeader><CardContent className="space-y-3"><Progress value={progress} aria-label="Example profile completion" /><Button variant="outline" size="sm" onClick={() => setProgress(value => value >= 100 ? 0 : value + 20)}>Update progress</Button></CardContent></Card>
       <EmptyState icon={<FileText />} title="Nothing here yet" description="A useful next step is more helpful than an empty dashboard." action={<Button variant="outline" onClick={() => toast("Example action")}>Discover clubs</Button>} />
-      <div role="status" aria-label="Loading example content" className="space-y-3"><Skeleton className="h-4 w-40" /><Skeleton className="h-4 w-full max-w-sm" /><span className="sr-only">Loading…</span></div>
+      <EmptyState density="compact" align="start" tone="outlined" title="No matching applications" description="Try another search or status filter." />
+      <LoadingState label="Loading example records…" rows={2} />
+      <LoadingState label="Refreshing availability…" layout="inline" />
     </section>
     <Divider />
     <section aria-labelledby="overlays" className="space-y-6">

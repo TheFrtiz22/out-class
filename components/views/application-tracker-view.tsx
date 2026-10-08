@@ -22,7 +22,7 @@ import type { TrackerStatus } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/status-badge"
 import { recruitmentDate } from "@/lib/recruitment-presentation"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingState } from "@/components/ui/loading-state"
 import { ClubLogo } from "@/components/club-logo"
 import {
   ApplicationForm,
@@ -154,13 +154,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   }
   if (pending || loading)
     return (
-      <div aria-busy="true" className="space-y-5">
-        <p role="status" className="text-sm text-muted-foreground">
-          Loading your applications…
-        </p>
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" />
-      </div>
+      <LoadingState label="Loading your applications…" rows={3} />
     )
   if (!user)
     return (

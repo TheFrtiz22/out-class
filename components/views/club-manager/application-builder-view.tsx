@@ -1,4 +1,5 @@
 "use client";
+import { NativeSelect } from "@/components/ui/native-select"
 import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "lucide-react";
@@ -285,7 +286,7 @@ export function ApplicationBuilderView({
                   <div className="flex flex-wrap items-center gap-4">
                     <label className="space-y-2 text-sm">
                       Response type
-                      <select
+                      <NativeSelect
                         className="oc-settings-select"
                         value={q.type}
                         onChange={(e) =>
@@ -302,7 +303,7 @@ export function ApplicationBuilderView({
                         <option value="ESSAY">Written response</option>
                         <option value="MULTIPLE_CHOICE">Multiple choice</option>
                         <option value="FILE_UPLOAD">PDF / document link</option>
-                      </select>
+                      </NativeSelect>
                     </label>
                     <label className="inline-flex min-h-11 items-center gap-2 text-sm">
                       <input

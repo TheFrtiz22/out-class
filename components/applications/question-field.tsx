@@ -1,4 +1,5 @@
 "use client";
+import { NativeSelect } from "@/components/ui/native-select"
 import type { ApplicationQuestion } from "@/lib/student-applications";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,7 +36,7 @@ export function QuestionField({
     );
   if (question.type === "MULTIPLE_CHOICE" && question.options?.length)
     return (
-      <select
+      <NativeSelect
         {...props}
         className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-ring"
         value={value}
@@ -47,7 +48,7 @@ export function QuestionField({
             {option}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     );
   return (
     <Input

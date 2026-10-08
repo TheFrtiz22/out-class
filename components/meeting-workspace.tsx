@@ -1,4 +1,7 @@
 "use client";
+import { LoadingState } from "@/components/ui/loading-state"
+import { EmptyState } from "@/components/ui/empty-state"
+import { NativeSelect } from "@/components/ui/native-select"
 import "@/components/shell/responsive-workspace.css"
 import Link from "next/link";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
@@ -61,12 +64,12 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     <p className="max-w-2xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance in one place. Past meetings include any recaps your club has shared.</p>
     <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
       <div role="group" aria-label="Meeting time" className="flex gap-1">{(["upcoming", "past"] as const).map(value => <Button key={value} variant={period === value ? "secondary" : "ghost"} aria-pressed={period === value} onClick={() => setPeriod(value)}>{value === "upcoming" ? "Upcoming" : "Past"}</Button>)}</div>
-      <label className="flex items-center gap-3 text-sm">Audience<select className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></select></label>
+      <label className="flex items-center gap-3 text-sm">Audience<NativeSelect className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
     </div>
     {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <details className="rounded-lg border bg-card px-5"><summary className="min-h-12 cursor-pointer py-4 text-sm font-medium">Create a meeting</summary><MeetingEditor clubId={clubId} onSaved={() => setRefresh(v => v + 1)} /></details>}
-    {loading && <p role="status">Loading meetings…</p>}
+    {loading && <LoadingState label="Loading meetings…" rows={3} />}
     {error && <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
-    {!loading && !error && !visible.length && <p role="status" className="border-y py-8 text-sm text-muted-foreground">No {period} meetings are available for this audience.{period === "upcoming" ? " Check Past for earlier agendas and recaps." : " Shared meeting history will appear here."}</p>}
+    {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
     <ul className="divide-y">{visible.map(meeting => <li key={meeting.id} className="py-5 first:pt-0">
       <Link href={`/meetings/${meeting.id}`} className="group flex gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></Link>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
@@ -147,14 +150,14 @@ function MeetingEditor({
         </label>
         <label className="block">
           Audience
-          <select
+          <NativeSelect
             name="audience"
             defaultValue={meeting?.audience || "RECRUITMENT"}
             className="ml-3 rounded border p-2"
           >
             <option value="RECRUITMENT">Recruitment / Interest</option>
             <option value="MEMBERS">Members</option>
-          </select>
+          </NativeSelect>
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label>
@@ -238,7 +241,7 @@ function MeetingEditor({
               </label>
               <label>
                 Type{" "}
-                <select
+                <NativeSelect
                   className="rounded border p-2"
                   value={r.kind}
                   onChange={(e) =>
@@ -254,7 +257,7 @@ function MeetingEditor({
                   <option value="LINK">Link</option>
                   <option value="FILE">File</option>
                   <option value="SLIDES">Slides</option>
-                </select>
+                </NativeSelect>
               </label>
               <Button
                 type="button"
@@ -317,7 +320,7 @@ export function MeetingDetail({ id }: { id: string }) {
         </Button>
       </div>
     );
-  if (!meeting) return <p role="status">Loading meeting…</p>;
+  if (!meeting) return <LoadingState label="Loading meeting…" rows={3} />;
   const member = user?.memberships.find((m) => m.clubId === meeting.clubId),
     resources = resourceSchema.array().safeParse(meeting.resources);
   return (

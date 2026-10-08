@@ -1,4 +1,5 @@
 "use client";
+import { NativeSelect } from "@/components/ui/native-select"
 import { getPipelineSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -248,7 +249,7 @@ export function InterviewPipelineBuilderView({
                     </label>
                     <label className="space-y-2 text-sm">
                       Round type
-                      <select
+                      <NativeSelect
                         className="oc-settings-select"
                         value={r.type}
                         onChange={(e) =>
@@ -262,7 +263,7 @@ export function InterviewPipelineBuilderView({
                             {roundTypeLabels[t]}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </label>
                   </div>
                   <label className="block space-y-2 text-sm">

@@ -46,6 +46,14 @@
   --oc-shadow-surface: 0 1px 2px rgb(20 36 58 / 4%);
   --oc-shadow-popover: 0 4px 20px rgb(20 36 58 / 10%);
   --oc-shadow-modal: 0 16px 64px rgb(20 36 58 / 16%);
+  --oc-shadow-surface-hover: 0 4px 12px rgb(20 45 69 / 9%);
+  --oc-control-height: 2.5rem;
+  --oc-control-height-compact: 2.25rem;
+  --oc-control-height-large: 2.75rem;
+  --oc-density-gap: 1.5rem;
+  --oc-density-inset: 1.5rem;
+  --oc-density-header-gap: .375rem;
+  --oc-density-row: .75rem;
   --oc-space-unit: 0.25rem;
   --oc-space-control: 0.75rem;
   --oc-space-content: 1.5rem;

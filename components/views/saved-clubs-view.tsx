@@ -7,7 +7,8 @@ import { DiscoveryCard } from "@/components/clubs/discovery-card";
 import { CorkboardButton } from "@/components/clubs/corkboard-button";
 import { ClubProfileView } from "@/components/views/club-profile-view";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/ui/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { DirectoryClub } from "@/lib/club-directory";
 import type { ViewId } from "@/lib/views";
 import "@/components/clubs/club-discovery.css";
@@ -55,14 +56,7 @@ export function SavedClubsView({
         </p>
       )}
       {loading ? (
-        <div role="status" aria-label="Loading Saved clubs">
-          <span className="sr-only">Loading Saved clubs…</span>
-          <div className="oc-explore-grid" aria-hidden="true">
-            {[1, 2, 3].map((n) => (
-              <Skeleton key={n} className="h-64 rounded-xl" />
-            ))}
-          </div>
-        </div>
+        <LoadingState label="Loading Saved clubs…" layout="cards" rows={3} />
       ) : !authenticated ? (
         <section className="oc-directory-empty">
           <Bookmark className="size-7" />
@@ -102,17 +96,7 @@ export function SavedClubsView({
           </ul>
         </>
       ) : (
-        <section className="oc-directory-empty">
-          <Bookmark className="size-7" />
-          <h2>A place for your next possibility.</h2>
-          <p>
-            Save a club from Explore or its profile, and you’ll find it here.
-          </p>
-          <Button onClick={() => onNavigate("explore")}>
-            Find clubs in Explore
-            <ArrowRight className="size-4" />
-          </Button>
-        </section>
+        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="A place for your next possibility." description="Save a club from Explore or its profile, and you’ll find it here." action={<Button onClick={() => onNavigate("explore")}>Find clubs in Explore<ArrowRight className="size-4" /></Button>} />
       )}
     </div>
   );

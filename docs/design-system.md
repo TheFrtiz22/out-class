@@ -29,20 +29,9 @@ changing every screen's spacing in a foundations change.
 
 ## Typography
 
-Libre Caslon Text is the universal application family, self-hosted with
-`next/font/local` in `app/layout.tsx`. Normal and italic variable fonts live in
-`app/fonts/libre-caslon-text/`, together with their SIL Open Font License.
-Both faces support real weights from 400 through 700. All font utility aliases
-resolve to this family. No runtime Google Fonts requests are made.
+The intentional current font exception is documented in [the typography audit](typography-audit.md) and [Campus OS](outclass-campus-os.md). The October 2 migration replaced Horsham Serial with self-hosted Libre Caslon Text. Do not silently restore Horsham or add another downloaded family.
 
-Body uses 400; labels and navigation use 500; buttons and headings use 700.
-Page and display hierarchy uses the existing sizes, spacing and case. Legacy
-light utilities resolve to 400, and extra bold/black resolve to 700, within the
-available range. Synthetic bold and italic remain disabled; actual italic
-emphasis uses the supplied italic face. Standalone demo SVG monograms use
-Caslon 700 outlines because SVG images cannot inherit the page font.
-Invitation emails retain their email-compatible Arial stack outside the app.
-Existing logos and externally supplied image assets remain unchanged.
+Public marketing and authentication use Caslon throughout. Authenticated product shells, focused workspaces, and the reference page use system sans for operational text and Caslon for display/page/dialog headings. `styles/product-tokens.css` owns that context, including portaled overlays. `app/layout.tsx` loads actual Caslon normal/italic weights 400–700; synthetic faces remain disabled. Brand artwork keeps its original typography; invitation emails retain Arial for email compatibility.
 
 ## Components
 
@@ -50,7 +39,7 @@ Existing logos and externally supplied image assets remain unchanged.
 | --- | --- |
 | Action | `Button`: existing variants/sizes retained; `accent` is a pale orange treatment. Preserve normal HTML submit semantics; specify type for non-submit form buttons. |
 | Icon action | `IconButton`: required `aria-label`, defaults to `type="button"`. |
-| Form fields | `Input`, `Textarea`, Radix `Select`; associate visible labels and error descriptions. |
+| Form fields | `Input`, `Textarea`, Radix `Select`, native `NativeSelect`; associate visible labels and error descriptions. |
 | Search | `Search`: required accessible name, normal input props, no filtering state ownership. |
 | Label/status | `Badge` semantic variants; `StatusBadge` supports existing labels and Prisma status strings without changing stored values. |
 | Identity | `Avatar`, `AvatarImage`, `AvatarFallback`; provide an accessible name or adjacent identity. |
@@ -60,8 +49,8 @@ Existing logos and externally supplied image assets remain unchanged.
 | Tabs | Existing Radix exports; `TabsList variant="underline"` avoids another rounded container. Default remains compatible. |
 | Tooltip | Existing exports, 350ms delay; never use a tooltip as the only accessible name. |
 | Toast | Existing Sonner `toast` API; semantic tones centralized in the root `Toaster`. Inline feedback remains necessary for field errors. |
-| Loading | `Skeleton` is decorative; put an accessible loading status on its container. |
-| Empty state | `EmptyState`: title, description, optional icon/action; no default card. |
+| Loading | `LoadingState` reserves rows/cards or gives inline Lucide feedback; one accessible status. `Skeleton` remains decorative. |
+| Empty state | `EmptyState`: title, description, optional icon/action; compact/roomy density, start/center alignment, plain/subtle/outlined tone; no default card. |
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |
 
@@ -92,10 +81,11 @@ reduced motion. Check dialog focus return, dropdown/select navigation, disabled
 states, tabs, progress labels, and error announcements. Contrast ratios should be
 checked again whenever token values or surfaces change.
 
-Repository commands: `pnpm lint`, `pnpm exec tsc --noEmit --incremental false`,
-`node --test tests/*.test.cjs`, `pnpm build`. The repository currently lacks a
-configured ESLint dependency/configuration; builds also suppress type/lint errors,
-so a successful build alone is not sufficient verification.
+Shared field/action heights are 40px default, 36px compact, and 44px large. Mobile controls have a 44px minimum and fields use at least 16px text to avoid focus zoom. Field borders use `input`; cards/dividers use the quieter `border`. `md` is the control radius and `lg` the grouped-surface radius. Avatars, status pills, campus art, and the Corkboard retain their purposeful shapes. Surface density controls padding. Small surface elevation is distinct from overlay elevation; do not give select triggers popover shadows.
+
+`styles/interface-primitives.css` supplies shared field, loading, and empty-state roles, including compatibility styling for remaining native selects. The student/leader/admin shells share `ProductShell`, navigation primitives, and tokens; preserve their role-specific destinations and keyboard behavior.
+
+Repository commands: `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`. A successful build alone is insufficient verification. See [the visual consistency audit](interface-consistency-audit.md) for scope and verification.
 
 ## Launch constraints recorded for future work
 

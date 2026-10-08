@@ -1,4 +1,5 @@
 "use client"
+import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { PageHeader } from "@/components/product/page-header"
@@ -6,7 +7,8 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
+import { LoadingState } from "@/components/ui/loading-state"
+import { EmptyState } from "@/components/ui/empty-state"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
@@ -171,10 +173,10 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             Refine search{active.length > 0 && <span>({active.length})</span>}
           </summary>
           <div className="oc-directory-filters">
-            <label>Recruitment<select value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closing">Closing in 7 days</option></select></label>
+            <label>Recruitment<NativeSelect value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closing">Closing in 7 days</option></NativeSelect></label>
             <label>
               Time commitment
-              <select value={filters.time} onChange={(event) => change("time", event.target.value)}>
+              <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
                 <option value="all">Any commitment</option>
                 {["1-3", "3-5", "5+"]
                   .filter((time) => clubs.some((club) => club.timeCommitment === time))
@@ -183,11 +185,11 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                       {time} hours / week
                     </option>
                   ))}
-              </select>
+              </NativeSelect>
             </label>
             <label>
               Club-reported acceptance
-              <select
+              <NativeSelect
                 value={filters.acceptance}
                 onChange={(event) => change("acceptance", event.target.value)}
               >
@@ -197,26 +199,26 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                     Up to {value}%
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
             <label>
               Club-reported fund size
-              <select value={filters.aum} onChange={(event) => change("aum", event.target.value)}>
+              <NativeSelect value={filters.aum} onChange={(event) => change("aum", event.target.value)}>
                 <option value="all">Any / not reported</option>
                 <option value="small">Up to $50,000</option>
                 <option value="medium">$50,001–$250,000</option>
                 <option value="large">Over $250,000</option>
-              </select>
+              </NativeSelect>
             </label>
           </div>
         </details>
         <label className="oc-directory-sort">
           Sort
-          <select value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
+          <NativeSelect value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
             <option value="name">Name A–Z</option>
             <option value="deadline">Next deadline</option>
             <option value="acceptance">Reported acceptance rate</option>
-          </select>
+          </NativeSelect>
         </label>
       </div>
       {active.length > 0 && (
@@ -241,7 +243,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         </div>
       )}
       {loading ? (
-        <div role="status" aria-label="Loading clubs"><span className="sr-only">Loading clubs…</span><div className="oc-explore-grid" aria-hidden="true">{[1, 2, 3].map(n => <Skeleton key={n} className="h-64 w-full rounded-xl" />)}</div></div>
+        <LoadingState label="Loading clubs…" layout="cards" rows={3} />
       ) : error ? (
         <section className="oc-directory-empty" role="status">
           <h2>Let’s try that again.</h2>
@@ -283,24 +285,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             {filtered.length ? (
               <ul className="oc-explore-grid">{filtered.map(club => card(club, "results"))}</ul>
             ) : (
-              <div className="oc-directory-empty">
-                <Compass size={26} strokeWidth={1.5} />
-                <h3>
-                  {clubs.length
-                    ? "No clubs match this search."
-                    : "The directory is getting started."}
-                </h3>
-                <p>
-                  {clubs.length
-                    ? "Try a broader keyword or remove a filter."
-                    : "Clubs will appear here as they join OutClass."}
-                </p>
-                {active.length > 0 && (
-                  <Button variant="outline" onClick={() => { updateFilters(emptyDirectoryFilters) }}>
-                    Clear search and filters
-                  </Button>
-                )}
-              </div>
+              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "The directory is getting started."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Clubs will appear here as they join OutClass."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
             )}
           </section>
         </>

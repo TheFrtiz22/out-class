@@ -1,5 +1,7 @@
 # OutClass typography audit: Libre Caslon Text
 
+**Current context (October 8):** The record below describes the October 2 migration away from Horsham. The later [Campus OS](outclass-campus-os.md) intentionally uses system sans for product controls/body and Caslon for display headings, scoped in `styles/product-tokens.css`. Public pages retain Caslon throughout. See [design-system.md](design-system.md) for current guidance.
+
 Libre Caslon Text is the universal application family, self-hosted through
 `next/font/local` in `app/layout.tsx`. Normal and italic variable fonts support
 weights 400–700 and live in `app/fonts/libre-caslon-text/`, with the SIL Open Font
