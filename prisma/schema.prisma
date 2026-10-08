@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
   adminElevationChallenges AdminElevationChallenge[]
   platformReports PlatformReport[]
@@ -1104,4 +1105,27 @@ model PlatformReport {
   updatedAt DateTime @updatedAt
   @@index([status, createdAt])
   @@index([kind, targetId])
+}
+
+// Public interest only. Never creates a School, identity, or access grant.
+model SchoolRequest {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String
+  university   String
+  role         String
+  organization String   @default("")
+  message      String   @default("")
+  status       String   @default("PENDING")
+  reviewNote   String?
+  reviewedBy   String?
+  reviewer     User?    @relation(fields: [reviewedBy], references: [id], onDelete: Restrict)
+  reviewedAt   DateTime?
+  revision     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([email, createdAt])
+  @@index([createdAt])
 }

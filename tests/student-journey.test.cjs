@@ -82,6 +82,8 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   const dependencies = { react, '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/components/views/club-profile-view': { ClubProfileView: 'ClubProfile' }, '@/components/views/application-tracker-view': { ApplicationTrackerView: 'ApplicationTracker' }, '@/components/views/calendar-view': { CalendarView: 'Calendar' }, '@/components/views/auth-view': { AuthView: 'Auth' }, '@/components/views/student-onboarding-wizard': { StudentOnboardingWizard: 'Onboarding' }, '@/components/ui/button': { Button: 'Button' }, '@/lib/workspace-api': {} }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/qr/public-club-page.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
+  dependencies['@/components/landing/public-navigation'] = { PublicNavigation: 'PublicNavigation' }
+  dependencies['@/components/views/landing.css'] = {}
   new Function('require', 'module', 'exports', 'window', code)(name => dependencies[name] || require(name), mod, mod.exports, window)
   function nodes(node) { return !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)] }
   const render = () => { cursor = 0; return nodes(mod.exports.PublicClubPage({ club: { id: 'club' } })) }

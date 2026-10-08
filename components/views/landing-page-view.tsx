@@ -18,7 +18,7 @@ import {
 import { ScrollMotion, SectionReveal, TextReveal } from "@/components/motion/scroll-motion"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingIntro } from "@/components/landing/landing-intro"
-import { LandingNavbar } from "@/components/landing/landing-navbar"
+import { PublicNavigation } from "@/components/landing/public-navigation"
 import { ProductJourney } from "@/components/landing/product-stories"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
 const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: () => <p role="status" className="p-6">Opening your student profile…</p> })
@@ -28,14 +28,16 @@ interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
   launchClubs?: LaunchClub[]
   campusName?: string
+  initialSignup?: boolean
 }
 
 export function LandingPageView({
   onNavigateToApp,
   launchClubs = [],
   campusName = "University of Virginia",
+  initialSignup = false,
 }: LandingPageViewProps) {
-  const [signup, setSignup] = useState(false)
+  const [signup, setSignup] = useState(initialSignup)
   const [info, setInfo] = useState<string | null>(null)
   const { perspective, switchPerspective } = useLandingPerspective()
   const enterLeader = () => onNavigateToApp("leader")
@@ -44,10 +46,7 @@ export function LandingPageView({
     <ScrollMotion className="oc-landing" id="top">
       <LandingNavigation />
       <a className="oc-skip-link" href="#about">Skip to product overview</a>
-      <LandingNavbar
-        onSignIn={() => onNavigateToApp(perspective)}
-        onGetStarted={start}
-      />
+      <PublicNavigation hero onGetStarted={start} />
       <main>
         <LandingIntro>
           <LandingHero perspective={perspective} onCreateProfile={() => setSignup(true)} onLeaderEnter={enterLeader} />

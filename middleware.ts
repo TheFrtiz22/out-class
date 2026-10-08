@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const response = ownsAuth ? NextResponse.next() : await createClient(request)
   // Product views share the homepage URL. Preserve their query parameters and
   // authentication while explicitly keeping those responses out of search.
-  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error"].some(key => request.nextUrl.searchParams.has(key))
+  const accountView = request.nextUrl.pathname === "/" && ["workspace", "view", "demoClub", "next", "error", "signup"].some(key => request.nextUrl.searchParams.has(key))
   const accountCookie = request.cookies.has(PLATFORM_VIEW_COOKIE) || request.cookies.get(DEMO_COOKIE)?.value === "1" || request.cookies.getAll().some(cookie => /^sb-.+-auth-token(?:\.\d+)?$/.test(cookie.name))
   if (accountView || accountCookie) response.headers.set("X-Robots-Tag", "noindex, nofollow")
   return response

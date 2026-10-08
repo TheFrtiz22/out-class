@@ -50,4 +50,4 @@ export function publicPageStructuredData(name: string, description: string, path
 
 // These parameters select account, authentication, or demonstration interfaces.
 // Tracking parameters still consolidate to the indexable homepage canonical.
-export const privateHomepageParams = ["workspace", "view", "demoClub", "next", "error"] as const
+export const privateHomepageParams = ["workspace", "view", "demoClub", "next", "error", "signup"] as const

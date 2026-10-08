@@ -16,6 +16,8 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", childre
         <a href={overviewHref}>How it works</a>
         <a href="/about">About OutClass</a>
         <a href="/uva">OutClass at UVA</a>
+        <a href="/uva#faq">FAQ</a>
+        <a href="/request-school">Request Your School</a>
         {children}
       </nav>
       <small>© {new Date().getFullYear()} OutClass</small>

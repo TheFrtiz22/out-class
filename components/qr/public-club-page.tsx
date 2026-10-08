@@ -8,6 +8,8 @@ import { CalendarView } from "@/components/views/calendar-view"
 import { AuthView } from "@/components/views/auth-view"
 import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
 import { Button } from "@/components/ui/button"
+import { PublicNavigation } from "@/components/landing/public-navigation"
+import "@/components/views/landing.css"
 import type { DirectoryClub } from "@/lib/club-directory"
 import type { ViewId } from "@/lib/views"
 import { getStudentDashboardData } from "@/lib/workspace-api"
@@ -59,6 +61,8 @@ export function PublicClubPage({
       initialData={dashboard ?? (authenticated ? emptyPrivateDashboard : null)}
       persistLocalState={!authenticated && dashboard == null}
     >
+      <div className="oc-landing oc-information">
+      <PublicNavigation />
       <main className="min-h-svh bg-background px-5 py-8 font-sans sm:px-8 sm:py-12">
         {view !== "profile" && (
           <Button variant="ghost" className="mb-6" onClick={() => setView("profile")}>
@@ -80,6 +84,7 @@ export function PublicClubPage({
           />
         )}
       </main>
+      </div>
     </ApplicationStateProvider>
   )
 }

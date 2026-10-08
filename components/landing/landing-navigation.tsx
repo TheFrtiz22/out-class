@@ -1,7 +1,7 @@
 "use client"
 import { useEffect } from "react"
 
-/** Native anchors own scrolling, URL history, and back/forward restoration. */
+/** Native anchors own history; restore initial fragments after streamed HTML mounts. */
 export function LandingNavigation() {
   useEffect(() => {
     const root = document.documentElement
@@ -13,9 +13,14 @@ export function LandingNavigation() {
       if (!target || !target.closest(".oc-landing")) return
       if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1")
       target.focus({ preventScroll: true })
+      return target
     }
     window.addEventListener("hashchange", focusTarget)
-    return () => { root.classList.remove("oc-native-navigation"); window.removeEventListener("hashchange", focusTarget) }
+    const frame = requestAnimationFrame(() => {
+      const target = focusTarget()
+      if (target && window.scrollY === 0) target.scrollIntoView({ behavior: "instant", block: "start" })
+    })
+    return () => { cancelAnimationFrame(frame); root.classList.remove("oc-native-navigation"); window.removeEventListener("hashchange", focusTarget) }
   }, [])
   return null
 }

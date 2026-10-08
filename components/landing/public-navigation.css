@@ -1,0 +1,48 @@
+.oc-public-nav {
+  position: sticky;
+  top: var(--support-banner-height, 0px);
+  z-index: 40;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+.oc-public-nav[data-hero="true"] { color: #fff7ec; background: rgb(20 45 78 / 24%); border-color: #fff7ec20; }
+.oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
+.oc-information > .oc-public-nav[data-hero] { position: sticky; }
+.oc-public-nav-row { display: flex; align-items: center; gap: 24px; max-width: 1240px; min-height: 88px; padding: 16px 32px; margin: auto; }
+.oc-public-logo { display: flex; flex-shrink: 0; width: 140px; }
+.oc-public-logo img { width: 100%; height: auto; }
+.oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 22px; }
+.oc-public-desktop { margin-left: auto; }
+.oc-public-account { gap: 18px; }
+.oc-public-nav a { text-decoration: none; white-space: nowrap; }
+.oc-public-desktop > a:not([data-slot]), .oc-public-login { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+.oc-public-nav a[aria-current], .oc-public-nav a:not([data-slot]):hover { text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--brand-orange); }
+.oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.oc-public-nav[data-hero="true"] :is(a, button):focus-visible { outline-color: #fff7ec; }
+.oc-public-nav .oc-public-request { background: transparent; border-color: currentColor; color: inherit; box-shadow: none; min-height: 44px; padding-inline: 16px; font-size: 14px; }
+.oc-public-nav .oc-public-request:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.oc-public-nav .oc-public-primary { min-height: 44px; padding-inline: 20px; font-size: 14px; }
+.oc-public-nav[data-hero="true"] .oc-public-primary { color: var(--primary); background: #fff7ec; }
+.oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: white; }
+.oc-public-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: var(--oc-radius-md); }
+.oc-public-mobile { display: none; }
+@media (max-width: 1099px) {
+  .oc-public-nav-row { min-height: 76px; padding: 12px 24px; gap: 16px; }
+  .oc-public-desktop { display: none; }
+  .oc-public-account { margin-left: auto; gap: 16px; }
+  .oc-public-menu-toggle { display: flex; }
+  .oc-public-mobile:not([hidden]) { display: flex; flex-direction: column; gap: 8px; padding: 8px 24px 24px; max-height: calc(100dvh - 90px); overflow-y: auto; border-top: 1px solid var(--border); }
+  .oc-public-mobile > a { display: flex; align-items: center; min-height: 48px; }
+  .oc-public-mobile .oc-public-request { align-self: flex-start; margin-top: 8px; }
+}
+@media (max-width: 480px) {
+  .oc-public-nav-row { padding-inline: 12px; gap: 10px; }
+  .oc-public-logo { width: clamp(78px, 23vw, 110px); }
+  .oc-public-account { gap: 10px; }
+  .oc-public-nav .oc-public-primary { padding-inline: 12px; font-size: 13px; }
+  .oc-public-login { font-size: 13px; }
+  .oc-public-menu-toggle { width: 40px; }
+}
+@media (prefers-reduced-motion: reduce) { .oc-public-nav * { transition: none; } }

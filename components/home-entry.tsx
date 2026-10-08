@@ -18,6 +18,6 @@ export function HomeEntry(props: AppShellProps) {
   const [authRole, setAuthRole] = useState<"student" | "leader" | undefined>()
   const landing = !authRole && props.initialView === "landing" &&
     !["workspace", "view", "demoClub", "next", "error"].some(key => params.has(key))
-  if (landing) return <LandingPageView launchClubs={props.launchClubs} onNavigateToApp={role => setAuthRole(role ?? "student")} />
+  if (landing) return <LandingPageView launchClubs={props.launchClubs} initialSignup={params.get("signup") === "student"} onNavigateToApp={role => setAuthRole(role ?? "student")} />
   return <AppShell {...props} initialAuthRole={authRole} />
 }
