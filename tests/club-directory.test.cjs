@@ -171,3 +171,23 @@ test("concurrent starts use an empty update branch and session-derived identity"
 test('category URL filters are case-insensitive without introducing a second directory',()=>{
  assert.deepEqual(filterDirectory(clubs,{...emptyDirectoryFilters,category:'consulting'}).map(c=>c.id),['a']);
 });
+
+test('cached public directory deadlines survive JSON serialization and retain availability', async () => {
+  const deadline = new Date(Date.now() + 86400000)
+  const record = { id: 'cached-club', name: 'Cached society', claimedAt: new Date(), suspendedAt: null, applicationOpen: true,
+    applicationDeadline: deadline, tagline: 'Research', description: 'Public profile', color: '#142d4e', category: 'Academic',
+    logoUrl: null, bannerUrl: null, marketing: {}, acceptanceRate: null, aumValue: null, testRequirement: 'OPTIONAL', campusKey: 'uva', directorySource: null,
+    pipelineRounds: [{ id: 'review', name: 'Application review', order: 0 }], questions: [] }
+  let reads = 0
+  const api = load('actions/club-directory.ts', {
+    'next/cache': { unstable_cache: fn => { let saved; return async () => { if (!saved) saved = JSON.stringify(await fn()); return JSON.parse(saved) } } },
+    '@/utils/prisma': { prisma: { club: { findMany: async () => { reads++; return [record] } }, meeting: { findMany: async () => [] } } },
+  })
+  for (let i = 0; i < 2; i++) {
+    const result = await api.getClubDirectory()
+    assert.equal(result.error, undefined)
+    assert.equal(result.clubs[0].applicationDeadline, deadline.toISOString())
+    assert.equal(result.clubs[0].applicationAvailable, true)
+  }
+  assert.equal(reads, 1)
+})

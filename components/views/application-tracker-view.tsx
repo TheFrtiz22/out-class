@@ -20,7 +20,8 @@ import "@/components/applications/application-tracker.css"
 import type { ViewId } from "@/lib/views"
 import type { TrackerStatus } from "@/lib/data"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/status-badge"
+import { recruitmentDate } from "@/lib/recruitment-presentation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ClubLogo } from "@/components/club-logo"
 import {
@@ -224,11 +225,11 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
             </p>
             <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Badge variant="secondary">{app.status === "DRAFTING" ? "Draft" : "Submitted"}</Badge>
+              <StatusBadge status={app.status} />
               <p className="text-xs text-muted-foreground">
                 {app.submittedAt
                   ? `Submitted ${date(app.submittedAt)}`
-                  : demoDeadline(app.clubId) ? `Sample deadline ${date(demoDeadline(app.clubId)!)}` : "Deadline not provided on OutClass"}
+                  : app.club.applicationDeadline || demoDeadline(app.clubId) ? `${demo.isDemoEnabled ? "Sample deadline" : "Deadline"} ${recruitmentDate((app.club.applicationDeadline || demoDeadline(app.clubId))!)}` : "Deadline not published"}
               </p>
             </div>
           </div>
@@ -247,7 +248,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           />
         ) : (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-y py-4"><p className="text-sm text-muted-foreground">Your responses are saved and read-only after submission.</p><Button variant="outline" onClick={() => openRelated("status")}>Track status<ArrowRight size={15} /></Button></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-y py-4"><p className="text-sm text-muted-foreground">Your responses are saved and read-only after submission.</p><Button variant="outline" onClick={() => openRelated("status")}>View status<ArrowRight size={15} /></Button></div>
             <section className="space-y-6" aria-label="Submitted responses">
               <div>
                 <h2 className="oc-section-heading ">Your submitted responses</h2>
@@ -326,7 +327,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           {statusView && <p className="text-xs text-muted-foreground">Current rounds are recorded by each club. Later rounds are shown as context, not confirmed invitations.</p>}
           <p role="status" className="sr-only">{visible.length} {visible.length === 1 ? "application" : "applications"} shown</p>
           <ul className={statusView ? "oc-status-list" : "oc-application-management-list"}>
-            {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} onOpen={() => open(item)} />}</li>)}
+            {visible.map(item => <li key={item.id}>{statusView ? <ApplicationStatusCard application={item} now={now} onOpen={() => open(item)} /> : <ApplicationManagementCard application={item} deadline={demoDeadline(item.clubId)} sample={demo.isDemoEnabled} onOpen={() => open(item)} />}</li>)}
           </ul>
           {!visible.length && <p role="status" className="py-6 text-sm text-muted-foreground">No applications match this filter.</p>}
         </>

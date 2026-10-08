@@ -25,7 +25,7 @@ const model=load('lib/application-presentation.ts');
 
 test('status uses actual club rounds without inventing interviews or marking later rounds as complete',()=>{
  const source=app('Review','IN_REVIEW',{club:{pipelineRounds:[round('essay','Essay review',0),round('decision','Decision',1)]},round:round('essay','Essay review',0)});
- const result=model.applicationStatusProgress(source);assert.deepEqual(result.stages.map(stage=>stage.name),['Applied','Essay review','Decision']);assert.equal(result.current,'essay');
+ const result=model.applicationStatusProgress(source);assert.deepEqual(result.stages.map(stage=>stage.name),['Submitted','Essay review','Decision']);assert.equal(result.current,'essay');
  source.status='ACCEPTED';assert.equal(model.applicationStatusProgress(source).current,'decision');assert.equal(source.round.name,'Essay review');
 });
 test('submitted applications use their recorded current round even if the status was not changed with a round move',()=>{

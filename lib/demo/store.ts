@@ -235,7 +235,7 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
       const application = joinedApplication(a.id)
       return {
         ...application,
-        club: { ...application.club, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
+        club: { ...application.club, applicationOpen: application.club.claimed, applicationDeadline: application.club.deadline, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
         bookings: application.bookings.map(booking => ({
           ...booking,
           roundId: demoStore.get().roomBookings?.find(record => record.id === booking.slot.id)?.roundId ?? null,
@@ -296,6 +296,7 @@ export function demoDirectory() {
     tags: ["Demo / sample", ...(club.earlyAdopter ? ["Early adopter (sample)"] : []), club.theme],
     description: club.description,
     applicationAvailable: club.claimed,
+    applicationDeadline: club.claimed ? club.deadline.toISOString() : null,
     acceptanceRate: club.marketing?.showAcceptance === false ? null : club.acceptanceRate === undefined ? 15 + (i % 7) * 3 : club.acceptanceRate,
     aumValue: club.marketing?.showAum === false ? null : club.aumValue ?? null,
     timeCommitment: "3-5" as const,

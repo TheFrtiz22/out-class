@@ -34,7 +34,7 @@ export function PublicClubPage({
   }, [authenticated, identity, initialData])
   const dashboard = privateData.owner === identity ? privateData.data : null
   function navigate(next: ViewId) {
-    if (["explore", "corkboard"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
+    if (["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
     setView(next)
   }
   if (view === "auth")
@@ -65,13 +65,14 @@ export function PublicClubPage({
             Back to club profile
           </Button>
         )}
-        {view === "tracker" ? (
-          <ApplicationTrackerView onNavigate={navigate} />
+        {view === "tracker" || view === "status" ? (
+          <ApplicationTrackerView onNavigate={navigate} scope={view === "status" ? "status" : "all"} />
         ) : view === "calendar" ? (
           <CalendarView onNavigate={navigate} />
         ) : (
           <ClubProfileView
             club={club}
+            backLabel="Back to OutClass"
             onBack={() => {
               window.location.href = "/"
             }}

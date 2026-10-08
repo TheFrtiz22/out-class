@@ -42,3 +42,16 @@
 .ir-confirmed p { margin-top: 5px; }
 @media(max-width:1100px) { .ir-booking { grid-template-columns: minmax(0,1fr); } .ir-booking-intro { border-right: 0; border-bottom: 1px solid var(--border); } }
 @media(max-width:600px) { .ir-overview { gap: 8px; } .ir-overview > div { padding: 12px; grid-template-columns: 1fr; } .ir-overview svg { display: none; } .ir-overview strong { font-size: var(--oc-size-20); } .ir-room-slots { grid-template-columns: repeat(2,minmax(0,1fr)); } .ir-calendar-layout { grid-template-columns: minmax(0,1fr); } .ir-times { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+/* Student booking shares the application's quieter surfaces and touch targets. */
+.oc-application-detail .ir-booking { border-radius: var(--oc-radius-lg); box-shadow: var(--oc-shadow-surface); }
+.oc-application-detail .ir-booking-intro { padding: 20px; }
+.oc-application-detail .ir-select { min-height: 44px; border-radius: var(--oc-radius-md); }
+.oc-application-detail .ir-confirmed { background: var(--success-subtle); color: var(--success); border-color: var(--border); border-radius: var(--oc-radius-md); }
+@media (max-width: 639px) {
+  .oc-application-detail .ir-booking-intro .ir-symbol { margin-bottom: 12px; }
+  .oc-application-detail .ir-booking-intro .ir-detail { margin-top: 10px; }
+  .oc-application-detail .ir-booking-action > button { width: 100%; min-height: 44px; }
+}
+.oc-application-detail .ir-booking-intro :is(.ir-eyebrow, .ir-detail),
+.oc-application-detail .ir-booking-intro > p:not(.ir-eyebrow) { color: var(--foreground); }

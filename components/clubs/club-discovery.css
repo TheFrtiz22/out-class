@@ -672,3 +672,19 @@
 .shell-content-enter:has(> .oc-club-profile) > [data-view-heading] {
   display: none;
 }
+
+/* Shared student recruitment facts stay close to the profile's identity and action. */
+.oc-club-recruitment-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 16px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--oc-radius-md); background: var(--card); font-size: var(--oc-text-caption); }
+.oc-club-recruitment-summary > span { font-weight: var(--oc-weight-semibold); }
+.oc-club-recruitment-summary [data-available="true"] { color: var(--success); }
+.oc-club-recruitment-summary p { flex: 1 1 16rem; color: var(--muted-foreground); line-height: var(--oc-leading-body); }
+.oc-club-profile .oc-marketing-profile { border-radius: var(--oc-radius-lg); }
+.oc-club-profile .oc-marketing-cover { height: 112px; }
+.oc-club-profile .oc-club-recruitment { border-radius: var(--oc-radius-md); padding: 20px; }
+.oc-club-profile .oc-club-requirements { margin-top: 20px; }
+@media (max-width: 639px) {
+  .oc-club-profile .oc-marketing-cover { height: 88px; }
+  .oc-club-profile .oc-marketing-profile > div:last-child { padding-inline: 16px; }
+  .oc-club-profile .oc-club-recruitment { padding: 16px; }
+  .oc-club-events li { flex-wrap: wrap; }
+}

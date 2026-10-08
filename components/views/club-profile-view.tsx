@@ -12,6 +12,8 @@ import { useClubCustomization } from "@/lib/club-customization"
 import { useApplicationState } from "@/lib/application-state"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"
+import { clubRecruitment, recruitmentDate } from "@/lib/recruitment-presentation"
+import { StatusBadge } from "@/components/status-badge"
 import { startClubApplication } from "@/lib/workspace-api"
 import { MarketingProfile, MarketingSections } from "@/components/clubs/marketing-profile"
 import { profileDraft, readMarketing } from "@/lib/club-marketing"
@@ -26,11 +28,13 @@ export function ClubProfileView({
   onBack,
   onNavigate,
   preview = false,
+  backLabel = "Back to Discover",
 }: {
   club: DirectoryClub
   onBack: () => void
   onNavigate: (view: ViewId) => void
   preview?: boolean
+  backLabel?: string
 }) {
   const demo = useDemoMode()
   const sampleDeadline = demo.isDemoEnabled ? demo.state?.clubs.find(c => c.id === club.id)?.deadline : null
@@ -45,6 +49,9 @@ export function ClubProfileView({
     if (ready && !preview) heading.current?.focus()
   }, [ready, preview])
   const real = club.source === "database"
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
+  const recruitment = clubRecruitment({ ...club, applicationDeadline: club.applicationDeadline || sampleDeadline }, now)
   const customized = !real && (configured || club.id === "vvf")
   const profile = state.profile
   const name = customized ? profile.name : club.name
@@ -94,6 +101,9 @@ export function ClubProfileView({
       marketing: { ...readMarketing(club.marketing), showAcceptance: profile.showAcceptance, showAum: profile.showAum, placements: profile.showPlacements ? profile.placements.split("\n").filter(Boolean) : [] },
     } : {}),
   })
+  const draft = !!application && /draft/i.test(application.status)
+  const applyLabel = busy ? "Opening…" : application ? draft ? "Continue draft" : "View status" : !recruitment.available && real ? "Applications unavailable" : real && !user ? "Sign in to apply" : "Start application"
+  const applyDisabled = preview || busy || (real && !application && !recruitment.available)
   async function apply() {
     if (preview) return
     if (real && !user) {
@@ -133,7 +143,7 @@ export function ClubProfileView({
                   : "Submitted",
         })
       focusApplication(club.id)
-      onNavigate("tracker")
+      onNavigate(application && !draft ? "status" : "tracker")
     } catch {
       setError("We couldn’t open your application. Please try again.")
     } finally {
@@ -145,50 +155,35 @@ export function ClubProfileView({
     <article className="oc-club-profile">
       <Button variant="ghost" className="oc-club-back" onClick={onBack} disabled={preview}>
         <ArrowLeft size={15} />
-        Back to clubs
+        {backLabel}
       </Button>
-      {real && !demo.isDemoEnabled && <UnclaimedProfileNotice club={club} />}
-      <nav aria-label="Club profile links" className="my-4 flex flex-wrap gap-x-6 gap-y-2">
-        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps ↗</Link>}
-        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace ↗</Link>}
-      </nav>
-      {real && club.testRequirement && <p className="my-3 text-sm">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores are provided through your student profile.</p>}
       {!real && (
         <p className="oc-club-preview-note">
           {preview ? "Club profile preview" : "Sample club profile"} ·{" "}
           {configured ? "Includes changes saved on this device" : "Illustrative information"}
         </p>
       )}
+      <div className="oc-club-recruitment-summary" role="note"><span data-available={recruitment.available}>{recruitment.label}</span><p>{recruitment.deadline ? `${demo.isDemoEnabled ? "Sample deadline" : "Deadline"} · ${recruitmentDate(recruitment.deadline)}` : "Recruitment deadline not published"}</p>{application && <StatusBadge status={application.status} />}</div>
       <div ref={heading} tabIndex={-1} aria-label={name} className="outline-none">
-        <MarketingProfile profile={publicProfile} action={<Button disabled={preview || busy || (real && !application && !club.applicationAvailable)} onClick={() => void apply()}>{busy ? "Opening…" : application ? "View application" : real && !club.applicationAvailable ? "Applications unavailable" : "Apply now"}<ArrowRight size={15} /></Button>} />
+        <MarketingProfile profile={publicProfile} action={<Button disabled={applyDisabled} onClick={() => void apply()}>{applyLabel}<ArrowRight size={15} aria-hidden="true" /></Button>} />
       </div>
+      {real && !demo.isDemoEnabled && <UnclaimedProfileNotice club={club} />}
       <div className="oc-club-profile-grid mt-6">
         <aside className="oc-club-recruitment" aria-labelledby="club-recruitment">
           <p className="oc-club-eyebrow">Your next step</p>
           <h2 id="club-recruitment">Recruitment</h2>
           <p>
-            {club.applicationDeadline ? `Application deadline: ${new Date(club.applicationDeadline).toLocaleString()}` : sampleDeadline ? `Sample application deadline: ${sampleDeadline.toLocaleString()}` : deadline
-              ? `Application deadline: ${deadline.date} · ${deadline.time}`
-              : "Recruitment dates have not been published."}
+            {recruitment.deadline ? `${demo.isDemoEnabled ? "Sample application deadline" : "Application deadline"}: ${recruitmentDate(recruitment.deadline)}` : deadline ? `Application deadline: ${deadline.date} · ${deadline.time}` : "Recruitment dates have not been published."}
+            {recruitment.expired && " The deadline has passed. Existing drafts remain available."}
           </p>
           {application && <RecruitmentTimeline status={application.status} rounds={real ? club.rounds : undefined} roundId={actualApplication?.roundId} />}
           <Button
             style={customized ? { backgroundColor: accent, color: contrast } : undefined}
             className="oc-club-apply"
-            disabled={preview || busy || (real && !application && !club.applicationAvailable)}
+            disabled={applyDisabled}
             onClick={() => void apply()}
           >
-            {busy
-              ? "Opening application…"
-              : application
-                ? /draft/i.test(application.status)
-                  ? "Continue application"
-                  : "View application"
-                : real && !club.applicationAvailable
-                  ? "Application not available"
-                  : real && !user
-                    ? "Sign in to apply"
-                    : "Start application"}
+            {applyLabel}
             <ArrowRight size={15} />
           </Button>
           {error && (
@@ -201,6 +196,7 @@ export function ClubProfileView({
           <div className="oc-club-requirements">
             <h3>Before you apply</h3>
             <p>Your OutClass profile is the starting point for your application.</p>
+{real && club.testRequirement && <p className="my-3 text-sm">Standardized tests: {club.testRequirement === "OPTIONAL" ? "SAT and ACT optional" : club.testRequirement.replaceAll("_", " ") + " required"}. Scores are provided through your student profile.</p>}
             {club.timeCommitment && <p>Time commitment: {club.timeCommitment} hours per week.</p>}
             {club.requirements?.length ? (
               <>
@@ -224,6 +220,10 @@ export function ClubProfileView({
             <h2 id="club-about">About the organization</h2>
             <p className="oc-club-about">{about || "This club hasn’t added a description yet."}</p>
           </section>
+      <nav aria-label="Club profile links" className="my-4 flex flex-wrap gap-x-6 gap-y-2">
+        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps ↗</Link>}
+        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace ↗</Link>}
+      </nav>
           <MarketingSections profile={publicProfile} />
           <section className="oc-club-events" aria-labelledby="club-events">
             <h2 id="club-events">Events & important dates</h2>

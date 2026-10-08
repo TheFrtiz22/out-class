@@ -57,9 +57,11 @@
 .oc-journey-member > div { flex: 1; }
 .oc-journey-member span { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: var(--oc-size-11); }
 
-/* Content tells a finite story inside an anchored window. Hidden beats keep their space. */
+/* A populated interface tells a finite story; completion feedback keeps its space. */
 .oc-perspective-scene [data-demo-reveal] { opacity: 1; transform: translateY(0); transition: opacity 220ms var(--oc-ease-out), transform 280ms var(--oc-ease-out); }
-.oc-perspective-scene [data-demo-reveal][data-revealed="false"] { opacity: 0; transform: translateY(var(--oc-demo-travel, 8px)); }
+.oc-perspective-scene [data-demo-reveal][data-revealed="false"] { opacity: 1; transform: none; }
+/* Only completion feedback enters later; the interface itself is always populated. */
+.oc-perspective-scene :is(.oc-animated-check, .oc-journey-confirmation)[data-revealed="false"] { opacity: 0; }
 .oc-perspective-scene .oc-demo-fill { display: inline-block; }
 .oc-demo-phrase { transition: opacity 180ms var(--oc-ease-out); }
 .oc-animated-check { flex-shrink: 0; color: var(--success); }

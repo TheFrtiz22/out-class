@@ -3,7 +3,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { PageHeader } from "@/components/product/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Sparkles, Users } from "lucide-react"
+import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,11 +12,12 @@ import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
 import { getClubDirectory } from "@/lib/workspace-api"
-import { filterDirectory, emptyDirectoryFilters, type DirectoryClub } from "@/lib/club-directory"
+import { filterDirectory, emptyDirectoryFilters, directoryFiltersFromParams, directoryFilterParams, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
 import type { ViewId } from "@/lib/views"
 import { demoStore, demoDirectory } from "@/lib/demo/store"
 import { useDemoMode } from "@/contexts/demo-context"
+import { clubRecruitment } from "@/lib/recruitment-presentation"
 import "@/components/clubs/club-discovery.css"
 import "@/components/clubs/explore-directory.css"
 
@@ -27,7 +28,10 @@ function categoryIcon(category: string) {
   if (/cultur|international/.test(value)) return Globe2
   if (/service|volunteer/.test(value)) return Heart
   if (/recreat|sport|outdoor/.test(value)) return Mountain
-  return Sparkles
+  if (/entrepreneur|startup/.test(value)) return Lightbulb
+  if (/consult/.test(value)) return ChartNoAxesCombined
+  if (/market|communication/.test(value)) return MessageSquare
+  return Users
 }
 
 export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (view: ViewId) => void; section?: "explore" | "categories" }) {
@@ -36,9 +40,11 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const [error, setError] = useState("")
   const [retry, setRetry] = useState(0)
   const searchParams = useSearchParams()
-  const categoryParam = searchParams.get("category") || "all"
-  const [filters, setFilters] = useState({ ...emptyDirectoryFilters, category: categoryParam })
-  useEffect(() => { setFilters(previous => ({ ...previous, category: categoryParam })) }, [categoryParam])
+  const filterQuery = searchParams.toString()
+  const [filters, setFilters] = useState(() => directoryFiltersFromParams(searchParams))
+  useEffect(() => { setFilters(directoryFiltersFromParams(new URLSearchParams(filterQuery))) }, [filterQuery])
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
@@ -77,15 +83,22 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],
   )
-  const filtered = useMemo(() => filterDirectory(clubs, filters), [clubs, filters])
+  const filtered = useMemo(() => filterDirectory(clubs, filters, now), [clubs, filters, now])
   const active = Object.entries(filters).filter(
     ([key, value]) =>
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],
   )
-  function change(key: keyof typeof filters, value: string) {
-    setFilters((previous) => ({ ...previous, [key]: value }))
-    if (key === "category") { const next = new URLSearchParams(window.location.search); if (value === "all") next.delete("category"); else next.set("category", value); next.delete("section"); window.history.replaceState(null,"",`${window.location.pathname}?${next}`) }
+  const recruitmentCounts = useMemo(() => {
+    const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
+    return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
+  }, [clubs, filters, now])
+  function updateFilters(next: typeof filters) {
+    setFilters(next)
+    const params = directoryFilterParams(new URLSearchParams(window.location.search), next)
+    params.delete("section")
+    window.history.replaceState(null, "", `${window.location.pathname}?${params}`)
   }
+  function change(key: keyof typeof filters, value: string) { updateFilters({ ...filters, [key]: value }) }
   function open(club: DirectoryClub, entry = club.id) {
     lastClub.current = entry
     setSelected(club)
@@ -93,10 +106,10 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const highlights = clubs.some(club => club.recommended)
     ? clubs.filter(club => club.recommended).slice(0, 3)
     : filterDirectory(clubs, emptyDirectoryFilters).slice(0, 3)
-  const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => club.source !== "preview" && club.applicationAvailable === true)
+  const available = filterDirectory(clubs, emptyDirectoryFilters).filter(club => clubRecruitment(club, now).available)
   function card(club: DirectoryClub, section: string) {
     const entry = `${section}-${club.id}`
-    return <DiscoveryCard key={club.id} club={club} entry={entry} onOpen={() => open(club, entry)} action={<CorkboardButton club={club} onNavigate={onNavigate} />} />
+    return <DiscoveryCard key={club.id} club={club} now={now} entry={entry} onOpen={() => open(club, entry)} action={<CorkboardButton club={club} onNavigate={onNavigate} />} />
   }
   if (selected)
     return (
@@ -105,8 +118,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <Link href="/saved-clubs" className="text-sm underline">Saved clubs</Link>
-        <PageHeader eyebrow="University of Virginia" title="Discover Clubs" description="Find your people. Search by interest, compare clubs, and save what catches your eye." illustration={{ variant: "rotunda", presentation: "prominent" }} />
+        <PageHeader eyebrow="University of Virginia" title="Discover clubs" description="Compare interests, recruitment dates, and what each club asks of you." illustration={{ variant: "rotunda", presentation: "compact" }} action={<Link href="/saved-clubs" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Saved clubs <ArrowRight size={15} className="ml-2" aria-hidden="true" /></Link>} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
@@ -150,13 +162,16 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           )})}
         </section>
       )}
+      <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
       <div className="oc-directory-tools">
         <details>
+
           <summary>
             <SlidersHorizontal size={15} />
             Refine search{active.length > 0 && <span>({active.length})</span>}
           </summary>
           <div className="oc-directory-filters">
+            <label>Recruitment<select value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closing">Closing in 7 days</option></select></label>
             <label>
               Time commitment
               <select value={filters.time} onChange={(event) => change("time", event.target.value)}>
@@ -199,6 +214,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           Sort
           <select value={filters.sort} onChange={(event) => change("sort", event.target.value)}>
             <option value="name">Name A–Z</option>
+            <option value="deadline">Next deadline</option>
             <option value="acceptance">Reported acceptance rate</option>
           </select>
         </label>
@@ -217,11 +233,11 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                 )
               }
             >
-              {key === "query" ? `“${value}”` : `${key}: ${value}`}
+              {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : "Closing in 7 days" : `${key}: ${value}`}
               <X size={12} />
             </button>
           ))}
-          <button onClick={() => { setFilters(emptyDirectoryFilters); change("category", "all") }}>Clear all</button>
+          <button onClick={() => { updateFilters(emptyDirectoryFilters) }}>Clear all</button>
         </div>
       )}
       {loading ? (
@@ -246,17 +262,17 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
       ) : (
         <>
           {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
-          {!active.length && highlights.length > 0 && (
+          {!active.length && filters.sort === "name" && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
               <div className="oc-explore-section-heading"><div><h2 id="curated-title">Worth getting to know</h2></div>
-              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An alphabetical introduction to the directory."}</p></div>
+              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An A–Z introduction to the directory."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>
           )}
-          {!active.length && available.length > 0 && <section className="oc-explore-available" aria-labelledby="available-title">
-            <div><h2 id="available-title">Applications on OutClass</h2><p>An A–Z selection of clubs with applications available. Check their profiles for recruitment details.</p></div>
-            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Application available</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
-          </section>}
+          {!active.length && available.length > 0 && <details className="oc-explore-available"><summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Applications open · {available.length} clubs</summary>
+            <p>An A–Z selection of clubs accepting applications. Check their profiles for requirements.</p>
+            <ul>{available.slice(0, 6).map(club => <li key={club.id}><button data-directory-entry={`available-${club.id}`} onClick={() => open(club, `available-${club.id}`)}><DirectoryLogo club={club} /><span><strong>{club.name}</strong><small>Applications open</small></span><ArrowRight size={18} aria-hidden="true" /></button></li>)}</ul>
+          </details>}
           <section aria-labelledby="directory-results-title">
             <div className="oc-directory-results-heading">
               <h2 id="directory-results-title">{active.length ? "Search results" : "All clubs"}</h2>
@@ -280,7 +296,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                     : "Clubs will appear here as they join OutClass."}
                 </p>
                 {active.length > 0 && (
-                  <Button variant="outline" onClick={() => { setFilters(emptyDirectoryFilters); change("category", "all") }}>
+                  <Button variant="outline" onClick={() => { updateFilters(emptyDirectoryFilters) }}>
                     Clear search and filters
                   </Button>
                 )}

@@ -232,7 +232,7 @@ export function StudentDashboardView({
           : "Explore clubs, learn what they do, and start an application when you’re ready."
   const nextLabel =
     next.kind === "application"
-      ? "Continue application"
+      ? "Continue draft"
       : next.kind === "event"
         ? "View event details"
         : "Explore clubs"

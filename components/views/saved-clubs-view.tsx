@@ -23,6 +23,7 @@ export function SavedClubsView({
     return (
       <ClubProfileView
         club={selected}
+        backLabel="Back to saved clubs"
         onBack={() => setSelected(null)}
         onNavigate={onNavigate}
       />

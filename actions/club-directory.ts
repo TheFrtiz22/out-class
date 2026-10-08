@@ -93,7 +93,8 @@ function present(club: PublicClubRecord): DirectoryClub {
     source: "database",
     applicationAvailable:
       !club.suspendedAt && club.pipelineRounds.length > 0 && applicationAvailability(club),
-    applicationDeadline: club.applicationDeadline?.toISOString() ?? null,
+    // Next's public metadata cache JSON-serializes Prisma dates.
+    applicationDeadline: club.applicationDeadline ? new Date(club.applicationDeadline).toISOString() : null,
     rounds: club.pipelineRounds,
     requirements: club.questions.map((question) => question.prompt),
     publicEvents: club.events.map((event) => ({

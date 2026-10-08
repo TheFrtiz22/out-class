@@ -7,11 +7,11 @@ import { applicationStatusLabels, applicationNextStep } from "@/lib/student-appl
 import { applicationStatusProgress, currentApplicationInterview, applicationNeedsAttention, isApplicationDecision } from "@/lib/application-presentation"
 import type { StudentApplication } from "./application-form"
 
-export const applicantDate = (value: Date | string) => new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+export const applicantDate = (value: Date | string) => new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })
 export function ApplicationStatusProgress({ application }: { application: StudentApplication }) {
-  const { stages, current } = applicationStatusProgress(application)
+  const { stages, current, previous } = applicationStatusProgress(application)
   return <ol className="oc-status-stages" aria-label={`Recruitment stages for ${application.club.name}`}>
-    {stages.map(stage => <li key={stage.id} aria-current={stage.id === current ? "step" : undefined}><span aria-hidden="true" />{stage.name}</li>)}
+    {stages.map(stage => <li key={stage.id} aria-current={stage.id === current ? "step" : undefined} data-previous={previous.includes(stage.id)}><span aria-hidden="true" />{stage.name}</li>)}
   </ol>
 }
 export function ApplicationStatusCard({ application: app, now, onOpen }: { application: StudentApplication; now: number; onOpen: () => void }) {

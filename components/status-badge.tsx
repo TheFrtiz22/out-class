@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { applicationStatusCode, applicationStatusLabel } from "@/lib/application-status"
 
 const styles: Record<string, string> = {
   Applied: "bg-muted text-muted-foreground border-transparent",
@@ -12,26 +13,20 @@ const styles: Record<string, string> = {
   Rejected: "bg-status-rejected text-status-rejected-foreground border-transparent",
 }
 
-const labels: Record<string, string> = {
-  DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review",
-  INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted",
-}
-styles.Drafting = styles.Applied
-styles.Submitted = styles.Applied
-styles.Waitlisted = styles["In Review"]
-
 const dotStatuses = new Set(["Round 1", "Round 2", "Interviewing"])
 
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
-  const label = labels[status] ?? status
+  const code = applicationStatusCode(status)
+  const label = applicationStatusLabel(status)
+  const styleKey = ({ DRAFTING: "Applied", SUBMITTED: "Applied", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "In Review" } as Record<string, string>)[code] || status
   return (
     <Badge
       data-status-label={label}
       className={cn(
         "gap-1.5 font-medium",
-        dotStatuses.has(label) &&
+        dotStatuses.has(styleKey) &&
           "before:size-1.5 before:shrink-0 before:rounded-full before:content-['']",
-        styles[label] ?? styles.Applied,
+        styles[styleKey] ?? styles.Applied,
         className,
       )}
       variant="outline"

@@ -25,9 +25,10 @@ export function applicationStatusProgress(application: StatusApplication) {
   if (application.round && !rounds.some(round => round.id === application.round!.id)) rounds.push({ ...application.round, order: rounds.length })
   const applied = rounds.find(round => /^(applied|applications?)$/i.test(round.name.trim()))
   const decision = rounds.find(round => /^decisions?$/i.test(round.name.trim()))
-  const stages = [...(applied ? [] : [{ id: "submitted", name: "Applied" }]), ...rounds, ...(decision ? [] : [{ id: "decision", name: "Decision" }])]
-  const current = isApplicationDecision(application.status) ? decision?.id || "decision" : application.round?.id || applied?.id || "submitted"
-  return { stages, current }
+  const stages = [...(applied ? [] : [{ id: "submitted", name: "Submitted" }]), ...rounds, ...(decision ? [] : [{ id: "decision", name: "Decision" }])]
+  const current = application.status === "DRAFTING" ? "draft" : isApplicationDecision(application.status) ? decision?.id || "decision" : application.round?.id || applied?.id || "submitted"
+  // Earlier pipeline positions are context, not proof an interview or every round occurred.
+  return { stages, current, previous: stages.slice(0, Math.max(0, stages.findIndex(stage => stage.id === current))).map(stage => stage.id) }
 }
 export type StatusFilter = "All" | "Needs attention" | "Upcoming interviews" | "In progress" | "Decisions"
 export function currentApplicationInterview<T extends { roundId?: string | null; slot: { startTime: Date | string; endTime?: Date | string } }>(application: { round?: { id: string } | null; bookings: readonly T[] }, now = Date.now()) {

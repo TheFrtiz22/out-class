@@ -15,15 +15,7 @@ export type ApplicationQuestion = {
   options?: string[]
   wordLimit: number | null
 }
-export const applicationStatusLabels: Record<string, string> = {
-  DRAFTING: "Draft",
-  SUBMITTED: "Submitted",
-  IN_REVIEW: "In review",
-  INTERVIEWING: "Interview",
-  ACCEPTED: "Accepted",
-  REJECTED: "Not selected",
-  WAITLISTED: "Waitlisted",
-}
+export { applicationStatusLabels } from "@/lib/application-status"
 export function wordCount(value: string) {
   return value.trim() ? value.trim().split(/\s+/u).length : 0
 }
@@ -112,4 +104,13 @@ export function assertApplicationAttachmentOwnership(questions: ApplicationQuest
         isApplicationStoragePath(answer.response) && !answer.response.startsWith(`${userId}/`))
       throw new Error("You can only attach your own uploaded documents.")
   }
+}
+
+/** Progress reflects valid required responses, including word limits and choice/file validation. */
+export function applicationResponseProgress(questions: ApplicationQuestion[], answers: { questionId: string; response: string }[]) {
+  const errors = answerErrors(questions, answers, true)
+  const required = questions.filter(question => question.required)
+  const completed = required.filter(question => answers.some(answer => answer.questionId === question.id && answer.response.trim()) && !errors[question.id]).length
+  return { completed, total: required.length, percent: required.length ? completed / required.length * 100 : 100,
+    ready: Object.keys(errors).length === 0, nextQuestionId: questions.find(question => errors[question.id])?.id }
 }

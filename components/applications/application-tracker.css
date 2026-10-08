@@ -79,3 +79,20 @@
   .oc-application-management-row > .oc-management-state { margin-left: 0; }
   .oc-application-management-row > button { justify-self: start; }
 }
+
+/* Draft readiness and saved-state feedback use the same progress primitive as the product. */
+.oc-application-management-row .oc-draft-progress { max-width: 22rem; height: 4px; margin-top: 10px; }
+.oc-draft-progress-summary { display: grid; gap: 4px; margin-top: -12px; }
+.oc-draft-progress-summary [data-slot="progress"] { height: 6px; }
+.oc-draft-progress-summary button { justify-self: start; min-height: 44px; }
+.oc-status-stages li[data-previous="true"] { color: var(--primary); }
+.oc-status-stages li[data-previous="true"] > span { background: var(--primary); border-color: var(--primary); }
+.oc-status-stages [aria-current="step"], .oc-status-next .oc-status-next-label, .oc-status-next .oc-status-interview { font-weight: var(--oc-weight-semibold); }
+@media (max-width: 639px) {
+  .oc-application-actions > div { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); width: 100%; }
+  .oc-application-actions > div button { min-width: 0; height: auto; min-height: 44px; white-space: normal; text-align: center; }
+  .oc-application-detail header h1 { font-size: var(--oc-text-title); }
+  .oc-status-next > button { width: 100%; }
+  .oc-application-management-row > .oc-management-state { justify-self: start; }
+}
+.oc-applications .oc-segmented-control button[aria-pressed="false"] { color: var(--foreground); }

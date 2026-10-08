@@ -1,3 +1,4 @@
+import { clubRecruitment } from "@/lib/recruitment-presentation"
 import type { DiscoverClub } from "@/lib/data"
 export type DirectoryClub = DiscoverClub & {
   applicationDeadline?: string | null
@@ -27,6 +28,7 @@ export type DirectoryFilters = {
   aum: string
   acceptance: string
   sort: string
+  recruitment: string
 }
 export const emptyDirectoryFilters: DirectoryFilters = {
   query: "",
@@ -35,9 +37,14 @@ export const emptyDirectoryFilters: DirectoryFilters = {
   aum: "all",
   acceptance: "all",
   sort: "name",
+  recruitment: "all",
 }
-export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilters) {
+export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilters, now = Date.now()) {
   const words = filters.query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+  const deadlineOrder = (club: DirectoryClub) => {
+    const recruitment = clubRecruitment(club, now)
+    return recruitment.available && recruitment.deadline ? +recruitment.deadline : Infinity
+  }
   return clubs
     .filter((club) => {
       const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags]
@@ -45,6 +52,9 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
         .toLocaleLowerCase()
       if (!words.every((word) => text.includes(word))) return false
       if (filters.category !== "all" && club.category.toLowerCase() !== filters.category.toLowerCase()) return false
+      const recruitment = clubRecruitment(club, now)
+      if (filters.recruitment === "open" && !recruitment.available) return false
+      if (filters.recruitment === "closing" && !recruitment.closingSoon) return false
       if (filters.time !== "all" && club.timeCommitment !== filters.time) return false
       if (
         filters.acceptance !== "all" &&
@@ -62,7 +72,9 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
     })
     .sort(
       (a, b) =>
-        (filters.sort === "acceptance"
+        (filters.sort === "deadline"
+          ? deadlineOrder(a) - deadlineOrder(b)
+          : filters.sort === "acceptance"
           ? (a.acceptanceRate ?? Infinity) - (b.acceptanceRate ?? Infinity)
           : 0) || a.name.localeCompare(b.name),
     )
@@ -76,4 +88,24 @@ export function recruitmentStage(status: string) {
   if (["ACCEPTED", "REJECTED", "WAITLISTED", "DECISION", "DECISION PENDING"].includes(normalized))
     return 3
   return -1
+}
+
+const filterParams: Record<keyof DirectoryFilters, string> = { query: "q", category: "category", time: "time", aum: "aum", acceptance: "acceptance", sort: "sort", recruitment: "recruitment" }
+export function directoryFiltersFromParams(params: { get: (key: string) => string | null }): DirectoryFilters {
+  const values = { ...emptyDirectoryFilters }
+  for (const key of Object.keys(filterParams) as (keyof DirectoryFilters)[]) values[key] = params.get(filterParams[key]) || values[key]
+  if (!["name", "acceptance", "deadline"].includes(values.sort)) values.sort = "name"
+  if (!["all", "open", "closing"].includes(values.recruitment)) values.recruitment = "all"
+  if (!["all", "1-3", "3-5", "5+"].includes(values.time)) values.time = "all"
+  if (!["all", "small", "medium", "large"].includes(values.aum)) values.aum = "all"
+  if (!["all", "5", "10", "25", "50", "100"].includes(values.acceptance)) values.acceptance = "all"
+  return values
+}
+export function directoryFilterParams(params: URLSearchParams, filters: DirectoryFilters) {
+  const next = new URLSearchParams(params)
+  for (const key of Object.keys(filterParams) as (keyof DirectoryFilters)[]) {
+    if (filters[key] === emptyDirectoryFilters[key]) next.delete(filterParams[key])
+    else next.set(filterParams[key], filters[key])
+  }
+  return next
 }

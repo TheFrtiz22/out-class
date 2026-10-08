@@ -98,3 +98,6 @@
 
 .oc-context-sidebar > div:has(.oc-workspace-switcher-trigger) { margin-bottom: 1rem; }
 .oc-context-sidebar > div:has(> nav[aria-label="Review tools"]) { margin-top: 1.25rem; }
+
+/* Student mode labels remain readable on the quiet navigation surface. */
+[data-product-shell="personal"] .oc-product-modes button:not([aria-current]) { color: var(--foreground); }

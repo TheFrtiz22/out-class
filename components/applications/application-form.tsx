@@ -11,7 +11,8 @@ import {
   type getStudentApplications,
 } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
-import { answerErrors, wordCount } from "@/lib/student-applications"
+import { answerErrors, wordCount, applicationResponseProgress } from "@/lib/student-applications"
+import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,7 +55,8 @@ export function ApplicationForm({
     response: responses[question.id] || "",
   }))
   const required = questions.filter((question) => question.required)
-  const completed = required.filter((question) => responses[question.id]?.trim()).length
+  const progress = applicationResponseProgress(questions, answers)
+  const completed = progress.completed
   useEffect(() => {
     onDirty(dirty)
     onBusy(busy)
@@ -169,13 +171,14 @@ export function ApplicationForm({
       <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4 text-sm">
         <p>
           {required.length
-            ? `${completed} of ${required.length} required responses added`
+            ? `${completed} of ${required.length} required responses ready`
             : "No required questions"}
         </p>
         <span role="status" className="text-xs text-muted-foreground">
           {busy ? "Working…" : dirty ? "Unsaved changes" : message || "Saved responses loaded"}
         </span>
       </div>
+      <div className="oc-draft-progress-summary"><Progress value={progress.percent} aria-label="Required application responses ready" />{progress.nextQuestionId && <Button type="button" variant="link" className="px-0" disabled={busy} onClick={() => { const field = document.getElementById(`answer-${progress.nextQuestionId}`); field?.scrollIntoView({ block: "center", behavior: "instant" }); field?.focus({ preventScroll: true }) }}>Continue to next response</Button>}</div>
       <div className="flex items-start gap-3 text-sm leading-relaxed">
         <FileText className="mt-1 size-4 shrink-0 text-muted-foreground" />
         <div>
@@ -251,11 +254,11 @@ export function ApplicationForm({
             </p>
           )}
         </fieldset>
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-5">
+        <div className="oc-application-actions flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-5">
           <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
             Save and come back whenever you need. Nothing is submitted until you confirm.
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
