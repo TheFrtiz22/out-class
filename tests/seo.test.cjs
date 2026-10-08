@@ -86,8 +86,19 @@ test('public information pages render factual content, consistent entity referen
   const { renderToStaticMarkup } = require('react-dom/server')
   const React = require('react')
   const PublicInformationPage = ({ title, introduction, children }) => React.createElement('main', null, React.createElement('h1', null, title), React.createElement('p', null, introduction), children)
+  const publicFaq = load('lib/public-faq.ts')
+  const { PublicFaq } = load('components/landing/public-faq.tsx', { '@/lib/public-faq': publicFaq })
+  const common = {
+    '@/components/landing/public-information-page': { PublicInformationPage },
+    '@/components/landing/public-faq': { PublicFaq },
+    '@/lib/public-faq': publicFaq,
+    '@/components/motion/scroll-motion': { SectionReveal: ({ children, ...props }) => React.createElement('section', props, children) },
+    '@/components/ui/button': { Button: ({ children }) => children },
+    'next/image': { __esModule: true, default: ({ priority, ...props }) => React.createElement('img', props) },
+    'next/link': { __esModule: true, default: ({ prefetch, ...props }) => React.createElement('a', props) },
+  }
   for (const path of ['/uva', '/about']) {
-    const page = load(`app${path}/page.tsx`, { '@/lib/seo': seo, '@/components/landing/public-information-page': { PublicInformationPage } })
+    const page = load(`app${path}/page.tsx`, { '@/lib/seo': seo, ...common })
     const meta = page.metadata
     assert.equal(meta.alternates.canonical, `${seo.SITE_URL}${path}`)
     assert.equal(meta.openGraph.url, meta.alternates.canonical)
@@ -111,9 +122,10 @@ test('public information pages render factual content, consistent entity referen
     if (path === '/uva') {
       assert.equal(meta.title.absolute, 'OutClass at UVA | Club Recruitment at the University of Virginia')
       const faq = graph.find(item => item['@type'] === 'FAQPage')
-      assert.equal(faq.mainEntity.length, (html.match(/<details>/g) || []).length)
+      assert.equal(faq.mainEntity.length, (html.match(/<details\b/g) || []).length)
+      assert.equal(new Set(publicFaq.publicFaqs.map(item => item.id)).size, faq.mainEntity.length)
       for (const item of faq.mainEntity) {
-        assert.ok(html.includes(`<summary>${item.name}</summary>`))
+        assert.ok(html.includes(`<summary>${item.name}<span`))
         assert.ok(html.includes(`<p>${item.acceptedAnswer.text}</p>`))
       }
     } else assert.equal(meta.title.absolute, 'OutClass | About')
