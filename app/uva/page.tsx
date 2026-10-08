@@ -1,21 +1,13 @@
 import { ArrowRight } from "lucide-react"
+import Link from "next/link"
 import { PublicInformationPage } from "@/components/landing/public-information-page"
 import { publicPageMetadata, publicPageStructuredData, SITE_URL } from "@/lib/seo"
+import { publicFaqs } from "@/lib/public-faq"
+import { PublicFaq } from "@/components/landing/public-faq"
 
 const title = "OutClass at UVA | Club Recruitment at the University of Virginia"
 const description = "Learn how OutClass helps University of Virginia students discover organizations, apply to clubs, manage interviews, and track recruitment, with tools for club leaders to manage applicants and decisions."
 export const metadata = publicPageMetadata(title, description, "/uva")
-
-const faqs = [
-  { question: "What is OutClass?", answer: "OutClass is a platform for college club recruitment. It brings organization discovery, applications, interviews, and recruitment status into one experience for students, with recruiting tools for club leaders." },
-  { question: "What can students use OutClass for?", answer: "Students can discover organizations, maintain one profile, submit applications, manage interviews, and track their recruitment status." },
-  { question: "Who can use OutClass?", answer: "Account access currently begins with verified University of Virginia email addresses for the campus pilot. Students, club leaders, and university administrators from any university can request their school without creating an account." },
-  { question: "How do students apply to clubs?", answer: "Get Started opens student profile setup. Use your UVA account, complete your profile, and explore participating clubs. Submit each club’s application when recruitment is open; requirements and decisions are set by the club." },
-  { question: "What can club leaders use OutClass for?", answer: "Club leaders can configure applications, manage applicants, coordinate interviews and scheduling, collaborate on evaluations, and manage recruitment decisions." },
-  { question: "Is OutClass part of the University of Virginia?", answer: "OutClass is an independent platform being built for students and student organizations beginning at the University of Virginia. It is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university." },
-  { question: "When will OutClass be available?", answer: "OutClass is beginning with a campus pilot at the University of Virginia. Clubs join the pilot individually; no general launch date has been announced on this page." },
-  { question: "How can another university request access?", answer: "Choose Request Your School and share your university and contact details. No account is required. OutClass administrators review requests; submitting a request does not approve a university or immediately enable account access." },
-] as const
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -25,50 +17,20 @@ const structuredData = {
       "@type": "FAQPage",
       "@id": `${SITE_URL}/uva#faq`,
       isPartOf: { "@id": `${SITE_URL}/uva#webpage` },
-      mainEntity: faqs.map(({ question, answer }) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })),
+      mainEntity: publicFaqs.map(({ question, answer }) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })),
     },
   ],
 }
 
 export default function UvaPage() {
   return (
-    <PublicInformationPage eyebrow="Beginning at UVA" title="OutClass at the University of Virginia" introduction="OutClass is a student-focused club recruitment platform beginning at the University of Virginia. Students can discover organizations, submit applications, manage interviews, and follow their recruitment status through one profile, while club leaders can manage applicants and recruiting workflows in one place.">
+    <PublicInformationPage className="oc-editorial-page oc-campus-page" eyebrow="Beginning at UVA" title="A clearer way to find your place on Grounds." introduction="OutClass brings college club recruitment together, beginning at the University of Virginia. One profile for students. One coordinated process for club leaders." heroActions={<div className="oc-public-actions"><a className="oc-public-text-link" href="#faq">A few things you might be wondering <ArrowRight size={16} aria-hidden="true" /></a><Link prefetch={false} className="oc-public-text-link" href="/#about">See how it works</Link></div>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
-      <section className="oc-information-section">
-        <h2>One profile. Every opportunity.</h2>
-        <p>Club recruitment can mean separate forms, schedules, and updates for every organization. OutClass brings those steps together so students can keep their opportunities organized and club leaders can work through a clearer recruiting process.</p>
-      </section>
-      <div className="oc-information-cards">
-        <section className="oc-information-card">
-          <p className="oc-story-eyebrow">Your next chapter</p>
-          <h2>For UVA students</h2>
-          <ul>
-            <li>Discover student organizations and explore opportunities.</li>
-            <li>Maintain one profile and submit club applications.</li>
-            <li>Manage interviews and keep your next steps organized.</li>
-            <li>Track recruitment status in one place.</li>
-          </ul>
-        </section>
-        <section className="oc-information-card">
-          <p className="oc-story-eyebrow">Your next class</p>
-          <h2>For student organizations</h2>
-          <ul>
-            <li>Configure applications and manage applicants.</li>
-            <li>Coordinate interviews and scheduling.</li>
-            <li>Collaborate on applicant evaluations.</li>
-            <li>Manage decisions and streamline recruiting workflows.</li>
-          </ul>
-        </section>
-      </div>
-      <section className="oc-information-section">
-        <h2>Built around student organizations</h2>
-        <p>OutClass is being built around the workflow of selective and application-based student organizations, beginning at UVA. It is an independent platform, not an official university service. The focus is on the students applying and the student leaders organizing recruitment.</p>
-        <a className="oc-information-link" href="/about">Learn about OutClass <ArrowRight size={16} aria-hidden="true" /></a>
-      </section>
-      <section id="faq" className="oc-information-section oc-information-faq" aria-labelledby="faq-title">
-        <h2 id="faq-title">Frequently asked questions</h2>
-        {faqs.map(({ question, answer }) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
-        <a className="oc-information-link" href="/request-school">Request Your School <ArrowRight size={16} aria-hidden="true" /></a>
+      <section className="oc-campus-context oc-public-section"><p className="oc-public-kicker">A campus pilot. A focused beginning.</p><div className="oc-editorial-split"><h2>One profile.<br />Every opportunity.</h2><div className="oc-editorial-prose"><p>Students can discover organizations, submit applications, manage interviews, and follow their recruitment status. Leaders have tools to configure applications, coordinate interviews, evaluate applicants, and manage decisions.</p><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p><a className="oc-public-text-link" href="/about">The story behind OutClass <ArrowRight size={16} aria-hidden="true" /></a></div></div></section>
+      <section id="faq" className="oc-public-section oc-information-faq" aria-labelledby="faq-title">
+        <div className="oc-faq-heading"><p className="oc-public-kicker">A little clarity</p><h2 id="faq-title">Good questions.<br />Clear answers.</h2><p>From your first application to your campus’s next chapter.</p></div>
+        <PublicFaq />
+        <div className="oc-faq-next"><div><h3>Not at UVA?</h3><p>Your campus could be next. Tell us where you’d like to see OutClass.</p></div><a className="oc-public-text-link" href="/request-school">Request Your School <ArrowRight size={16} aria-hidden="true" /></a></div>
       </section>
     </PublicInformationPage>
   )

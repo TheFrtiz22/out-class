@@ -65,6 +65,8 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
   }, [open])
   const active = (href: string) => {
     const [path, anchor] = href.split("#")
+    if (pathname === "/uva" && anchor === "faq") return hash === "#faq" || hash.startsWith("#faq-")
+    if (pathname === "/" && anchor === "about") return ["#about", "#students", "#club-leaders", "#clubs"].includes(hash) || hash.startsWith("#journey-")
     return pathname === path && (!anchor ? !hash : hash === `#${anchor}`)
   }
   const accountDestination = platformAdmin?.userId === user?.id && platformAdmin?.eligible && !isImpersonating ? "/platform" : activeClubId

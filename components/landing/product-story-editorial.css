@@ -1,0 +1,53 @@
+/* Five chapters use distinct surfaces; the existing functional previews remain. */
+.oc-landing .oc-how-introduction { display: grid; grid-template-columns: 1fr 1fr; gap: 0 80px; padding-block: 88px 52px; }
+.oc-how-introduction .oc-public-kicker { grid-column: 1 / -1; }
+.oc-how-introduction h2 { margin: 0; }
+.oc-how-introduction > p:not(.oc-public-kicker) { font-size: 18px; color: var(--muted-foreground); max-width: 42ch; align-self: center; }
+.oc-how-introduction > .oc-public-note { grid-column: 2; margin-top: 12px; }
+.oc-landing .oc-journey-controls { border-block: 1px solid color-mix(in srgb, var(--primary) 15%, transparent); padding-block: 16px; top: calc(88px + var(--support-banner-height, 0px)); }
+.oc-journey-index { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: var(--oc-public-width); margin: auto; padding: 24px 0 8px; }
+.oc-journey-index a { display: flex; flex-direction: column; gap: 10px; min-height: 72px; padding: 8px 20px; border-left: 1px solid #142d4e25; font-size: 16px; color: var(--primary); }
+.oc-journey-index a:first-child { border-left: 0; padding-left: 0; }
+.oc-journey-index a span { color: var(--brand-ink); font-size: 11px; }
+.oc-journey-index a:hover { text-decoration: underline; text-underline-offset: 5px; }
+.oc-landing[data-scroll-motion] .oc-product-story { padding-block: 80px; gap: clamp(40px, 7vw, 100px); }
+.oc-stage-marker { display: flex; align-items: center; gap: 18px; margin-bottom: 24px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--brand-ink); }
+.oc-stage-marker > span { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid currentColor; border-radius: 50%; font-size: 14px; letter-spacing: 0; }
+.oc-landing .oc-story-copy h2 { font-size: clamp(2rem, 3.5vw, 3rem); max-width: 17ch; font-weight: 400; line-height: 1.15; }
+.oc-landing .oc-perspective-copy > p:last-child { font-size: 17px; max-width: 38ch; line-height: 1.75; }
+.oc-stage-detail { font-size: 12px; border-top: 1px solid currentColor; padding-top: 16px; margin-top: 32px; max-width: 35ch; opacity: .7; }
+.oc-landing .oc-product-story::after { display: none; }
+.oc-landing .oc-product-story .oc-story-frame { box-shadow: none; border-radius: 10px; }
+.oc-story-frame figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.oc-landing .oc-product-story[data-stage="discover"] { background: var(--oc-public-linen); }
+.oc-landing .oc-product-story[data-stage="apply"] { background: var(--oc-public-paper); }
+.oc-landing[data-scroll-motion] .oc-product-story[data-stage="interview"] { background: var(--primary); background-image: none; padding-block: 96px; color: var(--oc-public-paper); }
+.oc-landing .oc-product-story[data-stage="interview"] :is(.oc-stage-marker, .oc-story-copy h2, .oc-perspective-copy > p:last-child) { color: var(--oc-public-paper); }
+.oc-landing .oc-product-story[data-stage="interview"] .oc-story-frame { color: var(--foreground); border-color: #ffffff40; box-shadow: none; }
+.oc-landing .oc-product-story[data-stage="track"] { background: #edf1f4; background-image: none; color: var(--foreground); }
+.oc-landing .oc-product-story[data-stage="track"] :is(.oc-story-copy h2, .oc-perspective-copy > p:last-child) { color: var(--foreground); }
+.oc-landing .oc-product-story[data-stage="track"] .oc-stage-marker { color: var(--brand-ink); }
+.oc-landing .oc-product-story[data-stage="belong"] { background: var(--oc-public-linen); }
+.oc-landing .oc-product-story[data-stage="belong"] .oc-story-frame { border-top: 3px solid var(--brand-orange); }
+.oc-landing #product-journey [id] { scroll-margin-top: 190px; }
+.oc-landing .oc-final-invitation { min-height: 420px; background: var(--oc-public-paper); padding-block: 80px; }
+.oc-landing .oc-final-invitation .oc-invitation-cta { min-height: 52px; width: auto; padding: 14px 28px; font-size: 16px; box-shadow: none; }
+@media (max-width: 1099px) {
+  .oc-journey-index { margin-inline: var(--oc-public-gutter); }
+  .oc-landing .oc-journey-controls { top: calc(76px + var(--support-banner-height, 0px)); }
+}
+@media (max-width: 800px) {
+  .oc-landing .oc-how-introduction { grid-template-columns: 1fr; gap: 24px; padding-block: 64px 32px; }
+  .oc-how-introduction .oc-public-kicker { margin-bottom: 0; }
+  .oc-how-introduction > .oc-public-note { grid-column: 1; margin: 0; }
+  .oc-how-introduction > p:not(.oc-public-kicker) { font-size: 16px; }
+  .oc-landing .oc-journey-controls { position: static; align-items: stretch; text-align: left; }
+  .oc-journey-index { gap: 8px; }
+  .oc-journey-index a { padding: 8px 0; border: 0; font-size: 12px; min-height: 60px; }
+  .oc-landing[data-scroll-motion] .oc-product-story, .oc-landing[data-scroll-motion] .oc-product-story[data-stage="interview"] { padding-block: 48px; gap: 28px; }
+  .oc-stage-marker { margin-bottom: 18px; }
+  .oc-landing .oc-story-copy h2 { max-width: 24ch; }
+  .oc-landing .oc-perspective-copy > p:last-child { font-size: 16px; }
+  .oc-stage-detail { margin-top: 20px; }
+  .oc-landing #product-journey [id] { scroll-margin-top: 96px; }
+}
