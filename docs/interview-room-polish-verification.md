@@ -1,0 +1,28 @@
+# Interview-room polish — October 8, 2026
+
+Release branch: `codex/interview-room-polish`. Integrated baseline: `8a6795cfa96de44859068e0e7cb3ec68634a8786`, including the newer recruitment authorization/review-integrity changes. Production release is authorized; protected merge and matching deployment remain pending at this checkpoint.
+
+The miniature résumé was a pointer-disabled browser iframe inside the overlay trigger button. It now uses the existing PDF.js dependency and packaged worker/assets to render the already-authorized document blob into all-page, lazy-rendered canvas sheets. A separate labeled Expand résumé button opens the unchanged annotation viewer. Native focusable scrolling, contained overscroll and pan-y touch behavior replace the nested viewer chrome. Opening/closing the overlay preserves the mounted preview, its scroll position and drafts; the existing viewer still rechecks access, and an access failure removes/revokes the preview. Document references, snapshots, download authorization and annotation moderation remain unchanged.
+
+Desktop headshots/fallbacks are 120×128px with cover cropping, 104×112px on tablet and 88×96px on mobile. Shared room controls and separators are quieter; navy/off-white/white surfaces and existing typography remain.
+
+After acknowledged personal completion, Save & close uses a 760ms eased fixed-size summary flight with a final 250ms crossfade starting at 510ms. Source height and destination space animate without scaling text. A synchronous guard blocks overlapping clicks; failures retain input and completion remains unmarked. The flight is inert/aria-hidden, cancels cleanly on resize/scroll/unmount/reduced-motion change, and stays local on stacked layouts. Existing end-interview and candidate-transition animations, autosave, answer keys, independent private sessions, scoring/history, immutable submission and next-candidate authorization are reused.
+
+## Evidence
+
+- 37 focused session/layout/PDF viewer/new motion/preview regressions passed, followed by 29 integrated Demo/journey/recruitment authorization checks after incorporating current main.
+- Full required unit suite: 851 tests, 844 passed, zero failed, seven skipped. Skips require separately configured native PostgreSQL/Auth/MFA/Storage/SMTP or built-Next environments; they are not reported as passed or newly rerun hosted coverage.
+- Required isolated PGlite migration validation passed: all 29 existing migrations on fresh/legacy databases, all 53 tables with RLS/browser-role isolation. This performs no hosted migration or mutation.
+- Type check, lint (zero errors; existing warnings), production build and `git diff --check` passed on the integrated source.
+- Rendered credential-free local Demo at 1440×900 desktop, 1366×900 laptop and 390×844 mobile. Mobile document width 375px within the 390px viewport. Three-page fictional PDF is physically outside the repository; the bundled sample PDF remains unchanged.
+- Actual wheel scrolling, native keyboard End/Home navigation and scrollbar dragging reached different document pages without opening the overlay. Wheel input stayed confined to the preview. Overlay Escape restored Expand-button focus and retained preview scroll position and both drafts.
+- Simulated save failure retained private/miscellaneous notes and zero completed rows; retry acknowledged one row. Native animation midpoint inspection confirmed no scaling and the miscellaneous textarea's identical bounds before/during flight. Reopening and reload recovered private notes/completion. Discussion starts unscored; deliberate Home selected 1, ArrowRight selected exact 1.5; personal submission locked and next candidate reset all applicant state.
+- Reduced-motion/mobile cancellation and duplicate-click behavior have focused regression coverage. No physical touchscreen or hardware trackpad test, OS-level reduced-motion browser test, or real-time screen recording was available; native paused motion screenshots are inspection evidence, not recordings.
+
+Protected screenshot evidence is under `C:\Users\arden\AppData\Local\OutClass-staging-verification`: `interview-polish-desktop.png`, `interview-polish-mobile.png`, `interview-polish-post-interview.png`, `interview-polish-multipage.png`, and `interview-polish-motion-midpoint.png`. The before reference is the user's Screenshot 2026-10-07 205713.png. Local harness/failure/pause controls and multipage fixtures do not ship.
+
+## Release and recovery
+
+No models, backend actions, migration SQL, lockfile or dependencies changed; no database migration, maintenance change or password rotation is required. Production database/Auth/Storage environment and protections are preserved. Branch-only staging preview overrides target `omfcozcbpmevwolshibh`; other deployment scopes are unchanged. Do not test the baseline artifact produced before binding as an isolated release candidate.
+
+Previous compatible production: READY `dpl_Fe3nfMqkM8WGrGfTbhNHunzCHxPm`, source `8a6795cfa96de44859068e0e7cb3ec68634a8786`, https://out-class-py408t68d-outclassuva.vercel.app. Existing schema/draft formats are compatible with application rollback. Use the normal protected PR checks, recheck current main, then allow the existing Vercel Git integration to deploy the merge. Do not launch a competing manual production build. Confirm production aliases match the merge revision, inspect runtime errors and exercise the shared UI in existing authorized production Demo Mode without changing real applicant records. If this release regresses, promote that compatible deployment and preserve database contents. Actual merged/deployed revision and live acceptance are recorded after release in the PR and protected provider receipt.
