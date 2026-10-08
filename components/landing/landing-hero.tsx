@@ -1,6 +1,6 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { JourneyScenePreview } from "./journey-scenes"
+import { HeroFeatureStack } from "./hero-feature-stack"
 import type { LandingPerspective } from "./journey-content"
 import "./hero.css"
 
@@ -32,16 +32,7 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
             <p className="oc-hero-audience">For UVA students and the clubs they’ll call home.</p>
           </div>
         </div>
-        <figure className="oc-hero-preview" aria-labelledby="hero-preview-heading">
-          <h2 id="hero-preview-heading" className="sr-only">Example OutClass club discovery</h2>
-          <div className="oc-story-frame">
-            <div className="oc-story-toolbar"><span>OutClass</span><strong>Discover clubs</strong><span>Preview</span></div>
-            <div className="oc-hero-preview-content">
-              <JourneyScenePreview scene="discover" />
-            </div>
-          </div>
-          <figcaption>Illustrative interface · sample information</figcaption>
-        </figure>
+        <HeroFeatureStack />
       </div>
     </section>
   )

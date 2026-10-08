@@ -1,32 +1,9 @@
-/* The split-opening photograph is atmosphere, never a gate in front of content. */
-.oc-landing-intro { --oc-seam: clamp(4px, 1vw, 12px); position: relative; isolation: isolate; background: var(--primary); }
+/* Photography occupies its final frame from the first server render. */
+.oc-landing-intro { position: relative; isolation: isolate; background: var(--primary); }
 .oc-intro-visual { position: relative; min-height: 100svh; display: flex; align-items: center; }
-.oc-opening-underlay, .oc-opening-panels { position: absolute; inset: 0; overflow: clip; pointer-events: none; }
-.oc-opening-underlay { z-index: -2; }
-.oc-opening-panels { z-index: -1; }
-.oc-opening-underlay .oc-campus-backdrop, .oc-opening-panel .oc-campus-backdrop { position: absolute; inset: 0; }
-.oc-opening-underlay .oc-campus-photo, .oc-opening-panel .oc-campus-photo { width: 100%; height: 100%; object-fit: cover; }
-.oc-opening-underlay .oc-campus-photo { object-position: center 62%; filter: saturate(.85); }
-.oc-opening-underlay::after { content: ""; position: absolute; inset: 0; background: rgb(12 25 43 / 72%); }
-.oc-opening-panel { position: absolute; inset-block: 0; width: calc(50% + var(--oc-seam)); background: var(--primary); }
-.oc-opening-left { left: 0; clip-path: polygon(0 0, 100% 0, calc(100% - 2 * var(--oc-seam)) 100%, 0 100%); }
-.oc-opening-right { right: 0; clip-path: polygon(calc(2 * var(--oc-seam)) 0, 100% 0, 100% 100%, 0 100%); }
-.oc-opening-panel .oc-campus-photo { filter: saturate(.7) contrast(.96); }
-.oc-opening-left .oc-campus-photo { object-position: 38% center; }
-.oc-opening-right .oc-campus-photo { object-position: 50% center; }
-.oc-opening-panel::after { content: ""; position: absolute; inset: 0; background: rgb(12 25 43 / 72%); }
+.oc-intro-backdrop { position: absolute; inset: 0; z-index: -1; overflow: clip; pointer-events: none; }
+.oc-intro-backdrop .oc-campus-backdrop { position: absolute; inset: 0; }
+.oc-intro-backdrop .oc-campus-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; filter: saturate(.85); }
+.oc-intro-backdrop::after { content: ""; position: absolute; inset: 0; background: rgb(12 25 43 / 72%); }
 .oc-intro-scroll { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; min-height: 44px; white-space: nowrap; font-size: var(--oc-size-11); letter-spacing: .04em; color: #fff7ec; }
 .oc-landing .oc-intro-scroll:focus-visible { outline-color: #fff7ec; }
-
-/* Keep the recognizable opening movement, without extra pinned screens or hidden copy. */
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .oc-landing-intro { view-timeline: --oc-opening block; }
-    .oc-opening-left { animation: oc-opening-left linear both; }
-    .oc-opening-right { animation: oc-opening-right linear both; }
-    .oc-opening-panel { animation-timeline: --oc-opening; animation-range: exit 0% exit 85%; }
-  }
-}
-@keyframes oc-opening-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-@keyframes oc-opening-right { from { transform: translateX(0); } to { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .oc-opening-panel { animation: none; transform: none; } }
