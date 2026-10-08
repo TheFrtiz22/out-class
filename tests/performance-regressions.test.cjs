@@ -174,3 +174,15 @@ test('advanced permissions delegate one directory and one self-identity refresh 
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(mutations, 1); assert.equal(legacy, 0); assert.equal(owner, 1); assert.equal(identity, 1);
 });
+
+test('a stalled workspace read times out, aborts its request and releases the deadline', async () => {
+  let deadline, cleared = 0
+  const load = loader({}, {
+    setTimeout: (fn, ms) => { assert.equal(ms, 30000); deadline = fn; return 1 },
+    clearTimeout: id => { assert.equal(id, 1); cleared++ },
+    fetch: async (_url, options) => new Promise((_resolve, reject) => options.signal?.addEventListener('abort', () => reject(new Error('aborted')))),
+  })
+  const read = load('lib/workspace-read.ts').readWorkspace('directory')
+  assert.equal(typeof deadline, 'function', 'A stalled read must have a finite deadline')
+  deadline(); await assert.rejects(read, /took too long.*try again/i); assert.equal(cleared, 1)
+})

@@ -32,7 +32,8 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
             <p className="oc-hero-audience">For UVA students and the clubs they’ll call home.</p>
           </div>
         </div>
-        <figure className="oc-hero-preview" aria-label="Example OutClass club discovery">
+        <figure className="oc-hero-preview" aria-labelledby="hero-preview-heading">
+          <h2 id="hero-preview-heading" className="sr-only">Example OutClass club discovery</h2>
           <div className="oc-story-frame">
             <div className="oc-story-toolbar"><span>OutClass</span><strong>Discover clubs</strong><span>Preview</span></div>
             <div className="oc-hero-preview-content">

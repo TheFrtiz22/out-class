@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import { z } from "zod";
+import { useSearchParams } from "next/navigation";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -53,6 +56,11 @@ export function PublicEventBoard() {
     [selected, setSelected] = useState<CampusEvent | null>(null),
     [open, setOpen] = useState(false);
   const origin = useRef<HTMLButtonElement | null>(null);
+  const eventId = useSearchParams().get("event");
+  const [linkedLoading, setLinkedLoading] = useState(false),
+    [linkedError, setLinkedError] = useState(""),
+    [linkedMissing, setLinkedMissing] = useState(false),
+    [linkedRetry, setLinkedRetry] = useState(0);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -83,21 +91,32 @@ export function PublicEventBoard() {
     };
   }, [filters, retry]);
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("event");
-    if (!id) return;
     let active = true;
-    getPublicCampusEvent(id)
-      .then((e) => {
-        if (active && e) {
-          setSelected(e);
+    setLinkedError("");
+    setLinkedMissing(false);
+    setOpen(false);
+    setSelected(null);
+    setLinkedLoading(!!eventId);
+    if (!eventId) return;
+    if (!z.string().uuid().safeParse(eventId).success) {
+      setLinkedLoading(false);
+      setLinkedMissing(true);
+      return;
+    }
+    getPublicCampusEvent(eventId)
+      .then((event) => {
+        if (!active) return;
+        if (event) {
+          setSelected(event);
           setOpen(true);
-        }
+        } else setLinkedMissing(true);
       })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
+      .catch(() => {
+        if (active) setLinkedError("We couldn’t load this event. Please try again.");
+      })
+      .finally(() => { if (active) setLinkedLoading(false); });
+    return () => { active = false; };
+  }, [eventId, linkedRetry]);
   function filter(p: EventFilters) {
     setFilters((f) => ({ ...f, ...p, page: 0 }));
   }
@@ -112,6 +131,9 @@ export function PublicEventBoard() {
       className="oc-event-board-section"
       aria-label="Public campus events"
     >
+      {linkedLoading && <LoadingState label="Opening linked event…" layout="inline" />}
+      {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
+      {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
         <div className="oc-event-periods" aria-label="Event date range">
           {["All", "Today", "This Week", "Weekend"].map((period) => (
@@ -560,20 +582,25 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     >([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [retry, setRetry] = useState(0);
+    [retry, setRetry] = useState(0),
+    [loading, setLoading] = useState(true),
+    [notice, setNotice] = useState("");
+  const readVersion = useRef(0);
   useEffect(() => {
     let active = true;
-    const load = () =>
-      getMyCampusEventRsvps()
+    const load = () => {
+      const version = ++readVersion.current;
+      setLoading(true);
+      setError("");
+      return getMyCampusEventRsvps()
         .then((r) => {
-          if (active) {
-            setRows(r);
-            setError("");
-          }
+          if (active && version === readVersion.current) setRows(r);
         })
         .catch(() => {
-          if (active) setError("Your RSVPs could not be loaded.");
-        });
+          if (active && version === readVersion.current) setError("Your RSVPs could not be loaded.");
+        })
+        .finally(() => { if (active && version === readVersion.current) setLoading(false); });
+    };
     void load();
     window.addEventListener("outclass-event-rsvp", load);
     return () => {
@@ -582,9 +609,16 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
     };
   }, [retry]);
   async function cancel(id: string) {
+    if (busy) return;
     setBusy(true);
+    setError("");
+    setNotice("");
     try {
       await setCampusEventRsvp({ eventId: id, going: false });
+      ++readVersion.current;
+      setLoading(false);
+      setError("");
+      setNotice("Your RSVP was cancelled.");
       setRows((r) => r.filter((e) => e.eventId !== id));
       onCancelled(id);
     } catch {
@@ -596,7 +630,7 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
   return (
     <details className="mt-5 rounded-lg border p-4">
       <summary className="cursor-pointer text-sm font-medium">
-        Your RSVPs ({rows.length})
+        Your RSVPs{!loading && !error && ` (${rows.length})`}
       </summary>
       <p className="my-3 text-xs text-muted-foreground">
         You can cancel here even if an event has been withdrawn or cancelled.
@@ -609,6 +643,9 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
           </Button>
         </p>
       )}
+      {loading && <LoadingState label="Loading your RSVPs…" layout="inline" />}
+      {notice && <p role="status" className="my-3 text-sm">{notice}</p>}
+      {!loading && !error && !rows.length && <p className="my-3 text-sm text-muted-foreground">No RSVPs yet. Open a campus event to RSVP.</p>}
       <ul className="space-y-3">
         {rows.map((r) => (
           <li
@@ -631,7 +668,7 @@ function MyEventRsvps({ onCancelled }: { onCancelled: (id: string) => void }) {
               disabled={busy}
               onClick={() => void cancel(r.eventId)}
             >
-              Cancel RSVP
+              {busy ? "Cancelling…" : "Cancel RSVP"}
             </Button>
           </li>
         ))}

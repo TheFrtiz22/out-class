@@ -89,6 +89,7 @@ test("board uses original flyer in accessible modal, keyboard button activation 
     {
       react,
       "next/link": { default: "Link" },
+      "next/navigation": { useSearchParams: () => new URLSearchParams() },
       "@/contexts/auth-context": { useAuth: () => ({ user: null }) },
       "@/lib/workspace-api": {},
     },

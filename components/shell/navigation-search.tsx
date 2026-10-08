@@ -105,7 +105,7 @@ export function NavigationSearch({
   }
   function choose(item: WorkspaceSearchResult) {
     if (item.kind === "club") {
-      if (document.querySelector('[data-saving="true"]')) return
+      if (!prepare()) return
       window.location.assign(demoStore.active() ? `/preview?demoClub=${encodeURIComponent(item.clubId)}` : `/club/${encodeURIComponent(item.clubId)}`)
       return
     }
