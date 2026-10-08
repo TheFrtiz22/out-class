@@ -67,8 +67,9 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
     const [path, anchor] = href.split("#")
     return pathname === path && (!anchor ? !hash : hash === `#${anchor}`)
   }
-  const dashboard = platformAdmin?.userId === user?.id && platformAdmin?.eligible && !isImpersonating ? "/platform" : activeClubId
+  const accountDestination = platformAdmin?.userId === user?.id && platformAdmin?.eligible && !isImpersonating ? "/platform" : activeClubId
     ? `/club/${encodeURIComponent(activeClubId)}/workspace` : "/?workspace=student"
+  const getStartedHref = user && !isDemoEnabled ? accountDestination : "/?signup=student"
   const close = () => setOpen(false)
   return (
     <header ref={header} className="oc-public-nav" data-hero={hero && !scrolled && !open} onBlur={event => {
@@ -83,15 +84,13 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
           <Button variant="outline" className="oc-public-request" asChild><a href="/request-school" aria-current={active("/request-school") ? "page" : undefined}>Request Your School</a></Button>
         </nav>
         <div className="oc-public-account">
-          {user && !isDemoEnabled ? <Button className="oc-public-primary" asChild><a href={dashboard}>Dashboard</a></Button> : <>
-            <a className="oc-public-login" href="/login">Log In</a>
-            <Button className="oc-public-primary" asChild><Link prefetch={false} href="/?signup=student" onClick={event => {
-              if (!onGetStarted || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-              event.preventDefault()
-              close()
-              onGetStarted()
-            }}>Get Started</Link></Button>
-          </>}
+          <a className="oc-public-login" href="/login">Log In</a>
+          <Button className="oc-public-primary" asChild><Link prefetch={false} href={getStartedHref} onClick={event => {
+            close()
+            if (user && !isDemoEnabled || !onGetStarted || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            onGetStarted()
+          }}>Get Started</Link></Button>
           <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls="public-mobile-menu" aria-label={open ? "Close navigation menu" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
             {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>

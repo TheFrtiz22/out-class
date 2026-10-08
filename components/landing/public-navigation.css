@@ -23,9 +23,8 @@
 .oc-public-nav[data-hero="true"] :is(a, button):focus-visible { outline-color: #fff7ec; }
 .oc-public-nav .oc-public-request { background: transparent; border-color: currentColor; color: inherit; box-shadow: none; min-height: 44px; padding-inline: 16px; font-size: 14px; }
 .oc-public-nav .oc-public-request:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-.oc-public-nav .oc-public-primary { min-height: 44px; padding-inline: 20px; font-size: 14px; }
-.oc-public-nav[data-hero="true"] .oc-public-primary { color: var(--primary); background: #fff7ec; }
-.oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: white; }
+.oc-public-nav .oc-public-primary { min-height: 44px; padding-inline: 20px; font-size: 14px; color: var(--primary); background: #fff7ec; }
+.oc-public-nav .oc-public-primary:hover { background: white; }
 .oc-public-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: var(--oc-radius-md); }
 .oc-public-mobile { display: none; }
 @media (max-width: 1099px) {
