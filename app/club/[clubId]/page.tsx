@@ -27,7 +27,7 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   const jar = await cookies()
   if (jar.get(DEMO_COOKIE)?.value === "1") {
     const { data: { user }, error: authError } = await getSessionUser()
-    if (canAccessDemo(authError ? undefined : user?.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
+    if (canAccessDemo(authError || !user?.email_confirmed_at ? undefined : user.email)) redirect(`/preview?demoClub=${encodeURIComponent(clubId)}`)
   }
   const result = await getPublicClub(clubId)
   const sample = publicClubs.find((club) => club.id === clubId)

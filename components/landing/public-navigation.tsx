@@ -83,7 +83,6 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
         </Link>
         <nav className="oc-public-desktop" aria-label="Main navigation">
           {links.map(link => <a key={link.href} href={link.href} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}>{link.label}</a>)}
-          <Button variant="outline" className="oc-public-request" asChild><a href="/request-school" aria-current={active("/request-school") ? "page" : undefined}>Request Your School</a></Button>
         </nav>
         <div className="oc-public-account">
           <a className="oc-public-login" href="/login">Log In</a>
@@ -100,7 +99,6 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
       </div>
       <nav id="public-mobile-menu" className="oc-public-mobile" aria-label="Mobile navigation" hidden={!open}>
         {links.map(link => <a key={link.href} href={link.href} onClick={close} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}>{link.label}</a>)}
-        <Button variant="outline" className="oc-public-request" asChild><a href="/request-school" onClick={close} aria-current={active("/request-school") ? "page" : undefined}>Request Your School</a></Button>
       </nav>
     </header>
   )

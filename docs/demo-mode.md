@@ -1,5 +1,11 @@
 # Production-safe OutClass Demo Mode
 
+## Private presentation only
+
+The demo is not publicly available. Homepage and login invitations have been removed. `/preview` (including view/deep-link variants) and `/demo/*` sample assets require an active demo cookie plus a server-verified, email-confirmed account on the configured presenter allowlist. Middleware checks these paths before static-file shortcuts; the preview layout also checks access. Anonymous, unconfirmed, non-allowlisted, expired, and support-view sessions receive 404 responses. Demo responses are private and not cached. A demo cookie alone never grants access.
+
+Signed-out homepage workspace/view/demoClub query URLs go through the existing login return flow instead of opening sample dashboards. Ordinary sign-in and signup behavior is unchanged. Authorized presenters can still enable the private demo from their account menu using the opt-in configuration below.
+
 ## Enable access
 
 Demo Mode uses the **same explicit opt-in and authenticated allowlist in Development, Preview, and Production**. Local development no longer bypasses authentication or configuration. Neither `NODE_ENV` nor `VERCEL_ENV` grants access.

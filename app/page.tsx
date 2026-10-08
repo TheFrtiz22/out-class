@@ -10,6 +10,7 @@ import { cookies } from "next/headers"
 import { prisma } from "@/utils/prisma"
 import type { Metadata } from "next"
 import { unstable_cache } from "next/cache"
+import { redirect } from "next/navigation"
 import { SITE_TITLE, SITE_DESCRIPTION, publicPageMetadata, privateRobots, privateHomepageParams, websiteStructuredData } from "@/lib/seo"
 
 const getCachedLaunchClubs = unstable_cache(getLaunchClubs, ["public-launch-clubs"], { revalidate: 300 })
@@ -25,13 +26,24 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 
 export const maxDuration = 60
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
-  const next = safeReturnPath((await searchParams).next)
+export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams
+  const next = safeReturnPath(typeof params.next === "string" ? params.next : undefined)
   const cookieStore = await cookies()
   const { data: { user: login }, error: authError } = await getSessionUser()
   const user = cookieStore.has(PLATFORM_VIEW_COOKIE) ? (await requireAuth()).user : !authError && login?.email_confirmed_at && login.email && isUvaEmail(login.email) ? login : null
 
   if (cookieStore.get(DEMO_COOKIE)?.value === "1" && canAccessDemo(authError ? undefined : user?.email)) return <HomeEntry launchClubs={await getCachedLaunchClubs()} initialView="landing" />
+
+  // Direct workspace URLs must not open a sample application for signed-out visitors.
+  if (!user && ["workspace", "view", "demoClub"].some(key => params[key] !== undefined)) {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach(item => query.append(key, item))
+      else if (value !== undefined) query.set(key, value)
+    })
+    redirect(`/login?next=${encodeURIComponent(`/?${query}`)}`)
+  }
 
   let initialData = null
   let hasProfile = false
