@@ -13,7 +13,7 @@ export async function recipientInvitation(tx: AppTransactionClient, invitationId
   await lockOperationalClub(tx, hint.clubId);
   const identities = await verifiedSchoolIdentities(tx, account);
   const invitation = await tx.clubInvitation.findUniqueOrThrow({ where: { id: invitationId } });
-  if (invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || invitation.expiredAt || invitation.expiresAt <= new Date() || !identities.some(i => i.id === invitation.schoolIdentityId)) {
+  if (invitation.applicationId || invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || invitation.expiredAt || invitation.expiresAt <= new Date() || !identities.some(i => i.id === invitation.schoolIdentityId)) {
     throw new Error("Invitation unavailable or expired.");
   }
   return invitation;

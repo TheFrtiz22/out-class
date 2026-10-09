@@ -12,4 +12,5 @@ let binary='npm', args=['run',mode];
 if(mode==='migrate'){binary=process.execPath;args=['node_modules/prisma/build/index.js','migrate','deploy'];}
 if(mode==='start'){binary=process.execPath;args=['node_modules/next/dist/bin/next','start','-p','3109','-H','127.0.0.1'];}
 if(mode==='integration'){binary=process.execPath;args=['--test','tests/admin-workspace-e2e.test.cjs'];env.OUTCLASS_ADMIN_E2E_CONFIG=filename;}
+if(mode==='session-integration'){binary=process.execPath;args=['--test','tests/admin-session-e2e.test.cjs'];env.OUTCLASS_ADMIN_SESSION_E2E_CONFIG=filename;}
 const child=spawn(binary,args,{env,stdio:'inherit'});child.on('exit',code=>{process.exitCode=code;});process.on('SIGTERM',()=>child.kill('SIGTERM'));

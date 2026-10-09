@@ -1,4 +1,5 @@
 "use server";
+import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -66,13 +67,10 @@ async function actorFor(tx: AppTransactionClient, clubId: string, userId: string
   return actor!;
 }
 
-async function revokePendingGrants(tx: AppTransactionClient, clubId: string, userId: string) {
+async function revokePendingGrants(tx: AppTransactionClient, clubId: string, userId: string, actorId: string) {
   const person = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
   await tx.invitationDelivery.updateMany({ where: { status: "QUEUED", invitation: { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId } }] } }, data: { status: "CANCELLED" } });
-  await tx.clubInvitation.updateMany({
-    where: { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId } }] },
-    data: { status: "REVOKED", revokedAt: new Date() },
-  });
+  await revokeClubInvitations(tx, { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId } }] }, actorId, "organization-members.revocation");
 }
 
 async function protectLastOwner(tx: AppTransactionClient, clubId: string, target: { id: string; isOwner: boolean; status: string }) {
@@ -105,7 +103,7 @@ export async function changeOrganizationMemberRole(input: unknown) {
     if (target.user.disabledAt) throw new Error("Role changes require an active account.");
     if (data.role !== "OWNER") await protectLastOwner(tx, data.clubId, target);
     await tx.clubMember.update({ where: { id: target.id }, data: { accessRole: data.role, isOwner: data.role === "OWNER", permissions: organizationRolePermissions[data.role] } });
-    await revokePendingGrants(tx, data.clubId, target.userId);
+    await revokePendingGrants(tx, data.clubId, target.userId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "club.member.role", details: { before: { role: target.accessRole, permissions: target.permissions, isOwner: target.isOwner }, after: { role: data.role, permissions: organizationRolePermissions[data.role], isOwner: data.role === "OWNER" } } } });
   });
 }
@@ -119,7 +117,7 @@ export async function removeOrganizationMember(input: unknown) {
     if (!target || (!actor.isOwner && target.interviewOffices?.length) || !canRemoveOrganizationMember(actor, target)) throw new Error("You cannot remove this member.");
     await protectLastOwner(tx, data.clubId, target);
     await tx.clubMember.update({ where: { id: target.id }, data: { status: "LEFT", accessRole: "MEMBER", isOwner: false, permissions: [] } });
-    await revokePendingGrants(tx, data.clubId, target.userId);
+    await revokePendingGrants(tx, data.clubId, target.userId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "club.member.remove", details: { before: { role: target.accessRole, permissions: target.permissions, isOwner: target.isOwner, status: target.status }, after: { status: "LEFT" } } } });
   });
 }
@@ -133,8 +131,8 @@ export async function transferOrganizationOwnership(input: unknown) {
     if (!organizationCapabilities(actor).canTransferOwnership || !target || target.userId === user.id || target.isOwner) throw new Error("Transfer requires a different active non-owner member.");
     await tx.clubMember.update({ where: { id: target.id }, data: { accessRole: "OWNER", isOwner: true, permissions: organizationRolePermissions.OWNER } });
     await tx.clubMember.update({ where: { id: actor.id }, data: { accessRole: "ADMIN", isOwner: false, permissions: organizationRolePermissions.ADMIN } });
-    await revokePendingGrants(tx, data.clubId, target.userId);
-    await revokePendingGrants(tx, data.clubId, actor.userId);
+    await revokePendingGrants(tx, data.clubId, target.userId, user.id);
+    await revokePendingGrants(tx, data.clubId, actor.userId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "club.owner.transfer", details: { previousOwnerId: actor.id, newOwnerId: target.id } } });
   });
 }
@@ -154,7 +152,7 @@ export async function manageOrganizationInvitation(input: unknown) {
     if (!invitation || invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || !canManageOrganizationInvitation(actor, invitation)) throw new Error("Invitation unavailable or above your authority.");
     if (data.action === "REVOKE") {
       await tx.invitationDelivery.updateMany({ where: { invitationId: invitation.id, status: "QUEUED" }, data: { status: "CANCELLED" } });
-      await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "REVOKED", revokedAt: new Date() } });
+      await revokeClubInvitations(tx, { id: invitation.id, clubId: data.clubId, status: "PENDING" }, user.id, "organization.invitation.revoke");
     }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: invitation.id, action: data.action === "REVOKE" ? "club.invite.revoke" : "club.invite.resend.request" } });
     return { queued: data.action === "RESEND", reused: false };
@@ -179,7 +177,7 @@ export async function bulkOrganizationMembers(input: unknown) {
     await tx.clubMember.updateMany({ where: { clubId: data.clubId, id: { in: ids } }, data: fields });
     const grants = { clubId: data.clubId, status: "PENDING" as const, OR: [{ email: { in: targets.map(t => t.user.email.toLowerCase()), mode: "insensitive" as const } }, { schoolIdentity: { userId: { in: targets.map(t => t.userId) } } }] };
     await tx.invitationDelivery.updateMany({ where: { status: "QUEUED", invitation: grants }, data: { status: "CANCELLED" } });
-    await tx.clubInvitation.updateMany({ where: grants, data: { status: "REVOKED", revokedAt: new Date() } });
+    await revokeClubInvitations(tx, grants, user.id, "organization-members.revocation");
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: `club.members.bulk.${data.action.toLowerCase()}`, details: { before: targets.map(t => ({ id: t.id, role: t.accessRole, isOwner: t.isOwner, permissions: t.permissions, status: t.status })), after: fields } } });
     return { count: targets.length };
   });
@@ -196,7 +194,7 @@ export async function bulkOrganizationInvitations(input: unknown) {
     let queued = 0;
     if (data.action === "REVOKE") {
       await tx.invitationDelivery.updateMany({ where: { invitationId: { in: data.invitationIds }, status: "QUEUED" }, data: { status: "CANCELLED" } });
-      await tx.clubInvitation.updateMany({ where: { clubId: data.clubId, id: { in: data.invitationIds } }, data: { status: "REVOKED", revokedAt: new Date() } });
+      await revokeClubInvitations(tx, { clubId: data.clubId, id: { in: data.invitationIds } }, user.id, "organization-members.revocation");
     } else {
       // Cooldown, grant scope, and send limits are enforced by the shared outbox.
       queued = (await enqueueInvitationEmails(tx, data.clubId, user.id, invitations.map(i => ({ invitationId: i.id, key: randomUUID() })))).queued;

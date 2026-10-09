@@ -232,6 +232,7 @@ enum QuestionType {
 }
 
 model Application {
+  recruitmentOffer ClubInvitation?
   interviewAssignments InterviewPanelAssignment[]
   resumeDocuments InterviewResumeDocument[]
   votingCandidates VotingCandidate[]
@@ -255,6 +256,7 @@ model Application {
   bookings    InterviewBooking[]
 
   @@unique([studentId, clubId])
+  @@unique([id, clubId])
   @@index([clubId], map: "Application_clubId_idx")
   @@index([roundId], map: "Application_roundId_idx")
   @@index([studentId], map: "Application_studentId_idx")
@@ -454,6 +456,9 @@ model AuditLog {
 }
 
 model ClubInvitation {
+  applicationId String? @unique
+  @@unique([applicationId, clubId])
+  application Application? @relation(fields: [applicationId, clubId], references: [id, clubId], onDelete: Cascade)
   firstEmailSentAt    DateTime?
   lastEmailSentAt     DateTime?
   emailSendCount      Int                       @default(0)

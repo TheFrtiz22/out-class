@@ -1,4 +1,5 @@
 "use client"
+import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
 import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { genderValues } from "@/lib/student-profile"
@@ -16,7 +17,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, moveApplicantRound, setApplicationStatus } from "@/lib/workspace-api"
+import { getClubPipeline, moveApplicantRound, setApplicationStatus, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
@@ -338,7 +339,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
         setScore(mine ? String(mine.score) : "")
         setNotes(mine?.notes || "")
         setBaseline(JSON.stringify([mine ? String(mine.score) : "", mine?.notes || ""]))
-        setMessage("Round updated. Application status is unchanged.")
+        setMessage("Round updated. Moving out of an interview round returns interview applicants to review.")
       } else {
         await setApplicationStatus({
           clubId: membership.clubId,
@@ -348,6 +349,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
         })
         // Only the status field is optimistic; identity and privacy projections stay server-owned.
         setDecision("")
+        setRevision(v => v + 1)
         setMessage("Application status updated.")
       }
     } catch {
@@ -792,20 +794,21 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
                   </select>
                   <Button
                     variant="outline"
-                    disabled={busy || dirty || targetRound === active.roundId || !hasPermission(membership, "recruitment.manage") || !hasPermission(membership, "applicants.identify")}
+                    disabled={busy || dirty || ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(active.status) || targetRound === active.roundId || !hasPermission(membership, "recruitment.manage") || !hasPermission(membership, "applicants.identify")}
                     onClick={() => void mutate("round")}
                   >
                     Move round
                   </Button>
                 </div>
                 <p className="text-xs leading-6 text-muted-foreground">
-                  Moving rounds does not change the student-visible application status. Save your
-                  review before moving.
+                  Final decisions cannot move rounds or reopen. Moving out of an interview round returns the applicant to review. Save your review before moving.
                 </p>
+                {active.recruitmentOffer?.status === "ACCEPTED" && <p className="text-xs text-muted-foreground">This offer was accepted. Decision changes preserve membership; use member management for access changes.</p>}
+                {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Only pending offers can be rescinded. Accepted memberships must be managed through member management.</p><Button variant="outline" disabled={busy || dirty} onClick={async()=>{setBusy(true);try{await revokeRecruitmentOffer(membership.clubId,active.id);setRevision(v => v + 1);setMessage("Pending offer rescinded.")}catch{setMessage("Only pending offers can be rescinded. Manage existing members through member management.")}finally{setBusy(false)}}}>Rescind pending offer</Button></div>}
                 {hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") ? (
                   <div className="flex flex-wrap gap-2">
                     {(["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"] as const)
-                      .filter((value) => value !== active.status)
+                      .filter((value) => value !== active.status && (value !== "INTERVIEWING" || isInterviewRecruitmentRound(data.rounds.find(r => r.id === active.roundId)?.type || "")) && (!["ACCEPTED", "REJECTED", "WAITLISTED"].includes(active.status) || ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(value)))
                       .map((value) => (
                         <Button
                           key={value}

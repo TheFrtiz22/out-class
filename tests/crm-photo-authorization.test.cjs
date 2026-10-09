@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const ts = require('typescript');
 function load(file, mocks = {}) {
   const m = { exports: {} };
-  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/lib/') ? load(n.slice(2) + '.ts', mocks) : require(n), m, m.exports);
+  new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/') ? load(n.slice(2) + '.ts', mocks) : require(n), m, m.exports);
   return m.exports;
 }
 const id = n => `123e4567-e89b-12d3-a456-${String(n).padStart(12, '0')}`;

@@ -19,6 +19,12 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
     try {
       if (accept) {
         const result = await (owner ? acceptIdentityClubInvitation(id) : acceptClubInvitation(id));
+        if ("status" in result && result.status === "INACTIVE_MEMBERSHIP") {
+          setMessage("Your membership is inactive. Contact an organization owner about reinstatement; this offer cannot restore access.");
+          responding.current = false;
+          setBusy(false);
+          return;
+        }
         window.location.assign(owner ? clubWorkspaceHref(result.clubId) : "/");
       } else {
         await declineClubInvitation(id);

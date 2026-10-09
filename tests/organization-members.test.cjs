@@ -24,7 +24,7 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
   },
   clubInvitation:{
    findFirst:async({where})=>state.invitation.id===where.id&&state.invitation.clubId===where.clubId?state.invitation:null,
-   findMany:async args=>{state.reads.push(args);return[state.invitation];},
+   findMany:async args=>{state.reads.push(args);return args.where.AND ? (state.invitation.applicationId && state.invitation.status==='PENDING' && !state.invitation.revokedAt ? [state.invitation] : []) : [state.invitation];},
    update:async({where,data})=>{assert.equal(where.id,inviteId);Object.assign(state.invitation,data);},
    updateMany:async({where,data})=>{assert.equal(where.clubId,clubId);assert.equal(where.status,'PENDING');Object.assign(state.invitation,data);},
   },
@@ -146,7 +146,7 @@ test('bulk selection protects all owners together, rejects stale versions and es
  const targetId=memberId,otherId=require('node:crypto').randomUUID();const a=member(actorId,'OWNER'),b=member(targetId,'OWNER');
  // Add real bulk-model semantics to this fixture through a separate action harness.
  const state={members:[a,b,member(otherId,'MEMBER')],audits:[]};for(const m of state.members)m.updatedAt=new Date('2026-10-05T12:00:00Z');
- let actor=actorId,writes=0;const tx={$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>state.members.find(m=>m.userId===actor),findMany:async({where})=>state.members.filter(m=>where.id.in.includes(m.id)),count:async({where})=>state.members.filter(m=>m.isOwner&&m.status==='ACTIVE'&&!where.id.notIn.includes(m.id)).length,updateMany:async({where,data})=>{writes++;for(const m of state.members.filter(m=>where.id.in.includes(m.id)))Object.assign(m,data);}},invitationDelivery:{updateMany:async()=>{}},clubInvitation:{updateMany:async()=>{}},auditLog:{create:async({data})=>state.audits.push(data)}};
+ let actor=actorId,writes=0;const tx={$queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},clubMember:{findUnique:async()=>state.members.find(m=>m.userId===actor),findMany:async({where})=>state.members.filter(m=>where.id.in.includes(m.id)),count:async({where})=>state.members.filter(m=>m.isOwner&&m.status==='ACTIVE'&&!where.id.notIn.includes(m.id)).length,updateMany:async({where,data})=>{writes++;for(const m of state.members.filter(m=>where.id.in.includes(m.id)))Object.assign(m,data);}},invitationDelivery:{updateMany:async()=>{}},clubInvitation:{findMany:async()=>[],updateMany:async()=>{}},auditLog:{create:async({data})=>state.audits.push(data)}};
  const api=load('actions/organization-members.ts',{'@/utils/auth':{requireAuth:async()=>({user:{id:actor}})},'@/utils/prisma':{prisma:{$transaction:async fn=>{const before=structuredClone(state);try{return await fn(tx);}catch(e){Object.assign(state,before);throw e;}}}},'@/actions/club-onboarding':{}});
  const targets=ids=>state.members.filter(m=>ids.includes(m.userId)).map(m=>({id:m.id,updatedAt:m.updatedAt}));
  await assert.rejects(api.bulkOrganizationMembers({clubId,targets:targets([actorId,targetId]),action:'REMOVE'}),/active owner/);assert.equal(writes,0);

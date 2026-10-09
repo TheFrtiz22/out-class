@@ -1,10 +1,12 @@
+import { adminPageLoad } from "@/utils/admin-page";
+import { AdminRecovery } from "@/components/admin/admin-recovery";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { getAdminOverview } from "@/actions/admin-workspace";
 import { PageHeader } from "@/components/product/page-header";
 export default async function PlatformPage() {
-  let metrics;
-  try { metrics = await getAdminOverview(); } catch { redirect("/platform/login"); }
+  const result = await adminPageLoad("/platform", getAdminOverview, "ADMIN_DATA_LOAD_FAILED");
+  if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
+  const metrics = result.value!;
   const labels = { students: "Students", clubs: "Clubs", eventApprovals: "Pending event approvals", clubApprovals: "Pending club approvals", reports: "Open reports", upcomingEvents: "Upcoming approved events", supportItems: "Support items" };
   const attention = [{ key: "eventApprovals" as const, label: "Review pending events", href: "/platform/events" }, { key: "clubApprovals" as const, label: "Review club claims", href: "/platform/claims" }, { key: "reports" as const, label: "Investigate reports", href: "/platform/reports" }, { key: "supportItems" as const, label: "Help with support requests", href: "/platform/support" }];
   return <div className="space-y-7 p-5 sm:p-8"><PageHeader eyebrow="OutClass · Administration" title="What needs your attention?" description="Your platform at a glance. Review requests, help people, and keep Grounds connected." />

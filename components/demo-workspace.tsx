@@ -144,6 +144,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
         slot.applicationId = applicationId || null
         if (applicationId) {
           const a = s.applications.find((a) => a.id === applicationId)!
+          if (["ACCEPTED", "REJECTED", "WAITLISTED"].includes(a.status)) throw new Error("Final decisions cannot be reopened.")
           a.status = "INTERVIEWING"
           a.roundId = club.rounds.find((r) => r.name === "Interview")!.id
         }

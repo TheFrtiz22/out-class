@@ -20,6 +20,8 @@ const profile = z
   .passthrough()
 export const demoSnapshotSchema = z
   .object({
+    recruitmentOffers: z.array(z.object({applicationId:id,status:z.enum(["PENDING","ACCEPTED","DECLINED","REVOKED","EXPIRED"]),createdAt:z.date(),expiresAt:z.date()})).optional(),
+    offerAudit: z.array(z.object({action:z.enum(["offer.created","offer.accepted","offer.declined","offer.revoked"]),applicationId:id,at:z.date()})).optional(),
     recruitingRules: z.array(z.object({ roundId: id, minGpa: z.number().min(0).max(4).nullable(), minSat: z.number().int().min(400).max(1600).multipleOf(10).nullable(), minAct: z.number().int().min(1).max(36).nullable(), revision: z.number().int().positive(), updatedAt: z.date() })).optional(),
     recruitingFlags: z.array(z.object({ roundId: id, applicationId: id, ruleRevision: z.number().int().positive(), reasons: z.array(z.string()), flaggedBy: id, flaggedAt: z.date() })).optional(),
     recruitingRuleAudit: z.array(z.object({ action: z.string(), roundId: id, actorId: id, at: z.date(), details: z.string() })).optional(),

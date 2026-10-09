@@ -1,3 +1,4 @@
+import { demoDecision } from "./recruitment-offers"
 import { academicYear } from "@/lib/recruitment-profile";
 import type * as Live from "@/actions/voting"
 import { demoStore, demoMember } from "./store"
@@ -31,6 +32,7 @@ function submit(input:unknown){
 }
 function command(input:unknown){
  const d=votingCommandSchema.parse(input),state=context(d.clubId),s=sessions().find(s=>s.id===d.sessionId&&s.clubId===d.clubId)
+ if(s?.publishedAt&&d.action==="PUBLISH"&&d.applicationIds?.length&&new Set(d.applicationIds).size===d.applicationIds.length){const published=s.candidates.filter(c=>c.publishedStatus).map(c=>c.applicationId);if(published.length===d.applicationIds.length&&published.every(id=>d.applicationIds!.includes(id)))return{success:true}}
  if(!s||s.publishedAt||s.revision!==d.revision)throw Error("Session changed or sealed.")
  const p=s.passes.at(-1),summary=summarizeVoting(s),now=new Date()
  switch(d.action){
@@ -44,7 +46,7 @@ function command(input:unknown){
  case "REOPEN":if(s.state!=="COMPLETED")throw Error("Not completed.");s.state="PAUSED";s.endedAt=null;break
  case "CONFIGURE":if(s.state==="COMPLETED"||(!d.targetSize&&!d.displayConfig))throw Error("Configuration unavailable.");if(d.displayConfig){if(s.startedAt||s.joinOpenedAt)throw Error("Display configuration is locked.");s.displayConfig=d.displayConfig}if(d.targetSize)s.targetSize=d.targetSize;break
  case "OVERRIDE":{if(s.state==="COMPLETED"||!d.reason||!d.decision)throw Error("Provide reason and decision.");const c=[...s.passes].reverse().flatMap(p=>p.candidates).find(c=>c.applicationId===d.applicationId);if(!c)throw Error("Candidate unavailable.");c.override=d.decision;c.overrideBy=demoMember()!.userId;c.overrideAt=now;break}
- case "PUBLISH":{if(s.state!=="COMPLETED"||!d.applicationIds?.length)throw Error("Finish and select decisions.");if(new Set(d.applicationIds).size!==d.applicationIds.length)throw Error("Duplicate publication selection.");const changes=d.applicationIds.map(id=>{const o=summary.outcomes.find(o=>o.applicationId===id),c=s.candidates.find(c=>c.applicationId===id),a=state.applications.find(a=>a.id===id);if(!o||o.outcome==="UNRESOLVED"||!c||!a||a.clubId!==s.clubId||a.roundId!==s.roundId||a.status!==c.expectedStatus)throw Error("Application changed or unresolved.");return{o,c,a}});for(const {o,c,a}of changes){a.status=o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED";c.publishedStatus=a.status}s.publishedAt=now;s.publishedBy=demoMember()!.userId;break}
+ case "PUBLISH":{if(s.state!=="COMPLETED"||!d.applicationIds?.length)throw Error("Finish and select decisions.");if(new Set(d.applicationIds).size!==d.applicationIds.length)throw Error("Duplicate publication selection.");const changes=d.applicationIds.map(id=>{const o=summary.outcomes.find(o=>o.applicationId===id),c=s.candidates.find(c=>c.applicationId===id),a=state.applications.find(a=>a.id===id);if(!o||o.outcome==="UNRESOLVED"||!c||!a||a.clubId!==s.clubId||a.roundId!==s.roundId||a.status!==c.expectedStatus)throw Error("Application changed or unresolved.");return{o,c,a}});for(const {o,c,a}of changes){demoDecision(state,a.id,o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED");c.publishedStatus=a.status}s.publishedAt=now;s.publishedBy=demoMember()!.userId;break}
  }
  s.revision++;s.updatedAt=now;audit(`voting.${d.action.toLowerCase()}`,s.id);return{success:true}
 }

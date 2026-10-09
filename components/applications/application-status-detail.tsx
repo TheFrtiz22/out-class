@@ -1,4 +1,5 @@
 "use client"
+import { RecruitmentOffer } from "./recruitment-offer"
 import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "lucide-react"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
@@ -9,8 +10,8 @@ import { isApplicationDecision } from "@/lib/application-presentation"
 import { ApplicationStatusProgress, applicantDate } from "./application-status-card"
 import type { StudentApplication } from "./application-form"
 
-export function ApplicationStatusDetail({ application: app, notice, onBack, onResponses, onCalendar, onRefresh, onBookingChanged }: {
-  application: StudentApplication; notice: string; onBack: () => void; onResponses: () => void; onCalendar: () => void; onRefresh: () => void; onBookingChanged: () => void;
+export function ApplicationStatusDetail({ application: app, notice, onBack, onResponses, onCalendar, onRefresh, onBookingChanged, onMyClubs }: {
+  application: StudentApplication; notice: string; onBack: () => void; onResponses: () => void; onCalendar: () => void; onRefresh: () => void; onBookingChanged: () => void; onMyClubs: () => void;
 }) {
   const decision = isApplicationDecision(app.status)
   const history = app.status === "INTERVIEWING" ? app.bookings.filter(booking => booking.roundId && booking.roundId !== app.round?.id) : app.bookings
@@ -26,7 +27,7 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
       <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusBadge status={app.status} /></div>
       {!decision && app.round?.name && <p className="mt-2 text-sm text-muted-foreground">Current club round · {app.round.name}</p>}
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{applicationNextStep(app.status)}</p>
-      {app.status === "ACCEPTED" && <p className="mt-2 text-sm leading-6 text-muted-foreground">Follow the club’s instructions for joining. Acceptance does not automatically create a club membership.</p>}
+      {(app.status === "ACCEPTED" || app.recruitmentOffer) && <RecruitmentOffer application={app} onChanged={onRefresh} onMyClubs={onMyClubs} />}
       {app.status === "WAITLISTED" && <p className="mt-2 text-sm text-muted-foreground">No decision date has been provided on OutClass.</p>}
       <div className="mt-5"><ApplicationStatusProgress application={app} /></div>
     </section>

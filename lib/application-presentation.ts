@@ -13,6 +13,7 @@ export function relevantInterview<T extends { slot: { startTime: Date | string }
 
 export type StatusApplication = {
   status: string;
+  recruitmentOffer?: { status: string; expiresAt: Date | string } | null;
   round?: { id: string; name: string } | null;
   club: { pipelineRounds?: readonly { id: string; name: string; order: number }[] };
   bookings: readonly { roundId?: string | null; slot: { startTime: Date | string; endTime?: Date | string } }[];
@@ -40,6 +41,7 @@ export function currentApplicationInterview<T extends { roundId?: string | null;
   return { ...interview, past: end && Number.isFinite(+new Date(end)) ? +new Date(end) <= now : interview.past }
 }
 export function applicationNeedsAttention(application: StatusApplication, now = Date.now()) {
+  if (application.status === "ACCEPTED" && application.recruitmentOffer?.status === "PENDING" && +new Date(application.recruitmentOffer.expiresAt) > now) return true
   if (application.status !== "INTERVIEWING") return false
   const interview = currentApplicationInterview(application, now)
   // A past booking alone does not establish a new scheduling requirement.

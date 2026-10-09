@@ -1,3 +1,4 @@
+import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
 import { platformViewSession } from "@/utils/platform-view-as";
@@ -22,7 +23,7 @@ export const getSessionUser = cache(async () => {
  * Ensures a user is logged in. Returns the Supabase user and Prisma user.
  * Redirects to /auth (or home) if not authenticated.
  */
-export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean } = {}) {
+export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean; adminDiagnostics?: boolean } = {}) {
   const cookieStore = await cookies();
   if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) {
     const session = await platformViewSession();
@@ -43,10 +44,12 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
     // Never borrow the administrator's Auth metadata or verified-email status.
     return { user: effective, supabaseUser: { id: effective.id, email: effective.email, email_confirmed_at: undefined, app_metadata: {} }, impersonation: session };
   }
-  if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new Error("Live data is unavailable in Demo Mode.");
+  if (cookieStore.get(DEMO_COOKIE)?.value === "1") throw new AdminAccessError("ADMIN_ACCESS_DENIED", "Live data is unavailable in Demo Mode.");
   const { data: { user }, error } = await getSessionUser();
   
+  if (options.adminDiagnostics && error && !providerAuthFailure(error)) throw error;
   if (error || !user || !user.email || !isUvaEmail(user.email) || !user.email_confirmed_at) {
+    if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
     redirect("/"); // Redirect to login page
   }
 
@@ -60,6 +63,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
 
   if (!prismaUser || prismaUser.disabledAt) {
     // Edge case: Trigger failed or user was deleted from Prisma but not Supabase
+    if (options.adminDiagnostics) throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Sign-in required.");
     redirect("/");
   }
 
