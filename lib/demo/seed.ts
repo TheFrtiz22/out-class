@@ -252,7 +252,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       const status: ApplicationStatus =
         a === 0
           ? (["INTERVIEWING", "IN_REVIEW", "DRAFTING", "SUBMITTED", "ACCEPTED", "WAITLISTED"][
-              c % 6
+              c === 7 ? 4 : c % 6
             ] as ApplicationStatus)
           : stages[(a + c) % stages.length]
       const round =
@@ -397,6 +397,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
   return {
+    recruitmentOffers: applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:at(-4),expiresAt:at(30)})) as import("./recruitment-offers").DemoOffer[],
+    offerAudit: [] as {action:string;applicationId:string;at:Date}[],
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),
     meetings, meetingAttendances, meetingTokens,
     interviewFoundation: { assignments: applications.filter(a => a.studentId !== students[0].id).map(a => ({ applicationId: a.id, roundId: a.roundId, memberId: memberships.find(m => m.clubId === a.clubId && m.isOwner)!.id, revokedAt: null as string | null })), documents: [], annotations: [], history: [], audit: [] } as import("./interview-foundation").DemoInterviewFoundation,

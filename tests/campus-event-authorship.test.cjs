@@ -10,7 +10,7 @@ function load(file, mocks) {
   }).outputText;
   new Function("require", "module", "exports", code)(
     (name) => name in mocks ? mocks[name]
-      : name.startsWith("@/lib/") ? load(name.slice(2) + ".ts", mocks)
+      : name.startsWith("@/") ? load(name.slice(2) + ".ts", mocks)
         : require(name), mod, mod.exports,
   );
   return mod.exports;

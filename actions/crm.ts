@@ -1,4 +1,6 @@
 "use server";
+import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
+import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { genderValues } from "@/lib/student-profile";
 import { genderVisibility } from "@/lib/recruitment-profile";
 
@@ -31,7 +33,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
     const rounds = await tx.pipelineRound.findMany({
       where: { clubId, archivedAt: null },
       orderBy: { order: "asc" },
-      select: { id: true, name: true, order: true, anonymousReview: true, applicantDisplay: true },
+      select: { id: true, name: true, order: true, type: true, anonymousReview: true, applicantDisplay: true },
     });
     const selectedRound = rounds.find(r => r.id === filter.roundId);
     if (filter.gender || filter.genderCounts) {
@@ -45,6 +47,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
         ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
       },
       include: {
+        recruitmentOffer: { select: { status: true, expiresAt: true } },
         round: true,
         student: {
           include: { studentProfile: { include: { experiences: true } } },
@@ -58,11 +61,12 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
 
     return {
-      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
+      rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications: applications.map(raw => {
         const app = { ...raw, evaluations: raw.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
-        return !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+        const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
+        return { ...projected, recruitmentOffer: raw.recruitmentOffer ?? null };
       }),
     };
   }, { isolationLevel: "RepeatableRead" });
@@ -93,6 +97,9 @@ export async function moveApplicantRound(
       where: { id: parsed.newRoundId, clubId: parsed.clubId, archivedAt: null },
     });
     if (!round) throw new Error("Round is not available for this club.");
+    const current = await tx.application.findFirst({ where: { id: parsed.applicationId, clubId: parsed.clubId } });
+    if (!current) throw Error("Application unavailable.");
+    assertRecruitmentRoundMove(current.status);
     const result = await tx.application.updateMany({
       where: {
         id: parsed.applicationId,
@@ -100,7 +107,7 @@ export async function moveApplicantRound(
         status: { not: "DRAFTING" },
         ...(parsed.expectedRoundId ? { roundId: parsed.expectedRoundId } : {}),
       },
-      data: { roundId: parsed.newRoundId },
+      data: { roundId: parsed.newRoundId, ...(current.status === "INTERVIEWING" && !isInterviewRecruitmentRound(round.type) ? { status: "IN_REVIEW" as const } : {}) },
     });
     if (result.count !== 1)
       throw new Error("Application changed or is not available for this club. Refresh before moving rounds.");
@@ -164,22 +171,13 @@ export async function setApplicationStatus(
 
   const application = await prisma.$transaction(async (tx) => {
     await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
-    const result = await tx.application.updateMany({
-      where: {
-        id: parsed.applicationId,
-        clubId: parsed.clubId,
-        status: parsed.expectedStatus ?? { not: "DRAFTING" },
-      },
-      data: { status: parsed.status },
-    });
-    if (result.count !== 1)
-      throw new Error("Application is not available for this club.");
+    const decision = await publishRecruitmentDecision(tx, parsed, user.id);
     const updated = await tx.application.findFirst({
       where: { id: parsed.applicationId, clubId: parsed.clubId },
       include: { round: true },
     });
 
-    await tx.auditLog.create({
+    if (decision.previousStatus !== parsed.status) await tx.auditLog.create({
       data: {
         actorId: user.id,
         action: "club.decision.update",

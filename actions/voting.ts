@@ -1,4 +1,6 @@
 "use server"
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
+import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { academicYear } from "@/lib/recruitment-profile";
 
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
@@ -89,9 +91,13 @@ export async function commandVotingSession(input: unknown) {
   const {user,membership}=await requireClubPermission(d.clubId,caps)
   return prisma.$transaction(async tx=>{
     await lockOperationalClub(tx, d.clubId)
-    await member(tx,d.clubId,membership.id,caps)
+    await authorizeClubTransaction(tx,d.clubId,user.id,caps)
     const s=await session(tx,d.clubId,d.sessionId)
     if(!await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:d.clubId,archivedAt:null}})) throw Error("Archived voting rounds are read-only.")
+    if(s.publishedAt && d.action === "PUBLISH" && d.applicationIds?.length && new Set(d.applicationIds).size === d.applicationIds.length) {
+      const published = s.candidates.filter(c=>c.publishedStatus).map(c=>c.applicationId);
+      if(published.length === d.applicationIds.length && published.every(id=>d.applicationIds!.includes(id))) return {success:true};
+    }
     if(s.revision!==d.revision) throw Error("Session changed. Refresh and review before trying again.")
     if(s.publishedAt) throw Error("Published sessions are sealed. Create a new session to review again.")
     const active=s.passes.find(p=>p.number===s.currentPass)
@@ -140,8 +146,9 @@ export async function commandVotingSession(input: unknown) {
           const o=summary.outcomes.find(o=>o.applicationId===id), c=s.candidates.find(c=>c.applicationId===id)
           if(!o||!c||o.outcome==="UNRESOLVED") throw Error("Only resolved session candidates can publish.")
           const status=o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED"
-          const result=await tx.application.updateMany({where:{id,clubId:d.clubId,roundId:s.roundId,status:c.expectedStatus},data:{status}})
-          if(result.count!==1) throw Error("Application changed since the session snapshot. Publication cancelled.")
+          const current = await tx.application.findFirst({where:{id,clubId:d.clubId,roundId:s.roundId,status:c.expectedStatus}})
+          if(!current) throw Error("Application changed since the session snapshot. Publication cancelled.")
+          await publishRecruitmentDecision(tx,{applicationId:id,clubId:d.clubId,roundId:s.roundId,expectedStatus:c.expectedStatus,status},user.id)
           await tx.votingCandidate.update({where:{sessionId_applicationId:{sessionId:s.id,applicationId:id}},data:{publishedStatus:status}})
           await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:id,action:"voting.decision.published",details:{sessionId:s.id,pass:o.passNumber,outcome:o.outcome,previousStatus:c.expectedStatus,status}}})
         }

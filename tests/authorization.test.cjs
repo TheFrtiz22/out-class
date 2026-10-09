@@ -8,7 +8,7 @@ function load(file, mocks = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   new Function("require", "module", "exports", code)(
-    (name) => (name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.slice(2)+".ts") : require(name)),
+    (name) => (name in mocks ? mocks[name] : name.startsWith("@/") ? load(name.slice(2)+".ts", mocks) : require(name)),
     mod,
     mod.exports,
   )
@@ -127,6 +127,7 @@ function accessHarness(actor, target, invitation, options = {}) {
       },
     },
     clubInvitation: {
+      findMany: async () => [],
       updateMany: async ({ where, data }) => {
         assert.equal(where.acceptedAt, null)
         assert.ok(data.revokedAt instanceof Date)

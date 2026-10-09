@@ -21,7 +21,7 @@ function load(file, mocks = {}) {
         ? mocks[n]
         : n === "./supabase/server" && mocks["@/utils/supabase/server"] ? mocks["@/utils/supabase/server"]
         : n === "./prisma" && mocks["@/utils/prisma"] ? mocks["@/utils/prisma"]
-        : n.startsWith("@/lib/")
+        : n.startsWith("@/")
           ? load(n.slice(2) + ".ts", mocks)
           : require(n),
     mod,

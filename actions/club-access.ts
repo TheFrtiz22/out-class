@@ -1,4 +1,6 @@
 "use server";
+import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
+import { respondToRecruitmentOffer } from "@/utils/recruitment-offers";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
@@ -90,6 +92,7 @@ export async function acceptClubInvitation(invitationId: string) {
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
+    if (hint.applicationId) return respondToRecruitmentOffer(tx, hint.applicationId, user.id, "ACCEPT");
     if (hint.schoolIdentityId) {
       const { acceptIdentityInvitationInTransaction } = await import("@/utils/club-onboarding");
       return acceptIdentityInvitationInTransaction(tx, id, account);
@@ -210,16 +213,13 @@ export async function updateClubAccess(input: {
       select: { email: true },
     });
     if (person)
-      await tx.clubInvitation.updateMany({
-        where: {
+      await revokeClubInvitations(tx, {
           clubId: data.clubId,
           status: "PENDING",
           OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }],
           acceptedAt: null,
           revokedAt: null,
-        },
-        data: { status: "REVOKED", revokedAt: new Date() },
-      });
+        }, user.id, "club-access.revocation");
     await tx.auditLog.create({
       data: {
         actorId: user.id,
@@ -250,10 +250,7 @@ export async function revokeClubInvitation(
     if (!invitation || invitation.clubId !== clubId || !canManageOrganizationInvitation(actor, invitation)) {
       throw new Error("Only an authorized owner can revoke higher-authority invitations.");
     }
-    const result = await tx.clubInvitation.updateMany({
-      where: { id: invitationId, clubId, status: "PENDING", acceptedAt: null },
-      data: { status: "REVOKED", revokedAt: new Date() },
-    });
+    const result = await revokeClubInvitations(tx, { id: invitationId, clubId, status: "PENDING", acceptedAt: null }, user.id, "club-access.revocation");
     if (result.count !== 1) throw new Error("Invitation unavailable.");
     await tx.auditLog.create({
       data: {
@@ -330,7 +327,7 @@ export async function removeClubMember(clubId: string, memberId: string) {
         "Revoke leadership access first. Memberships with evaluation or interview history must be retained.",
       );
     const person = await tx.user.findUnique({ where: { id: target.userId }, select: { email: true } });
-    if (person) await tx.clubInvitation.updateMany({ where: { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }], acceptedAt: null, revokedAt: null }, data: { status: "REVOKED", revokedAt: new Date() } });
+    if (person) await revokeClubInvitations(tx, { clubId, status: "PENDING", OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: target.userId } }], acceptedAt: null, revokedAt: null }, user.id, "club-access.revocation");
     await tx.clubMember.update({ where: { id: target.id }, data: { status: "LEFT", permissions: [], isOwner: false, accessRole: "MEMBER" } });
     await tx.auditLog.create({
       data: {
@@ -352,6 +349,7 @@ export async function declineClubInvitation(invitationId: string) {
   return prisma.$transaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
+    if (hint.applicationId) { await respondToRecruitmentOffer(tx, hint.applicationId, user.id, "DECLINE"); return; }
     if (hint.schoolIdentityId) {
       const { recipientInvitation } = await import("@/utils/club-onboarding");
       const invitation = await recipientInvitation(tx, id, account);

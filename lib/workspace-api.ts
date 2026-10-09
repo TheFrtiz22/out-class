@@ -1,4 +1,7 @@
 "use client"
+import * as offers from "@/actions/recruitment-offers";
+import * as demoOffers from "@/lib/demo/recruitment-offers";
+import { assertRecruitmentRoundMove } from "@/lib/recruitment-lifecycle";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { hasPermission } from "@/lib/permissions";
 import { genderVisibility } from "@/lib/recruitment-profile";
@@ -92,10 +95,10 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
   const scoped = s.applications.filter(a => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId));
   return {
     genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
-    rounds: rounds.map(r => ({ ...r, genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
+    rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
       .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
-      .map((a) => { const app = joinedApplication(a.id); return s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) }),
+      .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); return { ...projected, recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 })
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
@@ -111,6 +114,9 @@ export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
     if (input.expectedRoundId && app.roundId !== input.expectedRoundId)
       throw new Error("Application changed. Refresh before moving rounds.")
+    assertRecruitmentRoundMove(app.status)
+    const round = s.clubs.find(c=>c.id===input.clubId)!.rounds.find(r=>r.id===input.newRoundId)!
+    if(app.status === "INTERVIEWING" && !/interview/i.test(round.name)) app.status = "IN_REVIEW"
     app.roundId = input.newRoundId
     return { success: true, application: app }
   })
@@ -121,7 +127,7 @@ export const setApplicationStatus = adapt(crm.setApplicationStatus, (input) => {
     throw new Error("This candidate changed. Refresh before deciding.")
   return demoStore.mutate((s) => {
     const app = s.applications.find((a) => a.id === input.applicationId)!
-    app.status = input.status
+    demoOffers.demoDecision(s, app.id, input.status)
     return { success: true, application: app }
   })
 })
@@ -544,3 +550,6 @@ export const getCampusEventRsvp = adapt(campusEvents.getCampusEventRsvp, () => (
 export const setCampusEventRsvp = adapt(campusEvents.setCampusEventRsvp, noDemoEventWrite)
 export const getCampusEventAttendees = adapt(campusEvents.getCampusEventAttendees, () => [])
 export const getMyCampusEventRsvps = adapt(campusEvents.getMyCampusEventRsvps, () => [])
+
+export const respondToOffer = adapt(offers.respondToOffer, demoOffers.respondToOffer)
+export const revokeRecruitmentOffer = adapt(offers.revokeRecruitmentOffer, demoOffers.revokeRecruitmentOffer)

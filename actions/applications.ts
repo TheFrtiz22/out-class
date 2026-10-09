@@ -91,6 +91,7 @@ export async function getStudentApplications() {
       clubId: true,
       status: true,
       submittedAt: true,
+      recruitmentOffer: { select: { status: true, expiresAt: true } },
       club: {
         select: {
           applicationOpen: true,

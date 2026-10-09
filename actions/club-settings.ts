@@ -1,5 +1,6 @@
 "use server";
 
+import { finalRecruitmentStatuses, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
@@ -250,7 +251,7 @@ export async function savePipelineSettings(input: unknown) {
           await tx.application.count({
             where: {
               roundId: r.id,
-              status: { notIn: ["ACCEPTED", "REJECTED"] },
+              status: { notIn: [...finalRecruitmentStatuses] },
             },
           })
         )
@@ -290,6 +291,8 @@ export async function savePipelineSettings(input: unknown) {
           configuration: r.configuration,
         };
         if (saved) {
+          if (!isInterviewRecruitmentRound(r.type) && saved.type !== r.type && await tx.application.count({ where: { roundId: r.id, status: "INTERVIEWING" } }))
+            throw Error("Move interview applicants to a compatible round before changing this round type.");
           if (
             saved.type !== r.type &&
             (saved._count.interviewRooms ||

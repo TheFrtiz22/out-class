@@ -23,6 +23,7 @@ test('member management uses real migrated constraints, atomic transfer, queued 
    update:async({where,data})=>update('ClubMember',where.id,data),
   },
   clubInvitation:{
+   findMany:async()=> (await db.query('SELECT i.*,jsonb_build_object(\'studentId\',a."studentId") AS application FROM "ClubInvitation" i JOIN "Application" a ON a.id=i."applicationId" WHERE i."clubId"=$1 AND i.status=\'PENDING\' AND i."revokedAt" IS NULL',[clubId])).rows,
    findFirst:async({where})=>one('SELECT * FROM "ClubInvitation" WHERE id=$1 AND "clubId"=$2',[where.id,where.clubId]),
    updateMany:async({where,data})=>db.query('UPDATE "ClubInvitation" SET status=$1,"revokedAt"=$2 WHERE "clubId"=$3 AND status=\'PENDING\' AND email=$4',[data.status,data.revokedAt,where.clubId,where.OR[0].email]),
    update:async({where,data})=>update('ClubInvitation',where.id,data),

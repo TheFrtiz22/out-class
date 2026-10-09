@@ -33,6 +33,8 @@ function ensureCurrentWorkflows(value: DemoState) {
   value.recruitingFlags ??= []
   value.recruitingRuleAudit ??= []
   value.interviews ??= []
+  value.recruitmentOffers ??= value.applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:new Date(),expiresAt:new Date(Date.now()+30*86400000)}))
+  value.offerAudit ??= []
 }
 function ensurePresentation(value: DemoState) {
   ensureCurrentWorkflows(value)
@@ -235,6 +237,7 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
       const application = joinedApplication(a.id)
       return {
         ...application,
+        recruitmentOffer: demoStore.get().recruitmentOffers.find(o=>o.applicationId===a.id) ?? null,
         club: { ...application.club, applicationOpen: application.club.claimed, applicationDeadline: application.club.deadline, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
         bookings: application.bookings.map(booking => ({
           ...booking,

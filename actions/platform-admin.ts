@@ -1,4 +1,6 @@
 "use server";
+import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
+import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { z } from "zod";
 import {
   platformResources,
@@ -607,15 +609,12 @@ export async function changePlatformResource(input: unknown, reason: string) {
           select: { email: true },
         });
         if (person)
-          await tx.clubInvitation.updateMany({
-            where: {
+          await revokeClubInvitations(tx, {
               clubId: data.clubId,
               OR: [{ email: person.email.toLowerCase() }, { schoolIdentity: { userId: data.userId } }],
               acceptedAt: null,
               revokedAt: null,
-            },
-            data: { revokedAt: new Date() },
-          });
+            }, actor.id, justification, true);
         break;
       }
       case "question": {
@@ -652,12 +651,9 @@ export async function changePlatformResource(input: unknown, reason: string) {
         break;
       }
       case "application": {
-        const result = await tx.application.updateMany({
-          where: { id: data.id, status: data.expectedStatus },
-          data: { status: data.status },
-        });
-        if (result.count !== 1)
-          throw new Error("Application changed. Reload before deciding.");
+        const application = await tx.application.findUnique({ where: { id: data.id } });
+        if (!application) throw Error("Application unavailable.");
+        await publishRecruitmentDecision(tx, { clubId: application.clubId, applicationId: data.id, expectedStatus: data.expectedStatus, status: data.status }, actor.id);
         targetId = data.id;
         break;
       }
