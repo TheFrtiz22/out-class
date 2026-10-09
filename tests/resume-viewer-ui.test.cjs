@@ -4,7 +4,7 @@ const flush = () => new Promise(r => setImmediate(r));
 const nodes = n => !n || typeof n !== 'object' ? [] : Array.isArray(n) ? n.flatMap(nodes) : [n, ...nodes(n.props?.children)];
 const text = n => typeof n === 'string' || typeof n === 'number' ? String(n) : Array.isArray(n) ? n.map(text).join('') : n?.props ? text(n.props.children) : '';
 const button = (t, label) => nodes(t).find(n => n.type === 'Button' && text(n) === label);
-function ui(api) {
+function ui(api, options={}) {
   const slots = [], effects = [], cleanups = []; let index = 0, poll;
   const changed = (a,b) => !a || b.some((v,i) => v !== a[i]);
   const react = {
@@ -19,11 +19,16 @@ function ui(api) {
   const previousFetch=global.fetch; global.fetch=()=>new Promise(()=>{});
   const code=ts.transpileModule(fs.readFileSync('components/interview-resume-viewer.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const m={exports:{}}, h=harness();
-  new Function('require','module','exports',code)(n=>n==='react'?react:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
+  class Resource { key='actor-context'; getPdf(){return options.pdf ? Promise.resolve(options.pdf) : new Promise(()=>{})} invalidate(){} }
+  new Function('require','module','exports',code)(n=>n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   let lost=0;
   const scope={clubId:'club',applicationId:'app',roundId:'round'};
-  return { render(){index=0;const tree=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
+  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
 }
+
+test('code warming mounts no authorized viewer and performs no document/comment reads until opening',async()=>{
+ let calls=0;const h=ui({getInterviewResumeAnnotations:async()=>{calls++;return{annotations:[]}}});assert.equal(h.warm(),null);await flush();assert.equal(calls,0);h.render();await flush();assert.equal(calls,1);h.close();
+});
 test('failed comment saves retain text and creation ID; explicit retry saves once without replacing shared peers',async()=>{
   let fail=true; const calls=[], rows=[{id:'peer',kind:'GENERAL_NOTE',comment:'Peer comment',anchor:null,revision:0,authorName:'Other panelist',canEdit:false}];
   const api={getInterviewResumeAnnotations:async()=>({annotations:rows}),saveInterviewResumeAnnotation:async input=>{calls.push(input);if(fail)throw Error('Offline');rows.push({...input.content,id:input.id,revision:0,authorName:'Me',canEdit:true});},deleteInterviewResumeAnnotation:async()=>{throw Error('unexpected')}};
@@ -46,13 +51,22 @@ test('lazy viewer failure stays inside overlay and retry creates a fresh loader 
   const react={Component:require('react').Component,useState:()=>[attempt,fn=>attempt=fn(attempt)],useMemo:fn=>{if(lastAttempt!==attempt){loader=fn();lastAttempt=attempt;}return loader;}};
   const code=ts.transpileModule(fs.readFileSync('components/interview-resume-loader.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const m={exports:{}};
-  new Function('require','module','exports',code)(n=>n==='react'?react:n==='next/dynamic'?{default:()=>{created++;return function LazyViewer(){};}}:n==='@/components/ui/button'?{Button:'Button'}:require(n),m,m.exports);
+  new Function('require','module','exports',code)(n=>n==='react'?react:n.endsWith('.css')?{}:n==='next/dynamic'?{default:()=>{created++;return function LazyViewer(){};}}:n==='@/components/ui/button'?{Button:'Button'}:require(n),m,m.exports);
   const props={scope:{clubId:'c',applicationId:'a',roundId:'r'},documentId:'version',isDemo:false,onAccessLost(){}};
   const first=m.exports.InterviewResumeLoader(props), boundary=new first.type(first.props);
   boundary.state=first.type.getDerivedStateFromError(new Error('Chunk unavailable'));
   const fallback=boundary.render(); assert.match(text(fallback),/question draft is preserved/);
   button(fallback,'Retry viewer').props.onClick(); const second=m.exports.InterviewResumeLoader(props);
   assert.equal(created,2); assert.notEqual(first.props.children.type,second.props.children.type);assert.equal(second.props.children.props.documentId,'version');
+});
+
+test('single-page toolbar has zoom/download but no pagination or routine access refresh; multipage retains navigation',async()=>{
+ for(const numPages of [1,3]){
+  let calls=0;const h=ui({getInterviewResumeAnnotations:async()=>{calls++;return{annotations:[]}}},{pdf:{numPages}});h.render();await flush();h.render();await flush();const t=h.render();
+  assert.equal(nodes(t).filter(n=>n.props?.['aria-label']==='Résumé page').length,numPages>1?1:0);
+  assert.equal(nodes(t).filter(n=>n.props?.['aria-label']==='Previous page').length,numPages>1?1:0);
+  assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Résumé zoom'));assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Download original PDF'));assert.equal(button(t,'Refresh access'),undefined);assert.equal(button(t,'Retry access'),undefined);assert.equal(calls,1);h.close();
+ }
 });
 test('management shows moderation only for active explicit presidents/VPs, independent of admin scheduling rights', () => {
   const h=harness(), code=ts.transpileModule(fs.readFileSync('components/interview-management-tabs.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
