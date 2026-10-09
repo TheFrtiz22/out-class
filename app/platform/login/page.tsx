@@ -28,7 +28,7 @@ export default function PlatformLogin() {
     }
   }
     if (loading) return <main className="p-8" role="status">Checking your sign-in…</main>
-  if (!user) return <main className="mx-auto max-w-lg space-y-5 p-8"><PageHeader title="Sign in before entering Admin" description="Use your normal OutClass account first, then verify your password and authenticator for Admin." /><Link className="underline" href="/?view=auth&next=%2Fplatform">Sign in to OutClass</Link></main>
+  if (!user) return <main className="mx-auto max-w-lg space-y-5 p-8"><PageHeader title="Sign in before entering Admin" description="Use your normal OutClass account first, then verify your password and authenticator for Admin." /><Link className="underline" href="/login?next=%2Fplatform">Sign in to OutClass</Link></main>
   if (isImpersonating) return <main className="p-8">Exit impersonation above to restore platform administration.</main>
   if (demo.isDemoEnabled)
     return (

@@ -1,4 +1,6 @@
-import { notFound, redirect } from "next/navigation";
+import { adminPageLoad } from "@/utils/admin-page";
+import { AdminRecovery } from "@/components/admin/admin-recovery";
+import { notFound } from "next/navigation";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 import { adminNavigation } from "@/lib/admin-navigation";
 import { PageHeader } from "@/components/product/page-header";
@@ -10,7 +12,8 @@ import { AdminSettings } from "@/components/admin/admin-settings";
 import { AdminPermissions } from "@/components/admin/admin-permissions";
 import type { PlatformResource } from "@/actions/platform-admin";
 export default async function AdminSection({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  try { await requirePlatformAdmin(); } catch { redirect("/platform/login"); }
+  const result = await adminPageLoad("/platform/[section]", requirePlatformAdmin);
+  if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   const { section } = await params, search = await searchParams;
   const entry = adminNavigation.find(i => i.id === section);
   if (!entry) notFound();

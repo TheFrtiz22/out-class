@@ -1,3 +1,4 @@
+import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
 import { createHash, createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { createClient as providerClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
@@ -8,18 +9,19 @@ export const elevationHash = (token: string) => createHash("sha256").update(toke
 export async function authSessionId() {
   const client = await createClient(await cookies());
   const { data, error } = await client.auth.getClaims();
-  if (error || typeof data?.claims.session_id !== "string") throw Error("Verified sign-in required.");
+  if (error && !providerAuthFailure(error)) throw error;
+  if (error || typeof data?.claims.session_id !== "string") throw new AdminAccessError("ADMIN_AUTH_REQUIRED", "Verified sign-in required.");
   return data.claims.session_id;
 }
 export async function requireAdminElevation(actorId: string) {
   const token = (await cookies()).get(ADMIN_ELEVATION_COOKIE)?.value;
-  if (!token || !/^[a-f0-9]{64}$/.test(token)) throw Error("Fresh Admin authentication required.");
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", "Fresh Admin authentication required.");
   const row = await prisma.adminElevation.findUnique({ where: { tokenHash: elevationHash(token) } });
   const sessionId = await authSessionId();
-  if (!validAdminElevation(row, actorId, sessionId)) throw Error("Admin elevation expired or revoked. Authenticate again.");
+  if (!validAdminElevation(row, actorId, sessionId)) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", "Admin elevation expired or revoked. Authenticate again.");
   // Access JWTs can outlive provider logout. A closed Auth session cannot retain Admin.
   const live = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid AND user_id=${actorId}::uuid AND (not_after IS NULL OR not_after>clock_timestamp())`;
-  if (!live.length) throw Error("Authentication session ended. Authenticate again.");
+  if (!live.length) throw new AdminAccessError("ADMIN_SESSION_EXPIRED", "Authentication session ended. Authenticate again.");
   return row!;
 }
 function key() {
