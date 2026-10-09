@@ -356,6 +356,9 @@
   background: var(--background);
   border-block: 1px solid var(--border);
 }
+.oc-final-invitation h2 {
+  margin-inline: auto;
+}
 .oc-final-invitation > p[data-motion="body"] {
   margin: 20px 0 26px;
   font-size: var(--oc-size-14);
@@ -366,6 +369,7 @@
 }
 .oc-invitation-note {
   margin-top: 18px;
+  margin-inline: auto;
   font-size: var(--oc-size-11);
   color: var(--muted-foreground);
 }
@@ -374,9 +378,13 @@
   margin: auto;
   padding: 36px 40px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  text-align: center;
   gap: 28px;
+}
+.oc-public-footer > div > a {
+  display: inline-flex;
 }
 .oc-public-footer p {
   font-size: var(--oc-size-11);
@@ -386,6 +394,7 @@
 .oc-public-footer nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 20px;
   font-size: var(--oc-size-12);
   color: var(--muted-foreground);
@@ -465,6 +474,7 @@
 }
 .oc-photo-credit {
   margin: 0 auto;
+  text-align: center;
   max-width: 1240px;
   padding: 0 40px 28px;
   font-size: var(--oc-size-10);
