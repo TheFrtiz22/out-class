@@ -55,7 +55,7 @@ const adminViewIds: ViewId[] = [
 
 /** Map URL error codes from OAuth / auth callback redirects to user-facing messages. */
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  "uva_only": "Please sign in using your UVA Microsoft account (@virginia.edu).",
+  "uva_only": "Please sign in using your UVA email (@virginia.edu).",
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 

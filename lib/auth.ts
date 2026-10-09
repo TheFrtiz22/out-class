@@ -35,7 +35,7 @@ export function authEntryHref(route: "/login" | "/signup", query: string): strin
 }
 
 export function authenticationError(code: unknown): string {
-  if (code === "uva_only") return "Please sign in using your UVA Microsoft account (@virginia.edu)."
+  if (code === "uva_only") return "Please sign in using your UVA email (@virginia.edu)."
   if (code === "auth-code-expired") return "Your sign-in link has expired. Please try again."
   return ""
 }

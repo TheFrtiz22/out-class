@@ -112,6 +112,7 @@ test('switching login/signup retains the exact return query; signup completion r
 function signup(auth, window, state = {}) {
   const values = []; let cursor = 0
   const C = load('components/auth/signup-page-view.tsx', {
+    "@/lib/auth-features": { MICROSOFT_AUTH_ENABLED: state.microsoftEnabled === true },
     react: { useState: value => { const i = cursor++; if (!(i in values)) values[i] = value; return [values[i], next => { values[i] = next }] } },
     '@/contexts/auth-context': { useAuth: () => ({ isImpersonating: false, ...state }) },
     '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false, ...state }) },
@@ -120,18 +121,20 @@ function signup(auth, window, state = {}) {
   }, window).SignupPageView
   return { render: () => { cursor = 0; return C({ initialUser: null }) } }
 }
-test('signup Microsoft authentication uses existing Azure provider and resumes signup with claim context', async () => {
-  let payload
-  const h = signup({ signInWithOAuth: async input => { payload = input; return { error: null } } }, {
-    location: { origin: 'https://outclass.test', search: '?next=%2Fclub-claims%2Fa&intent=leader' },
-  })
+test('enabled signup Microsoft authentication uses guarded route and preserves claim context', async () => {
+  const window = { location: { origin: 'https://outclass.test', search: '?next=%2Fclub-claims%2Fa&intent=leader', href: '' } }
+  const h = signup({}, window, { microsoftEnabled: true })
   await nodes(h.render()).find(n => n.props?.className === 'oc-login-uva').props.onClick()
-  assert.equal(payload.provider, 'azure')
-  assert.equal(payload.options.scopes, 'email')
-  const callback = new URL(payload.options.redirectTo)
-  assert.equal(callback.pathname, '/auth/callback')
-  assert.equal(callback.searchParams.get('next'), '/signup?intent=leader&next=%2Fclub-claims%2Fa')
+  const target = new URL(window.location.href, window.location.origin)
+  assert.equal(target.pathname, '/auth/microsoft')
+  assert.equal(target.searchParams.get('next'), '/signup?intent=leader&next=%2Fclub-claims%2Fa')
   assert.equal(nodes(h.render()).find(n => n.props?.className === 'oc-login-uva').props.disabled, true)
+})
+test('default signup exposes onboarding without any Microsoft option or provider loading state', () => {
+  const tree = nodes(signup({ signInWithOAuth() { assert.fail('OAuth must not run') } }, {}).render())
+  assert.ok(!tree.some(n => n.props?.className === 'oc-login-uva'))
+  assert.ok(tree.some(n => n.type === 'StudentOnboardingWizard'))
+  assert.equal(tree.find(n => n.type === 'fieldset').props.disabled, false)
 })
 test('signup blocks identity changes in support/demo modes', () => {
   for (const state of [{ isImpersonating: true }, { isDemoEnabled: true }]) {

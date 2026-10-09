@@ -7,8 +7,8 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
 import { LoginBrandPanel } from "./login-brand-panel"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/utils/supabase/client"
 import { authEntryHref, signupReturnPath } from "@/lib/auth"
+import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 import type { User } from "@supabase/supabase-js"
 import "./login.css"
 
@@ -18,7 +18,7 @@ export function SignupPageView({ initialUser, initialError = "" }: { initialUser
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(initialError)
   async function continueWithUva() {
-    if (busy || isImpersonating || demo.isDemoEnabled) return
+    if (!MICROSOFT_AUTH_ENABLED || busy || isImpersonating || demo.isDemoEnabled) return
     setBusy(true)
     setError("")
     try {
@@ -26,11 +26,7 @@ export function SignupPageView({ initialUser, initialError = "" }: { initialUser
       const next = signupReturnPath(query.get("next"))
       query.delete("next")
       if (next !== "/") query.set("next", next)
-      const { error } = await createClient().auth.signInWithOAuth({
-        provider: "azure",
-        options: { scopes: "email", redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(authEntryHref("/signup", query.toString()))}` },
-      })
-      if (error) throw error
+      window.location.href = `/auth/microsoft?next=${encodeURIComponent(authEntryHref("/signup", query.toString()))}`
     } catch {
       setError("Unable to start Microsoft sign-in. Please try again.")
       setBusy(false)
@@ -45,7 +41,7 @@ export function SignupPageView({ initialUser, initialError = "" }: { initialUser
       <div className="oc-signup-content">
         <p className="oc-login-auth-description">For students and club leaders. Create your profile, then discover your campus.</p>
         <p className="oc-login-auth-description">Leading a club? Use your club’s invitation or claim its organization page after signing up. Club access requires verification and approval.</p>
-        {!initialUser && <><Button className="oc-login-uva" disabled={busy} onClick={() => void continueWithUva()}>{busy ? "Redirecting…" : "Continue with UVA"}</Button><p className="oc-login-auth-description">Or create an account with your UVA email below.</p></>}
+        {MICROSOFT_AUTH_ENABLED && !initialUser && <><Button className="oc-login-uva" disabled={busy} onClick={() => void continueWithUva()}>{busy ? "Redirecting…" : "Continue with UVA"}</Button><p className="oc-login-auth-description">Or create an account with your UVA email below.</p></>}
         {error && <p role="alert" className="oc-login-error">{error}</p>}
         <fieldset disabled={busy}><StudentOnboardingWizard embedded initialUser={initialUser}
           onSignIn={() => { window.location.href = authEntryHref("/login", window.location.search) }}

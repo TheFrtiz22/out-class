@@ -40,9 +40,23 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   assert.ok(signupHtml.includes('Your campus opportunities start here.'));
   assert.ok(signupHtml.includes('One profile. Every opportunity. Join OutClass to discover organizations, apply, and get involved.'));
   assert.match(signupHtml,/autocomplete="new-password"/i);
-  const login=await visitor.request('/login');assert.equal(login.status,200);assert.ok((await login.text()).includes('Welcome back.'));
+  assert.ok(!signupHtml.includes('oc-login-uva')&&!signupHtml.includes('Continue with UVA'));
+  const login=await visitor.request('/login'),loginHtml=await login.text();assert.equal(login.status,200);assert.ok(loginHtml.includes('Welcome back.'));
+  assert.ok(!loginHtml.includes('oc-login-uva')&&!loginHtml.includes('Continue with UVA'));
+  assert.match(loginHtml,/autocomplete="current-password"/i);
   await assertEntryRedirect(visitor,'/?signup=student&next=%2Finvitations%2Fpublic-test','/signup?next=%2Finvitations%2Fpublic-test');
   const platform=await visitor.request('/platform/login');assert.equal(platform.status,200);assert.ok((await platform.text()).includes('Sign in before entering Admin'));
+ });
+ await scenario('Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved',async()=>{
+  for(const actor of [new Actor(config),admin]){
+   for(const route of ['/auth/microsoft','/auth/microsoft?enabled=true&next=%2Fsignup','/auth/callback?provider=azure&code=disabled-test']){
+    const response=await actor.request(route);assert.equal(response.status,403);
+    assert.equal(response.headers.get('location'),null);
+    assert.match((await response.json()).error,/Use email sign-in/);
+   }
+  }
+  const schools=await call(admin,'platform-organization-onboarding','getOrganizationOnboardingSchools');
+  assert.ok(schools.length>0);
  });
  await scenario('OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login',async()=>{
   const actor=new Actor(config),email=`otp${suffix}@virginia.edu`,password='Local-otp-only!2026';

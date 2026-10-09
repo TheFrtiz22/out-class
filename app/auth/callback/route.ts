@@ -3,10 +3,14 @@ import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { isUvaEmail, loginReturnPath, authFailurePath } from '@/lib/auth'
+import { MICROSOFT_AUTH_ENABLED } from '@/lib/auth-features'
 
 export async function GET(request: Request) {
   if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Exit impersonation before changing authentication." }, { status: 403 })
   const { searchParams, origin } = new URL(request.url)
+  if (!MICROSOFT_AUTH_ENABLED && searchParams.get('provider') === 'azure') {
+    return NextResponse.json({ error: "This sign-in method is unavailable. Use email sign-in." }, { status: 403, headers: { "Cache-Control": "private, no-store" } })
+  }
   const code = searchParams.get('code')
   const next = loginReturnPath(searchParams.get('next'))
 

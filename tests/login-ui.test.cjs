@@ -39,11 +39,12 @@ function hooks() {
 const nodes = node => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(nodes) : [node, ...nodes(node.props?.children)]
 const submit = { preventDefault() {} }
 
-function setup(auth = {}, props = {}, search = "") {
+function setup(auth = {}, props = {}, search = "", microsoftEnabled = false) {
   const h = hooks()
   const window = { location: { origin: "http://localhost:3000", search, href: "" } }
   const C = load("components/views/auth-view.tsx", {
     react: h.react,
+    "@/lib/auth-features": { MICROSOFT_AUTH_ENABLED: microsoftEnabled },
     "@/contexts/auth-context": { useAuth: () => ({ isImpersonating: false }) },
     "@/utils/supabase/client": { createClient: () => ({ auth }) },
   }, window).AuthView
@@ -97,16 +98,18 @@ test("password login preserves normalized credentials, pending state, provider e
   assert.equal(window.location.href, "/interviews/book")
 })
 
-test("UVA button retains Azure OAuth, scopes, callback URL and redirect loading", async () => {
-  let payload
-  const { render } = setup({ signInWithOAuth: async input => { payload = input; return { error: null } } }, {}, "?next=%2Fclub-access%2Fexample")
+test("enabled Microsoft login uses the guarded server route and retains return routing", async () => {
+  const { render, window } = setup({}, {}, "?next=%2Fclub-access%2Fexample", true)
   await render().onMicrosoftLogin()
-  assert.deepEqual(payload, { provider: "azure", options: { scopes: "email", redirectTo: "http://localhost:3000/auth/callback?next=%2Fclub-access%2Fexample" } })
+  assert.equal(window.location.href, "/auth/microsoft?next=%2Fclub-access%2Fexample")
   assert.equal(render().microsoftLoading, true)
-  const failed = setup({ signInWithOAuth: async () => { throw Error("Unavailable") } })
-  await failed.render().onMicrosoftLogin()
-  assert.equal(failed.render().microsoftLoading, false)
-  assert.equal(failed.render().error, "Unable to start Microsoft sign-in. Please try again.")
+})
+
+test("disabled Microsoft login cannot initiate OAuth even when its handler is called", async () => {
+  const { render, window } = setup({ signInWithOAuth() { assert.fail("Browser OAuth must not run") } })
+  await render().onMicrosoftLogin()
+  assert.equal(window.location.href, "")
+  assert.equal(render().microsoftLoading, false)
 })
 
 test("email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect", async () => {
@@ -157,7 +160,7 @@ test("expired OTP and identity mismatch cannot redirect, and mismatched sessions
 
 test("auth presentation keeps collapsed controls inert and callback errors announced", () => {
   const h = hooks()
-  const C = load("components/auth/login-auth-panel.tsx", { react: h.react, "./email-login-form": { EmailLoginForm: "EmailLoginForm" } }).LoginAuthPanel
+  const C = load("components/auth/login-auth-panel.tsx", { react: h.react, "@/lib/auth-features": { MICROSOFT_AUTH_ENABLED: true }, "./email-login-form": { EmailLoginForm: "EmailLoginForm" } }).LoginAuthPanel
   const p = setup({}, { initialError: "Microsoft sign-in failed." }).render()
   const tree = nodes(C(p))
   const reveal = tree.find(n => n.props?.id === "login-email-fields")
@@ -181,4 +184,12 @@ test("public login cannot enter a demo and account creation retains its existing
     assert.equal(entered, undefined)
     assert.equal(created, true)
   }
+})
+
+test("default login renders email immediately and omits Microsoft controls, branding and the email toggle", () => {
+  const h = hooks()
+  const C = load("components/auth/login-auth-panel.tsx", { react: h.react, "@/lib/auth-features": { MICROSOFT_AUTH_ENABLED: false }, "./email-login-form": { EmailLoginForm: "EmailLoginForm" } }).LoginAuthPanel
+  const tree = nodes(C(setup().render()))
+  assert.equal(tree.filter(n => n.type === "EmailLoginForm").length, 1)
+  assert.ok(!tree.some(n => n.props?.className === "oc-login-uva" || n.props?.className === "oc-login-email-toggle" || n.props?.id === "login-email-fields"))
 })
