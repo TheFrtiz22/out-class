@@ -92,7 +92,12 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
   </div>;
 }
 
-export default function InterviewResumeViewer({ scope, documentId, isDemo, onAccessLost, resource: sharedResource, initialPage = 1 }: { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; resource?: InterviewResumeResource; initialPage?: number }) {
+type ViewerProps = { scope: InterviewScope; documentId: string; isDemo: boolean; onAccessLost: () => void; resource?: InterviewResumeResource; initialPage?: number; preloadOnly?: boolean };
+/** Warming loads code only; authorization and document state belong to the visible viewer. */
+export default function InterviewResumeViewer(props: ViewerProps) {
+  return props.preloadOnly ? null : <AuthorizedResumeViewer {...props} />;
+}
+function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resource: sharedResource, initialPage = 1 }: ViewerProps) {
   const { user } = useAuth();
   const request = useMemo(() => ({ ...scope, documentId }), [scope, documentId]);
   const [demoSource, setDemoSource] = useState("/demo/sample-resume.pdf");
@@ -137,7 +142,7 @@ export default function InterviewResumeViewer({ scope, documentId, isDemo, onAcc
     let current = true;
     setPdfError(""); setPdf(null);
     (async () => {
-      const document = await resource.getPdf(); if (current) { setPage(p => Math.max(1, Math.min(document.numPages, p))); setPdf(document); }
+      const document = await resource.getPdf(() => import("pdfjs-dist")); if (current) { setPage(p => Math.max(1, Math.min(document.numPages, p))); setPdf(document); }
     })().catch(error => { if (current) { if (error instanceof ResumeAccessError) { setAllowed(false); setAnnotations([]); setDraft(null); setActive(undefined); resource.invalidate(); setStatus("Access could not be verified. Retry to check your membership and connection."); accessLost.current(); } setPdfError("Text viewing is unavailable for this PDF. It may be encrypted, damaged or unsupported. You can retry or download the original and keep general résumé notes."); } });
     return () => { current = false; };
   }, [currentAccess, resource, retry]);

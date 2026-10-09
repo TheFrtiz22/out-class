@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { InterviewResumeLoader as InterviewResumeViewer, warmInterviewResumeViewer } from "@/components/interview-resume-loader";
+import { InterviewResumeLoader as InterviewResumeViewer } from "@/components/interview-resume-loader";
 import { getInterviewApplicantPanel, pinInterviewResume } from "@/lib/workspace-api";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -26,6 +26,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
   const [error, setError] = useState("");
   const [resumeError, setResumeError] = useState("");
   const [open, setOpen] = useState(false);
+  const [warm, setWarm] = useState(false);
   const [retry, setRetry] = useState(0);
   const [loading, setLoading] = useState(!initialPanel);
   const [imageFailed, setImageFailed] = useState(false);
@@ -56,7 +57,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
     resource.getBlob().then(() => { if (current) { setUrl(resource.objectUrl); setResumeError(""); } }).catch(() => { if (current) { setResumeError("Résumé unavailable. Retry to check your current access."); setUrl(""); setOpen(false); } });
     return () => { current = false; unsubscribe(); resource.invalidate(); };
   }, [resource]);
-  useEffect(() => { if (!url) return; const timer = setTimeout(warmInterviewResumeViewer, 250); return () => clearTimeout(timer); }, [url]);
+  useEffect(() => { setWarm(false); if (!url) return; const timer = setTimeout(() => setWarm(true), 250); return () => clearTimeout(timer); }, [url]);
   const fallback = useMemo(() => resource && url ? <InterviewResumePlaceholder resource={resource} page={initialPage} /> : <p role="status">Loading résumé…</p>, [resource, url, initialPage]);
   const name = panel?.profile ? `${panel.profile.firstName} ${panel.profile.lastName}` : "Profile not provided";
   const scholarships = scholarNames(panel?.profile?.scholarStatus);
@@ -69,6 +70,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
         <div className="min-w-0"><h1>{name}</h1>{!!scholarships.length && <ul aria-label="Scholar status" className="oc-applicant-scholars">{scholarships.map((s,i) => <li key={`${s}-${i}`}>{s}</li>)}</ul>}</div>
       </div>
       <div className="oc-resume-document">
+      {warm && resource && <div hidden aria-hidden="true"><InterviewResumeViewer preloadOnly scope={scope} documentId={documentId} isDemo={isDemoEnabled} resource={resource} onAccessLost={() => {}} /></div>}
       {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>

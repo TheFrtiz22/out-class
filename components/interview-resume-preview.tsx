@@ -16,7 +16,7 @@ export default function InterviewResumePreview({ resource, name, onExpand, focus
     const rendering = new Set<import("pdfjs-dist").RenderTask>();
     setError(false); setReady(false);
     void (async () => {
-      const pdf = await resource.getPdf(), first = await pdf.getPage(1);
+      const pdf = await resource.getPdf(() => import("pdfjs-dist")), first = await pdf.getPage(1);
       if (!current) return;
       const firstViewport = first.getViewport({ scale: 1 });
       const sheets = Array.from({ length: pdf.numPages }, (_, index) => {

@@ -23,8 +23,12 @@ function ui(api, options={}) {
   new Function('require','module','exports',code)(n=>n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   let lost=0;
   const scope={clubId:'club',applicationId:'app',roundId:'round'};
-  return { render(){index=0;const tree=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
+  return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
 }
+
+test('code warming mounts no authorized viewer and performs no document/comment reads until opening',async()=>{
+ let calls=0;const h=ui({getInterviewResumeAnnotations:async()=>{calls++;return{annotations:[]}}});assert.equal(h.warm(),null);await flush();assert.equal(calls,0);h.render();await flush();assert.equal(calls,1);h.close();
+});
 test('failed comment saves retain text and creation ID; explicit retry saves once without replacing shared peers',async()=>{
   let fail=true; const calls=[], rows=[{id:'peer',kind:'GENERAL_NOTE',comment:'Peer comment',anchor:null,revision:0,authorName:'Other panelist',canEdit:false}];
   const api={getInterviewResumeAnnotations:async()=>({annotations:rows}),saveInterviewResumeAnnotation:async input=>{calls.push(input);if(fail)throw Error('Offline');rows.push({...input.content,id:input.id,revision:0,authorName:'Me',canEdit:true});},deleteInterviewResumeAnnotation:async()=>{throw Error('unexpected')}};

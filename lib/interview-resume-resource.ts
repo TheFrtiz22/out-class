@@ -2,6 +2,7 @@ import type { PDFDocumentLoadingTask, PDFDocumentProxy } from "pdfjs-dist";
 import type { InterviewScope } from "@/lib/interview-access";
 
 export type ResumeFrame = { page: number; zoom: number; width: number; height: number; canvas: HTMLCanvasElement; textNodes: Node[]; text: string };
+export type ResumePdfLibraryLoader = () => Promise<typeof import("pdfjs-dist")>;
 export class ResumeAccessError extends Error {}
 
 /** Owned by one mounted, authenticated interview context. Never a shared or persistent cache. */
@@ -37,12 +38,12 @@ export class InterviewResumeResource {
     })().catch(error => { if (epoch === this.generation) this.blobPromise = undefined; throw error; });
     return this.blobPromise;
   }
-  getPdf(): Promise<PDFDocumentProxy> {
+  getPdf(loadLibrary: ResumePdfLibraryLoader): Promise<PDFDocumentProxy> {
     if (this.pdfPromise) return this.pdfPromise;
     const epoch = this.generation;
     this.pdfPromise = (async () => {
       const blob = await this.getBlob();
-      const [buffer, library] = await Promise.all([blob.arrayBuffer(), import("pdfjs-dist")]);
+      const [buffer, library] = await Promise.all([blob.arrayBuffer(), loadLibrary()]);
       if (epoch !== this.generation) throw new Error("Document context changed");
       library.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs";
       const task = library.getDocument({ data: new Uint8Array(buffer), cMapUrl: "/pdfjs/cmaps/", cMapPacked: true, standardFontDataUrl: "/pdfjs/standard_fonts/", wasmUrl: "/pdfjs/wasm/", iccUrl: "/pdfjs/iccs/" });

@@ -1,4 +1,4 @@
-﻿const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
 const compile=file=>ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 const g={exports:{}};new Function('module','exports',compile('lib/resume-preview-gesture.ts'))(g,g.exports);
 const host=()=>({clientWidth:300,clientHeight:400,scrollTop:0,scrollLeft:0,getBoundingClientRect:()=>({left:10,top:20})});
@@ -15,7 +15,7 @@ function resourceHarness(){let fetched=0,parsed=0,destroyed=0,denied=false,parse
  const library={GlobalWorkerOptions:{},getDocument:()=>{parsed++;return{promise:parseFails?Promise.reject(Error('damaged')):Promise.resolve(pdf),destroy:async()=>destroyed++}}};
  new Function('require','module','exports','fetch','URL',compile('lib/interview-resume-resource.ts'))(n=>n==='pdfjs-dist'?library:require(n),m,m.exports,async(path,opts)=>{fetched++;assert.equal(opts.cache,'no-store');return{ok:!denied,blob:async()=>new Blob(['fictional PDF'])}},URLmock);
  const scope={clubId:'club',applicationId:'candidate',roundId:'round'};
- return{newResource:(actor='actor',doc='version',demo=false)=>new m.exports.InterviewResumeResource(actor,scope,doc,demo),get fetched(){return fetched},get parsed(){return parsed},get destroyed(){return destroyed},revoked,pdf,deny:v=>denied=v,parseFail:v=>parseFails=v};
+ return{newResource:(actor='actor',doc='version',demo=false)=>{const r=new m.exports.InterviewResumeResource(actor,scope,doc,demo);const get=r.getPdf.bind(r);r.getPdf=()=>get(async()=>library);return r},get fetched(){return fetched},get parsed(){return parsed},get destroyed(){return destroyed},revoked,pdf,deny:v=>denied=v,parseFail:v=>parseFails=v};
 }
 test('preview and repeated expansions share one download, parser and worker; invalidation revokes bytes and releases render caches',async()=>{
  const h=resourceHarness(),r=h.newResource();const [a,b]=await Promise.all([r.getPdf(),r.getPdf()]);assert.equal(a,b);await r.getBlob();await r.getPdf();assert.equal(h.fetched,1);assert.equal(h.parsed,1);
