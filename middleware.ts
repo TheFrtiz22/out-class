@@ -4,6 +4,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  // Protect both the presenter route and its sample assets before static-file shortcuts.
+  let path = request.nextUrl.pathname
+  try { path = decodeURIComponent(path) } catch { return new NextResponse(null, { status: 400 }) }
+  if (path === "/preview" || path.startsWith("/preview/") || path === "/demo" || path.startsWith("/demo/")) {
+    if (!["GET", "HEAD"].includes(request.method) || request.cookies.get(DEMO_COOKIE)?.value !== "1" || request.cookies.has(PLATFORM_VIEW_COOKIE)) {
+      return new NextResponse(null, { status: 404, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } })
+    }
+    return createClient(request, { demoOnly: true })
+  }
   // The internal delivery route checks its independent bearer secret. Cron needs no Supabase session refresh.
   if (request.nextUrl.pathname === "/api/internal/invitation-delivery") return NextResponse.next()
   // Metadata routes contain only public content and need no session refresh.

@@ -172,13 +172,13 @@ test("auth presentation keeps collapsed controls inert and callback errors annou
   assert.equal(nodes(form).find(n => n.type === "Button").props.disabled, true)
 })
 
-test("demo and account creation retain the caller's existing destinations", () => {
-  for (const [initialRole, expected] of [["student", "student-dashboard"], ["leader", "leader-dashboard"]]) {
+test("public login cannot enter a demo and account creation retains its existing callback", () => {
+  for (const initialRole of ["student", "leader"]) {
     let entered, created = false
     const p = setup({}, { initialRole, onEnter: view => { entered = view }, onCreateAccount: () => { created = true } }).render()
-    p.onDemo()
+    assert.equal(p.onDemo, undefined)
     p.onCreateAccount()
-    assert.equal(entered, expected)
+    assert.equal(entered, undefined)
     assert.equal(created, true)
   }
 })

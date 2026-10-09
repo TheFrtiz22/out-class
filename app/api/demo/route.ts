@@ -11,7 +11,7 @@ async function access() {
   const {
     data: { user }, error,
   } = await client.auth.getUser()
-  return { ...getDemoAccess(error ? undefined : user?.email), enabled: jar.get(DEMO_COOKIE)?.value === "1" }
+  return { ...getDemoAccess(error || !user?.email_confirmed_at ? undefined : user.email), enabled: jar.get(DEMO_COOKIE)?.value === "1" }
 }
 export async function GET() {
   const state = await access()

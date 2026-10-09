@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { HeroFeatureStack } from "./hero-feature-stack"
 import type { LandingPerspective } from "./journey-content"
@@ -25,9 +25,6 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
                 {perspective === "student" ? "Create your profile" : "Explore club workspace"}
                 <ArrowRight size={16} aria-hidden="true" />
               </Button>
-              <a className="oc-hero-demo-link" href="/preview?view=student-dashboard">
-                Explore the demo <ArrowUpRight size={16} aria-hidden="true" />
-              </a>
             </div>
             <p className="oc-hero-audience">For UVA students and the clubs they’ll call home.</p>
           </div>

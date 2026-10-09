@@ -41,7 +41,7 @@ export function StudentWorkspacePreview() {
               <div className="oc-preview-section-label"><h3>Coming up</h3><CalendarDays size={15} aria-hidden="true" /></div>
               <div className="oc-preview-event"><span className="oc-preview-date">SEP<strong>24</strong></span><div><h4>Meet the team</h4><p>{example.consultingClub}</p><span>5:00 PM · On Grounds</span></div></div>
               <div className="oc-preview-event"><span className="oc-preview-date">SEP<strong>26</strong></span><div><h4>First-round interview</h4><p>Virginia Venture Fund</p><span>Choose your time</span></div></div>
-              <div className="oc-preview-discover"><span>Still exploring?</span><p>Find a club that shares your curiosity.</p><a href="/preview/?view=student-dashboard">Explore the student demo <ArrowUpRight size={14} aria-hidden="true" /></a></div>
+              <div className="oc-preview-discover"><span>Still exploring?</span><p>Find a club that shares your curiosity.</p><a href="#about">Explore how it works <ArrowUpRight size={14} aria-hidden="true" /></a></div>
             </section>
           </div>
         </div>

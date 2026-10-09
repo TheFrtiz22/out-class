@@ -61,7 +61,7 @@ export default async function RootLayout({
   const viewSession = cookieStore.has(PLATFORM_VIEW_COOKIE) ? await platformViewSession().catch(() => null) : null
   const { data: { user }, error: authError } = await getSessionUser()
   const target = viewSession ? await prisma.user.findUnique({ where: { id: viewSession.targetUserId }, select: { email: true, studentProfile: { select: { firstName: true, lastName: true } } } }) : null
-  const demoAllowed = !cookieStore.has(PLATFORM_VIEW_COOKIE) && canAccessDemo(authError ? undefined : user?.email)
+  const demoAllowed = !cookieStore.has(PLATFORM_VIEW_COOKIE) && canAccessDemo(authError || !user?.email_confirmed_at ? undefined : user.email)
   const demoEnabled = demoAllowed && cookieStore.get(DEMO_COOKIE)?.value === "1"
   const initialUser = !demoEnabled && (viewSession || !authError && user?.email_confirmed_at && user.email && isUvaEmail(user.email))
     ? await getCurrentUser().catch(() => null) : null

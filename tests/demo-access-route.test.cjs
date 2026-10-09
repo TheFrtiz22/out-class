@@ -24,7 +24,7 @@ test('deployed demo endpoint verifies identity, issues secure cookie, and reject
       '@/lib/demo/access': access,
     '@/lib/platform-view-as': { PLATFORM_VIEW_COOKIE: 'outclass-platform-view' },
       'next/headers': { cookies: async () => ({ has: () => false, get: () => ({ value: '1' }) }) },
-      '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { email } }, error: authError } } } }) },
+      '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { email, email_confirmed_at: '2026-10-08T12:00:00Z' } }, error: authError } } } }) },
     })
     const request = (enabled, origin = 'https://demo.example') => new NextRequest('https://demo.example/api/demo', { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ enabled }) })
     const on = await api.POST(request(true))

@@ -149,7 +149,6 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         onDifferentEmail={() => { setStep("email"); setEmailExpanded(true); setCode(""); setError(""); setNotice("") }}
         onBack={onBack}
         onCreateAccount={onCreateAccount}
-        onDemo={() => onEnter(initialRole === "leader" ? "leader-dashboard" : "student-dashboard")}
       />
     </div>
   )

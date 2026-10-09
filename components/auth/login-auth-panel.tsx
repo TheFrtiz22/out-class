@@ -22,11 +22,10 @@ type LoginAuthPanelProps = EmailLoginFormProps & {
   onDifferentEmail: () => void
   onBack: () => void
   onCreateAccount?: () => void
-  onDemo: () => void
 }
 
 export function LoginAuthPanel(props: LoginAuthPanelProps) {
-  const { step, emailExpanded, email, code, notice, error, loading, microsoftLoading, resendSeconds, onToggleEmail, onCodeChange, onMicrosoftLogin, onVerifyCode, onRequestCode, onDifferentEmail, onBack, onCreateAccount, onDemo } = props
+  const { step, emailExpanded, email, code, notice, error, loading, microsoftLoading, resendSeconds, onToggleEmail, onCodeChange, onMicrosoftLogin, onVerifyCode, onRequestCode, onDifferentEmail, onBack, onCreateAccount } = props
   const emailToggle = useRef<HTMLButtonElement>(null)
   return (
     <main className="oc-login-auth" aria-labelledby="login-auth-title">
@@ -58,7 +57,7 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
         {error && <p id="auth-error" role="alert" className="oc-login-error">{error}</p>}
         {onCreateAccount && <p className="oc-login-create">New to OutClass? <button type="button" onClick={onCreateAccount} className="oc-login-text-link">Create an account <ArrowRight size={14} /></button></p>}
       </div>
-      <footer className="oc-login-footer"><button type="button" onClick={onDemo} className="oc-login-text-link">Explore the demo <ArrowRight size={13} /></button><p>For University of Virginia students and club leaders.</p></footer>
+      <footer className="oc-login-footer"><p>For University of Virginia students and club leaders.</p></footer>
     </main>
   )
 }

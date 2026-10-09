@@ -1,6 +1,6 @@
 # Public school requests
 
-The shared public navigation links to `/request-school`. Anyone can submit interest as a student, club leader, or university administrator. The homepage’s existing Get Started action still opens the student onboarding modal (or the club experience for the selected club perspective); information pages link to `/?signup=student` to open that same student modal. Log In uses the existing `/login` route and its existing redirect handling.
+Footer links and informational-page invitations link to `/request-school`; Request Your School is absent from desktop and mobile top navigation. Anyone can submit interest as a student, club leader, or university administrator. The homepage’s existing Get Started action still opens the student onboarding modal (or the club experience for the selected club perspective); information pages link to `/?signup=student` to open that same student modal. Log In uses the existing `/login` route and its existing redirect handling.
 
 FAQ links to the expanded existing accessible accordion at `/uva#faq`. How It Works uses `/#about` with the existing sticky-header scroll offset. About remains `/about`.
 
