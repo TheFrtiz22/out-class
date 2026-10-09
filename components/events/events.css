@@ -97,6 +97,8 @@
   border-radius: 6px;
   background-color: #be8e61;
   background-image: url("/images/events/cork.svg");
+  background-size: 384px 384px;
+  background-repeat: repeat;
   box-shadow: inset 0 1px 8px #59341833;
 }
 .oc-flyer-grid {
