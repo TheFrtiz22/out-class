@@ -374,9 +374,10 @@
   color: var(--muted-foreground);
 }
 .oc-public-footer {
-  max-width: 1240px;
+  width: 100%;
   margin: auto;
   padding: 36px 40px;
+  background: var(--background);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -392,6 +393,7 @@
   color: var(--muted-foreground);
 }
 .oc-public-footer nav {
+  max-width: 1160px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -475,7 +477,8 @@
 .oc-photo-credit {
   margin: 0 auto;
   text-align: center;
-  max-width: 1240px;
+  width: 100%;
+  background: var(--background);
   padding: 0 40px 28px;
   font-size: var(--oc-size-10);
   line-height: var(--oc-leading-body);
