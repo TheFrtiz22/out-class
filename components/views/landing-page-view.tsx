@@ -1,5 +1,4 @@
 "use client"
-import dynamic from "next/dynamic"
 
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
@@ -21,38 +20,35 @@ import { LandingIntro } from "@/components/landing/landing-intro"
 import { PublicNavigation } from "@/components/landing/public-navigation"
 import { ProductJourney } from "@/components/landing/product-stories"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
-const StudentOnboardingWizard = dynamic(() => import("@/components/views/student-onboarding-wizard").then(module => module.StudentOnboardingWizard), { loading: () => <p role="status" className="p-6">Opening your student profile…</p> })
 import "./landing.css"
 
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
   launchClubs?: LaunchClub[]
   campusName?: string
-  initialSignup?: boolean
 }
 
 export function LandingPageView({
   onNavigateToApp,
   launchClubs = [],
   campusName = "University of Virginia",
-  initialSignup = false,
 }: LandingPageViewProps) {
-  const [signup, setSignup] = useState(initialSignup)
   const [info, setInfo] = useState<string | null>(null)
   const { perspective, switchPerspective } = useLandingPerspective()
-  const enterLeader = () => onNavigateToApp("leader")
-  const start = () => perspective === "student" ? setSignup(true) : enterLeader()
+  const createProfile = () => { window.location.href = "/signup" }
+  const enterLeader = () => { window.location.href = "/signup?intent=leader" }
+  const start = () => perspective === "student" ? createProfile() : enterLeader()
   return (
     <ScrollMotion className="oc-landing" id="top">
       <LandingNavigation />
       <a className="oc-skip-link" href="#about">Skip to product overview</a>
-      <PublicNavigation hero onGetStarted={start} />
+      <PublicNavigation hero />
       <main>
         <LandingIntro>
-          <LandingHero perspective={perspective} onCreateProfile={() => setSignup(true)} onLeaderEnter={enterLeader} />
+          <LandingHero perspective={perspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
-        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={() => setSignup(true)} onLeaderEnter={enterLeader} />
+        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"
@@ -84,24 +80,6 @@ export function LandingPageView({
       <p className="oc-photo-credit">
         OutClass is an independent platform.
       </p>
-      <Dialog open={signup} onOpenChange={setSignup}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Create your student profile</DialogTitle>
-            <DialogDescription>Begin with your UVA account.</DialogDescription>
-          </DialogHeader>
-          <StudentOnboardingWizard
-            embedded
-            onComplete={() => {
-              window.location.href = "/"
-            }}
-            onSignIn={() => {
-              setSignup(false)
-              onNavigateToApp("student")
-            }}
-          />
-        </DialogContent>
-      </Dialog>
       <Dialog
         open={!!info}
         onOpenChange={(open) => {

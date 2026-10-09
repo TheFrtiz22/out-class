@@ -6,8 +6,6 @@ import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/auth-context"
-import { useDemoMode } from "@/contexts/demo-context"
 import "./public-navigation.css"
 
 const links = [
@@ -17,17 +15,13 @@ const links = [
 ] as const
 
 /** Shared marketing header. Account workspaces keep their own navigation. */
-export function PublicNavigation({ hero = false, onGetStarted }: {
+export function PublicNavigation({ hero = false }: {
   hero?: boolean
-  onGetStarted?: () => void
 }) {
   const pathname = usePathname()
-  const { user, activeClubId, isImpersonating } = useAuth()
-  const { isDemoEnabled } = useDemoMode()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [hash, setHash] = useState("")
-  const [platformAdmin, setPlatformAdmin] = useState<{ userId: string; eligible: boolean } | null>(null)
   const toggle = useRef<HTMLButtonElement>(null)
   const header = useRef<HTMLElement>(null)
   useEffect(() => {
@@ -37,13 +31,6 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
     window.addEventListener("hashchange", update)
     return () => { window.removeEventListener("scroll", update); window.removeEventListener("hashchange", update) }
   }, [])
-  useEffect(() => {
-    if (!user || isImpersonating || isDemoEnabled) return
-    let live = true
-    fetch("/api/platform/eligibility").then(r => r.ok ? r.json() : null)
-      .then(data => { if (live) setPlatformAdmin({ userId: user.id, eligible: data?.eligible === true }) }).catch(() => {})
-    return () => { live = false }
-  }, [user, isImpersonating, isDemoEnabled])
   useEffect(() => {
     if (!open) return
     const dismiss = (event: KeyboardEvent) => {
@@ -69,9 +56,6 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
     if (pathname === "/" && anchor === "about") return ["#about", "#students", "#club-leaders", "#clubs"].includes(hash) || hash.startsWith("#journey-")
     return pathname === path && (!anchor ? !hash : hash === `#${anchor}`)
   }
-  const accountDestination = platformAdmin?.userId === user?.id && platformAdmin?.eligible && !isImpersonating ? "/platform" : activeClubId
-    ? `/club/${encodeURIComponent(activeClubId)}/workspace` : "/?workspace=student"
-  const getStartedHref = user && !isDemoEnabled ? accountDestination : "/?signup=student"
   const close = () => setOpen(false)
   return (
     <header ref={header} className="oc-public-nav" data-hero={hero && !scrolled && !open} onBlur={event => {
@@ -86,12 +70,7 @@ export function PublicNavigation({ hero = false, onGetStarted }: {
         </nav>
         <div className="oc-public-account">
           <a className="oc-public-login" href="/login">Log In</a>
-          <Button className="oc-public-primary" asChild><Link prefetch={false} href={getStartedHref} onClick={event => {
-            close()
-            if (user && !isDemoEnabled || !onGetStarted || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-            event.preventDefault()
-            onGetStarted()
-          }}>Get Started</Link></Button>
+          <Button className="oc-public-primary" asChild><Link prefetch={false} href="/signup" onClick={close}>Get Started</Link></Button>
           <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls="public-mobile-menu" aria-label={open ? "Close navigation menu" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
             {open ? <X size={22} aria-hidden="true" /> : <Menu size={22} aria-hidden="true" />}
           </button>

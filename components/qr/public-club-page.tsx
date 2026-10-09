@@ -5,8 +5,6 @@ import { useState, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { ApplicationTrackerView } from "@/components/views/application-tracker-view"
 import { CalendarView } from "@/components/views/calendar-view"
-import { AuthView } from "@/components/views/auth-view"
-import { StudentOnboardingWizard } from "@/components/views/student-onboarding-wizard"
 import { Button } from "@/components/ui/button"
 import { PublicNavigation } from "@/components/landing/public-navigation"
 import "@/components/views/landing.css"
@@ -36,25 +34,14 @@ export function PublicClubPage({
   }, [authenticated, identity, initialData])
   const dashboard = privateData.owner === identity ? privateData.data : null
   function navigate(next: ViewId) {
+    if (next === "auth" || next === "student-onboarding") {
+      const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`
+      window.location.href = `${next === "auth" ? "/login" : "/signup"}?next=${encodeURIComponent(returnTo)}`
+      return
+    }
     if (["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
     setView(next)
   }
-  if (view === "auth")
-    return (
-      <AuthView
-        onBack={() => setView("profile")}
-        onCreateAccount={() => setView("student-onboarding")}
-        onEnter={() => setView("profile")}
-      />
-    )
-  if (view === "student-onboarding")
-    return (
-      <StudentOnboardingWizard
-        onBack={() => setView("profile")}
-        onSignIn={() => setView("auth")}
-        onComplete={() => window.location.reload()}
-      />
-    )
   return (
     <ApplicationStateProvider
       key={`${identity}:${dashboard ? "ready" : "initial"}`}

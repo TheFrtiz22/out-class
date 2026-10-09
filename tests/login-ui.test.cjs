@@ -128,7 +128,7 @@ test("email-code flow preserves existing-account restriction, resend cooldown, t
   assert.equal(render().code, "123456")
   await render().onVerifyCode(submit)
   assert.deepEqual(calls[1], { email: "student@virginia.edu", token: "123456", type: "email" })
-  assert.equal(window.location.href, "/?workspace=student")
+  assert.equal(window.location.href, "/login")
   render().onDifferentEmail()
   assert.equal(render().emailExpanded, true)
   assert.equal(render().step, "email")
