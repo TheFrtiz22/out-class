@@ -121,6 +121,8 @@ export type ManagedCampusEvent = CampusEvent & {
   status: string;
   submittedAt: string | null;
   rejectionReason: string | null;
+  reviewedAt?: string | null;
+  publishedAt?: string | null;
 };
 const parts = (d: Date) =>
   Object.fromEntries(
@@ -241,4 +243,11 @@ export function eventIsPublished(event: {
     event.publication?.status === "PUBLISHED" &&
     event.publication.approvedRevision === event.revision
   );
+}
+
+export function managedEventStatus(event: ManagedCampusEvent) {
+  return ({ DRAFT: event.submittedAt ? "Changes require approval" : "Draft", PENDING: "Pending Approval", PUBLISHED: "Published", REJECTED: "Rejected", CANCELLED: "Cancelled", ARCHIVED: "Archived" } as Record<string, string>)[event.status] || "Unavailable";
+}
+export function eventRsvpSummary(count: number, capacity: number | null) {
+  return capacity === null ? `${count} RSVPs · Unlimited capacity` : `${count} / ${capacity} RSVPs · ${count >= capacity ? "Event Full" : `${capacity - count} ${capacity - count === 1 ? "spot" : "spots"} remaining`}`;
 }

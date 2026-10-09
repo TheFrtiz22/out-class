@@ -163,3 +163,37 @@ test("reduced motion removes pull and overlay animation; Escape and focus trappi
   assert.match(css, /dialog-overlay.*animation:none!important/);
   assert.match(dialog, /@radix-ui\/react-dialog/);
 });
+
+test("leader local Meetings switch keeps member tools and isolates unavailable Demo events", () => {
+  let params = new URLSearchParams('section=meetings'), demo = false, navigated;
+  const { ClubMeetingsWorkspace } = load('components/events/club-meetings-workspace.tsx', {
+    'next/navigation': { useSearchParams: () => params, useRouter: () => ({ push: value => navigated = value }) },
+    '@/contexts/demo-context': { useDemoMode: () => ({isDemoEnabled: demo}) },
+    '@/lib/workspace-navigation': { navigateWithinClub: value => {navigated=value;return true} },
+  });
+  const props={clubId:'club',clubName:'Club',canSeeAttendees:true};
+  let tree=ClubMeetingsWorkspace(props);
+  assert.ok(all(tree).some(n=>n.type==='MeetingList' && n.props.initialAudience==='ALL'));
+  all(tree).find(n=>title(n)==='Corkboard Events' && n.type==='Button').props.onClick();
+  assert.match(navigated,/section=meetings&meetingTab=events/);
+  params=new URLSearchParams('section=meetings&meetingTab=events');tree=ClubMeetingsWorkspace(props);
+  assert.ok(all(tree).some(n=>n.type==='ClubEvents'));
+  demo=true;tree=ClubMeetingsWorkspace(props);
+  assert.match(title(tree),/not available in Demo yet/);
+  assert.ok(!all(tree).some(n=>n.type==='ClubEvents'));
+});
+
+test("leader removal requires confirmation and returns keyboard focus to its origin", async () => {
+  const slots=[], refs=[];let cursor=0,refCursor=0;const calls=[];
+  const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){return refs[refCursor++]??={current:initial}},useEffect(){}};
+  const {ClubEvents}=load('components/events/club-events.tsx',{react,'@/lib/workspace-api':{commandCampusEvent:async input=>calls.push(input)}});
+  const render=()=>{cursor=0;refCursor=0;return ClubEvents({clubId:'club',clubName:'Club',canSeeAttendees:true})};
+  render();slots[0]=[{id:'event',clubId:'club',title:'Public night',date:'2099-10-16T23:00:00Z',endDate:'2099-10-17T01:00:00Z',location:'Hall',status:'PUBLISHED',revision:2,rsvpCount:1,capacity:2}];slots[1]=false;
+  let tree=render();let focused=false;const origin={isConnected:true,focus(){focused=true}};
+  all(tree).find(n=>n.type==='Button' && title(n)==='Remove from Corkboard').props.onClick({currentTarget:origin});assert.equal(calls.length,0);
+  tree=render();const dialog=all(tree).find(n=>n.type==='DialogContent');
+  assert.match(title(dialog),/history and RSVP records will remain/);
+  let prevented=false;dialog.props.onCloseAutoFocus({preventDefault(){prevented=true}});assert.ok(focused && prevented);
+  await all(dialog).find(n=>n.type==='Button' && title(n)==='Remove from Corkboard').props.onClick();
+  assert.equal(calls.length,1);assert.equal(calls[0].command,'WITHDRAW');assert.equal(calls[0].revision,2);
+});

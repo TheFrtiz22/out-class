@@ -1,5 +1,5 @@
 "use server";
-import { lockOperationalClub } from "@/lib/club-suspension";
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireClubPermission } from "@/utils/auth";
@@ -37,7 +37,7 @@ export async function uploadEventFlyer(input: FormData) {
   try {
     result = await prisma.$transaction(
       async (tx) => {
-        await lockOperationalClub(tx, clubId);
+        await authorizeClubTransaction(tx, clubId, user.id, ["meetings.manage"]);
         await tx.$queryRaw`SELECT id FROM "Event" WHERE id=${eventId} FOR UPDATE`;
         const e = await tx.meeting.findFirst({
           where: { id: eventId, clubId },
