@@ -66,6 +66,14 @@ test(
       code: totp(c.identities.admin.totpSecret),
     });
     assert.equal(verified.error, null);
+    // Exercise the current fresh password + MFA elevation gate, not only AAL2.
+    const elevate = body => admin.request('/api/platform/elevation', {
+      method: 'POST', headers: { origin: c.appUrl, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    assert.equal((await elevate({ action: 'password', password: c.identities.admin.password })).status, 200);
+    assert.equal((await elevate({ action: 'verify', code: totp(c.identities.admin.totpSecret) })).status, 200);
+
     const action = (actor, name, ...args) =>
         actor.action("actions/campus-events.ts", name, args),
       legacy = (_actor, name, ...args) =>

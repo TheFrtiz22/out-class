@@ -553,3 +553,5 @@ export const getMyCampusEventRsvps = adapt(campusEvents.getMyCampusEventRsvps, (
 
 export const respondToOffer = adapt(offers.respondToOffer, demoOffers.respondToOffer)
 export const revokeRecruitmentOffer = adapt(offers.revokeRecruitmentOffer, demoOffers.revokeRecruitmentOffer)
+
+export const getCampusEventRsvpDashboard = adapt(campusEvents.getCampusEventRsvpDashboard, () => ({ eventId: "", count: 0, capacity: null, attendees: [] }))

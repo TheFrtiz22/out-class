@@ -1,296 +1,79 @@
 "use client";
-import { useEffect, useState } from "react";
-import {
-  listClubCampusEvents,
-  saveCampusEvent,
-  commandCampusEvent,
-  uploadEventFlyer,
-  getCampusEventAttendees,
-} from "@/lib/workspace-api";
-import {
-  eventCategories,
-  flyerTemplates,
-  newYorkInput,
-  newYorkInstant,
-  eventDateLabel,
-  type CampusEvent,
-  type ManagedCampusEvent,
-} from "@/lib/campus-events";
+import { useEffect, useRef, useState } from "react";
+import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
+import { eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, eventTimeLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "./events.css";
-const tabs = [
-  "Upcoming",
-  "Past",
-  "Pending Approval",
-  "Rejected",
-  "Cancelled",
-  "Drafts",
-];
-export function ClubEvents({
-  clubId,
-  clubName,
-  canSeeAttendees,
-}: {
-  clubId: string;
-  clubName: string;
-  canSeeAttendees: boolean;
-}) {
-  const [rows, setRows] = useState<ManagedCampusEvent[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
-    [tab, setTab] = useState("Upcoming"),
-    [editing, setEditing] = useState<ManagedCampusEvent | null | undefined>(),
-    [busy, setBusy] = useState(false),
-    [retry, setRetry] = useState(0),
-    [attendees, setAttendees] = useState<
-      { name: string; email: string | null; createdAt: string }[] | null
-    >(null),
-    [attendeeTitle, setAttendeeTitle] = useState("");
+const tabs = ["Upcoming", "Past", "Pending Approval", "Rejected", "Drafts", "Closed"];
+export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: string; clubName: string; canSeeAttendees: boolean }) {
+  const [rows, setRows] = useState<ManagedCampusEvent[]>([]), [loading, setLoading] = useState(true), [error, setError] = useState(""),
+    [tab, setTab] = useState("Upcoming"), [editing, setEditing] = useState<ManagedCampusEvent | null | undefined>(),
+    [selected, setSelected] = useState<string | null>(null), [busy, setBusy] = useState(false), [retry, setRetry] = useState(0),
+    [confirm, setConfirm] = useState<ManagedCampusEvent | null>(null), [notice, setNotice] = useState("");
+  const inFlight = useRef(false);
+  const removeOrigin = useRef<HTMLButtonElement | null>(null);
+  const detailHeading = useRef<HTMLHeadingElement | null>(null);
+  const overviewHeading = useRef<HTMLHeadingElement | null>(null);
+  const removed = useRef(false);
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    listClubCampusEvents(clubId)
-      .then((r) => {
-        if (active) {
-          setRows(r);
-          setError("");
-        }
-      })
-      .catch((e) => {
-        if (active) setError(e.message || "Could not load events.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    let active = true; setLoading(true); setError("");
+    listClubCampusEvents(clubId).then(r => { if (active) setRows(r) }).catch(() => { if (active) { setRows([]); setError("Could not load events. Refresh to try again.") } }).finally(() => { if (active) setLoading(false) });
+    return () => { active = false };
   }, [clubId, retry]);
-  async function command(
-    event: ManagedCampusEvent,
-    command: "SUBMIT" | "WITHDRAW" | "CANCEL" | "ARCHIVE",
-  ) {
-    setBusy(true);
-    setError("");
+  useEffect(() => { const refresh = () => setRetry(n => n + 1); window.addEventListener("focus", refresh); return () => window.removeEventListener("focus", refresh) }, []);
+  async function command(event: ManagedCampusEvent, value: "SUBMIT" | "WITHDRAW") {
+    if (inFlight.current) return; inFlight.current = true; setBusy(true); setError("");
     try {
-      await commandCampusEvent({
-        eventId: event.id,
-        clubId,
-        revision: event.revision,
-        command,
-      });
-      setRetry((n) => n + 1);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Event could not be updated.");
-    } finally {
-      setBusy(false);
-    }
+      await commandCampusEvent({ eventId: event.id, clubId, revision: event.revision, command: value });
+      setNotice(value === "WITHDRAW" ? `Removed “${event.title}” from Corkboard. Event history and RSVPs are preserved.` : "");
+      removed.current = value === "WITHDRAW";
+      if (value === "SUBMIT") setTab("Pending Approval");
+      setConfirm(null); setRetry(n => n + 1);
+    } catch { setError("Event could not be updated. Refresh and try again; it may have changed.") }
+    finally { inFlight.current = false; setBusy(false) }
   }
-  async function showAttendees(event: ManagedCampusEvent) {
-    setBusy(true);
-    setError("");
-    try {
-      setAttendees(await getCampusEventAttendees(clubId, event.id));
-      setAttendeeTitle(event.title);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Attendees unavailable.");
-    } finally {
-      setBusy(false);
-    }
+  const event = rows.find(e => e.id === selected);
+  const visible = rows.filter(e => tab === "Upcoming" ? +new Date(e.endDate) > Date.now() && !["ARCHIVED", "CANCELLED"].includes(e.status) : tab === "Past" ? +new Date(e.endDate) <= Date.now() : tab === "Pending Approval" ? e.status === "PENDING" : tab === "Rejected" ? e.status === "REJECTED" : tab === "Closed" ? ["CANCELLED", "ARCHIVED"].includes(e.status) : e.status === "DRAFT");
+  if (editing !== undefined) return <EventEditor key={editing?.id || "new"} clubId={clubId} clubName={clubName} event={editing} onClose={() => { setEditing(undefined); setRetry(n => n + 1) }} onSaved={(next = "Drafts") => { setEditing(undefined); setTab(next); setRetry(n => n + 1) }} />;
+  function actions(e: ManagedCampusEvent) {
+    return <div className="oc-event-actions">
+      {selected !== e.id && <Button variant="outline" onClick={() => setSelected(e.id)}>Manage event</Button>}
+      {!["CANCELLED", "ARCHIVED"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={() => setEditing(e)}>Edit & preview</Button>}
+      {["DRAFT", "REJECTED"].includes(e.status) && <Button disabled={busy || +new Date(e.date) <= Date.now()} onClick={() => void command(e, "SUBMIT")}>Submit for approval</Button>}
+      {["PUBLISHED", "PENDING"].includes(e.status) && <Button variant="outline" disabled={busy} onClick={click => { removeOrigin.current = click.currentTarget; removed.current = false; setConfirm(e); }}>Remove from Corkboard</Button>}
+    </div>;
   }
-  const visible = rows.filter((e) =>
-    tab === "Upcoming"
-      ? e.status === "PUBLISHED" && +new Date(e.endDate) > Date.now()
-      : tab === "Past"
-        ? (e.status === "PUBLISHED" && +new Date(e.endDate) <= Date.now()) ||
-          e.status === "ARCHIVED"
-        : tab === "Pending Approval"
-          ? e.status === "PENDING"
-          : tab === "Rejected"
-            ? e.status === "REJECTED"
-            : tab === "Cancelled"
-              ? e.status === "CANCELLED"
-              : e.status === "DRAFT",
-  );
-  if (editing !== undefined)
-    return (
-      <EventEditor
-        key={editing?.id || "new"}
-        clubId={clubId}
-        clubName={clubName}
-        event={editing}
-        onClose={() => setEditing(undefined)}
-        onSaved={() => {
-          setEditing(undefined);
-          setTab("Drafts");
-          setRetry((n) => n + 1);
-        }}
-      />
-    );
-  return (
-    <section aria-label="Club events">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
-          Create a campus event, then submit it for admin approval.
-        </p>
-        <Button onClick={() => setEditing(null)}>Create event</Button>
+  return <section aria-label="Corkboard Events" className="min-w-0 space-y-5">
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h2 ref={overviewHeading} tabIndex={-1} className="oc-section-heading">Corkboard Events</h2><p className="mt-2 text-sm text-muted-foreground">Public events, approval, and RSVP intent. Check-in attendance stays in Member Meetings.</p></div><Button onClick={() => { setSelected(null); setEditing(null) }}>+ Create Corkboard Event</Button></header>
+    {notice && <p role="status" className="rounded-lg border p-3 text-sm">{notice}</p>}
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    <Button variant="outline" size="sm" disabled={loading || busy} onClick={() => setRetry(n => n + 1)}>Refresh events</Button>
+    {event ? <div className="oc-event-management-detail">
+      <div><Button variant="ghost" onClick={() => setSelected(null)}>← All Corkboard events</Button><EventFlyer event={event} /></div>
+      <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventDateLabel(event.date)} · {eventTimeLabel(event.date)} – {eventTimeLabel(event.endDate)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
+        {event.status === "PENDING" && <p role="status">Waiting for OutClass approval.</p>}
+        {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
+        <dl className="text-sm text-muted-foreground">{event.submittedAt && <><dt>Last submitted</dt><dd>{eventDateLabel(event.submittedAt)}</dd></>}{event.reviewedAt && <><dt>Last reviewed</dt><dd>{eventDateLabel(event.reviewedAt)}</dd></>}</dl>
+        {actions(event)}
+        {canSeeAttendees ? <RsvpDashboard key={event.id} event={event} /> : <p className="text-sm">{eventRsvpSummary(event.rsvpCount, event.capacity)}. Attendee access requires attendance-management permission.</p>}
       </div>
-      <div className="oc-event-management-tabs" aria-label="Event status">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            type="button"
-            aria-pressed={tab === t}
-            onClick={() => setTab(t)}
-          >
-            {t}
-            {t === "Pending Approval"
-              ? ` (${rows.filter((e) => e.status === "PENDING").length})`
-              : ""}
-          </button>
-        ))}
-      </div>
-      {error && (
-        <div role="alert" className="mb-4 text-sm text-destructive">
-          {error}{" "}
-          <Button variant="outline" onClick={() => setRetry((n) => n + 1)}>
-            Reload events
-          </Button>
-        </div>
-      )}
-      {loading ? (
-        <p role="status">Loading events…</p>
-      ) : (
-        <div className="oc-managed-events">
-          {visible.length ? (
-            visible.map((e) => (
-              <article className="oc-managed-event" key={e.id}>
-                <div aria-hidden="true">
-                  <EventFlyer event={e} />
-                </div>
-                <div>
-                  <h2 className="font-semibold">{e.title}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {eventDateLabel(e.date)} · {e.rsvpCount} RSVPs
-                    {e.capacity !== null ? ` / ${e.capacity} capacity` : ""}
-                  </p>
-                  <span className="oc-event-status">
-                    {e.status === "PUBLISHED"
-                      ? "Approved · Published"
-                      : e.status === "PENDING"
-                        ? "Pending admin approval"
-                        : e.status.toLowerCase()}
-                  </span>
-                  {e.rejectionReason && (
-                    <p className="mt-2 text-sm">Reason: {e.rejectionReason}</p>
-                  )}
-                </div>
-                <div className="oc-event-actions">
-                  {!["CANCELLED", "ARCHIVED"].includes(e.status) && (
-                    <>
-                      <Button
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => setEditing(e)}
-                      >
-                        Edit & preview
-                      </Button>
-                      {["DRAFT", "REJECTED"].includes(e.status) ? (
-                        <Button
-                          disabled={busy}
-                          onClick={() => void command(e, "SUBMIT")}
-                        >
-                          Submit for approval
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          disabled={busy}
-                          onClick={() => void command(e, "WITHDRAW")}
-                        >
-                          Withdraw
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        disabled={busy}
-                        onClick={() => void command(e, "CANCEL")}
-                      >
-                        Cancel event
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => void command(e, "ARCHIVE")}
-                      >
-                        Archive
-                      </Button>
-                    </>
-                  )}
-                  {canSeeAttendees && (
-                    <Button
-                      variant="outline"
-                      disabled={busy}
-                      onClick={() => void showAttendees(e)}
-                    >
-                      RSVP attendees
-                    </Button>
-                  )}
-                </div>
-              </article>
-            ))
-          ) : (
-            <p className="rounded-lg border p-8 text-sm text-muted-foreground">
-              No events in {tab.toLowerCase()}.
-            </p>
-          )}
-        </div>
-      )}
-      <Dialog
-        open={attendees !== null}
-        onOpenChange={(open) => {
-          if (!open) setAttendees(null);
-        }}
-      >
-        <DialogContent className="max-h-[85dvh] overflow-auto">
-          <DialogTitle>RSVP attendees</DialogTitle>
-          <DialogDescription>
-            {attendeeTitle} · RSVP intent, separate from check-in attendance.
-          </DialogDescription>
-          {attendees?.length ? (
-            <table className="oc-attendee-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>RSVP date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendees.map((a, i) => (
-                  <tr key={i}>
-                    <td>{a.name}</td>
-                    <td>{a.email || "Withheld during anonymous review"}</td>
-                    <td>{eventDateLabel(a.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No RSVPs yet.</p>
-          )}
-        </DialogContent>
-      </Dialog>
-    </section>
-  );
+    </div> : <>
+      <div className="oc-event-management-tabs" role="group" aria-label="Event filter">{tabs.map(t => <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}>{t}{t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}</button>)}</div>
+      {loading ? <p role="status">Loading events…</p> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <p className="rounded-lg border p-8 text-sm">No events in {tab.toLowerCase()}.</p> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
+        <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventDateLabel(e.date)} · {eventTimeLabel(e.date)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
+      </li>)}</ul>}
+    </>}
+    <Dialog open={!!confirm} onOpenChange={open => { if (!open && !busy) setConfirm(null) }}><DialogContent onCloseAutoFocus={e => { e.preventDefault(); const target = removed.current ? detailHeading.current || overviewHeading.current : removeOrigin.current; if (target?.isConnected) target.focus(); }}><DialogTitle>Remove from Corkboard?</DialogTitle><DialogDescription>{confirm?.title} will leave the public Corkboard. Its event history and RSVP records will remain. Publishing again requires approval.</DialogDescription>{error && <p role="alert">{error}</p>}<div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Keep event</Button><Button disabled={busy} onClick={() => confirm && void command(confirm, "WITHDRAW")}>Remove from Corkboard</Button></div></DialogContent></Dialog>
+  </section>;
+}
+function RsvpDashboard({ event }: { event: ManagedCampusEvent }) {
+  const [data, setData] = useState<Awaited<ReturnType<typeof getCampusEventRsvpDashboard>> | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(false), [open, setOpen] = useState(false), [revision, setRevision] = useState(0);
+  useEffect(() => { if (!open) return; let active = true; setLoading(true); setError(""); getCampusEventRsvpDashboard(event.clubId, event.id).then(value => { if (active) setData(value) }).catch(() => { if (active) { setData(null); setError("RSVPs could not be loaded. Refresh to try again.") } }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [open, event.clubId, event.id, revision]);
+  useEffect(() => { const refresh = () => setRevision(n => n + 1); window.addEventListener("focus", refresh); return () => window.removeEventListener("focus", refresh) }, []);
+  return <section className="min-w-0 space-y-3 rounded-lg border p-4" aria-label="Event RSVPs"><h3 className="font-semibold">RSVPs</h3><p role="status">{eventRsvpSummary(data?.count ?? event.rsvpCount, data ? data.capacity : event.capacity)}</p><p className="text-xs text-muted-foreground">RSVP intent is separate from recorded check-in attendance. Refreshes when you return to this window.</p><Button variant="outline" disabled={loading} onClick={() => { setOpen(true); setRevision(n => n + 1) }}>{loading ? "Loading RSVPs…" : open ? "Refresh RSVPs" : "View RSVPs"}</Button>{error && <p role="alert">{error}</p>}{open && data && (!data.attendees.length ? <p>No RSVPs yet.</p> : <ul className="divide-y">{data.attendees.map((a, i) => <li key={i} className="min-w-0 break-words py-3"><p className="font-medium">{a.name}</p><p className="text-sm">{a.email || "Identity withheld during anonymous review"}</p><p className="text-xs text-muted-foreground">RSVP · {eventDateLabel(a.createdAt)}</p></li>)}</ul>)}</section>;
 }
 function EventEditor({
   clubId,
@@ -303,7 +86,7 @@ function EventEditor({
   clubName: string;
   event: ManagedCampusEvent | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (tab?: string) => void;
 }) {
   const [saved, setSaved] = useState(event),
     [title, setTitle] = useState(event?.title || ""),
@@ -324,6 +107,7 @@ function EventEditor({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const operation = useRef(false);
   let date = "2026-10-16T23:00:00Z",
     endDate = "2026-10-17T01:00:00Z";
   try {
@@ -350,7 +134,9 @@ function EventEditor({
     rsvpCount: saved?.rsvpCount || 0,
     revision: saved?.revision || 0,
   };
-  async function save(finish: boolean) {
+  async function save(finish: boolean, nested = false) {
+    if (!nested && operation.current) return null;
+    operation.current = true;
     setBusy(true);
     setError("");
     setNotice("");
@@ -381,12 +167,22 @@ function EventEditor({
       setError(e instanceof Error ? e.message : "Could not save the event.");
       return null;
     } finally {
-      setBusy(false);
+      if (!nested) { operation.current = false; setBusy(false); }
     }
   }
+  async function submit() {
+    if (operation.current) return;
+    const current = await save(false, true);
+    if (!current) { operation.current = false; setBusy(false); return; }
+    setBusy(true);
+    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); onSaved("Pending Approval") }
+    catch { setError("Draft saved, but submission failed. Refresh and try again.") }
+    finally { operation.current = false; setBusy(false) }
+  }
   async function upload(file: File) {
-    const current = await save(false);
-    if (!current) return;
+    if (operation.current) return;
+    const current = await save(false, true);
+    if (!current) { operation.current = false; setBusy(false); return; }
     setBusy(true);
     try {
       const data = new FormData();
@@ -405,24 +201,25 @@ function EventEditor({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Flyer upload failed.");
     } finally {
-      setBusy(false);
+      operation.current = false; setBusy(false);
     }
   }
   return (
     <section>
       <div className="mb-5 flex items-center justify-between">
         <h2 className="font-serif text-2xl">
-          {event ? "Edit event" : "Create event"}
+          {event ? "Edit event" : "Create Corkboard Event"}
         </h2>
         <Button variant="ghost" disabled={busy} onClick={onClose}>
           Back to events
         </Button>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Save a draft, preview your flyer, then submit it from Drafts. Editing an
+        Save a draft, preview your flyer, then submit for approval. Editing an
         approved event withdraws it until an administrator approves the new
         revision.
       </p>
+      {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-slate-900">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <form
         className="oc-event-editor"
         onSubmit={(e) => {
@@ -430,7 +227,7 @@ function EventEditor({
           void save(true);
         }}
       >
-        <div className="oc-event-editor-fields">
+        <fieldset disabled={busy} className="oc-event-editor-fields min-w-0">
           <label>
             Event name
             <Input
@@ -562,6 +359,7 @@ function EventEditor({
               )}
             </select>
           </label>
+          {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
           <label>
             Upload a flyer (PNG, JPEG or WebP · up to 5 MB)
             <Input
@@ -585,11 +383,13 @@ function EventEditor({
               {notice}
             </p>
           )}
+          <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => document.getElementById("event-flyer-preview")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Preview</Button>
+          <Button type="button" disabled={busy} onClick={() => void submit()}>Submit for Approval</Button>
           <Button type="submit" disabled={busy}>
             {busy ? "Saving…" : "Save draft"}
-          </Button>
-        </div>
-        <aside className="oc-event-editor-preview" aria-label="Flyer preview">
+          </Button></div>
+        </fieldset>
+        <aside className="oc-event-editor-preview" id="event-flyer-preview" aria-label="Flyer preview">
           <EventFlyer event={preview} />
           <p className="mt-3 text-xs text-muted-foreground">
             Preview · Structured details above are authoritative.

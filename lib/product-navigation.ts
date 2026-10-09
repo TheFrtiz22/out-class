@@ -40,7 +40,7 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(read ? [item("decisions", "Decisions", "recruitment")] : []),
       ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
   }
-  return [item("overview", "Overview"), item("meetings", "Meetings"), ...(hasPermission(member, "meetings.manage") ? [item("events", "Events")] : []), item("tasks", "Tasks"),
+  return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(hasPermission(member, "meetings.manage") ? [item("announcements", "Announcements", "announcements", { preview: true })] : []),
     ...(availableSettings(member).length ? [item("settings", "Appearance")] : [])]
