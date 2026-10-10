@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-10",
+  "timezone": "America/New_York",
+  "commands": [
+    {
+      "command": "npm run test",
+      "exitCode": 0,
+      "tests": 946,
+      "passed": 937,
+      "failed": 0,
+      "skipped": 9
+    },
+    {
+      "command": "npm run test:migrations",
+      "exitCode": 0,
+      "migrations": 31,
+      "rlsTables": 54
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 25
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node scripts/email-design.cjs render",
+      "exitCode": 0,
+      "comparisonScreenshots": 132,
+      "additionalFallbackChecks": 22,
+      "failures": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "actualClientChecks": {
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "finalTemplates": 8,
+    "lightDarkInspections": 16,
+    "allImagesLoaded": true,
+    "originalThemeRestored": "Light"
+  },
+  "delivery": {
+    "totalDesignPreviews": 16,
+    "passes": 2,
+    "delivered": 16,
+    "finalPreviewsObservedInInbox": 8,
+    "recipient": "bsb4rd@virginia.edu"
+  },
+  "productionChanges": {
+    "applicationDeployed": false,
+    "hostedAuthPublished": false,
+    "dnsChanged": false,
+    "credentialsChanged": false,
+    "permissionsChanged": false
+  },
+  "gallery": {
+    "linksChecked": true,
+    "missingLocalLinks": 0,
+    "controlsChecked": "320px dark comparison and template selector",
+    "loadedImages": true
+  }
+}

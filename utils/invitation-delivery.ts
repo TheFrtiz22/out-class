@@ -101,7 +101,7 @@ export async function processInvitationEmails(clubId: string, limit = 5) {
     try {
       // SMTP runs outside any transaction or organization lock. A claimed message
       // may already be in flight when revoked; accepting its link still checks live grants.
-      const receipt = await sendInvitationEmail({ recipient: claimed.recipientEmail, organizationName: claimed.invitation.club.name, owner: !!claimed.invitation.schoolIdentity && claimed.invitation.requestedRole === 'OWNER', deliveryId: claimed.id, ...(!claimed.invitation.schoolIdentity ? { legacyInvitationId: claimed.invitationId } : {}) });
+      const receipt = await sendInvitationEmail({ recipient: claimed.recipientEmail, organizationName: claimed.invitation.club.name, organizationLogoUrl: claimed.invitation.club.logoUrl, owner: !!claimed.invitation.schoolIdentity && claimed.invitation.requestedRole === 'OWNER', deliveryId: claimed.id, ...(!claimed.invitation.schoolIdentity ? { legacyInvitationId: claimed.invitationId } : {}) });
       await prisma.$transaction(async tx => {
         const now = new Date();
         await tx.invitationDelivery.update({ where: { id: claimed.id }, data: { status: 'SENT', sentAt: now, providerMessageId: receipt.messageId, failureCode: null } });

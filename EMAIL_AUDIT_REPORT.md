@@ -1,5 +1,7 @@
 # OutClass transactional email audit
 
+**October 10 redesign update:** The new [design report](docs/email-design/REPORT.md) and [comparison gallery](docs/email-design/index.html) supersede this report’s visual findings. Eight final design previews were received and inspected in actual Outlook Web light/dark mode; all have Resend Delivered events. The October 9 delivery and security audit below remains historical evidence. Nothing has been deployed or published to hosted Supabase.
+
 **Audit date:** October 9, 2026, America/New_York. **Only recipient:** `bsb4rd@virginia.edu`.
 
 Nine real emails were sent through the existing Resend infrastructure and **all nine have a Resend Delivered event**. This confirms acceptance by the recipient's mail server, not placement in the inbox. No recipient inbox was accessed. Three sends exercised real Supabase Auth workflows (one sign-in code and two recovery tests); six exercised the SMTP templates with explicit audit notices and no membership/invitation records. The SMTP previews are **not** credited as successful signup, account-claim, password-change, or outbox workflows.

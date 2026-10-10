@@ -32,23 +32,9 @@ function templates(stage = 'current') {
   return messages;
 }
 function buildAuth() {
-  const { transactionalEmailHtml } = load('lib/transactional-email.ts');
-  for (const [type, title, intro, footer] of [
-    ['confirmation', 'Verify your UVA email', 'Enter this code in OutClass:', 'If you didn’t create an OutClass account, you can ignore this email.'],
-    ['magic-link', 'Your sign-in code', 'Enter this code in OutClass to sign in:', 'If you didn’t request this code, you can ignore this email.'],
-  ]) fs.writeFileSync(path.join(ROOT, 'supabase/templates', type + '.html'), transactionalEmailHtml({ title, preview: intro + ' The code expires in one hour.', siteUrl: SITE, body: `<p>${intro}</p><p class="otp" style="margin:24px 0;padding:16px 0;font-size:36px;font-weight:bold;letter-spacing:8px;line-height:1.3">{{ .Token }}</p><p class="muted" style="color:#586473;font-size:14px">This code expires in one hour and can only be used once. Never share it with anyone.</p>`, footer }) + '\n');
-  // Preserve the established password-email layout; fix only compatibility/contrast/URLs.
-  for (const type of ['recovery', 'password-changed']) {
-    let html = fs.readFileSync(path.join(OUTPUT, 'hosted', type + '.html'), 'utf8');
-    html = html.replaceAll('https://out-class.vercel.app/', SITE + '/').replaceAll('#8a8f99', '#586473').replaceAll('#9a9da5', '#586473').replaceAll('#a4a19c', '#586473').replaceAll('#e5723a', '#a63b0b');
-    html = html.replace('</head>', `<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><style>@media only screen and (max-width:600px){.email-card>tbody>tr>td{padding-left:24px!important;padding-right:24px!important}h1{font-size:26px!important}}@media(prefers-color-scheme:dark){body,.email-bg,.email-bg>table{background-color:#0e1b2d!important}.email-card{background-color:#17263c!important}.email-card td{color:#c3cbd6!important}.email-card p,.email-card h1,.email-card strong{color:#f4f6f8!important}.email-card a{color:#f4f6f8!important}.email-card td[bgcolor]{background:#295c88!important}.notice{background-color:#233750!important}.brand{background-color:#ffffff!important}.copyright{color:#c3cbd6!important}}</style></head>`);
-    html = html.replace('<body ', '<body class="email-bg" ').replace('<!-- Email Card --> <table', '<!-- Email Card --> <table class="email-card"').replace('<!-- Logo --> <tr> <td', '<!-- Logo --> <tr> <td class="brand"').replace('background-color: #f7f5f0; border:', 'background-color: #f7f5f0; border:');
-    html = html.replace('<td style=" background-color: #f7f5f0;', '<td class="notice" style=" background-color: #f7f5f0;');
-    const preview = type === 'recovery' ? 'Choose a new password for your OutClass account.' : 'The password for your OutClass account was changed.';
-    html = html.replace(/(<body[^>]*>)/, `$1<div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${preview}</div>`);
-    html = html.replace('<!-- Copyright --> <p', '<!-- Copyright --> <p class="copyright"');
-    html = html.replace('<!-- Email Card -->', '<!-- Email Card --><!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0"><tr><td><![endif]-->').replace('</table> <!-- Copyright -->', '</table><!--[if mso]></td></tr></table><![endif]--> <!-- Copyright -->');
-    fs.writeFileSync(path.join(ROOT, 'supabase/templates', type + '.html'), html + '\n');
+  const { authEmailTemplates } = load('lib/auth-email-templates.ts');
+  for (const [type, message] of Object.entries(authEmailTemplates(SITE))) {
+    fs.writeFileSync(path.join(ROOT, 'supabase/templates', type + '.html'), message.html + '\n');
   }
 }
 async function render(stage) {

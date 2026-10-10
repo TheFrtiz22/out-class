@@ -422,3 +422,25 @@ content_path = "./supabase/templates/confirmation.html"
 [auth.email.template.magic_link]
 subject = "Your OutClass sign-in code"
 content_path = "./supabase/templates/magic-link.html"
+
+# Local Auth preview configuration only; hosted templates require separate approval.
+[auth.email.template.recovery]
+subject = "Reset your password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Your password was changed"
+content_path = "./supabase/templates/password-changed.html"
+
+[auth.email.template.invite]
+subject = "Your OutClass invitation"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email address"
+content_path = "./supabase/templates/email-change.html"
+
+[auth.email.template.reauthentication]
+subject = "Your OutClass verification code"
+content_path = "./supabase/templates/reauthentication.html"

@@ -1,4 +1,4 @@
-import { emailButton, emailSiteOrigin, escapeEmailHtml, transactionalEmailHtml } from '@/lib/transactional-email';
+import { emailButton, emailFallback, emailNotice, emailParagraph, emailSiteOrigin, transactionalEmailHtml } from '@/lib/transactional-email';
 
 export function studentClaimEmail(input: { name: string; tokenHash: string; siteUrl: string }) {
   const origin = emailSiteOrigin(input.siteUrl);
@@ -11,6 +11,9 @@ export function studentClaimEmail(input: { name: string; tokenHash: string; site
   return {
     subject: 'Claim your OutClass student account',
     text: `Hello ${name},\n\n${explanation}\n${link}\n\n${expiry}\n\nIf you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.`,
-    html: transactionalEmailHtml({ title: 'Your OutClass account is ready', preview: 'Choose your own password to claim your student account.', siteUrl: origin, body: `<p>Hello ${escapeEmailHtml(name)},</p><p>${explanation}</p>${emailButton('Claim your account', link.href)}<p class="muted" style="color:#586473;font-size:13px">${expiry}</p><p class="muted" style="color:#586473;font-size:13px">You can also open this link:<br><a href="${escapeEmailHtml(link.href)}" style="overflow-wrap:anywhere;word-break:break-all">${escapeEmailHtml(link.href)}</a></p>`, footer: 'If you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.' }),
+    html: transactionalEmailHtml({ title: 'Your campus. Your possibilities.', category: 'Your student account / Invitation', variant: 'welcome', preview: 'Your OutClass account is ready. Make it yours.', siteUrl: origin,
+      body: emailParagraph(`Hello ${name},`) + emailParagraph(explanation) + emailButton('Claim your account', link.href) + emailNotice('Make it yours', 'One profile connects you to organizations and opportunities across your university.') + emailParagraph(expiry, true) + emailFallback(link.href),
+      footer: 'If you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.',
+    }),
   };
 }

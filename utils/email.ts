@@ -21,7 +21,7 @@ export function invitationEmailConfig() {
   return config.data;
 }
 
-export async function sendInvitationEmail(input: { recipient: string; organizationName: string; owner: boolean; deliveryId: string; legacyInvitationId?: string }) {
+export async function sendInvitationEmail(input: { recipient: string; organizationName: string; organizationLogoUrl?: string | null; owner: boolean; deliveryId: string; legacyInvitationId?: string }) {
   const config = invitationEmailConfig();
   const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 10000, disableFileAccess: true, disableUrlAccess: true });
   try {

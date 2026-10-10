@@ -1,0 +1,1162 @@
+[
+  {
+    "type": "magic-link",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:54:21.238Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(46, 46, 46)",
+        "classes": "x_code-panel",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_otp x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "confirmation",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:54:38.459Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(46, 46, 46)",
+        "classes": "x_code-panel",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_otp x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "recovery",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:54:39.795Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "administrator-invitation",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:54:41.202Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "password-changed",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:55:10.433Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "member-invitation",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:55:11.760Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "student-claim",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:55:13.406Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "legacy-invitation",
+    "mode": "dark",
+    "observedAt": "2026-10-10T15:56:22.439Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgb(41, 41, 41)",
+        "classes": "x_email-paper",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(202, 220, 255)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(185, 203, 230)"
+      },
+      {
+        "background": "rgb(67, 86, 123)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(164, 177, 195)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "magic-link",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:56:55.008Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(245, 245, 245)",
+        "classes": "x_code-panel",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_otp x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "confirmation",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:56:56.344Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(245, 245, 245)",
+        "classes": "x_code-panel",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_otp x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "recovery",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:56:57.825Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "password-changed",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:57:06.425Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  },
+  {
+    "type": "member-invitation",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:57:07.835Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "administrator-invitation",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:57:09.448Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "legacy-invitation",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:57:19.637Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      },
+      {
+        "alt": "",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/logos/enactus.png"
+      }
+    ]
+  },
+  {
+    "type": "student-claim",
+    "mode": "light",
+    "observedAt": "2026-10-10T15:57:21.620Z",
+    "client": "Microsoft 365 Outlook Web in Chrome on macOS",
+    "colors": [
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "classes": "x_email-paper",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_campus-label x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_heading x_ink",
+        "color": "rgb(20, 45, 78)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgb(20, 45, 78)",
+        "classes": "x_cta",
+        "color": "rgb(255, 247, 236)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_copy",
+        "color": "rgb(51, 68, 90)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "classes": "x_muted",
+        "color": "rgb(89, 101, 117)"
+      }
+    ],
+    "images": [
+      {
+        "alt": "OutClass",
+        "loaded": true,
+        "src": "https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public/outclass-logo-light.jpeg"
+      }
+    ]
+  }
+]

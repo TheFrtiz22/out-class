@@ -1,0 +1,7 @@
+Reset your OutClass password
+
+Choose a new password: https://www.out-class.net/login?email-design-preview=1
+
+This single-use link expires in one hour. If it has expired, request a new reset email.
+
+Didn’t request a reset? Ignore this email. Your password will stay the same.
