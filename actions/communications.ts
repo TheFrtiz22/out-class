@@ -35,11 +35,12 @@ export async function saveNotificationPreferences(input: unknown) {
 export async function getDurableNotifications(cursor?: string) {
   const { user } = await requireAuth();
   if (cursor) uuid.parse(cursor);
+  const boundary = cursor ? await prisma.userNotification.findFirst({ where: { id: cursor, userId: user.id }, select: { id: true, createdAt: true } }) : null;
+  if (cursor && !boundary) throw new Error("Invalid notification cursor.");
   const rows = await prisma.userNotification.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, ...(boundary ? { OR: [{ createdAt: { lt: boundary.createdAt } }, { createdAt: boundary.createdAt, id: { lt: boundary.id } }] } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: 51,
-    ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     include: { club: { select: { name: true, color: true, logoUrl: true } } },
   });
   return { items: rows.slice(0, 50), nextCursor: rows.length > 50 ? rows[49].id : null };
@@ -48,6 +49,7 @@ export async function getDurableNotifications(cursor?: string) {
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {
   const { user } = await requireAuth();
   const selected = z.array(uuid).max(100).parse(ids);
+  z.boolean().parse(read);
   if (!selected.length) return { updated: 0 };
   const result = await prisma.userNotification.updateMany({ where: { id: { in: selected }, userId: user.id }, data: { readAt: read ? new Date() : null } });
   return { updated: result.count };
@@ -73,7 +75,7 @@ export async function publishClubAnnouncement(input: unknown) {
     if (!member || member.status !== "ACTIVE" || !(member.isOwner || member.permissions.includes("meetings.manage"))) throw new Error("Announcement publishing unavailable.");
     const recipients = data.audience === "MEMBERS"
       ? await tx.clubMember.findMany({ where: { clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { userId: true }, take: 1001 })
-      : await tx.application.findMany({ where: { clubId: data.clubId, submittedAt: { not: null }, student: { disabledAt: null } }, select: { studentId: true }, take: 1001 });
+      : await tx.application.findMany({ where: { clubId: data.clubId, status: { not: "DRAFTING" }, submittedAt: { not: null }, student: { disabledAt: null } }, select: { studentId: true }, take: 1001 });
     if (recipients.length > 1000) throw new Error("This audience exceeds the initial safe publishing limit of 1,000.");
     if (!recipients.length) throw new Error("No eligible recipients for this audience.");
     const announcement = await tx.clubAnnouncement.create({ data: { id: randomUUID(), clubId: data.clubId, authorId: user.id, title: data.title, body: data.body, audience: data.audience } });

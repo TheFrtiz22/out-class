@@ -1,7 +1,7 @@
 BEGIN;
 CREATE TABLE "ClubAnnouncement" (
  "id" TEXT NOT NULL, "clubId" TEXT NOT NULL, "authorId" TEXT NOT NULL,
- "title" TEXT NOT NULL, "body" TEXT NOT NULL, "audience" TEXT NOT NULL,
+ "title" TEXT NOT NULL CHECK(length(trim("title")) BETWEEN 1 AND 200), "body" TEXT NOT NULL CHECK(length(trim("body")) BETWEEN 1 AND 10000), "audience" TEXT NOT NULL CHECK("audience" IN ('MEMBERS','APPLICANTS')),
  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
  "publishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
  CONSTRAINT "ClubAnnouncement_pkey" PRIMARY KEY ("id"),
@@ -34,4 +34,14 @@ CREATE TABLE "UserNotificationPreference" (
  CONSTRAINT "UserNotificationPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
  CONSTRAINT "UserNotificationPreference_emailFrequency_check" CHECK ("emailFrequency" IN ('INSTANT','DAILY','OFF'))
 );
+DO $$ DECLARE t TEXT; r TEXT; BEGIN
+  FOREACH t IN ARRAY ARRAY['ClubAnnouncement','UserNotification','UserNotificationPreference'] LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',t);
+    EXECUTE format('REVOKE ALL ON %I FROM PUBLIC',t);
+    EXECUTE format('CREATE POLICY outclass_communications_server_only ON %I AS RESTRICTIVE FOR ALL TO PUBLIC USING(false) WITH CHECK(false)',t);
+    FOREACH r IN ARRAY ARRAY['anon','authenticated'] LOOP
+      IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=r) THEN EXECUTE format('REVOKE ALL ON %I FROM %I',t,r); END IF;
+    END LOOP;
+  END LOOP;
+END $$;
 COMMIT;
