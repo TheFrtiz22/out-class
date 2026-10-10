@@ -1,10 +1,11 @@
+import { clubAssetSource } from "@/lib/club-assets";
 import { emailArtworkUrl, emailButton, emailFallback, emailNotice, emailParagraph, emailSiteOrigin, escapeEmailHtml, transactionalEmailHtml } from '@/lib/transactional-email';
 
 /** Optional organization artwork never becomes a link or a delivery attachment. */
 export function invitationLogoUrl(value: string | null | undefined, origin: string) {
   if (!value) return null;
   try {
-    const url = new URL(value, origin);
+    const url = new URL(clubAssetSource(value), origin);
     if (url.protocol !== 'https:' || url.username || url.password || url.hash) return null;
     return emailArtworkUrl(url, origin);
   } catch { return null; }

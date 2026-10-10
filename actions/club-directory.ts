@@ -106,7 +106,7 @@ function present(club: PublicClubRecord): DirectoryClub {
 const readClubs = unstable_cache(
   async () =>
     prisma.club.findMany({
-      where: { isDiscoverable: true },
+      where: { isDiscoverable: true, suspendedAt: null },
       select: { ...publicFields, events: false },
       orderBy: { name: "asc" },
     }),
@@ -155,10 +155,13 @@ export async function getPublicClub(
 ): Promise<{ club: DirectoryClub | null; error?: string }> {
   try {
     const club = await prisma.club.findFirst({
-      where: { OR: [{ id }, { slug: id }] },
-      select: publicClubSelection(),
+      where: { OR: [{ id }, { slug: id }], suspendedAt: null },
+      select: { ...publicFields, events: false },
     });
-    return { club: club ? present(club) : null };
+    if (!club) return { club: null };
+    const { getPublicCorkboard } = await import("@/actions/campus-events");
+    const { events } = await getPublicCorkboard({ clubId: club.id });
+    return { club: { ...present({ ...club, events: [] }), publicEvents: events.map(({ id, title, date, location, description }) => ({ id, title, date, location, description })) } };
   } catch {
     return {
       club: null,

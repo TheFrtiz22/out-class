@@ -1,16 +1,17 @@
 "use client"
+import { clubAssetSource } from "@/lib/club-assets"
 import { useState } from "react"
 import { ImagePlus, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
-export function ProfileImageInput({ label, value, onChange, banner = false }: { label: string; value: string | null; onChange: (value: string | null) => void; banner?: boolean }) {
+export function ProfileImageInput({ label, value, onChange, banner = false, onUpload }: { label: string; value: string | null; onChange: (value: string | null) => void; banner?: boolean; onUpload?: (file: File) => Promise<string> }) {
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   async function upload(file?: File) {
     if (!file) return
     setError("")
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 10 * 1024 * 1024) { setError("Choose a PNG, JPEG, or WebP under 10 MB."); return }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 5 * 1024 * 1024) { setError("Choose a PNG, JPEG, or WebP up to 5 MB."); return }
     setBusy(true)
     try {
       const bitmap = await createImageBitmap(file)
@@ -20,20 +21,25 @@ export function ProfileImageInput({ label, value, onChange, banner = false }: { 
       const context = canvas.getContext("2d")
       if (!context) throw new Error()
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close()
+      if (onUpload) {
+        const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(Error()), "image/webp", .8));
+        onChange(await onUpload(new File([blob], "club-image.webp", { type: "image/webp" })));
+        return;
+      }
       const data = canvas.toDataURL("image/webp", .8)
       if (data.length > 350000) { setError("This image is too detailed. Try a smaller image."); return }
       onChange(data)
-    } catch { setError("Could not read this image. Try another file.") }
+    } catch { setError("Image could not be uploaded. Your saved profile has not changed.") }
     finally { setBusy(false) }
   }
   return <div className="space-y-2" data-saving={busy}>
     <p className="text-sm font-medium">{label}</p>
     <label className={`relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/30 ${banner ? "h-36 w-full" : "size-20 rounded-full"}`} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); void upload(e.dataTransfer.files[0]) }}>
-      {value ? <img src={value} alt={`${label} preview`} className="size-full object-cover" /> : <ImagePlus className="size-6 text-muted-foreground" />}
+      {value ? <img src={clubAssetSource(value, true)} alt={`${label} preview`} className={`size-full ${banner ? "object-cover" : "object-contain"}`} /> : <ImagePlus className="size-6 text-muted-foreground" />}
       <input aria-label={`Upload ${label}`} className="absolute inset-0 cursor-pointer opacity-0" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e => { void upload(e.target.files?.[0]); e.target.value = "" }} />
     </label>
-    <div className="flex items-center gap-2"><Input aria-label={`${label} image URL`} placeholder="https://… or click above to upload" value={value?.startsWith("data:") ? "" : value ?? ""} onChange={e => onChange(e.target.value || null)} />{value && <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${label}`} onClick={() => onChange(null)}><X size={16} /></Button>}</div>
-    <p className="text-xs text-muted-foreground">{busy ? "Preparing image…" : value?.startsWith("data:") ? "Image ready to publish." : "Drop an image or click to upload. PNG, JPEG, WebP up to 10 MB."}</p>
+    <div className="flex items-center gap-2"><Input className={onUpload ? "sr-only" : ""} readOnly={!!onUpload} aria-label={`${label} image URL`} placeholder="https://… or click above to upload" value={value?.startsWith("data:") ? "" : value ?? ""} onChange={e => onChange(e.target.value || null)} />{value && <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${label}`} onClick={() => onChange(null)}><X size={16} /></Button>}</div>
+    <p className="text-xs text-muted-foreground">{busy ? "Preparing image…" : value?.startsWith("data:") ? "Image ready to publish." : "Drop an image or click to upload. PNG, JPEG, WebP up to 5 MB."}</p>
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
   </div>
 }

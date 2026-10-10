@@ -1,0 +1,190 @@
+[
+  {
+    "key": "enactus",
+    "name": "Enactus at UVA",
+    "slug": "enactus",
+    "category": "Consulting",
+    "color": "#E2AE22",
+    "tagline": "Put business skills to work for the community.",
+    "description": "Enactus at UVA connects hands-on consulting with social entrepreneurship. Affiliated with McIntire, the organization provides pro-bono support to socially responsible businesses in Charlottesville.",
+    "website": "https://www.enactusatuva.com/",
+    "sections": [
+      {
+        "kind": "programs",
+        "title": "Consulting with a purpose",
+        "body": "Work on practical business challenges while supporting local organizations.",
+        "visible": true,
+        "cards": [
+          {
+            "title": "Client services",
+            "description": "Explore strategy, market research, brand positioning and digital marketing.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Social entrepreneurship",
+            "description": "Connect business thinking with community needs.",
+            "image": "",
+            "url": ""
+          }
+        ]
+      },
+      {
+        "kind": "impact",
+        "title": "Rooted in Charlottesville",
+        "body": "Community-focused client work brings classroom learning into real projects.",
+        "visible": true,
+        "cards": []
+      },
+      {
+        "kind": "about",
+        "title": "Grow through experience",
+        "body": "Build consulting skills through hands-on work, workshops and a collaborative student community.",
+        "visible": true,
+        "cards": []
+      }
+    ]
+  },
+  {
+    "key": "portico",
+    "name": "Portico Impact Fund",
+    "slug": "portico",
+    "category": "Finance",
+    "color": "#17644E",
+    "tagline": "Learn investing. Think about impact.",
+    "description": "Portico Impact Fund combines experiential finance education with socially responsible equity investing. Its approach connects investment research, member development and charitable giving.",
+    "website": "https://www.porticoimpactfund.com/",
+    "sections": [
+      {
+        "kind": "programs",
+        "title": "Investing with purpose",
+        "body": "Explore how business performance and environmental, social and governance considerations inform equity research.",
+        "visible": true,
+        "cards": [
+          {
+            "title": "Investment research",
+            "description": "Study companies across sector-focused coverage groups.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Experiential education",
+            "description": "Develop finance knowledge through applied investment work.",
+            "image": "",
+            "url": ""
+          }
+        ]
+      },
+      {
+        "kind": "impact",
+        "title": "Returns that reach further",
+        "body": "Portico describes donating a portion of annual returns to local charitable causes.",
+        "visible": true,
+        "cards": []
+      },
+      {
+        "kind": "about",
+        "title": "Build your perspective",
+        "body": "The fund welcomes different academic backgrounds to learn about investing and responsible business.",
+        "visible": true,
+        "cards": []
+      }
+    ]
+  },
+  {
+    "key": "common-cents",
+    "name": "Common Cents at UVA",
+    "slug": "common-cents",
+    "category": "Finance",
+    "color": "#336B55",
+    "tagline": "Make personal finance easier to understand.",
+    "description": "Common Cents at UVA promotes financial literacy for students and the Charlottesville community. Its broader mission is to make personal finance approachable and help people make informed money decisions.",
+    "website": "https://www.commoncents.org/",
+    "sections": [
+      {
+        "kind": "programs",
+        "title": "Practical financial literacy",
+        "body": "Explore the everyday decisions that shape financial wellbeing.",
+        "visible": true,
+        "cards": [
+          {
+            "title": "Budgeting",
+            "description": "Understand spending, saving and planning for financial goals.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Credit",
+            "description": "Learn the fundamentals of responsible credit use.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Investing",
+            "description": "Build familiarity with long-term investing and risk.",
+            "image": "",
+            "url": ""
+          }
+        ]
+      },
+      {
+        "kind": "about",
+        "title": "Knowledge for everyday life",
+        "body": "The UVA listing describes education through speakers and interactive activities. Current chapter programs and recruitment details can be added by its leaders.",
+        "visible": true,
+        "cards": []
+      }
+    ]
+  },
+  {
+    "key": "tamid",
+    "name": "TAMID Group at UVA",
+    "slug": "tamid",
+    "category": "Business",
+    "color": "#2665A6",
+    "tagline": "Build experience through education, consulting and investing.",
+    "description": "TAMID at UVA connects business education with applied consulting and investment research. Its member experience includes education, consulting, an investment fund and fellowship opportunities.",
+    "website": "https://www.uvatamid.org/",
+    "sections": [
+      {
+        "kind": "programs",
+        "title": "Explore the member journey",
+        "body": "Develop skills through learning and applied work.",
+        "visible": true,
+        "cards": [
+          {
+            "title": "Education",
+            "description": "Build investing and consulting foundations through practical training and cases.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Consulting",
+            "description": "Work on business challenges with Israeli high-tech companies.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Investment fund",
+            "description": "Develop equity research skills through investment analysis.",
+            "image": "",
+            "url": ""
+          },
+          {
+            "title": "Fellowship",
+            "description": "Explore the organization\u2019s internship-abroad opportunity through its official information.",
+            "image": "",
+            "url": ""
+          }
+        ]
+      },
+      {
+        "kind": "about",
+        "title": "Learn by doing",
+        "body": "Connect classroom ideas with team projects, research and a wider business community.",
+        "visible": true,
+        "cards": []
+      }
+    ]
+  }
+]

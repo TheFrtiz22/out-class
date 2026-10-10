@@ -46,3 +46,14 @@ test('design-test rendering neutralizes auth fragments and legacy invitation gra
     assert.ok(!html.includes('{{')); assert.ok(!text.includes('{{'));
   }
 });
+
+test('canonical club asset references in invitation artwork use proxy delivery rather than nonexistent site paths', () => {
+  const { invitationEmail, invitationLogoUrl } = load('lib/invitation-email.ts');
+  const reference = 'club-assets/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000002.webp';
+  const expected = new URL('/api/club-assets?reference=' + encodeURIComponent(reference), site).href;
+  assert.equal(invitationLogoUrl(reference, site), expected);
+  const email = invitationEmail({ organizationName: 'Club', organizationLogoUrl: reference, owner: false, siteUrl: site });
+  assert.ok(email.html.includes(expected));
+  assert.ok(!email.html.includes(site + '/club-assets/'));
+  assert.ok(!email.html.includes('/storage/v1/'));
+});
