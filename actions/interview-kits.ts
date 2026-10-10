@@ -10,6 +10,7 @@ import { authorizeInterview, authorizeQuestionBank, interviewActor } from "@/uti
 import { interviewScopeSchema as scope, interviewScoreSchema } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
+import { collaborationAccess } from "@/utils/interview-collaboration";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -91,7 +92,13 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     if (record.revision !== data.revision) throw new Error("A newer draft exists. Reload before saving.");
     if (data.draft.score !== null) interviewScoreSchema.parse(data.draft.score);
     const oldDraft = interviewDraftSchema.parse(record.draft);
-    validateAdditionalQuestionSnapshots(oldDraft, data.draft, kitSchema.parse(round.interviewKit));
+    let allowedBank = kitSchema.parse(round.interviewKit);
+    if (data.draft.additionalQuestions.some(q => q.bankQuestion && !oldDraft.additionalQuestions.some(old => old.id === q.id) && !allowedBank.some(source => source.id === q.id && source.prompt === q.question && source.guidance === q.bankQuestion!.guidance))) {
+      const { roomKey } = await collaborationAccess(tx, data, user.id);
+      const shared = await tx.interviewCollaboration.findUnique({ where: { applicationId_roundId_roomKey: { applicationId: app.id, roundId: round.id, roomKey } } });
+      if (shared) allowedBank = [...allowedBank, ...kitSchema.parse(shared.questions)];
+    }
+    validateAdditionalQuestionSnapshots(oldDraft, data.draft, allowedBank);
     let evaluation = null;
     const submittedAt = data.complete ? new Date() : null;
     if (data.complete) {

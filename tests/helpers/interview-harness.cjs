@@ -8,6 +8,7 @@ function harness(){
  const assignments=members.map(m=>({applicationId:app.id,roundId:round.id,memberId:m.id,revokedAt:null}));let historyQuery;
  const matches=(o,w)=>Object.entries(w).every(([k,v])=>v&&typeof v==='object'&&!Array.isArray(v)?('not'in v?o[k]!==v.not:('in'in v?v.in.includes(o[k]):true)):o[k]===v);
  const tx={
+  interviewBooking:{findUnique:async()=>null},interviewCollaboration:{findUnique:async()=>null},
   $queryRaw:async()=>[],user:{findUnique:async()=>({disabledAt:null})},
   clubMember:{findUnique:async({where})=>denied?null:members.find(m=>m.userId===where.userId_clubId.userId&&m.clubId===where.userId_clubId.clubId),findFirst:async({where})=>members.find(m=>m.id===where.id&&m.clubId===where.clubId),update:async({where,data})=>Object.assign(members.find(m=>m.id===where.id),data)},
   application:{findFirst:async({where})=>where.id===app.id&&where.clubId===app.clubId&&app.status!=='DRAFTING'?app:null},

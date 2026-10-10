@@ -9,9 +9,9 @@ import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel } from "@/lib/workspace-api"
+import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel, prepareInterviewAdvance, confirmInterviewAdvance } from "@/lib/workspace-api"
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
-import { interviewQueue, nextInterviewApplicant } from "@/lib/interview-queue"
+import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
@@ -107,6 +107,14 @@ function InterviewSession({
   const [candidateAnnouncement, setCandidateAnnouncement] = useState("")
   const [message, setMessage] = useState("")
   const [failed, setFailed] = useState(false)
+  const [arrival, setArrival] = useState<{ moveId: string; clientId: string } | null>(null)
+  const [arrivalRetry, setArrivalRetry] = useState(0)
+  useEffect(() => {
+    if (!arrival || !prepared || prepared.applicationId !== activeId) return
+    let current = true
+    confirmInterviewAdvance(arrival).then(() => { if (current) { setArrival(null); setMessage("") } }).catch(() => { if (current) { setFailed(true); setMessage("Your destination is open, but the panel invitation could not be confirmed. Retry confirmation.") } })
+    return () => { current = false }
+  }, [arrival, prepared, activeId, arrivalRetry])
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
@@ -230,7 +238,7 @@ function InterviewSession({
     setPrepared(null)
     setMessage("")
   }
-  async function nextApplicant() {
+  async function nextApplicant(clientId: string, invitationId?: string) {
     // Recheck membership, assignments, round and own completion at navigation time.
     // Never navigate using the queue cached before this review was submitted.
     if (advancingRef.current) return false
@@ -239,12 +247,13 @@ function InterviewSession({
     const epoch = navigation.current
     let started = false
     try {
+      const destination = await prepareInterviewAdvance({ clubId: membership.clubId, applicationId: activeId, roundId, clientId, invitationId })
+      if (!destination) return false
       const fresh = await getInterviewWorkspace(membership.clubId)
       if (epoch !== navigation.current) return false
-      const next = fresh.rounds.some(r => r.id === roundId && !r.archived)
-        ? nextInterviewApplicant(fresh.applications, roundId, activeId) : null
-      if (!next) return false
-      const scope = { clubId: membership.clubId, applicationId: next.id, roundId }
+      const next = fresh.applications.find(app => app.id === destination.scope.applicationId && app.roundId === roundId && app.assignedRoundIds.includes(roundId) && !app.completedRoundIds.includes(roundId))
+      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("Destination no longer eligible.")
+      const scope = destination.scope
       // Both actions enforce current access. Keep the submitted candidate visible
       // until the destination's own draft, snapshot and identity are all ready.
       const [session, panel] = await Promise.all([openInterviewSession(scope), getInterviewApplicantPanel(scope)])
@@ -253,6 +262,7 @@ function InterviewSession({
       const stage = candidateRoom.current?.querySelector<HTMLElement>(".oc-interview-columns")
       if (stage) outgoing.current = captureInterviewCandidate(stage)
       setPrepared({ applicationId: next.id, session, panel })
+      setArrival({ moveId: destination.moveId, clientId })
       setData(fresh)
       setActiveId(next.id) // The keyed subtree resets panel, document, questions and history together.
       rememberApplicant(next.id)
@@ -329,6 +339,7 @@ function InterviewSession({
         }
       >
         {message}
+        {arrival && failed && <Button type="button" variant="ghost" onClick={() => setArrivalRetry(v => v + 1)}>Retry confirmation</Button>}
       </p>
       <p className="sr-only" role="status" aria-live="polite">{candidateAnnouncement}</p>
       {!active ? (

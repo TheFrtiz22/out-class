@@ -33,6 +33,8 @@ import * as interviewResumes from "@/actions/interview-resumes"
 import * as interviewGrants from "@/actions/organization-members"
 import * as demoInterviews from "@/lib/demo/interview-foundation"
 import * as interviewKits from "@/actions/interview-kits"
+import * as collaboration from "@/actions/interview-collaboration"
+import * as demoCollaboration from "@/lib/demo/interview-collaboration"
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes } from "@/lib/interview-kits"
 import * as meetingsApi from "@/actions/meetings"
 import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
@@ -277,6 +279,12 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
 
 export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
 export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
+export const getInterviewCollaboration = adapt(collaboration.getInterviewCollaboration, demoCollaboration.getInterviewCollaboration)
+export const selectSharedInterviewQuestion = adapt(collaboration.selectSharedInterviewQuestion, demoCollaboration.selectSharedInterviewQuestion)
+export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCollaboration, demoCollaboration.leaveInterviewCollaboration)
+export const dismissInterviewInvitation = adapt(collaboration.dismissInterviewInvitation, demoCollaboration.dismissInterviewInvitation)
+export const prepareInterviewAdvance = adapt(collaboration.prepareInterviewAdvance, demoCollaboration.prepareInterviewAdvance)
+export const confirmInterviewAdvance = adapt(collaboration.confirmInterviewAdvance, demoCollaboration.confirmInterviewAdvance)
 export const saveInterviewKit = adapt(interviewKits.saveInterviewKit, demoInterviews.saveInterviewKit)
 export const openInterviewSession = adapt(interviewKits.openInterviewSession, demoInterviews.openInterviewSession)
 export const saveInterviewSession = adapt(interviewKits.saveInterviewSession, demoInterviews.saveInterviewSession)
