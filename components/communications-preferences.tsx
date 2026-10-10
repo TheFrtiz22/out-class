@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 type Pref=Awaited<ReturnType<typeof getNotificationPreferences>>;
 const fields=[
  ["emailAnnouncements","Club announcements"],
- ["emailMessages","Private messages"],
  ["emailApplications","Application updates"],
  ["emailInterviews","Interview updates"],
  ["emailInvitations","Club invitations"],
