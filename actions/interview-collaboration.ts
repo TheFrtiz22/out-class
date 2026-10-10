@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { interviewScopeSchema, type InterviewScope } from "@/lib/interview-access";
+import { interviewCapabilities, interviewScopeSchema, type InterviewScope } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema } from "@/lib/interview-kits";
 import { PRESENCE_TTL_MS, INVITATION_TTL_MS, type CollaborationView } from "@/lib/interview-collaboration";
 import { collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
@@ -36,18 +36,23 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
 export async function getInterviewCollaboration(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member, session, roomKey } = await collaborationSession(tx, data, user.id);
+    const { member, session, roomKey, app } = await collaborationSession(tx, data, user.id);
     const now = new Date();
     await tx.interviewPresence.deleteMany({ where: { sessionId: session.id, seenAt: { lt: new Date(Date.now() - PRESENCE_TTL_MS) } } });
     const old = await tx.interviewPresence.findUnique({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } } });
     if (!old || old.sessionId !== session.id || now.getTime() - old.seenAt.getTime() > 12000) await tx.interviewPresence.upsert({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } }, create: { sessionId: session.id, memberId: member.id, clientId: data.clientId }, update: { sessionId: session.id, seenAt: now } });
     const presences = await tx.interviewPresence.findMany({ where: { sessionId: session.id, seenAt: { gt: new Date(Date.now() - PRESENCE_TTL_MS) } }, orderBy: [{ memberId: "asc" }] });
-    const participants: CollaborationView["participants"] = [];
-    for (const id of [...new Set(presences.map(p => p.memberId))]) {
-      const peer = await tx.clubMember.findUnique({ where: { id } });
-      if (!peer) continue;
-      try { const access = await collaborationAccess(tx, data, peer.userId); if (access.roomKey === roomKey) participants.push({ id, name: await memberName(tx, id) }); } catch { /* Revoked peers never appear. */ }
-    }
+    const presentIds = [...new Set(presences.map(p => p.memberId))];
+    // The actor already holds the club/application/round locks. Check current
+    // peer grants together rather than rerunning the whole room authorization
+    // for every name (which blocked private saves on hosted pooler connections).
+    const ids = [...new Set([...presentIds, ...(session.selectedBy ? [session.selectedBy] : [])])];
+    await tx.$queryRaw`SELECT u.id FROM "User" u JOIN "ClubMember" m ON m."userId" = u.id WHERE m.id = ANY(${ids}::text[]) ORDER BY u.id FOR SHARE OF u, m`;
+    const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
+    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true } } } });
+    const authorized = peers.filter(peer => peer.userId !== app.studentId && interviewCapabilities(peer).participate && (!booking || (roomKey === `booking:${booking.id}:${booking.slot.roomId}` && booking.slot.room?.panelMemberIds.includes(peer.id) && booking.slot.room.approvedPanelMemberIds.includes(peer.id))));
+    const peerName = (peer: typeof authorized[number]) => peer.user.studentProfile ? `${peer.user.studentProfile.firstName} ${peer.user.studentProfile.lastName}` : "Interviewer";
+    const participants: CollaborationView["participants"] = authorized.filter(peer => presentIds.includes(peer.id)).map(peer => ({ id: peer.id, name: peerName(peer) }));
     let invitation: CollaborationView["invitation"] = null;
     const moves = await tx.interviewMove.findMany({ where: { sourceId: session.id, confirmedAt: { not: null }, expiresAt: { gt: now } }, orderBy: [{ confirmedAt: "desc" }, { id: "desc" }], take: 10 });
     const invites = moves.length ? await tx.interviewInvitation.findMany({ where: { recipientId: member.id, dismissedAt: null, moveId: { in: moves.map(m => m.id) } } }) : [];
@@ -64,12 +69,11 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
     }
     let selection: CollaborationView["selection"] = null;
     if (session.selectedQuestionId && session.selectedBy) {
-      const selector = await tx.clubMember.findUnique({ where: { id: session.selectedBy } });
-      if (selector) try {
-        const access = await collaborationAccess(tx, data, selector.userId);
+      const selector = authorized.find(peer => peer.id === session.selectedBy);
+      if (selector) {
         const question = kitSchema.parse(session.questions).find(q => q.id === session.selectedQuestionId);
-        if (question && access.roomKey === roomKey) selection = { question, by: await memberName(tx, selector.id), memberId: selector.id };
-      } catch { /* Do not expose revoked identities. */ }
+        if (question) selection = { question, by: peerName(selector), memberId: selector.id };
+      }
     }
     return { sessionId: session.id, revision: session.revision, participants, selection, invitation };
   }, transactionOptions);
