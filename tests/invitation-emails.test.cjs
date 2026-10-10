@@ -57,7 +57,7 @@ test('SMTP rejection is recorded; ambiguous timeout and post-send audit failure 
 test('template escapes input and uses normal sign-in without identifiers or secrets in URLs',()=>{
  const template=harness().load('lib/invitation-email.ts').invitationEmail;
  const email=template({organizationName:'<img src=x onerror=alert(1)>\r\nBcc: x',owner:true,siteUrl:'https://outclass.test'});
- assert.ok(email.html.includes('&lt;img'));assert.ok(!email.html.includes('<img'));assert.ok(!email.subject.includes('\n'));assert.ok(email.text.includes('verified university identity'));assert.ok(email.html.includes('next=%2Fsettings%2Forganizations'));assert.ok(!email.html.includes(invite));assert.ok(!email.html.includes('jms8xy'));
+ assert.ok(email.html.includes('&lt;img'));assert.ok(!email.html.includes('<img src=x'));assert.ok(!email.subject.includes('\n'));assert.ok(email.text.includes('verified university identity'));assert.ok(email.html.includes('next=%2Fsettings%2Forganizations'));assert.ok(!email.html.includes(invite));assert.ok(!email.html.includes('jms8xy'));
  assert.ok(template({organizationName:'Club',owner:false,siteUrl:'https://outclass.test',legacyInvitationId:invite}).html.includes(`/invitations/${invite}`));
  assert.throws(()=>template({organizationName:'Club',owner:false,siteUrl:'https://outclass.test',legacyInvitationId:'../unsafe'}));
  for(const siteUrl of ['http://evil.test','https://user:secret@outclass.test'])assert.throws(()=>template({organizationName:'Club',owner:false,siteUrl}));

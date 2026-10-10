@@ -1,6 +1,15 @@
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
 import { invitationEmail } from '@/lib/invitation-email';
+import { studentClaimEmail } from '@/lib/student-claim-email';
+
+/** Resend's SMTP 250 response carries its dashboard ID; Message-ID is a separate header. */
+function providerReceipt(info: { messageId: string; response?: string }, host: string) {
+  const providerId = host.toLowerCase() === 'smtp.resend.com'
+    ? info.response?.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0]
+    : undefined;
+  return { messageId: providerId || info.messageId };
+}
 
 /** Use the same SMTP provider/account as Supabase Auth; credentials stay server-side. */
 export function invitationEmailConfig() {
@@ -19,18 +28,18 @@ export async function sendInvitationEmail(input: { recipient: string; organizati
     const message = invitationEmail({ ...input, siteUrl: config.siteUrl });
     const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: { address: z.string().email().parse(input.recipient), name: '' }, ...message, messageId: `<${input.deliveryId}@${new URL(config.siteUrl).hostname}>` });
     if (!info.accepted?.length) throw Object.assign(new Error('SMTP rejected the recipient.'), { responseCode: 550 });
-    return { messageId: info.messageId as string };
+    return providerReceipt(info, config.host);
   } finally { transport.close(); }
 }
 
 /** Auth's invite token is delivered only to its intended email; never returned to Admin UI. */
 export async function sendStudentClaimEmail(input: { recipient: string; name: string; tokenHash: string; deliveryId: string; siteUrl: string }) {
   const config = invitationEmailConfig();
-  const link = new URL('/auth/student-claim', input.siteUrl);
-  link.hash = new URLSearchParams({ token_hash: input.tokenHash }).toString();
-  const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 5000, socketTimeout: 10000, disableFileAccess: true, disableUrlAccess: true });
+  const message = studentClaimEmail(input);
+  const transport = nodemailer.createTransport({ host: config.host, port: config.port, secure: config.port === 465, requireTLS: config.port !== 465, auth: { user: config.user, pass: config.password }, connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 10000, disableFileAccess: true, disableUrlAccess: true });
   try {
-    const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: z.string().email().parse(input.recipient), subject: 'Claim your OutClass student account', text: `Hello ${input.name},\n\nYour OutClass account is ready. Choose your own password using this single-use invitation:\n${link}\n\nThis link expires according to the university authentication service's invitation policy. If it has expired, request another invitation.`, messageId: `<${input.deliveryId}@${new URL(config.siteUrl).hostname}>` });
+    const info = await transport.sendMail({ from: { name: 'OutClass', address: config.from }, to: z.string().email().parse(input.recipient), ...message, messageId: `<${input.deliveryId}@${new URL(config.siteUrl).hostname}>` });
     if (!info.accepted?.length) throw Error('The invitation email was not accepted. The account exists; resend from Users.');
+    return providerReceipt(info, config.host);
   } finally { transport.close(); }
 }

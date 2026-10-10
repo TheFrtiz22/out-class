@@ -109,6 +109,15 @@ export async function POST(request: NextRequest) {
     });
     if (updated.error) {
       await client.auth.signOut({ scope: "local" });
+      if (updated.error.code === "insufficient_aal")
+        return reply(
+          {
+            error:
+              "This account requires multi-factor authentication to change its password. Sign in with MFA, or contact OutClass support for account recovery.",
+            needsNewLink: true,
+          },
+          400,
+        );
       return reply(
         {
           error:

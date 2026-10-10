@@ -125,8 +125,8 @@ export async function createAdminStudent(input: unknown) {
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.create", targetId: userId, reason: d.reason, details: { result: "created", email: d.email } } });
   if (d.major && d.gradYear && /^[a-z][a-z0-9]{1,31}$/.test(d.email.split("@")[0])) await prisma.studentProfile.create({ data: { userId, firstName: d.firstName, lastName: d.lastName, computingId: d.email.split("@")[0], major: d.major, gradYear: d.gradYear } });
   if (relationship && relationshipType) await createClubIdentityInvitation({ clubId: relationship.id, identifierTypeId: relationshipType.id, identifier: d.email.split("@")[0], invitedName: `${d.firstName} ${d.lastName}`, requestedRole: "MEMBER", platformDesignation: true });
-  await sendStudentClaimEmail({ recipient: d.email, name: d.firstName, tokenHash: invitation.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
-  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.sent", targetId: userId, details: { result: "sent" } } });
+  const receipt = await sendStudentClaimEmail({ recipient: d.email, name: d.firstName, tokenHash: invitation.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.sent", targetId: userId, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
   return { id: userId, email: d.email, status: "INVITED" };
 }
 export async function resendAdminStudentInvitation(userId: string, reason: string) {
@@ -134,12 +134,17 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
   const config = invitationEmailConfig(), client = adminAuth();
   const { data, error } = await client.auth.admin.getUserById(userId);
   if (error || !data.user?.email || !isUvaEmail(data.user.email) || !data.user.invited_at || data.user.email_confirmed_at) throw Error("Only unclaimed UVA invitations can be resent.");
-  if (await prisma.auditLog.count({ where: { targetId: userId, action: { in: ["platform.student.invitation.sent", "platform.student.invitation.resend"] }, createdAt: { gte: new Date(Date.now() - 15 * 60000) } } })) throw Error("Wait 15 minutes before resending.");
+  // Reserve the attempt before token generation/SMTP. Failed or ambiguous sends
+  // and concurrent Admin requests must respect the same resend cooldown.
+  await prisma.$transaction(async tx => {
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    if (await tx.auditLog.count({ where: { targetId: userId, action: { in: ["platform.student.invitation.create", "platform.student.invitation.sent", "platform.student.invitation.resend", "platform.student.invitation.resend-attempt"] }, createdAt: { gte: new Date(Date.now() - 15 * 60000) } } })) throw Error("Wait 15 minutes before resending.");
+    await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend-attempt", targetId: userId, reason, details: { result: "attempt" } } });
+  });
   const link = await client.auth.admin.generateLink({ type: "invite", email: data.user.email });
   if (link.error) throw Error("Could not renew the invitation.");
-  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend-attempt", targetId: userId, reason, details: { result: "attempt" } } });
-  await sendStudentClaimEmail({ recipient: data.user.email, name: String(data.user.user_metadata.firstName || "Student"), tokenHash: link.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
-  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend", targetId: userId, reason, details: { result: "sent" } } });
+  const receipt = await sendStudentClaimEmail({ recipient: data.user.email, name: String(data.user.user_metadata.firstName || "Student"), tokenHash: link.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend", targetId: userId, reason, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
   return { success: true };
 }
 export async function createAdminClub(input: unknown) {

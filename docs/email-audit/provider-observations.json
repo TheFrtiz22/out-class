@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-10-10T00:17:42.605Z",
+  "recipient": "bsb4rd@virginia.edu",
+  "verifiedDomain": "updates.out-class.net",
+  "resendDomainId": "29d7e0ad-9487-41cc-95ea-3e9e3359dbad",
+  "spfPresent": true,
+  "dkimPresent": true,
+  "dmarcFound": false,
+  "publicAuthRateLimitPerHour": 30,
+  "perUserEmailCooldownSeconds": 60,
+  "otpDigits": 6,
+  "otpLifetimeSeconds": 3600,
+  "otpPlainTextVerified": true,
+  "recoveryPlainTextVerified": true,
+  "recoveryProductionTokenFragmentVerified": true,
+  "recoveryProviderConfirmationUrl": false,
+  "recipientInboxObserved": false,
+  "resendApiKeyPermissions": "sending-only: domain and email-read API requests return restricted_api_key (401); dashboard read access works"
+}

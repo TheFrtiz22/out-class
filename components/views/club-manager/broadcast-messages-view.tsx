@@ -65,19 +65,15 @@ export function BroadcastMessagesView() {
 
   function handleSend() {
     if (!canSend) return
-    const recipientEstimate =
-      audiences.has("Subscribed Followers") && audiences.size === 1
-        ? 612
-        : audiences.size * 150 + Math.floor(Math.random() * 40)
     setHistory((prev) => [
       {
         id: `bc-${Date.now()}`,
-        dateSent: "Just now",
+        dateSent: "Previewed just now",
         audiences: Array.from(audiences),
         subject: subject.trim(),
         type,
-        deliveredPercent: 100,
-        recipients: recipientEstimate,
+        deliveredPercent: 0,
+        recipients: 0,
       },
       ...prev,
     ])
@@ -96,7 +92,7 @@ export function BroadcastMessagesView() {
 
   function handleResend(id: string) {
     setHistory((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, dateSent: "Just now (resent)", deliveredPercent: 100 } : b)),
+      prev.map((b) => (b.id === id ? { ...b, dateSent: "Previewed again just now" } : b)),
     )
   }
 
@@ -107,10 +103,10 @@ export function BroadcastMessagesView() {
         <CardHeader>
           <CardTitle className="oc-card-heading flex items-center gap-2 text-foreground">
             <Megaphone className="size-4 text-muted-foreground" />
-            Send Broadcast
+            Broadcast preview
           </CardTitle>
           <CardDescription>
-            Blast urgent notifications directly to subscribers, applicants, or members.
+            Preview a message for subscribers, applicants, or members. Email delivery is not connected.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
@@ -272,18 +268,18 @@ export function BroadcastMessagesView() {
       {/* History */}
       <Card className="bg-white shadow-none">
         <CardHeader>
-          <CardTitle className="oc-card-heading text-foreground">Sent Announcements History</CardTitle>
-          <CardDescription>Past broadcasts sent to your subscribers, applicants, and members.</CardDescription>
+          <CardTitle className="oc-card-heading text-foreground">Broadcast preview history</CardTitle>
+          <CardDescription>Example messages and previews from this session. These are not delivery records.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow className="border-slate-200">
-                <TableHead className="text-slate-500">Date Sent</TableHead>
+                <TableHead className="text-slate-500">Preview date</TableHead>
                 <TableHead className="text-slate-500">Target Audience</TableHead>
                 <TableHead className="text-slate-500">Subject</TableHead>
                 <TableHead className="text-slate-500">Type</TableHead>
-                <TableHead className="text-slate-500">Delivery Rate</TableHead>
+                <TableHead className="text-slate-500">Delivery</TableHead>
                 <TableHead className="text-right text-slate-500">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -303,14 +299,14 @@ export function BroadcastMessagesView() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-slate-600">
-                    {b.deliveredPercent}% Delivered / {b.recipients} Recipients
+                    Preview only
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`Resend ${b.subject}`}
+                        aria-label={`Preview again: ${b.subject}`}
                         onClick={() => handleResend(b.id)}
                         className="size-8 text-slate-500 hover:text-foreground"
                       >

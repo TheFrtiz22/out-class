@@ -161,6 +161,17 @@ test("provider password policy failures invalidate the consumed link without exp
   assert.deepEqual(h.calls.at(-1), ["signOut", { scope: "local" }]);
 });
 
+test('MFA-protected recovery explains the assurance requirement and revokes the isolated session', async () => {
+  const h = harness({ updateUser: async () => ({ error: { code: 'insufficient_aal', status: 401, message: 'private provider detail' } }) });
+  const response = await h.send(reset), body = await response.json();
+  assert.equal(response.status, 400);
+  assert.equal(body.needsNewLink, true);
+  assert.match(body.error, /multi-factor authentication/);
+  assert.doesNotMatch(body.error, /private provider detail|security requirements and differ/);
+  assert.equal(response.headers.get('set-cookie'), null);
+  assert.deepEqual(h.calls.at(-1), ['signOut', { scope: 'local' }]);
+});
+
 test('a completed reset remains successful if subsequent session revocation fails', async () => {
   const h = harness({ signOut: async () => { throw new Error('provider outage') } })
   const response = await h.send(reset)

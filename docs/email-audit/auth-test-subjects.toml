@@ -1,0 +1,11 @@
+# Proposed temporary hosted change. Do not push the repository's full config.
+# Only the exact test mailbox receives a prefix; restore original subjects after tests.
+project_id = "outclass-email-audit-subjects"
+[auth.email.template.confirmation]
+subject = '{{ if eq .Email "bsb4rd@virginia.edu" }}[OutClass Test] {{ end }}Verify your UVA email — OutClass'
+[auth.email.template.magic_link]
+subject = '{{ if eq .Email "bsb4rd@virginia.edu" }}[OutClass Test] {{ end }}Your OutClass sign-in code'
+[auth.email.template.recovery]
+subject = '{{ if eq .Email "bsb4rd@virginia.edu" }}[OutClass Test] {{ end }}Reset your password'
+[auth.email.notification.password_changed]
+subject = '{{ if eq .Email "bsb4rd@virginia.edu" }}[OutClass Test] {{ end }}Your password was changed'
