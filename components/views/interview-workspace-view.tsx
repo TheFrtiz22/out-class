@@ -9,9 +9,9 @@ import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
-import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel } from "@/lib/workspace-api"
+import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel, prepareInterviewAdvance, confirmInterviewAdvance } from "@/lib/workspace-api"
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
-import { interviewQueue, nextInterviewApplicant } from "@/lib/interview-queue"
+import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { DemoInterviewGuide } from "@/components/demo-workspace"
 import { Button } from "@/components/ui/button"
@@ -107,17 +107,25 @@ function InterviewSession({
   const [candidateAnnouncement, setCandidateAnnouncement] = useState("")
   const [message, setMessage] = useState("")
   const [failed, setFailed] = useState(false)
+  const [arrival, setArrival] = useState<{ moveId: string; clientId: string; applicationId: string } | null>(null)
+  const [arrivalRetry, setArrivalRetry] = useState(0)
   const heading = useRef<HTMLHeadingElement>(null)
   const form = useRef<HTMLFormElement>(null)
   const recoveryKey = `outclass-interview:${membership.clubId}:${membership.id}`
   const recoveredApplicant = useCallback(() => {
-    try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string } | null }
+    try { return JSON.parse(sessionStorage.getItem(recoveryKey) || "null") as { roundId: string; applicationId: string; moveId?: string; clientId?: string } | null }
     catch { return null }
   }, [recoveryKey])
-  function rememberApplicant(applicationId: string) {
-    try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId, applicationId })) }
+  const rememberApplicant = useCallback((applicationId: string, receipt?: { moveId: string; clientId: string }) => {
+    try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId, applicationId, ...receipt })) }
     catch { /* Server drafts remain available if browser storage is unavailable. */ }
-  }
+  }, [recoveryKey, roundId])
+  useEffect(() => {
+    if (!arrival || arrival.applicationId !== activeId) return
+    let current = true
+    confirmInterviewAdvance({ moveId: arrival.moveId, clientId: arrival.clientId }).then(() => { if (current) { setArrival(null); rememberApplicant(activeId); setMessage("") } }).catch(() => { if (current) { setFailed(true); setMessage("Your destination is open, but the panel invitation could not be confirmed. Retry confirmation.") } })
+    return () => { current = false }
+  }, [arrival, activeId, arrivalRetry, rememberApplicant])
   const round = data?.rounds.find((item) => item.id === roundId)
   const queue = interviewQueue(data?.applications || [], roundId)
   const active = queue.find((app) => app.id === activeId)
@@ -183,7 +191,9 @@ function InterviewSession({
   useEffect(() => {
     if (!data) return
     const recovery = recoveredApplicant()
-    setActiveId(recovery?.roundId === roundId && interviewQueue(data.applications, roundId).some(a => a.id === recovery.applicationId) ? recovery.applicationId : "")
+    const recovered = recovery?.roundId === roundId && interviewQueue(data.applications, roundId).some(a => a.id === recovery.applicationId)
+    setActiveId(recovered ? recovery.applicationId : "")
+    if (recovered && recovery.moveId && recovery.clientId) setArrival({ applicationId: recovery.applicationId, moveId: recovery.moveId, clientId: recovery.clientId })
     setMessage("")
   }, [roundId, data, recoveredApplicant])
   useEffect(() => {
@@ -215,6 +225,7 @@ function InterviewSession({
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
     setActiveId(id)
+    setArrival(null)
     navigation.current++
     setPrepared(null)
     rememberApplicant(id)
@@ -226,11 +237,12 @@ function InterviewSession({
     if (busy || (dirty && !window.confirm("Return to interviews? Unsaved changes will be lost."))) return
     try { sessionStorage.removeItem(recoveryKey) } catch { /* Selection stays local if storage is unavailable. */ }
     setActiveId("")
+    setArrival(null)
     navigation.current++
     setPrepared(null)
     setMessage("")
   }
-  async function nextApplicant() {
+  async function nextApplicant(clientId: string, invitationId?: string) {
     // Recheck membership, assignments, round and own completion at navigation time.
     // Never navigate using the queue cached before this review was submitted.
     if (advancingRef.current) return false
@@ -239,12 +251,13 @@ function InterviewSession({
     const epoch = navigation.current
     let started = false
     try {
+      const destination = await prepareInterviewAdvance({ clubId: membership.clubId, applicationId: activeId, roundId, clientId, invitationId })
+      if (!destination) return false
       const fresh = await getInterviewWorkspace(membership.clubId)
       if (epoch !== navigation.current) return false
-      const next = fresh.rounds.some(r => r.id === roundId && !r.archived)
-        ? nextInterviewApplicant(fresh.applications, roundId, activeId) : null
-      if (!next) return false
-      const scope = { clubId: membership.clubId, applicationId: next.id, roundId }
+      const next = fresh.applications.find(app => app.id === destination.scope.applicationId && app.roundId === roundId && app.assignedRoundIds.includes(roundId) && !app.completedRoundIds.includes(roundId))
+      if (!next || !fresh.rounds.some(r => r.id === roundId && !r.archived)) throw Error("Destination no longer eligible.")
+      const scope = destination.scope
       // Both actions enforce current access. Keep the submitted candidate visible
       // until the destination's own draft, snapshot and identity are all ready.
       const [session, panel] = await Promise.all([openInterviewSession(scope), getInterviewApplicantPanel(scope)])
@@ -253,9 +266,10 @@ function InterviewSession({
       const stage = candidateRoom.current?.querySelector<HTMLElement>(".oc-interview-columns")
       if (stage) outgoing.current = captureInterviewCandidate(stage)
       setPrepared({ applicationId: next.id, session, panel })
+      setArrival({ moveId: destination.moveId, clientId, applicationId: next.id })
       setData(fresh)
       setActiveId(next.id) // The keyed subtree resets panel, document, questions and history together.
-      rememberApplicant(next.id)
+      rememberApplicant(next.id, { moveId: destination.moveId, clientId })
       setMessage("")
       setFailed(false)
       started = !!stage
@@ -329,6 +343,7 @@ function InterviewSession({
         }
       >
         {message}
+        {arrival && failed && <Button type="button" variant="ghost" onClick={() => setArrivalRetry(v => v + 1)}>Retry confirmation</Button>}
       </p>
       <p className="sr-only" role="status" aria-live="polite">{candidateAnnouncement}</p>
       {!active ? (

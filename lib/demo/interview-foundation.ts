@@ -8,6 +8,7 @@ import { demoResumeText } from "./resume-fixture";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
+  collaboration?: import("./interview-collaboration").DemoCollaboration;
   assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null; bookingManaged?: boolean; bookingId?: string | null }[];
   documents: { id: string; applicationId: string; roundId: string; source: string; createdAt: string }[];
   annotations: (Content & { id: string; documentId: string; authorId: string; revision: number; deletedAt: string | null })[];
@@ -70,7 +71,8 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
     if (app.roundId !== round.id || record.revision !== input.revision) throw new Error("Interview changed. Reload before saving.");
     validateQuestionNotes(record.questions, draft);
     if (draft.score !== null) interviewScoreSchema.parse(draft.score);
-    validateAdditionalQuestionSnapshots(record.draft, draft, kitSchema.parse(round.interviewKit));
+    const shared = s.interviewFoundation.collaboration?.rooms.find(r => r.scope.clubId === input.clubId && r.scope.applicationId === app.id && r.scope.roundId === round.id);
+    validateAdditionalQuestionSnapshots(record.draft, draft, [...kitSchema.parse(round.interviewKit), ...(shared?.questions || [])]);
     let evaluation = null;
     if (input.complete) {
       const score = interviewScoreSchema.parse(draft.score);

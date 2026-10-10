@@ -48,8 +48,8 @@ export function validateAdditionalQuestionSnapshots(previous: InterviewDraft, ne
   }
   for (const item of next.additionalQuestions) {
     if (!item.bankQuestion || previous.additionalQuestions.some(q => q.id === item.id)) continue;
-    const source = bank.find(q => q.id === item.id);
-    if (!source || source.prompt !== item.question || source.guidance !== item.bankQuestion.guidance)
+    const source = bank.some(q => q.id === item.id && q.prompt === item.question && q.guidance === item.bankQuestion!.guidance);
+    if (!source)
       throw new Error("The question bank changed. Reload the bank before adding this question.");
   }
 }

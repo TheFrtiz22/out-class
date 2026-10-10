@@ -431,6 +431,54 @@ model InterviewRecord {
   @@unique([applicationId, interviewerId, roundId])
 }
 
+// Server-only collaboration metadata. Private reviews remain in InterviewRecord.
+// Cross-scope foreign keys and browser-role denial are enforced in migration SQL.
+model InterviewCollaboration {
+  id String @id @default(uuid())
+  clubId String
+  applicationId String
+  roundId String
+  roomKey String
+  questions Json
+  selectedQuestionId String?
+  selectedBy String?
+  revision Int @default(0)
+  @@unique([applicationId, roundId, roomKey])
+  @@index([clubId, roundId])
+}
+
+model InterviewPresence {
+  id String @id @default(uuid())
+  sessionId String
+  memberId String
+  clientId String
+  seenAt DateTime @default(now())
+  @@unique([memberId, clientId])
+  @@index([sessionId, seenAt])
+}
+
+model InterviewMove {
+  id String @id @default(uuid())
+  sourceId String
+  destinationId String
+  memberId String
+  invited Boolean @default(false)
+  acceptedInvitationId String?
+  createdAt DateTime @default(now())
+  confirmedAt DateTime?
+  expiresAt DateTime
+  @@index([memberId, confirmedAt])
+}
+
+model InterviewInvitation {
+  id String @id @default(uuid())
+  moveId String
+  recipientId String
+  dismissedAt DateTime?
+  @@unique([moveId, recipientId])
+  @@index([recipientId, dismissedAt])
+}
+
 model PlatformAdmin {
   userId    String   @id
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -10,6 +10,7 @@ import { authorizeInterview, authorizeQuestionBank, interviewActor } from "@/uti
 import { interviewScopeSchema as scope, interviewScoreSchema } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
+import { collaborationAccess } from "@/utils/interview-collaboration";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -63,7 +64,13 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     if (!record) {
       if (round.archivedAt) throw new Error("Archived rounds cannot start interviews.");
       if (app.roundId !== round.id) throw new Error("Cannot start an interview in a previous round.");
-      record = await tx.interviewRecord.create({ data: { ...key, questions: kitSchema.parse(round.interviewKit), draft: emptyInterviewDraft, anonymousReview: false } });
+      const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: round.id } }, include: { slot: { include: { room: true } } } });
+      const room = booking?.slot.room;
+      const inRoom = !booking || !!room && room.isOpen && room.panelMemberIds.includes(member.id) && room.approvedPanelMemberIds.includes(member.id) && !!room.panelApprovedBy && !!await tx.clubMember.findFirst({ where: { clubId: app.clubId, userId: room.panelApprovedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } });
+      const common = inRoom ? await tx.interviewCollaboration.findUnique({ where: { applicationId_roundId_roomKey: { applicationId: app.id, roundId: round.id, roomKey: booking ? `booking:${booking.id}:${room!.id}` : `panel:${app.id}` } } }) : null;
+      // A later panel member joins the same preserved bank, even if the master
+      // kit changed since the first participant opened this candidate's room.
+      record = await tx.interviewRecord.create({ data: { ...key, questions: kitSchema.parse(common?.questions ?? round.interviewKit), draft: emptyInterviewDraft, anonymousReview: false } });
     }
     if (record.anonymousReview) throw new Error("Historical anonymous interview is protected.");
     if (!record.completedAt && app.roundId !== round.id) throw new Error("Applicant round changed.");
@@ -91,7 +98,13 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     if (record.revision !== data.revision) throw new Error("A newer draft exists. Reload before saving.");
     if (data.draft.score !== null) interviewScoreSchema.parse(data.draft.score);
     const oldDraft = interviewDraftSchema.parse(record.draft);
-    validateAdditionalQuestionSnapshots(oldDraft, data.draft, kitSchema.parse(round.interviewKit));
+    let allowedBank = kitSchema.parse(round.interviewKit);
+    if (data.draft.additionalQuestions.some(q => q.bankQuestion && !oldDraft.additionalQuestions.some(old => old.id === q.id) && !allowedBank.some(source => source.id === q.id && source.prompt === q.question && source.guidance === q.bankQuestion!.guidance))) {
+      const { roomKey } = await collaborationAccess(tx, data, user.id);
+      const shared = await tx.interviewCollaboration.findUnique({ where: { applicationId_roundId_roomKey: { applicationId: app.id, roundId: round.id, roomKey } } });
+      if (shared) allowedBank = [...allowedBank, ...kitSchema.parse(shared.questions)];
+    }
+    validateAdditionalQuestionSnapshots(oldDraft, data.draft, allowedBank);
     let evaluation = null;
     const submittedAt = data.complete ? new Date() : null;
     if (data.complete) {

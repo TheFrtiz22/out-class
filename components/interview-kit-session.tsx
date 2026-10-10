@@ -16,6 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "lucide-react";
+import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
+import type { KitQuestion } from "@/lib/interview-kits";
+import { simulateDemoInterviewSelection, simulateDemoInterviewAdvance } from "@/lib/demo/interview-collaboration";
 export function InterviewKitSession({
   clubId,
   applicationId,
@@ -45,7 +48,7 @@ export function InterviewKitSession({
     >,
     next: boolean,
   ) => void;
-  onNextApplicant?: () => Promise<boolean>;
+  onNextApplicant?: (clientId: string, invitationId?: string) => Promise<boolean>;
   onReturnToList?: () => void;
 }) {
   const [session, setSession] = useState<InterviewSessionData | null>(initialSession || null),
@@ -59,6 +62,15 @@ export function InterviewKitSession({
     [newQuestion, setNewQuestion] = useState(""),
     [retry, setRetry] = useState(0);
   const [activeQuestion, setActiveQuestion] = useState("");
+  const collaboration = useInterviewWorkspace({ clubId, applicationId, roundId }, !!session);
+  const sharedRevision = useRef(-1);
+  const personalQuestion = useRef(false);
+  const suppressQuestionFocus = useRef(false);
+  const [sharedQuestion, setSharedQuestion] = useState<KitQuestion | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<{ question: KitQuestion; by: string; revision: number } | null>(null);
+  const [collaborationMessage, setCollaborationMessage] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const composing = useRef(false);
   const [offScriptOpen, setOffScriptOpen] = useState(false);
   const activeHeading = useRef<HTMLHeadingElement>(null);
   const bankControl = useRef<HTMLButtonElement>(null);
@@ -150,7 +162,7 @@ export function InterviewKitSession({
     getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") }).finally(() => { if (current) setLibraryLoading(false); });
     return () => { current = false };
   }, [clubId, roundId, libraryOpen, libraryRetry]);
-  useEffect(() => { if (activeQuestion) activeHeading.current?.focus({ preventScroll: false }); }, [activeQuestion]);
+  useEffect(() => { if (activeQuestion && !suppressQuestionFocus.current) activeHeading.current?.focus({ preventScroll: false }); suppressQuestionFocus.current = false; }, [activeQuestion]);
   useEffect(() => {
     if (!closing || session?.completedAt) return;
     let current = true; setHistory(null); setHistoryError("");
@@ -168,6 +180,48 @@ export function InterviewKitSession({
   draftRef.current = draft;
   const serialized = JSON.stringify(draft),
     dirty = !!session && !session.completedAt && serialized !== saved;
+  function openSharedQuestion(question: KitQuestion, focus: boolean) {
+    const record = sessionRef.current;
+    if (!record || record.completedAt || draftRef.current.postInterview) return;
+    if (!record.questions.some(q => q.id === question.id) && !draftRef.current.additionalQuestions.some(q => q.id === question.id)) {
+      if (draftRef.current.additionalQuestions.length >= 30) { setCollaborationMessage("Your session has reached its question limit. Your private notes are safe."); return; }
+      setDraft(d => ({ ...d, additionalQuestions: [...d.additionalQuestions, { id: question.id, question: question.prompt, bankQuestion: { guidance: question.guidance }, notes: "" }] }));
+    }
+    personalQuestion.current = false;
+    suppressQuestionFocus.current = !focus;
+    setSharedQuestion(question); setActiveQuestion(question.id); setPendingQuestion(null);
+  }
+  useEffect(() => {
+    const view = collaboration.view;
+    if (!view || session?.completedAt || closing || view.revision <= sharedRevision.current) return;
+    sharedRevision.current = view.revision;
+    if (!view.selection) return;
+    const { question, by } = view.selection;
+    if (sharedQuestion?.id === question.id && activeQuestion === question.id) return;
+    const element = document.activeElement;
+    const typing = composing.current || !!element && !!formRef.current?.contains(element) && (element.tagName === "TEXTAREA" || element.tagName === "INPUT" || (element as HTMLElement).isContentEditable);
+    if (dirty || typing || personalQuestion.current || saving || closingQuestion || ending) setPendingQuestion({ question, by, revision: view.revision });
+    else { openSharedQuestion(question, false); setCollaborationMessage(`${by} selected this question.`); }
+  // Incoming state never substitutes a draft or focuses a field.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collaboration.view, closing, session?.completedAt]);
+  async function selectBankQuestion(question: KitQuestion) {
+    if (selecting || savingRef.current || sessionRef.current?.completedAt || draftRef.current.postInterview) return;
+    setSelecting(true); setCollaborationMessage("");
+    try {
+      if (dirty && !(await persist())) return;
+      const result = await collaboration.select(question.id);
+      sharedRevision.current = Math.max(sharedRevision.current, result.revision);
+      openSharedQuestion(result.question, true);
+    } catch { setCollaborationMessage("Could not share this question. Your notes remain here. Try selecting it again."); }
+    finally { setSelecting(false); }
+  }
+  async function acceptPendingQuestion() {
+    if (!pendingQuestion || composing.current) return;
+    if (dirty && !(await persist())) return;
+    openSharedQuestion(pendingQuestion.question, true);
+    setCollaborationMessage(`${pendingQuestion.by} selected this question.`);
+  }
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -288,7 +342,8 @@ export function InterviewKitSession({
     ...session.questions.map(q => ({ id: q.id, prompt: q.prompt, guidance: q.guidance, extra: false })),
     ...draft.additionalQuestions.map(q => ({ id: q.id, prompt: q.question, guidance: q.bankQuestion?.guidance || "", extra: true, bank: !!q.bankQuestion })),
   ];
-  const active = questions.find(q => q.id === activeQuestion);
+  const ownActive = questions.find(q => q.id === activeQuestion);
+  const active = ownActive && sharedQuestion?.id === ownActive.id && !personalQuestion.current ? { ...ownActive, ...sharedQuestion } : ownActive;
   const completedIds = session.draft.completedQuestionIds || [];
   const completed = questions.filter(q => completedIds.includes(q.id));
   const available = questions.filter(q => !completedIds.includes(q.id));
@@ -327,6 +382,7 @@ export function InterviewKitSession({
   function addQuestion(prompt: string, bankId?: string, guidance?: string) {
     if (disabled || draft.additionalQuestions.length >= 30 || !prompt.trim()) return;
     const id = bankId || crypto.randomUUID();
+    personalQuestion.current = true; setSharedQuestion(null);
     if (questions.some(q => q.id === id)) { setActiveQuestion(id); return; }
     setDraft(d => ({ ...d, additionalQuestions: [...d.additionalQuestions, { id, question: prompt.trim(), notes: "", ...(bankId ? { bankQuestion: { guidance: guidance || "" } } : {}) }] }));
     setActiveQuestion(id);
@@ -363,7 +419,7 @@ export function InterviewKitSession({
     if (!sessionRef.current?.completedAt || nextBusyRef.current || !onNextApplicant) return;
     nextBusyRef.current = true; setNextBusy(true); setNextError("");
     try {
-      const found = await onNextApplicant();
+      const found = await onNextApplicant(collaboration.clientId);
       if (mounted.current) setNoMoreApplicants(!found);
     } catch {
       if (mounted.current) setNextError("Could not load the next applicant. Your submitted review is safe. Retry to check your current access and assignments.");
@@ -372,16 +428,23 @@ export function InterviewKitSession({
       if (mounted.current) setNextBusy(false);
     }
   }
-  return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
+  return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
       <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
+    <div className="oc-room-collaboration" aria-label="Room participants">
+      <span>{collaboration.view ? `${collaboration.view.participants.map(p => p.name).join(" · ")} · In this room` : "Connecting to panel…"}</span>
+      {collaboration.error && <span role="status">{collaboration.error} <Button type="button" variant="ghost" onClick={() => void collaboration.refresh()}>Retry connection</Button></span>}
+      {collaboration.view?.simulated && <details><summary>Demo collaboration simulation</summary><p>Alex is simulated. This does not demonstrate real multi-user behavior.</p><Button type="button" variant="ghost" onClick={() => { simulateDemoInterviewSelection({ clubId, applicationId, roundId }); void collaboration.refresh(); }}>Simulate question selection</Button><Button type="button" variant="ghost" onClick={() => { try { simulateDemoInterviewAdvance({ clubId, applicationId, roundId }); void collaboration.refresh(); } catch { setCollaborationMessage("No eligible sample candidate remains."); } }}>Simulate next-candidate invitation</Button></details>}
+    </div>
     <div className="oc-interview-columns grid items-start">
       {context}
       <div className="oc-question-workspace min-w-0">
         <div className="oc-candidate-content">
+        {collaborationMessage && <p role="status" className="text-xs text-muted-foreground">{collaborationMessage}</p>}
+        {pendingQuestion && !closing && !session.completedAt && <div className="oc-shared-question-pending" role="status"><span>{pendingQuestion.by} selected a question. Your private work stays here.</span><Button type="button" variant="outline" disabled={saving || completing || closingQuestion || ending} onClick={() => void acceptPendingQuestion()}>Open question</Button></div>}
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
         {session.completedAt && <Button type="button" variant="ghost" onClick={() => setActiveQuestion("")}>Back to submitted review</Button>}
@@ -393,11 +456,11 @@ export function InterviewKitSession({
           <Input aria-label="Search question bank" placeholder="Search questions…" value={search} onChange={e => setSearch(e.target.value)} />
           {libraryLoading && <p role="status">Loading question bank…</p>}
           {libraryError && <p role="alert">{libraryError} <Button type="button" variant="ghost" onClick={() => setLibraryRetry(v => v + 1)}>Retry bank</Button></p>}
-          <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={!existing && (disabled || draft.additionalQuestions.length >= 30)} onClick={() => existing ? setActiveQuestion(existing.id) : addQuestion(q.prompt, q.id, q.guidance)}>{existing ? "Open saved question" : "Use question"}</Button></li>; })}</ul>
+          <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={disabled || selecting || (!existing && draft.additionalQuestions.length >= 30)} onClick={() => void selectBankQuestion(q)}>{existing ? "Open shared question" : "Use question"}</Button></li>; })}</ul>
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
         </section>}
         <div ref={completionSource} className="oc-question-completion-source">
-        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => setActiveQuestion(q.id)} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
+        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion || selecting} onClick={() => { if (!q.extra || ("bank" in q && q.bank)) void selectBankQuestion(q); else { personalQuestion.current = true; setActiveQuestion(q.id); } }} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">
           <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(""); setLibraryOpen(false); bankControl.current?.focus(); }}>Back to question bank</Button>
           <h3 ref={activeHeading} tabIndex={-1} className="break-words">{active.prompt}</h3>
@@ -440,13 +503,20 @@ export function InterviewKitSession({
           <div id={`question-review-${q.id}`} className="oc-question-review" data-open={open} inert={!open}><div><div className="oc-question-review-content">
             <p className="text-sm">{q.prompt}</p>{key(q.guidance)}<label htmlFor={`review-notes-${q.id}`}>Your private notes</label>
             <Textarea id={`review-notes-${q.id}`} rows={4} maxLength={10000} disabled={disabled} value={notes} onChange={e => q.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(item => item.id === q.id ? { ...item, notes: e.target.value } : item) })) : note(q.id, e.target.value)} />
-            {!closing && !session.completedAt && <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(q.id); setExpandedQuestions([]); }}>Reopen question</Button>}
+            {!closing && !session.completedAt && <Button type="button" variant="ghost" onClick={() => { personalQuestion.current = true; setSharedQuestion(null); setActiveQuestion(q.id); setExpandedQuestions([]); }}>Reopen question</Button>}
           </div></div></div>
         </li>; })}</ul>
         {!reviewed.length && <p className="text-sm text-muted-foreground">{closing || session.completedAt ? "No question notes recorded." : "Saved questions appear here."}</p>}
         </div>
       </aside>
     </div>
+    {collaboration.view?.invitation && <aside className="oc-room-invitation" aria-label="Invitation to another interview" role="status"><p>{collaboration.view.invitation.sender} moved to {collaboration.view.invitation.candidate}’s interview. Would you like to join?</p>{!session.completedAt && <p>Finish your current review before joining.</p>}<div><Button type="button" disabled={nextBusy || completing || saving} onClick={() => {
+      if (!session.completedAt) { setCollaborationMessage("Finish your current review before joining."); return; }
+      const invitationId = collaboration.view!.invitation!.id;
+      if (!onNextApplicant || nextBusyRef.current) return;
+      nextBusyRef.current = true; setNextBusy(true);
+      void onNextApplicant(collaboration.clientId, invitationId).catch(() => setCollaborationMessage("Could not join. Retry after checking current assignments; your review is safe.")).finally(() => { nextBusyRef.current = false; if (mounted.current) setNextBusy(false); });
+    }}>Proceed</Button>{!session.completedAt && <Button type="button" variant="outline" disabled={saving || completing || ending} onClick={() => { if (!closing) void endInterview(); else closingHeading.current?.focus({ preventScroll: false }); }}>Finish current review</Button>}<Button type="button" variant="ghost" disabled={nextBusy} onClick={() => void collaboration.dismiss(collaboration.view!.invitation!.id).catch(() => setCollaborationMessage("Could not dismiss the invitation. Retry Stay here."))}>Stay here</Button></div></aside>}
     {flights.map(f => <div key={f.id} ref={el => { if (el) flightNodes.current.set(f.id, el); else flightNodes.current.delete(f.id); }} className="oc-question-flight" aria-hidden="true" inert style={{ left: f.from.left, top: f.from.top, width: f.from.width, height: f.from.height }}><div style={{ width: f.from.width }}><p>{f.prompt}</p>{f.notes && <p className="oc-note-preview">{f.notes}</p>}</div></div>)}
   </form>;
 }
