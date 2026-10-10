@@ -327,7 +327,7 @@ export const scheduleDate = "Monday, September 7th"
 
 export const scheduleLocationNames = []
 
-export type NotificationType = "Announcement" | "Interview Invite"
+export type NotificationType = "Announcement" | "Interview Invite" | "Application Update" | "Club Invitation" | "Task" | "OutClass Update" | "Private Message"
 
 export type Notification = {
   durableId?: string

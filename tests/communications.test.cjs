@@ -4,6 +4,24 @@ const policy = loader({})('lib/communications-policy.ts');
 const email = loader({})('lib/notification-email.ts');
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
+test('durable inbox categories preserve announcement filtering and persisted read state', () => {
+  const { inboxNotification } = loader({})('lib/communications-client.ts');
+  const base = { id: uuid(1), clubId: uuid(2), club: { name: 'Fixture', color: '#142d4e', logoUrl: null }, href: '/?workspace=student&view=inbox', title: 'Update', body: 'Saved body', createdAt: new Date('2026-10-10T12:00:00Z'), readAt: new Date() };
+  const items = ['ANNOUNCEMENT', 'APPLICATION', 'TASK', 'INVITATION', 'PLATFORM', 'INTERVIEW'].map(type => inboxNotification({ ...base, type }));
+  assert.deepEqual(items.map(n => n.type), ['Announcement', 'Application Update', 'Task', 'Club Invitation', 'OutClass Update', 'Interview Invite']);
+  assert.equal(items.filter(n => n.type === 'Announcement').length, 1);
+  assert.ok(items.every(n => n.read && n.durableId === base.id && n.body[0] === base.body));
+  assert.equal(inboxNotification({ ...base, type: 'ANNOUNCEMENT', readAt: null }).read, false);
+});
+
+test('retired direct-message actions reject old clients without accessing live services', async () => {
+  const unavailable = () => { throw Error('Retired actions must not access services'); };
+  const api = loader({ '@/utils/auth': { requireAuth: unavailable, requireClubPermission: unavailable }, '@/utils/prisma': { prisma: new Proxy({}, { get: unavailable }) } })('actions/communications.ts');
+  for (const name of ['findCommunicationRecipients', 'startClubConversation', 'listClubConversations', 'getClubConversation', 'sendClubMessage']) {
+    await assert.rejects(api[name](), /Direct messaging is not available/);
+  }
+});
+
 test('every optional notification category honors its switch, global OFF, and opt-in platform default', () => {
   for (const [type, field] of Object.entries(policy.emailCategory)) {
     assert.equal(policy.optionalEmailAllowed({ ...policy.notificationDefaults, [field]: false }, type), false);
