@@ -1,0 +1,87 @@
+{
+  "validatedAt": "2026-10-10T16:24:58.643Z",
+  "timezone": "America/New_York",
+  "emailCodeCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+  "productionBranch": "main",
+  "repository": {
+    "startingWorkingTree": "clean",
+    "redesignFiles": 263,
+    "unrelatedChanges": [],
+    "remoteMainAtStart": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5"
+  },
+  "checks": [
+    {
+      "command": "npm run email:templates",
+      "exitCode": 0,
+      "generatedDiff": false
+    },
+    {
+      "command": "node --test relevant email regression tests",
+      "exitCode": 0,
+      "passed": 20,
+      "failed": 0
+    },
+    {
+      "command": "npm run test",
+      "exitCode": 0,
+      "passed": 937,
+      "failed": 0,
+      "skipped": 9
+    },
+    {
+      "command": "npm run typecheck",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "errors": 0,
+      "existingWarnings": 25
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0
+    }
+  ],
+  "migrationExecution": false,
+  "configurationChanges": false,
+  "productionBeforePublication": {
+    "deploymentId": "dpl_DX9tZMj4jXRkqewdsKwjRP3NY1cW",
+    "url": "https://out-class-7hqx9i7kv-outclassuva.vercel.app",
+    "commit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+    "status": "Ready",
+    "domain": "www.out-class.net",
+    "deploymentSource": "Existing Git/Vercel integration"
+  },
+  "previousDesignDeployment": {
+    "deploymentId": "dpl_3EHPWT4jVPS4hAFZVzq3aT6Ycfbe",
+    "url": "https://out-class-g39nr7ji1-outclassuva.vercel.app",
+    "commit": "93502dde5e5d9155d5d8d6751cefddbb385c5da9"
+  },
+  "templates": [
+    {
+      "type": "confirmation",
+      "subject": "Verify your UVA email — OutClass",
+      "beforeSha256": "23d3f3c297828ebb90038f11e49d4b8b802c4024ed5598a6f8c69d46b0c840b0",
+      "proposedSha256": "a30ce9dd1a59dc934ca06e6f4abbae95cb02507913bcda36b9b4896a1a2512df"
+    },
+    {
+      "type": "magic-link",
+      "subject": "Your OutClass sign-in code",
+      "beforeSha256": "e492b7376964fcc4395c23711c13faceea9d4c171b6cb6a42c48324c032c44da",
+      "proposedSha256": "548a06e57ff8a229c7d0cafb87400721f4a204420d32c0100cd7ed08f0390959"
+    },
+    {
+      "type": "recovery",
+      "subject": "Reset your password",
+      "beforeSha256": "d2a25f3d8de0c96012f5619f6a4d6904b3038fd9851954f5f7867a96965206da",
+      "proposedSha256": "0ad7109aa77919135ab9a0fcc6593a6d6b25eeb1a06ed6a26aab4d7e3676b9dc"
+    },
+    {
+      "type": "password-changed",
+      "subject": "unchanged; body-only editor update",
+      "beforeSha256": "55e28dd0c7a79b60e7e3bb4970c0632f03a75c510b7d702cef3b76a0d5e3b057",
+      "proposedSha256": "84b11da9b00b3f29d1209c13372626c8e5750a9ca2f825c5bae1b505b2637562"
+    }
+  ]
+}
