@@ -118,6 +118,7 @@ export async function getMessagingClubs() {
 }
 
 export async function findCommunicationRecipients(clubId: string, query: string) {
+  throw new Error("Direct messaging is not available in OutClass.");
   uuid.parse(clubId);
   const search = z.string().trim().min(2).max(100).parse(query);
   const { membership } = await requireClubPermission(clubId, ["meetings.manage"]);
@@ -129,6 +130,7 @@ export async function findCommunicationRecipients(clubId: string, query: string)
 }
 
 export async function startClubConversation(input: unknown) {
+  throw new Error("Direct messaging is not available in OutClass.");
   const data = z.object({ clubId: uuid, studentId: uuid.optional(), subject: z.string().trim().min(1).max(200) }).strict().parse(input);
   const { user } = await requireAuth();
   const studentId = data.studentId ?? user.id;
@@ -141,6 +143,7 @@ export async function startClubConversation(input: unknown) {
 }
 
 export async function listClubConversations(clubId?: string) {
+  throw new Error("Direct messaging is not available in OutClass.");
   if (clubId) { uuid.parse(clubId); await requireClubPermission(clubId, ["meetings.manage"]); }
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
@@ -158,6 +161,7 @@ export async function listClubConversations(clubId?: string) {
 }
 
 export async function getClubConversation(conversationId: string, before?: string) {
+  throw new Error("Direct messaging is not available in OutClass.");
   uuid.parse(conversationId); if (before) uuid.parse(before);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
@@ -173,6 +177,7 @@ export async function getClubConversation(conversationId: string, before?: strin
 }
 
 export async function sendClubMessage(input: unknown) {
+  throw new Error("Direct messaging is not available in OutClass.");
   const data = z.object({ conversationId: uuid, body: z.string().trim().min(1).max(10000), requestKey: uuid }).strict().parse(input);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
