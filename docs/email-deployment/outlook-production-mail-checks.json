@@ -1,0 +1,16 @@
+{
+  "observedAt": "2026-10-10T16:55:43.829Z",
+  "client": "Actual Microsoft 365 Outlook Web",
+  "otp": {
+    "heading": "Your sign-in code.",
+    "logoLoaded": true,
+    "recipientMessageObserved": true,
+    "sixDigitCodePresent": true
+  },
+  "recovery": {
+    "heading": "Reset your password.",
+    "logoLoaded": true,
+    "recipientMessageObserved": true,
+    "resetButtonPresent": true
+  }
+}

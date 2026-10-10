@@ -1,0 +1,18 @@
+{
+  "buttons": [
+    "Update password"
+  ],
+  "headings": [
+    "Choose a new password."
+  ],
+  "passwordFields": [
+    {
+      "empty": true
+    },
+    {
+      "empty": true
+    }
+  ],
+  "tokenRenderedInBody": false,
+  "passwordChangeSubmitted": false
+}
