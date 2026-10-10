@@ -8,6 +8,15 @@ async function setup(){
  return{...h,api,kit,a,b,one:{...h.scope,clientId:randomUUID()},two:{...h.scope,clientId:randomUUID()}};
 }
 async function addCandidate(h,id){const student=randomUUID();await h.db.query('INSERT INTO "User"(id,email) VALUES ($1,$2)',[student,student+'@virginia.edu']);await h.db.query('INSERT INTO "Application"(id,"clubId","roundId","studentId",status) VALUES ($1,$2,$3,$4,\'INTERVIEWING\')',[id,h.ids.club,h.ids.round,student]);}
+test('a later panel member inherits the room bank snapshot after master-kit edits',async()=>{
+ const h=await setup();try{
+ const applicationId=randomUUID();await addCandidate(h,applicationId);
+ for(const member of ['panel','peer'])await h.db.query('INSERT INTO "InterviewPanelAssignment"(id,"applicationId","roundId","memberId","grantedBy") VALUES ($1,$2,$3,$4,$5)',[randomUUID(),applicationId,h.ids.round,h.ids[member+'Member'],h.ids.owner]);
+ const scope={...h.scope,applicationId};h.as(h.ids.panel);const original=await h.kit.openInterviewSession(scope);await h.api.getInterviewCollaboration({...scope,clientId:randomUUID()});
+ h.as(h.ids.owner);await h.kit.saveInterviewKit(h.ids.club,h.ids.round,0,[{id:h.ids.question,prompt:'New master prompt',guidance:'New key'}]);
+ h.as(h.ids.peer);assert.deepEqual((await h.kit.openInterviewSession(scope)).questions,original.questions);
+ }finally{await h.db.close();}
+});
 test('shared selection is ordered and narrow; private notes, phase, completion remain per reviewer; revoked peers disappear',async()=>{
  const h=await setup();try{
  h.as(h.ids.panel);const first=await h.api.getInterviewCollaboration(h.one);

@@ -141,6 +141,8 @@ export async function confirmInterviewAdvance(input: { moveId: string; clientId:
     move = await tx.interviewMove.findUniqueOrThrow({ where: { id: data.moveId } });
     if (member.id !== move.memberId || session.id !== source.id || !record.completedAt || move.expiresAt.getTime() <= Date.now()) throw Error("Advance receipt unavailable.");
     if (move.confirmedAt) return { confirmed: true };
+    const later = await tx.interviewMove.findFirst({ where: { memberId: member.id, confirmedAt: { not: null }, createdAt: { gt: move.createdAt } } });
+    if (later) throw Error("Interviewer has moved again. This arrival receipt is stale.");
     if (move.acceptedInvitationId) await validInvite(tx, move.acceptedInvitationId, source.id, member.id, user.id);
     const destination = await tx.interviewCollaboration.findUniqueOrThrow({ where: { id: move.destinationId } });
     const access = await eligibleDestination(tx, collaborationScope(destination), user.id);

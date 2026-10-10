@@ -3,7 +3,7 @@ const flush=()=>new Promise(r=>setImmediate(r));
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function harness(){
- const slots=[],effects=[],cleanups=[],storage=new Map();let index=0,calls=0,denied=false;
+ const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[];let index=0,calls=0,denied=false,confirmationDenied=false;
  const rows=['a','b','c'].map(id=>({id,name:id.toUpperCase(),roundId:'r',assignedRoundIds:['r'],completedRoundIds:[]}));
  let pipeline={rounds:[{id:'r',name:'Round 1',archived:false}],applications:rows}, deferred=null, sessionDenied=false;
  const depsChanged=(a,b)=>!a||b.some((v,i)=>v!==a[i]);
@@ -15,10 +15,10 @@ function harness(){
  const clear=()=>{};
  const api={getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  api.prepareInterviewAdvance=async scope=>{if(denied)throw Error('revoked');const next=queue.nextInterviewApplicant(pipeline.applications,scope.roundId,scope.applicationId);return next?{moveId:'move',scope:{clubId:scope.clubId,roundId:scope.roundId,applicationId:next.id}}:null};
- api.confirmInterviewAdvance=async()=>({confirmed:true});
+ api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw Error('disconnected');return{confirmed:true}};
  new Function('require','module','exports','window','sessionStorage','requestAnimationFrame',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn());
  const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){}};
- return{storage,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
+ return{storage,confirmations,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
 const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
@@ -47,4 +47,11 @@ test('next applicant refreshes assignments, skips completed/revoked rows and cha
  h.fresh({rounds:[{id:'r',name:'Round 1',archived:false}],applications:[{...h.rows[0],completedRoundIds:['r']},{...h.rows[1],assignedRoundIds:[]},h.rows[2]]});
  assert.equal(await kit(t).props.onNextApplicant(),true);t=h.render();t=h.render();assert.equal(kit(t).props.applicationId,'c');assert.notEqual(kit(t).key,old.key);assert.equal(h.calls(),2);
  h.deny();await assert.rejects(kit(t).props.onNextApplicant(),/revoked/);assert.equal(kit(h.render()).props.applicationId,'c');
+});
+test('failed arrival confirmation retains only its receipt and resumes after refresh',async()=>{
+ const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();
+ h.denyConfirmation(true);await kit(t).props.onNextApplicant('tab');h.render();h.render();await flush();t=h.render();assert.match(text(t),/Retry confirmation/);
+ const saved=h.storage.get('outclass-interview:club:member');assert.deepEqual(JSON.parse(saved),{roundId:'r',applicationId:'b',moveId:'move',clientId:'tab'});h.unmount();
+ const restored=harness();restored.storage.set('outclass-interview:club:member',saved);restored.render();await flush();restored.render();restored.render();await flush();t=restored.render();
+ assert.equal(kit(t).props.applicationId,'b');assert.deepEqual(restored.confirmations,[{moveId:'move',clientId:'tab'}]);assert.deepEqual(JSON.parse(restored.storage.get('outclass-interview:club:member')),{roundId:'r',applicationId:'b'});
 });
