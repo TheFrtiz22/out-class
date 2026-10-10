@@ -1,4 +1,5 @@
 "use client"
+import { clubAssetSource } from "@/lib/club-assets"
 
 import { useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
@@ -23,7 +24,7 @@ type ClubLogoProps = {
 }
 
 export function ClubLogo(props: ClubLogoProps) {
-  const src = props.logoUrl?.trim() || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
+  const src = clubAssetSource(props.logoUrl?.trim()) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
   // Remount on source changes so a failed image never hides a replacement logo.
   return <ClubLogoImage key={src} {...props} src={src} />
 }
@@ -37,7 +38,7 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
     return fallback ?? (
       <div
         className={cn("flex items-center justify-center font-semibold tracking-tight text-white", dimensions)}
-        style={{ backgroundColor: color }}
+        style={{ backgroundColor: "var(--muted)", color: "var(--foreground)", borderColor: color }}
         role={alt ? "img" : undefined}
         aria-label={alt || undefined}
         aria-hidden={alt ? undefined : true}
@@ -48,7 +49,7 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
   }
 
   return (
-    <span className={cn("relative inline-flex items-center justify-center overflow-hidden font-semibold text-white", dimensions)} style={{ backgroundColor: color }}>
+    <span className={cn("relative inline-flex items-center justify-center overflow-hidden font-semibold text-white", dimensions)} style={{ backgroundColor: "var(--muted)", color: "var(--foreground)", borderColor: color }}>
       <span aria-hidden="true">{text}</span>
       <img
         src={src}

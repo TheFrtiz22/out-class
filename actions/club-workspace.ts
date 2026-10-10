@@ -1,5 +1,6 @@
 "use server";
 
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { clubProfileSchema } from "@/lib/club-marketing";
@@ -17,7 +18,10 @@ export async function updateClubSettings(input: {
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
   const { clubId, ...fields } = data;
   const result = await prisma.$transaction(async (tx) => {
-    await lockOperationalClub(tx, data.clubId);
+    await authorizeClubTransaction(tx, data.clubId, user.id, ["club.settings"]);
+    const previous = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { logoUrl: true, bannerUrl: true, marketing: true } });
+    const { assertClubImageAssignment } = await import("@/utils/club-asset-storage");
+    await assertClubImageAssignment(tx, clubId, fields, previous);
     await tx.club.update({ where: { id: clubId }, data: fields });
     await tx.auditLog.create({
       data: {

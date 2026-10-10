@@ -1,9 +1,15 @@
 import { z } from "zod"
+import { clubAssetReference } from "@/lib/club-assets"
 
 const text = (max: number) => z.string().trim().max(max)
 export const publicUrl = z.string().trim().max(2000).refine(v => !v || /^https?:\/\//i.test(v) && (() => { try { return !!new URL(v).hostname } catch { return false } })(), "Use a full https:// link.")
-export const profileImage = z.string().max(350000).refine(v => !v || publicUrl.safeParse(v).success || /^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(v), "Use an image URL or upload a PNG, JPEG, or WebP.")
+export const profileImage = z.string().max(350000).refine(v => !v || clubAssetReference.safeParse(v).success || /^\/logos\/[a-zA-Z0-9_.-]+$/.test(v) || publicUrl.safeParse(v).success || /^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(v), "Use an image URL or upload a PNG, JPEG, or WebP.")
 export const marketingSchema = z.object({
+  sections: z.array(z.object({
+    title: text(100).min(1), kind: z.enum(["about", "programs", "people", "impact", "recruitment"]).default("programs"),
+    visible: z.boolean().default(true), body: text(5000).default(""),
+    cards: z.array(z.object({ title: text(150), description: text(2000), url: publicUrl.default(""), image: profileImage.default("") })).max(12).default([]),
+  })).max(12).default([]),
   memberCount: z.number().int().min(0).max(1000000).nullable().default(null),
   showAcceptance: z.boolean().default(true), showAum: z.boolean().default(true), showMembers: z.boolean().default(true),
   placements: z.array(text(100)).max(20).default([]), accolades: z.array(text(200)).max(20).default([]),

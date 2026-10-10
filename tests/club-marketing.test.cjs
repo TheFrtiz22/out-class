@@ -29,8 +29,10 @@ test('invalid links, non-raster uploads, oversized images, and impossible stats 
 test('publishing checks club permission and atomically saves every profile field with an audit', async () => {
   let stored, audit, allowed = false, writes = 0
   const actions = load('actions/club-workspace.ts', {
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
     '@/utils/auth': { requireClubPermission: async (id, p) => { assert.equal(id, clubId); assert.deepEqual(p, ['club.settings']); if (!allowed) throw new Error('Denied'); return { user: { id: 'editor' } } } },
-    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ $queryRaw: async()=>[], club: { update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ $queryRaw: async()=>[], club: { findUniqueOrThrow: async () => draft(), update: async q => { writes++; stored = q.data; assert.equal(q.where.id, clubId) } }, auditLog: { create: async q => { audit = q.data } } }) } },
   })
   await assert.rejects(actions.updateClubSettings({ clubId, ...draft() }), /Denied/)
   assert.equal(writes, 0)
@@ -67,7 +69,7 @@ test('shared public renderer displays marketing content and respects empty and h
   const { renderToStaticMarkup } = require('react-dom/server')
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n === '@/lib/club-marketing' ? { readMarketing } : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(n => n === '@/lib/club-marketing' ? { readMarketing } : n === '@/lib/club-assets' ? load('lib/club-assets.ts') : require(n), mod, mod.exports)
   const profile = draft()
   const header = renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile }))
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))

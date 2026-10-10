@@ -14,7 +14,7 @@ export function isIndexableClub(club: PublicClubSeo | null): boolean {
 
 export const getPublicClubSeo = cache(async (id: string): Promise<PublicClubSeo | null> => {
   try {
-    return await prisma.club.findFirst({ where: { OR: [{ id }, { slug: id }] }, select: publicSeoFields })
+    return await prisma.club.findFirst({ where: { OR: [{ id }, { slug: id }], suspendedAt: null }, select: publicSeoFields })
   } catch {
     return null
   }
@@ -22,7 +22,7 @@ export const getPublicClubSeo = cache(async (id: string): Promise<PublicClubSeo 
 
 export const getIndexableClubs = unstable_cache(async () => {
   try {
-    const clubs = await prisma.club.findMany({ where: { claimedAt: { not: null } }, select: publicSeoFields, orderBy: { id: "asc" } })
+    const clubs = await prisma.club.findMany({ where: { claimedAt: { not: null }, isDiscoverable: true, suspendedAt: null }, select: publicSeoFields, orderBy: { id: "asc" } })
     return clubs.filter(isIndexableClub)
   } catch {
     // Database outages must never cause fictional fixtures to enter the sitemap.

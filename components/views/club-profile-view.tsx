@@ -234,7 +234,7 @@ export function ClubProfileView({
                     <li key={event.id}>
                       <CalendarDays size={18} aria-hidden="true" />
                       <div>
-                        <h3>{event.title}</h3>
+                        <h3><a className="underline underline-offset-4" href={`/corkboard?event=${event.id}`}>{event.title}</a></h3>
                         <time dateTime={event.date}>
                           {new Date(event.date).toLocaleString("en-US", {
                             weekday: "short",
@@ -262,7 +262,7 @@ export function ClubProfileView({
                   <li key={event.id}>
                     <CalendarDays size={18} aria-hidden="true" />
                     <div>
-                      <h3>{event.title}</h3>
+                      <h3><a className="underline underline-offset-4" href={`/corkboard?event=${event.id}`}>{event.title}</a></h3>
                       <p>
                         {event.date} · {event.time}
                       </p>

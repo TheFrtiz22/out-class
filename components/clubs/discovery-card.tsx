@@ -1,4 +1,5 @@
 "use client"
+import { clubAssetSource } from "@/lib/club-assets"
 
 import { useState, type ReactNode, type CSSProperties } from "react"
 import Image from "next/image"
@@ -21,7 +22,7 @@ export function DiscoveryCard({ club, entry, onOpen, action, now = Date.now() }:
   return <li className="oc-explore-card" style={{ "--oc-club-accent": club.color || "var(--primary)" } as CSSProperties}>
     <article>
       <div className="oc-explore-card-cover" data-has-banner={hasBanner}>
-        {hasBanner && <Image src={club.bannerUrl!} alt="" fill unoptimized={!club.bannerUrl!.startsWith("/") || club.bannerUrl!.startsWith("//")} sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw" onError={() => setFailedBanner(club.bannerUrl!)} />}
+        {hasBanner && <Image src={clubAssetSource(club.bannerUrl!)} alt="" fill unoptimized={!club.bannerUrl!.startsWith("/") || club.bannerUrl!.startsWith("//")} sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw" onError={() => setFailedBanner(club.bannerUrl!)} />}
         <div className="oc-explore-card-logo"><DirectoryLogo club={club} size="lg" /></div>
         <span className="oc-explore-category">{club.category || "Student organization"}</span>
       </div>
