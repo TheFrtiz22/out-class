@@ -8,7 +8,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
+import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, MessageSquare, Shield, SlidersHorizontal, Video } from "lucide-react"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from 
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { getTaskNotifications } from "@/lib/workspace-api"
+import { getDurableNotifications } from "@/actions/communications"
 import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { createClient } from "@/utils/supabase/client"
@@ -30,7 +31,7 @@ import { hasPermission } from "@/lib/permissions"
 import { cn } from "@/lib/utils"
 import { handleClubLink } from "@/lib/workspace-navigation"
 
-const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
+const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, messages: MessageSquare, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
 
 export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, workspaceKind, onSelect, onNavigate, onReviewTool }: {
   workspaceKind?: "admin";
@@ -39,7 +40,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   clubId?: string; clubName?: string; manager?: boolean; onSelect: (id: string) => void; onNavigate: (view: ViewId) => void;
 }) {
   const router = useRouter()
-  const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications } = useApplicationState()
+  const { user, isImpersonating } = useAuth(), demo = useDemoMode(), { notifications, syncTaskNotifications, syncDurableNotifications, durableUnread } = useApplicationState()
   const [mobile, setMobile] = useState(false), [search, setSearch] = useState(false), [signingOut, setSigningOut] = useState(false)
   const contextKey = `${clubId}:${mode}:${active}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
@@ -64,7 +65,26 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     window.addEventListener("focus",refresh);window.addEventListener("outclass:tasks-changed",refresh)
     return()=>{active=false;clearInterval(timer);window.removeEventListener("focus",refresh);window.removeEventListener("outclass:tasks-changed",refresh)}
   }, [userId, demo.isDemoEnabled, syncTaskNotifications])
-  const unread = notifications.filter(n => !n.read).length
+  useEffect(() => {
+    if (!userId || demo.isDemoEnabled) return
+    let active = true, running = false, again = false
+    const refresh = async () => {
+      if (running) { again = true; return }
+      running = true
+      try { const data = await getDurableNotifications(); if (active) syncDurableNotifications(data) }
+      catch { /* Keep the last successful inbox while offline; retry on focus/reconnect. */ }
+      finally { running = false; if (again && active) { again = false; void refresh() } }
+    }
+    void refresh()
+    const stream = !isImpersonating ? new EventSource("/api/communications/stream") : null
+    const changed = () => { void refresh(); window.dispatchEvent(new Event("outclass:communications-refresh")) }
+    stream?.addEventListener("communications", changed)
+    stream?.addEventListener("unavailable", () => { stream.close() })
+    const timer = setInterval(changed, 30000)
+    window.addEventListener("focus", changed); window.addEventListener("outclass:communications-changed", changed)
+    return () => { active = false; clearInterval(timer); stream?.close(); window.removeEventListener("focus", changed); window.removeEventListener("outclass:communications-changed", changed) }
+  }, [userId, demo.isDemoEnabled, isImpersonating, syncDurableNotifications])
+  const unread = notifications.filter(n => !n.durableId && !n.read).length + (demo.isDemoEnabled ? 0 : durableUnread)
   const { invitations } = useOrganizationInvitations()
   const pendingInvitations = invitations.length
   const name = user?.profile ? `${user.profile.firstName} ${user.profile.lastName}` : user?.email || "Your account"

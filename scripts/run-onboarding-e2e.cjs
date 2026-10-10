@@ -50,10 +50,11 @@ async function ready(url,headers={}){
  const start=config.indexOf('[auth.email]'),end=config.indexOf('[auth.sms]',start);config=config.slice(0,start)+config.slice(start,end).replace('enable_confirmations = false','enable_confirmations = true')+config.slice(end);
  const mfaStart=config.indexOf('[auth.mfa.totp]'),mfaEnd=config.indexOf('[auth.mfa.phone]',mfaStart);config=config.slice(0,mfaStart)+config.slice(mfaStart,mfaEnd).replace('enroll_enabled = false','enroll_enabled = true').replace('verify_enabled = false','verify_enabled = true')+config.slice(mfaEnd);
  if(!/^project_id = "outclass-onboarding-e2e"$/m.test(config))throw Error('Refusing to operate on a non-test Supabase project');
- config+='\n[auth.email.template.recovery]\nsubject = \"Reset your OutClass password\"\ncontent_path = \"./supabase/templates/recovery.html\"\n';
+ const recovery='[auth.email.template.recovery]\nsubject = \"Reset your OutClass password\"\ncontent_path = \"./supabase/templates/recovery.html\"\n';
+ config=config.includes('[auth.email.template.recovery]')?config.replace(/\[auth\.email\.template\.recovery\][\s\S]*?(?=\n\[|$)/,recovery):config+'\n'+recovery;
  fs.writeFileSync(path.join(root,'supabase/templates/recovery.html'),'<h2>Reset your password</h2><a href="{{ .RedirectTo }}#token_hash={{ .TokenHash }}">Reset password</a>');
  fs.writeFileSync(path.join(root,'supabase/config.toml'),config);
- for(const name of ['confirmation.html','magic-link.html']) fs.copyFileSync(path.join(repo,'supabase/templates',name),path.join(root,'supabase/templates',name));
+ for(const name of fs.readdirSync(path.join(repo,'supabase/templates')).filter(name=>name.endsWith('.html')&&name!=='recovery.html')) fs.copyFileSync(path.join(repo,'supabase/templates',name),path.join(root,'supabase/templates',name));
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.
  stackTouched=true;
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
@@ -62,6 +63,7 @@ async function ready(url,headers={}){
  const settings={projectId:'outclass-onboarding-e2e',appUrl:'http://127.0.0.1:3107',status,buildDir:path.join(repo,'.next-publish')};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
  const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'localhost',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
+ Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'false',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});
  logged('npm',['run','db:deploy'],'migrate.log',env);
  console.log('All Prisma migrations applied through the authoritative deployment command.');
  // Test-only trusted TLS for the same Mailpit provider used by local Supabase Auth.
