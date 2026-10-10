@@ -43,6 +43,9 @@ model User {
   clubClaims      ClubClaim[]
   assignedTasks   ClubTask[]
   taskSubmissions TaskAssignment[]
+  authoredAnnouncements ClubAnnouncement[]
+  notifications UserNotification[]
+  notificationPreferences UserNotificationPreference?
 }
 
 enum AppRole {
@@ -134,6 +137,8 @@ model Club {
   events         Meeting[]
   applications   Application[]
   pipelineRounds PipelineRound[]
+  announcements ClubAnnouncement[]
+  notifications UserNotification[]
   questions      ApplicationQuestion[]
   @@unique([id, schoolId])
 }
@@ -1133,4 +1138,62 @@ model SchoolRequest {
   @@index([status, createdAt])
   @@index([email, createdAt])
   @@index([createdAt])
+}
+
+// Durable club communications. Recipient notification rows are the immutable
+// publication audience snapshot; no cross-club audience is inferred later.
+model ClubAnnouncement {
+  id          String   @id @default(uuid())
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  title       String
+  body        String
+  audience    String
+  createdAt   DateTime @default(now())
+  publishedAt DateTime @default(now())
+  notifications UserNotification[]
+
+  @@index([clubId, publishedAt])
+}
+
+// The stable inbox record remains after users leave a club. Access always
+// requires matching userId; never infer inbox ownership from club membership.
+model UserNotification {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clubId         String?
+  club           Club?    @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  announcementId String?
+  announcement   ClubAnnouncement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
+  eventKey       String
+  type           String
+  title          String
+  body           String
+  href           String
+  readAt         DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, eventKey])
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([announcementId])
+}
+
+// This table controls OPTIONAL email only. Security/identity emails are not
+// gated on it, and in-app notification delivery never consults it.
+model UserNotificationPreference {
+  userId            String @id
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAnnouncements Boolean @default(true)
+  emailMessages      Boolean @default(true)
+  emailApplications  Boolean @default(true)
+  emailInterviews    Boolean @default(true)
+  emailInvitations   Boolean @default(true)
+  emailTasks         Boolean @default(true)
+  emailPlatform      Boolean @default(false)
+  emailFrequency     String @default("INSTANT")
+  updatedAt          DateTime @updatedAt
 }
