@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { ClubMessaging } from "@/components/club-messaging"
 import { useDemoMode } from "@/contexts/demo-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
@@ -27,8 +26,8 @@ const selectStyle =
 
 export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
   const params = useSearchParams(), demo = useDemoMode()
-  const [tab, setTab] = useState(params.get("tab") === "preferences" ? "preferences" : params.get("conversation") ? "messages" : "notifications")
-  useEffect(() => { if (params.get("conversation")) setTab("messages"); else if (params.get("tab") === "preferences") setTab("preferences") }, [params])
+  const [tab, setTab] = useState(params.get("tab") === "preferences" ? "preferences" : "notifications")
+  useEffect(() => { if (params.get("tab") === "preferences") setTab("preferences"); else setTab("notifications") }, [params])
   const { invitations } = useOrganizationInvitations()
   const {
     notifications: items,
@@ -111,8 +110,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     setClub("all")
   }
 
-  const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["messages", "Messages"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
-  if (tab !== "notifications") return <div className="mx-auto max-w-6xl space-y-6">{tabs}{tab === "messages" ? <ClubMessaging /> : demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
+  const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
+  if (tab !== "notifications") return <div className="mx-auto max-w-6xl space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
   return (
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
       {tabs}
@@ -510,7 +509,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 )}
               </div>
               <p className="border-t border-neutral-200 px-6 py-4 text-xs text-neutral-500">
-                {selected.senderTitle === "Private message" ? "Open the conversation to read and reply privately." : "Club updates stay here so you can return to them anytime."}
+                {"Club updates stay here so you can return to them anytime."}
               </p>
             </>
           )}
