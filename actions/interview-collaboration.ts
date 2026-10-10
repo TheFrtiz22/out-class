@@ -12,6 +12,9 @@ import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 
 const inputSchema = interviewScopeSchema.extend({ clientId: z.string().uuid() });
+// Current-access checks for each peer span several pooler round trips. Keep the
+// transaction bounded while allowing cold hosted connections to finish safely.
+const transactionOptions = { maxWait: 5000, timeout: 20000 };
 async function validInvite(tx: AppTransactionClient, id: string, sourceId: string, recipientId: string, userId: string) {
   const invite = await tx.interviewInvitation.findUnique({ where: { id } });
   if (!invite || invite.recipientId !== recipientId || invite.dismissedAt) throw Error("Invitation unavailable.");
@@ -69,7 +72,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
       } catch { /* Do not expose revoked identities. */ }
     }
     return { sessionId: session.id, revision: session.revision, participants, selection, invitation };
-  });
+  }, transactionOptions);
 }
 
 export async function selectSharedInterviewQuestion(input: z.infer<typeof inputSchema> & { questionId: string }) {
@@ -90,23 +93,23 @@ export async function selectSharedInterviewQuestion(input: z.infer<typeof inputS
     }
     const updated = await tx.interviewCollaboration.update({ where: { id: session.id }, data: { questions, selectedQuestionId: question.id, selectedBy: member.id, revision: { increment: 1 } } });
     return { revision: updated.revision, question };
-  });
+  }, transactionOptions);
 }
 
 export async function leaveInterviewCollaboration(input: z.infer<typeof inputSchema>) {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
-  return prisma.$transaction(async tx => { const { member, session } = await collaborationSession(tx, data, user.id); await tx.interviewPresence.deleteMany({ where: { memberId: member.id, clientId: data.clientId, sessionId: session.id } }); });
+  return prisma.$transaction(async tx => { const { member, session } = await collaborationSession(tx, data, user.id); await tx.interviewPresence.deleteMany({ where: { memberId: member.id, clientId: data.clientId, sessionId: session.id } }); }, transactionOptions);
 }
 
 export async function dismissInterviewInvitation(input: z.infer<typeof inputSchema> & { invitationId: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
-  return prisma.$transaction(async tx => { const { member } = await collaborationSession(tx, data, user.id); await tx.interviewInvitation.updateMany({ where: { id: data.invitationId, recipientId: member.id, dismissedAt: null }, data: { dismissedAt: new Date() } }); });
+  return prisma.$transaction(async tx => { const { member } = await collaborationSession(tx, data, user.id); await tx.interviewInvitation.updateMany({ where: { id: data.invitationId, recipientId: member.id, dismissedAt: null }, data: { dismissedAt: new Date() } }); }, transactionOptions);
 }
 
 /** Issues an expiring receipt; no invitation until destination UI confirms arrival. */
 export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema> & { invitationId?: string }) {
   const data = inputSchema.extend({ invitationId: z.string().uuid().optional() }).parse(input); const { user } = await requireAuth();
-  await prisma.$transaction(async tx => { const { record } = await collaborationSession(tx, data, user.id); if (!record.completedAt) throw Error("Finish your current review before joining."); });
+  await prisma.$transaction(async tx => { const { record } = await collaborationSession(tx, data, user.id); if (!record.completedAt) throw Error("Finish your current review before joining."); }, transactionOptions);
   const workspace = data.invitationId ? null : await getInterviewWorkspace(data.clubId);
   const next = workspace ? nextInterviewApplicant(workspace.applications, data.roundId, data.applicationId) : null;
   return prisma.$transaction(async tx => {
@@ -120,7 +123,7 @@ export async function prepareInterviewAdvance(input: z.infer<typeof inputSchema>
     const destination = invited?.destination || await tx.interviewCollaboration.upsert({ where: { applicationId_roundId_roomKey: { applicationId: scope.applicationId, roundId: scope.roundId, roomKey: dest.roomKey } }, create: { ...scope, roomKey: dest.roomKey, questions: kitSchema.parse(dest.round.interviewKit) }, update: {} });
     const move = await tx.interviewMove.create({ data: { sourceId: session.id, destinationId: destination.id, memberId: member.id, invited: !!invited, acceptedInvitationId: invited?.invite.id || null, expiresAt: new Date(Date.now() + INVITATION_TTL_MS) } });
     return { scope, moveId: move.id };
-  });
+  }, transactionOptions);
 }
 
 export async function confirmInterviewAdvance(input: { moveId: string; clientId: string }) {
@@ -153,5 +156,5 @@ export async function confirmInterviewAdvance(input: { moveId: string; clientId:
     await tx.interviewMove.update({ where: { id: move.id }, data: { confirmedAt: new Date() } });
     await tx.interviewPresence.upsert({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } }, create: { memberId: member.id, clientId: data.clientId, sessionId: destination.id }, update: { sessionId: destination.id, seenAt: new Date() } });
     return { confirmed: true };
-  });
+  }, transactionOptions);
 }
