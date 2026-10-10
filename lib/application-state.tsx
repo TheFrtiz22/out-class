@@ -17,6 +17,9 @@ import {
 import { studentCalendarEvents, type CalendarSource } from "@/lib/student-calendar-data"
 import { dateKey, dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar"
 import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
+import { getDurableNotifications, setDurableNotificationsRead, setDurableNotificationsArchived } from "@/actions/communications"
+import { communicationsChanged, inboxNotification } from "@/lib/communications-client"
+import { toast } from "sonner"
 
 /**
  * Single source of truth for "did the student apply to this club".
@@ -46,6 +49,9 @@ type ApplicationStateValue = {
   trackedApps: TrackedApplication[]
   syncTaskNotifications: (items: Notification[]) => void
   notifications: Notification[]
+  durableUnread: number
+  durableCursor: string | null
+  syncDurableNotifications: (data: Awaited<ReturnType<typeof getDurableNotifications>>, append?: boolean) => void
   events: ClubEvent[]
   appliedClubIds: Set<string>
   isApplied: (clubId: string) => boolean
@@ -103,9 +109,15 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(initialData ? serverApps : seedTrackedApplications)
   const dismissedTaskNotifications = useRef(new Set<string>())
   const syncTaskNotifications = useCallback((items: Notification[]) => {
-    setNotifications(previous => [...previous.filter(item => !item.taskHref), ...items.filter(item => !dismissedTaskNotifications.current.has(item.id)).map(item => ({...item, read:previous.find(old=>old.id===item.id)?.read ?? item.read}))])
+    setNotifications(previous => [...previous.filter(item => !item.taskHref || item.durableId), ...items.filter(item => !dismissedTaskNotifications.current.has(item.id) && !previous.some(old => old.durableId && old.taskHref === item.taskHref)).map(item => ({...item, read:previous.find(old=>old.id===item.id)?.read ?? item.read}))])
   }, [])
   const [notifications, setNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
+  const [durableUnread, setDurableUnread] = useState(0), [durableCursor, setDurableCursor] = useState<string | null>(null)
+  const syncDurableNotifications = useCallback((data: Awaited<ReturnType<typeof getDurableNotifications>>, append = false) => {
+    const next = data.items.map(inboxNotification)
+    setNotifications(previous => [...previous.filter(item => (append || !item.durableId) && !next.some(n => n.id === item.id || n.taskHref && n.taskHref === item.taskHref)), ...next])
+    setDurableUnread(data.unread); setDurableCursor(data.nextCursor)
+  }, [])
   
   const serverEvents = studentCalendarEvents(initialData)
 
@@ -216,12 +228,15 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const markNotificationRead = useCallback((id: string) => {
     if (demoStore.active()) { demoStore.mutate(s => { if (!s.readNotifications.includes(id)) s.readNotifications.push(id) }); return }
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    if (id.startsWith("durable-")) void setDurableNotificationsRead([id.slice(8)], true).then(communicationsChanged).catch(() => { toast.error("Could not mark notification as read."); communicationsChanged() })
   }, [])
 
   const setNotificationsRead = useCallback((ids: string[], read: boolean) => {
     if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return }
     const targets = new Set(ids)
     setNotifications((prev) => prev.map((item) => targets.has(item.id) ? { ...item, read } : item))
+    const durable = ids.filter(id => id.startsWith("durable-")).map(id => id.slice(8))
+    if (durable.length) void setDurableNotificationsRead(durable, read).then(communicationsChanged).catch(() => { toast.error("Could not update notifications."); communicationsChanged() })
   }, [])
 
   const deleteNotifications = useCallback((ids: string[]) => {
@@ -229,12 +244,16 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     ids.forEach(id => { if (id.startsWith("task-update-")) dismissedTaskNotifications.current.add(id) })
     const targets = new Set(ids)
     setNotifications((prev) => prev.filter((item) => !targets.has(item.id)))
+    const durable = ids.filter(id => id.startsWith("durable-")).map(id => id.slice(8))
+    if (durable.length) void setDurableNotificationsArchived(durable, true).then(communicationsChanged).catch(() => { toast.error("Could not archive notifications."); communicationsChanged() })
   }, [])
 
   const restoreNotifications = useCallback((items: Notification[]) => {
     if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return }
     items.forEach(item=>dismissedTaskNotifications.current.delete(item.id))
     setNotifications((prev) => [...prev, ...items.filter((item) => !prev.some((existing) => existing.id === item.id))])
+    const durable = items.flatMap(item => item.durableId ? [item.durableId] : [])
+    if (durable.length) void setDurableNotificationsArchived(durable, false).then(communicationsChanged).catch(() => { toast.error("Could not restore notifications."); communicationsChanged() })
   }, [])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
@@ -313,7 +332,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       syncApplications: setTrackedApps,
       syncApplicationBookings,
       trackedApps,
-      notifications, syncTaskNotifications,
+      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications,
       events: calendarEvents,
       appliedClubIds,
       isApplied,
@@ -332,7 +351,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       leaderFocus, clearLeaderFocus, syncApplicationBookings,
       hydrated,
       trackedApps,
-      notifications, syncTaskNotifications,
+      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications,
       calendarEvents,
       appliedClubIds,
       isApplied,
