@@ -2,13 +2,17 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as"
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { isUvaEmail, signInReturnPath } from '@/lib/auth'
+import { isUvaEmail, loginReturnPath, authFailurePath } from '@/lib/auth'
+import { MICROSOFT_AUTH_ENABLED } from '@/lib/auth-features'
 
 export async function GET(request: Request) {
   if ((await cookies()).has(PLATFORM_VIEW_COOKIE)) return NextResponse.json({ error: "Exit impersonation before changing authentication." }, { status: 403 })
   const { searchParams, origin } = new URL(request.url)
+  if (!MICROSOFT_AUTH_ENABLED && searchParams.get('provider') === 'azure') {
+    return NextResponse.json({ error: "This sign-in method is unavailable. Use email sign-in." }, { status: 403, headers: { "Cache-Control": "private, no-store" } })
+  }
   const code = searchParams.get('code')
-  const next = signInReturnPath(searchParams.get('next'))
+  const next = loginReturnPath(searchParams.get('next'))
 
   if (code) {
     const cookieStore = await cookies()
@@ -23,7 +27,7 @@ export async function GET(request: Request) {
       // Do NOT delete the Supabase auth user — just end the session.
       if (!user.email || !isUvaEmail(user.email)) {
         await supabase.auth.signOut()
-        return NextResponse.redirect(`${origin}/?error=uva_only`)
+        return NextResponse.redirect(`${origin}${authFailurePath(next, "uva_only")}`)
       }
 
       // Ensure user exists in the public Prisma database
@@ -45,5 +49,5 @@ export async function GET(request: Request) {
   }
 
   // Return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/?error=auth-code-expired`)
+  return NextResponse.redirect(`${origin}${authFailurePath(next, "auth-code-expired")}`)
 }

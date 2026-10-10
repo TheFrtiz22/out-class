@@ -1,5 +1,5 @@
 "use server";
-import { lockOperationalClub } from "@/lib/club-suspension";
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { prisma, type AppTransactionClient } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
@@ -30,7 +30,7 @@ const eventSelect = {
   audience: true,
   revision: true,
   club: { select: { name: true, suspendedAt: true } },
-  publication: true,
+  publication: { select: { status: true, category: true, contact: true, rsvpEnabled: true, rsvpRequired: true, capacity: true, rsvpDeadline: true, template: true, flyerId: true, submittedAt: true, submittedBy: true, reviewedAt: true, rejectionReason: true, approvedRevision: true, publishedAt: true } },
   _count: { select: { rsvps: true } },
 } as const;
 export type EventRecord = Prisma.MeetingGetPayload<{
@@ -67,6 +67,8 @@ function managed(e: EventRecord): ManagedCampusEvent {
     status: e.publication!.status,
     submittedAt: e.publication!.submittedAt?.toISOString() || null,
     rejectionReason: e.publication!.rejectionReason,
+    reviewedAt: e.publication!.reviewedAt?.toISOString() || null,
+    publishedAt: e.publication!.publishedAt?.toISOString() || null,
   };
 }
 function refresh() {
@@ -183,20 +185,22 @@ export async function getPublicCampusEvent(eventId: string) {
 }
 export async function listClubCampusEvents(clubId: string) {
   z.string().uuid().parse(clubId);
-  await requireClubPermission(clubId, ["meetings.manage"]);
-  return (
-    await prisma.meeting.findMany({
+  const { user } = await requireClubPermission(clubId, ["meetings.manage"]);
+  return prisma.$transaction(async tx => {
+    await authorizeClubTransaction(tx, clubId, user.id, ["meetings.manage"], { readOnly: true });
+    return (await tx.meeting.findMany({
       where: { clubId, publication: { isNot: null } },
       select: eventSelect,
       orderBy: { date: "desc" },
     })
   ).map(managed);
+  });
 }
 export async function saveCampusEvent(input: unknown) {
   const d = eventEditorSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
-    await lockOperationalClub(tx, d.clubId);
+    await authorizeClubTransaction(tx, d.clubId, user.id, ["meetings.manage"]);
     let id = d.id;
     const content = {
       title: d.title,
@@ -264,7 +268,7 @@ export async function commandCampusEvent(input: unknown) {
   const d = eventCommandSchema.parse(input),
     { user } = await requireClubPermission(d.clubId, ["meetings.manage"]);
   const result = await prisma.$transaction(async (tx) => {
-    await lockOperationalClub(tx, d.clubId);
+    await authorizeClubTransaction(tx, d.clubId, user.id, ["meetings.manage"]);
     const e = await locked(tx, d.eventId, d.clubId, d.revision),
       p = e.publication!;
     if (d.command === "SUBMIT") {
@@ -490,18 +494,15 @@ export async function setCampusEventRsvp(input: unknown) {
   refresh();
   return result;
 }
-export async function getCampusEventAttendees(clubId: string, eventId: string) {
-  z.string().uuid().parse(clubId);
-  z.string().uuid().parse(eventId);
-  await requireClubPermission(clubId, ["meetings.attendance"]);
-  if (
-    !(await prisma.meeting.findFirst({
-      where: { id: eventId, clubId, publication: { isNot: null } },
-      select: { id: true },
-    }))
-  )
-    throw Error("Event unavailable.");
-  const rows = await prisma.eventRsvp.findMany({
+/** RSVP intent only; check-in attendance is a separate canonical record. */
+export async function getCampusEventRsvpDashboard(clubId: string, eventId: string) {
+  z.string().uuid().parse(clubId); z.string().uuid().parse(eventId);
+  const { user } = await requireClubPermission(clubId, ["meetings.attendance"]);
+  return prisma.$transaction(async tx => {
+    await authorizeClubTransaction(tx, clubId, user.id, ["meetings.attendance"], { readOnly: true });
+    const event = await tx.meeting.findFirst({ where: { id: eventId, clubId, publication: { isNot: null } }, select: { id: true, publication: { select: { capacity: true } } } });
+    if (!event?.publication) throw Error("Event unavailable.");
+  const rows = await tx.eventRsvp.findMany({
     where: { eventId },
     select: {
       createdAt: true,
@@ -516,13 +517,14 @@ export async function getCampusEventAttendees(clubId: string, eventId: string) {
               round: { anonymousReview: true },
             },
             select: { id: true },
+            take: 1,
           },
         },
       },
     },
     orderBy: { createdAt: "asc" },
   });
-  return rows.map((r) => ({
+  const attendees = rows.map((r) => ({
     createdAt: r.createdAt.toISOString(),
     name: r.user.applications.length
       ? "Anonymous applicant"
@@ -531,6 +533,12 @@ export async function getCampusEventAttendees(clubId: string, eventId: string) {
         : r.user.email,
     email: r.user.applications.length ? null : r.user.email,
   }));
+
+    return { eventId, capacity: event.publication.capacity, count: attendees.length, attendees };
+  }, { isolationLevel: "RepeatableRead" });
+}
+export async function getCampusEventAttendees(clubId: string, eventId: string) {
+  return (await getCampusEventRsvpDashboard(clubId, eventId)).attendees;
 }
 /** Keep cancellation available after withdrawal without exposing the new unapproved content. */
 export async function getMyCampusEventRsvps() {

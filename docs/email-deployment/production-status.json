@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-10T16:59:06.275Z",
+  "productionDeployment": "dpl_DX9tZMj4jXRkqewdsKwjRP3NY1cW",
+  "productionCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+  "domain": "www.out-class.net",
+  "previewDeployment": "dpl_CJZk9HLAWQUUFcRQSBrtJ2RU4VXD",
+  "previewCommit": "2500e5c86ff6f1b740cdd71479fc8784b1bb19ee",
+  "previewStatus": "Build Ready; auth smoke test blocked by missing Preview Supabase URL/API key",
+  "previewPromoted": false,
+  "environmentVariablesChanged": false,
+  "productionErrorLogQuery": {
+    "since": "2026-10-10T16:15:00Z",
+    "level": "error",
+    "limit": 100,
+    "returnedEntries": 0
+  },
+  "authSubjectsEdited": false,
+  "notificationEnablementEdited": false,
+  "dnsChanged": false,
+  "credentialsChanged": false,
+  "liveMigrationsExecuted": false,
+  "additionalProductionDeployment": false,
+  "previewMissingVariables": [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+  ],
+  "previewVariableScopeEvidence": "Vercel env ls preview: required variables scoped to other branches; no entries for this validation branch"
+}

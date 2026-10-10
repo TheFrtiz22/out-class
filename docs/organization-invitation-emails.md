@@ -81,7 +81,7 @@ status is authoritative, not a claim that every queued message was sent.
 
 For delivery independent of an open browser, schedule authenticated HTTP POSTs to
 `/api/internal/invitation-delivery`, using `Authorization: Bearer <CRON_SECRET>`.
-The endpoint processes up to two messages from the oldest queued organization's
+The endpoint processes up to 25 messages from the oldest queued organization's
 queue per request, with a 60-second route duration. Configure frequency for the
 provider's throughput limits. No production scheduler or secrets were changed.
 Worker authorization is rechecked for each delivery even with a valid worker secret.

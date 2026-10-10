@@ -1,0 +1,58 @@
+[
+  {
+    "type": "member-invitation",
+    "recipient": "bsb4rd@virginia.edu",
+    "subject": "[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / member-invitation",
+    "attemptedAt": "2026-10-10T16:40:57.003Z",
+    "emailCodeCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+    "scope": "Recipient-restricted SMTP design preview from deployed application templates; no production action or outbox invoked",
+    "submission": "accepted by SMTP provider",
+    "delivery": "Delivered",
+    "messageId": "<95f0d881-5748-4adf-b4e0-df5e637ee28b@www.out-class.net>",
+    "providerId": "01a126b0-682e-7ab3-87b8-32cc1fd761f3",
+    "acceptedAt": "2026-10-10T16:40:57.769Z",
+    "deliveryEvidence": "Authenticated Resend dashboard"
+  },
+  {
+    "type": "administrator-invitation",
+    "recipient": "bsb4rd@virginia.edu",
+    "subject": "[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / administrator-invitation",
+    "attemptedAt": "2026-10-10T16:40:57.773Z",
+    "emailCodeCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+    "scope": "Recipient-restricted SMTP design preview from deployed application templates; no production action or outbox invoked",
+    "submission": "accepted by SMTP provider",
+    "delivery": "Delivered",
+    "messageId": "<83bedb67-c964-4ea4-bb9f-c837b06ef42d@www.out-class.net>",
+    "providerId": "01a126b0-6aee-7250-a0a5-d5e258b6f8ba",
+    "acceptedAt": "2026-10-10T16:40:58.478Z",
+    "deliveryEvidence": "Authenticated Resend dashboard"
+  },
+  {
+    "type": "legacy-invitation",
+    "recipient": "bsb4rd@virginia.edu",
+    "subject": "[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / legacy-invitation",
+    "attemptedAt": "2026-10-10T16:40:58.481Z",
+    "emailCodeCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+    "scope": "Recipient-restricted SMTP design preview from deployed application templates; no production action or outbox invoked",
+    "submission": "accepted by SMTP provider",
+    "delivery": "Delivered",
+    "messageId": "<fbfe5be5-08b3-49c6-ab4f-7ce4ab626d8a@www.out-class.net>",
+    "providerId": "01a126b0-6d9a-705b-9c6e-542ece6583ea",
+    "acceptedAt": "2026-10-10T16:40:59.098Z",
+    "deliveryEvidence": "Authenticated Resend dashboard"
+  },
+  {
+    "type": "student-claim",
+    "recipient": "bsb4rd@virginia.edu",
+    "subject": "[OutClass Production Test] Claim your OutClass student account / student-claim",
+    "attemptedAt": "2026-10-10T16:40:59.099Z",
+    "emailCodeCommit": "50c85c1c0ec2eab8d45820fea3ee1f4c22585ae5",
+    "scope": "Recipient-restricted SMTP design preview from deployed application templates; no production action or outbox invoked",
+    "submission": "accepted by SMTP provider",
+    "delivery": "Delivered",
+    "messageId": "<34a259b8-44c5-4324-a9c2-bb3b48c8ae11@www.out-class.net>",
+    "providerId": "01a126b0-6f64-78f8-97b8-357484c237a2",
+    "acceptedAt": "2026-10-10T16:40:59.568Z",
+    "deliveryEvidence": "Authenticated Resend dashboard"
+  }
+]

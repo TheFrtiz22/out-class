@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import type { PersonalSection } from "@/lib/product-navigation"
 import { useDemoMode } from "@/contexts/demo-context"
-import { signInReturnPath } from "@/lib/auth"
+import { signInReturnPath, authEntryHref } from "@/lib/auth"
 import { useAuth } from "@/contexts/auth-context"
 import { demoDashboard } from "@/lib/demo/store"
 import { useState, useEffect } from "react"
@@ -55,7 +55,7 @@ const adminViewIds: ViewId[] = [
 
 /** Map URL error codes from OAuth / auth callback redirects to user-facing messages. */
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  "uva_only": "Please sign in using your UVA Microsoft account (@virginia.edu).",
+  "uva_only": "Please sign in using your UVA email (@virginia.edu).",
   "auth-code-expired": "Your sign-in link has expired. Please try again.",
 }
 
@@ -163,7 +163,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   if (view === "auth" && isImpersonating) return <main className="p-8">Your administrator login is preserved. Exit impersonation above before changing authentication. <button className="underline" onClick={() => setView("student-dashboard")}>Return to the user’s workspace</button></main>
 
   if (view === "auth") {
-    return <AuthView onCreateAccount={() => setView("student-onboarding")} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />
+    return <AuthView onCreateAccount={() => { window.location.href = authEntryHref("/signup", window.location.search) }} onEnter={handleEnter} onBack={() => setView("landing")} initialRole={appMode === "admin" ? "leader" : "student"} initialError={authError} />
   }
 
   if (view === "student-onboarding") {

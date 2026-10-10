@@ -1,0 +1,68 @@
+[
+  {
+    "type": "magic-link",
+    "subject": "Your OutClass sign-in code",
+    "scope": "Implemented Auth · hosted publication pending",
+    "implemented": true
+  },
+  {
+    "type": "confirmation",
+    "subject": "Verify your UVA email — OutClass",
+    "scope": "Implemented Auth · hosted publication pending",
+    "implemented": true
+  },
+  {
+    "type": "recovery",
+    "subject": "Reset your password",
+    "scope": "Implemented Auth · hosted publication pending",
+    "implemented": true
+  },
+  {
+    "type": "password-changed",
+    "subject": "Your password was changed",
+    "scope": "Implemented Auth · hosted publication pending",
+    "implemented": true
+  },
+  {
+    "type": "invite",
+    "subject": "Your OutClass invitation",
+    "scope": "Provider template · no application trigger",
+    "implemented": false
+  },
+  {
+    "type": "email-change",
+    "subject": "Confirm your new email address",
+    "scope": "Provider template · no application trigger",
+    "implemented": false
+  },
+  {
+    "type": "reauthentication",
+    "subject": "Your OutClass verification code",
+    "scope": "Provider template · no application trigger",
+    "implemented": false
+  },
+  {
+    "type": "member-invitation",
+    "subject": "You’re invited to Enactus at UVA on OutClass",
+    "scope": "Application SMTP · deployment pending",
+    "implemented": true
+  },
+  {
+    "type": "administrator-invitation",
+    "subject": "You’re invited to Enactus at UVA on OutClass",
+    "scope": "Application SMTP · deployment pending",
+    "implemented": true
+  },
+  {
+    "type": "legacy-invitation",
+    "subject": "You’re invited to Enactus at UVA on OutClass",
+    "scope": "Application SMTP · deployment pending",
+    "implemented": true
+  },
+  {
+    "type": "student-claim",
+    "subject": "Claim your OutClass student account",
+    "scope": "Application SMTP · deployment pending",
+    "implemented": true
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "type": "magic-link",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T00:07:55.707Z",
+    "scope": "actual supported Supabase signInWithOtp; shouldCreateUser:false",
+    "submission": "accepted by Supabase Auth",
+    "delivery": "confirmed delivered by Resend to recipient mail server",
+    "inbox": "not observed",
+    "providerId": "01a12323-482b-7141-8bab-fb58020c7faf",
+    "providerSentLocal": "2026-10-09 20:07 America/New_York",
+    "providerDeliveredLocal": "2026-10-09 20:07 America/New_York",
+    "deliveryCheckedAt": "2026-10-10T00:17:42.605Z",
+    "evidenceUrl": "https://resend.com/emails/01a12323-482b-7141-8bab-fb58020c7faf"
+  },
+  {
+    "type": "recovery",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T00:07:57.547Z",
+    "scope": "actual production OutClass password-recovery request route",
+    "httpStatus": 200,
+    "submission": "uniform application acknowledgment; provider acceptance requires logs",
+    "delivery": "unconfirmed",
+    "inbox": "not observed"
+  },
+  {
+    "type": "password-changed",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T00:09:52.884Z",
+    "scope": "actual production reset route with separately generated provider recovery token; earlier emailed reset token invalidated",
+    "httpStatus": 400,
+    "resetSucceeded": false,
+    "newPasswordSignInVerified": false,
+    "recoveryTokenReuseRejected": false,
+    "submission": "reset failed",
+    "delivery": "unconfirmed",
+    "inbox": "not observed",
+    "rootCause": "Supabase insufficient_aal (401), reproduced directly: recovery session lacks enrolled MFA proof. No password change succeeded."
+  },
+  {
+    "type": "recovery",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T00:13:57.590Z",
+    "scope": "supported Supabase resetPasswordForEmail after cooldown; retest of acknowledged production route request without corresponding Resend event",
+    "submission": "accepted by Supabase Auth",
+    "delivery": "confirmed delivered by Resend to recipient mail server",
+    "inbox": "not observed",
+    "providerId": "01a12328-ce47-7d9d-9350-6447f1b70c1a",
+    "providerSentLocal": "2026-10-09 20:13 America/New_York",
+    "providerDeliveredLocal": "2026-10-09 20:14 America/New_York",
+    "deliveryCheckedAt": "2026-10-10T00:17:42.605Z",
+    "evidenceUrl": "https://resend.com/emails/01a12328-ce47-7d9d-9350-6447f1b70c1a"
+  },
+  {
+    "type": "recovery",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T00:50:21.968Z",
+    "scope": "final actual production password-recovery request route after cooldown",
+    "httpStatus": 200,
+    "submission": "accepted by Resend, confirmed by provider event",
+    "delivery": "confirmed delivered by Resend to recipient mail server",
+    "inbox": "not observed",
+    "providerId": "01a1234a-2276-753d-ae46-e9f6c27c8561",
+    "deliveryCheckedAt": "2026-10-10T00:51:17.800Z",
+    "evidenceUrl": "https://resend.com/emails/01a1234a-2276-753d-ae46-e9f6c27c8561"
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-10-10T00:47:13.561Z",
+  "tests": {
+    "command": "node --test tests/*.test.cjs",
+    "total": 942,
+    "passed": 933,
+    "failed": 0,
+    "skipped": 9
+  },
+  "typecheck": {
+    "command": "npm run typecheck",
+    "passed": true
+  },
+  "lint": {
+    "command": "npm run lint",
+    "errors": 0,
+    "warnings": 25
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true
+  },
+  "render": {
+    "command": "node scripts/email-audit.cjs render current",
+    "templates": 11,
+    "renders": 44,
+    "widths": [
+      720,
+      375,
+      320
+    ],
+    "darkMode": true,
+    "overflow": 0,
+    "brokenImages": 0,
+    "unresolvedVariables": 0,
+    "allDesktopMobileAndDarkScreenshotsVisuallyReviewed": true
+  },
+  "limitations": [
+    "Browser rendering does not certify Gmail/Outlook behavior.",
+    "Mocked regression tests are not live delivery evidence.",
+    "Production invitation queues and membership actions were not exercised.",
+    "MFA-protected reset rejected with insufficient_aal; no password change succeeded."
+  ]
+}

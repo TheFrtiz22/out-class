@@ -137,3 +137,6 @@
 @media (prefers-reduced-motion: reduce) {
   .oc-login *, .oc-login *::before, .oc-login *::after { animation: none !important; transition: none !important; }
 }
+
+.oc-signup-content { width: 100%; max-width: 480px; margin: auto; padding-block: 28px; }
+.oc-signup-content > fieldset { margin-top: 28px; min-width: 0; }

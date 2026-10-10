@@ -1,0 +1,29 @@
+[
+  {
+    "type": "magic-link",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T16:39:49.984Z",
+    "scope": "Actual production UI email-code sign-in request; no account creation",
+    "delivery": "Delivered",
+    "submission": "Production UI reached six-digit code entry; provider delivery pending verification",
+    "otpEntryScreenVerified": true,
+    "microsoftSignInHidden": true,
+    "providerId": "01a126af-66ac-786c-8235-cb714f2f1f74",
+    "recipientSideObserved": "Actual Microsoft 365 Outlook Web message observed",
+    "logoLoaded": true
+  },
+  {
+    "type": "recovery",
+    "recipient": "bsb4rd@virginia.edu",
+    "attemptedAt": "2026-10-10T16:42:34.931Z",
+    "scope": "Actual production forgot-password request via supported application flow; no password reset completion",
+    "delivery": "Delivered",
+    "submission": "Production recovery request acknowledged; Delivered confirmed by Resend",
+    "providerId": "01a126b1-e906-78a7-ae87-1983e740fae9",
+    "recipientSideObserved": "Actual Microsoft 365 Outlook Web message observed",
+    "logoLoaded": true,
+    "recoveryScreenOpened": true,
+    "passwordFieldsEmpty": true,
+    "passwordChangeSubmitted": false
+  }
+]

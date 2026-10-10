@@ -1,0 +1,64 @@
+[
+  {
+    "type": "confirmation",
+    "subject": "Verify your UVA email — OutClass",
+    "source": "supabase/templates/confirmation.html",
+    "scope": "implemented Auth template"
+  },
+  {
+    "type": "magic-link",
+    "subject": "Your OutClass sign-in code",
+    "source": "supabase/templates/magic-link.html",
+    "scope": "implemented Auth template"
+  },
+  {
+    "type": "recovery",
+    "subject": "Reset your password",
+    "source": "supabase/templates/recovery.html",
+    "scope": "implemented Auth template"
+  },
+  {
+    "type": "password-changed",
+    "subject": "Your password was changed",
+    "source": "supabase/templates/password-changed.html",
+    "scope": "implemented Auth template"
+  },
+  {
+    "type": "invite",
+    "subject": "You've been invited",
+    "source": "docs/email-audit/hosted/invite.html",
+    "scope": "provider-native; no application trigger"
+  },
+  {
+    "type": "email-change",
+    "subject": "Confirm your new email address",
+    "source": "docs/email-audit/hosted/email-change.html",
+    "scope": "provider-native; no application trigger"
+  },
+  {
+    "type": "reauthentication",
+    "subject": "Your verification code",
+    "source": "docs/email-audit/hosted/reauthentication.html",
+    "scope": "provider-native; no application trigger"
+  },
+  {
+    "type": "member-invitation",
+    "subject": "You’re invited to OutClass Audit Research Society on OutClass",
+    "scope": "application SMTP template"
+  },
+  {
+    "type": "administrator-invitation",
+    "subject": "You’re invited to OutClass Audit Research Society on OutClass",
+    "scope": "application SMTP template"
+  },
+  {
+    "type": "legacy-invitation",
+    "subject": "You’re invited to OutClass Audit Research Society on OutClass",
+    "scope": "application SMTP template"
+  },
+  {
+    "type": "student-claim",
+    "subject": "Claim your OutClass student account",
+    "scope": "application SMTP template"
+  }
+]

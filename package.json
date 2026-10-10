@@ -20,7 +20,9 @@
     "test:onboarding:e2e": "node scripts/run-onboarding-e2e.cjs",
     "pdf:assets": "node scripts/copy-pdfjs-assets.cjs",
     "predev": "npm run pdf:assets",
-    "prebuild": "npm run pdf:assets"
+    "prebuild": "npm run pdf:assets",
+    "email:templates": "node scripts/email-audit.cjs build",
+    "email:previews": "node scripts/email-design.cjs render"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

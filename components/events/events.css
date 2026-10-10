@@ -675,3 +675,18 @@
 .oc-rsvp-action:hover {
   background: var(--brand-ink) !important;
 }
+
+/* Leader management only; the student corkboard composition is unchanged. */
+.oc-event-management-detail { display: grid; grid-template-columns: minmax(0, 280px) minmax(0, 1fr); gap: 28px; }
+.oc-event-management-detail > div { min-width: 0; }
+.oc-event-management-detail .oc-event-paper { margin-top: 16px; }
+.oc-managed-event .oc-event-actions { max-width: 230px; }
+.oc-event-editor-fields, .oc-event-editor-preview, .oc-event-editor-pair > label { min-width: 0; }
+.oc-event-editor input, .oc-event-editor textarea { max-width: 100%; min-width: 0; }
+@media (max-width: 639px) {
+  .oc-event-management-detail { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .oc-event-management-detail .oc-event-paper { max-width: 260px; margin-inline: auto; }
+  .oc-event-editor-pair { grid-template-columns: minmax(0, 1fr); }
+  .oc-managed-event { gap: 12px; padding: 12px; }
+  .oc-managed-event .oc-event-actions { max-width: none; }
+}

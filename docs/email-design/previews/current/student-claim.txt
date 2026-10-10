@@ -1,0 +1,8 @@
+Hello Taylor,
+
+Your OutClass account is ready. Choose your own password using this single-use invitation.
+https://www.out-class.net/login?email-design-preview=1
+
+This link expires according to the university authentication service’s invitation policy. If it has expired, request another invitation.
+
+If you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.

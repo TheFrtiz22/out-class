@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { EmailLoginForm, type EmailLoginFormProps } from "./email-login-form"
+import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
 /** The existing Microsoft mark, without an icon package or provider changes. */
 function MicrosoftIcon() {
@@ -35,13 +36,16 @@ export function LoginAuthPanel(props: LoginAuthPanelProps) {
         <p className="oc-login-auth-description">{step === "email" ? "Sign in to OutClass." : <>Enter the six-digit code for <strong>{email}</strong>.</>}</p>
         {step === "email" ? (
           <>
-            <Button type="button" disabled={microsoftLoading || loading} onClick={onMicrosoftLogin} aria-busy={microsoftLoading} className="oc-login-uva">{microsoftLoading ? <><Loader2 className="size-4 animate-spin" />Redirecting…</> : <><MicrosoftIcon />Continue with UVA</>}</Button>
-            <button ref={emailToggle} type="button" disabled={loading || microsoftLoading} onClick={onToggleEmail} aria-expanded={emailExpanded} aria-controls="login-email-fields" className="oc-login-email-toggle">{emailExpanded ? "Hide email sign-in" : "Use email instead"}<ChevronDown size={14} /></button>
-            <div id="login-email-fields" className="oc-login-email-reveal" data-expanded={emailExpanded} aria-hidden={!emailExpanded} inert={!emailExpanded} onKeyDown={event => {
-              if (event.key === "Escape" && !loading && !microsoftLoading) { onToggleEmail(); emailToggle.current?.focus() }
-            }}>
-              <div className="oc-login-email-inner"><EmailLoginForm {...props} /></div>
-            </div>
+            {MICROSOFT_AUTH_ENABLED && <>
+              <Button type="button" disabled={microsoftLoading || loading} onClick={onMicrosoftLogin} aria-busy={microsoftLoading} className="oc-login-uva">{microsoftLoading ? <><Loader2 className="size-4 animate-spin" />Redirecting…</> : <><MicrosoftIcon />Continue with UVA</>}</Button>
+              <button ref={emailToggle} type="button" disabled={loading || microsoftLoading} onClick={onToggleEmail} aria-expanded={emailExpanded} aria-controls="login-email-fields" className="oc-login-email-toggle">{emailExpanded ? "Hide email sign-in" : "Use email instead"}<ChevronDown size={14} /></button>
+              <div id="login-email-fields" className="oc-login-email-reveal" data-expanded={emailExpanded} aria-hidden={!emailExpanded} inert={!emailExpanded} onKeyDown={event => {
+                if (event.key === "Escape" && !loading && !microsoftLoading) { onToggleEmail(); emailToggle.current?.focus() }
+              }}>
+                <div className="oc-login-email-inner"><EmailLoginForm {...props} /></div>
+              </div>
+            </>}
+            {!MICROSOFT_AUTH_ENABLED && <EmailLoginForm {...props} />}
           </>
         ) : (
           <form onSubmit={onVerifyCode} className="oc-login-verify-form" aria-busy={loading}>

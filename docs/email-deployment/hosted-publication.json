@@ -1,0 +1,36 @@
+[
+  {
+    "type": "password-changed",
+    "publishedAt": "2026-10-10T16:35:42.891Z",
+    "verifiedByReload": true,
+    "sha256": "84b11da9b00b3f29d1209c13372626c8e5750a9ca2f825c5bae1b505b2637562",
+    "notificationEnabled": "true",
+    "subjectEdited": false
+  },
+  {
+    "type": "confirmation",
+    "publicationVerifiedAt": "2026-10-10T16:38:37.579Z",
+    "verifiedByReload": true,
+    "sha256": "a30ce9dd1a59dc934ca06e6f4abbae95cb02507913bcda36b9b4896a1a2512df",
+    "subjectUnchanged": true,
+    "subject": "Verify your UVA email — OutClass"
+  },
+  {
+    "type": "magic-link",
+    "publishedAt": "2026-10-10T16:38:51.978Z",
+    "verifiedByReload": true,
+    "sha256": "548a06e57ff8a229c7d0cafb87400721f4a204420d32c0100cd7ed08f0390959",
+    "subjectBefore": "Your OutClass sign-in code",
+    "subjectAfter": "Your OutClass sign-in code",
+    "subjectUnchanged": true
+  },
+  {
+    "type": "recovery",
+    "publishedAt": "2026-10-10T16:39:01.282Z",
+    "verifiedByReload": true,
+    "sha256": "0ad7109aa77919135ab9a0fcc6593a6d6b25eeb1a06ed6a26aab4d7e3676b9dc",
+    "subjectBefore": "Reset your password",
+    "subjectAfter": "Reset your password",
+    "subjectUnchanged": true
+  }
+]

@@ -78,7 +78,7 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   const fs = require('node:fs'), ts = require('typescript')
   const slots = []; let cursor = 0
   const react = { ...require('react'), useState: initial => { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { slots[i] = value }] }, useRef: value => { const i = cursor++; return slots[i] ??= { current: value } }, useEffect() {} }
-  const window = { location: { href: '' } }
+  const window = { location: { href: '', pathname: '/club/club', search: '?ref=campus', hash: '#apply' } }
   const dependencies = { react, '@/lib/application-state': { ApplicationStateProvider: 'Provider' }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/components/views/club-profile-view': { ClubProfileView: 'ClubProfile' }, '@/components/views/application-tracker-view': { ApplicationTrackerView: 'ApplicationTracker' }, '@/components/views/calendar-view': { CalendarView: 'Calendar' }, '@/components/views/auth-view': { AuthView: 'Auth' }, '@/components/views/student-onboarding-wizard': { StudentOnboardingWizard: 'Onboarding' }, '@/components/ui/button': { Button: 'Button' }, '@/lib/workspace-api': {} }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/qr/public-club-page.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
@@ -89,6 +89,10 @@ test('public club entry retains unified Status, submitted responses, Calendar, a
   const render = () => { cursor = 0; return nodes(mod.exports.PublicClubPage({ club: { id: 'club' } })) }
   const profile = render().find(node => node.type === 'ClubProfile')
   assert.equal(profile.props.backLabel, 'Back to OutClass')
+  profile.props.onNavigate('auth')
+  assert.equal(window.location.href, '/login?next=%2Fclub%2Fclub%3Fref%3Dcampus%23apply')
+  profile.props.onNavigate('student-onboarding')
+  assert.equal(window.location.href, '/signup?next=%2Fclub%2Fclub%3Fref%3Dcampus%23apply')
   profile.props.onNavigate('status')
   let tracker = render().find(node => node.type === 'ApplicationTracker')
   assert.equal(tracker.props.scope, 'status')

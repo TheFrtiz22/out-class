@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-10T00:52:11.173Z",
+  "projectRef": "htlgjluegmdwfjkzzwic",
+  "temporaryChanges": "Four subjects conditionally prefixed only for bsb4rd@virginia.edu, separately approved by user.",
+  "allFourSubjectsRestored": true,
+  "subjects": [
+    {
+      "type": "confirmation",
+      "subject": "Verify your UVA email — OutClass",
+      "verifiedBy": "reloaded hosted input value"
+    },
+    {
+      "type": "magic_link",
+      "subject": "Your OutClass sign-in code",
+      "verifiedBy": "reloaded hosted input value"
+    },
+    {
+      "type": "recovery",
+      "subject": "Reset your password",
+      "verifiedBy": "reloaded hosted input value, including final 20:50 production-route retest restoration"
+    },
+    {
+      "type": "password_changed_notification",
+      "subject": "Your password was changed",
+      "verifiedBy": "visual inspection of reloaded hosted settings screenshot; accessible input value auto-redacted by browser tooling"
+    }
+  ],
+  "passwordChangedNotificationStillEnabled": true,
+  "method": "Authenticated Supabase dashboard. CLI restoration was stopped before mutation when its credential became unavailable; final CLI readback returned AccessTokenRequiredError.",
+  "noPermanentProviderChanges": true,
+  "unchanged": [
+    "Auth HTML bodies",
+    "SMTP credentials and sender",
+    "Auth confirmation policy",
+    "rate limits",
+    "MFA factors",
+    "redirects",
+    "DNS"
+  ],
+  "deployed": false,
+  "finalRecoveryRouteRetest": "Recipient-specific recovery prefix reapplied under the same approval for one final application-route retest, then original subject restored again."
+}

@@ -1,5 +1,5 @@
 "use client"
-import { ClubEvents } from "@/components/events/club-events";
+import { ClubMeetingsWorkspace } from "@/components/events/club-meetings-workspace";
 import dynamic from "next/dynamic";
 import { resolveSettingsTab } from "@/lib/club-settings"
 import { clubCampusIllustration } from "@/lib/campus-illustrations"
@@ -54,7 +54,8 @@ export function ClubWorkspace({
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const section = params.get("section") ?? "overview";
+  const legacyEvents = params.get("section") === "events";
+  const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
   const taskView = params.get("taskView") ?? undefined;
   const tool = params.get("tool") ?? undefined;
   const interviewMode = section === "recruitment" && tool === "interviews" && params.get("interview") === "1";
@@ -164,8 +165,7 @@ export function ClubWorkspace({
           {needsOverview && error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {section === "overview" && current && (manager ? <><ManagerOverview data={current} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <MemberOverview data={current} />)}
             {section === "tasks" && <ClubTasks clubId={clubId} embedded personalOnly={!manager} initialScope={taskView === "mine" ? "mine" : manager ? "team" : "mine"} />}
-            {section === "meetings" && <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience={hasPermission(membership, "meetings.manage") ? "ALL" : "MEMBERS"} />}
-            {section === "events" && hasPermission(membership, "meetings.manage") && <ClubEvents key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} />}
+            {section === "meetings" && (hasPermission(membership, "meetings.manage") ? <ClubMeetingsWorkspace key={clubId} clubId={clubId} clubName={membership.club.name} canSeeAttendees={hasPermission(membership, "meetings.attendance")} legacyEvents={legacyEvents} /> : <MeetingList clubId={clubId} embedded personalOnly={!manager} initialAudience="MEMBERS" />)}
             {section === "members" && <ClubMembers key={clubId} clubId={clubId} initialDirectory={saved?.members} onDirectory={publishMembers} />}
             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
             {section === "announcements" && <ClubAnnouncements key={clubId} />}

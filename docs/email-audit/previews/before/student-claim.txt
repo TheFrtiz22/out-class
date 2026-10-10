@@ -1,0 +1,6 @@
+Hello Taylor,
+
+Your OutClass account is ready. Choose your own password using this single-use invitation:
+https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token
+
+This link expires according to the university authentication service's invitation policy. If it has expired, request another invitation.

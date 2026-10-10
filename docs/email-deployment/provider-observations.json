@@ -1,0 +1,111 @@
+{
+  "observedAt": "2026-10-10T16:45:51.051Z",
+  "source": "Authenticated Resend dashboard",
+  "rows": [
+    {
+      "links": [
+        "https://resend.com/emails/01a126b1-e906-78a7-ae87-1983e740fae9",
+        "https://resend.com/emails/01a126b1-e906-78a7-ae87-1983e740fae9"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\nReset your password\n\t\n2min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a126b0-6f64-78f8-97b8-357484c237a2",
+        "https://resend.com/emails/01a126b0-6f64-78f8-97b8-357484c237a2"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Production Test] Claim your OutClass student account / student-claim\n\t\n4min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a126b0-6d9a-705b-9c6e-542ece6583ea",
+        "https://resend.com/emails/01a126b0-6d9a-705b-9c6e-542ece6583ea"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / legacy-invitation\n\t\n4min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a126b0-6aee-7250-a0a5-d5e258b6f8ba",
+        "https://resend.com/emails/01a126b0-6aee-7250-a0a5-d5e258b6f8ba"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / administrator-invitation\n\t\n4min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a126b0-682e-7ab3-87b8-32cc1fd761f3",
+        "https://resend.com/emails/01a126b0-682e-7ab3-87b8-32cc1fd761f3"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Production Test] You’re invited to Enactus at UVA on OutClass / member-invitation\n\t\n4min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a126af-66ac-786c-8235-cb714f2f1f74",
+        "https://resend.com/emails/01a126af-66ac-786c-8235-cb714f2f1f74"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\nYour OutClass sign-in code\n\t\n5min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-e616-79ab-874d-7b8adffc366b",
+        "https://resend.com/emails/01a12683-e616-79ab-874d-7b8adffc366b"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Claim your OutClass student account / student-claim / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-e43f-78ea-bb9b-a040337a6b53",
+        "https://resend.com/emails/01a12683-e43f-78ea-bb9b-a040337a6b53"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] You’re invited to Enactus at UVA on OutClass / legacy-invitation / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-e1ba-7820-83f4-53e5f5e9c990",
+        "https://resend.com/emails/01a12683-e1ba-7820-83f4-53e5f5e9c990"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] You’re invited to Enactus at UVA on OutClass / administrator-invitation / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-df08-7ac5-a5d8-d50bd09b8195",
+        "https://resend.com/emails/01a12683-df08-7ac5-a5d8-d50bd09b8195"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] You’re invited to Enactus at UVA on OutClass / member-invitation / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-dc5e-7141-a8c4-5ac8902a6d6e",
+        "https://resend.com/emails/01a12683-dc5e-7141-a8c4-5ac8902a6d6e"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Your password was changed / password-changed / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-da20-730c-aaa0-149ed5ce8cd2",
+        "https://resend.com/emails/01a12683-da20-730c-aaa0-149ed5ce8cd2"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Reset your password / recovery / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-d845-7336-948b-68155dbfe727",
+        "https://resend.com/emails/01a12683-d845-7336-948b-68155dbfe727"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Verify your UVA email — OutClass / confirmation / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a12683-d71a-71fd-9f00-fa88f75352ff",
+        "https://resend.com/emails/01a12683-d71a-71fd-9f00-fa88f75352ff"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Your OutClass sign-in code / magic-link / final artwork\n\t\n52min ago\n\t"
+    },
+    {
+      "links": [
+        "https://resend.com/emails/01a1267f-1a33-724a-b97f-a2b5eb64d924",
+        "https://resend.com/emails/01a1267f-1a33-724a-b97f-a2b5eb64d924"
+      ],
+      "text": "bsb4rd@virginia.edu\n\t\nDelivered\n\t\n[OutClass Design Test] Claim your OutClass student account / student-claim\n\t\n58min ago\n\t"
+    }
+  ]
+}

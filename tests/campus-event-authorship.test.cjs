@@ -76,6 +76,8 @@ function harness() {
     },
   };
   const mocks = {
+    // Authorship tests isolate review provenance; live reauthorization is covered separately.
+    "@/lib/club-transaction-authorization": { authorizeClubTransaction: async () => {} },
     "@/utils/prisma": { prisma: { $transaction: async (fn) => fn(tx) } },
     "@/utils/auth": { requireClubPermission: async () => ({ user: { id: actor } }) },
     "@/utils/platform-admin": { requirePlatformAdmin: async () => {

@@ -233,7 +233,7 @@ function LocalLeaderDashboardView() {
   }
 
   function sendEmail(name: string) {
-    toast.success(`Email drafted for ${name}`)
+    toast.info(`Email sending to ${name} is not connected for this workflow.`)
   }
 
   function clearSelection() {

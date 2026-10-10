@@ -1,0 +1,7 @@
+{
+  "observedAt": "2026-10-10T15:56:53.152Z",
+  "originalMode": "Light",
+  "restoredMode": "Light",
+  "scope": "Appearance only; organizational theme retained",
+  "verification": "Saved Light selection; confirmed actual light-mode message rendering in all eight light screenshots and measured RGB(255,255,255) paper."
+}

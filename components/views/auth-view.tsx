@@ -5,11 +5,12 @@ import { useState, useEffect, type FormEvent } from "react"
 import { LoginBrandPanel } from "@/components/auth/login-brand-panel"
 import { LoginAuthPanel } from "@/components/auth/login-auth-panel"
 import "@/components/auth/login.css"
-import { isUvaEmail, signInReturnPath } from "@/lib/auth"
+import { isUvaEmail, loginReturnPath } from "@/lib/auth"
 import type { ViewId } from "@/lib/views"
 import { createClient } from "@/utils/supabase/client"
 import Link from "next/link"
 import { authEmailError, confirmedEmailSession } from "@/lib/auth-email"
+import { MICROSOFT_AUTH_ENABLED } from "@/lib/auth-features"
 
 export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "student", initialError = "" }: {
   onEnter: (view: ViewId) => void
@@ -44,20 +45,13 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
   const supabase = createClient()
 
   async function handleMicrosoftLogin() {
-    if (isImpersonating) return
+    if (!MICROSOFT_AUTH_ENABLED || isImpersonating) return
     if (microsoftLoading) return
     setMicrosoftLoading(true)
     setError("")
 
     try {
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: "azure",
-        options: {
-          scopes: "email",
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(signInReturnPath(new URLSearchParams(window.location.search).get("next")))}`,
-        },
-      })
-      if (oauthError) throw oauthError
+      window.location.href = `/auth/microsoft?next=${encodeURIComponent(loginReturnPath(new URLSearchParams(window.location.search).get("next")))}`
       // Keep the pending state while the browser redirects.
     } catch {
       setError("Unable to start Microsoft sign-in. Please try again.")
@@ -74,7 +68,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password })
       if (error) { setError(error.message); return }
-      window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
+      window.location.href = loginReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch { setError("Unable to sign in. Please try again.") }
     finally { setLoading(false) }
   }
@@ -114,7 +108,7 @@ export function AuthView({ onEnter, onBack, onCreateAccount, initialRole = "stud
         setError("Unable to confirm your sign-in. Please try again.")
         return
       }
-      window.location.href = signInReturnPath(new URLSearchParams(window.location.search).get("next"))
+      window.location.href = loginReturnPath(new URLSearchParams(window.location.search).get("next"))
     } catch {
       setError("Unable to verify this code. Please try again.")
     } finally {

@@ -10,13 +10,54 @@ const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
 test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP',{skip:!configFile,timeout:180000},async t=>{
  const config=readConfig(configFile),db=new PrismaClient({datasourceUrl:config.status.DB_URL});t.after(()=>db.$disconnect());
  const admin=new Actor(config);await admin.signIn(config.admin.email,config.admin.password);
- const mfa=await admin.client.auth.mfa.challengeAndVerify({factorId:config.admin.factor,code:totp(config.admin.totpSecret)});assert.equal(mfa.error,null);
+ // Use the protected application flow: provider MFA alone is not an Admin elevation.
+ const elevate=body=>admin.request('/api/platform/elevation',{method:'POST',headers:{origin:config.appUrl,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const passwordStep=await elevate({action:'password',password:config.admin.password});assert.equal(passwordStep.status,200,await passwordStep.text());
+ const mfaStep=await elevate({action:'verify',code:totp(config.admin.totpSecret)});assert.equal(mfaStep.status,200,await mfaStep.text());
  const suffix=randomUUID().replaceAll('-','').slice(0,8),name=`Madison Investment Fund E2E ${suffix}`;
  const ids={president:`pres${suffix}`,existing:`sarah${suffix}`,newStudent:`michael${suffix}`,dismissed:`dismiss${suffix}`,incremental:`later${suffix}`};
  const president=new Actor(config),existing=new Actor(config),newStudent=new Actor(config),dismissed=new Actor(config);
  const call=(actor,file,name,...args)=>actor.action('actions/'+file+'.ts',name,args);
  let clubId,ownerInvitation,preview,importResult,memberInvitation;
  const complete=new Set();async function scenario(title,fn){await t.test(title,async()=>{await fn();complete.add(title);});assert.ok(complete.has(title),`Stop dependent scenarios after ${title} failed`);}
+ async function assertEntryRedirect(actor,route,target){
+  const response=await actor.request(route),body=await response.text();
+  if(response.status===307){assert.equal(response.headers.get('location'),target);return;}
+  assert.equal(response.status,200);
+  assert.ok(body.includes('id="__next-page-redirect"'),`${route} must redirect`);
+  assert.ok(body.includes(`url=${target.replaceAll('&','&amp;')}`),`Expected ${target}`);
+ }
+ await scenario('Public authentication — shared CTAs, signup, normal login and isolated administration',async()=>{
+  const visitor=new Actor(config);
+  for(const route of ['/','/about','/uva','/request-school']){
+   const response=await visitor.request(route);assert.equal(response.status,200);
+   const html=await response.text();
+   assert.match(html,/<a[^>]+href="\/signup"[^>]*>Get Started<\/a>/);
+   assert.match(html,/<a[^>]+href="\/login"[^>]*>Log In<\/a>/);
+   assert.ok(!/<a[^>]+href="\/platform/.test(html));
+  }
+  const signup=await visitor.request('/signup'),signupHtml=await signup.text();assert.equal(signup.status,200);
+  assert.ok(signupHtml.includes('Your campus opportunities start here.'));
+  assert.ok(signupHtml.includes('One profile. Every opportunity. Join OutClass to discover organizations, apply, and get involved.'));
+  assert.match(signupHtml,/autocomplete="new-password"/i);
+  assert.ok(!signupHtml.includes('oc-login-uva')&&!signupHtml.includes('Continue with UVA'));
+  const login=await visitor.request('/login'),loginHtml=await login.text();assert.equal(login.status,200);assert.ok(loginHtml.includes('Welcome back.'));
+  assert.ok(!loginHtml.includes('oc-login-uva')&&!loginHtml.includes('Continue with UVA'));
+  assert.match(loginHtml,/autocomplete="current-password"/i);
+  await assertEntryRedirect(visitor,'/?signup=student&next=%2Finvitations%2Fpublic-test','/signup?next=%2Finvitations%2Fpublic-test');
+  const platform=await visitor.request('/platform/login');assert.equal(platform.status,200);assert.ok((await platform.text()).includes('Sign in before entering Admin'));
+ });
+ await scenario('Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved',async()=>{
+  for(const actor of [new Actor(config),admin]){
+   for(const route of ['/auth/microsoft','/auth/microsoft?enabled=true&next=%2Fsignup','/auth/callback?provider=azure&code=disabled-test']){
+    const response=await actor.request(route);assert.equal(response.status,403);
+    assert.equal(response.headers.get('location'),null);
+    assert.match((await response.json()).error,/Use email sign-in/);
+   }
+  }
+  const schools=await call(admin,'platform-organization-onboarding','getOrganizationOnboardingSchools');
+  assert.ok(schools.length>0);
+ });
  await scenario('OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login',async()=>{
   const actor=new Actor(config),email=`otp${suffix}@virginia.edu`,password='Local-otp-only!2026';
   const created=await actor.action('actions/onboarding.ts','registerStudent',[{firstName:'OTP',lastName:'Test',email,password}]);
@@ -39,7 +80,13 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   assert.ok((await actor.client.auth.getUser()).data.user.email_confirmed_at);
   assert.ok((await actor.client.auth.getSession()).data.session);
   assert.ok((await actor.client.auth.verifyOtp({email,token:correct,type:'email'})).error);
+  const resume=await actor.request('/signup?next=%2Finvitations%2Fpending');assert.equal(resume.status,200);
+  const resumeHtml=await resume.text();assert.ok(resumeHtml.includes('finish your profile'));assert.ok(!/autocomplete="new-password"/i.test(resumeHtml));
+  await assertEntryRedirect(actor,'/login?next=%2Finvitations%2Fpending','/signup?next=%2Finvitations%2Fpending');
   await actor.profile('OTP Test',2028);
+  await assertEntryRedirect(actor,'/signup','/?workspace=student');
+  await assertEntryRedirect(actor,'/login','/?workspace=student');
+  await assertEntryRedirect(actor,'/signup?next=%2Fplatform','/?workspace=student');
   assert.equal((await actor.request('/')).status,200);
   assert.equal((await actor.request('/api/users/me')).status,200);
   await actor.client.auth.signOut();await actor.signIn(email,password);
@@ -76,6 +123,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation);
   invitation=await db.clubInvitation.findUniqueOrThrow({where:{id:ownerInvitation}});assert.equal(invitation.status,'ACCEPTED');assert.equal(invitation.claimedUserId,president.user.id);assert.ok(invitation.claimedAt);
   const membership=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:president.user.id,clubId}}});assert.equal(membership.isOwner,true);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.status,'ACTIVE');
+  await assertEntryRedirect(president,'/login',`/club/${clubId}/workspace`);
+  await assertEntryRedirect(president,'/signup',`/club/${clubId}/workspace`);
   const dashboard=await president.request(`/club/${clubId}/workspace`);assert.equal(dashboard.status,200);// Club data is fetched by the client; the checklist action verifies authorized organization data below.
   const checklist=await call(president,'organization-onboarding','getOrganizationSetupChecklist',clubId);assert.equal(checklist.organizationName,name);assert.equal(checklist.steps.find(s=>s.id==='claim').complete,true);
  });
@@ -129,7 +178,9 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const sarah=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:existing.user.id,clubId}}});
   for(const [file,name,args]of [['roster-import','previewRosterImport',[{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}]],['organization-members','changeOrganizationMemberRole',[{clubId,memberId:sarah.id,role:'ADMIN'}]],['invitation-emails','sendRosterInvitations',[preview.id]],['club-workspace','updateClubSettings',[{clubId,name:'Hijacked',tagline:'Valid unauthorized input',description:'Permission check must reject valid input.'}]],['organization-members','getOrganizationMemberManagement',[clubId]]])await assert.rejects(existing.action('actions/'+file+'.ts',name,args));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'RECRUITING_ADMIN'});
-  const recruiter=await call(existing,'club-overview','getWorkspaceRounds',clubId);assert.ok(Array.isArray(recruiter));
+  // Workspace readers use their real HTTP boundary rather than a Server Action worker.
+  const recruiter=await existing.request('/api/workspace?'+new URLSearchParams({kind:'rounds',args:JSON.stringify([clubId])}));
+  assert.equal(recruiter.status,200);assert.ok(Array.isArray((await recruiter.json()).data));
   await assert.rejects(call(existing,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'attack.csv',csv:'name,computing_id\nVictim,victimabc'}));
   await call(president,'organization-members','changeOrganizationMemberRole',{clubId,memberId:sarah.id,role:'ADMIN'});
   await call(existing,'organization-members','getOrganizationMemberManagement',clubId);
@@ -149,8 +200,15 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const repeatedResult=await call(president,'roster-import','confirmRosterImport',repeated.id);assert.equal(repeatedResult.created,0);assert.equal(repeatedResult.alreadyInvited,1);assert.equal(await db.clubInvitation.count({where:{clubId}}),before);
   const record=await db.rosterImport.findFirstOrThrow({where:{clubId,filename:'incremental.csv'}});
   const sends=await Promise.all([call(president,'invitation-emails','sendRosterInvitations',record.id),call(president,'invitation-emails','sendRosterInvitations',record.id)]);assert.equal(sends.reduce((n,s)=>n+s.queued,0),1);
-  const deliveries=await Promise.all([call(president,'invitation-emails','deliverOrganizationInvitations',clubId),call(president,'invitation-emails','deliverOrganizationInvitations',clubId)]);assert.equal(deliveries.reduce((n,s)=>n+s.sent,0),1);
-  const invitation=await db.clubInvitation.findFirstOrThrow({where:{clubId,email:ids.incremental+'@virginia.edu'}});assert.equal(invitation.emailSendCount,1);assert.ok(invitation.firstEmailSentAt&&invitation.lastEmailSentAt);
+  const deliveries=await Promise.all([call(president,'invitation-emails','deliverOrganizationInvitations',clubId),call(president,'invitation-emails','deliverOrganizationInvitations',clubId)]);
+  assert.ok(deliveries.reduce((n,s)=>n+s.sent,0)<=1,'Manual workers must never duplicate delivery; the background worker may already have sent it.');
+  let invitation;
+  for(let attempt=0;attempt<50;attempt++){
+   invitation=await db.clubInvitation.findFirstOrThrow({where:{clubId,email:ids.incremental+'@virginia.edu'}});
+   if(invitation.emailSendCount===1)break;
+   await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  assert.equal(invitation.emailSendCount,1);assert.ok(invitation.firstEmailSentAt&&invitation.lastEmailSentAt);
   const attempts=await db.invitationDelivery.findMany({where:{invitationId:invitation.id}});assert.equal(attempts.length,1);assert.equal(attempts[0].status,'SENT');
   await assert.rejects(call(president,'invitation-emails','resendOrganizationInvitation',clubId,invitation.id));
   const mail=await(await fetch(config.status.MAILPIT_URL+'/api/v1/messages?limit=100')).json();assert.equal(mail.messages.filter(m=>m.To.some(to=>to.Address===invitation.email)).length,1);

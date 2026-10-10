@@ -28,6 +28,16 @@ export const maxDuration = 60
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
+  // Keep existing signup bookmarks while moving public account creation to one route.
+  if (params.signup === "student") {
+    const query = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (key === "signup") return
+      if (Array.isArray(value)) value.forEach(item => query.append(key, item))
+      else if (value !== undefined) query.set(key, value)
+    })
+    redirect(`/signup${query.size ? `?${query}` : ""}`)
+  }
   const next = safeReturnPath(typeof params.next === "string" ? params.next : undefined)
   const cookieStore = await cookies()
   const { data: { user: login }, error: authError } = await getSessionUser()

@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   if (["GET", "HEAD"].includes(request.method) && /\.(svg|png|jpg|jpeg|gif|webp|ico)$/.test(request.nextUrl.pathname) && !/^\/(club|club-access|club-claims|invitations|meetings|platform|api)\//.test(request.nextUrl.pathname)) return NextResponse.next()
 
   // Identity-provider operations must never replace the preserved administrator login.
-  if (request.cookies.has(PLATFORM_VIEW_COOKIE) && (request.nextUrl.pathname.startsWith("/auth/") || request.nextUrl.pathname.startsWith("/api/auth/") || request.nextUrl.pathname === "/api/demo" || ["/platform/login", "/login", "/forgot-password", "/reset-password"].includes(request.nextUrl.pathname))) {
+  if (request.cookies.has(PLATFORM_VIEW_COOKIE) && (request.nextUrl.pathname.startsWith("/auth/") || request.nextUrl.pathname.startsWith("/api/auth/") || request.nextUrl.pathname === "/api/demo" || ["/platform/login", "/login", "/signup", "/forgot-password", "/reset-password"].includes(request.nextUrl.pathname))) {
     return NextResponse.json({ error: "Exit impersonation before changing authentication or demo mode." }, { status: 403 })
   }
   // Demo requests cannot invoke any live server action or mutation endpoint.

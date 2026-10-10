@@ -571,7 +571,7 @@ export function StudentOnboardingWizard({
                         <InputOTPSlot
                           key={i}
                           index={i}
-                          className="h-12 w-12 text-lg shadow-none"
+                          className="h-12 w-[clamp(28px,8vw,48px)] text-lg shadow-none"
                         />
                       ))}
                     </InputOTPGroup>
@@ -853,4 +853,3 @@ export function StudentOnboardingWizard({
     </div>
   )
 }
-

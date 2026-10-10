@@ -214,7 +214,7 @@ test("middleware allows effective application access but denies provider identit
   for (const path of ["/api/users/me", "/club/x/workspace", "/api/platform/view-as"]) {
     assert.equal((await middleware(new NextRequest(`https://outclass.test${path}`, { headers }))).status, 200);
   }
-  for (const path of ["/auth/callback", "/api/auth/password-recovery", "/api/demo", "/platform/login", "/login", "/forgot-password", "/reset-password"]) {
+  for (const path of ["/auth/callback", "/api/auth/password-recovery", "/api/demo", "/platform/login", "/login", "/signup", "/forgot-password", "/reset-password"]) {
     assert.equal((await middleware(new NextRequest(`https://outclass.test${path}`, { headers }))).status, 403);
   }
   assert.equal(live, 2);

@@ -9,3 +9,13 @@ test('SMTP transport reuses server configuration, requires encryption and sends 
  delete process.env.SMTP_HOST;assert.throws(()=>api.invitationEmailConfig(),/not configured/);
  }finally{for(const[key,value]of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
 });
+
+test('Resend receipts record the provider dashboard ID instead of the custom MIME Message-ID',async()=>{
+ const vars={SMTP_HOST:'smtp.resend.com',SMTP_PORT:'465',SMTP_USER:'resend',SMTP_PASSWORD:'fixture',SMTP_FROM_EMAIL:'no-reply@updates.out-class.net',OUTCLASS_SITE_URL:'https://www.out-class.net'};
+ const previous=Object.fromEntries(Object.keys(vars).map(key=>[key,process.env[key]]));Object.assign(process.env,vars);
+ const providerId='00000000-0000-4000-8000-000000000123';
+ try{const api=load('utils/email.ts',{nodemailer:{createTransport:()=>({sendMail:async message=>({accepted:['bsb4rd@virginia.edu'],messageId:message.messageId,response:'250 '+providerId}),close(){}})}});
+ assert.deepEqual(await api.sendInvitationEmail({recipient:'bsb4rd@virginia.edu',organizationName:'Audit Society',owner:false,deliveryId:'header-only'}),{messageId:providerId});
+ assert.deepEqual(await api.sendStudentClaimEmail({recipient:'bsb4rd@virginia.edu',name:'Taylor',tokenHash:'a'.repeat(56),deliveryId:'header-only',siteUrl:vars.OUTCLASS_SITE_URL}),{messageId:providerId});
+ }finally{for(const[key,value]of Object.entries(previous)){if(value===undefined)delete process.env[key];else process.env[key]=value;}}
+});

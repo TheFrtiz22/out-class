@@ -1,0 +1,618 @@
+[
+  {
+    "type": "confirmation",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Verify your UVA email\n\nEnter this code in OutClass:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t create an OutClass account, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "confirmation",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Verify your UVA email\n\nEnter this code in OutClass:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t create an OutClass account, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "confirmation",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Verify your UVA email\n\nEnter this code in OutClass:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t create an OutClass account, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "confirmation",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Verify your UVA email\n\nEnter this code in OutClass:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t create an OutClass account, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "magic-link",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your sign-in code\n\nEnter this code in OutClass to sign in:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t request this code, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "magic-link",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your sign-in code\n\nEnter this code in OutClass to sign in:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t request this code, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "magic-link",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your sign-in code\n\nEnter this code in OutClass to sign in:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t request this code, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "magic-link",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your sign-in code\n\nEnter this code in OutClass to sign in:\n\n[illustrative code]\n\nThis code expires in one hour and can only be used once. Never share it with anyone.\n\nIf you didn’t request this code, you can ignore this email.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "recovery",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token"
+    ],
+    "bodyText": "\n\n\nPASSWORD RESET\n\nReset your password.\n\nWe received a request to reset the password for your OutClass account. Click the button below to choose a new password.\n\nReset password\n\nIf the button above doesn't work, copy and paste this link into your browser:\n\nhttps://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token\n\nIf you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "recovery",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token"
+    ],
+    "bodyText": "\n\n\nPASSWORD RESET\n\nReset your password.\n\nWe received a request to reset the password for your OutClass account. Click the button below to choose a new password.\n\nReset password\n\nIf the button above doesn't work, copy and paste this link into your browser:\n\nhttps://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token\n\nIf you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "recovery",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token"
+    ],
+    "bodyText": "\n\n\nPASSWORD RESET\n\nReset your password.\n\nWe received a request to reset the password for your OutClass account. Click the button below to choose a new password.\n\nReset password\n\nIf the button above doesn't work, copy and paste this link into your browser:\n\nhttps://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token\n\nIf you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "recovery",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token"
+    ],
+    "bodyText": "\n\n\nPASSWORD RESET\n\nReset your password.\n\nWe received a request to reset the password for your OutClass account. Click the button below to choose a new password.\n\nReset password\n\nIf the button above doesn't work, copy and paste this link into your browser:\n\nhttps://www.out-class.net/reset-password#token_hash=audit-preview-not-a-valid-token\n\nIf you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "password-changed",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "\n\n\nSECURITY UPDATE\n\nYour password was changed.\n\nThe password for your OutClass account was successfully changed.\n\nYour account is now secured with your new password.\n\nIf you made this change, no further action is needed.\n\nIf you did not change your password, reset your password immediately and contact OutClass support.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "password-changed",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "\n\n\nSECURITY UPDATE\n\nYour password was changed.\n\nThe password for your OutClass account was successfully changed.\n\nYour account is now secured with your new password.\n\nIf you made this change, no further action is needed.\n\nIf you did not change your password, reset your password immediately and contact OutClass support.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "password-changed",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "\n\n\nSECURITY UPDATE\n\nYour password was changed.\n\nThe password for your OutClass account was successfully changed.\n\nYour account is now secured with your new password.\n\nIf you made this change, no further action is needed.\n\nIf you did not change your password, reset your password immediately and contact OutClass support.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "password-changed",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "\n\n\nSECURITY UPDATE\n\nYour password was changed.\n\nThe password for your OutClass account was successfully changed.\n\nYour account is now secured with your new password.\n\nIf you made this change, no further action is needed.\n\nIf you did not change your password, reset your password immediately and contact OutClass support.\n\n\n\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia.\n\n© 2026 OutClass. All rights reserved."
+  },
+  {
+    "type": "invite",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "You've been invited\n\nYou've been invited to create an account. Follow the link below to accept.\n\nAccept invitation"
+  },
+  {
+    "type": "invite",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "You've been invited\n\nYou've been invited to create an account. Follow the link below to accept.\n\nAccept invitation"
+  },
+  {
+    "type": "invite",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "You've been invited\n\nYou've been invited to create an account. Follow the link below to accept.\n\nAccept invitation"
+  },
+  {
+    "type": "invite",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "You've been invited\n\nYou've been invited to create an account. Follow the link below to accept.\n\nAccept invitation"
+  },
+  {
+    "type": "email-change",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "Confirm your new email address\n\nFollow the link below to confirm bsb4rd@virginia.edu as your new email address.\n\nConfirm new email address\n\nIf you didn't request this change, you can safely ignore this email."
+  },
+  {
+    "type": "email-change",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "Confirm your new email address\n\nFollow the link below to confirm bsb4rd@virginia.edu as your new email address.\n\nConfirm new email address\n\nIf you didn't request this change, you can safely ignore this email."
+  },
+  {
+    "type": "email-change",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "Confirm your new email address\n\nFollow the link below to confirm bsb4rd@virginia.edu as your new email address.\n\nConfirm new email address\n\nIf you didn't request this change, you can safely ignore this email."
+  },
+  {
+    "type": "email-change",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/login"
+    ],
+    "bodyText": "Confirm your new email address\n\nFollow the link below to confirm bsb4rd@virginia.edu as your new email address.\n\nConfirm new email address\n\nIf you didn't request this change, you can safely ignore this email."
+  },
+  {
+    "type": "reauthentication",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "Your verification code\n\nUse the code below to verify your identity. It expires shortly.\n\n[illustrative code]"
+  },
+  {
+    "type": "reauthentication",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "Your verification code\n\nUse the code below to verify your identity. It expires shortly.\n\n[illustrative code]"
+  },
+  {
+    "type": "reauthentication",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "Your verification code\n\nUse the code below to verify your identity. It expires shortly.\n\n[illustrative code]"
+  },
+  {
+    "type": "reauthentication",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [],
+    "bodyText": "Your verification code\n\nUse the code below to verify your identity. It expires shortly.\n\n[illustrative code]"
+  },
+  {
+    "type": "member-invitation",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "member-invitation",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "member-invitation",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "member-invitation",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "administrator-invitation",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "You’ve been designated as an administrator of OutClass Audit Research Society.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "administrator-invitation",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "You’ve been designated as an administrator of OutClass Audit Research Society.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "administrator-invitation",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "You’ve been designated as an administrator of OutClass Audit Research Society.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "administrator-invitation",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/?next=%2Fsettings%2Forganizations",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "You’ve been designated as an administrator of OutClass Audit Research Society.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/?next=%2Fsettings%2Forganizations\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "legacy-invitation",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "legacy-invitation",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "legacy-invitation",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "legacy-invitation",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "OutClass Audit Research Society has invited you to join its community on OutClass.\n\nOutClass uses your verified university identity to securely match this invitation. Sign in or create an account with your university email, then review the invitation in Settings → Organizations. Joining is your choice.\n\nSign in to OutClass\n\nYou can also open this link:\nhttps://www.out-class.net/invitations/00000000-0000-4000-8000-000000000001\n\nIf you weren’t expecting this invitation, you can ignore this email. For help, contact the organization that invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "student-claim",
+    "surface": "desktop",
+    "width": 720,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your OutClass account is ready\n\nHello Taylor,\n\nYour OutClass account is ready. Choose your own password using this single-use invitation.\n\nClaim your account\n\nThis link expires according to the university authentication service’s invitation policy. If it has expired, request another invitation.\n\nYou can also open this link:\nhttps://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token\n\nIf you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "student-claim",
+    "surface": "mobile",
+    "width": 375,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your OutClass account is ready\n\nHello Taylor,\n\nYour OutClass account is ready. Choose your own password using this single-use invitation.\n\nClaim your account\n\nThis link expires according to the university authentication service’s invitation policy. If it has expired, request another invitation.\n\nYou can also open this link:\nhttps://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token\n\nIf you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "student-claim",
+    "surface": "narrow",
+    "width": 320,
+    "colorScheme": "light",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your OutClass account is ready\n\nHello Taylor,\n\nYour OutClass account is ready. Choose your own password using this single-use invitation.\n\nClaim your account\n\nThis link expires according to the university authentication service’s invitation policy. If it has expired, request another invitation.\n\nYou can also open this link:\nhttps://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token\n\nIf you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  },
+  {
+    "type": "student-claim",
+    "surface": "dark",
+    "width": 375,
+    "colorScheme": "dark",
+    "overflow": false,
+    "brokenImages": 0,
+    "unresolvedVariables": false,
+    "links": [
+      "https://www.out-class.net/",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token",
+      "https://www.out-class.net/"
+    ],
+    "bodyText": "Your OutClass account is ready\n\nHello Taylor,\n\nYour OutClass account is ready. Choose your own password using this single-use invitation.\n\nClaim your account\n\nThis link expires according to the university authentication service’s invitation policy. If it has expired, request another invitation.\n\nYou can also open this link:\nhttps://www.out-class.net/auth/student-claim#token_hash=audit-preview-not-a-valid-token\n\nIf you weren’t expecting this invitation, ignore this email or contact the administrator who invited you.\n\nOutClass\nOne profile. Every opportunity.\nBeginning at the University of Virginia."
+  }
+]
