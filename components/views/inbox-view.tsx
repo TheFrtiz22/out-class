@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { CommunicationsInbox } from "@/components/communications-inbox"
 import { useEffect, useMemo, useState, useRef } from "react"
 import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "lucide-react"
 import { ClubLogo } from "@/components/club-logo"
@@ -104,6 +105,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
 
   return (
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
+      <CommunicationsInbox />
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       <header>
         <p className="text-sm text-muted-foreground">
