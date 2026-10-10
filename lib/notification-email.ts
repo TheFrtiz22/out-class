@@ -15,12 +15,12 @@ export function communicationEmailConfig() {
 export function buildNotificationEmail(input: { from: string; to: string; siteUrl: string; digest: boolean; items: { type: string; title: string; club: { name: string } | null }[] }): NotificationEmailPayload {
   const href = new URL("/?workspace=student&view=inbox", emailSiteOrigin(input.siteUrl)).href;
   const preferences = new URL("/?workspace=student&view=inbox&tab=preferences", input.siteUrl).href;
-  const subject = input.digest ? "Your daily OutClass updates" : "You have an OutClass update";
+  const subject = input.digest ? "Your daily OutClass updates" : input.items.length === 1 && input.items[0].type === "ANNOUNCEMENT" ? `New announcement from ${input.items[0].club?.name || "OutClass"}` : "You have an OutClass update";
   // Private message bodies, interview details and application decisions stay in-app.
   const summary = input.items.map(item => `${item.club?.name || "OutClass"}: ${item.type === "MESSAGE" ? "New private message" : item.title}`).join("\n");
   return { from: input.from, to: input.to, subject, digest: input.digest, categories: [...new Set(input.items.map(item => item.type))],
-    text: `${subject}\n\n${summary}\n\nRead and reply: ${href}\nEmail preferences: ${preferences}`,
-    html: transactionalEmailHtml({ title: subject, preview: "Your campus, connected.", siteUrl: input.siteUrl, category: "Your OutClass updates", variant: "welcome", body: input.items.map(item => emailParagraph(`${item.club?.name || "OutClass"}: ${item.type === "MESSAGE" ? "New private message" : item.title}`)).join("") + emailButton("Open your inbox", href) + emailButton("Email preferences", preferences), footer: "You receive optional updates according to your OutClass email preferences. Change these preferences in your inbox." }),
+    text: `${subject}\n\n${summary}\n\nRead your updates: ${href}\nEmail preferences: ${preferences}`,
+    html: transactionalEmailHtml({ title: subject, preview: "Your campus, connected.", siteUrl: input.siteUrl, category: "Your OutClass updates", variant: "welcome", body: input.items.map(item => emailParagraph(`${item.club?.name || "OutClass"}: ${item.type === "MESSAGE" ? "New private message" : item.title}`)).join("") + emailButton("Open your inbox", href) + emailButton("Email preferences", preferences), footer: "This is an automated OutClass notification. You can manage optional email updates in your OutClass preferences." }),
   };
 }
 export class NotificationDeliveryError extends Error {
