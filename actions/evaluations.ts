@@ -46,8 +46,10 @@ export async function getEvaluations(clubId: string, applicationId: string) {
   return prisma.$transaction(async tx => {
     const app = await tx.application.findFirst({ where: { id: applicationId, clubId }, select: { roundId: true } });
     if (!app) throw new Error("Application unavailable.");
-    const { member, caps } = await authorizeInterview(tx, { clubId, applicationId, roundId: app.roundId }, user.id, "closing");
-    const evaluations = await tx.evaluation.findMany({ where: { applicationId, roundId: { not: null }, stableRound: { clubId, anonymousReview: false }, submittedAt: { not: null }, ...(!caps.readClosing ? { interviewerId: member.id, stableRound: { clubId, anonymousReview: false, interviewAssignments: { some: { applicationId, memberId: member.id, revokedAt: null } } } } : {}) },
+    const { member, caps, panel } = await authorizeInterview(tx, { clubId, applicationId, roundId: app.roundId }, user.id, "closing");
+    const own = await tx.evaluation.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId, interviewerId: member.id, roundId: app.roundId } } });
+    const leadership = caps.readClosing && (!panel || !!own?.submittedAt);
+    const evaluations = await tx.evaluation.findMany({ where: { applicationId, roundId: { not: null }, stableRound: { clubId, anonymousReview: false }, submittedAt: { not: null }, ...(!leadership ? { interviewerId: member.id, stableRound: { clubId, anonymousReview: false, interviewAssignments: { some: { applicationId, memberId: member.id, revokedAt: null } } } } : {}) },
       include: { interviewer: { select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true, headshotUrl: true } } } } } } }, orderBy: [{ submittedAt: "desc" }, { id: "desc" }] });
     return { evaluations: evaluations.map(e => ({ ...e, interviewer: { ...e.interviewer, user: { ...e.interviewer.user, studentProfile: e.interviewer.user.studentProfile ? { ...e.interviewer.user.studentProfile, headshotUrl: profilePhotoSource(e.interviewer.user.studentProfile.headshotUrl, { clubId, applicationId, mode: "evaluation" }) ?? null } : null } } })) };
   });

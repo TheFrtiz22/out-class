@@ -7,6 +7,7 @@ import { seedTasks } from "./task-seed"
 import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
 import type { AppStatus as ApplicationStatus } from "@prisma/client"
+import { ensureInterviewImprovements } from "./interview-improvements"
 
 // Only the organization names below are real labels supplied for the presentation.
 // Everything else is fictional sample information, not verified club claims.
@@ -397,7 +398,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   })))
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
-  return {
+  const result = {
     letterTemplates: {} as Record<string, Partial<Record<LetterDecision,LetterTemplate>>>,
     decisionLetters: applications.filter(a=>['ACCEPTED','WAITLISTED','REJECTED'].includes(a.status)).map((a,i)=>{
       const club=clubs.find(c=>c.id===a.clubId)!,student=students.find(u=>u.id===a.studentId)!;
@@ -433,5 +434,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
     deletedNotifications: [] as string[],
     responses: {} as Record<string, "going" | "confirmed" | "declined">,
   }
+  ensureInterviewImprovements(result)
+  return result
 }
 export type DemoState = ReturnType<typeof createDemoSeed>

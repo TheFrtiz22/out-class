@@ -1,5 +1,6 @@
 import type { AppTransactionClient } from "@/utils/prisma";
 import { interviewCapabilities } from "@/lib/interview-access";
+import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
 /** Called inside the booking/owner transaction, serialized on Club and Application. */
 export async function syncBookingPanel(tx: AppTransactionClient, applicationId: string, roundId: string, actorId: string) {
   const app = await tx.application.findFirst({ where: { id: applicationId }, include: { round: true } });
@@ -12,16 +13,21 @@ export async function syncBookingPanel(tx: AppTransactionClient, applicationId: 
   const members = allowed.length ? await tx.clubMember.findMany({ where: { id: { in: allowed }, clubId: app.clubId, status: "ACTIVE", user: { disabledAt: null } } }) : [];
   const eligible = members.filter(m => m.userId !== app.studentId && interviewCapabilities(m).participate);
   for (const old of existing.filter(a => a.bookingManaged && !a.revokedAt && !eligible.some(m => m.id === a.memberId))) {
+    await notifyInterviewAssignment(tx, old, "cancelled");
     await tx.interviewPanelAssignment.updateMany({ where: { id: old.id, revokedAt: null }, data: { revokedAt: new Date() } });
     await tx.auditLog.create({ data: { actorId, clubId: app.clubId, targetId: old.id, action: "interview.panel.booking.revoke" } });
   }
   for (const member of eligible) {
     const old = existing.find(a => a.memberId === member.id);
     // Manual grants and manual revocations remain independent of scheduling.
-    if (old && !old.bookingManaged) continue;
+    if (old && !old.bookingManaged) {
+      if (!old.revokedAt) await notifyInterviewAssignment(tx, { ...old, bookingId: booking!.id }, "assigned");
+      continue;
+    }
     if (old && !old.revokedAt && old.bookingId === booking!.id) continue;
     const key = { applicationId, roundId, memberId: member.id };
     const grant = await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: room!.panelApprovedBy!, bookingManaged: true, bookingId: booking!.id }, update: { revokedAt: null, grantedBy: room!.panelApprovedBy!, grantedAt: new Date(), bookingManaged: true, bookingId: booking!.id } });
+    await notifyInterviewAssignment(tx, grant, "assigned");
     await tx.auditLog.create({ data: { actorId, clubId: app.clubId, targetId: grant.id, action: "interview.panel.booking.grant", details: { bookingId: booking!.id, approvedBy: room!.panelApprovedBy } } });
   }
 }

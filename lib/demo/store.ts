@@ -6,6 +6,7 @@ import { sampleInterviewKit } from "@/lib/interview-kits"
 import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
+import { ensureInterviewImprovements } from "./interview-improvements"
 export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
 let enabled = false
@@ -110,6 +111,7 @@ function ensurePresentation(value: DemoState) {
   for (const s of value.students) { s.profile.scholarStatus ??= null; s.profile.highSchool ??= null; s.profile.gender ??= null; s.profile.pronouns ??= null; s.profile.transferStudent ??= false; }
   if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
   ensureSemesterWork(value)
+  ensureInterviewImprovements(value)
 }
 export const demoStore = {
   active: () => enabled,
@@ -292,7 +294,13 @@ export function demoNotifications() {
     }))
     .filter((n) => !s.deletedNotifications.includes(n.id))
   const work=taskNotifications(s.tasks.flatMap(task=>task.assignments.filter(assignment=>assignment.userId===s.students[0].id && s.memberships.some(member=>member.id===assignment.memberId)).map(assignment=>({...assignment,task:{...task,club:s.clubs.find(club=>club.id===task.clubId)!}})))).map(notification=>({...notification,read:s.readNotifications.includes(notification.id)})).filter(notification=>!s.deletedNotifications.includes(notification.id))
-  return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work]
+  const member = s.perspective.role === "leader" ? demoMember() : null;
+  const assignments = (s.interviewFoundation.assignmentNotices || []).filter(n => n.memberId === member?.id && !s.deletedNotifications.includes(n.id)).map(n => {
+    const app = s.applications.find(a => a.id === n.applicationId), club = s.clubs.find(c => c.id === app?.clubId), round = club?.rounds.find(r => r.id === n.roundId), p = s.students.find(p => p.id === app?.studentId)?.profile;
+    const allowed = !!app && app.roundId === n.roundId && !round?.anonymousReview && s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === n.roundId && a.memberId === member?.id && !a.revokedAt);
+    return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: n.createdAt, createdAt: n.createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: `/club/${club?.id}/workspace?section=recruitment&tool=interviews${allowed ? `&interview=1&applicationId=${n.applicationId}&roundId=${n.roundId}` : ""}` };
+  });
+  return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work,...assignments]
 }
 export function demoDirectory() {
   const s = demoStore.get()

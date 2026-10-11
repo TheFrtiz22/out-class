@@ -10,6 +10,7 @@ import { hasPermission } from "@/lib/permissions"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type InterviewRoom, type RoomBooking, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 import { revalidatePath } from "next/cache"
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
+import { notifyInterviewBookingChange } from "@/utils/interview-assignment-notifications"
 
 const uuid = z.string().uuid()
 const roomInclude = { slots: { include: { _count: { select: { bookings: true } } }, orderBy: { startTime: "asc" as const } } }
@@ -80,6 +81,11 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
       if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
     }
     await tx.interviewRoom.update({ where: { id: room.id }, data: { isOpen: input.open } })
+    const bookings = await tx.interviewBooking.findMany({ where: { slot: { roomId: room.id }, roundId: room.roundId } });
+    for (const booking of bookings) {
+      await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${booking.applicationId} FOR UPDATE`;
+      await syncBookingPanel(tx, booking.applicationId, room.roundId, user.id);
+    }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: room.clubId, targetId: room.id, action: input.open ? "interview.room.open" : "interview.room.close" } })
   })
   revalidatePath(`/club/${room.clubId}/workspace`)
@@ -116,7 +122,10 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     const others = await tx.interviewBooking.findMany({ where: { application: { studentId: user.id }, ...(existing ? { id: { not: existing.id } } : {}), slot: { endTime: { gt: new Date() } } }, include: { slot: true } })
     if (others.some(b => overlaps(slot, b.slot))) throw new Error("You already have an interview at that time.")
     if (others.some(b => b.applicationId === application.id && b.roundId === null)) throw new Error("You already have a legacy booking with this club. Contact the club before booking another time.")
-    if (existing) await tx.interviewBooking.delete({ where: { id: existing.id } })
+    if (existing) {
+      await notifyInterviewBookingChange(tx, existing)
+      await tx.interviewBooking.delete({ where: { id: existing.id } })
+    }
     const result = await tx.interviewBooking.create({ data: { ...input, roundId: application.roundId } })
     await syncBookingPanel(tx, application.id, application.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: application.clubId, targetId: result.id, action: existing ? "interview.booking.reschedule" : "interview.booking.create" } })
@@ -137,6 +146,7 @@ export async function cancelRoomBooking(bookingId: string) {
     const booking = await tx.interviewBooking.findFirst({ where: { id: bookingId, application: { studentId: user.id } }, include: { slot: true } })
     if (!booking) throw new Error("Booking not found.")
     if (+booking.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
+    await notifyInterviewBookingChange(tx, booking)
     await tx.interviewBooking.delete({ where: { id: bookingId } })
     if (booking.roundId) await syncBookingPanel(tx, booking.applicationId, booking.roundId, user.id);
     await tx.auditLog.create({ data: { actorId: user.id, clubId: booking.slot.clubId, targetId: bookingId, action: "interview.booking.cancel" } })

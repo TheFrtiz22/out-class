@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/utils/prisma";
 import { nextDigestAt, optionalEmailAllowed, requireCommunicationAccess } from "@/lib/communications-policy";
 import { buildNotificationEmail, communicationEmailConfig, NotificationDeliveryError, notificationEmailPayload, sendNotificationEmail } from "@/lib/notification-email";
+import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
 // A crash outside that window requires receipt reconciliation, never a blind resend.
@@ -31,6 +32,9 @@ export async function processNotificationEmails(limit = 10) {
           await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
         }
         if (row.notification.club?.suspendedAt) continue;
+        if (row.notification.eventKey?.startsWith(assignmentNotificationPrefix) && row.notification.eventKey.includes(":assigned:") && !await currentAssignmentNotification(tx, row.notification, userId)) {
+          await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
+        }
         if (row.notification.type === "MESSAGE") {
           const conversationId = new URL(row.notification.href, config.siteUrl).searchParams.get("conversation");
           const conversation = conversationId ? await tx.clubConversation.findUnique({ where: { id: conversationId }, select: { clubId: true, studentId: true } }) : null;
@@ -60,6 +64,9 @@ export async function processNotificationEmails(limit = 10) {
       if (!(row.status === "QUEUED" && row.nextAttemptAt <= new Date() || row.status === "SENDING" && row.leaseUntil && row.leaseUntil < new Date())) return null;
       const payload = notificationEmailPayload.parse(row.payload);
       let inaccessibleMessage = false;
+      for (const item of row.items.filter(item => item.notification.eventKey?.startsWith(assignmentNotificationPrefix) && item.notification.eventKey.includes(":assigned:"))) {
+        if (!await currentAssignmentNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
+      }
       for (const item of row.items.filter(item => item.notification.type === "MESSAGE")) {
         const conversationId = new URL(item.notification.href, config.siteUrl).searchParams.get("conversation");
         const conversation = conversationId ? await tx.clubConversation.findUnique({ where: { id: conversationId }, select: { clubId: true, studentId: true } }) : null;

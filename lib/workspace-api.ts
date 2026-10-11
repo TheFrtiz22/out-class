@@ -102,7 +102,7 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
     rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
       .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
-      .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); return { ...projected, recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
+      .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 })
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
@@ -281,6 +281,8 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
 
 export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
 export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
+export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
+export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
 export const getInterviewCollaboration = adapt(collaboration.getInterviewCollaboration, demoCollaboration.getInterviewCollaboration)
 export const selectSharedInterviewQuestion = adapt(collaboration.selectSharedInterviewQuestion, demoCollaboration.selectSharedInterviewQuestion)
 export const leaveInterviewCollaboration = adapt(collaboration.leaveInterviewCollaboration, demoCollaboration.leaveInterviewCollaboration)

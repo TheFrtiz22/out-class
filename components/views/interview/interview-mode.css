@@ -47,7 +47,7 @@
 .oc-interview-room[data-workspace-detail] .oc-resume-trigger { width: 100%; justify-content: stretch; padding: 4px 0; background: transparent; white-space: normal; }
 .oc-resume-trigger .oc-resume-label { width: 100%; }
 .oc-resume-mini > p { font-size: .75rem; color: var(--muted-foreground); margin-bottom: 6px; }
-.oc-resume-preview { height: clamp(260px,52dvh,520px); width: 100%; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); overflow: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; background: var(--card); }
+.oc-resume-preview { height: clamp(360px,65dvh,760px); width: 100%; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); overflow: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; background: var(--card); }
 .oc-resume-preview:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .oc-resume-sheet { width: 100%; background: white; }
 .oc-resume-sheet + .oc-resume-sheet { border-top: 8px solid var(--background); }
@@ -82,11 +82,17 @@
 .oc-score-history li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
 .oc-focused-interview :is(button,input,textarea):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 @media (min-width: 1024px) {
-  .oc-interview-room[data-workspace-detail] .oc-interview-columns { grid-template-columns: minmax(170px,22fr) minmax(0,53fr) minmax(190px,25fr); }
+  .oc-interview-room[data-workspace-detail] .oc-interview-columns { grid-template-columns: minmax(190px,26fr) minmax(0,49fr) minmax(190px,25fr); }
+  .oc-interview-room[data-workspace-detail] .oc-room-applicant { padding-inline: 18px; }
   .oc-interview-room[data-workspace-detail] .oc-room-applicant { border-bottom: 0; border-right: 1px solid var(--border); }
   .oc-interview-room[data-workspace-detail] #interview-completed { border-top: 0; border-left: 1px solid var(--border); }
   .oc-interview-room[data-workspace-detail] .oc-question-workspace { padding: 24px 28px; }
 }
+.oc-interview-timer { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: .75rem; }
+.oc-interview-timer output { font-variant-numeric: tabular-nums; min-width: 3rem; }
+.oc-earlier-rounds { margin-bottom: 20px; font-size: .8125rem; line-height: 1.6; }
+.oc-earlier-rounds > button { padding-left: 0 !important; }
+.oc-round-score { font-size: .875rem; border-block: 1px solid var(--border); padding-block: 12px; }
 @media (max-width: 1023px) {
   .oc-interview-room[data-workspace-detail] .oc-room-applicant > .oc-candidate-content { gap: 16px; }
   .oc-applicant-identity { flex: 1; min-width: 170px; }

@@ -7,10 +7,11 @@ import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
-import { interviewScopeSchema as scope, interviewScoreSchema } from "@/lib/interview-access";
+import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
 import { collaborationAccess } from "@/utils/interview-collaboration";
+import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -115,10 +116,43 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
         create: { ...key, round: round.name, score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt },
         update: { score, notes: data.draft.additionalNotes ?? data.draft.overallReview, applicantQuestions: data.draft.applicantQuestions || "", submittedAt } });
     }
-    const changed = await tx.interviewRecord.updateMany({ where: { id: record.id, revision: data.revision, completedAt: null }, data: { draft: data.draft, revision: { increment: 1 }, completedAt: submittedAt, ...(evaluation ? { evaluationId: evaluation.id } : {}) } });
+    const changed = await tx.interviewRecord.updateMany({ where: { id: record.id, revision: data.revision, completedAt: null }, data: { draft: data.draft, revision: { increment: 1 }, completedAt: submittedAt, ...(evaluation ? { evaluationId: evaluation.id, submittedQuestions: snapshotSubmittedQuestions(kitSchema.parse(record.questions), data.draft) } : {}) } });
     if (changed.count !== 1) throw new Error("A newer draft exists. Reload before saving.");
     if (data.complete) await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: record.id, action: "interview.complete" } });
     return { session: await present((await tx.interviewRecord.findUniqueOrThrow({ where: { id: record.id } })), tx), evaluation };
+  }, interviewTransactionOptions);
+}
+/** Application ID is the immutable recruitment record: final decisions cannot be reopened.
+ * Never look up history by student, display round name, or a later application. */
+export async function getEarlierInterviewReviews(input: unknown) {
+  const data = scope.parse(input); const { user } = await requireAuth({ verifyEmail: true });
+  return prisma.$transaction(async tx => {
+    const access = await authorizeInterview(tx, data, user.id, "panel", "share");
+    if (access.app.roundId !== data.roundId) throw Error("Current later-round assignment required.");
+    await collaborationAccess(tx, data, user.id);
+    const current = await tx.pipelineRound.findUniqueOrThrow({ where: { id: data.roundId } });
+    const records = await tx.interviewRecord.findMany({ where: { applicationId: data.applicationId, completedAt: { not: null }, anonymousReview: false, round: { clubId: data.clubId, order: { lt: current.order }, anonymousReview: false }, evaluation: { submittedAt: { not: null } } }, include: { round: true, evaluation: true, interviewer: { include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ round: { order: "asc" } }, { completedAt: "desc" }, { id: "desc" }] });
+    return records.flatMap(r => {
+      const e = r.evaluation;
+      if (!e || e.applicationId !== data.applicationId || e.roundId !== r.roundId || e.interviewerId !== r.interviewerId || r.interviewer.clubId !== data.clubId) return [];
+      const parsed = submittedQuestionsSchema.safeParse(r.submittedQuestions);
+      const p = r.interviewer.user.studentProfile;
+      return [{ id: r.id, roundId: r.roundId, roundName: r.round.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: e.submittedAt!.toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", score: e.score }];
+    });
+  }, interviewTransactionOptions);
+}
+
+export async function getInterviewRoundScore(input: unknown) {
+  const data = scope.parse(input); const { user } = await requireAuth({ verifyEmail: true });
+  return prisma.$transaction(async tx => {
+    const access = await authorizeInterview(tx, data, user.id, "closingReview", "share");
+    const own = await tx.evaluation.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, interviewerId: access.member.id, roundId: data.roundId } } });
+    // Independent scoring applies to leaders who also participate in this round.
+    const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: data.applicationId, roundId: data.roundId, memberId: access.member.id } } });
+    if ((!access.caps.readClosing || access.app.roundId === data.roundId && assignment && !assignment.revokedAt) && !own?.submittedAt) throw Error("Submit your own review before viewing round scores.");
+    const evaluations = await tx.evaluation.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, submittedAt: { not: null }, stableRound: { clubId: data.clubId }, interviewer: { clubId: data.clubId } }, orderBy: [{ submittedAt: "desc" }, { id: "desc" }] });
+    const assignments = await tx.interviewPanelAssignment.findMany({ where: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null, member: { clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null } } }, include: { member: true } });
+    return submittedScoreSummary(evaluations, assignments.filter(a => interviewCapabilities(a.member).participate).map(a => a.memberId));
   }, interviewTransactionOptions);
 }
 export async function getInterviewRounds(clubId: string) {
@@ -147,8 +181,12 @@ export async function getSubmittedInterviewReviews(clubId: string) {
 export async function getSubmittedInterviewReview(input: z.infer<typeof scope> & { interviewerId: string }) {
   const data = scope.extend({ interviewerId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member, caps, anonymous: scopeAnonymous } = await authorizeInterview(tx, data, user.id, "closingReview");
+    const { member, caps, panel, app, anonymous: scopeAnonymous } = await authorizeInterview(tx, data, user.id, "closingReview");
     if (data.interviewerId !== member.id && !caps.readClosing) throw new Error("Leadership review access required.");
+    if (data.interviewerId !== member.id && panel && app.roundId === data.roundId) {
+      const own = await tx.evaluation.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: member.id } } });
+      if (!own?.submittedAt) throw Error("Submit your own review before viewing peers' reviews.");
+    }
     const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: data.applicationId, roundId: data.roundId, interviewerId: data.interviewerId } }, include: { evaluation: true } });
     if (!record?.completedAt || (record.anonymousReview && !caps.readClosing)) throw new Error("Submitted review unavailable.");
     const anonymous = scopeAnonymous || record.anonymousReview;

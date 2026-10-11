@@ -55,6 +55,11 @@ export async function changeInterviewRoomPanel(input: unknown) {
     if(slots.some(s=>others.some(o=>o.room?.panelMemberIds.some(memberId=>ids.includes(memberId))&&overlaps(s,o,Math.max(room.buffer,o.room?.buffer??0)))))throw Error("An interviewer already has an overlapping room schedule.");
     // Any edit invalidates owner approval; it never grants private access.
     await tx.interviewRoom.update({where:{id:room.id},data:{panelMemberIds:ids,approvedPanelMemberIds:[],panelApprovedBy:null,panelApprovalRevision:{increment:1}}});
+    const bookings = await tx.interviewBooking.findMany({ where: { slot: { roomId: room.id }, roundId: room.roundId } });
+    for (const booking of bookings) {
+      await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${booking.applicationId} FOR UPDATE`;
+      await syncBookingPanel(tx, booking.applicationId, room.roundId, user.id);
+    }
     await tx.auditLog.create({data:{actorId:user.id,clubId:data.clubId,targetId:room.id,action:"interview.room.panel.change",details:{before:room.panelMemberIds,after:ids}}});
   });
 }
