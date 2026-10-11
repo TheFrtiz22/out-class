@@ -159,7 +159,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   if (!user)
     return (
       <div className="max-w-xl space-y-4 py-10">
-        <h2 className="oc-section-heading ">A little clarity for every next step.</h2>
+        <h2 className="oc-section-heading ">Sign in to manage your applications</h2>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Sign in to view your applications and save responses to your account. Preview activity
           does not submit an application to a club.
@@ -314,7 +314,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
         { label: "submitted", value: submitted.length },
       ]} />}
       {!applications.length || statusView && !submitted.length ? (
-        <EmptyState icon={<FilePenLine />} title={statusView ? "Your next step starts with an application." : "Your next chapter is waiting."} description={statusView ? "Submitted applications will appear here with their review progress, interview details, and decisions." : "Explore clubs and start an application. Manage your drafts and submissions here."} action={<Button onClick={() => onNavigate?.(statusView && applications.length ? "tracker" : "explore")}>{statusView && applications.length ? "Continue applications" : "Discover clubs"}<ArrowRight className="size-4" /></Button>} />
+        <EmptyState icon={<FilePenLine />} title={statusView ? "No submitted applications yet." : "No applications yet."} description={statusView ? "Submitted applications will appear here with their review progress, interview details, and decisions." : "Explore clubs and start an application. Manage your drafts and submissions here."} action={<Button onClick={() => onNavigate?.(statusView && applications.length ? "tracker" : "explore")}>{statusView && applications.length ? "Continue applications" : "Discover clubs"}<ArrowRight className="size-4" /></Button>} />
       ) : (
         <>
           <SegmentedControl label={statusView ? "Filter application status" : "Filter applications"} value={filter} onChange={setFilter} options={statusView ? statusFilters.map(value => ({ value, label: `${value} (${submitted.filter(item => applicationMatchesStatusFilter(item, value, now)).length})` })) : ["All", "Drafts", "Submitted"].map(label => ({ label, value: label }))} />

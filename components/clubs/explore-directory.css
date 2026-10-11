@@ -164,3 +164,45 @@
   [data-product-shell] .oc-discovery .oc-explore-card-cover { height: 64px; }
 }
 [data-product-shell] .oc-discovery .oc-directory-categories button:not([aria-pressed="true"]) { color: var(--foreground); }
+
+
+/* Unclaimed and image-less clubs are honest directory entries, not invented art. */
+.oc-explore-card .oc-explore-card-cover[data-has-banner="false"] {
+  height: 88px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.oc-explore-card-cover[data-has-banner="false"] .oc-explore-card-logo {
+  inset: 0 auto 0 16px;
+  display: grid;
+  place-items: center;
+}
+.oc-explore-card-cover[data-has-banner="false"] .oc-explore-card-logo > :first-child {
+  border: 2px solid var(--card);
+  box-shadow: none;
+}
+.oc-explore-card-cover[data-has-banner="false"] .oc-explore-category {
+  left: auto;
+  right: 16px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  max-width: calc(100% - 102px);
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: var(--oc-size-11);
+  color: var(--muted-foreground);
+  text-align: right;
+}
+.oc-explore-directory-note {
+  margin: -5px 0 12px;
+  color: var(--muted-foreground);
+  font-size: var(--oc-size-11);
+  line-height: 1.5;
+}
+@container (max-width: 520px) {
+  [data-product-shell] .oc-explore-card .oc-explore-card-cover[data-has-banner="false"],
+  .oc-explore-card .oc-explore-card-cover[data-has-banner="false"] { height: 76px; }
+}

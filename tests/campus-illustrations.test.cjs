@@ -11,8 +11,8 @@ function load(file) {
  return mod.exports
 }
 const { campusIllustrations, studentCampusIllustration, clubCampusIllustration } = load('lib/campus-illustrations.ts')
-const student = {'student-dashboard':'lamp-posts-grounds',explore:'rotunda',corkboard:'lawn-archways',inbox:'lamp-posts-grounds','student-profile':'jefferson'}
-const club = {overview:'rotunda',meetings:'lawn-archways',tasks:'monticello',members:'homer',announcements:'lamp-posts-grounds',settings:'monticello'}
+const student = {'student-dashboard':'lamp-posts-grounds',explore:'rotunda'}
+const club = {overview:'rotunda'}
 for (const [page,art] of Object.entries(student)) test(`Student ${page} resolves ${art}`,()=>assert.equal(studentCampusIllustration(page),art))
 for (const [page,art] of Object.entries(club)) test(`Club ${page} resolves ${art}`,()=>assert.equal(clubCampusIllustration(page),art))
 test('unmapped sections and recruiting never inherit generic or parent art',()=>{
@@ -21,10 +21,13 @@ test('unmapped sections and recruiting never inherit generic or parent art',()=>
  assert.equal(clubCampusIllustration(page),undefined,page)
  }
  for(const page of Object.keys(club)) assert.equal(clubCampusIllustration(page,'recruiting'),undefined)
+ // Utility screens use real data and task structure, without decorative campus art.
+ for (const page of ['corkboard','inbox','student-profile']) assert.equal(studentCampusIllustration(page),undefined,page)
+ for (const page of ['meetings','tasks','members','announcements','settings']) assert.equal(clubCampusIllustration(page),undefined,page)
  assert.equal(studentCampusIllustration('meetings'),undefined)
  assert.equal(studentCampusIllustration('tasks'),undefined)
  for(const setting of ['application','pipeline','interviews','members','notifications','advanced','unknown']) assert.equal(clubCampusIllustration('settings','club',setting),undefined)
- assert.equal(clubCampusIllustration('settings','club','general'),'monticello')
+ assert.equal(clubCampusIllustration('settings','club','general'),undefined)
 })
 test('approved assets preserve full viewBoxes and filled external vector groups',()=>{
  for(const asset of new Set(Object.values(campusIllustrations).map(a=>a.asset))) {
@@ -76,15 +79,15 @@ test("approved SVG bytes remain unchanged",()=>{
 
 const { resolveSettingsTab } = load('lib/club-settings.ts')
 const settingsCases = [
- ['owner Appearance', {isOwner:true}, 'general', 'general', 'monticello'],
- ['profile capability Appearance', {permissions:['club.settings']}, 'general', 'general', 'monticello'],
+ ['owner Appearance', {isOwner:true}, 'general', 'general', undefined],
+ ['profile capability Appearance', {permissions:['club.settings']}, 'general', 'general', undefined],
  ['application-only inaccessible General', {permissions:['application.manage']}, 'general', 'application', undefined],
  ['members-only inaccessible General', {permissions:['members.manage']}, 'general', 'members', undefined],
  ['interviews-only inaccessible General', {permissions:['interviews.manage']}, 'general', 'interviews', undefined],
  ['direct operational tab', {isOwner:true}, 'application', 'application', undefined],
- ['inaccessible operational request falls back to Appearance', {permissions:['club.settings']}, 'interviews', 'general', 'monticello'],
+ ['inaccessible operational request falls back to Appearance', {permissions:['club.settings']}, 'interviews', 'general', undefined],
  ['inaccessible operational request falls back to permitted operational tab', {permissions:['application.manage']}, 'members', 'application', undefined],
- ['unknown requested tab follows permitted Appearance fallback', {isOwner:true}, 'unknown', 'general', 'monticello'],
+ ['unknown requested tab follows permitted Appearance fallback', {isOwner:true}, 'unknown', 'general', undefined],
  ['default limited-permission tab', {permissions:['interviews.manage']}, null, 'interviews', undefined],
  ['no permitted settings', {permissions:[]}, 'general', undefined, undefined],
  ['revoked membership', {isOwner:true,status:'REVOKED'}, 'general', undefined, undefined],

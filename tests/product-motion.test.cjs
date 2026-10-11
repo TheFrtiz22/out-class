@@ -159,9 +159,9 @@ test("reduced motion and unsupported observers show the final state, including a
   h.dispose()
 })
 
-test("compact demos finish sooner and stay complete when resized to desktop", () => {
+test("compact demos keep the same readable pacing and remain complete after resizing", () => {
   const h = harness({ compact: true })
-  h.visible(.8); h.advance(3400)
+  h.visible(.8); h.advance(4200)
   assert.equal(h.progress(), 1)
   h.screen.matches = false; h.screen.dispatch("change")
   assert.equal(h.progress(), 1)

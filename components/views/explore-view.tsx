@@ -249,7 +249,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           <h2>Let’s try that again.</h2>
           <p>{error}</p>
           <Button onClick={() => setRetry((value) => value + 1)}>Retry directory</Button>
-          {discoverClubs.length > 0 && (
+          {isDemoEnabled && discoverClubs.length > 0 && (
             <Button
               variant="outline"
               onClick={() => {
@@ -263,11 +263,11 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
         </section>
       ) : (
         <>
-          {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Sample directory · these profiles are a local preview. Applications are not connected.</p>}
+          {clubs.some(club => club.source === "preview") && <p className="oc-explore-sample" role="note">Demo directory · fictional profiles for testing only. No real applications are submitted.</p>}
           {!active.length && filters.sort === "name" && highlights.length > 0 && (
             <section className="oc-explore-section" aria-labelledby="curated-title">
-              <div className="oc-explore-section-heading"><div><h2 id="curated-title">Worth getting to know</h2></div>
-              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "An A–Z introduction to the directory."}</p></div>
+              <div className="oc-explore-section-heading"><div><h2 id="curated-title">Featured clubs</h2></div>
+              <p>{clubs.some(club => club.recommended) ? "Clubs highlighted in the directory." : "Clubs from the directory, listed alphabetically."}</p></div>
               <ul className="oc-explore-grid">{highlights.map(club => card(club, "featured"))}</ul>
             </section>
           )}
@@ -285,7 +285,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             {filtered.length ? (
               <ul className="oc-explore-grid">{filtered.map(club => card(club, "results"))}</ul>
             ) : (
-              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "The directory is getting started."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Clubs will appear here as they join OutClass."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
+              <EmptyState density="compact" tone="subtle" icon={<Compass />} title={clubs.length ? "No clubs match this search." : "No clubs available yet."} description={clubs.length ? "Try a broader keyword or remove a filter." : "Club profiles will appear here as organizations are added."} action={active.length > 0 ? <Button variant="outline" onClick={() => updateFilters(emptyDirectoryFilters)}>Clear search and filters</Button> : undefined} />
             )}
           </section>
         </>

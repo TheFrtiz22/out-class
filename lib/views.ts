@@ -101,7 +101,7 @@ export const navSections: { label: string; items: NavItem[] }[] = [
 
 export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   "my-clubs": { title: "My Clubs", subtitle: "Your communities, meetings, and assignments." },
-  landing: { title: "OutClass SaaS Landing Page", subtitle: "A Common App for club recruitment." },
+  landing: { title: "OutClass home", subtitle: "Discover and apply to participating university clubs." },
   auth: { title: "Welcome to OutClass", subtitle: "One profile. Every selective club." },
   "student-onboarding": { title: "Create Your Profile", subtitle: "Set up your OutClass student profile." },
   "student-dashboard": { title: "Home", subtitle: "Your applications, next steps, and upcoming events." },
@@ -135,6 +135,6 @@ export const viewTitles: Record<ViewId, { title: string; subtitle: string }> = {
   },
   "broadcast-messages": {
     title: "Broadcast & Messages",
-    subtitle: "Blast urgent notifications to subscribers, applicants, or members.",
+    subtitle: "Example message composer; send real announcements from a club workspace.",
   },
 } satisfies Record<ViewId, { title: string; subtitle: string }>

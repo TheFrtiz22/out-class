@@ -32,9 +32,9 @@ export function SavedClubsView({
   return (
     <div className="oc-corkboard space-y-6">
       <PageHeader
-        eyebrow="Your campus, collected"
+        eyebrow="Clubs you saved"
         title="Saved clubs"
-        description="Keep interesting clubs close. Come back when you’re ready to learn more."
+        description="Return to clubs you want to learn more about."
       />
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <p>Saving a club does not apply, subscribe, or join you.</p>
@@ -60,7 +60,7 @@ export function SavedClubsView({
       ) : !authenticated ? (
         <section className="oc-directory-empty">
           <Bookmark className="size-7" />
-          <h2>Your saved clubs go where you do.</h2>
+          <h2>Sign in to see your saved clubs.</h2>
           <p>Sign in to save clubs and revisit them across devices.</p>
           <Button onClick={() => onNavigate("auth")}>Sign in</Button>
           <Button variant="outline" onClick={() => onNavigate("explore")}>
@@ -96,7 +96,7 @@ export function SavedClubsView({
           </ul>
         </>
       ) : (
-        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="A place for your next possibility." description="Save a club from Explore or its profile, and you’ll find it here." action={<Button onClick={() => onNavigate("explore")}>Find clubs in Explore<ArrowRight className="size-4" /></Button>} />
+        <EmptyState density="compact" tone="subtle" icon={<Bookmark />} title="No saved clubs yet." description="Save a club from Explore or its profile, and you’ll find it here." action={<Button onClick={() => onNavigate("explore")}>Browse clubs<ArrowRight className="size-4" /></Button>} />
       )}
     </div>
   );

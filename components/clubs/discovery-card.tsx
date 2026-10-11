@@ -29,6 +29,7 @@ export function DiscoveryCard({ club, entry, onOpen, action, now = Date.now() }:
       <div className="oc-explore-card-body">
         <h3><button data-club-id={club.id} data-directory-entry={entry} onClick={onOpen}>{club.name}</button></h3>
         <p className="oc-explore-pitch">{club.pitch || club.description || "Get to know this club and explore its profile."}</p>
+        {club.source === "preview" ? <p className="oc-explore-directory-note">Demo profile · not a participating organization</p> : club.claimed === false ? <p className="oc-explore-directory-note">Directory listing · not yet managed by this club</p> : null}
         <div className="oc-explore-card-footer">
           <div className="oc-explore-recruitment"><span data-available={recruitment.available}>{recruitment.label}</span>{recruitment.deadline ? <time dateTime={recruitment.deadline.toISOString()}>{recruitment.expired ? "Closed" : "Deadline"} · {recruitmentDate(recruitment.deadline)}</time> : <small>Deadline not published</small>}{club.timeCommitment && <small>{club.timeCommitment} hours / week</small>}</div>
           <ArrowRight size={18} aria-hidden="true" />
