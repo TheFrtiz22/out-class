@@ -76,7 +76,7 @@ export function UnifiedStudentProfileView() {
   if (!profile)
     return (
       <div className="max-w-xl space-y-3 py-10">
-        <h2 className="oc-section-heading ">Your story starts here.</h2>
+        <h2 className="oc-section-heading ">Complete your student profile.</h2>
         <p className="text-muted-foreground">
           {user
             ? "Complete student onboarding to create your recruiting profile."
@@ -219,7 +219,7 @@ export function UnifiedStudentProfileView() {
           )}
         </div>
         <aside className="border-t border-border pt-8 lg:pt-10">
-          <h3 className="oc-card-heading ">Make it yours</h3>
+          <h3 className="oc-card-heading ">Profile details</h3>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {completed} of {checklist.length} profile details added. These are suggestions, not
             application requirements.
