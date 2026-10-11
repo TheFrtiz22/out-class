@@ -1,38 +1,26 @@
-import Image from "next/image"
-import { ArrowRight, CalendarDays } from "lucide-react"
+import { CalendarDays, Check } from "lucide-react"
 
-/** Sample product states, deliberately outside the login keyboard path. */
+/** A visibly illustrative product state, never represented as live club activity. */
 export function ProductPreviewCards() {
   return (
-    <div className="oc-login-previews" role="img" aria-label="Example OutClass workspace: discover Virginia Consulting Group, track a TAMID application at the interview stage, and see an upcoming McIntire Investment Institute interview.">
-      <div className="oc-login-preview oc-login-preview-discovery" aria-hidden="true">
-        <p className="oc-login-preview-context">Explore clubs</p>
-        <div className="oc-login-preview-club">
-          <span className="oc-login-club-mark">VCG</span>
-          <h3>Virginia<br />Consulting Group</h3>
-        </div>
-        <p className="oc-login-preview-deadline">Applications close Friday</p>
-        <span className="oc-login-preview-link">View club <ArrowRight size={14} /></span>
+    <aside className="oc-login-example" aria-label="Illustrative application status preview">
+      <div className="oc-login-example-caption">
+        <span>OUTCLASS / APPLICATION STATUS</span>
+        <strong>ILLUSTRATIVE EXAMPLE</strong>
       </div>
-
-      <div className="oc-login-preview oc-login-preview-application" aria-hidden="true">
-        <p className="oc-login-preview-context">Your applications</p>
-        <div className="oc-login-preview-application-heading">
-          <h3>TAMID</h3>
-          <span className="oc-login-preview-status"><i />Interview</span>
+      <div className="oc-login-example-heading">
+        <div>
+          <p>Student workspace</p>
+          <h3>Sample club application</h3>
         </div>
-        <p className="oc-login-preview-update">Application updated</p>
-        <div className="oc-login-preview-progress"><span /><span /><span /></div>
+        <span className="oc-login-example-state">In review</span>
       </div>
-
-      <div className="oc-login-preview oc-login-preview-interview" aria-hidden="true">
-        <p className="oc-login-preview-context">Coming up</p>
-        <div className="oc-login-preview-club">
-          <Image src="/logos/mii.webp" alt="" width={38} height={38} className="oc-login-club-logo" />
-          <h3>McIntire<br />Investment Institute</h3>
-        </div>
-        <div className="oc-login-preview-event"><span>Interview</span><span><CalendarDays size={14} />Tomorrow · 4:00 PM</span></div>
-      </div>
-    </div>
+      <ol className="oc-login-example-steps" aria-label="Example application progress">
+        <li><span className="oc-login-example-step-mark"><Check size={14} aria-hidden="true" /></span><span>Application submitted</span></li>
+        <li aria-current="step"><span className="oc-login-example-step-mark" /><span>Club review in progress</span></li>
+        <li><span className="oc-login-example-step-mark"><CalendarDays size={13} aria-hidden="true" /></span><span>Interview details, if invited</span></li>
+      </ol>
+      <p className="oc-login-example-footnote">This is an example of the workspace, not a real student's application.</p>
+    </aside>
   )
 }
