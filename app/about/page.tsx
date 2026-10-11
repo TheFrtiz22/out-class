@@ -13,7 +13,7 @@ const structuredData = publicPageStructuredData("About OutClass", description, "
 export default function AboutPage() {
   return (
     <PublicInformationPage className="oc-editorial-page oc-about-page" eyebrow="About OutClass" title="Club recruitment, without the scattered forms and spreadsheets." introduction="OutClass is being built by UVA students to make it easier to discover organizations, apply, schedule interviews, and keep track of what happens next."
-      heroActions={<div className="oc-public-actions"><a className="oc-public-text-link" href="#why-outclass">Why we're building it <ArrowRight size={16} aria-hidden="true" /></a></div>}
+      heroActions={<div className="oc-public-actions"><a className="oc-public-text-link" href="#why-outclass">Why we’re building it <ArrowRight size={16} aria-hidden="true" /></a></div>}
       heroAside={<figure className="oc-about-hero-photo"><Image src="/images/campus/autumn-lawn-1600.webp" alt="Autumn trees framing the University of Virginia Lawn" width={1600} height={1614} sizes="(max-width: 800px) 100vw, 45vw" priority /><figcaption><span>Beginning on Grounds</span><span>Charlottesville, Virginia</span></figcaption></figure>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SectionReveal id="why-outclass" className="oc-public-section oc-editorial-split oc-about-problem" aria-labelledby="why-title">
