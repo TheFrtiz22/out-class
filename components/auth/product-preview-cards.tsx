@@ -20,7 +20,7 @@ export function ProductPreviewCards() {
         <li aria-current="step"><span className="oc-login-example-step-mark" /><span>Club review in progress</span></li>
         <li><span className="oc-login-example-step-mark"><CalendarDays size={13} aria-hidden="true" /></span><span>Interview details, if invited</span></li>
       </ol>
-      <p className="oc-login-example-footnote">This is an example of the workspace, not a real student's application.</p>
+      <p className="oc-login-example-footnote">This is an example of the workspace, not a real student’s application.</p>
     </aside>
   )
 }
