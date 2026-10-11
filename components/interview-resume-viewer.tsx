@@ -110,14 +110,22 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   const [draft, setDraft] = useState<Draft | null>(null), [active, setActive] = useState<string>(), [page, setPage] = useState(initialPage), [zoom, setZoom] = useState(1), [notesOpen, setNotesOpen] = useState(true), [retry, setRetry] = useState(0);
   const [mobileTab, setMobileTab] = useState<"document" | "comments">("document"), [desktop, setDesktop] = useState(false);
   const comment = useRef<HTMLTextAreaElement>(null), serial = useRef(0), mounted = useRef(true), writing = useRef(false), accessLost = useRef(onAccessLost);
+  const refreshFlight = useRef<Promise<void> | null>(null);
   accessLost.current = onAccessLost;
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
     const update = () => setDesktop(media.matches); update(); media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (afterWrite = false) => {
+    // Slow authorized reads must finish before polling again. A completed write
+    // invalidates that read and needs a fresh result before exposing its revision.
+    if (refreshFlight.current) {
+      await refreshFlight.current;
+      if (!afterWrite || !mounted.current) return;
+    }
     const sequence = ++serial.current;
+    const flight = (async () => {
     try {
       const result = await getInterviewResumeAnnotations(request);
       if (!mounted.current || sequence !== serial.current) return;
@@ -128,6 +136,9 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
       if (!mounted.current || sequence !== serial.current) return;
       setAllowed(false); setAnnotations([]); setDraft(null); setActive(undefined); resource.invalidate(); setStatus("Access could not be verified. Retry to check your membership and connection."); accessLost.current();
     }
+    })();
+    refreshFlight.current = flight;
+    try { await flight; } finally { if (refreshFlight.current === flight) refreshFlight.current = null; }
   }, [request, isDemo, resource]);
   useEffect(() => { if (!sharedResource) return () => resource.invalidate(); }, [sharedResource, resource]);
   useEffect(() => {
@@ -135,7 +146,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     mounted.current = true; void refresh();
     const poll = () => { if (!document.hidden && !writing.current) void refresh(); };
     const timer = setInterval(poll, 5000); window.addEventListener("focus", poll); document.addEventListener("visibilitychange", poll);
-    return () => { mounted.current = false; ++sequenceRef.current; clearInterval(timer); window.removeEventListener("focus", poll); document.removeEventListener("visibilitychange", poll); };
+    return () => { mounted.current = false; ++sequenceRef.current; refreshFlight.current = null; clearInterval(timer); window.removeEventListener("focus", poll); document.removeEventListener("visibilitychange", poll); };
   }, [refresh]);
   useEffect(() => {
     if (!currentAccess) { setPdf(null); return; }
@@ -161,16 +172,16 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     writing.current = true; ++serial.current; setBusy(true); setError(""); setStatus("Saving comment…");
     try {
       await saveInterviewResumeAnnotation({ ...request, id: draft.id, ...(draft.revision !== undefined ? { revision: draft.revision } : {}), content: content.data });
-      if (mounted.current) { setDraft(null); setStatus("Comment saved"); await refresh(); }
+      if (mounted.current) { setDraft(null); setStatus("Comment saved"); await refresh(true); }
     } catch {
-      if (mounted.current) { setError("Comment was not saved. Your text is retained. Retry, or review the latest version if someone changed it."); await refresh(); }
+      if (mounted.current) { setError("Comment was not saved. Your text is retained. Retry, or review the latest version if someone changed it."); await refresh(true); }
     } finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
   async function remove(a: Annotation) {
     if (writing.current || !window.confirm(`Delete this résumé comment by ${a.authorName}? Moderation history is retained.`)) return;
     writing.current = true; ++serial.current; setBusy(true); setError("");
-    try { await deleteInterviewResumeAnnotation({ ...request, id: a.id, revision: a.revision }); if (draft?.id === a.id) setDraft(null); await refresh(); }
-    catch { setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(); }
+    try { await deleteInterviewResumeAnnotation({ ...request, id: a.id, revision: a.revision }); if (draft?.id === a.id) setDraft(null); await refresh(true); }
+    catch { setError("Comment was not deleted. Refresh and review its latest version before retrying."); await refresh(true); }
     finally { writing.current = false; if (mounted.current) setBusy(false); }
   }
   async function download() {
