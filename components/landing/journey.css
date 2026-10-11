@@ -16,6 +16,10 @@
 .oc-story-interface { min-height: 486px; }
 .oc-perspective-scene { min-width: 0; }
 .oc-profile-facts { margin-top: 22px; }
+/* Keep the applicant identity visually separate from the interview booking card. */
+.oc-perspective-scene[data-scene="leader-interview"] > .oc-profile-person {
+  margin-block-end: 24px;
+}
 .oc-journey-club { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .oc-journey-club > div { flex: 1; min-width: 0; }
 .oc-journey-club h3 { font-size: var(--oc-text-small); }
@@ -115,6 +119,7 @@
   .oc-story-copy { position: static; }
 }
 @media (max-width: 540px) {
+  .oc-perspective-scene[data-scene="leader-interview"] > .oc-profile-person { margin-block-end: 18px; }
   .oc-perspective-scene { --oc-demo-travel: 4px; }
   .oc-perspective-scene [data-demo-reveal] { transition-duration: 180ms; }
   .oc-journey-controls > h2 { font-size: var(--oc-size-16); }
