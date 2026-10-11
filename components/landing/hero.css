@@ -18,7 +18,7 @@
 .oc-hero-introduction { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5vw, 72px); max-width: 1160px; margin: 0 auto; }
 .oc-hero-copy { min-width: 0; }
 .oc-hero-context { margin: 0 0 24px; font-size: var(--oc-size-11); font-weight: var(--oc-weight-semibold); letter-spacing: .12em; text-transform: uppercase; line-height: 1.8; }
-.oc-hero-headline { margin: 0; font-size: clamp(2.5rem, 4.3vw, 4rem); font-weight: var(--oc-weight-display); line-height: 1.15; letter-spacing: -.045em; }
+.oc-hero-headline { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2.5rem, 4.3vw, 4rem); font-weight: var(--oc-weight-display); line-height: 1.15; letter-spacing: -.045em; }
 .oc-hero-headline span { display: block; }
 .oc-hero-support > p:first-child { margin: 24px 0 0; max-width: 460px; font-size: var(--oc-size-16); line-height: var(--oc-leading-body); text-wrap: pretty; }
 .oc-hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 28px; }
