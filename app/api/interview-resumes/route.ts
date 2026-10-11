@@ -1,6 +1,6 @@
 import { requireAuth } from "@/utils/auth";
 import { prisma } from "@/utils/prisma";
-import { authorizeInterview } from "@/utils/interview-access";
+import { authorizeInterview, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema } from "@/lib/interview-access";
 import { z } from "zod";
 
@@ -12,11 +12,11 @@ export async function GET(request: Request) {
   try {
     const { user } = await requireAuth();
     const bytes = await prisma.$transaction(async tx => {
-      await authorizeInterview(tx, parsed.data, user.id, "resume");
+      await authorizeInterview(tx, parsed.data, user.id, "resume", "share");
       const document = await tx.interviewResumeDocument.findFirst({ where: { id: parsed.data.documentId, applicationId: parsed.data.applicationId, roundId: parsed.data.roundId }, select: { content: true } });
       if (!document) throw new Error("Unavailable");
       return document.content;
-    });
+    }, interviewTransactionOptions);
     const headers = new Headers({ "Content-Type": "application/pdf", "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "Content-Disposition": 'inline; filename="interview-resume.pdf"', "Accept-Ranges": "bytes" });
     const range = request.headers.get("range");
     if (range) {

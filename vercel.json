@@ -8,6 +8,10 @@
     {
       "path": "/api/internal/invitation-delivery",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/internal/notification-delivery",
+      "schedule": "* * * * *"
     }
   ]
 }

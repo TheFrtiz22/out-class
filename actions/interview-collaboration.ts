@@ -7,15 +7,16 @@ import { requireAuth } from "@/utils/auth";
 import { interviewCapabilities, interviewScopeSchema, type InterviewScope } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema } from "@/lib/interview-kits";
 import { PRESENCE_TTL_MS, INVITATION_TTL_MS, type CollaborationView } from "@/lib/interview-collaboration";
-import { collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
+import { CollaborationInitializationRequired, collaborationAccess, collaborationScope, collaborationSession, eligibleDestination, memberName } from "@/utils/interview-collaboration";
+import { interviewTransactionOptions } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 
 const inputSchema = interviewScopeSchema.extend({ clientId: z.string().uuid() });
 // Current-access checks for each peer span several pooler round trips. Keep the
 // transaction bounded while allowing cold hosted connections to finish safely.
-const transactionOptions = { maxWait: 5000, timeout: 20000 };
-async function validInvite(tx: AppTransactionClient, id: string, sourceId: string, recipientId: string, userId: string) {
+const transactionOptions = interviewTransactionOptions;
+async function validInvite(tx: AppTransactionClient, id: string, sourceId: string, recipientId: string, userId: string, applicationLock: "share" | "update" = "update") {
   const invite = await tx.interviewInvitation.findUnique({ where: { id } });
   if (!invite || invite.recipientId !== recipientId || invite.dismissedAt) throw Error("Invitation unavailable.");
   const move = await tx.interviewMove.findUnique({ where: { id: invite.moveId } });
@@ -24,9 +25,9 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
   if (newest?.id !== move.id) throw Error("Interviewer has moved again.");
   const destination = await tx.interviewCollaboration.findUniqueOrThrow({ where: { id: move.destinationId } });
   const sender = await tx.clubMember.findUniqueOrThrow({ where: { id: move.memberId } });
-  const senderAccess = await collaborationAccess(tx, collaborationScope(destination), sender.userId);
+  const senderAccess = await collaborationAccess(tx, collaborationScope(destination), sender.userId, applicationLock);
   if (senderAccess.roomKey !== destination.roomKey) throw Error("Room changed.");
-  const recipient = await eligibleDestination(tx, collaborationScope(destination), userId);
+  const recipient = await eligibleDestination(tx, collaborationScope(destination), userId, applicationLock);
   if (recipient.roomKey !== destination.roomKey) throw Error("Room changed.");
   return { invite, move, destination };
 }
@@ -35,8 +36,8 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
  * No browser SQL/realtime subscription exists; every refresh checks current access. */
 export async function getInterviewCollaboration(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
-  return prisma.$transaction(async tx => {
-    const { member, session, roomKey, app } = await collaborationSession(tx, data, user.id);
+  const read = (readOnly: boolean) => prisma.$transaction(async tx => {
+    const { member, session, roomKey, app } = await collaborationSession(tx, data, user.id, readOnly);
     const now = new Date();
     await tx.interviewPresence.deleteMany({ where: { sessionId: session.id, seenAt: { lt: new Date(Date.now() - PRESENCE_TTL_MS) } } });
     const old = await tx.interviewPresence.findUnique({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } } });
@@ -58,7 +59,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
     const invites = moves.length ? await tx.interviewInvitation.findMany({ where: { recipientId: member.id, dismissedAt: null, moveId: { in: moves.map(m => m.id) } } }) : [];
     const available = [];
     for (const i of invites) {
-      try { available.push(await validInvite(tx, i.id, session.id, member.id, user.id)); } catch { /* Stale/access-invalid invitations expose no destination data. */ }
+      try { available.push(await validInvite(tx, i.id, session.id, member.id, user.id, "share")); } catch { /* Stale/access-invalid invitations expose no destination data. */ }
     }
     available.sort((a,b) => b.move.confirmedAt!.getTime() - a.move.confirmedAt!.getTime() || b.move.id.localeCompare(a.move.id));
     if (available[0]) {
@@ -77,6 +78,10 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
     }
     return { sessionId: session.id, revision: session.revision, participants, selection, invitation };
   }, transactionOptions);
+  // Bootstrap alone needs an exclusive lock. End the shared transaction before
+  // retrying, so simultaneous first joins cannot deadlock on a lock upgrade.
+  try { return await read(true); }
+  catch (error) { if (!(error instanceof CollaborationInitializationRequired)) throw error; return read(false); }
 }
 
 export async function selectSharedInterviewQuestion(input: z.infer<typeof inputSchema> & { questionId: string }) {

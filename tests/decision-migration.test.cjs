@@ -3,7 +3,7 @@ test('reconciled migration preserves current-main announcements, preferences, no
  const db=new PGlite();try{
   await db.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
   const dir='prisma/migrations',name='20261010190001_reconciled_decision_letters';
-  for(const migration of fs.readdirSync(dir).filter(n=>n!==name&&fs.existsSync(path.join(dir,n,'migration.sql'))).sort())await db.exec(fs.readFileSync(path.join(dir,migration,'migration.sql'),'utf8'));
+  for(const migration of fs.readdirSync(dir).filter(n=>n<name&&fs.existsSync(path.join(dir,n,'migration.sql'))).sort())await db.exec(fs.readFileSync(path.join(dir,migration,'migration.sql'),'utf8'));
   await db.exec(`INSERT INTO "User" (id,email) VALUES ('leader','leader@virginia.edu'),('student','student@virginia.edu');
    INSERT INTO "Club" (id,slug,name,tagline,description,color,category) VALUES ('club','club','Existing Club','','','#142d45','Other');
    INSERT INTO "ClubAnnouncement" (id,"clubId","authorId",title,body,audience,"requestKey") VALUES ('announcement','club','leader','Existing announcement','Keep this wording','MEMBERS','request');

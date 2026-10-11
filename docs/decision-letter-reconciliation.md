@@ -1,10 +1,10 @@
 # Decision-letter reconciliation
 
-Current main baseline: c1c3952. Preserved implementation reviewed: c917260 (backup/decision-letters-before-sync). Comparison completed before product edits. No wholesale cherry-pick, file deletion, or restoration of older general communications.
+Integrated main baseline: `3448ccb96b9b3a54f035a06a572379d10537e07c`; original reconciliation base: `c1c3952`. See the final integration section for current results. Original reconciliation: Preserved implementation reviewed: c917260 (backup/decision-letters-before-sync). Comparison completed before product edits. No wholesale cherry-pick, file deletion, or restoration of older general communications.
 
 ## Architecture decision
 
-Current main remains authoritative for UserNotification (unique userId/eventKey), paginated inbox and aggregate unread badge, archive/read actions, UserNotificationPreference, ClubAnnouncement, private conversations, communicationsSnapshot/stream, NotificationEmailOutbox and NotificationEmailDelivery. The insert trigger queues every notification atomically. Existing Resend transport persists exact payloads and uses stable provider idempotency keys, bounded attempts and a 23-hour retry window; expired ambiguous receipts become UNCERTAIN. Existing SMTP invitation delivery is untouched. No parallel decision worker/route/cron is added.
+Current main remains authoritative for UserNotification (unique userId/eventKey), paginated inbox and aggregate unread badge, archive/read actions, UserNotificationPreference, ClubAnnouncement, retired direct-message exports (always denied), communicationsSnapshot/stream, NotificationEmailOutbox and NotificationEmailDelivery. The insert trigger queues every notification atomically. Existing Resend transport persists exact payloads and uses stable provider idempotency keys, bounded attempts and a 23-hour retry window; expired ambiguous receipts become UNCERTAIN. Existing SMTP invitation delivery is untouched. No parallel decision worker/route/cron is added.
 
 The feature adds immutable structured DecisionLetter snapshots, Application.decisionVersion and private Club.decisionLetterTemplates. Application/ClubInvitation/ClubMember remain authoritative. Template editing uses recruitment.manage with transaction-time user/member/capability/suspension checks under the existing Club lock. Preview uses only fictional Alex Student. Text is bounded and escaped; five whitelisted variables, no executable templates/HTML.
 
@@ -23,7 +23,7 @@ Current inbox component/actions, stream route, announcement UI, preference contr
 | Old file | Classification | Reconciliation |
 |---|---|---|
 | `actions/applications.ts` | ADAPT | Port the unique letter capability with current-main integration preserved. |
-| `actions/communications.ts` | ADAPT | Append letter/template actions; retain all current inbox, announcement, preference and conversation actions. |
+| `actions/communications.ts` | ADAPT | Append letter/template actions; retain current inbox, announcement and preference actions; preserve main’s denied retired conversation exports. |
 | `app/api/decision-letter-assets/route.ts` | PORT | Port the unique letter capability with current-main integration preserved. |
 | `app/api/internal/decision-delivery/route.ts` | OBSOLETE / DO NOT PORT | Keep current-main implementation. |
 | `app/applications/[applicationId]/decision/page.tsx` | PORT | Port the unique letter capability with current-main integration preserved. |
@@ -135,7 +135,7 @@ Migration compatibility was reviewed against the authoritative schema and `20261
 
 No remaining P0/P1/P2/P3 product finding was identified. Verified Chrome PDF/A4 output is ready for commit review; other print engines, physical printers and user-selected scaling/header/footer settings were not tested. Interactive preview tooling remains a local limitation, not a substitute for or blocker to the inspected PDFs. No commit/push/merge/deployment was performed; temporary services were stopped and local fixtures retained.
 
-## Exact changed-file manifest
+## Historical pre-commit changed-file manifest (39 files)
 
 Branch: `reconcile/decision-letters`; HEAD unchanged at `c1c3952`. 23 tracked files modified, 16 untracked files, zero staged files and no deletions.
 
@@ -180,4 +180,175 @@ tests/decision-migration.test.cjs
 tests/helpers/communications-native.cjs
 tests/helpers/reconcile-local.cjs
 utils/decision-communications.ts
+```
+
+## Integrated main and bounded runtime verification — 2026-10-11
+
+Baseline verification: clean branch `reconcile/decision-letters`, HEAD `bfeee314e9303771de4cb956dbb253ad97c1eaa8`; fetched origin/main remained `3448ccb96b9b3a54f035a06a572379d10537e07c`. Merge base `c1c3952d665132cf5130012470f1b5c3e41a4de6`. Per authorization, ran `git merge --no-commit --no-ff origin/main`; merge is resolved, staged and **uncommitted**. HEAD and remote reconciliation commit remain unchanged. This section supersedes historical validation/manifest statements above.
+
+### Resolution and semantic review
+
+- `components/club-workspace.tsx`: main’s message section remains removed; formal-decision publication wording retained.
+- `components/communications-preferences.tsx`: removed messaging switch; retained application updates and decisions label.
+- `lib/communications-client.ts`: union of main’s expanded category map and DECISION/OFFER_RESPONSE, with existing fallback and decision/response CTAs.
+- `lib/data.ts`: union of notification categories plus optional applicationId.
+- `lib/notification-email.ts`: main’s branded announcement subject, “Read your updates” and automated footer; neutral instant decisions, strict canonical UUID destinations and neutral digest CTAs retained.
+- `tests/communications-e2e.test.cjs`: retained main’s authoritative announcement/retired-messaging scenarios. Added guarded reconciliation-local config support; scope conversation assertions to this fixture’s clubs and quiesce retained disposable queue fixtures before running the global mocked worker. Decision integration remains separate.
+- Clean overlap `actions/communications.ts`: main’s five retired exports still reject immediately before any Auth/database/email access; appended letter/template actions retain owner reads and transactional reauthorization. Announcement/preferences/inbox implementation agrees with main.
+- Main’s interview authorization/shared-lock and polling changes, canonical inbox, stream, outbox, shared delivery worker, cron and deployment workflow are retained. Direct/voting producer, offer/membership commands, anonymous-review restrictions, Demo isolation and private-asset authorization retain the reviewed implementation. No duplicate models/workers or competing migration history were introduced.
+
+### Bounded runtime repair
+
+New migration: `prisma/migrations/20261011194930_decision_letter_runtime_access/migration.sql`, scaffolded with Supabase CLI then moved to the authoritative Prisma history. It follows `20261011002000_production_communications_runtime_access`. Existing SQL/history is unchanged. If the runtime role exists, only DecisionLetter ownership transfers to `outclass_production_app`; temporary schema CREATE permission is restored to its prior state in the same transaction. Without that role it is a no-op. No unrelated table ownership, browser grants, RLS policy, role attribute or immutable trigger changes are made by this migration.
+
+PGlite regression paths: **4/4 passed** (three upgrade paths and absent-role no-op). Verify preserved announcements, notifications, preferences, queued intent and existing letters; owner/RLS/restrictive policy state; runtime read/write/outbox publication; immutable update denial; actual anon/authenticated SELECT/INSERT/UPDATE/DELETE denial; idempotent repair; NOSUPERUSER/NOBYPASSRLS and no public schema CREATE.
+
+Real PostgreSQL/Prisma `migrate deploy` paths: **3/3 passed**, 38 migrations each:
+
+1. Fresh complete history, populated records and second no-op deploy preserved.
+2. Already-current-main history, populated communications, then pending older `20261010190001` followed by additive repair. Prisma successfully applies the pending older timestamp despite main’s later applied migration.
+3. Original reconciliation history with populated immutable letter and communications, then current-main runtime migration and additive letter repair.
+
+Each compares full row JSON for ClubAnnouncement, UserNotification, UserNotificationPreference and NotificationEmailOutbox, plus existing DecisionLetter where present; confirms migration count, runtime SELECT, RLS and absence of browser CRUD privileges. Database names and exact deploy output are in the local evidence logs. Failed initial harness attempts (snapshot ordering assumed every table has an id) were corrected; the reported three paths are the successful reruns.
+
+### Actual bounded server and integration evidence
+
+The dedicated `outclass_reconcile_test` fixture was configured to mirror existing server-owned tables and the retained local Storage server-ownership convention. Only this isolated database’s existing application tables and `storage.objects` were assigned to the test runtime role; Storage schema USAGE was granted and schema CREATE removed. This is fixture setup, **not additional shipped migration SQL** or evidence about live environment grants. The new migration itself changes only DecisionLetter. Isolated bootstrap used the local Supabase administrator because local `postgres` cannot transfer every owned table; no runtime superuser/BYPASSRLS grant was used.
+
+The built Next server connects as `outclass_production_app`; queried `current_user`, `rolsuper=false`, `rolbypassrls=false`; public/storage schema CREATE and reverse operator membership are false, and reading `_prisma_migrations` is denied. Real authenticated HTTP direct/voting publication and retries succeed, confirming access through actual server paths. Private logo uploads/settings and private reads succeed with application authorization. Browser REST notification access denies; actual local PostgreSQL `SET ROLE anon` and `SET ROLE authenticated` attempts independently deny all eight letter CRUD operations (`browser-denial.log`), matching the PGlite checks. Foreign letter reads return null; foreign/anonymous private assets return 404; owner assets return 200.
+
+### Checks rerun on the integrated tree
+
+| Check | Result |
+|---|---|
+| Focused communications, decision, migration/runtime, anonymous, assets and offers | 38 passed, 0 failed/skipped |
+| Native communication/offer transactions | 26 passed, 0 failed/skipped |
+| Same decision-native suite using bounded runtime connection | 8 passed, 0 failed/skipped |
+| Broader native recruitment authorization/locks/photos | 16 passed, 0 failed/skipped |
+| Real Auth/Next announcement, inbox/preferences and mocked worker | 5 passed, 0 failed/skipped |
+| Real Auth/Next direct/voting letters/private Storage/shared mocked provider | 1 passed, 0 failed/skipped |
+| Private proxy/history checks on four retained print fixtures | All passed; owner 200, foreign/anonymous 404, immutable copy and one event/outbox preserved |
+| Full default suite (final rerun) | 996 total: 982 passed, 14 gated skips, 0 failed |
+| Migration security harness | All 38 migrations fresh/legacy; all 66 public tables RLS and browser CRUD denial |
+| TypeScript and Prisma validation | Passed |
+| Lint | 0 errors, 28 existing warnings |
+| Production build | Passed, isolated local DB/Auth configuration, hosted delivery disabled |
+| Authoritative migration-source guard; staged/unstaged diff checks | Passed |
+
+Four suites skipped in the default run were explicitly exercised above (announcement HTTP, decision native, decision HTTP, offer native); native recruitment was also run separately. Remaining default gates: Admin session, broader Admin MFA/integration, full club-assets Admin/leader lifecycle, corkboard HTTP, interview collaboration native, interview transactions native, onboarding native, onboarding HTTP and built resume-import integration. These are **not counted as passes**. This task reran decision private Storage paths, not the entire pre-existing Admin/club-assets/onboarding fixture matrix. Providers are mocked/intercepted; no hosted email was sent. Prior rendered PDF verification remains historical evidence, not a newly repeated print run; letter markup/CSS were unchanged.
+
+Remaining findings: no P0/P1/P2 product regression identified; P3 existing lint warnings. Local integration required isolated fixture ownership/bootstrap adjustments described above. Live schema drift is not inspected or claimed validated. The integrated diff is ready for commit review, with gated checks and print-engine limits explicitly retained. No original Admin ejection fix is claimed.
+
+Evidence retained outside Git: `/tmp/outclass-integrated-verification/` contains full/focused/native/bounded-native/recruitment-native logs, real HTTP logs, private-access checks, Prisma/lint/types/build, migration security and real PostgreSQL deploy/path logs and guarded reproduction scripts. Runtime credentials remain only in private local files, never in manifests or repository artifacts. Prior PDFs remain `/tmp/outclass-print-verification/`. Temporary app/proxy and isolated REST/Storage services were stopped after validation; fixture databases and evidence retained. No commit, push, merge into main, deployment, production/staging access or mutation occurred.
+
+### Exact final manifests
+
+The resolved merge index differs from reconciliation HEAD in **58 files** (main imports plus integration fixes). All are staged, with zero unstaged/untracked/unmerged files. This is deliberately different from the original 39-file feature commit.
+
+```text
+.github/workflows/deploy.yml
+actions/communications.ts
+actions/interview-collaboration.ts
+actions/interview-kits.ts
+actions/interview-resumes.ts
+app/api/interview-resumes/route.ts
+components/club-announcements.tsx
+components/club-messaging.tsx
+components/club-workspace.tsx
+components/communications-preferences.tsx
+components/interview-resume-viewer.tsx
+components/shell/product-shell.tsx
+components/views/inbox-view.tsx
+docs/announcement-verification/REPORT.md
+docs/announcement-verification/announcement-email.html
+docs/announcement-verification/checks/build.txt
+docs/announcement-verification/checks/lint.txt
+docs/announcement-verification/checks/migration-status.txt
+docs/announcement-verification/checks/migration-tests.txt
+docs/announcement-verification/checks/schema.txt
+docs/announcement-verification/checks/tests.txt
+docs/announcement-verification/checks/typecheck.txt
+docs/announcement-verification/evidence.json
+docs/announcement-verification/screenshots/email-mobile.jpg
+docs/announcement-verification/screenshots/email-preferences.jpg
+docs/announcement-verification/screenshots/notification-bell.jpg
+docs/announcement-verification/screenshots/notification-desktop.jpg
+docs/announcement-verification/screenshots/notification-mobile.jpg
+docs/announcement-verification/screenshots/outlook-dark.jpg
+docs/announcement-verification/screenshots/outlook-light.jpg
+docs/announcement-verification/screenshots/published.jpg
+docs/announcement-verification/screenshots/resend-delivered.jpg
+docs/decision-letter-reconciliation.md
+docs/interview-collaboration.md
+docs/interview-release-handoff.md
+docs/screenshots/collaboration-live-invitation.png
+docs/screenshots/collaboration-live-restored-access.png
+docs/screenshots/collaboration-live-revoked-access.png
+lib/communications-client.ts
+lib/data.ts
+lib/notification-email.ts
+lib/product-navigation.ts
+prisma/migrations/20261011002000_production_communications_runtime_access/migration.sql
+prisma/migrations/20261011194930_decision_letter_runtime_access/migration.sql
+scripts/announcement-e2e-control.cjs
+scripts/prepare-announcement-e2e.cjs
+tests/communications-e2e.test.cjs
+tests/communications-native.test.cjs
+tests/communications.test.cjs
+tests/decision-migration.test.cjs
+tests/decision-runtime-migration.test.cjs
+tests/helpers/announcement-e2e.cjs
+tests/interview-collaboration-native.test.cjs
+tests/production-communications-runtime-migration.test.cjs
+tests/resume-viewer-ui.test.cjs
+utils/interview-access.ts
+utils/interview-collaboration.ts
+vercel.json
+```
+
+Feature/integration diff against current `origin/main`: **42 files**:
+
+```text
+actions/applications.ts
+actions/communications.ts
+app/api/decision-letter-assets/route.ts
+app/applications/[applicationId]/decision/page.tsx
+components/applications/application-status-detail.tsx
+components/club-workspace.tsx
+components/communications-preferences.tsx
+components/communications/decision-letter.css
+components/communications/decision-letter.tsx
+components/communications/template-editor.tsx
+components/live-voting/board-decision-mode.tsx
+components/recruitment-review-settings.tsx
+components/views/leader-dashboard/live-leader-workspace.tsx
+docs/decision-letter-reconciliation.md
+lib/anonymous-review.ts
+lib/communications-client.ts
+lib/communications-policy.ts
+lib/data.ts
+lib/decision-letters.ts
+lib/demo/communications.ts
+lib/demo/recruitment-offers.ts
+lib/demo/seed.ts
+lib/demo/store.ts
+lib/notification-email.ts
+lib/workspace-api.ts
+prisma/migrations/20261010190001_reconciled_decision_letters/migration.sql
+prisma/migrations/20261011194930_decision_letter_runtime_access/migration.sql
+prisma/schema.prisma
+tests/communications-e2e.test.cjs
+tests/communications-native.test.cjs
+tests/communications.test.cjs
+tests/decision-communications-e2e.test.cjs
+tests/decision-letters.test.cjs
+tests/decision-migration.test.cjs
+tests/decision-runtime-migration.test.cjs
+tests/helpers/communications-native.cjs
+tests/helpers/reconcile-local.cjs
+tests/live-applicant-views.test.cjs
+tests/recruitment-offers-native.test.cjs
+tests/review-tools.test.cjs
+utils/decision-communications.ts
+utils/recruitment-offers.ts
 ```

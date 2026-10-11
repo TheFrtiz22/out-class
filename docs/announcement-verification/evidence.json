@@ -1,0 +1,110 @@
+{
+  "localApp": "http://127.0.0.1:3117",
+  "authApi": "http://127.0.0.1:56321",
+  "databaseHost": "127.0.0.1",
+  "databasePort": "56322",
+  "clubId": "ad61efa5-4cb3-409a-a8af-ef6e1245e63b",
+  "approvedRecipient": "bsb4rd@virginia.edu",
+  "eligibleAudience": 1,
+  "announcements": [
+    {
+      "id": "3ae27d58-0395-47d9-9067-cbf4c3e98169",
+      "title": "OutClass Notification System Test",
+      "body": "This is a test announcement to verify that OutClass notifications and email delivery are working correctly. No action is required.",
+      "audience": "APPLICANTS",
+      "authorId": "49d13e08-8566-4972-b15c-c4b796ffdd5b",
+      "publishedAt": "2026-10-10T22:17:05.585Z",
+      "_count": {
+        "notifications": 1
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "d9676c7e-1b02-4dac-93b2-98778b7e0959",
+      "userId": "4df747c5-fac6-4d23-acee-e1514ab87c80",
+      "eventKey": "announcement:3ae27d58-0395-47d9-9067-cbf4c3e98169",
+      "title": "OutClass Notification System Test",
+      "body": "This is a test announcement to verify that OutClass notifications and email delivery are working correctly. No action is required.",
+      "readAt": "2026-10-10T22:23:11.034Z",
+      "createdAt": "2026-10-10T22:17:05.588Z",
+      "emailOutbox": {
+        "status": "ASSIGNED",
+        "deliveryId": "7e0492e7-5751-45d5-b536-8fc571c7a9d5"
+      }
+    }
+  ],
+  "deliveries": [
+    {
+      "id": "7e0492e7-5751-45d5-b536-8fc571c7a9d5",
+      "status": "SENT",
+      "providerMessageId": "01a127e4-dc07-7088-878c-c94f38000442",
+      "attemptCount": 1,
+      "sentAt": "2026-10-10T22:17:52.458Z",
+      "failureCode": null
+    }
+  ],
+  "preferences": {
+    "userId": "4df747c5-fac6-4d23-acee-e1514ab87c80",
+    "emailAnnouncements": true,
+    "emailMessages": false,
+    "emailApplications": false,
+    "emailInterviews": false,
+    "emailInvitations": false,
+    "emailTasks": false,
+    "emailPlatform": false,
+    "emailFrequency": "INSTANT",
+    "updatedAt": "2026-10-10T22:24:24.292Z"
+  },
+  "completedMigrations": 35,
+  "receipt": {
+    "startedAt": "2026-10-10T22:17:41.263Z",
+    "announcementId": "3ae27d58-0395-47d9-9067-cbf4c3e98169",
+    "notificationId": "d9676c7e-1b02-4dac-93b2-98778b7e0959",
+    "recipient": "bsb4rd@virginia.edu",
+    "enabled": true,
+    "sent": 1,
+    "failed": 0,
+    "suppressed": 1,
+    "deliveryId": "7e0492e7-5751-45d5-b536-8fc571c7a9d5",
+    "providerMessageId": "01a127e4-dc07-7088-878c-c94f38000442",
+    "databaseStatus": "SENT",
+    "attemptCount": 1,
+    "repeatedWorkerSent": 0,
+    "providerReadStatus": 401,
+    "providerStatus": "delivered",
+    "providerEvidence": "Authenticated Resend dashboard sent and delivered events",
+    "mailboxVerified": true,
+    "mailboxFolder": "Junk Email",
+    "outlookWebLight": true,
+    "outlookWebDark": true,
+    "nativeOutlookVerified": false,
+    "localEmailEnabledAfterTest": false
+  },
+  "validation": {
+    "total": 984,
+    "passed": 973,
+    "failed": 0,
+    "skipped": 11,
+    "lintWarnings": 27,
+    "lintErrors": 0,
+    "prismaValidation": "PASS",
+    "freshLocalMigrationDeploy": "PASS",
+    "migrationRegression": "PASS",
+    "typecheck": "PASS",
+    "productionBuild": "PASS"
+  },
+  "browser": {
+    "unreadBaseline": 1,
+    "unreadAfterPublication": 2,
+    "unreadAfterRead": 1,
+    "announcementsFilterResults": 1,
+    "notificationMobileWidth": 390,
+    "notificationHorizontalOverflow": false,
+    "sentHtmlMobileWidth": 320,
+    "emailHorizontalOverflow": false,
+    "emailLogoLoadedInOutlook": true,
+    "emailLinksFollowed": true,
+    "outlookOriginalLightModeRestored": true
+  }
+}

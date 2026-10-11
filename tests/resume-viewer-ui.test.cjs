@@ -29,6 +29,13 @@ function ui(api, options={}) {
 test('code warming mounts no authorized viewer and performs no document/comment reads until opening',async()=>{
  let calls=0;const h=ui({getInterviewResumeAnnotations:async()=>{calls++;return{annotations:[]}}});assert.equal(h.warm(),null);await flush();assert.equal(calls,0);h.render();await flush();assert.equal(calls,1);h.close();
 });
+test('slow authorization refreshes are not superseded by overlapping polls and still detect revocation',async()=>{
+ let calls=0,resolveRead,denied=false;
+ const h=ui({getInterviewResumeAnnotations:()=>{calls++;return denied?Promise.reject(Error('Revoked')):new Promise(resolve=>{resolveRead=resolve;});}});
+ h.render();h.poll();h.poll();await flush();assert.equal(calls,1);
+ resolveRead({annotations:[]});await flush();let t=h.render();assert.match(text(t),/Shared comments up to date/);assert.equal(button(t,'Retry access'),undefined);
+ denied=true;h.poll();await flush();t=h.render();assert.equal(calls,2);assert.equal(h.lost,1);assert.ok(button(t,'Retry access'));h.close();
+});
 test('failed comment saves retain text and creation ID; explicit retry saves once without replacing shared peers',async()=>{
   let fail=true; const calls=[], rows=[{id:'peer',kind:'GENERAL_NOTE',comment:'Peer comment',anchor:null,revision:0,authorName:'Other panelist',canEdit:false}];
   const api={getInterviewResumeAnnotations:async()=>({annotations:rows}),saveInterviewResumeAnnotation:async input=>{calls.push(input);if(fail)throw Error('Offline');rows.push({...input.content,id:input.id,revision:0,authorName:'Me',canEdit:true});},deleteInterviewResumeAnnotation:async()=>{throw Error('unexpected')}};

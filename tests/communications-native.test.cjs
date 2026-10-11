@@ -1,8 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{api}=require('./helpers/communications-native.cjs');
-const databaseUrl=process.env.OUTCLASS_RECRUITMENT_TEST_DATABASE_URL;
+const runtimeUrl=process.env.OUTCLASS_DECISION_RUNTIME_TEST_DATABASE_URL;
+const databaseUrl=runtimeUrl??process.env.OUTCLASS_RECRUITMENT_TEST_DATABASE_URL;
 test('native decision communications: atomic snapshots, ownership, history, retries and outbox',{skip:!databaseUrl,timeout:120000},async t=>{
- const url=new URL(databaseUrl);assert.ok(['localhost','127.0.0.1'].includes(url.hostname)&&url.pathname==='/outclass_recruitment_test');
+ const url=new URL(databaseUrl);assert.ok(['localhost','127.0.0.1'].includes(url.hostname)&&url.pathname===(runtimeUrl?'/outclass_reconcile_test':'/outclass_recruitment_test'));
  const {PrismaClient}=require('@prisma/client'),db=new PrismaClient({datasourceUrl:databaseUrl});t.after(()=>db.$disconnect());
+ if(runtimeUrl){assert.equal(url.port,'56322');const [role]=await db.$queryRaw`SELECT current_user,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user`;assert.deepEqual(role,{current_user:'outclass_production_app',rolsuper:false,rolbypassrls:false});}
  const leader=await db.user.create({data:{email:`communications-leader-${randomUUID()}@demo.invalid`}}),student=await db.user.create({data:{email:`communications-student-${randomUUID()}@demo.invalid`}}),foreign=await db.user.create({data:{email:`communications-foreign-${randomUUID()}@demo.invalid`}});
  const club=await db.club.create({data:{name:'Synthetic Communications Club',slug:randomUUID(),tagline:'',description:'',category:'Other',color:'#142d45'}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Anonymous review',anonymousReview:true,order:0,type:'APPLICATION_REVIEW'}});
  const membership=await db.clubMember.create({data:{clubId:club.id,userId:leader.id,permissions:['decisions.manage','applicants.identify','recruitment.manage']}});

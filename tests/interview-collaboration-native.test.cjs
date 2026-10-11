@@ -12,6 +12,12 @@ test('native collaboration: ordered simultaneous picks, revision conflicts, exac
  for(const app of apps)for(const m of [aMember,bMember])await db.interviewPanelAssignment.create({data:{applicationId:app.id,roundId:round.id,memberId:m.id,grantedBy:owner.id}});
  const a=actor(db,one.id),b=actor(db,two.id),scope={clubId:club.id,roundId:round.id,applicationId:apps[0].id},aInput={...scope,clientId:randomUUID()},bInput={...scope,clientId:randomUUID()};
  await Promise.all([a.kits.openInterviewSession(scope),b.kits.openInterviewSession(scope)]);await Promise.all([a.rooms.getInterviewCollaboration(aInput),b.rooms.getInterviewCollaboration(bInput)]);
+ // Routine refreshes keep current authorization locked without serializing all
+ // reviewers' private saves/downloads behind an exclusive applicant lock.
+ const locks=[];const observed=new Proxy(db,{get(target,key){if(key==='$transaction')return(fn,options)=>target.$transaction(tx=>fn(new Proxy(tx,{get(client,method){if(method==='$queryRaw')return(strings,...values)=>{locks.push(strings.join('?'));return client.$queryRaw(strings,...values)};return client[method]}})),options);return target[key]}});
+ await actor(observed,one.id).rooms.getInterviewCollaboration(aInput);
+ assert.ok(locks.some(sql=>sql.includes('FROM "Application"')&&sql.includes('FOR SHARE')));
+ assert.ok(!locks.some(sql=>sql.includes('FROM "Application"')&&sql.includes('FOR UPDATE')));
  const picks=await Promise.all([a.rooms.selectSharedInterviewQuestion({...aInput,questionId:q[0].id}),b.rooms.selectSharedInterviewQuestion({...bInput,questionId:q[1].id})]);assert.deepEqual(picks.map(p=>p.revision).sort(),[1,2]);
  const [av,bv]=await Promise.all([a.rooms.getInterviewCollaboration(aInput),b.rooms.getInterviewCollaboration(bInput)]);assert.deepEqual(av.selection,bv.selection);assert.equal(av.revision,2);assert.equal(av.participants.length,2);
  const draft=(await a.kits.openInterviewSession(scope)).draft;
