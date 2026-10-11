@@ -1,6 +1,11 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useDemoMode } from "@/contexts/demo-context"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
+import { CommunicationsInbox } from "@/components/communications-inbox"
+import { CommunicationsPreferences } from "@/components/communications-preferences"
 import { useEffect, useMemo, useState, useRef } from "react"
 import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "lucide-react"
 import { ClubLogo } from "@/components/club-logo"
@@ -20,6 +25,9 @@ const selectStyle =
   "h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
 
 export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
+  const params = useSearchParams(), demo = useDemoMode()
+  const [tab, setTab] = useState(params.get("tab") === "preferences" ? "preferences" : "notifications")
+  useEffect(() => { if (params.get("tab") === "preferences") setTab("preferences"); else setTab("notifications") }, [params])
   const { invitations } = useOrganizationInvitations()
   const {
     notifications: items,
@@ -102,8 +110,11 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     setClub("all")
   }
 
+  const tabs = <nav aria-label="Communications center" className="flex gap-1 overflow-x-auto border-b pb-3">{[["notifications", "Updates"], ["preferences", "Email preferences"]].map(([id, label]) => <Button key={id} variant={tab === id ? "secondary" : "ghost"} aria-current={tab === id ? "page" : undefined} onClick={() => { if (canLeaveWorkspace()) setTab(id) }}>{label}</Button>)}</nav>
+  if (tab !== "notifications") return <div className="mx-auto max-w-6xl space-y-6">{tabs}{demo.isDemoEnabled ? <p className="text-sm text-muted-foreground">Email preferences are available in your live account.</p> : <CommunicationsPreferences />}</div>
   return (
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
+      {tabs}
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       <header>
         <p className="text-sm text-muted-foreground">
@@ -469,7 +480,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     </p>
                   </div>
                 )}
-                {(selected.eventId ||
+                {!selected.href && (selected.eventId ||
                   selected.type === "Interview Invite" ||
                   selected.locationChange) && (
                   <Button
@@ -484,7 +495,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   </Button>
                 )}
                 {selected.taskHref && <Button variant="outline" asChild><Link href={selected.taskHref}>View task</Link></Button>}
-                {selected.cta && !selected.taskHref && selected.type !== "Interview Invite" && (
+                {selected.cta && selected.href && !selected.taskHref && <Button variant="outline" asChild><Link href={selected.href}>{selected.cta}</Link></Button>}
+                {selected.cta && !selected.href && !selected.taskHref && selected.type !== "Interview Invite" && (
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -497,12 +509,13 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 )}
               </div>
               <p className="border-t border-neutral-200 px-6 py-4 text-xs text-neutral-500">
-                Club notifications are read-only. Replies aren&#39;t available here.
+                {"Club updates stay here so you can return to them anytime."}
               </p>
             </>
           )}
         </section>
       </div>
+      {!demo.isDemoEnabled && <CommunicationsInbox />}
     </div>
   )
 }

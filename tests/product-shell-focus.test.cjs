@@ -23,11 +23,11 @@ test('pending invitations drive the notification bell and are reviewable in the 
  const state={invitations:[]},navigations=[];
  const mocks={
   react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect(){},useMemo:fn=>fn()},
-  'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({})},
+  'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},
   '@/lib/workspace-api':{getTaskNotifications:async()=>[]},'@/contexts/auth-context':{useAuth:()=>({user:null})},
   '@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},
   '@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>state},
-  '@/lib/application-state':{useApplicationState:()=>({notifications:[],focusNotificationId:null})},
+  '@/lib/application-state':{useApplicationState:()=>({notifications:[],durableUnread:0,focusNotificationId:null})},
   '@/lib/views':{adminNav:[],studentNav:[]},
   '@/lib/product-navigation':{personalUniversalItems:[],canLeaveWorkspace:()=>true},
  };

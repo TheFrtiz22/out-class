@@ -43,6 +43,12 @@ model User {
   clubClaims      ClubClaim[]
   assignedTasks   ClubTask[]
   taskSubmissions TaskAssignment[]
+  authoredAnnouncements ClubAnnouncement[]
+  notifications UserNotification[]
+  notificationPreferences UserNotificationPreference?
+  conversations ClubConversation[]
+  sentClubMessages ClubMessage[]
+  notificationEmails NotificationEmailDelivery[]
 }
 
 enum AppRole {
@@ -134,6 +140,9 @@ model Club {
   events         Meeting[]
   applications   Application[]
   pipelineRounds PipelineRound[]
+  announcements ClubAnnouncement[]
+  notifications UserNotification[]
+  conversations ClubConversation[]
   questions      ApplicationQuestion[]
   @@unique([id, schoolId])
 }
@@ -1181,4 +1190,132 @@ model SchoolRequest {
   @@index([status, createdAt])
   @@index([email, createdAt])
   @@index([createdAt])
+}
+
+// Durable club communications. Recipient notification rows are the immutable
+// publication audience snapshot; no cross-club audience is inferred later.
+model ClubAnnouncement {
+  id          String   @id @default(uuid())
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  title       String
+  body        String
+  audience    String
+  requestKey  String   @default(uuid())
+  createdAt   DateTime @default(now())
+  publishedAt DateTime @default(now())
+  notifications UserNotification[]
+
+  @@index([clubId, publishedAt])
+  @@unique([clubId, requestKey])
+}
+
+// The stable inbox record remains after users leave a club. Access always
+// requires matching userId; never infer inbox ownership from club membership.
+model UserNotification {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clubId         String?
+  club           Club?    @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  announcementId String?
+  announcement   ClubAnnouncement? @relation(fields: [announcementId], references: [id], onDelete: SetNull)
+  eventKey       String
+  type           String
+  title          String
+  body           String
+  href           String
+  readAt         DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  emailOutbox    NotificationEmailOutbox?
+
+  @@unique([userId, eventKey])
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([announcementId])
+  @@index([userId, updatedAt])
+}
+
+// This table controls OPTIONAL email only. Security/identity emails are not
+// gated on it, and in-app notification delivery never consults it.
+model UserNotificationPreference {
+  userId            String @id
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailAnnouncements Boolean @default(true)
+  emailMessages      Boolean @default(true)
+  emailApplications  Boolean @default(true)
+  emailInterviews    Boolean @default(true)
+  emailInvitations   Boolean @default(true)
+  emailTasks         Boolean @default(true)
+  emailPlatform      Boolean @default(false)
+  emailFrequency     String @default("INSTANT")
+  updatedAt          DateTime @updatedAt
+}
+
+// One private channel between a student and a club's authorized team.
+model ClubConversation {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  studentId String
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  messages ClubMessage[]
+  @@unique([clubId, studentId])
+  @@index([studentId, updatedAt])
+  @@index([clubId, updatedAt])
+}
+
+model ClubMessage {
+  id String @id @default(uuid())
+  conversationId String
+  conversation ClubConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId String
+  sender User @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  senderKind String
+  body String
+  requestKey String
+  createdAt DateTime @default(now())
+  @@unique([conversationId, senderId, requestKey])
+  @@index([conversationId, createdAt, id])
+  @@index([senderId, createdAt])
+}
+
+// INSERT triggers place every durable notification in this outbox atomically.
+model NotificationEmailOutbox {
+  notificationId String @id
+  notification UserNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  status String @default("PENDING")
+  deliveryId String?
+  delivery NotificationEmailDelivery? @relation(fields: [deliveryId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@index([status, createdAt])
+  @@index([deliveryId])
+}
+
+model NotificationEmailDelivery {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status String @default("QUEUED")
+  payload Json
+  items NotificationEmailOutbox[]
+  attemptCount Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  firstAttemptAt DateTime?
+  leaseUntil DateTime?
+  leaseToken String?
+  providerMessageId String?
+  failureCode String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  @@index([status, nextAttemptAt])
+  @@index([userId, createdAt])
 }

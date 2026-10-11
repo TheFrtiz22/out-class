@@ -1,0 +1,77 @@
+Route (app)                                 Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                      621 B         156 kB
+├ ƒ /_not-found                            219 B         105 kB
+├ ƒ /about                                1.4 kB         128 kB
+├ ƒ /api/application-attachments           219 B         105 kB
+├ ƒ /api/auth/logout                       219 B         105 kB
+├ ƒ /api/auth/password-recovery            219 B         105 kB
+├ ƒ /api/auth/student-claim                219 B         105 kB
+├ ƒ /api/club-assets                       219 B         105 kB
+├ ƒ /api/communications/stream             219 B         105 kB
+├ ƒ /api/demo                              219 B         105 kB
+├ ƒ /api/event-flyers                      219 B         105 kB
+├ ƒ /api/internal/invitation-delivery      219 B         105 kB
+├ ƒ /api/internal/notification-delivery    219 B         105 kB
+├ ƒ /api/interview-resumes                 219 B         105 kB
+├ ƒ /api/platform/elevation                219 B         105 kB
+├ ƒ /api/platform/eligibility              219 B         105 kB
+├ ƒ /api/platform/view-as                  219 B         105 kB
+├ ƒ /api/platform/view-as/blocked          219 B         105 kB
+├ ƒ /api/profile-photos                    219 B         105 kB
+├ ƒ /api/recruiting-resumes                219 B         105 kB
+├ ƒ /api/resumes                           219 B         105 kB
+├ ƒ /api/school-requests                   219 B         105 kB
+├ ƒ /api/users/me                          219 B         105 kB
+├ ƒ /api/workspace                         219 B         105 kB
+├ ○ /apple-icon                            219 B         105 kB
+├ ƒ /auth/callback                         219 B         105 kB
+├ ƒ /auth/microsoft                        219 B         105 kB
+├ ƒ /auth/student-claim                  2.88 kB         117 kB
+├ ƒ /check-in                            5.31 kB         208 kB
+├ ƒ /club-access/[clubId]                6.32 kB         175 kB
+├ ƒ /club-claims/[clubId]                2.13 kB         120 kB
+├ ƒ /club/[clubId]                       30.7 kB         293 kB
+├ ƒ /club/[clubId]/tasks                 25.4 kB         243 kB
+├ ƒ /club/[clubId]/workspace             18.9 kB         392 kB
+├ ƒ /corkboard                           11.4 kB         229 kB
+├ ƒ /decisions                             219 B         105 kB
+├ ƒ /design-system                       22.4 kB         284 kB
+├ ƒ /forgot-password                       139 B         141 kB
+├ ○ /icon                                  219 B         105 kB
+├ ƒ /interviews                            219 B         105 kB
+├ ƒ /interviews/book                     6.76 kB         215 kB
+├ ƒ /invitations/[id]                    4.32 kB         140 kB
+├ ƒ /live-voting                           181 B         133 kB
+├ ƒ /login                               9.95 kB         253 kB
+├ ○ /manifest.webmanifest                  219 B         105 kB
+├ ƒ /meetings                            5.41 kB         223 kB
+├ ƒ /meetings/[id]                       5.41 kB         223 kB
+├ ƒ /platform                              166 B         108 kB
+├ ƒ /platform/[section]                  13.6 kB         162 kB
+├ ƒ /platform/claims                     2.53 kB         120 kB
+├ ƒ /platform/clubs                      7.96 kB         162 kB
+├ ƒ /platform/events                     5.84 kB         154 kB
+├ ƒ /platform/login                       6.3 kB         179 kB
+├ ƒ /platform/school-requests            3.23 kB         134 kB
+├ ƒ /platform/view-as                      166 B         108 kB
+├ ƒ /preview                             9.26 kB         373 kB
+├ ƒ /request-school                      4.48 kB         144 kB
+├ ƒ /reset-password                        139 B         141 kB
+├ ○ /robots.txt                            219 B         105 kB
+├ ƒ /saved-clubs                         9.83 kB         266 kB
+├ ƒ /settings/organizations              11.9 kB         194 kB
+├ ƒ /signup                              33.2 kB         301 kB
+├ ○ /sitemap.xml                           219 B         105 kB         10m      1y
+├ ƒ /uva                                 3.82 kB         130 kB
+├ ƒ /vote                                  182 B         133 kB
+└ ƒ /voting/[sessionId]/join             10.9 kB         217 kB
++ First Load JS shared by all             105 kB
+  ├ chunks/9296-0701e12dbaa149b3.js      46.6 kB
+  ├ chunks/9c3bff69-ed0b2266d7b5a5f2.js  54.2 kB
+  └ other shared chunks (total)          4.06 kB
+
+
+ƒ Middleware                             95.1 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

@@ -1,0 +1,10 @@
+Baseline + additive migration applied; all existing identities/memberships preserved; access backfill verified; no implicit platform admin; append-only audit enforced.
+Claim migration preserves owners/profiles; directory preload avoids duplicates and fabricated statistics.
+Anonymous review/test migration preserves default behavior and enforces valid ACT scores and requirements.
+Interview kit migration preserves existing evaluations and enforces session uniqueness and API isolation.
+Unified meeting migration preserves event IDs/attendance and protects member visibility and QR secrets.
+Task migration preserves legacy assignments and former-member submissions; unique recipients and browser isolation verified.
+Platform view sessions are isolated from browser roles; token hashes unique; existing user and task data retained.
+Recruiting rules preserve decisions, validate thresholds, and isolate versioned flags from browser access.
+Task workflow migration preserves existing responses, validates revision requests, and persists group labels.
+All 35 migrations applied on fresh and legacy databases; all 65 tables enforce RLS and deny browser-role CRUD.

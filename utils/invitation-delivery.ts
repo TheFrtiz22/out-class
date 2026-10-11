@@ -1,5 +1,6 @@
 import { assertClubOperational } from "@/lib/club-suspension";
 import { randomUUID } from 'node:crypto';
+import { nextDigestAt, optionalEmailAllowed } from '@/lib/communications-policy';
 import { prisma, type AppTransactionClient } from '@/utils/prisma';
 import { canManageOrganizationInvitation } from '@/lib/organization-authorization';
 import { invitationEmailConfig, sendInvitationEmail } from '@/utils/email';
@@ -94,6 +95,13 @@ export async function processInvitationEmails(clubId: string, limit = 5) {
       if (current.status !== 'QUEUED') return null;
       const ready = await eligible(tx, current.id);
       if (!ready) { await tx.invitationDelivery.update({ where: { id: current.id }, data: { status: 'CANCELLED', failureCode: 'INVITATION_UNAVAILABLE' } }); cancelled++; return null; }
+      const recipient = await tx.user.findUnique({ where: { email: ready.recipientEmail }, select: { disabledAt: true, notificationPreferences: true } });
+      if (recipient?.disabledAt || !optionalEmailAllowed(recipient?.notificationPreferences ?? null, 'INVITATION')) {
+        await tx.invitationDelivery.update({ where: { id: current.id }, data: { status: 'CANCELLED', failureCode: 'RECIPIENT_EMAIL_DISABLED' } }); cancelled++; return null;
+      }
+      if (recipient?.notificationPreferences?.emailFrequency === 'DAILY' && nextDigestAt(current.createdAt) > new Date()) {
+        await tx.invitationDelivery.update({ where: { id: current.id }, data: { nextAttemptAt: nextDigestAt(current.createdAt) } }); return null;
+      }
       await tx.invitationDelivery.update({ where: { id: current.id }, data: { status: 'SENDING', attemptCount: { increment: 1 } } });
       return ready;
     });

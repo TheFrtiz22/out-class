@@ -1,39 +1,76 @@
-"use client"
-import { EmptyState } from "@/components/ui/empty-state"
-import { useEffect, useState } from "react"
-import { Plus, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { announcementExample, createAnnouncementPreview, type AnnouncementPreview } from "@/lib/announcement-preview"
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useDemoMode } from "@/contexts/demo-context";
+import { communicationsChanged } from "@/lib/communications-client";
+import { Plus, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { getClubAnnouncements, publishClubAnnouncement } from "@/actions/communications";
+type Item = Awaited<ReturnType<typeof getClubAnnouncements>>[number];
 
-/** Local presentation sandbox. No persistence, recipient lookup, or delivery calls. */
-export function ClubAnnouncements() {
-  const [previews, setPreviews] = useState<AnnouncementPreview[]>([])
-  const [compose, setCompose] = useState(false), [selected, setSelected] = useState<string | null>(null)
-  const [title, setTitle] = useState(""), [body, setBody] = useState(""), [error, setError] = useState("")
-  const active = previews.find(item => item.id === selected)
-  const dirty = !!title.trim() || !!body.trim()
-  useEffect(() => {
-    if (!dirty) return
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
-    window.addEventListener("beforeunload", warn)
-    return () => window.removeEventListener("beforeunload", warn)
-  }, [dirty])
-  return <div className="max-w-5xl space-y-7" data-unsaved={dirty}>
-    <p role="note" className="max-w-3xl border-l-2 border-brand-orange pl-4 text-sm leading-7 text-muted-foreground"><strong className="font-medium text-foreground">Preview only.</strong> Announcements are not connected yet. Nothing here is published or delivered. Composed previews stay on this screen and disappear when you leave or reload.</p>
-    <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="oc-section-heading ">Announcement previews</h2><p className="mt-2 text-sm text-muted-foreground">Explore the layout and compose text before a publishing service is available.</p></div><Button onClick={() => { setSelected(null); setCompose(true) }}><Plus aria-hidden="true" className="size-4" />Compose preview</Button></div>
-    {previews.length ? <ul className="divide-y border-y">{previews.map(item => <li key={item.id}><button type="button" className="flex w-full items-center justify-between gap-5 rounded py-5 text-left hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-ring sm:px-3" onClick={() => { setSelected(item.id); setCompose(false) }}><span className="min-w-0"><span className="text-xs text-muted-foreground">Preview · audience not connected</span><span className="mt-2 block break-words font-medium">{item.title}</span><span className="mt-2 line-clamp-2 break-words text-sm leading-6 text-muted-foreground">{item.body}</span></span><ArrowRight aria-hidden="true" className="size-4 shrink-0" /></button></li>)}</ul> : <EmptyState title="Give your club something to talk about." description="Compose an announcement preview, or start with a clearly labeled example. Publishing and delivery are not connected." action={<Button variant="outline" onClick={() => setPreviews([announcementExample])}>Load example preview</Button>} />}
-    {previews.length > 0 && <Button variant="ghost" onClick={() => { setPreviews([]); setSelected(null) }}>Clear local previews</Button>}
-    <Sheet open={compose || !!active} onOpenChange={open => { if (!open) { setCompose(false); setSelected(null) } }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl" onCloseAutoFocus={event => { event.preventDefault(); document.getElementById("workspace-content")?.focus() }}><SheetTitle>{compose ? "Compose announcement preview" : active?.title}</SheetTitle><SheetDescription>Preview only · no publishing, recipient selection, or delivery.</SheetDescription>
-      {compose ? <form className="mt-7 space-y-6" onSubmit={event => { event.preventDefault(); try { const preview = createAnnouncementPreview(crypto.randomUUID(),title,body); setPreviews(items => [preview,...items]); setTitle(""); setBody(""); setError(""); setCompose(false); setSelected(preview.id) } catch(e) { setError(e instanceof Error ? e.message : "Could not create preview.") } }}>
-        <label className="block space-y-2 text-sm font-medium">Title<Input required maxLength={200} value={title} onChange={event => setTitle(event.target.value)} /></label>
-        <div className="space-y-2"><label htmlFor="announcement-audience" className="text-sm font-medium">Audience</label><select id="announcement-audience" disabled aria-describedby="announcement-audience-help" className="min-h-11 w-full rounded-md border bg-muted px-3 text-sm text-muted-foreground"><option>Audience selection not connected</option></select><p id="announcement-audience-help" className="text-xs leading-6 text-muted-foreground">This placeholder does not select members, applicants, or other recipients.</p></div>
-        <label className="block space-y-2 text-sm font-medium">Announcement<Textarea required maxLength={10000} className="min-h-56" value={body} onChange={event => setBody(event.target.value)} /></label>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" disabled={!title.trim() || !body.trim()}>Add to preview list</Button><p className="text-xs leading-6 text-muted-foreground">Closing this panel keeps your text while this screen stays open. Leaving the screen clears it.</p>
-      </form> : active && <article className="mt-7 space-y-5"><p className="text-xs text-muted-foreground">Local preview · not published</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{active.body}</p><p className="border-t pt-4 text-xs text-muted-foreground">Audience and delivery are not connected. No email or message was sent.</p></article>}
-    </SheetContent></Sheet>
-  </div>
+export function ClubAnnouncements({ clubId }: { clubId: string }) {
+ const demo = useDemoMode();
+ const requestKey = useRef<string | null>(null);
+ const [items, setItems] = useState<Item[]>([]);
+ const [busy, setBusy] = useState(false);
+ const [compose, setCompose] = useState(false);
+ const [confirmPublish, setConfirmPublish] = useState(false);
+ const publishing = useRef(false);
+ const [title, setTitle] = useState("");
+ const [body, setBody] = useState("");
+ const [audience, setAudience] = useState<"MEMBERS" | "APPLICANTS">("MEMBERS");
+ const [error, setError] = useState("");
+ const [success, setSuccess] = useState("");
+ const dirty = compose && (!!title.trim() || !!body.trim());
+ const reload = useCallback(async () => {
+  if (demo.isDemoEnabled) return;
+  try { setItems(await getClubAnnouncements(clubId)); }
+  catch (e) { setError(e instanceof Error ? e.message : "Could not load announcements."); }
+ }, [clubId, demo.isDemoEnabled]);
+ useEffect(() => { void reload(); }, [reload]);
+ useEffect(() => {
+  if (!dirty) return;
+  const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+  window.addEventListener("beforeunload",warn);
+  return () => window.removeEventListener("beforeunload",warn);
+ }, [dirty]);
+ async function publish() {
+  if (publishing.current) return;
+  publishing.current = true;
+  setBusy(true); setError(""); setSuccess("");
+  try {
+   requestKey.current ||= crypto.randomUUID();
+   const result = await publishClubAnnouncement({ clubId, title, body, audience, requestKey: requestKey.current });
+   requestKey.current = null; communicationsChanged();
+   setSuccess("Published to " + result.recipientCount + " recipient(s). Optional emails follow each recipient’s preferences.");
+   setTitle(""); setBody(""); setConfirmPublish(false); setCompose(false); await reload();
+  } catch (e) { setError(e instanceof Error ? e.message : "Publishing failed."); }
+  finally { publishing.current = false; setBusy(false); }
+ }
+ if (demo.isDemoEnabled) return <p className="rounded-lg border p-6 text-sm text-muted-foreground">Announcement publishing is available when signed into your live OutClass account.</p>;
+ return <div className="max-w-5xl space-y-7" data-saving={busy} data-unsaved={dirty}>
+  <div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="oc-section-heading">Announcements</h2><p className="mt-2 text-sm text-muted-foreground">Publish to your club’s current members or submitted applicants.</p></div><Button onClick={()=>{setCompose(true);setError("");setSuccess("");}}><Plus className="size-4" /> New announcement</Button></div>
+  {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+  {success && <p role="status" className="text-sm">{success}</p>}
+  {items.length ? <ul className="divide-y border-y">{items.map(item=><li key={item.id} className="space-y-2 py-5"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">{item.title}</h3><span className="text-xs text-muted-foreground">{item.audience === "MEMBERS" ? "Members" : "Applicants"} · {item._count.notifications} notified</span></div><p className="whitespace-pre-wrap break-words text-sm leading-7">{item.body}</p><time className="block text-xs text-muted-foreground">{new Date(item.publishedAt).toLocaleString()}</time></li>)}</ul> : <p className="rounded-lg border p-8 text-sm text-muted-foreground">No announcements published yet.</p>}
+  <Sheet open={compose} onOpenChange={open=>{if(busy) return;if(!open && dirty && !window.confirm("Close this announcement draft?")) return;setCompose(open);}}>
+   <SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-xl"><SheetTitle>New announcement</SheetTitle><SheetDescription>Choose the audience and publish a permanent in-app update.</SheetDescription>
+   <form className="mt-7 space-y-6" data-unsaved={dirty} onSubmit={e=>{e.preventDefault();if(!busy)setConfirmPublish(true);}}>
+    <label className="block space-y-2 text-sm font-medium">Title<Input required disabled={busy} maxLength={200} value={title} onChange={e=>{setTitle(e.target.value);requestKey.current=null;}} /></label>
+    <label className="block space-y-2 text-sm font-medium">Recipients<select disabled={busy} className="w-full rounded-md border bg-background p-3" value={audience} onChange={e=>{setAudience(e.target.value as typeof audience);requestKey.current=null;}}><option value="MEMBERS">Current club members</option><option value="APPLICANTS">Submitted applicants</option></select></label>
+    <label className="block space-y-2 text-sm font-medium">Announcement<Textarea required disabled={busy} maxLength={10000} className="min-h-56" value={body} onChange={e=>{setBody(e.target.value);requestKey.current=null;}} /></label>
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    <Button type="submit" disabled={busy || !title.trim() || !body.trim()}><Send className="size-4" /> {busy?"Publishing…":"Publish in-app announcement"}</Button>
+   </form></SheetContent>
+  </Sheet>
+  <AlertDialog open={confirmPublish} onOpenChange={open=>{if(!busy)setConfirmPublish(open);}}>
+   <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Publish this announcement?</AlertDialogTitle><AlertDialogDescription>All eligible {audience.toLowerCase()} will receive an in-app update and optional email according to their preferences.</AlertDialogDescription></AlertDialogHeader>
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    <AlertDialogFooter><AlertDialogCancel disabled={busy}>Keep editing</AlertDialogCancel><Button disabled={busy} onClick={()=>void publish()}>{busy?"Publishing…":"Confirm publication"}</Button></AlertDialogFooter>
+   </AlertDialogContent>
+  </AlertDialog>
+ </div>;
 }
