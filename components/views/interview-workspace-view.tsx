@@ -166,7 +166,14 @@ function InterviewSession({
         if (current) {
           setData(result)
           const recovery = recoveredApplicant()
-          const focused = result.applications.find(a => a.id === leaderFocus?.applicantId)
+          const query = new URLSearchParams(window.location?.search || "");
+          const linked = result.applications.find(a => a.id === query.get("applicationId") && a.assignedRoundIds.includes(query.get("roundId") || "") && a.roundId === query.get("roundId"));
+          if (linked) try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId: linked.roundId, applicationId: linked.id })); } catch { /* Authorized queue still opens if browser storage is unavailable. */ }
+          if (linked && window.history && window.location?.href) {
+            const destination = new URL(window.location.href); destination.searchParams.delete("applicationId"); destination.searchParams.delete("roundId");
+            window.history.replaceState(window.history.state, "", destination);
+          }
+          const focused = linked || result.applications.find(a => a.id === leaderFocus?.applicantId)
           const first = result.rounds.find(r => r.id === focused?.roundId) ||
             result.rounds.find(r => r.id === recovery?.roundId && interviewQueue(result.applications, r.id).some(a => a.id === recovery.applicationId)) ||
             result.rounds.find((item) =>

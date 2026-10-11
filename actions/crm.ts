@@ -17,6 +17,8 @@ import { prisma } from "@/utils/prisma";
 import { requireClubPermission } from "@/utils/auth";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { interviewCapabilities } from "@/lib/interview-access";
+import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
 const pipelineFilter = z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
@@ -53,6 +55,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
           include: { studentProfile: { include: { experiences: true } } },
         },
         evaluations: { omit: { notes: true, applicantQuestions: true } },
+        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
         answers: { include: { question: true } },
         bookings: { include: { slot: true } },
       },
@@ -64,9 +67,14 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
       rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications: applications.map(raw => {
-        const app = { ...raw, evaluations: raw.evaluations.map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+        const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
+        const assigned = raw.interviewAssignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
+        const canSeeRound = (interviewCapabilities(membership).readClosing && !assigned) || ownSubmitted;
+        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), raw.interviewAssignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
+        const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
+        const app = { ...safe, evaluations: raw.evaluations.filter(e => e.submittedAt && (e.interviewerId === membership.id || canSeeRound && (e.roundId === raw.roundId || interviewCapabilities(membership).readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
         const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
-        return { ...projected, recruitmentOffer: raw.recruitmentOffer ?? null };
+        return { ...projected, recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
       }),
     };
   }, { isolationLevel: "RepeatableRead" });

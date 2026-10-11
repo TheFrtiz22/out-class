@@ -54,9 +54,7 @@ const name = (app: Candidate) =>
     ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}`
     : app.student.email
 const average = (app: Candidate) =>
-  app.evaluations.length
-    ? app.evaluations.reduce((total, item) => total + item.score, 0) / app.evaluations.length
-    : null
+  app.roundScore?.average ?? null
 
 export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()

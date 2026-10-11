@@ -80,6 +80,11 @@ export async function setInterviewRoomOpen(raw: { roomId: string; open: boolean 
       if (slots.some(s => others.some(o => (o.location.trim().toLowerCase() === room.location.trim().toLowerCase() || o.room?.name.toLowerCase() === room.name.toLowerCase() || o.room?.panelMemberIds.some(id => room.panelMemberIds.includes(id))) && overlaps(s, o, Math.max(room.buffer, o.room?.buffer ?? 0))))) throw new Error("Another room now overlaps this schedule. Create a new time window instead.")
     }
     await tx.interviewRoom.update({ where: { id: room.id }, data: { isOpen: input.open } })
+    const bookings = await tx.interviewBooking.findMany({ where: { slot: { roomId: room.id }, roundId: room.roundId } });
+    for (const booking of bookings) {
+      await tx.$queryRaw`SELECT id FROM "Application" WHERE id=${booking.applicationId} FOR UPDATE`;
+      await syncBookingPanel(tx, booking.applicationId, room.roundId, user.id);
+    }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: room.clubId, targetId: room.id, action: input.open ? "interview.room.open" : "interview.room.close" } })
   })
   revalidatePath(`/club/${room.clubId}/workspace`)

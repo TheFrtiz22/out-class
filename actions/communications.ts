@@ -5,6 +5,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { identifiableApplication, notificationDefaults } from "@/lib/communications-policy";
+import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -49,7 +50,12 @@ export async function getDurableNotifications(cursor?: string) {
     include: { club: { select: { name: true, color: true, logoUrl: true } } },
   });
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
-  return { items: rows.slice(0, 50), nextCursor: rows.length > 50 ? rows[49].id : null, unread };
+  const items = await prisma.$transaction(async tx => Promise.all(rows.slice(0, 50).map(async row => {
+    if (!row.eventKey?.startsWith(assignmentNotificationPrefix)) return row;
+    const context = await currentAssignmentNotification(tx, row, user.id);
+    return { ...row, ...(context || { title: "Interview assignment changed", body: "This assignment is no longer available. Check your current interview list.", href: `/club/${row.clubId}/workspace?section=recruitment&tool=interviews` }) };
+  })));
+  return { items, nextCursor: rows.length > 50 ? rows[49].id : null, unread };
 }
 
 export async function setDurableNotificationsRead(ids: string[], read: boolean) {

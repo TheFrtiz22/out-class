@@ -430,6 +430,8 @@ model InterviewRecord {
   round           PipelineRound @relation(fields: [roundId], references: [id], onDelete: Restrict)
   questions       Json
   draft           Json
+  // Published once at completion. NULL means legacy private notes were never shared.
+  submittedQuestions Json?
   anonymousReview Boolean
   revision        Int           @default(0)
   completedAt     DateTime?

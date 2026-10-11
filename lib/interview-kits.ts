@@ -82,6 +82,7 @@ export function validateQuestionNotes(
     throw new Error("Additional question IDs must be unique.");
 }
 export type InterviewSessionData = {
+  submittedQuestions?: import("zod").infer<typeof import("@/lib/interview-review-summary").submittedQuestionsSchema> | null;
   instructions?: string;
   duration?: number;
   feedbackSource?: "draft" | "evaluation" | "historical-snapshot";

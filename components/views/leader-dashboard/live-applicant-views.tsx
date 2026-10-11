@@ -7,6 +7,7 @@ import { applicationStatusLabels } from "@/lib/student-applications"
 import { relevantInterview } from "@/lib/application-presentation"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table"
+import { formatAverage } from "@/lib/interview-review-summary"
 
 type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
 type Candidate = Pipeline["applications"][number]
@@ -21,8 +22,9 @@ function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boo
   return <span className="oc-applicant-person"><Avatar aria-hidden="true"><AvatarFallback>{anonymous ? <ShieldCheck size={16} /> : label.split(/\s+/).map(part => part[0]).slice(0,2).join("")}</AvatarFallback></Avatar><span>{label}</span></span>
 }
 function Review({ app, average }: { app: Candidate; average: Props["average"] }) {
-  const score = average(app)
-  return <span className="oc-applicant-review" data-reviewed={app.evaluations.length > 0}>{app.evaluations.length ? <><strong>{score?.toFixed(1)}<span> / 10</span></strong><span>{app.evaluations.length} {app.evaluations.length === 1 ? "evaluation" : "evaluations"}</span></> : "Awaiting review"}</span>
+  void average;
+  const summary = app.roundScore;
+  return <span className="oc-applicant-review" data-reviewed={!!summary?.submitted}>{summary ? <><strong>{formatAverage(summary.average)}{summary.average !== null && <span> / 10</span>}</strong><span>{summary.submitted} of {summary.required} reviews submitted{summary.provisional && " · Provisional"}</span></> : "Submit your own review to see round scores"}</span>
 }
 export function LiveApplicantList({ applicants, rounds, open, compact, name, average }: Props) {
   return <>

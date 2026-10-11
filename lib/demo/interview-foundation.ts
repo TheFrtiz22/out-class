@@ -5,11 +5,15 @@ import { emptyInterviewDraft, interviewDraftSchema, kitSchema, validateQuestionN
 import { z } from "zod";
 import { anchorMatchesText } from "@/lib/resume-anchors";
 import { demoResumeText } from "./resume-fixture";
+import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
+import { demoAssignmentNotice } from "./interview-improvements";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
+  improvementsSeeded?: boolean;
+  assignmentNotices?: { id: string; memberId: string; applicationId: string; roundId: string; key: string; title: string; createdAt: string }[];
   collaboration?: import("./interview-collaboration").DemoCollaboration;
-  assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null; bookingManaged?: boolean; bookingId?: string | null }[];
+  assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null; bookingManaged?: boolean; bookingId?: string | null; notificationVersion?: number }[];
   documents: { id: string; applicationId: string; roundId: string; source: string; createdAt: string }[];
   annotations: (Content & { id: string; documentId: string; authorId: string; revision: number; deletedAt: string | null })[];
   history: { annotationId: string; revision: number; actorId: string; content: Content }[];
@@ -82,6 +86,7 @@ export function saveInterviewSession(input: InterviewScope & { revision: number;
       evaluation = { id: old?.id || crypto.randomUUID(), applicationId: app.id, interviewerId: member.id, roundId: round.id, round: round.name, score, notes: draft.additionalNotes ?? draft.overallReview, applicantQuestions: draft.applicantQuestions || "", submittedAt: new Date(), createdAt: old?.createdAt || new Date() };
       target.evaluations = [...target.evaluations.filter(e => e.id !== evaluation!.id), evaluation];
     }
+    if (input.complete) record.submittedQuestions = snapshotSubmittedQuestions(record.questions, draft);
     record.draft = draft; record.revision++; record.completedAt = input.complete ? new Date().toISOString() : null;
     return { session: structuredClone(record), evaluation };
   });
@@ -111,6 +116,7 @@ export function getSubmittedInterviewReview(input: InterviewScope & { interviewe
   demoStore.refresh();
   const { s, member, caps } = access(input, "closingReview");
   if (input.interviewerId !== member.id && !caps.readClosing) throw new Error("Leadership required.");
+  if (input.interviewerId !== member.id && s.interviewFoundation.assignments.some(a => a.applicationId === input.applicationId && a.roundId === input.roundId && a.memberId === member.id && !a.revokedAt) && !s.applications.find(a => a.id === input.applicationId)!.evaluations.some(e => e.roundId === input.roundId && e.interviewerId === member.id && e.submittedAt)) throw Error("Submit your own review before viewing peers' reviews.");
   const r = s.interviews.find(r => r.applicationId === input.applicationId && r.roundId === input.roundId && r.interviewerId === input.interviewerId && r.completedAt);
   if (!r) throw new Error("Submitted review unavailable.");
   const e = s.applications.find(a => a.id === input.applicationId)!.evaluations.find(e => e.roundId === input.roundId && e.interviewerId === input.interviewerId);
@@ -128,6 +134,28 @@ export function getPreviousInterviewScores(input: InterviewScope) {
     return { id: r.id, name: `${p.firstName} ${p.lastName}`, score: e?.score ?? r.draft.score };
   });
 }
+export function getEarlierInterviewReviews(input: unknown) {
+  const scope = interviewScopeSchema.parse(input); demoStore.refresh();
+  const { s, app, round } = access(scope);
+  if (app.roundId !== round.id) throw Error("Current later-round assignment required.");
+  const rounds = s.clubs.find(c => c.id === scope.clubId)!.rounds;
+  return s.interviews.filter(r => r.applicationId === app.id && r.clubId === scope.clubId && r.completedAt && !r.anonymousReview && rounds.some(old => old.id === r.roundId && old.order < round.order && !old.anonymousReview)).flatMap(r => {
+    const e = app.evaluations.find(e => e.roundId === r.roundId && e.interviewerId === r.interviewerId && e.submittedAt);
+    if (!e) return [];
+    const member = s.memberships.find(m => m.id === r.interviewerId && m.clubId === scope.clubId), p = s.students.find(p => p.id === member?.userId)?.profile;
+    const parsed = submittedQuestionsSchema.safeParse(r.submittedQuestions);
+    return [{ id: r.id, roundId: r.roundId, roundName: rounds.find(old => old.id === r.roundId)!.name, reviewer: p ? `${p.firstName} ${p.lastName}` : "Interviewer", submittedAt: new Date(e.submittedAt!).toISOString(), questions: parsed.success ? parsed.data : null, additionalNotes: e.notes || "", applicantQuestions: e.applicantQuestions || "", score: e.score }];
+  });
+}
+export function getInterviewRoundScore(input: unknown) {
+  const scope = interviewScopeSchema.parse(input); demoStore.refresh();
+  const { s, app, member, caps } = access(scope, "closingReview");
+  const own = app.evaluations.find(e => e.interviewerId === member.id && e.roundId === scope.roundId && e.submittedAt);
+  const assignment = s.interviewFoundation.assignments.find(a => a.applicationId === app.id && a.roundId === scope.roundId && a.memberId === member.id && !a.revokedAt);
+  if ((!caps.readClosing || app.roundId === scope.roundId && assignment) && !own) throw Error("Submit your own review before viewing round scores.");
+  const assigned = s.interviewFoundation.assignments.filter(a => a.applicationId === app.id && a.roundId === scope.roundId && !a.revokedAt && s.memberships.some(m => m.id === a.memberId && m.clubId === scope.clubId && interviewCapabilities(m).participate));
+  return submittedScoreSummary(app.evaluations.filter(e => e.roundId === scope.roundId), assigned.map(a => a.memberId));
+}
 export function setMemberInterviewOffices(input: unknown) {
   const d = z.object({ clubId: z.string(), memberId: z.string(), offices: interviewOfficesSchema }).parse(input); const { member, caps } = actor(d.clubId);
   if (!caps.manageGrants) throw new Error("Owner required.");
@@ -140,8 +168,8 @@ export function setInterviewPanelAssignment(input: unknown) {
     const target = s.memberships.find(m => m.id === d.memberId && m.clubId === d.clubId), app = s.applications.find(a => a.id === d.applicationId && a.clubId === d.clubId && a.status !== "DRAFTING"), round = s.clubs.find(c => c.id === d.clubId)?.rounds.find(r => r.id === d.roundId);
     if (!target || !app || !round || app.studentId === target.userId || (d.assigned && (!interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview))) throw new Error("Panel scope unavailable.");
     const a = s.interviewFoundation.assignments.find(a => a.applicationId === app.id && a.roundId === round.id && a.memberId === target.id);
-    if (a) { a.revokedAt = d.assigned ? null : new Date().toISOString(); a.bookingManaged=false;a.bookingId=null; }
-    else if (d.assigned) s.interviewFoundation.assignments.push({ applicationId: app.id, roundId: round.id, memberId: target.id, revokedAt: null });
+    if (a) { const changed = !!a.revokedAt === d.assigned; if(changed) a.notificationVersion=(a.notificationVersion||0)+1; a.revokedAt = d.assigned ? null : new Date().toISOString(); a.bookingManaged=false;a.bookingId=null; if(changed) demoAssignmentNotice(s,a,!d.assigned); }
+    else if (d.assigned) { const grant = { applicationId: app.id, roundId: round.id, memberId: target.id, revokedAt: null }; s.interviewFoundation.assignments.push(grant); demoAssignmentNotice(s,grant,false); }
     s.interviewFoundation.audit.push({ action: "interview.panel.change", targetId: target.id, actorId: member.userId }); return { ...d };
   });
 }

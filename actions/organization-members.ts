@@ -18,6 +18,7 @@ import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
 import { canChangeOrganizationRole, canRemoveOrganizationMember, canManageOrganizationInvitation, organizationCapabilities, organizationRoles, organizationRolePermissions } from "@/lib/organization-authorization";
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
+import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
 
 const id = z.string().uuid();
 
@@ -49,8 +50,14 @@ export async function setInterviewPanelAssignment(input: unknown) {
     if (!target || !app || !round || app.studentId === target.userId) throw new Error("Panel scope unavailable.");
     if (data.assigned && (target.user.disabledAt || !interviewCapabilities(target).participate || app.roundId !== round.id || round.anonymousReview)) throw new Error("Active identified reviewer and current round required.");
     const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
-    if (data.assigned) await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: user.id }, update: { revokedAt: null, grantedBy: user.id, grantedAt: new Date(), bookingManaged: false, bookingId: null } });
-    else await tx.interviewPanelAssignment.updateMany({ where: key, data: { revokedAt: new Date(), bookingManaged: false, bookingId: null } });
+    const old = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: key } });
+    if (data.assigned) {
+      const grant = await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: user.id }, update: { revokedAt: null, grantedBy: user.id, ...(old?.revokedAt ? { grantedAt: new Date() } : {}), bookingManaged: false, bookingId: null } });
+      if (!old || old.revokedAt) await notifyInterviewAssignment(tx, grant, "assigned");
+    } else {
+      if (old && !old.revokedAt) await notifyInterviewAssignment(tx, old, "cancelled");
+      await tx.interviewPanelAssignment.updateMany({ where: key, data: { revokedAt: new Date(), bookingManaged: false, bookingId: null } });
+    }
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: target.id, action: "interview.panel.change", details: { ...key, assigned: data.assigned } } });
     return { ...key, assigned: data.assigned };
   });

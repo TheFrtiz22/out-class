@@ -19,6 +19,8 @@ import { CheckCircle2 } from "lucide-react";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
 import type { KitQuestion } from "@/lib/interview-kits";
 import { simulateDemoInterviewSelection, simulateDemoInterviewAdvance } from "@/lib/demo/interview-collaboration";
+import { InterviewTimer } from "@/components/interview-timer";
+import { EarlierRounds, RoundScore } from "@/components/interview-review-references";
 export function InterviewKitSession({
   clubId,
   applicationId,
@@ -431,6 +433,7 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
+      <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} />
       <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
@@ -468,13 +471,14 @@ export function InterviewKitSession({
           {key(active.guidance)}
           <label htmlFor={`active-notes-${active.id}`}>Your private notes</label>
           <Textarea id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
-          <p className="text-xs text-muted-foreground">Only your interview session stores these notes. Typing does not mark a question complete.</p>
+          <p className="text-xs text-muted-foreground">Draft question notes are private. Finalized notes are shared with assigned later-round interviewers after submission. Typing does not mark completion.</p>
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
         </div>
         {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => setOffScriptOpen(v => !v)}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Input id="new-interview-question" autoFocus maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); }}>Add question</Button><p className="text-xs text-muted-foreground">Add it to your session before leaving. Its private notes autosave.</p></fieldset>}</div>}
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
+          {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
           <a href="#interview-completed" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 lg:hidden">Miscellaneous notes and question review</a>
           <fieldset disabled={disabled} className="space-y-3"><label htmlFor="applicant-questions">Questions the applicant asked</label><Textarea id="applicant-questions" rows={4} maxLength={20000} value={draft.applicantQuestions || ""} onChange={e => setDraft(d => ({ ...d, applicantQuestions: e.target.value }))} />
             {!session.completedAt && <div className="oc-score-history"><h3>Your previous five interviews in this round</h3>{historyError ? <p role="alert">{historyError} <Button type="button" variant="ghost" onClick={() => setHistoryRetry(v => v + 1)}>Retry history</Button></p> : history === null ? <p role="status">Loading your scores…</p> : history.length ? <ul>{history.map(h => <li key={h.id}><span>{h.name}</span><span>{h.score} / 10</span></li>)}</ul> : <p className="text-xs text-muted-foreground">No previous completed interviews available.</p>}</div>}
@@ -494,6 +498,7 @@ export function InterviewKitSession({
       <aside id="interview-completed" tabIndex={-1} aria-label="Your notes and completed questions" className="min-w-0">
         <div className="oc-candidate-content">
         <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
+        <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} />
         <h2>{closing || session.completedAt ? "Your question notes" : "Completed questions"} <span className="oc-completed-count">{reviewed.length}</span></h2>
         <ul>{reviewed.map(q => { const notes = questionNotes(q.id), open = expandedQuestions.includes(q.id), done = completedIds.includes(q.id); return <li key={q.id} style={flights.some(f => f.id === q.id) ? { opacity: 0 } : undefined} ref={el => { if (el) rowNodes.current.set(q.id, el); else rowNodes.current.delete(q.id); }}>
           <button type="button" aria-expanded={open} aria-controls={`question-review-${q.id}`} onClick={() => setExpandedQuestions(ids => open ? ids.filter(id => id !== q.id) : [...ids, q.id])} className="oc-completed-row">
