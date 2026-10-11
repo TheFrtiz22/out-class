@@ -13,9 +13,12 @@ export async function interviewActor(tx: AppTransactionClient, clubId: string, u
   return { member, caps: interviewCapabilities(member) };
 }
 
-export async function authorizeInterview(tx: AppTransactionClient, scope: InterviewScope, userId: string, mode: "panel" | "resume" | "closing" | "closingReview" = "panel") {
+export const interviewTransactionOptions = { maxWait: 10000, timeout: 20000 };
+
+export async function authorizeInterview(tx: AppTransactionClient, scope: InterviewScope, userId: string, mode: "panel" | "resume" | "closing" | "closingReview" = "panel", applicationLock: "share" | "update" = "update") {
   const actor = await interviewActor(tx, scope.clubId, userId);
-  await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${scope.applicationId} FOR UPDATE`;
+  if (applicationLock === "share") await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${scope.applicationId} FOR SHARE`;
+  else await tx.$queryRaw`SELECT id FROM "Application" WHERE id = ${scope.applicationId} FOR UPDATE`;
   const app = await tx.application.findFirst({ where: { id: scope.applicationId, clubId: scope.clubId, status: { not: "DRAFTING" } }, include: { round: true } });
   await tx.$queryRaw`SELECT id FROM "PipelineRound" WHERE id = ${scope.roundId} OR id = ${app?.roundId || scope.roundId} FOR SHARE`;
   const round = await tx.pipelineRound.findFirst({ where: { id: scope.roundId, clubId: scope.clubId } });
