@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 import { profilePhotoSource } from "@/lib/profile-photo";
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, interviewActor } from "@/utils/interview-access";
+import { authorizeInterview, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, annotationContentSchema } from "@/lib/interview-access";
 import { isPrivateResume, validateProfileFile } from "@/lib/student-profile";
 import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
@@ -24,16 +24,16 @@ export async function getInterviewResumeModerationQueue(clubId: string) {
       select: { id: true, applicationId: true, roundId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
     return documents.map(d => ({ documentId: d.id, clubId, applicationId: d.applicationId, roundId: d.roundId, roundName: d.round.name, applicantName: d.application.student.studentProfile ? `${d.application.student.studentProfile.firstName} ${d.application.student.studentProfile.lastName}` : "Profile not provided" }));
-  });
+  }, interviewTransactionOptions);
 }
 export async function getInterviewApplicantPanel(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { app } = await authorizeInterview(tx, data, user.id);
+    const { app } = await authorizeInterview(tx, data, user.id, "panel", "share");
     const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { firstName: true, lastName: true, headshotUrl: true, scholarStatus: true } });
     const document = await tx.interviewResumeDocument.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: data.roundId } }, select: documentSelect });
     return { profile: profile ? { ...profile, headshotUrl: profilePhotoSource(profile.headshotUrl, data) ?? null } : null, document };
-  });
+  }, interviewTransactionOptions);
 }
 /** Snapshot bytes once; neither profile replacement nor student object deletion changes this version. */
 export async function pinInterviewResume(input: z.infer<typeof scope>) {
@@ -46,7 +46,7 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
     const profile = await tx.studentProfile.findUnique({ where: { userId: app.studentId }, select: { resumeUrl: true } });
     if (!profile?.resumeUrl || !isPrivateResume(profile.resumeUrl) || !profile.resumeUrl.startsWith(`${app.studentId}/`)) throw new Error("Upload a private PDF before pinning an interview resume. External URLs are not snapshotted.");
     return { existing: null, path: profile.resumeUrl };
-  });
+  }, interviewTransactionOptions);
   if (initial.existing) return initial.existing;
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret) throw new Error("Private resume storage unavailable.");
@@ -66,18 +66,18 @@ export async function pinInterviewResume(input: z.infer<typeof scope>) {
     const document = await tx.interviewResumeDocument.create({ data: { ...key, sourcePath: initial.path!, contentHash: hash, content: bytes }, select: documentSelect });
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: document.id, action: "interview.resume.pin" } });
     return document;
-  });
+  }, interviewTransactionOptions);
 }
 const documentScope = scope.extend({ documentId: z.string().uuid() });
 export async function getInterviewResumeAnnotations(input: z.infer<typeof documentScope>) {
   const data = documentScope.parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
+    const { member, caps } = await authorizeInterview(tx, data, user.id, "resume", "share");
     const document = await tx.interviewResumeDocument.findFirst({ where: { id: data.documentId, applicationId: data.applicationId, roundId: data.roundId }, select: documentSelect });
     if (!document) throw new Error("Document unavailable.");
     const annotations = await tx.interviewResumeAnnotation.findMany({ where: { documentId: document.id, deletedAt: null }, include: { author: { select: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] });
     return { document, annotations: annotations.map(({ author, ...a }) => ({ ...a, authorName: author.user.studentProfile ? `${author.user.studentProfile.firstName} ${author.user.studentProfile.lastName}` : "Club interviewer", canEdit: a.authorId === member.id || caps.moderateResume })) };
-  });
+  }, interviewTransactionOptions);
 }
 export async function saveInterviewResumeAnnotation(input: unknown) {
   const data = documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0).optional(), content: annotationContentSchema }).strict().parse(input);
@@ -111,7 +111,7 @@ export async function saveInterviewResumeAnnotation(input: unknown) {
     } else await tx.interviewResumeAnnotation.create({ data: { id: data.id, documentId: data.documentId, authorId: member.id, ...data.content, anchor: data.content.anchor ?? Prisma.DbNull } });
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.id, action: old ? "interview.annotation.edit" : "interview.annotation.create", details: { moderated: !!old && old.authorId !== member.id, revision: old ? old.revision + 1 : 0 } } });
     return { id: data.id, revision: old ? old.revision + 1 : 0 };
-  });
+  }, interviewTransactionOptions);
 }
 export async function deleteInterviewResumeAnnotation(input: unknown) {
   const data = documentScope.extend({ id: z.string().uuid(), revision: z.number().int().min(0) }).strict().parse(input); const { user } = await requireAuth();
@@ -125,15 +125,15 @@ export async function deleteInterviewResumeAnnotation(input: unknown) {
     if (changed.count !== 1) throw new Error("Annotation changed. Reload before deleting.");
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: old.id, action: "interview.annotation.delete", details: { moderated: old.authorId !== member.id, revision: old.revision + 1 } } });
     return { id: old.id, deleted: true };
-  });
+  }, interviewTransactionOptions);
 }
 /** Original moderated text is not included in general audit logs or normal panel responses. */
 export async function getInterviewAnnotationHistory(input: unknown) {
   const data = documentScope.extend({ id: z.string().uuid() }).parse(input); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
-    const { member, caps } = await authorizeInterview(tx, data, user.id, "resume");
+    const { member, caps } = await authorizeInterview(tx, data, user.id, "resume", "share");
     const annotation = await tx.interviewResumeAnnotation.findFirst({ where: { id: data.id, documentId: data.documentId, document: { applicationId: data.applicationId, roundId: data.roundId } } });
     if (!annotation || (annotation.authorId !== member.id && !caps.moderateResume)) throw new Error("Annotation history unavailable.");
     return tx.interviewAnnotationRevision.findMany({ where: { annotationId: annotation.id }, orderBy: { revision: "asc" } });
-  });
+  }, interviewTransactionOptions);
 }

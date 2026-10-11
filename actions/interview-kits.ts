@@ -6,7 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import type { AppTransactionClient } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
-import { authorizeInterview, authorizeQuestionBank, interviewActor } from "@/utils/interview-access";
+import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTransactionOptions } from "@/utils/interview-access";
 import { interviewScopeSchema as scope, interviewScoreSchema } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
@@ -26,7 +26,7 @@ export async function getInterviewKit(clubId: string, roundId: string) {
   return prisma.$transaction(async tx => {
     const { round } = await authorizeQuestionBank(tx, clubId, roundId, user.id);
     return { questions: kitSchema.parse(round.interviewKit), version: round.kitVersion };
-  });
+  }, interviewTransactionOptions);
 }
 /** Narrow assignment-scoped queue: no academic metrics, answers or other reviewers' drafts. */
 export async function getInterviewWorkspace(clubId: string) {
@@ -41,7 +41,7 @@ export async function getInterviewWorkspace(clubId: string) {
     } });
     const rounds = await tx.pipelineRound.findMany({ where: { clubId, anonymousReview: false, id: { in: applications.flatMap(a => a.interviewAssignments.map(s => s.roundId)) } }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, name: true, archivedAt: true } });
     return { rounds: rounds.map(r => ({ id: r.id, name: r.name, archived: !!r.archivedAt })), applications: applications.map(a => ({ id: a.id, roundId: a.roundId, name: a.student.studentProfile ? `${a.student.studentProfile.firstName} ${a.student.studentProfile.lastName}` : "Profile not provided", assignedRoundIds: a.interviewAssignments.map(s => s.roundId), completedRoundIds: a.interviewRecords.filter(r => r.completedAt).map(r => r.roundId) })) };
-  });
+  }, interviewTransactionOptions);
 }
 export async function saveInterviewKit(clubId: string, roundId: string, version: number, questions: unknown) {
   z.string().uuid().parse(clubId); z.string().uuid().parse(roundId);
@@ -53,7 +53,7 @@ export async function saveInterviewKit(clubId: string, roundId: string, version:
     if (changed.count !== 1) throw new Error("Kit changed. Reload before editing.");
     await tx.auditLog.create({ data: { actorId: user.id, clubId, targetId: roundId, action: "interview.kit.update", details: { version: version + 1, questionCount: parsed.length } } });
     return { questions: parsed, version: version + 1 };
-  });
+  }, interviewTransactionOptions);
 }
 export async function openInterviewSession(input: z.infer<typeof scope>): Promise<InterviewSessionData> {
   const data = scope.parse(input); const { user } = await requireAuth();
@@ -76,7 +76,7 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     if (!record.completedAt && app.roundId !== round.id) throw new Error("Applicant round changed.");
     const settings = roundConfigurationSchema.parse(round.configuration || {});
     return { ...await present(record, tx), instructions: settings.instructions, duration: settings.duration };
-  });
+  }, interviewTransactionOptions);
 }
 export async function saveInterviewSession(input: z.infer<typeof scope> & { revision: number; draft: unknown; complete?: boolean }) {
   const data = scope.extend({ revision: z.number().int().min(0), draft: interviewDraftSchema, complete: z.boolean().default(false) }).parse(input);
@@ -119,14 +119,14 @@ export async function saveInterviewSession(input: z.infer<typeof scope> & { revi
     if (changed.count !== 1) throw new Error("A newer draft exists. Reload before saving.");
     if (data.complete) await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: record.id, action: "interview.complete" } });
     return { session: await present((await tx.interviewRecord.findUniqueOrThrow({ where: { id: record.id } })), tx), evaluation };
-  });
+  }, interviewTransactionOptions);
 }
 export async function getInterviewRounds(clubId: string) {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { member, caps } = await interviewActor(tx, clubId, user.id);
     return tx.pipelineRound.findMany({ where: { clubId, ...(!caps.editKit ? { interviewAssignments: { some: { memberId: member.id, revokedAt: null } } } : {}) }, select: { id: true, name: true }, orderBy: { order: "asc" } });
-  });
+  }, interviewTransactionOptions);
 }
 /** Closing projection deliberately never includes questions or private draft notes. */
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
@@ -142,7 +142,7 @@ export async function getSubmittedInterviewReviews(clubId: string) {
       select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
     return records.map(r => { const anonymous = !!(r.anonymousReview || r.round.anonymousReview || r.application.round.anonymousReview); return { id: r.id, applicationId: r.applicationId, roundId: r.roundId, interviewerId: r.interviewerId, anonymous, roundName: anonymous ? "Interview review" : r.round.name, applicantName: anonymous ? anonymousApplicantLabel(r.applicationId) : r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided" }; });
-  });
+  }, interviewTransactionOptions);
 }
 export async function getSubmittedInterviewReview(input: z.infer<typeof scope> & { interviewerId: string }) {
   const data = scope.extend({ interviewerId: z.string().uuid() }).parse(input); const { user } = await requireAuth();
@@ -155,7 +155,7 @@ export async function getSubmittedInterviewReview(input: z.infer<typeof scope> &
     const draft = interviewDraftSchema.parse(record.draft);
     return { id: record.id, interviewerId: record.interviewerId, roundId: record.roundId, anonymous, textUnavailable: anonymous, submittedAt: anonymous ? null : record.completedAt.toISOString(), score: record.evaluation?.score ?? draft.score,
       applicantQuestions: anonymous ? "" : record.evaluation?.applicantQuestions ?? draft.applicantQuestions ?? "", additionalNotes: anonymous ? "" : record.evaluation?.notes ?? draft.additionalNotes ?? draft.overallReview, readOnly: true as const };
-  });
+  }, interviewTransactionOptions);
 }
 export async function getPreviousInterviewScores(input: z.infer<typeof scope>) {
   const data = scope.parse(input); const { user } = await requireAuth();
@@ -168,5 +168,5 @@ export async function getPreviousInterviewScores(input: z.infer<typeof scope>) {
     }, orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 5,
     select: { id: true, evaluation: { select: { score: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } });
     return records.map(r => ({ id: r.id, name: r.application.student.studentProfile ? `${r.application.student.studentProfile.firstName} ${r.application.student.studentProfile.lastName}` : "Profile not provided", score: r.evaluation!.score }));
-  });
+  }, interviewTransactionOptions);
 }
