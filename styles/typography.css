@@ -12,7 +12,7 @@
   input, textarea, select { font-family: inherit; font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
   small { font-size: var(--oc-text-caption); }
 }
-@utility oc-page-title { font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
+@utility oc-page-title { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-section-heading { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-card-heading { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-modal-title { font-size: var(--oc-text-modal); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
