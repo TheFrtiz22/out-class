@@ -18,20 +18,13 @@ export type CampusIllustrationOptions = {
 }
 
 /** Explicit surface mapping. A workspace or parent section never supplies a fallback. */
+// Campus art belongs at key navigation moments, not on every utility screen.
 export const studentCampusIllustrations = {
   "student-dashboard": "lamp-posts-grounds",
   explore: "rotunda",
-  corkboard: "lawn-archways",
-  inbox: "lamp-posts-grounds",
-  "student-profile": "jefferson",
 } as const satisfies Record<string, CampusIllustrationVariant>
 export const clubCampusIllustrations = {
   overview: "rotunda",
-  meetings: "lawn-archways",
-  tasks: "monticello",
-  members: "homer",
-  announcements: "lamp-posts-grounds",
-  settings: "monticello",
 } as const satisfies Record<string, CampusIllustrationVariant>
 export function studentCampusIllustration(view: string): CampusIllustrationVariant | undefined {
   return Object.hasOwn(studentCampusIllustrations, view) ? studentCampusIllustrations[view as keyof typeof studentCampusIllustrations] : undefined
