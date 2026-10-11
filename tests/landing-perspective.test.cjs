@@ -57,3 +57,14 @@ test("leaving the landing page removes both navigation listeners", () => {
   page.cleanup.forEach(cleanup => cleanup())
   assert.equal(page.listeners.size, 0)
 })
+
+test("hero-to-paper boundary stays crisp with a readable scroll cue", () => {
+  const atmosphere = fs.readFileSync("components/landing/journey-atmosphere.css", "utf8")
+  const intro = fs.readFileSync("components/landing/intro.css", "utf8")
+  const introMarkup = fs.readFileSync("components/landing/landing-intro.tsx", "utf8")
+  // The original fade laid a gray translucent strip across the bottom of the photo.
+  assert.doesNotMatch(atmosphere, /\.oc-landing\s+\.oc-landing-intro::after\s*\{/)
+  assert.match(atmosphere, /\.oc-landing:has\(\.oc-product-stories\) main\s*\{\s*background: var\(--oc-journey-linen\);/)
+  assert.match(intro, /\.oc-intro-scroll\s*\{[^}]*z-index: 1;[^}]*bottom: clamp\(30px, 4vw, 52px\)/)
+  assert.match(introMarkup, /href="#about"/)
+})
