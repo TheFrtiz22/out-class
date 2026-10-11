@@ -116,7 +116,7 @@ export function getSubmittedInterviewReview(input: InterviewScope & { interviewe
   demoStore.refresh();
   const { s, member, caps } = access(input, "closingReview");
   if (input.interviewerId !== member.id && !caps.readClosing) throw new Error("Leadership required.");
-  if (input.interviewerId !== member.id && s.interviewFoundation.assignments.some(a => a.applicationId === input.applicationId && a.roundId === input.roundId && a.memberId === member.id && !a.revokedAt) && !s.applications.find(a => a.id === input.applicationId)!.evaluations.some(e => e.roundId === input.roundId && e.interviewerId === member.id && e.submittedAt)) throw Error("Submit your own review before viewing peers' reviews.");
+  if (input.interviewerId !== member.id && s.applications.find(a => a.id === input.applicationId)!.roundId === input.roundId && s.interviewFoundation.assignments.some(a => a.applicationId === input.applicationId && a.roundId === input.roundId && a.memberId === member.id && !a.revokedAt) && !s.applications.find(a => a.id === input.applicationId)!.evaluations.some(e => e.roundId === input.roundId && e.interviewerId === member.id && e.submittedAt)) throw Error("Submit your own review before viewing peers' reviews.");
   const r = s.interviews.find(r => r.applicationId === input.applicationId && r.roundId === input.roundId && r.interviewerId === input.interviewerId && r.completedAt);
   if (!r) throw new Error("Submitted review unavailable.");
   const e = s.applications.find(a => a.id === input.applicationId)!.evaluations.find(e => e.roundId === input.roundId && e.interviewerId === input.interviewerId);

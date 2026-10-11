@@ -15,3 +15,14 @@ test('migrated database captures immutable final questions, deduplicates notific
  h.as(i.student);await assert.rejects(api.getEarlierInterviewReviews(scope));h.as(i.owner);await grants.setInterviewPanelAssignment({...scope,memberId:i.panelMember,assigned:false});h.as(i.panel);await assert.rejects(api.getEarlierInterviewReviews(scope),/panel/);
  assert.equal((await h.db.query('SELECT "submittedQuestions" FROM "InterviewRecord" WHERE "interviewerId"=$1',[i.panelMember])).rows[0].submittedQuestions[0].notes,'Published final evidence');
 });
+test('booking cancellation notifies direct grants once without revoking their independent access; stale round notices reveal no context',async t=>{
+ const h=await harness();t.after(()=>h.db.close());const i=h.ids,grants=h.load('actions/organization-members.ts'),notices=h.load('utils/interview-assignment-notifications.ts');
+ await grants.setInterviewPanelAssignment({...h.scope,memberId:i.panelMember,assigned:true});
+ const booking={id:randomUUID(),applicationId:i.app,roundId:i.round};
+ for(let n=0;n<2;n++)await h.prisma.$transaction(tx=>notices.notifyInterviewBookingChange(tx,booking));
+ assert.equal((await h.db.query('SELECT count(*)::int AS n FROM "UserNotification" WHERE "eventKey" LIKE \'%:cancelled:%\'')).rows[0].n,1);
+ assert.equal((await h.db.query('SELECT "revokedAt","bookingManaged" FROM "InterviewPanelAssignment" WHERE "memberId"=$1',[i.panelMember])).rows[0].revokedAt,null);
+ const notice=(await h.db.query('SELECT * FROM "UserNotification" WHERE "eventKey" LIKE \'%:assigned:%\'')).rows[0];
+ const later=randomUUID();await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES ($1,$2,\'Later\',2)',[later,i.club]);await h.db.query('UPDATE "Application" SET "roundId"=$1 WHERE id=$2',[later,i.app]);
+ assert.equal(await h.prisma.$transaction(tx=>notices.currentAssignmentNotification(tx,notice,i.panel)),null);
+});

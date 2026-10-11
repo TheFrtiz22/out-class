@@ -68,11 +68,13 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications: applications.map(raw => {
         const ownSubmitted = raw.evaluations.some(e => e.interviewerId === membership.id && e.roundId === raw.roundId && e.submittedAt);
-        const assigned = raw.interviewAssignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
-        const canSeeRound = (interviewCapabilities(membership).readClosing && !assigned) || ownSubmitted;
-        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), raw.interviewAssignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
+        const assignments = raw.interviewAssignments || [];
+        const assigned = assignments.some(a => a.roundId === raw.roundId && a.memberId === membership.id);
+        const caps = interviewCapabilities(membership);
+        const canSeeRound = raw.studentId !== membership.userId && ((caps.readClosing && !assigned) || caps.participate && assigned && ownSubmitted);
+        const roundScore = canSeeRound ? submittedScoreSummary(raw.evaluations.filter(e => e.roundId === raw.roundId), assignments.filter(a => a.roundId === raw.roundId && interviewCapabilities(a.member).participate).map(a => a.memberId)) : null;
         const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
-        const app = { ...safe, evaluations: raw.evaluations.filter(e => e.submittedAt && (e.interviewerId === membership.id || canSeeRound && (e.roundId === raw.roundId || interviewCapabilities(membership).readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
+        const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
         const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
         return { ...projected, recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
       }),

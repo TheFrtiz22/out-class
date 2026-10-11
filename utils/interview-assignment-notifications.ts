@@ -16,8 +16,16 @@ export async function currentAssignmentNotification(tx: AppTransactionClient, no
   const scope = { clubId: notification.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "" };
   try {
     const actor = await collaborationAccess(tx, scope, userId, "share");
+    if (actor.app.roundId !== scope.roundId) return null;
     const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId } }, include: { slot: { include: { room: true } } } });
     const p = await tx.studentProfile.findUnique({ where: { userId: actor.app.studentId }, select: { firstName: true, lastName: true } });
     return { title: `Interview assignment · ${actor.round.name}`, body: `${p ? `${p.firstName} ${p.lastName}` : "Applicant"}${booking?.slot.room ? ` · ${booking.slot.room.name} · ${booking.slot.startTime.toISOString()}` : ""}`, href: notification.href };
   } catch { return null; }
+}
+
+/** Before deleting a booking, notify active direct grants as well as booking-managed grants. */
+export async function notifyInterviewBookingChange(tx: AppTransactionClient, booking: { id: string; applicationId: string; roundId: string | null }) {
+  if (!booking.roundId) return;
+  const grants = await tx.interviewPanelAssignment.findMany({ where: { applicationId: booking.applicationId, roundId: booking.roundId, revokedAt: null } });
+  for (const grant of grants) await notifyInterviewAssignment(tx, { ...grant, bookingId: booking.id }, "cancelled");
 }

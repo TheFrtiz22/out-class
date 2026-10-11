@@ -34,6 +34,6 @@ async function harness(){
  }
  const prisma={...orm(db),$transaction:fn=>db.transaction(client=>fn(orm(client)))};
  const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:actor}}),requireClubPermission:async(club,permissions)=>{const m=await prisma.clubMember.findUnique({where:{userId_clubId:{userId:actor,clubId:club}}});if(!m||m.status!=='ACTIVE'||!permissions.every(p=>m.isOwner||m.permissions.includes(p)))throw Error('Denied');return{user:{id:actor},membership:m};}},'next/cache':{revalidatePath(){}}};const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}
- return{db,ids,load,as:id=>actor=id,scope:{clubId:ids.club,applicationId:ids.app,roundId:ids.round}};
+ return{db,prisma,ids,load,as:id=>actor=id,scope:{clubId:ids.club,applicationId:ids.app,roundId:ids.round}};
 }
 module.exports={harness};
