@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 
 const ProgressContext = createContext(1)
-const PlaybackContext = createContext({ complete: true, reduced: true, paused: false, toggle: () => {} })
+const PlaybackContext = createContext({ complete: true, reduced: true, paused: false, toggle: () => {}, replay: () => {} })
 export const useProductProgress = () => useContext(ProgressContext)
 
 /** Normalize a named beat of a scene to 0–1. */
@@ -23,6 +23,7 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const syncRef = useRef(() => {})
+  const replayRef = useRef(() => {})
   const pausedRef = useRef(false)
   const [snapshot, setSnapshot] = useState({ key: resetKey, progress: 1 })
   const [paused, setPaused] = useState(false)
@@ -32,7 +33,6 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const compact = window.matchMedia("(max-width: 540px)")
     if (!window.IntersectionObserver) return
     let visible = false
     let elapsed = 0
@@ -43,19 +43,18 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
     pausedRef.current = false
     setPaused(false)
     const publish = (value: number) => setSnapshot({ key: resetKey, progress: value })
-    const sceneDuration = () => duration * (compact.matches ? .8 : 1)
     const stop = () => {
       if (frame !== undefined) cancelAnimationFrame(frame)
       frame = undefined
       previous = undefined
     }
     const tick = (now: number) => {
-      if (previous !== undefined) elapsed = Math.min(sceneDuration(), elapsed + now - previous)
+      if (previous !== undefined) elapsed = Math.min(duration, elapsed + now - previous)
       previous = now
-      const complete = elapsed >= sceneDuration()
+      const complete = elapsed >= duration
       // One clock, at most 25 React updates/sec. CSS handles the small reveal transitions.
       if (now - published >= 40 || complete) {
-        publish(elapsed / sceneDuration())
+        publish(elapsed / duration)
         published = now
       }
       if (complete) { finished = true; stop() }
@@ -65,36 +64,44 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
       stop()
       setReduced(preference.matches)
       if (preference.matches) {
-        elapsed = sceneDuration()
+        elapsed = duration
         finished = true
         publish(1)
         return
       }
-      if (finished || elapsed >= sceneDuration()) { finished = true; publish(1); return }
+      if (finished || elapsed >= duration) { finished = true; publish(1); return }
       if (visible && !document.hidden && !pausedRef.current) frame = requestAnimationFrame(tick)
     }
     publish(preference.matches ? 1 : 0)
     syncRef.current = sync
+    replayRef.current = () => {
+      stop()
+      elapsed = 0
+      finished = false
+      published = 0
+      pausedRef.current = false
+      setPaused(false)
+      publish(0)
+      sync()
+    }
     const observer = new IntersectionObserver(([entry]) => {
-      // Short landscape screens may never fit 45% of a window. In that case,
-      // fill 70% of the unobscured viewport. These bounds come from the observer.
+      // Start when a meaningful part of the preview is visible, even in landscape.
       const minimumRatio = entry.rootBounds && entry.boundingClientRect.height > 0
-        ? Math.min(.45, entry.rootBounds.height * .7 / entry.boundingClientRect.height)
-        : .45
+        ? Math.min(.25, entry.rootBounds.height * .55 / entry.boundingClientRect.height)
+        : .25
       visible = entry.isIntersecting && entry.intersectionRatio >= minimumRatio
       sync()
-    }, { threshold: [0, .05, .1, .15, .2, .25, .3, .35, .4, .45], rootMargin: "-190px 0px -24px 0px" })
+    }, { threshold: [0, .05, .1, .15, .2, .25], rootMargin: "-100px 0px -24px 0px" })
     if (ref.current) observer.observe(ref.current)
     preference.addEventListener("change", sync)
-    compact.addEventListener("change", sync)
     document.addEventListener("visibilitychange", sync)
     sync()
     return () => {
       stop()
       observer.disconnect()
       syncRef.current = () => {}
+      replayRef.current = () => {}
       preference.removeEventListener("change", sync)
-      compact.removeEventListener("change", sync)
       document.removeEventListener("visibilitychange", sync)
     }
   }, [duration, resetKey])
@@ -104,19 +111,20 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
     setPaused(pausedRef.current)
     syncRef.current()
   }
+  const replay = () => replayRef.current()
   return <div ref={ref} className="oc-product-motion" data-demo-complete={progress === 1} data-demo-paused={paused}>
-    <PlaybackContext.Provider value={{ complete: progress === 1, reduced, paused, toggle }}>
+    <PlaybackContext.Provider value={{ complete: progress === 1, reduced, paused, toggle, replay }}>
       <ProgressContext.Provider value={progress}>{children}</ProgressContext.Provider>
     </PlaybackContext.Provider>
   </div>
 }
 
-/** Fits the existing toolbar's Preview label; no extra controls below the windows. */
+/** One unobtrusive control: pause during the story or replay it afterward. */
 export function ProductMotionControl() {
-  const { complete, reduced, paused, toggle } = useContext(PlaybackContext)
-  return <button type="button" className="oc-preview-playback" disabled={complete || reduced}
-    aria-label={complete || reduced ? "Preview complete" : paused ? "Resume example" : "Pause example"}
-    onClick={toggle}>{complete || reduced ? "Preview" : paused ? "Resume" : "Pause"}</button>
+  const { complete, reduced, paused, toggle, replay } = useContext(PlaybackContext)
+  return <button type="button" className="oc-preview-playback" disabled={reduced}
+    aria-label={reduced ? "Static preview" : complete ? "Replay example" : paused ? "Resume example" : "Pause example"}
+    onClick={complete ? replay : toggle}>{reduced ? "Preview" : complete ? "Replay" : paused ? "Resume" : "Pause"}</button>
 }
 
 export function Fill({ at, children }: { at: number; children: ReactNode }) {
@@ -132,10 +140,12 @@ export function AnimatedCheck({ at, size = 17 }: { at: number; size?: number }) 
   </svg>
 }
 
-/** Whole phrases appear quickly; hidden phrases retain natural wrapping and full SR text. */
+/** A completed response arrives in one calm fade, not a typewriter or word-by-word flash. */
 export function ProgressiveText({ phrases, start, end }: { phrases: readonly string[]; start: number; end: number }) {
   const progress = useProductProgress()
-  return <><span className="sr-only">{phrases.join(" ")}</span><span aria-hidden="true">{phrases.map((phrase, index) =>
-    <span key={phrase} className="oc-demo-phrase" style={{ opacity: progress >= start + (end - start) * index / phrases.length ? 1 : 0 }}>{phrase}{index < phrases.length - 1 ? " " : ""}</span>,
-  )}</span></>
+  return <><span className="sr-only">{phrases.join(" ")}</span>
+    <span aria-hidden="true" className="oc-demo-response" data-revealed={progress >= start + (end - start) * .75}>
+      {phrases.join(" ")}
+    </span>
+  </>
 }

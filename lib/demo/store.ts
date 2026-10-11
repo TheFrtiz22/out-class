@@ -1,3 +1,5 @@
+import { demoCommunicationRows, demoPublishLetter } from "./communications"
+import { inboxNotification } from "@/lib/communications-client"
 import { taskNotifications } from "@/lib/task-notifications"
 import { seedTasks } from "./task-seed"
 import { sampleInterviewKit } from "@/lib/interview-kits"
@@ -36,6 +38,8 @@ function ensureCurrentWorkflows(value: DemoState) {
   value.interviews ??= []
   value.recruitmentOffers ??= value.applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:new Date(),expiresAt:new Date(Date.now()+30*86400000)}))
   value.offerAudit ??= []
+  value.letterTemplates ??= {}
+  if (!value.decisionLetters) { value.decisionLetters=[]; for(const app of value.applications) demoPublishLetter(value,app.id) }
 }
 function ensurePresentation(value: DemoState) {
   ensureCurrentWorkflows(value)
@@ -239,6 +243,7 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
       const application = joinedApplication(a.id)
       return {
         ...application,
+        decisionLetters: demoStore.get().decisionLetters.filter(l=>l.applicationId===a.id).slice(-1).map(l=>({id:l.id})),
         recruitmentOffer: demoStore.get().recruitmentOffers.find(o=>o.applicationId===a.id) ?? null,
         club: { ...application.club, applicationOpen: application.club.claimed, applicationDeadline: application.club.deadline, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
         bookings: application.bookings.map(booking => ({
@@ -265,7 +270,7 @@ export function demoDashboard() {
 export function demoNotifications() {
   const s = demoStore.get()
   const recruiting = studentApplications()
-    .filter((a) => a.status !== "DRAFTING")
+    .filter((a) => a.status !== "DRAFTING" && !["ACCEPTED","WAITLISTED","REJECTED"].includes(a.status))
     .map((a) => ({
       id: `update-${a.id}-${a.status}`,
       clubId: a.clubId,
@@ -295,7 +300,7 @@ export function demoNotifications() {
     const allowed = !!app && app.roundId === n.roundId && !round?.anonymousReview && s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === n.roundId && a.memberId === member?.id && !a.revokedAt);
     return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: n.createdAt, createdAt: n.createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: `/club/${club?.id}/workspace?section=recruitment&tool=interviews${allowed ? `&interview=1&applicationId=${n.applicationId}&roundId=${n.roundId}` : ""}` };
   });
-  return [...recruiting,...work,...assignments]
+  return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work,...assignments]
 }
 export function demoDirectory() {
   const s = demoStore.get()

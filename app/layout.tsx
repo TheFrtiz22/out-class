@@ -5,6 +5,7 @@ import { PlatformViewBanner } from "@/components/platform-view-banner"
 import type React from "react"
 import type { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
+import { DM_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
@@ -22,6 +23,13 @@ const libreCaslonText = localFont({
   display: "swap",
   fallback: ["serif"],
   adjustFontFallback: false,
+})
+
+// Self-host DM Sans through next/font for consistent interface typography across platforms.
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
 })
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", interactiveWidget: "resizes-content" }
@@ -74,7 +82,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className={libreCaslonText.variable}>
+    <html lang="en" className={`${libreCaslonText.variable} ${dmSans.variable}`}>
       <body className="font-sans antialiased">
         {cookieStore.has(PLATFORM_VIEW_COOKIE) && <PlatformViewBanner label={target ? `${target.studentProfile ? `${target.studentProfile.firstName} ${target.studentProfile.lastName} · ` : ""}${target.email}` : "Expired or unavailable session"} expiresAt={viewSession?.expiresAt.toISOString()} />}
         <SupportSessionSync marker={cookieStore.has(PLATFORM_VIEW_COOKIE)} sessionId={viewSession?.id ?? null} />

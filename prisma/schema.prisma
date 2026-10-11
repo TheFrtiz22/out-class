@@ -100,6 +100,8 @@ model Experience {
 // ==========================================
 
 model Club {
+  decisionLetterTemplates Json?
+  decisionLetters DecisionLetter[]
   suspendedAt DateTime?
 
   applicationOpen Boolean @default(true)
@@ -241,6 +243,8 @@ enum QuestionType {
 }
 
 model Application {
+  decisionVersion Int @default(0)
+  decisionLetters DecisionLetter[]
   recruitmentOffer ClubInvitation?
   interviewAssignments InterviewPanelAssignment[]
   resumeDocuments InterviewResumeDocument[]
@@ -1320,4 +1324,18 @@ model NotificationEmailDelivery {
   updatedAt DateTime @default(now()) @updatedAt
   @@index([status, nextAttemptAt])
   @@index([userId, createdAt])
+}
+
+model DecisionLetter {
+ id String @id @default(uuid())
+ applicationId String
+ application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+ clubId String
+ club Club @relation(fields: [clubId], references: [id], onDelete: Restrict)
+ version Int
+ decision AppStatus
+ content Json
+ createdAt DateTime @default(now())
+ @@unique([applicationId, version])
+ @@index([clubId, createdAt])
 }

@@ -1,3 +1,4 @@
+import { resolveLetter, type LetterDecision, type LetterTemplate } from "@/lib/decision-letters";
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
 import { defaultVotingDisplay } from "@/lib/voting-presentation"
 import { defaultDisplayConfig } from "@/lib/applicant-display"
@@ -251,8 +252,8 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       ] as ApplicationStatus[]
       const status: ApplicationStatus =
         a === 0
-          ? (["INTERVIEWING", "IN_REVIEW", "DRAFTING", "SUBMITTED", "ACCEPTED", "WAITLISTED"][
-              c === 7 ? 4 : c % 6
+          ? (["INTERVIEWING", "IN_REVIEW", "DRAFTING", "SUBMITTED", "ACCEPTED", "WAITLISTED", "REJECTED"][
+              c === 7 ? 4 : c % 7
             ] as ApplicationStatus)
           : stages[(a + c) % stages.length]
       const round =
@@ -397,6 +398,11 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
   return {
+    letterTemplates: {} as Record<string, Partial<Record<LetterDecision,LetterTemplate>>>,
+    decisionLetters: applications.filter(a=>['ACCEPTED','WAITLISTED','REJECTED'].includes(a.status)).map((a,i)=>{
+      const club=clubs.find(c=>c.id===a.clubId)!,student=students.find(u=>u.id===a.studentId)!;
+      return {id:uid(31,i),applicationId:a.id,clubId:a.clubId,version:1,decision:a.status as LetterDecision,createdAt:at(-4),content:resolveLetter(a.status as LetterDecision,{}, {firstName:student.profile.firstName,fullName:`${student.profile.firstName} ${student.profile.lastName}`,clubName:club.name,date:at(-4),expiresAt:a.status==='ACCEPTED'?at(30):null,logoReference:null,accent:club.color})};
+    }) as import('./communications').DemoLetter[],
     recruitmentOffers: applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:at(-4),expiresAt:at(30)})) as import("./recruitment-offers").DemoOffer[],
     offerAudit: [] as {action:string;applicationId:string;at:Date}[],
     tasks: seedTasks(clubs[0].id, memberships.filter(m=>m.clubId===clubs[0].id).map(m=>({...m,user:{id:m.userId,email:students.find(s=>s.id===m.userId)!.email,studentProfile:students.find(s=>s.id===m.userId)!.profile}})), anchor),

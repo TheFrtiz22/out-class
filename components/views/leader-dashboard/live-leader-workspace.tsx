@@ -109,6 +109,7 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, ini
 }
 
 function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, onData }: { membership: ExtendedMembership; decisionsOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+  const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(initialData)
   const [error, setError] = useState("")
@@ -843,6 +844,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
             <DialogDescription>
               {active && name(active)} will see their application marked{" "}
               {applicationStatusLabels[decision]}. The applicant will see this status in OutClass.
+              {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " A formal letter and notification will be published, and an email linking to the letter will follow the student’s application-email preferences.")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">

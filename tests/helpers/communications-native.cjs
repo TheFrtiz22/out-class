@@ -1,0 +1,8 @@
+const fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
+function api(prisma,actor,onAuthorized=()=>{}){
+ const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;
+ const auth={requireAuth:async()=>{const user=await prisma.user.findUniqueOrThrow({where:{id:actor}});if(user.disabledAt)throw Error('Denied');onAuthorized();return{user}},requireClubPermission:async(clubId,caps)=>{const membership=await prisma.clubMember.findUnique({where:{userId_clubId:{userId:actor,clubId}}});if(!membership||membership.status!=='ACTIVE'||!caps.every(p=>membership.isOwner||membership.permissions.includes(p)))throw Error('Denied');const user=await prisma.user.findUniqueOrThrow({where:{id:actor}});if(user.disabledAt)throw Error('Denied');onAuthorized();return{user,membership}}};
+ const mocks={'@/utils/prisma':{prisma},'@/utils/auth':auth,'next/cache':{revalidatePath(){},revalidateTag(){}},'next/server':{after(){}},'@/utils/platform-admin':{requirePlatformAdmin:async()=>({id:actor})}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}
+ return{communications:load('actions/communications.ts'),crm:load('actions/crm.ts'),offers:load('actions/recruitment-offers.ts'),voting:load('actions/voting.ts'),settings:load('actions/club-settings.ts'),members:load('actions/organization-members.ts'),access:load('actions/club-access.ts'),platform:load('actions/platform-admin.ts')};
+}
+module.exports={api};

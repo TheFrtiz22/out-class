@@ -76,7 +76,7 @@
 .oc-story-copy h2,
 .oc-final-invitation h2 {
   margin: 0;
-  font-family: var(--oc-font-sans);
+  font-family: var(--oc-font-display);
   font-size: var(--oc-text-section);
   line-height: var(--oc-leading-heading);
   font-weight: var(--oc-weight-regular);

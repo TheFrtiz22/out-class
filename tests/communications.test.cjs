@@ -7,8 +7,8 @@ const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 test('durable inbox categories preserve announcement filtering and persisted read state', () => {
   const { inboxNotification } = loader({})('lib/communications-client.ts');
   const base = { id: uuid(1), clubId: uuid(2), club: { name: 'Fixture', color: '#142d4e', logoUrl: null }, href: '/?workspace=student&view=inbox', title: 'Update', body: 'Saved body', createdAt: new Date('2026-10-10T12:00:00Z'), readAt: new Date() };
-  const items = ['ANNOUNCEMENT', 'APPLICATION', 'TASK', 'INVITATION', 'PLATFORM', 'INTERVIEW'].map(type => inboxNotification({ ...base, type }));
-  assert.deepEqual(items.map(n => n.type), ['Announcement', 'Application Update', 'Task', 'Club Invitation', 'OutClass Update', 'Interview Invite']);
+  const items = ['ANNOUNCEMENT', 'APPLICATION', 'TASK', 'INVITATION', 'PLATFORM', 'INTERVIEW', 'DECISION', 'OFFER_RESPONSE'].map(type => inboxNotification({ ...base, type }));
+  assert.deepEqual(items.map(n => n.type), ['Announcement', 'Application Update', 'Task', 'Club Invitation', 'OutClass Update', 'Interview Invite', 'Decision Available', 'Offer Confirmation']);
   assert.equal(items.filter(n => n.type === 'Announcement').length, 1);
   assert.ok(items.every(n => n.read && n.durableId === base.id && n.body[0] === base.body));
   assert.equal(inboxNotification({ ...base, type: 'ANNOUNCEMENT', readAt: null }).read, false);
@@ -77,3 +77,13 @@ test('worker and real-time endpoints reject unauthenticated requests before acce
     assert.equal((await stream.GET(new Request('http://localhost/api/communications/stream'))).status, 401);
   } finally { if (prior === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = prior; }
 });
+
+ test('announcement branding and automated wording coexist with neutral decision digest CTAs', () => {
+  const input={from:'outclass@virginia.edu',to:'student@virginia.edu',siteUrl:'https://outclass.test',digest:false,items:[{type:'ANNOUNCEMENT',title:'A campus update',club:{name:'Example Club'}}]};
+  const announcement=email.buildNotificationEmail(input);
+  assert.equal(announcement.subject,'New announcement from Example Club');
+  assert.match(announcement.text,/Read your updates:/);assert.doesNotMatch(announcement.text,/reply/i);assert.match(announcement.html,/This is an automated OutClass notification/);
+  const href=`/applications/${uuid(1)}/decision?letterId=${uuid(2)}`;
+  const digest=email.buildNotificationEmail({...input,digest:true,items:[...input.items,{type:'DECISION',title:'ACCEPTED',club:{name:'Example Club'},href}]});
+  assert.equal(digest.subject,'Your daily OutClass updates');assert.match(digest.text,/View Decision:/);assert.match(digest.html,/View Decision/);assert.match(digest.html,/This is an automated OutClass notification/);assert.doesNotMatch(digest.html,/ACCEPTED|Read and reply/);
+ });

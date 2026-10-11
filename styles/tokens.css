@@ -59,8 +59,9 @@
   --oc-space-content: 1.5rem;
   --oc-space-section: clamp(2rem, 5vw, 4rem);
   --oc-space-page: clamp(1.25rem, 4vw, 3rem);
-  --oc-font-sans: var(--font-libre-caslon-text), serif;
-  --oc-font-display: var(--oc-font-sans);
+  /* Sans for controls and body copy; Caslon for the editorial display voice. */
+  --oc-font-sans: var(--font-dm-sans), Arial, sans-serif;
+  --oc-font-display: var(--font-libre-caslon-text), Georgia, serif;
   --oc-weight-regular: 400;
   --oc-weight-medium: 500;
   --oc-weight-semibold: 700; /* Compatibility alias for existing components. */

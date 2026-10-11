@@ -1,3 +1,4 @@
+import { publishDecisionCommunication, offerResponseNotification } from "@/utils/decision-communications";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import type { AppStatus } from "@prisma/client";
 import type { AppTransactionClient } from "@/utils/prisma";
@@ -16,7 +17,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
     throw Error("Application changed. Refresh before deciding.");
   assertRecruitmentTransition(app.status, input.status, app.round.type);
-  if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status } });
+  if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status, ...( ["ACCEPTED","WAITLISTED","REJECTED"].includes(input.status) ? { decisionVersion: { increment: 1 } } : {} ) } });
   const existing = await tx.clubInvitation.findUnique({ where: { applicationId: app.id } });
   if (input.status === "ACCEPTED" && !existing) {
     const [club, student] = await Promise.all([
@@ -33,6 +34,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
     await revokeClubInvitations(tx, { id: existing.id }, actorId, "recruitment.decision.reversal");
   }
   if (app.status !== input.status) await tx.auditLog.create({ data: { actorId, clubId: app.clubId, targetId: app.id, action: "recruitment.decision.published", details: { previousStatus: app.status, status: input.status, roundId: app.roundId } } });
+  if (app.status !== input.status) await publishDecisionCommunication(tx, app.id, actorId);
   return { previousStatus: app.status };
 }
 
@@ -59,6 +61,7 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   if (response === "DECLINE") {
     await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await event(tx, userId, app.clubId, offer.id, "offer.declined", app.id);
+    await offerResponseNotification(tx, app, offer.id, "DECLINE");
     return { clubId: app.clubId, status: "DECLINED" as const };
   }
   if (existing && existing.status !== "ACTIVE") return { clubId: app.clubId, status: "INACTIVE_MEMBERSHIP" as const };
@@ -67,5 +70,6 @@ export async function respondToRecruitmentOffer(tx: AppTransactionClient, applic
   const now = new Date();
   await tx.clubInvitation.update({ where: { id: offer.id }, data: { status: "ACCEPTED", acceptedAt: now, claimedAt: now, claimedUserId: userId } });
   await event(tx, userId, app.clubId, offer.id, "offer.accepted", app.id);
+  await offerResponseNotification(tx, app, offer.id, "ACCEPT");
   return { clubId: app.clubId, status: "ACCEPTED" as const };
 }

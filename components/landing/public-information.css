@@ -4,6 +4,7 @@
   border-block: 1px solid var(--border);
 }
 .oc-information h1 {
+  font-family: var(--oc-font-display);
   max-width: 900px;
   font-size: clamp(36px, 5vw, 64px);
   line-height: var(--oc-leading-heading);
@@ -25,6 +26,7 @@
 }
 .oc-information-section { padding-bottom: 48px; }
 .oc-information h2 {
+  font-family: var(--oc-font-display);
   margin-bottom: 16px;
   font-size: var(--oc-text-section);
   font-weight: var(--oc-weight-regular);
