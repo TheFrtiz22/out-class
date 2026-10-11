@@ -218,8 +218,8 @@ export function StudentDashboardView({
       : next.kind === "event"
         ? next.event.title
         : applications.length
-          ? "A little room to explore."
-          : "Find your first opportunity."
+          ? "Explore more clubs."
+          : "Find a club to apply to."
   const nextCopy =
     next.kind === "application"
       ? next.application.deadline
@@ -294,7 +294,7 @@ export function StudentDashboardView({
           ) : (
             <div className="oc-home-empty">
               <FileText size={23} strokeWidth={1.5} aria-hidden="true" />
-              <h3>{unavailable ? "Applications are unavailable" : "Your next chapter is waiting"}</h3>
+              <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
               <p>
                 {unavailable
                   ? "Reload the page to try again."
@@ -323,7 +323,7 @@ export function StudentDashboardView({
           ) : (
             <div className="oc-home-agenda-empty">
               <CalendarDays size={22} strokeWidth={1.5} aria-hidden="true" />
-              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "A little breathing room."}</h3>
+              <h3>{agendaUnavailable ? "Your agenda is unavailable" : "Nothing scheduled yet"}</h3>
               <p>
                 {agendaUnavailable
                   ? "Reload the page to check your scheduled events."
