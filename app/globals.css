@@ -16,7 +16,7 @@
   --font-sans: var(--oc-font-sans);
   --font-display: var(--oc-font-display);
   --font-mono: var(--oc-font-sans);
-  --font-serif: var(--oc-font-sans);
+  --font-serif: var(--oc-font-display);
   /* Keep legacy utilities within the font's real 400–700 range. */
   --font-weight-thin: 400;
   --font-weight-extralight: 400;
