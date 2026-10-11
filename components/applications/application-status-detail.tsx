@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link"
 import { RecruitmentOffer } from "./recruitment-offer"
 import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "lucide-react"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
@@ -27,8 +28,10 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
       <div className="flex flex-wrap items-center gap-3"><h2 className="oc-section-heading">{applicationStatusLabels[app.status]}</h2><StatusBadge status={app.status} /></div>
       {!decision && app.round?.name && <p className="mt-2 text-sm text-muted-foreground">Current club round · {app.round.name}</p>}
       <p className="mt-3 text-sm leading-6 text-muted-foreground">{applicationNextStep(app.status)}</p>
-      {(app.status === "ACCEPTED" || app.recruitmentOffer) && <RecruitmentOffer application={app} onChanged={onRefresh} onMyClubs={onMyClubs} />}
-      {app.status === "WAITLISTED" && <p className="mt-2 text-sm text-muted-foreground">No decision date has been provided on OutClass.</p>}
+      {!!app.decisionLetters?.length && <Button asChild className="mt-4"><Link href={`/applications/${encodeURIComponent(app.id)}/decision`}>View Decision</Link></Button>}
+      {!app.decisionLetters?.length && decision && <p className="mt-2 text-xs text-muted-foreground">Formal letter unavailable for this historical decision.</p>}
+      {!app.decisionLetters?.length && (app.status === "ACCEPTED" || app.recruitmentOffer) && <RecruitmentOffer application={app} onChanged={onRefresh} onMyClubs={onMyClubs} />}
+      {app.status === "WAITLISTED" && !app.decisionLetters?.length && <p className="mt-2 text-sm text-muted-foreground">No decision date has been provided on OutClass.</p>}
       <div className="mt-5"><ApplicationStatusProgress application={app} /></div>
     </section>
     {app.status === "INTERVIEWING" && <section aria-label="Interview scheduling"><h2 className="oc-section-heading">Your interview</h2><p className="mt-2 text-sm text-muted-foreground">Review the club’s instructions and available times. Manage your recorded booking here.</p><ApplicantBooking key={app.id} applicationId={app.id} onChanged={onBookingChanged} /></section>}

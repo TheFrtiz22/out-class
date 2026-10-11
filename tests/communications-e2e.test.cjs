@@ -4,10 +4,10 @@ const { createClient } = require('@supabase/supabase-js');
 const { Actor, randomUUID } = require('./helpers/onboarding-e2e.cjs');
 const { readConfig } = require('./helpers/announcement-e2e.cjs');
 const { loader } = require('./helpers/communications-loader.cjs');
-const configFile = process.env.OUTCLASS_ANNOUNCEMENT_E2E_CONFIG;
+const configFile = process.env.OUTCLASS_ANNOUNCEMENT_E2E_CONFIG ?? process.env.OUTCLASS_RECONCILE_E2E_CONFIG;
 
 test('announcements over real Next HTTP, verified local Auth and PostgreSQL; provider delivery is mocked', { skip: !configFile, timeout: 180000 }, async t => {
-  const config = readConfig(configFile), db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
+  const config = process.env.OUTCLASS_RECONCILE_E2E_CONFIG ? require("./helpers/reconcile-local.cjs").readReconcileConfig(configFile) : readConfig(configFile), db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
   t.after(() => db.$disconnect());
   const admin = createClient(config.status.API_URL, config.status.SECRET_KEY, { auth: { persistSession: false } });
   const suffix = randomUUID().slice(0, 8), users = {}, actors = {};
@@ -55,7 +55,7 @@ test('announcements over real Next HTTP, verified local Auth and PostgreSQL; pro
     const response = await fetch(config.status.API_URL + '/rest/v1/UserNotification?select=*', { headers: { apikey: config.status.PUBLISHABLE_KEY, authorization: 'Bearer ' + (await actors.applicant.client.auth.getSession()).data.session.access_token } });
     assert.ok([401, 403].includes(response.status), 'Browser database roles cannot bypass server ownership');
     for (const name of ['findCommunicationRecipients', 'startClubConversation', 'listClubConversations', 'getClubConversation', 'sendClubMessage']) await assert.rejects(call('owner', name));
-    assert.equal(await db.clubConversation.count(), 0);
+    assert.equal(await db.clubConversation.count({ where: { clubId: { in: [club.id, foreign.id] } } }), 0);
   });
   await t.test('inbox read/unread and preference updates persist through new authenticated requests', async () => {
     const before = await call('applicant', 'getDurableNotifications'); assert.ok(before.items.some(row => row.id === notification.id && row.body === input.body));
@@ -68,6 +68,12 @@ test('announcements over real Next HTTP, verified local Auth and PostgreSQL; pro
   });
 
   await t.test('mocked worker covers OFF, daily aggregation, retries, leases, uncertain outcomes and account changes', async () => {
+    // This guarded disposable database may retain other verification fixtures.
+    // Quiesce them before invoking the global worker, preserving their records.
+    if (process.env.OUTCLASS_RECONCILE_E2E_CONFIG) {
+      await db.notificationEmailOutbox.updateMany({ where: { status: 'PENDING' }, data: { status: 'SUPPRESSED' } });
+      await db.notificationEmailDelivery.updateMany({ where: { status: { in: ['QUEUED', 'SENDING'] } }, data: { status: 'SUPPRESSED' } });
+    }
     // Isolate all fixtures from the approved UI event and the real-email ledger.
     await db.notificationEmailOutbox.updateMany({ where: { status: 'PENDING', notification: { userId: { in: Object.values(users).map(u => u.id) } } }, data: { status: 'SUPPRESSED' } });
     const requests = [], accepted = new Map(); let mode = 'success';

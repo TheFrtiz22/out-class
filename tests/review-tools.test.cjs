@@ -22,6 +22,7 @@ test('limited recruitment managers can change test requirements but cannot toggl
     '@/lib/workspace-api':{setRoundAnonymousReview:async(...args)=>calls.push(['privacy',...args]),setClubTestRequirement:async(...args)=>calls.push(['tests',...args])},
     '@/lib/test-scores':{testRequirements:['ACT'],testRequirementLabels:{ACT:'ACT'}},
     '@/components/ui/button':{Button:'button'},
+    '@/components/communications/template-editor':{DecisionTemplateEditor:'DecisionTemplateEditor'},
   })
   const render=canIdentify=>RecruitmentReviewSettings({clubId:'club',rounds:[{id:'round',name:'Round one',anonymousReview:true}],onChanged(){},embedded:true,canIdentify})
   assert.equal(nodes(render(false)).find(n=>n.type==='input').props.disabled,true)

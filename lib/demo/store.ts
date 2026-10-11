@@ -1,3 +1,5 @@
+import { demoCommunicationRows, demoPublishLetter } from "./communications"
+import { inboxNotification } from "@/lib/communications-client"
 import { taskNotifications } from "@/lib/task-notifications"
 import { seedTasks } from "./task-seed"
 import { sampleInterviewKit } from "@/lib/interview-kits"
@@ -35,6 +37,8 @@ function ensureCurrentWorkflows(value: DemoState) {
   value.interviews ??= []
   value.recruitmentOffers ??= value.applications.filter(a=>a.status==="ACCEPTED").map(a=>({applicationId:a.id,status:"PENDING",createdAt:new Date(),expiresAt:new Date(Date.now()+30*86400000)}))
   value.offerAudit ??= []
+  value.letterTemplates ??= {}
+  if (!value.decisionLetters) { value.decisionLetters=[]; for(const app of value.applications) demoPublishLetter(value,app.id) }
 }
 function ensurePresentation(value: DemoState) {
   ensureCurrentWorkflows(value)
@@ -237,6 +241,7 @@ export function studentApplications(studentId = demoStore.get().students[0].id) 
       const application = joinedApplication(a.id)
       return {
         ...application,
+        decisionLetters: demoStore.get().decisionLetters.filter(l=>l.applicationId===a.id).slice(-1).map(l=>({id:l.id})),
         recruitmentOffer: demoStore.get().recruitmentOffers.find(o=>o.applicationId===a.id) ?? null,
         club: { ...application.club, applicationOpen: application.club.claimed, applicationDeadline: application.club.deadline, pipelineRounds: application.club.rounds.map(({ id, name, order }) => ({ id, name, order })) },
         bookings: application.bookings.map(booking => ({
@@ -263,7 +268,7 @@ export function demoDashboard() {
 export function demoNotifications() {
   const s = demoStore.get()
   const recruiting = studentApplications()
-    .filter((a) => a.status !== "DRAFTING")
+    .filter((a) => a.status !== "DRAFTING" && !["ACCEPTED","WAITLISTED","REJECTED"].includes(a.status))
     .map((a) => ({
       id: `update-${a.id}-${a.status}`,
       clubId: a.clubId,
@@ -287,7 +292,7 @@ export function demoNotifications() {
     }))
     .filter((n) => !s.deletedNotifications.includes(n.id))
   const work=taskNotifications(s.tasks.flatMap(task=>task.assignments.filter(assignment=>assignment.userId===s.students[0].id && s.memberships.some(member=>member.id===assignment.memberId)).map(assignment=>({...assignment,task:{...task,club:s.clubs.find(club=>club.id===task.clubId)!}})))).map(notification=>({...notification,read:s.readNotifications.includes(notification.id)})).filter(notification=>!s.deletedNotifications.includes(notification.id))
-  return [...recruiting,...work]
+  return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work]
 }
 export function demoDirectory() {
   const s = demoStore.get()

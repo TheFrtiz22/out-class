@@ -1,4 +1,5 @@
 "use client";
+import { DecisionTemplateEditor } from "@/components/communications/template-editor";
 import { useState } from "react";
 import {
   setRoundAnonymousReview,
@@ -95,6 +96,7 @@ export function RecruitmentReviewSettings({
           </Button>
         </form>
         <p role="status">{message}</p>
+        <DecisionTemplateEditor clubId={clubId} />
       </div>
   );
   return embedded ? content : <details className="border-y py-4"><summary className="cursor-pointer font-medium">Review privacy and test requirements</summary>{content}</details>;
