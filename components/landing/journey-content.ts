@@ -28,20 +28,21 @@ export const journeyChapters = {
 
 export type JourneyScene = (typeof journeyChapters)[LandingPerspective][number]["scene"] | "profile" | "schedule"
 
-// Finite visible-time demos; compact screens run the same story 20% faster.
+// One deliberate interaction per preview, followed by a useful final state.
+// Timings are identical across devices; mobile no longer rushes through the story.
 export const journeySceneDurations: Record<JourneyScene, number> = {
-  discover: 3600,
-  profile: 4000,
-  apply: 4800,
-  "student-interview": 4000,
-  status: 4800,
-  join: 4200,
-  build: 4200,
-  review: 4300,
-  schedule: 4600,
-  "leader-interview": 4800,
-  decide: 4800,
-  manage: 4000,
+  discover: 2700,
+  profile: 3000,
+  apply: 3500,
+  "student-interview": 3100,
+  status: 3200,
+  join: 3000,
+  build: 3300,
+  review: 3200,
+  schedule: 3300,
+  "leader-interview": 3400,
+  decide: 3500,
+  manage: 3100,
 }
 
 // Both perspectives use the same applicant, organization, and interview.

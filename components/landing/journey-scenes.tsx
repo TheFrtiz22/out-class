@@ -76,6 +76,7 @@ function InterviewEvent({ at, timeAt, checkAt, leader = false, applicant = false
 function DiscoverScene() {
   const progress = useProductProgress()
   const beat = beats.discover
+  const financeSelected = progress >= beat.finance
   return <>
     <div className="oc-discover-intro"><h3>Find your kind of curious.</h3><p>Explore clubs by what interests you.</p></div>
     <div className="oc-example-filters" aria-label="Example categories" {...revealAt(progress, beat.filters)}>
@@ -85,7 +86,9 @@ function DiscoverScene() {
     {[
       { mark: example.clubMark, name: example.club, logo: example.clubLogo, category: "Finance", copy: "Learn to invest with a team that shares your curiosity." },
       { mark: example.consultingClubMark, name: example.consultingClub, logo: example.consultingClubLogo, category: "Consulting", copy: "Bring fresh thinking to organizations creating social impact." },
-    ].map((club, index) => <div key={club.mark} className="oc-discover-row" {...revealAt(progress, index === 0 ? beat.primary : beat.secondary)}>
+    ].map((club, index) => <div key={club.mark} className="oc-discover-row"
+      hidden={financeSelected && club.category !== "Finance"}
+      {...revealAt(progress, index === 0 ? beat.primary : beat.secondary)}>
       <Image className="oc-sample-club-logo" src={club.logo} alt="" width={48} height={48} />
       <div><h4>{club.name}</h4><p>{club.copy}</p><Badge variant="outline" {...revealAt(progress, index === 0 ? beat.category : beat.secondary)}>{club.category}</Badge></div>
     </div>)}
@@ -179,7 +182,7 @@ function ReviewScene() {
     <div className="oc-example-heading"><h3>Applicant pipeline</h3><Badge variant="secondary">In review</Badge></div>
     <Person subtitle={`Application ready for review · ${example.clubMark}`} at={beat.person} />
     <p className="oc-scene-note" {...revealAt(progress, beat.response)}>“I want to turn research into a clear recommendation…”</p>
-    <div className="oc-review-rubric" {...revealAt(progress, beat.rubric)}>{[["Motivation & fit", "4.5"], ["Problem solving", "4.8"], ["Collaboration", "4.3"]].map(([label, score], i) => <div key={label}><span>{label}</span><strong><Fill at={beat.scores[i]}>{score} / 5</Fill></strong></div>)}</div>
+    <div className="oc-review-rubric" {...revealAt(progress, beat.rubric)}>{[["Motivation & fit", "4.5"], ["Problem solving", "4.8"], ["Collaboration", "4.3"]].map(([label, score]) => <div key={label}><span>{label}</span><strong><Fill at={beat.scores[2]}>{score} / 5</Fill></strong></div>)}</div>
     <p className="oc-scene-note" {...revealAt(progress, beat.note)}>Reviewer note · Clear curiosity. Thoughtful research experience.</p>
   </>
 }
@@ -198,7 +201,8 @@ function ScheduleScene() {
 function DecideScene() {
   const progress = useProductProgress()
   const beat = beats.decide
-  const votes = [beat.acceptVotes.filter(at => progress >= at).length, progress >= beat.waitlistVote ? 1 : 0, 0]
+  // The aggregated result appears as a single decision, not five artificial clicks.
+  const votes = progress >= beat.winner ? [4, 1, 0] : [0, 0, 0]
   return <>
     <Person subtitle={`${example.clubMark} · Final round`} />
     <div className="oc-review-rubric" {...revealAt(progress, beat.options)}>{["Accept", "Waitlist", "Decline"].map((label, i) => <div key={label} data-demo-winner={i === 0 && progress >= beat.winner} data-recorded={progress >= beat.recorded}><span>{label}</span><strong>{votes[i]} {votes[i] === 1 ? "vote" : "votes"}</strong></div>)}</div>

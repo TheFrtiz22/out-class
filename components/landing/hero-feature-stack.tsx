@@ -6,16 +6,20 @@ import { heroFeatures } from "./hero-features"
 import "./hero-feature-stack.css"
 
 const count = heroFeatures.length
-const duration = 1100
-const interval = 3500
-const easing = "cubic-bezier(.22, .8, .25, 1)"
+const duration = 760
+const interval = 5400
+const easing = "cubic-bezier(.22, 1, .36, 1)"
 const depthOf = (index: number, active: number) => (index - active + count) % count
-const pose = (depth: number) => ({
-  transform: `translate3d(0, ${-depth * 25}px, ${-depth * 65}px)`,
-  opacity: depth === 0 ? 1 : Math.max(.12, .55 - depth * .085),
-})
+// Only three layers are visible. The others sit invisibly at the back.
+const pose = (depth: number) => {
+  const layer = Math.min(depth, 2)
+  return {
+    transform: `translate3d(0, ${-layer * 17}px, ${-layer * 32}px) scale(${1 - layer * .018})`,
+    opacity: depth === 0 ? 1 : depth === 1 ? .38 : depth === 2 ? .16 : 0,
+  }
+}
 
-/** Real Z depth sorts the cards continuously; there are no z-index swaps. */
+/** Restrained index-card carousel. Each transition finishes before autoplay is rescheduled. */
 export function HeroFeatureStack() {
   const root = useRef<HTMLDivElement>(null)
   const cards = useRef<(HTMLDivElement | null)[]>([])
@@ -27,42 +31,33 @@ export function HeroFeatureStack() {
   const [announcement, setAnnouncement] = useState("")
 
   useEffect(() => {
-    const host = root.current
-    if (!host) return
-    const element = host
+    const element = root.current
+    if (!element) return
     const media = window.matchMedia("(prefers-reduced-motion: reduce)")
     let reduced = media.matches
-    let visible = false
+    let visible = !("IntersectionObserver" in window)
     let hovered = element.matches(":hover")
     let focused = element.contains(document.activeElement)
     let userPaused = false
     let disposed = false
     let moving = false
-    let manual = false
     let timer: ReturnType<typeof setTimeout> | undefined
     let animations: Animation[] = []
 
     const clearTimer = () => { clearTimeout(timer); timer = undefined }
-    const blocked = () => !visible || document.hidden || (!manual && (hovered || focused || userPaused))
-    const schedule = (delay = interval) => {
+    const blocked = () => !visible || document.hidden || hovered || focused || userPaused
+    // Hover, focus and Pause prevent the NEXT move; they never freeze an in-flight card.
+    const schedule = () => {
       clearTimer()
-      if (!disposed && !moving && !reduced && !blocked()) timer = setTimeout(() => move(1, false), delay)
-    }
-    const sync = () => {
-      clearTimer()
-      if (moving) {
-        animations.forEach(animation => {
-          if (animation.playState !== "finished") blocked() ? animation.pause() : animation.play()
-        })
-      } else schedule()
+      if (!disposed && !moving && !reduced && !blocked()) timer = setTimeout(() => move(1, false), interval)
     }
     const settle = (next: number, announce: boolean) => {
       cards.current.forEach((card, index) => {
         if (!card) return
         const depth = depthOf(index, next)
         Object.assign(card.style, pose(depth))
-        const content = card.firstElementChild as HTMLElement
-        content.style.opacity = depth === 0 ? "1" : "0"
+        const ink = card.firstElementChild as HTMLElement | null
+        if (ink) ink.style.opacity = depth === 0 ? "1" : "0"
       })
       current.current = next
       setActive(next)
@@ -71,12 +66,10 @@ export function HeroFeatureStack() {
     function move(direction: 1 | -1, requested: boolean) {
       if (disposed || moving) return
       clearTimer()
-      manual = requested
       const from = current.current
       const next = (from + direction + count) % count
-      if (reduced || !element.animate) {
+      if (reduced || !Element.prototype.animate) {
         settle(next, requested)
-        manual = false
         schedule()
         return
       }
@@ -85,80 +78,70 @@ export function HeroFeatureStack() {
         if (!card) return []
         const before = depthOf(index, from)
         const after = depthOf(index, next)
-        const recycling = direction === 1 ? before === 0 : after === 0
-        // Move below the stack before returning at its back. Reversing uses
-        // the same continuous path, so manual navigation feels equally physical.
-        const route: Keyframe[] = [
-          { ...pose(0), offset: 0, easing: "cubic-bezier(.4, 0, .6, 1)" },
-          { transform: "translate3d(0, var(--oc-feature-drop, 38%), 20px)", opacity: .3, offset: .42, easing: "ease-in-out" },
-          { transform: "translate3d(0, 24%, -325px)", opacity: .12, offset: .64, easing },
-          { ...pose(count - 1), offset: 1 },
-        ]
-        const frames = recycling
-          ? direction === 1 ? route : route.slice().reverse().map(frame => ({ ...frame, offset: 1 - (frame.offset as number) }))
-          : [pose(before), pose(after)]
-        const shell = card.animate(frames, { duration, easing: recycling ? "linear" : easing, fill: "both" })
-        const content = card.firstElementChild as HTMLElement
-        // Exchange the typography early in the glide, without ghosted lines
-        // competing on transparent surfaces as their edges pass one another.
-        const inkFrames = before === 0
-          ? [{ opacity: 1, offset: 0 }, { opacity: 0, offset: .2 }, { opacity: 0, offset: 1 }]
-          : after === 0
-            ? [{ opacity: 0, offset: 0 }, { opacity: 0, offset: .2 }, { opacity: 1, offset: .75 }, { opacity: 1, offset: 1 }]
+        if (before > 2 && after > 2) return []
+        const outgoing = before === 0
+        const incoming = after === 0
+        // A single restrained movement: the front card settles out while the
+        // next card rises from behind. No long dives, spins, or z-index swaps.
+        const frames: Keyframe[] = outgoing
+          ? [pose(0), { transform: "translate3d(0, 22px, -48px) scale(.975)", opacity: 0 }]
+          : incoming && before > 2
+            ? [{ ...pose(1), opacity: 0 }, pose(0)]
+            : [pose(before), pose(after)]
+        const shell = card.animate(frames, { duration, easing, fill: "both" })
+        const ink = card.firstElementChild as HTMLElement | null
+        if (!ink) return [shell]
+        const inkFrames: Keyframe[] = outgoing
+          ? [{ opacity: 1 }, { opacity: 0, offset: .5 }, { opacity: 0 }]
+          : incoming
+            ? [{ opacity: 0 }, { opacity: 0, offset: .3 }, { opacity: 1 }]
             : [{ opacity: 0 }, { opacity: 0 }]
-        const ink = content.animate(inkFrames, { duration, easing, fill: "both" })
-        return [shell, ink]
+        return [shell, ink.animate(inkFrames, { duration, easing, fill: "both" })]
       })
-      sync()
       void Promise.all(animations.map(animation => animation.finished)).then(() => {
         if (disposed) return
-        // Write the identical resting pose before removing the animation fill.
         settle(next, requested)
         animations.forEach(animation => animation.cancel())
         animations = []
         moving = false
-        manual = false
-        schedule(interval - duration)
-      }).catch(() => { /* Unmount cancels the pending animation promises. */ })
+        schedule()
+      }).catch(() => { /* Unmount cancels pending animations. */ })
     }
     navigate.current = direction => move(direction, true)
-    updatePause.current = value => { userPaused = value; sync() }
-    const enter = () => { hovered = true; sync() }
-    const leave = () => { hovered = false; sync() }
-    const focus = () => { focused = true; sync() }
+    updatePause.current = value => { userPaused = value; schedule() }
+    const enter = () => { hovered = true; schedule() }
+    const leave = () => { hovered = false; schedule() }
+    const focus = () => { focused = true; schedule() }
     const blur = (event: FocusEvent) => {
-      if (!element.contains(event.relatedTarget as Node | null)) { focused = false; sync() }
+      if (!element.contains(event.relatedTarget as Node | null)) { focused = false; schedule() }
     }
     const motionChange = () => {
       reduced = media.matches
-      if (reduced) {
-        clearTimer()
-        if (moving) animations.forEach(animation => animation.finish())
-        return
-      }
-      sync()
+      if (reduced && moving) {
+        animations.forEach(animation => animation.finish())
+      } else schedule()
     }
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting
-      sync()
-    }, { threshold: .15 })
-    observer.observe(element)
+    const observer = "IntersectionObserver" in window
+      ? new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; schedule() }, { threshold: .15 })
+      : null
+    observer?.observe(element)
     element.addEventListener("pointerenter", enter)
     element.addEventListener("pointerleave", leave)
     element.addEventListener("focusin", focus)
     element.addEventListener("focusout", blur)
-    document.addEventListener("visibilitychange", sync)
+    document.addEventListener("visibilitychange", schedule)
     media.addEventListener("change", motionChange)
+    schedule()
     return () => {
       disposed = true
       clearTimer()
       animations.forEach(animation => animation.cancel())
-      observer.disconnect()
+      observer?.disconnect()
       element.removeEventListener("pointerenter", enter)
       element.removeEventListener("pointerleave", leave)
       element.removeEventListener("focusin", focus)
       element.removeEventListener("focusout", blur)
-      document.removeEventListener("visibilitychange", sync)
+      document.removeEventListener("visibilitychange", schedule)
       media.removeEventListener("change", motionChange)
       navigate.current = () => {}
       updatePause.current = () => {}
