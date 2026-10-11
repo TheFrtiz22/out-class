@@ -12,7 +12,7 @@
 .oc-public-kicker::before { content: ""; width: 28px; height: 2px; background: var(--brand-orange); flex-shrink: 0; }
 .oc-public-section { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin-inline: auto; padding-block: var(--oc-public-space); }
 .oc-public-section :is(h2, h3) { text-wrap: balance; }
-.oc-public-section h2 { font-size: var(--oc-public-heading); font-weight: 400; line-height: 1.15; letter-spacing: -.035em; }
+.oc-public-section h2 { font-family: var(--oc-font-display); font-size: var(--oc-public-heading); font-weight: 400; line-height: 1.15; letter-spacing: -.035em; }
 .oc-public-section p { line-height: 1.75; }
 .oc-public-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 16px 28px; margin-top: 32px; }
 .oc-public-actions [data-slot="button"] { min-height: 48px; padding-inline: 24px; }
