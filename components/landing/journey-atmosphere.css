@@ -7,7 +7,7 @@
   background: var(--oc-journey-cool);
 }
 .oc-landing:has(.oc-product-stories) main { background: var(--oc-journey-linen); }
-.oc-landing .oc-landing-intro::after { content: ""; position: absolute; z-index: 4; inset: auto 0 0; height: clamp(48px, 7vw, 104px); background: linear-gradient(180deg, transparent, var(--oc-journey-linen)); pointer-events: none; }
+/* A crisp photo-to-paper boundary replaces the former gray gradient haze. */
 .oc-landing .oc-launch-clubs { background: var(--oc-journey-linen); }
 .oc-landing .oc-product-stories { --oc-journey-gutter: max(40px, calc((100% - 1120px) / 2)); max-width: none; padding: 0; background: var(--oc-journey-linen); }
 .oc-landing .oc-journey-controls { padding-inline: var(--oc-journey-gutter); background: var(--oc-journey-linen); }
