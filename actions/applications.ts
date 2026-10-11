@@ -92,6 +92,7 @@ export async function getStudentApplications() {
       status: true,
       submittedAt: true,
       recruitmentOffer: { select: { status: true, expiresAt: true } },
+      decisionLetters: { orderBy: { version: "desc" }, take: 1, select: { id: true } },
       club: {
         select: {
           applicationOpen: true,

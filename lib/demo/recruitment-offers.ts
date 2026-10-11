@@ -1,3 +1,4 @@
+import { demoPublishLetter } from "./communications";
 import type { AppStatus } from "@prisma/client";
 import type { DemoState } from "./seed";
 import { demoStore } from "./store";
@@ -8,10 +9,12 @@ export function demoDecision(state: DemoState, applicationId: string, status: Ap
   if(!app) throw Error("Application unavailable.");
   const round = state.clubs.find(c=>c.id===app.clubId)!.rounds.find(r=>r.id===app.roundId)!;
   assertRecruitmentTransition(app.status,status,/interview/i.test(round.name)?"INTERVIEW":"CUSTOM");
+  const changed=app.status!==status;
   app.status=status;
   const offer=state.recruitmentOffers.find(o=>o.applicationId===app.id);
   if(status==="ACCEPTED"&&!offer){state.recruitmentOffers.push({applicationId:app.id,status:"PENDING",createdAt:new Date(),expiresAt:new Date(Date.now()+30*86400000)});state.offerAudit.push({action:"offer.created",applicationId,at:new Date()});}
   else if(status!=="ACCEPTED"&&offer?.status==="PENDING"){offer.status="REVOKED";state.offerAudit.push({action:"offer.revoked",applicationId,at:new Date()});}
+  if(changed)demoPublishLetter(state,app.id);
 }
 export async function respondToOffer(applicationId:string,response:"ACCEPT"|"DECLINE") {
  return demoStore.mutate(s=>{

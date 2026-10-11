@@ -3,10 +3,10 @@ const { PrismaClient } = require('@prisma/client');
 const { createClient } = require('@supabase/supabase-js');
 const { Actor, readConfig, randomUUID } = require('./helpers/onboarding-e2e.cjs');
 const { loader } = require('./helpers/communications-loader.cjs');
-const configFile = process.env.OUTCLASS_COMMUNICATIONS_E2E_CONFIG;
+const configFile = process.env.OUTCLASS_COMMUNICATIONS_E2E_CONFIG ?? process.env.OUTCLASS_RECONCILE_E2E_CONFIG;
 
 test('Communications Center over real Next HTTP, verified Supabase Auth and local PostgreSQL', { skip: !configFile, timeout: 180000 }, async t => {
-  const config = readConfig(configFile), db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
+  const config = process.env.OUTCLASS_RECONCILE_E2E_CONFIG ? require("./helpers/reconcile-local.cjs").readReconcileConfig(configFile) : readConfig(configFile), db = new PrismaClient({ datasourceUrl: config.status.DB_URL });
   t.after(() => db.$disconnect());
   const authAdmin = createClient(config.status.API_URL, config.status.SECRET_KEY, { auth: { persistSession: false } });
   const suffix = randomUUID().replaceAll('-', '').slice(0, 8), password = 'Local-only!' + randomUUID();
@@ -45,7 +45,7 @@ test('Communications Center over real Next HTTP, verified Supabase Auth and loca
     await assert.rejects(call(actors.limited, 'startClubConversation', { clubId: club.id, studentId: users.applicant.id, subject: 'Private' }));
     await assert.rejects(call(actors.applicant, 'startClubConversation', { clubId: club.id, studentId: users.member.id, subject: 'Forged recipient' }));
     const searchParams = new URLSearchParams(); searchParams.set('kind', 'unknown');
-    const browserRead = await fetch(config.status.API_URL + '/rest/v1/ClubConversation?select=*', { headers: { apikey: config.status.PUBLISHABLE_KEY, authorization: 'Bearer ' + (await actors.owner.client.auth.getSession()).data.session.access_token } });
+    const browserRead = await fetch((config.status.REST_URL ?? config.status.API_URL + '/rest/v1') + '/ClubConversation?select=*', { headers: { apikey: config.status.PUBLISHABLE_KEY, authorization: 'Bearer ' + (await actors.owner.client.auth.getSession()).data.session.access_token } });
     assert.ok(browserRead.status === 401 || browserRead.status === 403, 'Browser database roles cannot read private tables');
   });
 
@@ -125,9 +125,11 @@ test('Communications Center over real Next HTTP, verified Supabase Auth and loca
     await db.club.update({ where: { id: club.id }, data: { suspendedAt: new Date() } });
     await assert.rejects(call(actors.owner, 'getClubConversation', conversation.id));
     await db.club.update({ where: { id: club.id }, data: { suspendedAt: null } });
-    await db.clubMember.update({ where: { userId_clubId: { userId: users.owner.id, clubId: club.id } }, data: { status: 'LEFT' } });
+    // Preserve the canonical last-owner invariant while testing this owner's revocation.
+    await db.clubMember.create({ data: { userId: users.foreign.id, clubId: club.id, isOwner: true, accessRole: 'OWNER' } });
+    await db.clubMember.update({ where: { userId_clubId: { userId: users.owner.id, clubId: club.id } }, data: { status: 'LEFT', isOwner: false, accessRole: 'MEMBER', permissions: [] } });
     await assert.rejects(call(actors.owner, 'getClubConversation', conversation.id));
-    await db.clubMember.update({ where: { userId_clubId: { userId: users.owner.id, clubId: club.id } }, data: { status: 'ACTIVE' } });
+    await db.clubMember.update({ where: { userId_clubId: { userId: users.owner.id, clubId: club.id } }, data: { status: 'ACTIVE', isOwner: true, accessRole: 'OWNER' } });
   });
 
   await scenario('durable queue survives provider failures, concurrent workers, stale leases and preference changes without real email', async () => {

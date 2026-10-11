@@ -7,7 +7,7 @@ type Pref=Awaited<ReturnType<typeof getNotificationPreferences>>;
 const fields=[
  ["emailAnnouncements","Club announcements"],
  ["emailMessages","Private messages"],
- ["emailApplications","Application updates"],
+ ["emailApplications","Application updates and decisions"],
  ["emailInterviews","Interview updates"],
  ["emailInvitations","Club invitations"],
  ["emailTasks","Tasks and deadlines"],

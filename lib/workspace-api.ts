@@ -1,4 +1,6 @@
 "use client"
+import * as decisionCommunications from "@/actions/communications";
+import * as demoDecisionCommunications from "@/lib/demo/communications";
 import * as offers from "@/actions/recruitment-offers";
 import * as demoOffers from "@/lib/demo/recruitment-offers";
 import { assertRecruitmentRoundMove } from "@/lib/recruitment-lifecycle";
@@ -563,3 +565,8 @@ export const respondToOffer = adapt(offers.respondToOffer, demoOffers.respondToO
 export const revokeRecruitmentOffer = adapt(offers.revokeRecruitmentOffer, demoOffers.revokeRecruitmentOffer)
 
 export const getCampusEventRsvpDashboard = adapt(campusEvents.getCampusEventRsvpDashboard, () => ({ eventId: "", count: 0, capacity: null, attendees: [] }))
+
+export const getDecisionLetter = adapt(decisionCommunications.getDecisionLetter, demoDecisionCommunications.getDecisionLetter);
+export const getDecisionTemplates = adapt(decisionCommunications.getDecisionTemplates, demoDecisionCommunications.getDecisionTemplates);
+export const saveDecisionTemplates = adapt(decisionCommunications.saveDecisionTemplates, demoDecisionCommunications.saveDecisionTemplates);
+export const setDecisionNotificationsRead = adapt(decisionCommunications.setDurableNotificationsRead, demoDecisionCommunications.setDurableNotificationsRead);

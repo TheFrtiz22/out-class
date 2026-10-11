@@ -37,7 +37,7 @@ export const notificationDefaults = {
   emailAnnouncements: true, emailMessages: true, emailApplications: true, emailInterviews: true,
   emailInvitations: true, emailTasks: true, emailPlatform: false, emailFrequency: "INSTANT",
 };
-export const emailCategory = { ANNOUNCEMENT: "emailAnnouncements", MESSAGE: "emailMessages", APPLICATION: "emailApplications", INTERVIEW: "emailInterviews", INVITATION: "emailInvitations", TASK: "emailTasks", PLATFORM: "emailPlatform" } as const;
+export const emailCategory = { DECISION: "emailApplications", OFFER_RESPONSE: "emailApplications", ANNOUNCEMENT: "emailAnnouncements", MESSAGE: "emailMessages", APPLICATION: "emailApplications", INTERVIEW: "emailInterviews", INVITATION: "emailInvitations", TASK: "emailTasks", PLATFORM: "emailPlatform" } as const;
 export function optionalEmailAllowed(preference: typeof notificationDefaults | null, type: string) {
   const pref = preference ?? notificationDefaults;
   const key = emailCategory[type as keyof typeof emailCategory];

@@ -327,9 +327,10 @@ export const scheduleDate = "Monday, September 7th"
 
 export const scheduleLocationNames = []
 
-export type NotificationType = "Announcement" | "Interview Invite"
+export type NotificationType = "Announcement" | "Interview Invite" | "Decision Available" | "Offer Confirmation"
 
 export type Notification = {
+  applicationId?: string
   durableId?: string
   href?: string
   taskHref?: string
