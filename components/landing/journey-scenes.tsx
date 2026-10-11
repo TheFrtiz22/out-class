@@ -182,7 +182,7 @@ function ReviewScene() {
     <div className="oc-example-heading"><h3>Applicant pipeline</h3><Badge variant="secondary">In review</Badge></div>
     <Person subtitle={`Application ready for review · ${example.clubMark}`} at={beat.person} />
     <p className="oc-scene-note" {...revealAt(progress, beat.response)}>“I want to turn research into a clear recommendation…”</p>
-    <div className="oc-review-rubric" {...revealAt(progress, beat.rubric)}>{[["Motivation & fit", "4.5"], ["Problem solving", "4.8"], ["Collaboration", "4.3"]].map(([label, score], i) => <div key={label}><span>{label}</span><strong><Fill at={beat.scores[i]}>{score} / 5</Fill></strong></div>)}</div>
+    <div className="oc-review-rubric" {...revealAt(progress, beat.rubric)}>{[["Motivation & fit", "4.5"], ["Problem solving", "4.8"], ["Collaboration", "4.3"]].map(([label, score]) => <div key={label}><span>{label}</span><strong><Fill at={beat.scores[2]}>{score} / 5</Fill></strong></div>)}</div>
     <p className="oc-scene-note" {...revealAt(progress, beat.note)}>Reviewer note · Clear curiosity. Thoughtful research experience.</p>
   </>
 }
@@ -201,7 +201,8 @@ function ScheduleScene() {
 function DecideScene() {
   const progress = useProductProgress()
   const beat = beats.decide
-  const votes = [beat.acceptVotes.filter(at => progress >= at).length, progress >= beat.waitlistVote ? 1 : 0, 0]
+  // The aggregated result appears as a single decision, not five artificial clicks.
+  const votes = progress >= beat.winner ? [4, 1, 0] : [0, 0, 0]
   return <>
     <Person subtitle={`${example.clubMark} · Final round`} />
     <div className="oc-review-rubric" {...revealAt(progress, beat.options)}>{["Accept", "Waitlist", "Decline"].map((label, i) => <div key={label} data-demo-winner={i === 0 && progress >= beat.winner} data-recorded={progress >= beat.recorded}><span>{label}</span><strong>{votes[i]} {votes[i] === 1 ? "vote" : "votes"}</strong></div>)}</div>
