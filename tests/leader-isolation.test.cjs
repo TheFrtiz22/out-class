@@ -9,7 +9,7 @@ function load(file, prisma, roles) {
  const mod={exports:{}}
  const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
  const mocks={'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async(id,allowed)=>{roles.push([id,allowed]);return {user:{id:'actor'},membership:{id:'reviewer',permissions:['applications.review','applicants.identify']}}}},'next/cache':{revalidatePath:()=>{}}}
- new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:name.startsWith("@/")?load(name.replace("@/", "")+".ts", {}, []):require(name),mod,mod.exports);return mod.exports
+ new Function('require','module','exports',code)(name=>name in mocks?mocks[name]:name.startsWith("@/")?load(name.replace("@/", "")+".ts", prisma, roles):require(name),mod,mod.exports);return mod.exports
 }
 test('round moves reject foreign rounds before any mutation',async()=>{
  let written=false;const roles=[];const action=load('actions/crm.ts',{pipelineRound:{findFirst:async args=>{assert.deepEqual(args.where,{id:newRoundId,clubId,archivedAt:null});return null}},application:{updateMany:async()=>{written=true}}},roles)

@@ -9,7 +9,10 @@ export async function publishDecisionCommunication(tx:AppTransactionClient,appli
  const letter=await tx.decisionLetter.create({data:{applicationId:app.id,clubId:app.clubId,version:app.decisionVersion,decision:app.status,content:resolveLetter(app.status as LetterDecision,app.club.decisionLetterTemplates,{firstName:profile?.firstName || 'Student',fullName:profile ? `${profile.firstName} ${profile.lastName}` : 'Student',clubName:app.club.name,date:now,expiresAt:app.recruitmentOffer?.expiresAt ?? null,logoReference:clubAssetReference.safeParse(app.club.logoUrl).success?app.club.logoUrl:null,accent:app.club.color})}});
  await tx.userNotification.create({data:{userId:app.studentId,clubId:app.clubId,type:'DECISION',title:`Your decision from ${app.club.name} is available`,body:'Open your formal decision letter on OutClass.',href:decisionDestination(app.id,letter.id),eventKey:`decision:${app.id}:${app.decisionVersion}`}});
  // The canonical INSERT trigger atomically queues NotificationEmailOutbox.
- await tx.auditLog.createMany({data:['recruitment.letter.published','recruitment.notification.created','recruitment.email.queued'].map(action=>({actorId,clubId:app.clubId,targetId:letter.id,action,details:{applicationId:app.id,version:app.decisionVersion}}))});
+ // Individual domain events pass through the existing support attribution layer.
+ for (const action of ['recruitment.letter.published','recruitment.notification.created','recruitment.email.queued']) {
+  await tx.auditLog.create({data:{actorId,clubId:app.clubId,targetId:letter.id,action,details:{applicationId:app.id,version:app.decisionVersion}}});
+ }
 }
 export async function offerResponseNotification(tx:AppTransactionClient,app:{id:string;clubId:string;studentId:string},offerId:string,response:'ACCEPT'|'DECLINE') {
  const club=await tx.club.findUniqueOrThrow({where:{id:app.clubId},select:{name:true}});

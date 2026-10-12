@@ -1,4 +1,5 @@
 "use server"
+import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { academicYear } from "@/lib/recruitment-profile";
@@ -89,7 +90,7 @@ export async function commandVotingSession(input: unknown) {
   const caps:ClubPermission[]=["applications.review",capability]
   if(d.action==="PUBLISH") caps.push("applicants.identify")
   const {user,membership}=await requireClubPermission(d.clubId,caps)
-  return prisma.$transaction(async tx=>{
+  return clubWriteTransaction(async tx=>{
     await lockOperationalClub(tx, d.clubId)
     await authorizeClubTransaction(tx,d.clubId,user.id,caps)
     const s=await session(tx,d.clubId,d.sessionId)
@@ -158,7 +159,7 @@ export async function commandVotingSession(input: unknown) {
     await tx.votingSession.update({where:{id:s.id},data:{state,...extra,revision:{increment:1}}})
     await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:`voting.${d.action.toLowerCase()}`,reason:d.reason,details:{pass:extra.currentPass??s.currentPass,applicationIds:d.applicationIds??null,applicationId:d.applicationId??null,decision:d.decision??null,target:d.targetSize??null,displayConfig:d.displayConfig??null,outcomes:summary.outcomes}}})
     return {success:true}
-  }, { timeout: 30000 })
+  }, votingWriteLimits)
 }
 
 /** QR contains only a UUID. Eligibility is always derived from the authenticated account. */

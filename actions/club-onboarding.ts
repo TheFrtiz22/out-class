@@ -1,4 +1,5 @@
 "use server";
+import { clubWriteTransaction } from "@/utils/club-write-transaction";
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 
@@ -28,7 +29,7 @@ const invitationInput = z.object({
 export async function createClubIdentityInvitation(input: unknown) {
   const data = invitationInput.parse(input);
   const actor = data.platformDesignation ? await requirePlatformAdmin() : (await requireAuth()).user;
-  return prisma.$transaction(async tx => {
+  return clubWriteTransaction(async tx => {
     return createIdentityInvitationInTransaction(tx, data, actor);
   });
 }
