@@ -1,5 +1,18 @@
 # UVA campus photographs
 
+## UVA information page: project-requested Lawn photograph
+
+`lawn-aerial.jpg` is the 675 × 450 aerial Lawn photograph requested by the project
+owner on October 12, 2026. The attached reference was matched to this published
+file and copied locally without cropping, upscaling, or generative alteration:
+
+- Source image: https://howardrideoutarch.wordpress.com/wp-content/uploads/2019/07/2-university-of-virginia.jpg
+- Source page: https://howardrideoutarch.wordpress.com/tag/quest-art-gallery/
+
+The legacy Creative Commons credits below do not apply to this photograph. The
+UVA information page serves it locally through Next.js Image, preserving the full
+3:2 composition and its dimensions during loading.
+
 ## Current opening: project-supplied images
 
 These three files were supplied by the project owner on October 4, 2026 and are
