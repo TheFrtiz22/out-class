@@ -1,0 +1,21 @@
+.oc-availability { --av-navy: var(--foreground); color: var(--foreground); }
+.oc-av-scroll { max-height: 560px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border); border-radius: 12px; user-select: none; }
+.oc-av-row { display: grid; grid-template-columns: 54px repeat(7, minmax(60px, 1fr)); min-width: 510px; }
+.oc-av-header { position: sticky; top: 0; z-index: 2; background: var(--card); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; }
+.oc-av-header > * { padding: 12px 3px; text-align: center; }
+.oc-av-header small { display: block; margin-top: 4px; font-weight: 400; color: var(--muted-foreground); }
+.oc-av-time { padding: 3px 7px; font-size: 11px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.oc-av-cell { height: 25px; background: var(--card); border: 0; border-left: 1px solid var(--border); border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); font-size: 11px; font-variant-numeric: tabular-nums; }
+.oc-av-cell.is-hour { border-top: 1px solid var(--border); }
+.oc-av-cell.is-available { background: var(--primary); color: var(--primary-foreground); }
+.oc-av-cell:focus-visible { outline: 2px solid var(--foreground); outline-offset: -3px; position: relative; z-index: 1; }
+.oc-av-cell:hover { box-shadow: inset 0 0 0 1px var(--foreground); }
+.oc-av-select { min-height: 44px; max-width: 100%; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); font-size: 14px; }
+.oc-av-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .oc-av-row { grid-template-columns: 68px 1fr; min-width: 0; }
+  .oc-av-day:not(.is-mobile-day) { display: none; }
+  .oc-av-cell { height: 44px; }
+  .oc-av-time { padding-top: 13px; }
+  .oc-av-scroll { max-height: 520px; }
+}

@@ -1,5 +1,6 @@
 "use client";
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
+import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
@@ -342,6 +343,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         data && (
           <>
             <InvitationEmailControls clubId={clubId} onSent={reload} />
+            {caps.canManageMembers && <InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={selectedMembers.map(member => member.id)} refreshKey={String(Math.max(...data.members.map(member => +new Date(member.updatedAt))))} onSaved={() => reload()} />}
             {caps.canManageMembers && (
               <details className="rounded-xl border p-4">
                 <summary
@@ -973,6 +975,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             <div
               className="mt-6 space-y-6"
               onChangeCapture={(event) => {
+                if ((event.target as HTMLElement).closest("[data-eligibility-controls]")) return;
                 if ((event.target as HTMLElement).closest("form, fieldset"))
                   setDirty(true);
               }}
@@ -995,6 +998,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 {active.groups.join(", ") || "None"} · Cohort:{" "}
                 {active.cohort || "Not set"}
               </p>
+              {caps.canManageMembers && active.status === "ACTIVE" && !active.user.disabledAt && <InterviewerEligibilityControls key={`${clubId}:${active.id}`} clubId={clubId} selectedIds={[active.id]} refreshKey={String(active.updatedAt)} individual onSaved={() => reload()} />}
               {error && (
                 <p role="alert" className="text-sm text-destructive">
                   {error}

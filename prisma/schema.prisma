@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  availability UserAvailability?
   schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
   adminElevationChallenges AdminElevationChallenge[]
@@ -100,6 +101,8 @@ model Experience {
 // ==========================================
 
 model Club {
+  interviewerRoles MembershipAccessRole[] @default([INTERVIEWER])
+  interviewerEligibilityRevision Int @default(0)
   decisionLetterTemplates Json?
   decisionLetters DecisionLetter[]
   suspendedAt DateTime?
@@ -150,6 +153,8 @@ model Club {
 }
 
 model ClubMember {
+  interviewerEligible Boolean?
+  interviewParticipation InterviewRoundParticipation[]
   interviewOffices String[] @default([])
   interviewAssignments InterviewPanelAssignment[]
   resumeAnnotations InterviewResumeAnnotation[]
@@ -175,6 +180,7 @@ model ClubMember {
   evaluations Evaluation[]
 
   @@unique([userId, clubId])
+  @@unique([id, clubId])
   @@index([clubId], map: "ClubMember_clubId_idx")
   @@index([clubId, status, joinedAt])
 }
@@ -190,6 +196,7 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  interviewParticipation InterviewRoundParticipation[]
   stableEvaluations Evaluation[] @relation("EvaluationRound")
   interviewAssignments InterviewPanelAssignment[]
   resumeDocuments InterviewResumeDocument[]
@@ -215,6 +222,7 @@ model PipelineRound {
   applications Application[]
 
   @@index([clubId], map: "PipelineRound_clubId_idx")
+  @@unique([id, clubId])
   @@index([clubId, archivedAt, order])
 }
 
@@ -363,6 +371,34 @@ model EventAttendance {
 // ==========================================
 // 5. SCHEDULING
 // ==========================================
+
+// Compact wall-clock declarations, not another scheduling/room model.
+model UserAvailability {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule Json
+  revision Int @default(1)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+}
+
+model InterviewRoundParticipation {
+  id String @id @default(uuid())
+  clubId String
+  memberId String
+  member ClubMember @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Cascade)
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Cascade)
+  eligibilityOverride Boolean?
+  // Explicit confirmation freezes defaults; adjustments remain scoped to this round.
+  availability Json?
+  confirmedAt DateTime? @db.Timestamptz(3)
+  revision Int @default(1)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([memberId, roundId])
+  @@index([clubId, roundId, confirmedAt])
+  @@index([roundId])
+}
 
 model InterviewRoom {
   id             String          @id @default(uuid())
