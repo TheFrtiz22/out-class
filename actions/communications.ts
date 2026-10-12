@@ -53,11 +53,17 @@ export async function getDurableNotifications(cursor?: string) {
     include: { club: { select: { name: true, color: true, logoUrl: true } } },
   });
   const unread = await prisma.userNotification.count({ where: { userId: user.id, archivedAt: null, readAt: null } });
-  const items = await prisma.$transaction(async tx => Promise.all(rows.slice(0, 50).map(async row => {
+  const items = await prisma.$transaction(async tx => {
+    const contexts = new Map<string, ReturnType<typeof currentAssignmentNotification>>();
+    return Promise.all(rows.slice(0, 50).map(async row => {
     if (!row.eventKey?.startsWith(assignmentNotificationPrefix)) return row;
-    const context = await currentAssignmentNotification(tx, row, user.id);
+    // Several reschedule notices can refer to the same current authorized context.
+    const key = `${row.clubId}:${row.href}:${row.eventKey.includes(":cancelled:")}`;
+    if (!contexts.has(key)) contexts.set(key, currentAssignmentNotification(tx, row, user.id));
+    const context = await contexts.get(key)!;
     return { ...row, ...(context || { title: "Interview assignment changed", body: "This assignment is no longer available. Check your current interview list.", href: `/club/${row.clubId}/workspace?section=recruitment&tool=interviews` }) };
-  })));
+    }));
+  }, { maxWait: 10000, timeout: 20000 });
   return { items, nextCursor: rows.length > 50 ? rows[49].id : null, unread };
 }
 

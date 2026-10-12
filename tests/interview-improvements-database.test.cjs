@@ -26,3 +26,13 @@ test('booking cancellation notifies direct grants once without revoking their in
  const later=randomUUID();await h.db.query('INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES ($1,$2,\'Later\',2)',[later,i.club]);await h.db.query('UPDATE "Application" SET "roundId"=$1 WHERE id=$2',[later,i.app]);
  assert.equal(await h.prisma.$transaction(tx=>notices.currentAssignmentNotification(tx,notice,i.panel)),null);
 });
+test('assignment inbox projects current contexts and removes all identity after revocation without aborting the read',async t=>{
+ const h=await harness();t.after(()=>h.db.close());const i=h.ids,grants=h.load('actions/organization-members.ts'),notices=h.load('utils/interview-assignment-notifications.ts'),inbox=h.load('actions/communications.ts');
+ await h.db.query('INSERT INTO "StudentProfile"(id,"userId","firstName","lastName","computingId",major,"gradYear") VALUES ($1,$2,\'Synthetic\',\'Applicant\',\'inbox-fixture\',\'Economics\',2027)',[randomUUID(),i.student]);
+ await grants.setInterviewPanelAssignment({...h.scope,memberId:i.panelMember,assigned:true});
+ const grant=(await h.db.query('SELECT * FROM "InterviewPanelAssignment" WHERE "memberId"=$1',[i.panelMember])).rows[0];
+ for(let n=0;n<3;n++)await h.prisma.$transaction(tx=>notices.notifyInterviewAssignment(tx,{...grant,bookingId:randomUUID()},'assigned'));
+ h.as(i.panel);const current=await inbox.getDurableNotifications();assert.equal(current.items.length,4);assert.ok(current.items.every(n=>n.body.includes('Synthetic Applicant')));
+ h.as(i.owner);await grants.setInterviewPanelAssignment({...h.scope,memberId:i.panelMember,assigned:false});h.as(i.panel);
+ const revoked=await inbox.getDurableNotifications();assert.equal(revoked.items.length,5);assert.ok(revoked.items.every(n=>!n.body.includes('Synthetic Applicant')&&!n.href.includes('applicationId')));
+});

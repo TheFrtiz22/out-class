@@ -15,6 +15,11 @@ export async function currentAssignmentNotification(tx: AppTransactionClient, no
   const query = new URL(notification.href, "https://out-class.net").searchParams;
   const scope = { clubId: notification.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "" };
   try {
+    // Skip stale contexts cheaply. Full current authorization remains mandatory below.
+    const current = await tx.application.findFirst({ where: { id: scope.applicationId, clubId: scope.clubId, roundId: scope.roundId }, select: { id: true } });
+    if (!current) return null;
+    const grant = await tx.interviewPanelAssignment.findFirst({ where: { applicationId: scope.applicationId, roundId: scope.roundId, revokedAt: null, member: { userId, clubId: scope.clubId, status: "ACTIVE", user: { disabledAt: null } } }, select: { id: true } });
+    if (!grant) return null;
     const actor = await collaborationAccess(tx, scope, userId, "share");
     if (actor.app.roundId !== scope.roundId) return null;
     const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId } }, include: { slot: { include: { room: true } } } });
