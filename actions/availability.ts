@@ -5,7 +5,7 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { organizationRoles } from "@/lib/organization-authorization"
-import { interviewCapabilities } from "@/lib/interview-access"
+import { loadInterviewerPool } from "@/utils/interviewer-pool"
 import { addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
 
 const id = z.string().uuid()
@@ -162,8 +162,7 @@ export async function getEligibleInterviewerPool(raw: unknown) {
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"], { readOnly: true })
     await roundFor(tx, input.clubId, input.roundId)
-    const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
-    const members = await tx.clubMember.findMany({ where: { clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null } }, include: { interviewParticipation: { where: { clubId: input.clubId, roundId: input.roundId } }, user: { select: { disabledAt: true } } } })
-    return members.filter(m => { const p = m.interviewParticipation[0]; return interviewerEligible(m, club.interviewerRoles, p?.eligibilityOverride) && p?.confirmedAt && p.availability && intervalAvailability(parseSchedule(p.availability), start, end) === "available" }).map(m => ({ memberId: m.id, evidenceAccess: interviewCapabilities(m).participate }))
+    const pool = await loadInterviewerPool(tx, input.clubId, input.roundId)
+    return pool.members.filter(m => m.eligible && m.confirmed && intervalAvailability(m.availability, start, end) === "available").map(m => ({ memberId: m.id, evidenceAccess: m.evidenceAccess }))
   }, { timeout: 15000 })
 }

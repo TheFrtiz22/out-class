@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { spawn, spawnSync } = require('node:child_process'), { randomUUID } = require('node:crypto')
 const { PrismaClient } = require('@prisma/client'), { createClient } = require('@supabase/supabase-js')
 const repo = path.resolve(__dirname, '..'), root = path.join(os.tmpdir(), 'outclass-availability-e2e'), project = 'outclass-availability-e2e'
-const keep = process.argv.includes('--keep'); let server, touched = false
+const panels = process.argv.includes('--panels'); const keep = process.argv.includes('--keep'); let server, touched = false
 const supabase = path.join(repo, 'node_modules/supabase/dist/supabase.js')
 function run(args, log, env, cwd = repo) {
   const fd = fs.openSync(path.join(root, log + '.log'), 'w')
@@ -60,6 +60,7 @@ async function main() {
       settings.clubs.push({ id: club.id, roundId: round.id, memberId: member.id })
       await db.interviewRoom.create({ data: { clubId: club.id, roundId: round.id, name: 'Existing test room', location: 'Hall', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 20, slots: { create: { clubId: club.id, location: 'Hall', startTime: new Date('2026-10-12T13:00:00Z'), endTime: new Date('2026-10-12T13:20:00Z') } } } })
     }
+    if (panels) await require('../tests/panel-proposals-browser.cjs').prepare(db, auth, settings)
     fs.writeFileSync(path.join(root, 'config.json'), JSON.stringify(settings), { mode: 0o600 })
   } finally { await db.$disconnect() }
   run([path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], 'build', env, path.join(root, 'app'))
@@ -68,7 +69,7 @@ async function main() {
   fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid))
   fs.closeSync(fd)
   for (let i = 0; i < 100; i++) { try { const r = await fetch(settings.appUrl); if (r.ok) break } catch {} await new Promise(resolve => setTimeout(resolve, 100)) }
-  await require('../tests/availability-browser.cjs').verify(settings, root)
+  await require(panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
   console.log('Browser → actual server actions → local Prisma/Postgres: PASS')
   if (keep) { server.unref(); fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid)); console.log('Local fixture retained at ' + settings.appUrl) }
 }

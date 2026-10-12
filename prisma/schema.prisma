@@ -12,6 +12,8 @@ datasource db {
 // ==========================================
 
 model User {
+  createdPanelProposals InterviewPanelProposal[] @relation("PanelProposalCreator")
+  modifiedPanelProposals InterviewPanelProposal[] @relation("PanelProposalModifier")
   availability UserAvailability?
   schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
@@ -196,6 +198,7 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  panelProposal InterviewPanelProposal?
   interviewParticipation InterviewRoundParticipation[]
   stableEvaluations Evaluation[] @relation("EvaluationRound")
   interviewAssignments InterviewPanelAssignment[]
@@ -400,7 +403,31 @@ model InterviewRoundParticipation {
   @@index([roundId])
 }
 
+// This document is never an active panel assignment or an applicant booking.
+model InterviewPanelProposal {
+  id String @id @default(uuid())
+  clubId String
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Cascade)
+  status String @default("UNPUBLISHED")
+  document Json
+  validation Json
+  sourceFingerprint String
+  revision Int @default(1)
+  createdBy String
+  creator User @relation("PanelProposalCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  modifiedBy String
+  modifier User @relation("PanelProposalModifier", fields: [modifiedBy], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index([clubId, updatedAt])
+  @@unique([roundId, clubId])
+}
+
 model InterviewRoom {
+  interviewersNeeded Int @default(2)
+  staffingRevision Int @default(0)
   id             String          @id @default(uuid())
   clubId         String
   club           Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -421,10 +448,13 @@ model InterviewRoom {
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
+  @@index([approvedPanelMemberIds], type: Gin, map: "InterviewRoom_approved_members_gin")
   @@index([clubId, roundId])
 }
 
 model InterviewSlot {
+  interviewersNeeded Int?
+  staffingRevision Int @default(0)
   roomId String?
   room   InterviewRoom? @relation(fields: [roomId], references: [id], onDelete: Cascade)
 

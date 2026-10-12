@@ -7,6 +7,7 @@ import { z } from "zod"
 import { prisma } from "@/utils/prisma"
 import { requireAuth, requireClubPermission } from "@/utils/auth"
 import { hasPermission } from "@/lib/permissions"
+import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { roomInputSchema, roomSlots, overlaps, type RoomInput, type InterviewRoom, type RoomBooking, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 import { revalidatePath } from "next/cache"
 import { syncBookingPanel } from "@/utils/interview-scheduling-access"
@@ -17,7 +18,8 @@ const roomInclude = { slots: { include: { _count: { select: { bookings: true } }
 type StoredRoom = Prisma.InterviewRoomGetPayload<{ include: typeof roomInclude }>
 function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
   return { id: room.id, clubId: room.clubId, roundId: room.roundId, name: room.name, location: room.location, kind: room.kind, timezone: room.timezone, duration: room.duration, buffer: room.buffer, isOpen: room.isOpen, panelMemberIds: applicant ? [] : room.panelMemberIds,
-    slots: room.slots.filter(s => !applicant || +s.startTime > Date.now()).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings })) }
+    ...(!applicant ? { interviewersNeeded: room.interviewersNeeded, staffingRevision: room.staffingRevision, approvedPanelMemberIds: room.approvedPanelMemberIds } : {}),
+    slots: room.slots.filter(s => !applicant || +s.startTime > Date.now()).map(s => ({ id: s.id, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), capacity: s.capacity, booked: s._count.bookings, ...(!applicant ? { interviewersNeeded: s.interviewersNeeded, staffingRevision: s.staffingRevision } : {}) })) }
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -59,7 +61,7 @@ export async function createInterviewRoom(raw: RoomInput) {
       const sharedPanel = other.room?.panelMemberIds.some(id => panelIds.includes(id))
       if ((sameRoom || sharedPanel) && overlaps(slot, other, Math.max(input.buffer, other.room?.buffer ?? 0))) throw new Error(sharedPanel ? "An interviewer already has an overlapping room schedule." : "This room or location already has overlapping interview slots.")
     }
-    const room = await tx.interviewRoom.create({ data: { clubId: input.clubId, roundId: input.roundId, name: input.name, location: input.location, kind: input.kind, timezone: input.timezone, duration: input.duration, buffer: input.buffer, panelMemberIds: panelIds, slots: { create: slots.map(s => ({ ...s, clubId: input.clubId, location: input.location })) } } })
+    const room = await tx.interviewRoom.create({ data: { clubId: input.clubId, roundId: input.roundId, name: input.name, location: input.location, kind: input.kind, timezone: input.timezone, duration: input.duration, buffer: input.buffer, interviewersNeeded: input.interviewersNeeded ?? 2, panelMemberIds: panelIds, slots: { create: slots.map(s => ({ ...s, clubId: input.clubId, location: input.location })) } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: room.id, action: "interview.room.create" } })
     return { id: room.id, count: slots.length }
   })
@@ -159,4 +161,22 @@ export async function getBookingApplication(clubId: string, roundId: string) {
   const app = await prisma.application.findFirst({ where: { clubId, roundId, studentId: user.id, status: "INTERVIEWING" }, select: { id: true } })
   if (!app) throw new Error("This booking link is for applicants invited to this recruitment round. Sign in with your applicant account or check with the club.")
   return { applicationId: app.id }
+}
+
+/** Staffing metadata only. Never calls panel sync, approval or notification code. */
+export async function setInterviewStaffingRequirement(raw: unknown) {
+  const input = z.object({ clubId: uuid, roomId: uuid, slotId: uuid.optional(), revision: z.number().int().nonnegative(), needed: z.number().int().min(1).max(8).nullable() }).strict().parse(raw)
+  if (!input.slotId && input.needed === null) throw new Error("Choose 1–8 interviewers for this room.")
+  const { user } = await requireAuth()
+  return prisma.$transaction(async tx => {
+    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
+    const room = await tx.interviewRoom.findFirst({ where: { id: input.roomId, clubId: input.clubId } })
+    if (!room) throw new Error("Room unavailable.")
+    const result = input.slotId
+      ? await tx.interviewSlot.updateMany({ where: { id: input.slotId, roomId: room.id, clubId: input.clubId, staffingRevision: input.revision }, data: { interviewersNeeded: input.needed, staffingRevision: { increment: 1 } } })
+      : await tx.interviewRoom.updateMany({ where: { id: room.id, clubId: input.clubId, staffingRevision: input.revision }, data: { interviewersNeeded: input.needed!, staffingRevision: { increment: 1 } } })
+    if (result.count !== 1) throw new Error("Staffing requirement changed. Reload before saving.")
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, action: "interview.staffing.requirement", targetId: input.slotId ?? room.id, details: { needed: input.needed } } })
+    return { revision: input.revision + 1 }
+  })
 }

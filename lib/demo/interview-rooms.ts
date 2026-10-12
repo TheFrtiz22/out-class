@@ -85,3 +85,9 @@ export async function getBookingApplication(clubId: string, roundId: string) {
   if (!app) throw new Error("The sample applicant has not been invited to this round.")
   return { applicationId: app.id }
 }
+
+export async function setInterviewStaffingRequirement(input: {clubId:string;roomId:string;slotId?:string;needed:number|null;revision:number}) {
+ manager(input.clubId)
+ if(input.needed!==null&&(!Number.isInteger(input.needed)||input.needed<1||input.needed>8))throw new Error("Choose one to eight interviewers.")
+ demoStore.mutate(s=>{const room=s.interviewRooms.find(r=>r.id===input.roomId&&r.clubId===input.clubId);if(!room)throw new Error("Room unavailable.");if(input.slotId){const slot=room.slots.find(slot=>slot.id===input.slotId);if(!slot||input.revision!==(slot.staffingRevision??0))throw new Error("Reload staffing.");slot.interviewersNeeded=input.needed;slot.staffingRevision=(slot.staffingRevision??0)+1;}else{if(input.needed===null||input.revision!==(room.staffingRevision??0))throw new Error("Reload staffing.");room.interviewersNeeded=input.needed;room.staffingRevision=(room.staffingRevision??0)+1;}})
+}
