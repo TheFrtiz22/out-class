@@ -119,6 +119,9 @@ test("origin, demo, view-as, UVA and password validation fail before provider ca
     [{ ...reset, confirmation: "mismatch" }, {}, 400],
     [{ ...reset, password: "short", confirmation: "short" }, {}, 400],
     [{ ...reset, tokenHash: "" }, {}, 400],
+    [{ ...reset, authenticatorCode: "12" }, {}, 400],
+    [{ ...reset, authenticatorCode: "1234567" }, {}, 400],
+    [{ ...reset, authenticatorCode: "abcdef" }, {}, 400],
   ])
     assert.equal((await h.send(body, headers)).status, status);
   assert.equal(h.calls.length, 0);
@@ -170,6 +173,80 @@ test('MFA-protected recovery explains the assurance requirement and revokes the 
   assert.doesNotMatch(body.error, /private provider detail|security requirements and differ/);
   assert.equal(response.headers.get('set-cookie'), null);
   assert.deepEqual(h.calls.at(-1), ['signOut', { scope: 'local' }]);
+});
+
+function mfaHarness(overrides = {}) {
+  const actor = { id: 'recovered-user', email: 'student@virginia.edu' };
+  return harness({
+    verifyOtp: async () => ({ data: { session: {}, user: actor }, error: null }),
+    getUser: async () => ({ data: { user: actor }, error: null }),
+    mfa: {
+      listFactors: async () => ({ data: { totp: [{ id: 'owned-factor', status: 'verified' }] }, error: null }),
+      challengeAndVerify: async (input) => {
+        assert.deepEqual(input, { factorId: 'owned-factor', code: '123456' });
+        return { data: {}, error: null };
+      },
+      getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: 'aal2' }, error: null }),
+      ...overrides.mfa,
+    },
+    ...Object.fromEntries(Object.entries(overrides).filter(([name]) => name !== 'mfa')),
+  });
+}
+test('recovery plus verified owned authenticator and AAL2 permits the password change without attaching a session', async () => {
+  const h = mfaHarness();
+  const response = await h.send({ ...reset, authenticatorCode: '123456', factorId: 'attacker-factor', userId: 'attacker' });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('set-cookie'), null);
+  assert.deepEqual(h.calls, [['update', { password: reset.password }], ['signOut', { scope: 'global' }]]);
+  assert.deepEqual(Object.keys(await response.json()), ['message']);
+});
+test('MFA recovery rejects unverified factors, bad codes, wrong identity and AAL1 before changing a password', async () => {
+  for (const overrides of [
+    { mfa: { listFactors: async () => ({ data: { totp: [{ id: 'owned-factor', status: 'unverified' }] }, error: null }) } },
+    { mfa: { listFactors: async () => ({ data: null, error: { message: 'private factor failure' } }) } },
+    { mfa: { challengeAndVerify: async () => ({ data: null, error: { message: 'private bad code' } }) } },
+    { getUser: async () => ({ data: { user: { id: 'attacker', email: 'student@virginia.edu' } }, error: null }) },
+    { getUser: async () => ({ data: { user: { id: 'recovered-user', email: 'other@virginia.edu' } }, error: null }) },
+    { mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: 'aal1' }, error: null }) } },
+  ]) {
+    const h = mfaHarness(overrides);
+    const response = await h.send({ ...reset, authenticatorCode: '123456' });
+    assert.equal(response.status, 400);
+    const body = await response.json();
+    assert.equal(body.needsNewLink, true);
+    assert.doesNotMatch(body.error, /private|attacker|owned-factor/);
+    assert.deepEqual(h.calls, [['signOut', { scope: 'local' }]]);
+  }
+});
+test('a code from a later verified authenticator works, while provider rate limits stop factor attempts', async () => {
+  const attempted = [];
+  const factors = async () => ({ data: { totp: [
+    { id: 'not-verified', status: 'unverified' },
+    { id: 'first-factor', status: 'verified' },
+    { id: 'second-factor', status: 'verified' },
+  ] }, error: null });
+  const h = mfaHarness({ mfa: {
+    listFactors: factors,
+    challengeAndVerify: async ({ factorId }) => {
+      attempted.push(factorId);
+      return factorId === 'first-factor'
+        ? { data: null, error: { code: 'mfa_verification_failed' } }
+        : { data: {}, error: null };
+    },
+  } });
+  assert.equal((await h.send({ ...reset, authenticatorCode: '123456' })).status, 200);
+  assert.deepEqual(attempted, ['first-factor', 'second-factor']);
+  const limited = [];
+  const throttled = mfaHarness({ mfa: {
+    listFactors: factors,
+    challengeAndVerify: async ({ factorId }) => {
+      limited.push(factorId);
+      return { data: null, error: { code: 'over_request_rate_limit', status: 429 } };
+    },
+  } });
+  assert.equal((await throttled.send({ ...reset, authenticatorCode: '123456' })).status, 400);
+  assert.deepEqual(limited, ['first-factor']);
+  assert.deepEqual(throttled.calls, [['signOut', { scope: 'local' }]]);
 });
 
 test('a completed reset remains successful if subsequent session revocation fails', async () => {

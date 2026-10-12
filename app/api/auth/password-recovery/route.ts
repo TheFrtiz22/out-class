@@ -104,6 +104,33 @@ export async function POST(request: NextRequest) {
         },
         400,
       );
+    if (reset.data.authenticatorCode) {
+      // The recovery token establishes the account. Only its already verified
+      // factor may upgrade this isolated recovery session; never enroll/remove
+      // factors or borrow the visitor's normal login/Admin session.
+      const factors = await client.auth.mfa.listFactors();
+      let verified: Awaited<ReturnType<typeof client.auth.mfa.challengeAndVerify>> | null = null;
+      if (!factors.error) {
+        for (const factor of factors.data.totp.filter((item) => item.status === "verified")) {
+          verified = await client.auth.mfa.challengeAndVerify({
+            factorId: factor.id, code: reset.data.authenticatorCode,
+          });
+          // Only a code mismatch warrants checking the next owned factor.
+          // Provider outages, session errors and rate limits stop immediately.
+          if (!verified.error || verified.error.code !== "mfa_verification_failed") break;
+        }
+      }
+      const identity = verified && !verified.error ? await client.auth.getUser() : null;
+      const assurance = identity && !identity.error
+        ? await client.auth.mfa.getAuthenticatorAssuranceLevel() : null;
+      if (!verified || verified.error || !identity || identity.error ||
+          identity.data.user?.id !== data.user.id ||
+          identity.data.user?.email?.trim().toLowerCase() !== data.user.email.trim().toLowerCase() ||
+          !assurance || assurance.error || assurance.data.currentLevel !== "aal2") {
+        await client.auth.signOut({ scope: "local" });
+        return reply({ error: "Authenticator verification failed. Request a new reset link and enter a fresh code from your account’s authenticator.", needsNewLink: true }, 400);
+      }
+    }
     const updated = await client.auth.updateUser({
       password: reset.data.password,
     });
@@ -113,7 +140,7 @@ export async function POST(request: NextRequest) {
         return reply(
           {
             error:
-              "This account requires multi-factor authentication to change its password. Sign in with MFA, or contact OutClass support for account recovery.",
+              "This account requires multi-factor authentication. Request a new reset link, then enter its authenticator code with your new password. If you no longer have your authenticator, contact OutClass support.",
             needsNewLink: true,
           },
           400,

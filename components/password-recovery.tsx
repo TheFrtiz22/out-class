@@ -17,6 +17,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [authenticatorCode, setAuthenticatorCode] = useState("");
   const [tokenHash, setTokenHash] = useState("");
   const [ready, setReady] = useState(mode === "request");
   const [busy, setBusy] = useState(false);
@@ -38,6 +39,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       setError("");
       setPassword("");
       setConfirmation("");
+      setAuthenticatorCode("");
       setReady(true);
     }
     if (!initialized.current) {
@@ -71,7 +73,8 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
         body: JSON.stringify(
           mode === "request"
             ? { action: mode, email }
-            : { action: mode, tokenHash, password, confirmation },
+            : { action: mode, tokenHash, password, confirmation,
+                ...(authenticatorCode ? { authenticatorCode } : {}) },
         ),
       });
       const data = await response.json();
@@ -82,6 +85,7 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
       }
       setPassword("");
       setConfirmation("");
+      setAuthenticatorCode("");
       setTokenHash("");
       setDone(true);
     } catch {
@@ -199,6 +203,22 @@ export function PasswordRecovery({ mode }: { mode: "request" | "reset" }) {
                       value={confirmation}
                       onChange={(e) => setConfirmation(e.target.value)}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="recovery-authenticator">Authenticator code (if enabled)</Label>
+                    <Input
+                      id="recovery-authenticator"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={authenticatorCode}
+                      onChange={(e) => setAuthenticatorCode(e.target.value)}
+                      aria-describedby="recovery-authenticator-help"
+                    />
+                    <p id="recovery-authenticator-help" className="text-xs text-muted-foreground">
+                      If your account uses two-step verification, enter a fresh six-digit code from your authenticator app.
+                    </p>
                   </div>
                 </>
               )}
