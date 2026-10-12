@@ -18,8 +18,8 @@
 .oc-hero-introduction { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5vw, 72px); max-width: 1160px; margin: 0 auto; }
 .oc-hero-copy { min-width: 0; }
 .oc-hero-context { margin: 0 0 24px; font-size: var(--oc-size-11); font-weight: var(--oc-weight-semibold); letter-spacing: .12em; text-transform: uppercase; line-height: 1.8; }
-.oc-hero-headline { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2.5rem, 4.3vw, 4rem); font-weight: var(--oc-weight-display); line-height: 1.15; letter-spacing: -.045em; }
-.oc-hero-headline span { display: block; }
+.oc-hero-headline { margin: 0; font-family: var(--oc-font-display); font-size: clamp(2.3rem, 3.65vw, 3.35rem); font-weight: var(--oc-weight-display); line-height: 1.15; letter-spacing: -.045em; text-wrap: balance; }
+.oc-hero-tagline { margin: 16px 0 0; font-family: var(--oc-font-display); font-size: clamp(1.12rem, 1.65vw, 1.5rem); font-style: italic; line-height: 1.25; color: #f2e5d3; }
 .oc-hero-support > p:first-child { margin: 24px 0 0; max-width: 460px; font-size: var(--oc-size-16); line-height: var(--oc-leading-body); text-wrap: pretty; }
 .oc-hero-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 28px; }
 .oc-hero-ctas [data-slot="button"] { min-height: 48px; height: auto; padding: 14px 22px; font-size: var(--oc-text-small); background: #fff7ec; color: var(--primary); }
@@ -35,14 +35,14 @@
 @media (max-width: 800px) {
   .oc-landing .oc-hero-editorial { padding: 112px 24px 88px; }
   .oc-hero-introduction { grid-template-columns: minmax(0, 1fr); gap: 36px; max-width: 560px; }
-  .oc-hero-headline { font-size: clamp(2.5rem, 7.2vw, 3.5rem); }
+  .oc-hero-headline { font-size: clamp(2.2rem, 6.3vw, 3rem); }
 }
 @media (max-width: 540px) {
   .oc-hero-header > a { width: clamp(84px, 26vw, 120px); }
   .oc-hero-header .nav-actions { gap: 8px; }
   .oc-hero-header .nav-actions [data-slot="button"] { min-height: 44px; padding: 10px; font-size: var(--oc-text-small); }
   .oc-landing .oc-hero-editorial { padding: 104px 20px 88px; }
-  .oc-hero-headline { font-size: clamp(2rem, 8.7vw, 2.9rem); }
+  .oc-hero-headline { font-size: clamp(1.95rem, 7.7vw, 2.5rem); }
   .oc-hero-context { font-size: var(--oc-size-10); letter-spacing: .1em; }
   .oc-hero-support > p:first-child { font-size: var(--oc-size-14); }
   .oc-hero-ctas { gap: 10px 12px; }
