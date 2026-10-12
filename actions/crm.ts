@@ -1,4 +1,5 @@
 "use server";
+import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
 import { genderValues } from "@/lib/student-profile";
@@ -179,7 +180,7 @@ export async function setApplicationStatus(
     "applicants.identify",
   ]);
 
-  const application = await prisma.$transaction(async (tx) => {
+  const application = await clubWriteTransaction(async (tx) => {
     await authorizeClubTransaction(tx, parsed.clubId, user.id, ["decisions.manage", "applicants.identify"]);
     const decision = await publishRecruitmentDecision(tx, parsed, user.id);
     const updated = await tx.application.findFirst({

@@ -60,6 +60,16 @@ export async function acceptIdentityInvitationInTransaction(tx: AppTransactionCl
 /** Shared canonical invitation creation; callers authorize before opening the transaction. */
 export async function createIdentityInvitationInTransaction(tx: AppTransactionClient, data: { clubId: string; identifierTypeId: string; identifier: string; invitedName: string | null; invitedYear: string | null; requestedRole: keyof typeof onboardingRolePermissions; deliveryEmail?: string; platformDesignation: boolean }, actor: { id: string }) {
     await lockOperationalClub(tx, data.clubId);
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id=${actor.id} FOR SHARE`;
+    await tx.$queryRaw`SELECT id FROM "ClubMember" WHERE "clubId"=${data.clubId} AND "userId"=${actor.id} FOR SHARE`;
+    const account = await tx.user.findUnique({ where: { id: actor.id }, select: { disabledAt: true } });
+    if (!account || account.disabledAt) throw new Error("Invitation authority unavailable.");
+    if (data.platformDesignation) {
+      await tx.$queryRaw`SELECT "userId" FROM "PlatformAdmin" WHERE "userId"=${actor.id} FOR SHARE`;
+      const allowed = (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(id => id.trim());
+      const grant = await tx.platformAdmin.findUnique({ where: { userId: actor.id } });
+      if (!allowed.includes(actor.id) || !grant?.active) throw new Error("Invitation authority unavailable.");
+    }
     const club = await tx.club.findUniqueOrThrow({ where: { id: data.clubId } });
     const config = await tx.schoolIdentifierType.findUniqueOrThrow({ where: { id: data.identifierTypeId }, include: { school: true } });
     if (config.schoolId !== club.schoolId || !config.school.active) throw new Error("Identifier type does not belong to this organization's active school.");
