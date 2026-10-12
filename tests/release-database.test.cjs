@@ -1,0 +1,39 @@
+const { test } = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const path = require('node:path')
+const { PGlite } = require('@electric-sql/pglite')
+const { catalogQuery, missingColumns } = require('../scripts/check-release-database.cjs')
+
+test('release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data', async () => {
+  const db = new PGlite()
+  const dir = path.resolve(__dirname, '../prisma/migrations')
+  const pending = new Set(['20261010190001_reconciled_decision_letters', '20261011180000_submitted_interview_questions', '20261011194930_decision_letter_runtime_access'])
+  const names = fs.readdirSync(dir).filter(name => fs.existsSync(path.join(dir, name, 'migration.sql'))).sort()
+  const apply = name => db.exec(fs.readFileSync(path.join(dir, name, 'migration.sql'), 'utf8'))
+  try {
+    await db.exec('CREATE ROLE anon; CREATE ROLE authenticated')
+    for (const name of names.filter(name => !pending.has(name))) await apply(name)
+    await db.exec(`INSERT INTO "User"(id,email) VALUES('release-student','release-fixture@virginia.edu');
+      INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('release-club','release-club','Release Fixture','','','#142d45','Other');
+      INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('release-round','release-club','Review',0);
+      INSERT INTO "Application"(id,"studentId","clubId","roundId",status,"submittedAt") VALUES('release-app','release-student','release-club','release-round','IN_REVIEW',NOW())`)
+    const before = (await db.query('SELECT id,email FROM "User" ORDER BY id')).rows
+    const application = (await db.query('SELECT id,"studentId",status FROM "Application" ORDER BY id')).rows
+    const missing = missingColumns((await db.query(catalogQuery)).rows)
+    assert.ok(missing.includes('Application.decisionVersion'))
+    assert.ok(missing.includes('Club.decisionLetterTemplates'))
+    assert.ok(missing.includes('InterviewRecord.submittedQuestions'))
+    assert.ok(missing.some(column => column.startsWith('DecisionLetter.')))
+    await assert.rejects(db.query('SELECT "decisionVersion" FROM "Application"'), /does not exist/)
+    for (const name of names.filter(name => pending.has(name))) await apply(name)
+    assert.deepEqual(missingColumns((await db.query(catalogQuery)).rows), [])
+    assert.deepEqual((await db.query('SELECT id,email FROM "User" ORDER BY id')).rows, before)
+    assert.deepEqual((await db.query('SELECT id,"studentId",status FROM "Application" ORDER BY id')).rows, application)
+    assert.equal((await db.query('SELECT "decisionVersion" FROM "Application"')).rows[0].decisionVersion, 0)
+    assert.equal((await db.query('SELECT count(*)::int AS count FROM "DecisionLetter"')).rows[0].count, 0)
+    for (const role of ['anon', 'authenticated']) {
+      assert.equal((await db.query(`SELECT has_table_privilege('${role}', '"DecisionLetter"', 'SELECT,INSERT,UPDATE,DELETE') AS allowed`)).rows[0].allowed, false)
+    }
+  } finally { await db.close() }
+})

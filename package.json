@@ -17,6 +17,7 @@
     "validate": "npm run test && npm run test:migrations && npm run lint && npm run typecheck && npm run build",
     "db:deploy": "node scripts/check-migration-path.cjs && prisma migrate deploy",
     "db:check-path": "node scripts/check-migration-path.cjs",
+    "db:check-release": "node scripts/check-release-database.cjs",
     "test:onboarding:e2e": "node scripts/run-onboarding-e2e.cjs",
     "pdf:assets": "node scripts/copy-pdfjs-assets.cjs",
     "predev": "npm run pdf:assets",
