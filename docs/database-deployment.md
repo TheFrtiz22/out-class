@@ -33,6 +33,8 @@ Run supabase/task-submissions.sql for the separate private task bucket as descri
 
 ## Deployment verification
 
+Before promoting a schema-dependent build, run `npm run db:check-release` with `OUTCLASS_DATABASE_CHECK_URL` securely set to the intended runtime connection. This read-only catalog check rejects missing Prisma tables/columns without executing migrations or exposing connection details. Check migration history separately using operator credentials; the bounded runtime role intentionally cannot read `_prisma_migrations`. See [the October 11 recovery plan](production-auth-recovery.md) for the current missing-schema incident and approval gates.
+
 - Check resumes.public = false and inspect pg_policies for the restrictive guard, including any legacy ALL/SELECT grants.
 - Using real anon and authenticated tokens, direct resume listing/download must fail, including for the owner. Owner upload issuance must work; cross-owner upload issuance must fail.
 - Authorized /api/resumes and /api/application-attachments reads must redirect to short-lived URLs. Deny outsiders, revoked memberships, draft reviewers, anonymous-round reviewers, guessed/old paths, and foreign application/question references.
