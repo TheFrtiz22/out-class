@@ -109,10 +109,17 @@ export async function POST(request: NextRequest) {
       // factor may upgrade this isolated recovery session; never enroll/remove
       // factors or borrow the visitor's normal login/Admin session.
       const factors = await client.auth.mfa.listFactors();
-      const factor = factors.data?.totp.find((item) => item.status === "verified");
-      const verified = !factors.error && factor
-        ? await client.auth.mfa.challengeAndVerify({ factorId: factor.id, code: reset.data.authenticatorCode })
-        : null;
+      let verified: Awaited<ReturnType<typeof client.auth.mfa.challengeAndVerify>> | null = null;
+      if (!factors.error) {
+        for (const factor of factors.data.totp.filter((item) => item.status === "verified")) {
+          verified = await client.auth.mfa.challengeAndVerify({
+            factorId: factor.id, code: reset.data.authenticatorCode,
+          });
+          // Only a code mismatch warrants checking the next owned factor.
+          // Provider outages, session errors and rate limits stop immediately.
+          if (!verified.error || verified.error.code !== "mfa_verification_failed") break;
+        }
+      }
       const identity = verified && !verified.error ? await client.auth.getUser() : null;
       const assurance = identity && !identity.error
         ? await client.auth.mfa.getAuthenticatorAssuranceLevel() : null;

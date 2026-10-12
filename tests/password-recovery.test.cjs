@@ -218,6 +218,36 @@ test('MFA recovery rejects unverified factors, bad codes, wrong identity and AAL
     assert.deepEqual(h.calls, [['signOut', { scope: 'local' }]]);
   }
 });
+test('a code from a later verified authenticator works, while provider rate limits stop factor attempts', async () => {
+  const attempted = [];
+  const factors = async () => ({ data: { totp: [
+    { id: 'not-verified', status: 'unverified' },
+    { id: 'first-factor', status: 'verified' },
+    { id: 'second-factor', status: 'verified' },
+  ] }, error: null });
+  const h = mfaHarness({ mfa: {
+    listFactors: factors,
+    challengeAndVerify: async ({ factorId }) => {
+      attempted.push(factorId);
+      return factorId === 'first-factor'
+        ? { data: null, error: { code: 'mfa_verification_failed' } }
+        : { data: {}, error: null };
+    },
+  } });
+  assert.equal((await h.send({ ...reset, authenticatorCode: '123456' })).status, 200);
+  assert.deepEqual(attempted, ['first-factor', 'second-factor']);
+  const limited = [];
+  const throttled = mfaHarness({ mfa: {
+    listFactors: factors,
+    challengeAndVerify: async ({ factorId }) => {
+      limited.push(factorId);
+      return { data: null, error: { code: 'over_request_rate_limit', status: 429 } };
+    },
+  } });
+  assert.equal((await throttled.send({ ...reset, authenticatorCode: '123456' })).status, 400);
+  assert.deepEqual(limited, ['first-factor']);
+  assert.deepEqual(throttled.calls, [['signOut', { scope: 'local' }]]);
+});
 
 test('a completed reset remains successful if subsequent session revocation fails', async () => {
   const h = harness({ signOut: async () => { throw new Error('provider outage') } })

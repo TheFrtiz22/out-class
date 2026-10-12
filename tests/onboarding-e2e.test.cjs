@@ -252,11 +252,17 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
    await actor.signUp('Recovery Student',identifier,2028);await actor.profile('Recovery Student',2028);
    const enrolled=await actor.client.auth.mfa.enroll({factorType:'totp',friendlyName:'Recovery test'});assert.equal(enrolled.error,null);
    const verified=await actor.client.auth.mfa.challengeAndVerify({factorId:enrolled.data.id,code:totp(enrolled.data.totp.secret)});assert.equal(verified.error,null);
+   let codeSecret=enrolled.data.totp.secret;
+   if(outcome==='valid'){
+    const second=await actor.client.auth.mfa.enroll({factorType:'totp',friendlyName:'Second recovery authenticator'});assert.equal(second.error,null);
+    const confirmed=await actor.client.auth.mfa.challengeAndVerify({factorId:second.data.id,code:totp(second.data.totp.secret)});assert.equal(confirmed.error,null);
+    codeSecret=second.data.totp.secret;
+   }
    const request=body=>existing.request('/api/auth/password-recovery',{method:'POST',headers:{origin:config.appUrl.replace('127.0.0.1','localhost'),'content-type':'application/json'},body:JSON.stringify(body)});
    const requested=await request({action:'request',email:actor.credentials.email});assert.equal(requested.status,200);
    const message=await confirmationMessage(config,actor.credentials.email,/Reset|Recovery/i);
    const tokenHash=(message.HTML+' '+message.Text).match(/#token_hash=([a-f0-9]+)/i)?.[1];assert.ok(tokenHash,'Captured recovery email contains a token hash');
-   const freshCode=totp(enrolled.data.totp.secret);
+   const freshCode=totp(codeSecret);
    const code=outcome==='invalid'?String((Number(freshCode)+1)%1000000).padStart(6,'0'):freshCode;
    const nextPassword='Recovered-MFA-local-only!123';
    const body={action:'reset',tokenHash,password:nextPassword,confirmation:nextPassword,...(outcome==='missing'?{}:{authenticatorCode:code}),userId:existing.user.id,factorId:'foreign-factor'};
@@ -273,7 +279,7 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
     assert.equal(responseBody.needsNewLink,true);await actor.signIn(actor.credentials.email,actor.credentials.password);
     const changed=await actor.client.auth.signInWithPassword({email:actor.credentials.email,password:nextPassword});assert.ok(changed.error,'Rejected MFA must not change the password');
    }
-   const factors=await actor.client.auth.mfa.listFactors();assert.equal(factors.data.totp.filter(f=>f.status==='verified').length,1,'Recovery must preserve MFA enrollment');
+   const factors=await actor.client.auth.mfa.listFactors();assert.equal(factors.data.totp.filter(f=>f.status==='verified').length,outcome==='valid'?2:1,'Recovery must preserve MFA enrollment');
    assert.equal(await db.platformAdmin.count({where:{userId:actor.user.id}}),0,'Recovery grants no administrator access');
   }
  });
