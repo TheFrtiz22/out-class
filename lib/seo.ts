@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 
 export const SITE_URL = "https://www.out-class.net"
-export const SITE_TITLE = "OutClass — One profile. Every opportunity."
-export const SITE_DESCRIPTION = "OutClass helps college students discover clubs, apply, manage interviews, and track recruitment, with tools for club leaders to manage applicants and decisions."
+export const SITE_TITLE = "OutClass | UVA Club Applications & Recruitment"
+export const SITE_DESCRIPTION = "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place."
 export const ORGANIZATION_DESCRIPTION = "OutClass is a platform for college club recruitment, helping students discover and apply to organizations while giving club leaders tools to manage applicants, interviews, scheduling, evaluations, and decisions."
 export const privateRobots: Metadata["robots"] = { index: false, follow: false }
 export const publicRobots: Metadata["robots"] = { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } }
