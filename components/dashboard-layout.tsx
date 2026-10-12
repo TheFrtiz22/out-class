@@ -37,7 +37,7 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
     if (leaderFocus?.roundId) query.set("roundId", leaderFocus.roundId)
     router.replace(`/club/${encodeURIComponent(managedClubId)}/workspace?${query}`)
   }, [leaderView, managedClubId, view, leaderFocus, router])
-  const section = view === "calendar" ? "calendar" : view === "status" ? "status" : view === "tracker" ? "applications" : view === "corkboard" ? "corkboard" : view === "explore" ? personalSection === "categories" ? "categories" : "explore" : personalSection
+  const section = view === "status" ? "status" : view === "tracker" ? "applications" : view === "corkboard" ? "corkboard" : view === "explore" ? personalSection === "categories" ? "categories" : "explore" : personalSection
   const mode = personalMode(section)
   const items = personalItems(mode)
   function select(id: string) {
@@ -48,8 +48,9 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
   if (leaderView && managed) return <OutClassLoadingScreen />
   if (!user && appMode === "admin") return <ProductShell mode="preview" modes={[{ id: "preview", label: "Local workspace preview" }]} items={adminNav.map(i => ({ id: i.id, label: i.title, preview: true }))} active={view} title={viewTitles[view].title} onSelect={id => { if (id !== "preview") onNavigate(id as ViewId) }} onNavigate={onNavigate}><p className="mb-6 text-sm text-muted-foreground">Local preview · sample data only. These controls do not publish changes.</p><PageHeader title={viewTitles[view].title} />{children}</ProductShell>
   const illustration = studentCampusIllustration(view)
-  const title = ["student-dashboard", "student-profile", "inbox"].includes(view) ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
-  return <ProductShell mode={mode} modes={personalModes} items={items} active={view === "student-profile" || view === "inbox" || view === "student-dashboard" ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
+  const universalView = ["student-dashboard", "calendar", "student-profile", "inbox"].includes(view)
+  const title = universalView ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
+  return <ProductShell mode={mode} modes={personalModes} items={items} active={universalView ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
     {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader eyebrow="Your campus, connected" title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} illustration={illustration ? { variant: illustration, treatment: view === "inbox" ? "quiet" : "standard", presentation: view === "inbox" ? "compact" : "standard" } : undefined} />}
     {(["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}

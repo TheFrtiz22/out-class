@@ -65,7 +65,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
   const demo = useDemoMode()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [personalSection, setPersonalSection] = useState<PersonalSection>("explore")
+  const [personalSection, setPersonalSection] = useState<PersonalSection>(() => canonicalStudentParams(new URLSearchParams(searchParams.toString()))?.section ?? "explore")
   const showLanding = !embedded && initialView === "landing" && !searchParams.has("workspace") && !searchParams.has("view") && !searchParams.has("demoClub") && !searchParams.has("next")
   const wantsStudent = searchParams.get("workspace") === "student"
   const { selectClub, user, isImpersonating } = useAuth()
@@ -97,7 +97,7 @@ export function AppShell({ launchClubs = [], initialView = "landing", embedded =
     if (isImpersonating && next === "auth") return
     if (demo.isDemoEnabled && ["auth", "student-onboarding"].includes(next)) { demo.viewAs("student"); return }
     if (resolveStudentView(next)) {
-      const nextSection = sectionForStudentView(next, section ?? null)
+      const nextSection = sectionForStudentView(next, section ?? (next === "calendar" ? personalSection : null))
       setPersonalSection(nextSection)
       const params = new URLSearchParams({ workspace: "student", view: next })
       if (!["explore", "corkboard"].includes(nextSection)) params.set("section", nextSection)

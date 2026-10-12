@@ -6,7 +6,7 @@ function shell(routeSearch,windowSearch='') {
  const demo={isDemoEnabled:true,state:{perspective:{role:'leader',clubId:'mii'}},viewAs:(...args)=>changes.push(args)}
  const router={replace:path=>redirects.push(path),push:path=>redirects.push(path)}
  const mocks={
-  react:{useState:initial=>[initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect)},
+  react:{useState:initial=>[typeof initial==='function'?initial():initial,value=>stateChanges.push(value)],useEffect:effect=>effects.push(effect)},
   'next/navigation':{useRouter:()=>router,useSearchParams:()=>new URLSearchParams(routeSearch)},
   '@/contexts/demo-context':{useDemoMode:()=>demo},
   '@/contexts/auth-context':{useAuth:()=>({user:{memberships:[]},selectClub(){}})},
@@ -61,4 +61,20 @@ test('student route scope preserves existing interviews, decisions, membership t
 
 test('student tab changes retain the client shell and update browser history without a server navigation',()=>{
  const result=shell('?workspace=student');result.navigate('explore','explore');result.navigate('tracker','applications');assert.deepEqual(result.redirects,[]);assert.deepEqual(result.historyChanges,['/?workspace=student&view=explore','/?workspace=student&view=tracker&section=applications']);assert.ok(result.stateChanges.includes('explore'));assert.ok(result.stateChanges.includes('tracker'));
+});
+
+test('opening the universal Calendar retains each originating tab in the URL and on reload',()=>{
+ const {canonicalStudentParams}=navigationModule.exports;
+ for(const [view,section] of [['explore','explore'],['corkboard','explore'],['tracker','applications'],['status','status'],['my-clubs','clubs'],['my-clubs','meetings'],['my-clubs','tasks']]){
+  const result=shell(`?workspace=student&view=${view}&section=${section}`);
+  result.navigate('calendar');
+  const route=canonicalStudentParams(new URL(result.historyChanges.at(-1),'https://outclass.test').searchParams);
+  assert.equal(route.view,'calendar');assert.equal(route.section,section);
+  assert.equal(canonicalStudentParams(route.params).params.toString(),route.params.toString());
+ }
+ for(const section of [null,'calendar','unknown','recruitment']){
+  assert.equal(navigationModule.exports.sectionForStudentView('calendar',section),'explore');
+ }
+ const old=canonicalStudentParams(new URLSearchParams('workspace=student&view=calendar&section=calendar&eventId=meeting'));
+ assert.equal(old.params.get('view'),'calendar');assert.equal(old.params.get('eventId'),'meeting');assert.equal(old.params.has('section'),false);
 });

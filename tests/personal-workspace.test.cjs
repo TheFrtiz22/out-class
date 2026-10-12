@@ -132,6 +132,26 @@ test('universal destinations work from a member club shell whose context links u
  const h=hooks(),navigation=[],context=[];
  const {ProductShell}=load('components/shell/product-shell.tsx',{'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
  const shell=h.render(()=>ProductShell({mode:'clubs',clubId:'member-club',title:'Overview',modes:[],items:[],active:'overview',onSelect:id=>context.push(id),onNavigate:view=>navigation.push(view)}));
- for(const id of ['student-dashboard','inbox','student-profile']) nodes(shell).find(node=>node.props?.['data-tour']==='nav-'+id).props.onClick();
- assert.deepEqual(navigation,['student-dashboard','inbox','student-profile']);assert.deepEqual(context,[]);
+ for(const id of ['student-dashboard','calendar','inbox','student-profile']) nodes(shell).find(node=>node.props?.['data-tour']==='nav-'+id).props.onClick();
+ assert.deepEqual(navigation,['student-dashboard','calendar','inbox','student-profile']);assert.deepEqual(context,[]);
+});
+
+test('Calendar is shared account navigation in every personal mode and keeps its title and active state',()=>{
+ const h=hooks(),navigation=[];
+ const mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[],focusApplication(){}})}};
+ const {DashboardLayout}=load('components/dashboard-layout.tsx',mocks),{ProductShell}=load('components/shell/product-shell.tsx',mocks);
+ const {personalDestination}=load('lib/product-navigation.ts');assert.deepEqual(personalDestination('calendar'),{view:'calendar'});
+ for(const [section,mode] of [['explore','explore'],['applications','apply'],['tasks','clubs']]){
+  const boundary=h.render(()=>DashboardLayout({view:'calendar',personalSection:section,appMode:'student',onNavigate:view=>navigation.push(view)}));
+  const layout=h.render(()=>boundary.props.children.type(boundary.props.children.props));
+  assert.equal(layout.props.mode,mode);assert.equal(layout.props.title,'Calendar');assert.equal(layout.props.active,'calendar');
+  assert.equal(layout.props.items.some(item=>item.id==='calendar'),false);
+  const shell=h.render(()=>ProductShell(layout.props));
+  const account=nodes(shell).find(node=>node.props?.['aria-label']==='Account navigation');
+  const buttons=nodes(account).filter(node=>node.props?.['data-tour']);
+  assert.deepEqual(buttons.map(button=>text(button)),['Calendar','Notifications','Profile']);
+  assert.equal(buttons[0].props['aria-current'],'page');buttons[0].props.onClick();
+  const mobile=nodes(shell).find(node=>node.type==='MobileNavigation');assert.equal(mobile.props.items.some(item=>item.id==='calendar'),false);
+ }
+ assert.deepEqual(navigation,['calendar','calendar','calendar']);
 });

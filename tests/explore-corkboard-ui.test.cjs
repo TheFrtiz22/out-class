@@ -19,7 +19,7 @@ test('desktop and mobile share contextual modes with Corkboard in Explore',()=>{
  const {personalItems,personalModes}=load('lib/product-navigation.ts');
  assert.deepEqual(personalModes.map(item=>item.label),['Explore','Apply','My Clubs']);
  assert.deepEqual(personalItems('explore').map(item=>item.label),['Discover','Corkboard']);
- assert.deepEqual(personalItems('apply').map(item=>item.label),['Applications','Status','Calendar']);
+ assert.deepEqual(personalItems('apply').map(item=>item.label),['Applications','Status']);
  assert.deepEqual(personalItems('clubs').map(item=>item.label),['Clubs','Meetings','Tasks']);
  const selections=[],{MobileNavigation}=load('components/shell/mobile-navigation.tsx',{'next/link':{default:'Link'}});
  const tree=MobileNavigation({items:personalItems('explore'),active:'corkboard',manager:false,onSelect:id=>selections.push(id),onLink(){},onMore(){}});

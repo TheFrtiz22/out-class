@@ -12,7 +12,8 @@ export function sectionForStudentView(view: ViewId, section: string | null): Per
   if (view === "status") return "status"
   if (view === "tracker") return ["status", "interviews", "decisions"].includes(section || "") ? "status" : "applications"
   if (view === "my-clubs") return ["clubs", "meetings", "tasks"].includes(section || "") ? section as PersonalSection : "clubs"
-  if (view === "calendar") return "calendar"
+  // Calendar is shared across modes; its section remembers the originating tab.
+  if (view === "calendar") return ["applications", "status", "clubs", "meetings", "tasks"].includes(section || "") ? section as PersonalSection : "explore"
   return view === "corkboard" ? "corkboard" : "explore"
 }
 export function studentRoute(value: string | null, section: string | null) {

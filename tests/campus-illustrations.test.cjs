@@ -101,10 +101,10 @@ for(const [name, member, requested, effective, illustration] of settingsCases) t
 
 // Render the real parent and settings content against one disposable identity/query.
 // Data readers, unrelated panels and shell chrome are inert; no service is contacted.
-function renderSettingsWorkspace(member, requested) {
+function renderSettingsWorkspace(member, requested, section = 'settings') {
  const clubId='visual-fixture-club'
  const membership={id:'fixture-member',clubId,status:'ACTIVE',permissions:[],...member,club:{name:'Fixture Club',pipelineVersion:1,applicationVersion:1}}
- const query=new URLSearchParams({section:'settings'})
+ const query=new URLSearchParams({section})
  if(requested != null) query.set('setting',requested)
  const passthrough=({children})=>React.createElement(React.Fragment,null,children)
  function component(file) {
@@ -129,7 +129,7 @@ function renderSettingsWorkspace(member, requested) {
   },exports)
   return exports
  }
- return renderToStaticMarkup(React.createElement(component('components/club-workspace.tsx').ClubWorkspace,{clubId,section:'settings'}))
+ return renderToStaticMarkup(React.createElement(component('components/club-workspace.tsx').ClubWorkspace,{clubId,section}))
 }
 for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,()=>{
  const html=renderSettingsWorkspace(member,requested)
@@ -140,4 +140,11 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  } else assert.equal(activeLinks.length,0)
  if(illustration) assert.ok(html.includes(`data-variant="${illustration}"`))
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
+})
+
+test('club Overview keeps its name, heading and public profile link without an artwork slot',()=>{
+ const html=renderSettingsWorkspace({isOwner:true},null,'overview');
+ assert.match(html,/<h1>Overview<\/h1>/);assert.match(html,/Fixture Club/);
+ assert.match(html,/Public club profile/);assert.match(html,/href="\/club\/visual-fixture-club"/);
+ assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })
