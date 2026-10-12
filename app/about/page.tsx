@@ -14,7 +14,7 @@ export default function AboutPage() {
   return (
     <PublicInformationPage className="oc-editorial-page oc-about-page" eyebrow="About OutClass" title="Club recruitment, without the scattered forms and spreadsheets." introduction="OutClass is being built by UVA students to make it easier to discover organizations, apply, schedule interviews, and keep track of what happens next."
       heroActions={<div className="oc-public-actions"><a className="oc-public-text-link" href="#why-outclass">Why we’re building it <ArrowRight size={16} aria-hidden="true" /></a></div>}
-      heroAside={<figure className="oc-about-hero-photo"><Image src="/images/campus/autumn-lawn-1600.webp" alt="Autumn trees framing the University of Virginia Lawn" width={1600} height={1614} sizes="(max-width: 800px) 100vw, 45vw" priority /><figcaption><span>Beginning on Grounds</span><span>Charlottesville, Virginia</span></figcaption></figure>}>
+      heroAside={<figure className="oc-about-hero-photo"><div className="oc-about-hero-image"><Image src="/images/campus/autumn-lawn-1600.webp" alt="Autumn trees framing the University of Virginia Lawn" width={1600} height={1614} sizes="(max-width: 800px) 100vw, 45vw" priority /></div><figcaption><span>Beginning on Grounds</span><span>Charlottesville, Virginia</span></figcaption></figure>}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SectionReveal id="why-outclass" className="oc-public-section oc-editorial-split oc-about-problem" aria-labelledby="why-title">
         <div><p className="oc-public-kicker">01 / Why this exists</p><h2 id="why-title" data-motion="text">Club recruitment is scattered.</h2></div>
@@ -31,7 +31,7 @@ export default function AboutPage() {
         </SectionReveal>
       </div>
       <SectionReveal className="oc-public-section oc-editorial-split oc-about-grounded" aria-labelledby="grounds-title">
-        <figure data-motion="visual"><Image src="/images/campus/sunset-rotunda-1600.webp" alt="The UVA Rotunda and Lawn at sunset" width={1600} height={1067} sizes="(max-width: 800px) 100vw, 50vw" /><figcaption>The University of Virginia Lawn</figcaption></figure>
+        <figure data-motion="visual"><Image src="/images/campus/sunset-rotunda-1600.webp" alt="The University of Virginia Rotunda at sunset" width={1600} height={1067} sizes="(max-width: 800px) 100vw, 50vw" /><figcaption>The University of Virginia Rotunda</figcaption></figure>
         <div><p className="oc-public-kicker">03 / The team behind it</p><h2 id="grounds-title" data-motion="text">Built by students at UVA.</h2><div className="oc-editorial-prose" data-motion="body"><p>OutClass started as a student-built project at the University of Virginia. We’re beginning with selective and application-based organizations because their recruitment involves real coordination on both sides.</p><p>We’re rolling out with participating clubs one at a time. That means testing the actual workflow, listening to the students and leaders using it, and fixing what doesn’t work before taking it to other campuses.</p></div><a className="oc-public-text-link" href="/uva">Explore OutClass at UVA <ArrowRight size={16} aria-hidden="true" /></a></div>
       </SectionReveal>
       <aside className="oc-about-independence"><p>OutClass is independent: it is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university.</p></aside>

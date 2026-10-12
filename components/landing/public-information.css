@@ -109,10 +109,11 @@
 
 /* About: an opening photograph, a shared problem, and a campus-grounded story. */
 .oc-about-page .oc-information-hero { background: var(--oc-public-linen); padding-block: 72px; }
-.oc-about-hero-photo { position: relative; margin: 0; padding: 0 0 28px 24px; }
-.oc-about-hero-photo::before { content: ""; position: absolute; inset: 28px 24px 0 0; border: 1px solid #142d4e40; pointer-events: none; }
-.oc-about-hero-photo img { position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 55%; }
-.oc-about-hero-photo figcaption { position: absolute; bottom: 5px; left: 28px; right: 0; display: flex; justify-content: space-between; gap: 16px; font-size: 10px; color: var(--muted-foreground); }
+.oc-about-hero-photo { position: relative; margin: 0; }
+.oc-about-hero-image { position: relative; padding-left: 24px; }
+.oc-about-hero-image::before { content: ""; position: absolute; inset: 28px 24px 0 0; border: 1px solid #142d4e40; pointer-events: none; }
+.oc-about-hero-photo img { display: block; position: relative; width: 100%; aspect-ratio: 4 / 4.6; object-fit: cover; object-position: center 55%; }
+.oc-about-hero-photo figcaption { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 16px 0 0 24px; font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-problem { border-bottom: 1px solid var(--border); }
 .oc-about-idea .oc-public-section > h2 { max-width: 24ch; font-size: clamp(2.25rem, 4.8vw, 4rem); }
 .oc-about-perspectives { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin: 52px 0 36px; }
@@ -122,8 +123,8 @@
 .oc-about-perspectives p { max-width: 42ch; font-size: 16px; color: #d5dce4; }
 .oc-about-grounded { align-items: center; }
 .oc-about-grounded figure { margin: 0; }
-.oc-about-grounded img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center; }
-.oc-about-grounded figcaption { font-size: 11px; margin-top: 16px; color: var(--muted-foreground); }
+.oc-about-grounded img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center; }
+.oc-about-grounded figcaption { margin-top: 16px; font-size: 11px; line-height: 1.5; color: var(--muted-foreground); }
 .oc-about-independence { width: min(var(--oc-public-width), calc(100% - var(--oc-public-gutter) * 2)); margin: auto; border-block: 1px solid var(--border); padding-block: 24px; }
 .oc-about-independence p { max-width: 85ch; margin: auto; font-size: 13px; color: var(--muted-foreground); line-height: 1.8; }
 .oc-about-next { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; }
