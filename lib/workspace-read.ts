@@ -11,7 +11,14 @@ export async function readWorkspace<T>(kind: string, args: unknown[] = []): Prom
   const deadline = setTimeout(() => controller.abort(), 30_000)
   try {
     const response = await fetch(`/api/workspace?${query}`, { cache: "no-store", credentials: "same-origin", signal: controller.signal })
-    if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? "Your access changed. Reload to check your current permissions." : "Could not load this workspace. Try again.")
+    if (!response.ok) {
+      if (kind === "invitations") {
+        const body = await response.json().catch(() => null) as { error?: string } | null
+        if (body?.error === "UNIVERSITY_VERIFICATION_REQUIRED") throw new Error("Verify your university email through the normal email verification or password recovery flow before responding to invitations.")
+        if (body?.error === "UNIVERSITY_VERIFICATION_UNAVAILABLE") throw new Error("University email verification is temporarily unavailable. Try again later.")
+      }
+      throw new Error(response.status === 401 || response.status === 403 ? "Your access changed. Reload to check your current permissions." : "Could not load this workspace. Try again.")
+    }
     return decodeWorkspaceData<T>(await response.json() as WorkspaceWire)
   } catch (error) {
     if (controller.signal.aborted) throw new Error("This workspace took too long to load. Please try again.")

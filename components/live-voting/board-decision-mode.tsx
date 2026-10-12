@@ -1,10 +1,12 @@
 "use client"
+import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { AppStatus } from "@prisma/client"
+import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { QrCodeCard } from "@/components/qr/qr-code-card"
 import { liveVotingFields, defaultVotingDisplay, readVotingDisplay, votingJoinPath, votingDisplayWarning, votingSessionStage } from "@/lib/voting-presentation"
@@ -22,16 +24,26 @@ export function BoardDecisionMode(props: { applicants: Pipeline["applications"];
 }
 export function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeof BoardDecisionMode>[0]) {
   const demo = useDemoMode()
-  const requestRevision = useRef({value:0})
+  const auth = useAuth()
+  const reader = useRef<ReturnType<typeof serializedWorkspaceRead<Workspace>> | null>(null)
   const initializedSession = useRef<string | undefined>(undefined)
-  const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
+  const [rawData,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
   const [sessionId,setSessionId]=useState<string>(),[round,setRound]=useState(""),[target,setTarget]=useState(40),[rule,setRule]=useState("NONE"),[threshold,setThreshold]=useState(100),[members,setMembers]=useState<string[]>([])
+  const scope=JSON.stringify([clubId,sessionId,demo.isDemoEnabled,auth.user?.id])
+  const [dataScope,setDataScope]=useState("")
+  const data=dataScope===scope?rawData:null
   const [previewCandidate,setPreviewCandidate]=useState("")
   const [previewFits,setPreviewFits]=useState<boolean|null>(null),[presentFits,setPresentFits]=useState<boolean|null>(null)
   const [present,setPresent]=useState(false),[displayFields,setDisplayFields]=useState<ApplicantField[]>(defaultVotingDisplay.fields),[creationCandidates,setCreationCandidates]=useState<string[]>([])
   const [index,setIndex]=useState(0),[ballotFilter,setBallotFilter]=useState("ALL"),[filter,setFilter]=useState("ALL"),[year,setYear]=useState("ALL"),[viewPass,setViewPass]=useState(0),[selected,setSelected]=useState<string[]>([]),[publishReview,setPublishReview]=useState(false),[override,setOverride]=useState<Decision>("HOLD"),[reason,setReason]=useState("")
-  const refresh=useCallback(async()=>{const request=++requestRevision.current.value;try{const v=await getVotingWorkspace(clubId,sessionId);if(request!==requestRevision.current.value)return;setData(v);setError("")}catch(e){if(request!==requestRevision.current.value)return;setData(null);setError(e instanceof Error?e.message:"Session unavailable.")}},[clubId,sessionId])
-  useEffect(()=>{const revision=requestRevision.current;let live=true;const poll=async()=>{if(live)await refresh()};void poll();const timer=setInterval(()=>void poll(),5000);return()=>{live=false;revision.value++;clearInterval(timer)}},[refresh])
+  const refresh=useCallback(()=>reader.current?.refresh()??Promise.resolve(),[])
+  useEffect(()=>{
+    setData(null);setError("")
+    const reads=serializedWorkspaceRead(()=>getVotingWorkspace(clubId,sessionId),value=>{setDataScope(scope);setData(value);setError("")},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
+    reader.current=reads;void reads.poll()
+    const timer=setInterval(()=>void reads.poll(),5000)
+    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
+  },[clubId,sessionId,demo.isDemoEnabled,auth.user?.id,scope])
   async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
   const s=data?.session,summary=data?.summary,current=s?.passes.find(p=>p.number===s.currentPass),shown=s?.passes.find(p=>p.number===(viewPass||s.currentPass))
   const liveNavigation=!!s&&current?.state==="OPEN"&&["OPEN","PAUSED"].includes(s.state)&&(!viewPass||viewPass===s.currentPass)

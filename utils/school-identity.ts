@@ -1,20 +1,33 @@
 import type { AppTransactionClient } from "@/utils/prisma";
 import { normalizeSchoolIdentifier } from "@/lib/club-onboarding";
-import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
+import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy, UniversityVerificationError } from "@/utils/verified-email-policy";
 
 type VerifiedAccount = {
   user: { id: string; email: string };
   supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown> };
 };
 
-/** Caller supplies requireAuth({verifyEmail:true}) output, never browser identity claims. */
-export async function verifiedSchoolIdentities(tx: AppTransactionClient, account: VerifiedAccount) {
-  const { user, supabaseUser } = account;
-  if (!hasConfirmedUniversityEmail(account)) {
-    throw new Error("Verify your university identity before responding to invitations.");
-  }
-  const email = supabaseUser.email!.trim().toLowerCase();
+// Per-account object preparation, never a global user/email cache. All public
+// actions obtain this object from requireAuth, never from client input.
+const prepared = new WeakSet<VerifiedAccount>();
+export async function prepareVerifiedSchoolAccount(account: VerifiedAccount) {
+  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED");
   await requireVerifiedEmailPolicy();
+  prepared.add(account);
+}
+
+/** Caller supplies requireAuth({verifyEmail:true}) output, never browser identity claims.
+ * Prepare before acquisition; the compatibility fallback remains fail-closed.
+ */
+export async function verifiedSchoolIdentities(tx: AppTransactionClient, account: VerifiedAccount) {
+  if (!prepared.has(account)) await prepareVerifiedSchoolAccount(account);
+  if (!hasConfirmedUniversityEmail(account)) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_REQUIRED");
+  const { user, supabaseUser } = account;
+  // Keep account disable/email change authoritative at transaction time.
+  await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR SHARE`;
+  const currentAccount = await tx.user.findUnique({ where: { id: user.id }, select: { disabledAt: true, email: true } });
+  if (!currentAccount || currentAccount.disabledAt || currentAccount.email.toLowerCase() !== user.email.toLowerCase()) throw new Error("University identity account unavailable.");
+  const email = supabaseUser.email!.trim().toLowerCase();
   const [local, domain] = email.split("@");
   const configs = await tx.schoolIdentifierType.findMany({
     where: { verification: "EMAIL_LOCAL_PART", emailDomain: domain, school: { active: true } },

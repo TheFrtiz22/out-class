@@ -68,7 +68,7 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,0);
   assert.equal((await one('SELECT * FROM "Club" WHERE id=$1',[club])).claimedAt,null);
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(invitation),api.acceptIdentityClubInvitation(invitation)]);
-  assert.equal(results.filter(result=>result.status==='fulfilled').length,1);assert.equal(results.filter(result=>result.status==='rejected').length,1);
+  assert.equal(results.filter(result=>result.status==='fulfilled').length,2);assert.equal(results.filter(result=>result.status==='rejected').length,0);
   const claimed=await one('SELECT * FROM "ClubInvitation" WHERE id=$1',[invitation]);assert.equal(claimed.status,'ACCEPTED');assert.equal(claimed.claimedUserId,john);assert.ok(claimed.claimedAt);
   const membership=await one('SELECT * FROM "ClubMember" WHERE "userId"=$1',[john]);assert.equal(membership.accessRole,'OWNER');assert.equal(membership.isOwner,true);assert.equal(membership.status,'ACTIVE');
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember"')).n,1);assert.deepEqual(await api.getOrganizationInvitations(),[]);
@@ -93,5 +93,5 @@ test('first-login discovery and atomic ownership acceptance run against all repo
   assert.equal((await one('SELECT status FROM "ClubInvitation" WHERE id=$1',[laterInvite])).status,'ACCEPTED');
   const member=await one('SELECT * FROM "ClubMember" WHERE "clubId"=$1',[memberClub]);assert.equal(member.userId,john);assert.equal(member.accessRole,'MEMBER');assert.equal(member.isOwner,false);
   assert.equal((await one('SELECT count(*)::int AS n FROM "ClubMember" WHERE "clubId"=$1',[memberClub])).n,1);
-  await assert.rejects(api.acceptIdentityClubInvitation(laterInvite),/unavailable/);
+  assert.deepEqual(await api.acceptIdentityClubInvitation(laterInvite),{clubId:memberClub});
 });

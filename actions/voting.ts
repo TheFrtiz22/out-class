@@ -47,7 +47,7 @@ export async function createVotingSession(input: unknown) {
   const d=createVotingSchema.parse(input)
   if(new Set(d.applicationIds).size!==d.applicationIds.length || new Set(d.participantIds).size!==d.participantIds.length) throw Error("Duplicate selection.")
   const {user,membership}=await requireClubPermission(d.clubId,["applications.review","decisions.manage"])
-  return prisma.$transaction(async tx=>{
+  return clubWriteTransaction(async tx=>{
     await lockOperationalClub(tx, d.clubId)
     await member(tx,d.clubId,membership.id,["applications.review","decisions.manage"])
     const round=await tx.pipelineRound.findFirst({where:{id:d.roundId,clubId:d.clubId,archivedAt:null}})
@@ -61,12 +61,12 @@ export async function createVotingSession(input: unknown) {
     const s=await tx.votingSession.create({data:{clubId:d.clubId,roundId:d.roundId,targetSize:d.targetSize,displayConfig:d.displayConfig,autoAdvance:d.autoAdvance,threshold:d.threshold,createdBy:user.id,participants:{create:d.participantIds.map(memberId=>({memberId}))},candidates:{create:d.applicationIds.map((applicationId,position)=>({applicationId,position,expectedStatus:apps.find(a=>a.id===applicationId)!.status}))}}})
     await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.session.created",details:{participants:d.participantIds,candidates:d.applicationIds,target:d.targetSize,displayConfig:d.displayConfig,rule:d.autoAdvance,threshold:d.threshold}}})
     return s.id
-  }, { timeout: 30000 })
+  }, votingWriteLimits)
 }
 export async function submitVotingBallot(input: unknown) {
   const d=votingScope.extend({passNumber:z.number().int().positive(),applicationId:z.string().uuid(),decision:decisionSchema}).strict().parse(input)
   const {user,membership}=await requireClubPermission(d.clubId,["applications.review","decisions.vote"])
-  return prisma.$transaction(async tx=>{
+  return clubWriteTransaction(async tx=>{
     await member(tx,d.clubId,membership.id,["applications.review","decisions.vote"])
     const s=await session(tx,d.clubId,d.sessionId), p=s.passes.find(p=>p.number===d.passNumber), c=p?.candidates.find(c=>c.applicationId===d.applicationId)
     if(s.state!=="OPEN"||s.currentPass!==d.passNumber||p?.state!=="OPEN"||!c||!s.participants.some(p=>p.memberId===membership.id)) throw Error("Voting is closed or participant/candidate unavailable.")
@@ -82,7 +82,7 @@ export async function submitVotingBallot(input: unknown) {
     await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.ballot.submitted",details:{applicationId:d.applicationId,pass:d.passNumber,decision:d.decision}}})
     if(after.automatic&&!before.automatic) await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:s.id,action:"voting.candidate.auto-advanced",details:{applicationId:d.applicationId,pass:d.passNumber,rule:s.autoAdvance,threshold:s.threshold}}})
     return {success:true}
-  }, { timeout: 30000 })
+  }, votingWriteLimits)
 }
 export async function commandVotingSession(input: unknown) {
   const d=votingCommandSchema.parse(input)
@@ -180,7 +180,7 @@ export async function joinVotingSession(sessionId: string) {
   const info=await getVotingJoinInfo(sessionId)
   if(!("clubId" in info)||!info.clubId) throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
   const {user,membership}=await requireClubPermission(info.clubId,["applications.review","decisions.vote"])
-  return prisma.$transaction(async tx=>{
+  return clubWriteTransaction(async tx=>{
     const m=await member(tx,info.clubId,membership.id,["applications.review","decisions.vote"])
     const s=await session(tx,info.clubId,sessionId)
     const round=await tx.pipelineRound.findFirst({where:{id:s.roundId,clubId:s.clubId}})
@@ -195,5 +195,5 @@ export async function joinVotingSession(sessionId: string) {
       await tx.auditLog.create({data:{actorId:user.id,clubId:s.clubId,targetId:s.id,action:"voting.participant.joined",details:{memberId:m.id}}})
     }
     return {clubId:s.clubId,sessionId:s.id,alreadyJoined:!!participant?.joinedAt}
-  },{timeout:30000})
+  },votingWriteLimits)
 }

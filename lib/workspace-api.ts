@@ -486,7 +486,7 @@ export const deleteApplicantObservation = adapt(applicantIntelligence.deleteAppl
 });
 
 // Persisted voting follows the same Demo Mode boundary as recruitment and applicant display.
-export const getVotingWorkspace = adapt(votingApi.getVotingWorkspace, demoVoting.getVotingWorkspace)
+export const getVotingWorkspace = adapt((...args: Parameters<typeof votingApi.getVotingWorkspace>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingWorkspace>>>("voting", args), demoVoting.getVotingWorkspace)
 export const createVotingSession = adapt(votingApi.createVotingSession, demoVoting.createVotingSession)
 export const submitVotingBallot = adapt(votingApi.submitVotingBallot, demoVoting.submitVotingBallot)
 export const commandVotingSession = adapt(votingApi.commandVotingSession, demoVoting.commandVotingSession)
@@ -530,7 +530,7 @@ export const saveTutorial = adapt(tutorials.saveTutorial, input => {
   })
 })
 
-export const getVotingJoinInfo = adapt(votingApi.getVotingJoinInfo, demoVoting.getVotingJoinInfo)
+export const getVotingJoinInfo = adapt((...args: Parameters<typeof votingApi.getVotingJoinInfo>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingJoinInfo>>>("votingJoin", args), demoVoting.getVotingJoinInfo)
 export async function joinVotingSession(sessionId:string,demoMemberId?:string){
   if(demoStore.active())return demoVoting.joinVotingSession(sessionId,demoMemberId)
   if(demoMemberId)throw Error("Demo identities are not valid in production.")
@@ -539,9 +539,9 @@ export async function joinVotingSession(sessionId:string,demoMemberId?:string){
 export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:string){
   if(demoStore.active())return demoVoting.getJoinedVotingWorkspace(sessionId,demoMemberId)
   if(demoMemberId)throw Error("Demo identities are not valid in production.")
-  const info=await votingApi.getVotingJoinInfo(sessionId)
+  const info=await getVotingJoinInfo(sessionId)
   if(!("clubId" in info)||!info.clubId)throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
-  return votingApi.getVotingWorkspace(info.clubId,sessionId)
+  return getVotingWorkspace(info.clubId,sessionId)
 }
 
 export const prepareResumeImport = adapt(resumeImport.prepareResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })

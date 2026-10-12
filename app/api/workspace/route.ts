@@ -1,3 +1,5 @@
+import { UniversityVerificationError } from "@/utils/verified-email-policy"
+import { getVotingWorkspace, getVotingJoinInfo } from "@/actions/voting"
 import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
@@ -20,6 +22,9 @@ export const maxDuration = 60
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie" }
 const clubArgs = z.tuple([z.string().uuid()])
 const noArgs = z.tuple([])
+// JSON serializes an explicit undefined optional argument as null.
+const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1 ? [args[0], null] : args,
+  z.tuple([z.string().uuid(), z.string().uuid().nullish().transform(value => value ?? undefined)]))
 
 // An explicit read allowlist. Each private loader still runs its original live
 // authentication/authorization; no client identity or arbitrary action dispatch.
@@ -44,6 +49,8 @@ export async function GET(request: Request) {
       case "corkboard": noArgs.parse(args); data = await getCorkboard(); break
       case "taskNotifications": noArgs.parse(args); data = await getTaskNotifications(); break
       case "studentDashboard": noArgs.parse(args); data = await getStudentDashboardData(); break
+      case "voting": data = await getVotingWorkspace(...votingArgs.parse(args)); break
+      case "votingJoin": data = await getVotingJoinInfo(...clubArgs.parse(args)); break
       case "invitations": data = await getOrganizationInvitations(...z.tuple([z.boolean()]).parse(args)); break
       case "tutorial": data = await getTutorial(...z.tuple([z.enum(["student", "leader"]), z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(args)); break
       case "applicantDisplay": data = await getApplicantDisplay(...z.tuple([z.object({ clubId: z.string().uuid(), applicationId: z.string().uuid(), sessionId: z.string().uuid().optional(), previewConfig: z.unknown().optional() }).strict()]).parse(args) as Parameters<typeof getApplicantDisplay>); break
@@ -52,6 +59,7 @@ export async function GET(request: Request) {
     }
     return Response.json(encodeWorkspaceData(data), { headers })
   } catch (error) {
+    if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })

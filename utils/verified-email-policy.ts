@@ -1,3 +1,11 @@
+export class UniversityVerificationError extends Error {
+  constructor(public readonly code: "UNIVERSITY_VERIFICATION_REQUIRED" | "UNIVERSITY_VERIFICATION_UNAVAILABLE") {
+    super(code === "UNIVERSITY_VERIFICATION_REQUIRED"
+      ? "Verify your university email through the normal email verification or password recovery flow before responding to invitations."
+      : "University email verification is temporarily unavailable. Try again later.");
+  }
+}
+
 export function hasConfirmedUniversityEmail(account: {
   user: { id: string; email: string };
   supabaseUser: { id: string; email?: string; email_confirmed_at?: string | null; confirmation_sent_at?: string | null; app_metadata?: Record<string, unknown>; identities?: { provider: string; user_id: string; identity_data?: Record<string, unknown> }[] };
@@ -24,7 +32,7 @@ export function hasConfirmedUniversityEmail(account: {
 export async function requireVerifiedEmailPolicy() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error("University email verification is unavailable.");
+  if (!url || !key) throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_UNAVAILABLE");
   try {
     const response = await fetch(`${url}/auth/v1/settings`, {
       headers: { apikey: key }, cache: "no-store", signal: AbortSignal.timeout(10000),
@@ -33,6 +41,6 @@ export async function requireVerifiedEmailPolicy() {
       throw new Error("Email confirmation must be enabled before university invitations can be claimed.");
     }
   } catch {
-    throw new Error("University invitations require an available Auth service with email confirmation enabled.");
+    throw new UniversityVerificationError("UNIVERSITY_VERIFICATION_UNAVAILABLE");
   }
 }

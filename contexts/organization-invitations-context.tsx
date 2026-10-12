@@ -44,7 +44,7 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
   useEffect(() => {
     let cancelled = false;
     if (changes.current.accountKey !== accountKey) changes.current = { accountKey, items: new Map() };
-    setData(previous => ({ accountKey, invitations: previous.accountKey === accountKey ? previous.invitations : [], notice: previous.accountKey === accountKey ? previous.notice : "", loading: enabled, failed: false }));
+    setData(previous => ({ accountKey, invitations: previous.accountKey === accountKey ? previous.invitations : [], notice: previous.accountKey === accountKey && !previous.failed ? previous.notice : "", loading: enabled, failed: false }));
     if (!enabled) return;
     const current = () => !cancelled && currentAccount.current === accountKey;
     // Include set-aside requests for Settings and the notification indicator.
@@ -55,8 +55,8 @@ export function OrganizationInvitationsProvider({ children }: { children: ReactN
         if (kind === "accepted" || kind === "declined") return [];
         return [{ ...invitation, dismissedAt: kind === "dismissed" ? new Date() : kind === "restored" ? null : invitation.dismissedAt }];
       });
-      setData(previous => ({ ...previous, invitations }));
-    }).catch(() => { if (current()) setData(previous => ({ ...previous, failed: true })); })
+      setData(previous => ({ ...previous, invitations, notice: previous.failed ? "" : previous.notice }));
+    }).catch(error => { if (current()) setData(previous => ({ ...previous, invitations: [], failed: true, notice: error instanceof Error ? error.message : "Could not check organization invitations." })); })
       .finally(() => { if (current()) setData(previous => ({ ...previous, loading: false })); });
     return () => { cancelled = true; };
   }, [accountKey, enabled, attempt]);
