@@ -37,8 +37,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
    assert.ok(!/<a[^>]+href="\/platform/.test(html));
   }
   const signup=await visitor.request('/signup'),signupHtml=await signup.text();assert.equal(signup.status,200);
-  assert.ok(signupHtml.includes('Your campus opportunities start here.'));
-  assert.ok(signupHtml.includes('One profile. Every opportunity. Join OutClass to discover organizations, apply, and get involved.'));
+  assert.ok(signupHtml.includes('aria-label="Create your OutClass account"'));
+  assert.match(signupHtml,/<h2[^>]*>Create your account<\/h2>/);
   assert.match(signupHtml,/autocomplete="new-password"/i);
   assert.ok(!signupHtml.includes('oc-login-uva')&&!signupHtml.includes('Continue with UVA'));
   const login=await visitor.request('/login'),loginHtml=await login.text();assert.equal(login.status,200);assert.ok(loginHtml.includes('Welcome back.'));

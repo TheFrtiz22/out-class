@@ -1,6 +1,6 @@
 # Production deployment and authentication recovery — October 11, 2026
 
-Status: investigation and local validation complete; production schema changes and release are awaiting explicit approval. No production migration has been executed.
+Status: the user approved the reviewed migrations after backup checks. All three are now applied through authoritative Prisma migration deployment; all 39 migrations are successful. Existing records and access protections were verified. Release validation and promotion are in progress.
 
 ## Confirmed causes
 
@@ -17,6 +17,7 @@ Status: investigation and local validation complete; production schema changes a
 
 - `npm run db:check-release` reads the catalog in a READ ONLY transaction and rejects missing Prisma tables/columns before a release. It requires an explicitly supplied `OUTCLASS_DATABASE_CHECK_URL`, emits column names and bounded error codes, and executes no migrations. Run it using the intended runtime connection. It does not certify all types, constraints, RLS or migration history; retain those independent checks.
 - A regression reconstructs the inspected production migration state in disposable PGlite, reproduces the missing-column SQL error, then applies only the three pending migrations. Required columns become available; existing user/application records and browser-role denial are preserved.
+- The real onboarding E2E signup check now asserts the account form and account heading instead of obsolete landing-page marketing sentences. No production UI copy was changed to satisfy the test.
 - Application auth, role routing, branding, fonts, landing animations and Microsoft sign-in configuration are unchanged. The root repair is the missing schema plus correct Vercel promotion, not an auth bypass or removal of required fields.
 
 ## Reviewed production migration plan — approval required
@@ -44,12 +45,24 @@ Each migration is transactional, but the three-migration sequence is not one tra
 | `npm run test:migrations` | Passed: all 39 migrations on fresh/legacy disposable databases; 66 protected tables |
 | `npm run build` | Passed, including DM Sans retrieval |
 | New script/test lint and `git diff --check` | Passed |
-| `prisma migrate status` | Correctly reports the three pending production migrations |
-| Read-only release check against current production | Correctly blocks on 10 missing required columns (including DecisionLetter fields) |
+| `prisma migrate status` before repair | Correctly reported exactly the three pending production migrations |
+| Read-only release check | Blocked on 10 missing columns before repair; passes after repair |
+| Real onboarding/Auth/MFA/PostgreSQL/captured SMTP E2E | 13 passed, 0 failed; new signup, OTP resend/invalid/consumed-token rejection, password login, verified profiles, authorized dashboards, MFA/elevation, access isolation and real password recovery |
 | Live authorized OTP | Request and verification 200; email initially delayed, subsequently received; confirmed account reached its authorized club-leader workspace |
 | Session after browser refresh | Authenticated workspace retained |
 | Browser console during observed login/workspace | No errors or warnings captured |
 
-These browser results are on the **older** deployment currently assigned to `www`, not the newer schema-dependent build. Fresh signup/verification, email/password login, reset completion, superadmin MFA/elevation and the corrected preview/new production flow are not yet verified. The user must enter any new password themselves in the browser; no password or OTP is retained in this report. Microsoft sign-in remains hidden.
+These initial browser results are on the **older** deployment assigned to `www` during investigation. The newer production-configured build `83f2671` was then tested before public promotion using the actual OTP-verified session: `/api/users/me`, the student workspace, and the authorized leader workspace all returned 200; account/profile/membership/application data matched, including the formerly missing decision version. Vercel deployment protection was accessed through authenticated `vercel curl`, without disabling it. The ordinary recovery-branch Preview is READY but its login render fails because required Supabase configuration is missing (a streamed 200 alone did not count as a pass).
+
+The user has no second authorized UVA test mailbox, so fresh **production** signup/verification cannot be completed; the real isolated E2E covers that flow. Live password login/reset completion and hosted superadmin MFA/elevation are not yet verified. The user must enter any new password themselves in the browser; no password or OTP is retained in this report. Microsoft sign-in remains hidden.
+
+## Approved migration and recovery receipt
+
+- Supabase CLI confirmed seven COMPLETED physical backups. Latest: `1933200511`, October 11 at 09:18:37.936 UTC. WAL-G enabled; PITR disabled. This is provider availability evidence, not a provider-wide restore test.
+- A new READ ONLY repeatable-read public-schema snapshot was dumped with certificate and hostname verification, encrypted with AES-256-GCM, and restored into a dedicated PostgreSQL 17 container with network `none` and zero published ports. All 66 table counts/content digests, schema ownership/grants/policies/functions and migration history restored successfully.
+- All three unchanged pending migrations were rehearsed on that actual restored copy. Every existing table's content remained identical after excluding newly added nullable/default columns; runtime ownership, browser CRUD denial and absent runtime schema CREATE were verified.
+- The macOS native Prisma engine rejected strict certificate configuration before any migration. A loopback-only PostgreSQL tunnel enforced remote TLS, CA and hostname verification; Prisma used that local tunnel to apply the approved SQL and maintain its normal migration history. Production TLS/configuration was unchanged.
+- Immediately before execution: 38 public users, 30 Auth users, 11 applications, 18 memberships. After execution: all 39 migrations successful; 65 existing application tables had identical counts/content digests, with only migration bookkeeping and additive schema changes. DecisionLetter owner is `outclass_production_app`, RLS is enabled, anon/authenticated CRUD remains denied, runtime public CREATE remains false. Actual READ ONLY `SET LOCAL ROLE` queries verify runtime access to the new fields/history.
+- Private encrypted backup and receipts: `/Users/jesseklinger/.codex/private/outclass-recovery-20261011/`. The archive covers the public application schema, not Storage object bytes or a full Auth/provider disaster restore. No migration changed Auth or Storage.
 
 The Vercel connector returned a team-scope 403; authenticated existing CLI access succeeded. Resend's existing send-only key cannot read delivery status (401 restricted_api_key); no broader credential was created. An attempted CLI env command unexpectedly created a separate `provider-check` project containing only diagnostic source, no credentials. That project was deleted and its absence verified. OutClass's project link and live deployment remained unchanged.
