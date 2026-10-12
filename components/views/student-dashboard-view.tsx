@@ -10,7 +10,6 @@ import {
   MapPin,
 } from "lucide-react"
 import { PageHeader } from "@/components/product/page-header"
-import { studentCampusIllustration } from "@/lib/campus-illustrations"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -204,10 +203,12 @@ export function StudentDashboardView({
   if (loading || !hydrated || !now)
     return (
       <div className="oc-student-home" role="status" aria-label="Loading your recruiting season">
-        <Skeleton className="h-8 w-60" />
-        <Skeleton className="mt-5 h-4 w-48" />
-        <Skeleton className="mt-10 h-36 w-full" />
-        <Skeleton className="mt-10 h-64 w-full" />
+        <Skeleton className="h-3 w-40" />
+        <Skeleton className="mt-2 h-10 w-32" />
+        <Skeleton className="mt-2 h-4 w-60 max-w-full" />
+        <Skeleton className="mt-4 h-10 w-full" />
+        <Skeleton className="mt-4 h-28 w-full" />
+        <Skeleton className="mt-4 h-64 w-full" />
         <span className="sr-only">Loading your recruiting season…</span>
       </div>
     )
@@ -239,7 +240,14 @@ export function StudentDashboardView({
 
   return (
     <div className="oc-student-home">
-      <PageHeader illustration={studentCampusIllustration("student-dashboard")} eyebrow="University of Virginia" title="Home" description={user?.profile?.firstName ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.` : "Your applications, upcoming events, and next step."} />
+      <PageHeader
+        className="oc-home-header"
+        eyebrow="University of Virginia"
+        title="Home"
+        description={user?.profile?.firstName
+          ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.`
+          : "Your applications, upcoming events, and next step."}
+      />
       {!unavailable && <MetricStrip label="Your campus activity" items={[
         { label: "applications", value: applications.length },
         { label: "coming up", value: agenda.length },
