@@ -21,6 +21,7 @@ export const passwordReset = z
       .regex(/^[A-Za-z0-9_-]+$/),
     password: newPassword,
     confirmation: z.string(),
+    authenticatorCode: z.string().regex(/^\d{6}$/).optional(),
   })
   .refine((value) => value.password === value.confirmation, {
     message: "Passwords must match.",

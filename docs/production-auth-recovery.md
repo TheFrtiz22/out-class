@@ -1,6 +1,6 @@
 # Production deployment and authentication recovery — October 11, 2026
 
-Status: the user approved the reviewed migrations after backup checks. All three are applied through authoritative Prisma migration deployment; all 39 migrations are successful. PR #22 merged and its production deployment `dpl_9TgFHomteaUd1tCBqxFAU4dqYoN7`, commit `ea7495097edf4847238791dafbe7fb89fbe3b61a`, is READY and serves `www`. Automatic production publishing is enabled. Existing records and access protections were verified. A follow-up wires the schema check into the production build gate.
+Status: the user approved the reviewed migrations after backup checks. All three are applied through authoritative Prisma migration deployment; all 39 migrations are successful. PRs #22 and #23 merged. Production deployment `dpl_87WQwshAjXUbP4RRFJxp2A816S97`, commit `62dcd41947d8579518a41833e7c998309b4f2264`, is READY and serves `www`. Automatic production publishing and the runtime schema build gate are enabled. Existing records and access protections were verified. A subsequent MFA password-recovery correction is locally validated but awaits authorized staging access before Preview verification and release.
 
 ## Confirmed causes
 
@@ -47,17 +47,23 @@ Each migration is transactional, but the three-migration sequence is not one tra
 | New script/test lint and `git diff --check` | Passed |
 | `prisma migrate status` before repair | Correctly reported exactly the three pending production migrations |
 | Read-only release check | Blocked on 10 missing columns before repair; passes after repair |
-| Real onboarding/Auth/MFA/PostgreSQL/captured SMTP E2E | 13 passed, 0 failed; new signup, OTP resend/invalid/consumed-token rejection, password login, verified profiles, authorized dashboards, MFA/elevation, access isolation and real password recovery |
+| Real onboarding/Auth/MFA/PostgreSQL/captured SMTP E2E | Latest follow-up: 14 passed, 0 failed; includes new signup, OTP resend/invalid/consumed-token rejection, password login, verified profiles, authorized dashboards, MFA/elevation, access isolation, ordinary password recovery and missing/incorrect/correct MFA recovery codes |
 | Live authorized OTP | Request and verification 200; email initially delayed, subsequently received; confirmed account reached its authorized club-leader workspace |
 | Session after browser refresh | Authenticated workspace retained |
 | Browser console during observed login/workspace | No errors or warnings captured |
 | Repaired live password login | Supabase `/token`: grant_type=password, status=200, authorized account matched; correct leader dashboard and refresh persistence |
 | Repaired live logout and mobile navigation | Public homepage restored after sign-out; 390px leader navigation opens with no horizontal overflow |
 | Anonymous/malformed session | `/api/users/me` returns 401 with no private data |
+| Live platform administration | Existing authorized account completed password/MFA/elevation; Admin overview and refreshed overview render correctly; database confirms fresh password/MFA verification and unexpired elevation; no browser errors |
+| Live recovery request and negative cases | Provider `/recover` 200; delivered link reaches reset UI; malformed token 400, foreign Origin 403, non-UVA email 400 |
+| Live MFA recovery completion | Original form rejects password change with `insufficient_aal`; missing authenticator-entry step identified; correction not released yet |
+| MFA correction local validation | 987 passed, 14 expected skips, 0 failed; 10 focused recovery tests; lint 0 errors/28 existing warnings; typecheck/build passed; real isolated E2E 14 passed; desktop/390px form renders with no overflow or console errors |
 
 These initial browser results are on the **older** deployment assigned to `www` during investigation. The newer production-configured build `83f2671` was then tested before public promotion using the actual OTP-verified session: `/api/users/me`, the student workspace, and the authorized leader workspace all returned 200; account/profile/membership/application data matched, including the formerly missing decision version. Vercel deployment protection was accessed through authenticated `vercel curl`, without disabling it. The ordinary recovery-branch Preview is READY but its login render fails because required Supabase configuration is missing (a streamed 200 alone did not count as a pass).
 
-The user has no second authorized UVA test mailbox, so fresh **production** signup/verification cannot be completed; the real isolated E2E covers that flow. Live reset completion and hosted superadmin MFA/elevation remain unverified; their real isolated-service tests passed. The user entered the existing password directly in the browser. No password or OTP is retained in this report. Microsoft sign-in remains hidden.
+The user has no second authorized UVA test mailbox, so fresh **production** signup/verification cannot be completed; the real isolated E2E covers that flow. Hosted superadmin password/MFA/elevation is now verified. The existing test account's MFA blocks email-only recovery, and the original reset form offered no authenticator field. The follow-up accepts an optional six-digit authenticator code, challenges the recovered account's already verified TOTP factor, and verifies matching identity and AAL2 before the password update. Recovery remains isolated from the visitor's signed-in session. The real-service regression verifies rejected missing/incorrect codes, consumed-link denial, valid reset, old-password rejection/new-password login, refresh-session revocation, preserved MFA enrollment and unchanged visitor identity.
+
+The user selected reuse of staging project `omfcozcbpmevwolshibh` instead of a new paid branch. After the reported reconnection, Supabase still lists only production and explicitly denies access to that staging project. Preview configuration, hosted MFA-reset completion and release of this follow-up remain pending. The user entered passwords and authenticator codes directly in the browser. No password, code or reset token is retained in this report. Microsoft sign-in remains hidden.
 
 ## Approved migration and recovery receipt
 

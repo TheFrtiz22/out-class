@@ -245,4 +245,37 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   await assert.rejects(call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id));
  });
 
+ await scenario('J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions',async()=>{
+  const visitorCookies=existing.cookieHeader();
+  for(const outcome of ['missing','invalid','valid']){
+   const actor=new Actor(config),identifier=`recover${outcome}${suffix}`;
+   await actor.signUp('Recovery Student',identifier,2028);await actor.profile('Recovery Student',2028);
+   const enrolled=await actor.client.auth.mfa.enroll({factorType:'totp',friendlyName:'Recovery test'});assert.equal(enrolled.error,null);
+   const verified=await actor.client.auth.mfa.challengeAndVerify({factorId:enrolled.data.id,code:totp(enrolled.data.totp.secret)});assert.equal(verified.error,null);
+   const request=body=>existing.request('/api/auth/password-recovery',{method:'POST',headers:{origin:config.appUrl.replace('127.0.0.1','localhost'),'content-type':'application/json'},body:JSON.stringify(body)});
+   const requested=await request({action:'request',email:actor.credentials.email});assert.equal(requested.status,200);
+   const message=await confirmationMessage(config,actor.credentials.email,/Reset|Recovery/i);
+   const tokenHash=(message.HTML+' '+message.Text).match(/#token_hash=([a-f0-9]+)/i)?.[1];assert.ok(tokenHash,'Captured recovery email contains a token hash');
+   const freshCode=totp(enrolled.data.totp.secret);
+   const code=outcome==='invalid'?String((Number(freshCode)+1)%1000000).padStart(6,'0'):freshCode;
+   const nextPassword='Recovered-MFA-local-only!123';
+   const body={action:'reset',tokenHash,password:nextPassword,confirmation:nextPassword,...(outcome==='missing'?{}:{authenticatorCode:code}),userId:existing.user.id,factorId:'foreign-factor'};
+   const result=await request(body),responseBody=await result.json();
+   assert.equal(result.status,outcome==='valid'?200:400,JSON.stringify(responseBody));
+   assert.equal(result.headers.get('set-cookie'),null);assert.equal(existing.cookieHeader(),visitorCookies);
+   const visitor=await existing.request('/api/users/me');assert.equal(visitor.status,200);assert.equal((await visitor.json()).id,existing.user.id);
+   const replay=await request({...body,authenticatorCode:freshCode});assert.equal(replay.status,400);assert.equal((await replay.json()).needsNewLink,true);
+   if(outcome==='valid'){
+    const refresh=await actor.client.auth.refreshSession();assert.ok(refresh.error,'Password recovery revokes the previous refresh session');
+    const old=await actor.client.auth.signInWithPassword(actor.credentials);assert.ok(old.error,'Old password must fail');
+    await actor.signIn(actor.credentials.email,nextPassword);
+   }else{
+    assert.equal(responseBody.needsNewLink,true);await actor.signIn(actor.credentials.email,actor.credentials.password);
+    const changed=await actor.client.auth.signInWithPassword({email:actor.credentials.email,password:nextPassword});assert.ok(changed.error,'Rejected MFA must not change the password');
+   }
+   const factors=await actor.client.auth.mfa.listFactors();assert.equal(factors.data.totp.filter(f=>f.status==='verified').length,1,'Recovery must preserve MFA enrollment');
+   assert.equal(await db.platformAdmin.count({where:{userId:actor.user.id}}),0,'Recovery grants no administrator access');
+  }
+ });
+
 });

@@ -104,6 +104,26 @@ export async function POST(request: NextRequest) {
         },
         400,
       );
+    if (reset.data.authenticatorCode) {
+      // The recovery token establishes the account. Only its already verified
+      // factor may upgrade this isolated recovery session; never enroll/remove
+      // factors or borrow the visitor's normal login/Admin session.
+      const factors = await client.auth.mfa.listFactors();
+      const factor = factors.data?.totp.find((item) => item.status === "verified");
+      const verified = !factors.error && factor
+        ? await client.auth.mfa.challengeAndVerify({ factorId: factor.id, code: reset.data.authenticatorCode })
+        : null;
+      const identity = verified && !verified.error ? await client.auth.getUser() : null;
+      const assurance = identity && !identity.error
+        ? await client.auth.mfa.getAuthenticatorAssuranceLevel() : null;
+      if (!verified || verified.error || !identity || identity.error ||
+          identity.data.user?.id !== data.user.id ||
+          identity.data.user?.email?.trim().toLowerCase() !== data.user.email.trim().toLowerCase() ||
+          !assurance || assurance.error || assurance.data.currentLevel !== "aal2") {
+        await client.auth.signOut({ scope: "local" });
+        return reply({ error: "Authenticator verification failed. Request a new reset link and enter a fresh code from your account’s authenticator.", needsNewLink: true }, 400);
+      }
+    }
     const updated = await client.auth.updateUser({
       password: reset.data.password,
     });
@@ -113,7 +133,7 @@ export async function POST(request: NextRequest) {
         return reply(
           {
             error:
-              "This account requires multi-factor authentication to change its password. Sign in with MFA, or contact OutClass support for account recovery.",
+              "This account requires multi-factor authentication. Request a new reset link, then enter its authenticator code with your new password. If you no longer have your authenticator, contact OutClass support.",
             needsNewLink: true,
           },
           400,
