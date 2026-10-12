@@ -12,11 +12,24 @@ function missingColumns(columns) {
     .filter(column => !present.has(column)))
 }
 
+function releaseTarget(env, args) {
+  const productionBuild = args.includes('--vercel-production-build')
+  if (productionBuild && (env.VERCEL !== '1' || env.VERCEL_ENV !== 'production')) return { skip: true }
+  // Hosted production uses the exact runtime precedence from utils/prisma.ts.
+  // Manual checks require an explicit target and never use a developer default.
+  return { datasourceUrl: productionBuild ? env.POSTGRES_PRISMA_URL || env.DATABASE_URL : env.OUTCLASS_DATABASE_CHECK_URL, productionBuild }
+}
+
 async function main() {
-  // Require a deliberate target; never silently use a developer's default URL.
-  const datasourceUrl = process.env.OUTCLASS_DATABASE_CHECK_URL
+  const { datasourceUrl, skip, productionBuild } = releaseTarget(process.env, process.argv.slice(2))
+  if (skip) {
+    console.log('Release database check applies only to Vercel production builds; skipping in this environment.')
+    return
+  }
   if (!datasourceUrl) {
-    console.error('Set OUTCLASS_DATABASE_CHECK_URL securely to the intended runtime database connection. This check is read-only.')
+    console.error(productionBuild
+      ? 'Production release blocked: the runtime database connection is missing. Configure POSTGRES_PRISMA_URL or DATABASE_URL before publishing.'
+      : 'Set OUTCLASS_DATABASE_CHECK_URL securely to the intended runtime database connection. This check is read-only.')
     process.exitCode = 1
     return
   }
@@ -44,5 +57,5 @@ async function main() {
   }
 }
 
-module.exports = { catalogQuery, missingColumns }
+module.exports = { catalogQuery, missingColumns, releaseTarget }
 if (require.main === module) void main()

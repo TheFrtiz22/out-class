@@ -1,6 +1,6 @@
 # Production deployment and authentication recovery — October 11, 2026
 
-Status: the user approved the reviewed migrations after backup checks. All three are now applied through authoritative Prisma migration deployment; all 39 migrations are successful. Existing records and access protections were verified. Release validation and promotion are in progress.
+Status: the user approved the reviewed migrations after backup checks. All three are applied through authoritative Prisma migration deployment; all 39 migrations are successful. PR #22 merged and its production deployment `dpl_9TgFHomteaUd1tCBqxFAU4dqYoN7`, commit `ea7495097edf4847238791dafbe7fb89fbe3b61a`, is READY and serves `www`. Automatic production publishing is enabled. Existing records and access protections were verified. A follow-up wires the schema check into the production build gate.
 
 ## Confirmed causes
 
@@ -15,7 +15,7 @@ Status: the user approved the reviewed migrations after backup checks. All three
 
 ## Changes in this recovery branch
 
-- `npm run db:check-release` reads the catalog in a READ ONLY transaction and rejects missing Prisma tables/columns before a release. It requires an explicitly supplied `OUTCLASS_DATABASE_CHECK_URL`, emits column names and bounded error codes, and executes no migrations. Run it using the intended runtime connection. It does not certify all types, constraints, RLS or migration history; retain those independent checks.
+- Vercel production `prebuild` reads the catalog in a READ ONLY transaction and rejects missing Prisma tables/columns before publishing. It uses the exact runtime connection precedence from `utils/prisma.ts` and fails closed on missing configuration. Local/Preview/CI builds skip this production-only check. Manual `npm run db:check-release` requires an explicitly supplied `OUTCLASS_DATABASE_CHECK_URL`. Diagnostics include column names and bounded error codes, never connection details; no migration is executed. The check does not certify all types, constraints, RLS or migration history; retain those independent checks.
 - A regression reconstructs the inspected production migration state in disposable PGlite, reproduces the missing-column SQL error, then applies only the three pending migrations. Required columns become available; existing user/application records and browser-role denial are preserved.
 - The real onboarding E2E signup check now asserts the account form and account heading instead of obsolete landing-page marketing sentences. No production UI copy was changed to satisfy the test.
 - Application auth, role routing, branding, fonts, landing animations and Microsoft sign-in configuration are unchanged. The root repair is the missing schema plus correct Vercel promotion, not an auth bypass or removal of required fields.
@@ -40,7 +40,7 @@ Each migration is transactional, but the three-migration sequence is not one tra
 |---|---|
 | `npm run lint` | Passed, 0 errors and 28 existing warnings |
 | `npm run typecheck` | Passed |
-| `npm run test` | 997 total: 983 passed, 14 environment-gated skips, 0 failed |
+| PR #22 GitHub `pnpm validate` | Passed: 998 tests, 984 passed, 14 environment-gated skips, 0 failed; lint/types/migrations/build passed |
 | New release regression | 1 passed, 0 failed |
 | `npm run test:migrations` | Passed: all 39 migrations on fresh/legacy disposable databases; 66 protected tables |
 | `npm run build` | Passed, including DM Sans retrieval |
@@ -51,10 +51,13 @@ Each migration is transactional, but the three-migration sequence is not one tra
 | Live authorized OTP | Request and verification 200; email initially delayed, subsequently received; confirmed account reached its authorized club-leader workspace |
 | Session after browser refresh | Authenticated workspace retained |
 | Browser console during observed login/workspace | No errors or warnings captured |
+| Repaired live password login | Supabase `/token`: grant_type=password, status=200, authorized account matched; correct leader dashboard and refresh persistence |
+| Repaired live logout and mobile navigation | Public homepage restored after sign-out; 390px leader navigation opens with no horizontal overflow |
+| Anonymous/malformed session | `/api/users/me` returns 401 with no private data |
 
 These initial browser results are on the **older** deployment assigned to `www` during investigation. The newer production-configured build `83f2671` was then tested before public promotion using the actual OTP-verified session: `/api/users/me`, the student workspace, and the authorized leader workspace all returned 200; account/profile/membership/application data matched, including the formerly missing decision version. Vercel deployment protection was accessed through authenticated `vercel curl`, without disabling it. The ordinary recovery-branch Preview is READY but its login render fails because required Supabase configuration is missing (a streamed 200 alone did not count as a pass).
 
-The user has no second authorized UVA test mailbox, so fresh **production** signup/verification cannot be completed; the real isolated E2E covers that flow. Live password login/reset completion and hosted superadmin MFA/elevation are not yet verified. The user must enter any new password themselves in the browser; no password or OTP is retained in this report. Microsoft sign-in remains hidden.
+The user has no second authorized UVA test mailbox, so fresh **production** signup/verification cannot be completed; the real isolated E2E covers that flow. Live reset completion and hosted superadmin MFA/elevation remain unverified; their real isolated-service tests passed. The user entered the existing password directly in the browser. No password or OTP is retained in this report. Microsoft sign-in remains hidden.
 
 ## Approved migration and recovery receipt
 
