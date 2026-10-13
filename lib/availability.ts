@@ -99,7 +99,7 @@ export function availabilityHref(clubId?: string, roundId?: string) {
 }
 export type AvailabilityRound = { id: string; clubId: string; clubName: string; name: string; confirmed: boolean; response: AvailabilityResponse; requested: boolean }
 export type OverviewMember = { id: string; name: string; role: string; submitted: boolean; confirmed: boolean; response: AvailabilityResponse; canRemind: boolean; available: boolean[][] }
-export type SessionCoverage = { id: string; roomId: string; roomName: string; startTime: string; endTime: string; required: number; assigned: number; active: boolean; availableMemberIds: string[] }
+export type SessionCoverage = { id: string; roomId: string; roomName: string; startTime: string; endTime: string; buffer?: number; required: number; assigned: number; active: boolean; availableMemberIds: string[] }
 export type AvailabilityOverview = { week: string; timezone: string; members: OverviewMember[]; cells: WeekCell[][]; slots: SessionCoverage[] }
 
 /** Serializable paint operation shared by pointer and keyboard editing. */

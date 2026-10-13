@@ -5,7 +5,7 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { organizationRoles } from "@/lib/organization-authorization"
-import { panelWindowSchema } from "@/lib/panel-proposals"
+import { sessionsOverlap, panelWindowSchema } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
 import { availabilityResponse, availabilityHref, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
@@ -143,17 +143,24 @@ export async function getAvailabilityOverview(raw: unknown): Promise<Availabilit
     const parts = (time: number | Date, zone: string) => { const key = `${zone}:${+time}`; let p = cache.get(key); if (!p) { p = localParts(time, zone); cache.set(key, p) } return p }
     const eligible = members.filter(m => interviewerEligible(m, club.interviewerRoles, m.interviewParticipation[0]?.eligibilityOverride))
     const schedules = new Map<string, AvailabilitySchedule | null>()
+    const candidates = new Map(planning?.scene.members.map(member => [member.id, member]) ?? [])
     const projected = eligible.map(m => {
-      const participation = m.interviewParticipation[0]
+      const participation = m.interviewParticipation[0], candidate = candidates.get(m.id)
       const raw = input.roundId ? participation?.availability : m.user.availability?.schedule
       const schedule = raw ? parseSchedule(raw) : null
       const confirmed = !!participation?.confirmedAt
       const submitted = !!schedule && (schedule.weeklySubmitted || Object.keys(schedule.exceptions).length > 0)
       schedules.set(m.id, input.roundId && !confirmed ? null : schedule)
-      return { id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, submitted, confirmed, response: availabilityResponse(participation), canRemind: !!participation?.requestedAt && !participation.confirmedAt && !participation.declinedAt && Date.now() - +(participation.lastReminderAt ?? participation.requestedAt) >= 86400000, available: cells.map(day => day.map(cell => cell.start !== null && cell.end !== null && intervalAvailability(schedules.get(m.id) ?? null, cell.start, cell.end, parts) === "available")) }
+      const available = cells.map(day => day.map(cell => {
+        const start = cell.start, end = cell.end
+        if (start === null || end === null) return false
+        if (planning && (!candidate?.evidenceAccess || candidate.commitments?.some(commitment => sessionsOverlap(commitment, { startTime: new Date(start).toISOString(), endTime: new Date(end).toISOString(), buffer: 0 })))) return false
+        return intervalAvailability(schedules.get(m.id) ?? null, start, end, parts) === "available"
+      }))
+      return { id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, submitted, confirmed, response: availabilityResponse(participation), canRemind: !!participation?.requestedAt && !participation.confirmedAt && !participation.declinedAt && Date.now() - +(participation.lastReminderAt ?? participation.requestedAt) >= 86400000, available }
     })
     // Without a round, slot staffing is deliberately omitted: global declarations aren't round confirmations.
-    const coverage = planning ? planning.scene.sessions.filter(s => { const date = parts(+new Date(s.startTime), input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, required: s.required, assigned: s.existingMemberIds.length, active: s.active, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id) && eligible.some(e => e.id === m.id)).map(m => m.id) })) : []
+    const coverage = planning ? planning.scene.sessions.filter(s => { const date = parts(+new Date(s.startTime), input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, required: s.required, assigned: s.existingMemberIds.length, active: s.active, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id) && eligible.some(e => e.id === m.id)).map(m => m.id) })) : []
     return { week, timezone: input.timezone, members: projected, cells, slots: coverage }
   }, { timeout: 20000 })
 }
@@ -227,7 +234,7 @@ export async function getRoundStaffingCoverage(raw: unknown) {
       eligible: planning.scene.members.filter(m => m.eligible).length,
       confirmed: planning.scene.members.filter(m => m.eligible && m.confirmed).length,
       state: planning.publishedRevision > 0 || planning.scene.sessions.some(s => s.existingMemberIds.length) ? proposal ? "Published · saved draft" : "Published" : proposal ? "Saved unpublished draft" : "No panel draft",
-      slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
+      slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
     }
   }, { timeout: 20000 })
 }

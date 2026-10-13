@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { getMyAvailability } from "@/actions/availability"
+import { getMyAvailability } from "@/lib/availability-workspace-read"
 import { availabilityHref, responseLabels, type AvailabilityRound } from "@/lib/availability"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"

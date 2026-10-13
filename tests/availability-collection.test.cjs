@@ -71,6 +71,6 @@ test('responses across clubs are independent and coverage reuses actual requirem
   const busy = await h.prisma.interviewRoom.create({ data: { clubId: otherClub, roundId: otherRound, name: 'Secret room', location: 'Private', kind: 'IN_PERSON', timezone: 'UTC', duration: 20, panelMemberIds: [otherMember] } })
   await h.prisma.interviewRoom.update({ where: { id: busy.id }, data: { approvedPanelMemberIds: [otherMember], panelApprovedBy: ids.owner } })
   await h.prisma.interviewSlot.create({ data: { clubId: otherClub, roomId: busy.id, startTime: new Date('2030-01-07T09:30:00Z'), endTime: new Date('2030-01-07T09:50:00Z'), location: 'Private' } })
-  overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.deepEqual(overview.slots[0].availableMemberIds, []); assert.equal(JSON.stringify(overview).includes('Secret'), false)
+  overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.deepEqual(overview.slots[0].availableMemberIds, []); assert.equal(JSON.stringify(overview).includes('Secret'), false); assert.equal(overview.members.find(m => m.id === ids.panelMember).available[0][38], false, 'busy members are excluded from quarter-hour heatmap counts too')
   await h.prisma.interviewSlot.update({ where: { id: slot.id }, data: { interviewersNeeded: 1 } }); overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.equal(overview.slots[0].required, 1)
 })
