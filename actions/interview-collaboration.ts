@@ -11,6 +11,7 @@ import { CollaborationInitializationRequired, collaborationAccess, collaboration
 import { interviewTransactionOptions } from "@/utils/interview-access";
 import { getInterviewWorkspace } from "@/actions/interview-kits";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
+import { interviewTiming } from "@/lib/interview-session-timing";
 
 const inputSchema = interviewScopeSchema.extend({ clientId: z.string().uuid() });
 // Current-access checks for each peer span several pooler round trips. Keep the
@@ -37,7 +38,7 @@ async function validInvite(tx: AppTransactionClient, id: string, sourceId: strin
 export async function getInterviewCollaboration(input: z.infer<typeof inputSchema>): Promise<CollaborationView> {
   const data = inputSchema.parse(input); const { user } = await requireAuth();
   const read = (readOnly: boolean) => prisma.$transaction(async tx => {
-    const { member, session, roomKey, app } = await collaborationSession(tx, data, user.id, readOnly);
+    const { member, session, roomKey, app, round, booking, panelIds } = await collaborationSession(tx, data, user.id, readOnly);
     const now = new Date();
     await tx.interviewPresence.deleteMany({ where: { sessionId: session.id, seenAt: { lt: new Date(Date.now() - PRESENCE_TTL_MS) } } });
     const old = await tx.interviewPresence.findUnique({ where: { memberId_clientId: { memberId: member.id, clientId: data.clientId } } });
@@ -50,8 +51,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
     const ids = [...new Set([...presentIds, ...(session.selectedBy ? [session.selectedBy] : [])])];
     await tx.$queryRaw`SELECT u.id FROM "User" u JOIN "ClubMember" m ON m."userId" = u.id WHERE m.id = ANY(${ids}::text[]) ORDER BY u.id FOR SHARE OF u, m`;
     const peers = await tx.clubMember.findMany({ where: { id: { in: ids }, clubId: data.clubId, status: "ACTIVE", user: { disabledAt: null }, interviewAssignments: { some: { applicationId: data.applicationId, roundId: data.roundId, revokedAt: null } } }, include: { user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } });
-    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: data.applicationId, roundId: data.roundId } }, include: { slot: { include: { room: true } } } });
-    const authorized = peers.filter(peer => peer.userId !== app.studentId && interviewCapabilities(peer).participate && (!booking || (roomKey === `booking:${booking.id}:${booking.slot.roomId}` && booking.slot.room?.panelMemberIds.includes(peer.id) && booking.slot.room.approvedPanelMemberIds.includes(peer.id))));
+    const authorized = peers.filter(peer => peer.userId !== app.studentId && interviewCapabilities(peer).participate && (!booking || (roomKey === `booking:${booking.id}:${booking.slot.roomId}` && panelIds?.includes(peer.id))));
     const peerName = (peer: typeof authorized[number]) => peer.user.studentProfile ? `${peer.user.studentProfile.firstName} ${peer.user.studentProfile.lastName}` : "Interviewer";
     const participants: CollaborationView["participants"] = authorized.filter(peer => presentIds.includes(peer.id)).map(peer => ({ id: peer.id, name: peerName(peer) }));
     let invitation: CollaborationView["invitation"] = null;
@@ -76,7 +76,7 @@ export async function getInterviewCollaboration(input: z.infer<typeof inputSchem
         if (question) selection = { question, by: peerName(selector), memberId: selector.id };
       }
     }
-    return { sessionId: session.id, revision: session.revision, participants, selection, invitation };
+    return { sessionId: session.id, revision: session.revision, participants, selection, invitation, timing: interviewTiming(data, round.configuration, booking) };
   }, transactionOptions);
   // Bootstrap alone needs an exclusive lock. End the shared transaction before
   // retrying, so simultaneous first joins cannot deadlock on a lock upgrade.

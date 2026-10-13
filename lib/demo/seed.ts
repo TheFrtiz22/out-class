@@ -218,7 +218,7 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
       ...(i % 3 ? ["Round 2"] : []),
       "Interview",
       "Final Decision",
-    ].map((name, order) => ({ interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: name === "Review", id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
+    ].map((name, order) => ({ configuration: { instructions: "Fictional sample interview", duration: name === "Round 2" ? 35 : 20 }, interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: name === "Review", id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
   }))
   const memberships = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({

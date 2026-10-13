@@ -50,7 +50,7 @@ function ensurePresentation(value: DemoState) {
     club.claimed ??= true
     club.earlyAdopter ??= value.clubs.indexOf(club) < 3
     club.testRequirement ??= "OPTIONAL"
-    for (const round of club.rounds) { round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); for (const q of round.interviewKit) q.guidance ??= ""; round.kitVersion ??= 0 }
+    for (const round of club.rounds) { round.configuration ??= { instructions: "Fictional sample interview", duration: round.name === "Round 2" ? 35 : 20 }; round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); for (const q of round.interviewKit) q.guidance ??= ""; round.kitVersion ??= 0 }
   }
   for (const student of value.students) {
     if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
