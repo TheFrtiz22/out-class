@@ -1,15 +1,13 @@
 "use server";
 import { z } from "zod";
-import { recipientAudienceSchema, audienceKey } from "@/lib/recipient-audience";
-import { resolveRecipientAudience } from "@/utils/recipient-audience";
+import { recipientAudienceSchema } from "@/lib/recipient-audience";
+import { publishAnnouncementTransaction } from "@/utils/announcement-publication";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from '@/lib/club-transaction-authorization';
 import { letterTemplatesSchema, type LetterContent } from '@/lib/decision-letters';
 import { Prisma } from '@prisma/client';
-import { randomUUID } from "node:crypto";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
-import { lockOperationalClub } from "@/lib/club-suspension";
 import { identifiableApplication, notificationDefaults } from "@/lib/communications-policy";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 
@@ -94,28 +92,7 @@ export async function publishClubAnnouncement(input: unknown) {
   const data = publishInput.parse(input);
   if ((data.audience === "CUSTOM") !== !!data.audienceSpec) throw Error("Custom audience rules are required only for custom recipients.");
   const { user } = await requireClubPermission(data.clubId, ["meetings.manage"]);
-  return clubWriteTransaction(async (tx) => {
-    await lockOperationalClub(tx, data.clubId);
-    // Hold live account and capability boundaries, including on publication retries.
-    await authorizeClubTransaction(tx, data.clubId, user.id, ["meetings.manage"]);
-    const previous = await tx.clubAnnouncement.findUnique({ where: { clubId_requestKey: { clubId: data.clubId, requestKey: data.requestKey } }, include: { _count: { select: { notifications: true } } } });
-    if (previous) {
-      if (previous.title !== data.title || previous.body !== data.body || previous.audience !== data.audience || previous.authorId !== user.id || audienceKey(previous.audienceSpec ?? null) !== audienceKey(data.audienceSpec ?? null)) throw new Error("This publication request was already used.");
-      return { id: previous.id, recipientCount: previous._count.notifications };
-    }
-    if (await tx.clubAnnouncement.count({ where: { clubId: data.clubId, publishedAt: { gt: new Date(Date.now() - 3600000) } } }) >= 20) throw new Error("Please wait before publishing another announcement.");
-    const spec = data.audienceSpec ?? { include: [{ source: data.audience === "MEMBERS" ? "MEMBERS" : "APPLICANTS" }] };
-    const userIds = await resolveRecipientAudience(tx, data.clubId, user.id, spec);
-    if (!userIds.length) throw new Error("No eligible recipients for this audience.");
-    const announcement = await tx.clubAnnouncement.create({ data: { id: randomUUID(), clubId: data.clubId, authorId: user.id, title: data.title, body: data.body, audience: data.audience, requestKey: data.requestKey, ...(data.audienceSpec ? { audienceSpec: data.audienceSpec } : {}) } });
-    await tx.userNotification.createMany({ data: userIds.map(userId => ({
-      id: randomUUID(), userId, clubId: data.clubId, announcementId: announcement.id,
-      eventKey: "announcement:" + announcement.id, type: "ANNOUNCEMENT",
-      title: data.title, body: data.body,
-      href: "/?workspace=student&view=inbox",
-    })) });
-    return { id: announcement.id, recipientCount: userIds.length };
-  });
+  return clubWriteTransaction(tx => publishAnnouncementTransaction(tx, { ...data, senderId: user.id }));
 }
 
 export async function setDurableNotificationsArchived(ids: string[], archived: boolean) {

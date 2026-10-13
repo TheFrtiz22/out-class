@@ -79,7 +79,8 @@ The retired direct-messaging actions remain disabled.
 
 `captureRecipientAudience` produces a server snapshot; `evaluateRecipientSnapshot`
 supports FIXED and SEND_TIME evaluation. FIXED retains captured IDs as an upper
-bound and suppresses recipients who no longer match current rules/visibility;
+bound and suppresses recipients who lose current club contact visibility or account eligibility;
+subsequent group/filter changes do not reselect the frozen identities;
 newly matching people cannot enter. SEND_TIME reevaluates rules/groups and can add
 new matches. Both reauthorize the actor and reject a different club. Snapshots are
 server-owned and must not be accepted from a future scheduler's client payload.

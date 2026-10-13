@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  scheduledCommunications ScheduledCommunication[]
   recipientGroupEntries RecipientGroupEntry[]
   schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
@@ -101,6 +102,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  scheduledCommunications ScheduledCommunication[]
   recipientGroups RecipientGroup[]
   decisionLetterTemplates Json?
   decisionLetters DecisionLetter[]
@@ -1203,6 +1205,7 @@ model SchoolRequest {
 // Durable club communications. Recipient notification rows are the immutable
 // publication audience snapshot; no cross-club audience is inferred later.
 model ClubAnnouncement {
+  scheduledFrom ScheduledCommunication?
   audienceSpec Json?
   id          String   @id @default(uuid())
   clubId      String
@@ -1366,4 +1369,37 @@ model RecipientGroupEntry {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([groupId, userId])
   @@index([clubId, userId])
+}
+
+// Server-only publication intent. No notification exists before publication.
+model ScheduledCommunication {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  senderId String
+  sender User @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  actorId String
+  supportSessionId String?
+  kind String @default("ANNOUNCEMENT")
+  title String
+  body String
+  audience Json
+  snapshot Json
+  recipientMode String
+  scheduledAt DateTime
+  timeZone String
+  localTime String
+  occurrence String
+  status String @default("SCHEDULED")
+  revision Int @default(0)
+  requestKey String
+  publicationId String? @unique
+  publication ClubAnnouncement? @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  recipientCount Int?
+  failureCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([clubId, requestKey])
+  @@index([status, scheduledAt])
+  @@index([clubId, createdAt])
 }

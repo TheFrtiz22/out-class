@@ -15,7 +15,7 @@ const visibleScope = (clubId: string, identify: boolean): Prisma.UserWhereInput 
 ] });
 /** Shared server resolver. Caller must hold the club serialization lock through use
  * of the result. Never applies channel preferences or sends provider requests. */
-export async function resolveRecipientAudience(tx: AppTransactionClient, clubId: string, actorId: string, input: unknown) {
+export async function resolveRecipientAudience(tx: AppTransactionClient, clubId: string, actorId: string, input: unknown, candidateIds?: readonly string[]) {
   const audience = recipientAudienceSchema.parse(input);
   const actor = await authorizeClubTransaction(tx, clubId, actorId, ["meetings.manage"], { readOnly: true });
   const identify = canIdentifyRecipients(actor);
@@ -70,7 +70,7 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
     }
     else throw Error("Unsupported audience source.");
     if ("gradYears" in r && r.gradYears.length) where = { AND: [where, { studentProfile: { gradYear: { in: r.gradYears } } }] };
-    const rows = await tx.user.findMany({ where: { AND: [where, { disabledAt: null }] }, select: { id: true }, take: limit + 1, orderBy: { id: "asc" } });
+    const rows = await tx.user.findMany({ where: { AND: [where, { disabledAt: null }, ...(candidateIds ? [{ id: { in: [...candidateIds] } }] : [])] }, select: { id: true }, take: limit + 1, orderBy: { id: "asc" } });
     if (rows.length > limit) throw Error("Audience exceeds 1,000 recipients. Narrow the filters.");
     return rows.map(row => row.id);
   }
@@ -83,18 +83,40 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
   }
   return evaluate(audience, new Set());
 }
-export type AudienceSnapshot = { clubId: string; audience: RecipientAudience; userIds: string[]; capturedAt: string };
-export async function captureRecipientAudience(tx: AppTransactionClient, clubId: string, actorId: string, audience: unknown): Promise<AudienceSnapshot> {
-  return { clubId, audience: recipientAudienceSchema.parse(audience), userIds: await resolveRecipientAudience(tx, clubId, actorId, audience), capturedAt: new Date().toISOString() };
+export type AudienceSnapshot = {
+  clubId: string; audience: RecipientAudience; userIds: string[]; capturedAt: string;
+  eligibility?: { members: string[]; applicants: string[]; rejected: string[]; contacts: string[] };
+};
+export async function captureRecipientAudience(tx: AppTransactionClient, clubId: string, actorId: string, input: unknown): Promise<AudienceSnapshot> {
+  const audience = recipientAudienceSchema.parse(input);
+  const userIds = await resolveRecipientAudience(tx, clubId, actorId, audience);
+  // Freeze selection separately from the contact boundary. Former members must
+  // not retain member contact authority merely because they once RSVPed to an event.
+  const members = (await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", userId: { in: userIds } }, select: { userId: true } })).map(row => row.userId);
+  const memberIds = new Set(members);
+  const actor = await tx.clubMember.findUnique({ where: { userId_clubId: { clubId, userId: actorId } } });
+  const apps = actor && canIdentifyRecipients(actor) ? await tx.application.findMany({ where: { clubId, studentId: { in: userIds.filter(id => !memberIds.has(id)) }, ...identified }, select: { studentId: true, status: true } }) : [];
+  const applicants = apps.filter(row => row.status !== "REJECTED").map(row => row.studentId);
+  const rejected = apps.filter(row => row.status === "REJECTED").map(row => row.studentId);
+  const scoped = new Set([...members, ...applicants, ...rejected]);
+  return { clubId, audience, userIds, capturedAt: new Date().toISOString(), eligibility: { members, applicants, rejected, contacts: userIds.filter(id => !scoped.has(id)) } };
 }
-/** Fixed mode preserves captured IDs, but rechecks current club visibility/account
- * and actor authority. Dynamic mode reevaluates rules and group membership. Only
- * persisted server snapshots may be passed here; never accept client snapshots. */
+/** Only persisted server snapshots, never client-provided IDs. Fixed selection
+ * survives group/filter edits, but not loss of its recorded contact boundary. */
 export async function evaluateRecipientSnapshot(tx: AppTransactionClient, clubId: string, actorId: string, snapshot: AudienceSnapshot, mode: "FIXED" | "SEND_TIME") {
   if (snapshot.clubId !== clubId) throw Error("Audience snapshot belongs to another club.");
   if (mode === "SEND_TIME") return resolveRecipientAudience(tx, clubId, actorId, snapshot.audience);
-  // Fixed identities are an upper bound: loss of membership/eligibility suppresses
-  // a captured recipient, but newly matching people cannot enter the snapshot.
-  const current = new Set(await resolveRecipientAudience(tx, clubId, actorId, snapshot.audience));
-  return [...new Set(snapshot.userIds)].filter(id => current.has(id)).sort();
+  if (!snapshot.eligibility) {
+    // Conservative compatibility for pre-scheduler snapshots, with no eligibility promotion.
+    const current = new Set(await resolveRecipientAudience(tx, clubId, actorId, snapshot.audience));
+    return [...new Set(snapshot.userIds)].filter(id => current.has(id)).sort();
+  }
+  const permitted = new Set<string>();
+  for (const [source, ids] of [["MEMBERS", snapshot.eligibility.members], ["APPLICANTS", snapshot.eligibility.applicants], ["REJECTED", snapshot.eligibility.rejected]] as const) {
+    if (!ids.length) continue;
+    const selected = new Set(ids);
+    for (const id of await resolveRecipientAudience(tx, clubId, actorId, { include: [{ source }] }, ids)) if (selected.has(id)) permitted.add(id);
+  }
+  if (snapshot.eligibility.contacts.length) for (const id of await resolveRecipientAudience(tx, clubId, actorId, { include: [{ source: "PEOPLE", userIds: snapshot.eligibility.contacts }] })) permitted.add(id);
+  return [...new Set(snapshot.userIds)].filter(id => permitted.has(id)).sort();
 }
