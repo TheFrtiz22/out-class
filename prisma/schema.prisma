@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  recipientGroupEntries RecipientGroupEntry[]
   schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
   adminElevationChallenges AdminElevationChallenge[]
@@ -100,6 +101,7 @@ model Experience {
 // ==========================================
 
 model Club {
+  recipientGroups RecipientGroup[]
   decisionLetterTemplates Json?
   decisionLetters DecisionLetter[]
   suspendedAt DateTime?
@@ -1201,6 +1203,7 @@ model SchoolRequest {
 // Durable club communications. Recipient notification rows are the immutable
 // publication audience snapshot; no cross-club audience is inferred later.
 model ClubAnnouncement {
+  audienceSpec Json?
   id          String   @id @default(uuid())
   clubId      String
   club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -1338,4 +1341,29 @@ model DecisionLetter {
  createdAt DateTime @default(now())
  @@unique([applicationId, version])
  @@index([clubId, createdAt])
+}
+
+
+model RecipientGroup {
+  id String @id @default(uuid())
+  clubId String
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name String
+  kind String
+  rules Json?
+  revision Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  entries RecipientGroupEntry[]
+  @@unique([id, clubId])
+  @@unique([clubId, name])
+}
+model RecipientGroupEntry {
+  groupId String
+  clubId String
+  group RecipientGroup @relation(fields: [groupId, clubId], references: [id, clubId], onDelete: Cascade)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([groupId, userId])
+  @@index([clubId, userId])
 }
