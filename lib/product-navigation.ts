@@ -36,10 +36,11 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     return [item("overview", "Overview", "recruitment"),
-      ...(read ? [item("applicants", "Applicants", "recruitment")] : []),
+      ...(read ? [item("applicants", "Applicants", "recruitment"), item("rejected", "Rejected Applicants", "recruitment")] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(read ? [item("decisions", "Decisions", "recruitment")] : []),
-      ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
+      ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment")] : []),
+      ...(hasPermission(member, "recruitment.manage") ? [item("cycles", "Recruitment Cycles", "recruitment"), item("letters", "Decision Letters", "recruitment"), item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
   }
   return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),

@@ -1,7 +1,7 @@
 "use server"
 import { clubWriteTransaction, votingWriteLimits } from "@/utils/club-write-transaction";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
-import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
+import { publishVotingCandidates } from "@/utils/voting-publication";
 import { academicYear } from "@/lib/recruitment-profile";
 
 import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
@@ -143,16 +143,7 @@ export async function commandVotingSession(input: unknown) {
       case "PUBLISH": {
         if(s.state!=="COMPLETED"||!d.applicationIds?.length) throw Error("Finish and explicitly select resolved candidates to publish.")
         if(new Set(d.applicationIds).size!==d.applicationIds.length) throw Error("Duplicate publication selection.")
-        for(const id of [...d.applicationIds].sort()) {
-          const o=summary.outcomes.find(o=>o.applicationId===id), c=s.candidates.find(c=>c.applicationId===id)
-          if(!o||!c||o.outcome==="UNRESOLVED") throw Error("Only resolved session candidates can publish.")
-          const status=o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED"
-          const current = await tx.application.findFirst({where:{id,clubId:d.clubId,roundId:s.roundId,status:c.expectedStatus}})
-          if(!current) throw Error("Application changed since the session snapshot. Publication cancelled.")
-          await publishRecruitmentDecision(tx,{applicationId:id,clubId:d.clubId,roundId:s.roundId,expectedStatus:c.expectedStatus,status},user.id)
-          await tx.votingCandidate.update({where:{sessionId_applicationId:{sessionId:s.id,applicationId:id}},data:{publishedStatus:status}})
-          await tx.auditLog.create({data:{actorId:user.id,clubId:d.clubId,targetId:id,action:"voting.decision.published",details:{sessionId:s.id,pass:o.passNumber,outcome:o.outcome,previousStatus:c.expectedStatus,status}}})
-        }
+        await publishVotingCandidates(tx,s,d.applicationIds,user.id)
         extra.publishedAt=new Date();extra.publishedBy=user.id;break
       }
     }

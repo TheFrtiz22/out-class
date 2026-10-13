@@ -11,7 +11,7 @@ const member = z.object({
 }).strict();
 const applicants = z.object({
   source: z.enum(["APPLICANTS", "REJECTED"]), gradYears: years,
-  roundIds: ids.default([]),
+  roundIds: ids.default([]), cycleIds: ids.default([]),
   statuses: z.array(z.enum(["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "WAITLISTED"])).max(5).default([]),
   interview: z.enum(["ANY", "INTERVIEWING", "BOOKED", "UNBOOKED", "COMPLETED"]).default("ANY"),
   offerStatuses: z.array(z.enum(["NONE", "PENDING", "ACCEPTED", "DECLINED", "REVOKED", "EXPIRED"])).max(6).default([]),
@@ -36,7 +36,7 @@ export function audienceKey(value: unknown): string {
   return JSON.stringify(value);
 }
 export const audienceCapabilities = {
-  recruitmentCycle: "Not recorded on applications; cycle filtering is unavailable.",
+  recruitmentCycle: "Recorded application cycle only; unknown legacy cycles are never inferred.",
   cohort: "Recorded membership cohort only; missing values are not inferred.",
   leads: "Recorded RSVP/attendance at selected club events, excluding active members and submitted applicants. Private saves are never used.",
   eligibility: "Audience membership is separate from email consent, channel preferences and delivery eligibility.",

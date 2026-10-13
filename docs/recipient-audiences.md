@@ -174,3 +174,14 @@ preference change or existing production queue change was performed.
 - `tests/recipient-audiences-e2e.test.cjs`
 - `tests/recipient-audiences-native.test.cjs`
 - `utils/recipient-audience.ts`
+
+
+## Follow-up: authoritative application cycles
+
+The original cycle gap above is superseded by `docs/decision-recruitment-controls.md`.
+`RecruitmentCycle` is club-scoped; `Application.recruitmentCycleId` is nullable and
+protected by a composite club/cycle foreign key. Leaders explicitly assign actual
+cycles; existing unknown values remain null. Applicant/rejected rules support
+`cycleIds` independently of round, graduation year, and membership joining cohort.
+Active-applicant rules continue to exclude rejected applications. Reconsideration
+returns an application to review without changing the student's platform account.

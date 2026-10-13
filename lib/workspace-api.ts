@@ -1,4 +1,6 @@
 "use client"
+import * as decisionSchedules from "@/actions/decision-schedules";
+import * as recruitmentManagement from "@/actions/recruitment-management";
 import * as decisionCommunications from "@/actions/communications";
 import * as demoDecisionCommunications from "@/lib/demo/communications";
 import * as offers from "@/actions/recruitment-offers";
@@ -572,3 +574,17 @@ export const getDecisionLetter = adapt(decisionCommunications.getDecisionLetter,
 export const getDecisionTemplates = adapt(decisionCommunications.getDecisionTemplates, demoDecisionCommunications.getDecisionTemplates);
 export const saveDecisionTemplates = adapt(decisionCommunications.saveDecisionTemplates, demoDecisionCommunications.saveDecisionTemplates);
 export const setDecisionNotificationsRead = adapt(decisionCommunications.setDurableNotificationsRead, demoDecisionCommunications.setDurableNotificationsRead);
+
+export const setFormalDecisionLetters = adapt(decisionCommunications.setFormalDecisionLetters, async()=>{throw Error("Formal-letter settings are unavailable in Demo.")});
+
+// These management operations are deliberately unavailable in Demo; no server calls.
+export const getRecruitmentCycles = adapt(recruitmentManagement.getRecruitmentCycles, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const saveRecruitmentCycle = adapt(recruitmentManagement.saveRecruitmentCycle, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const assignApplicationCycle = adapt(recruitmentManagement.assignApplicationCycle, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const reconsiderRejectedApplication = adapt(recruitmentManagement.reconsiderRejectedApplication, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+
+export const scheduleDecisionPublication = adapt(decisionSchedules.scheduleDecisionPublication, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const getDecisionSchedules = adapt(decisionSchedules.getDecisionSchedules, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const cancelDecisionSchedule = adapt(decisionSchedules.cancelDecisionSchedule, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});

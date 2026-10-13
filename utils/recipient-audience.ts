@@ -44,12 +44,14 @@ export async function resolveRecipientAudience(tx: AppTransactionClient, clubId:
     } else if (r.source === "APPLICANTS" || r.source === "REJECTED") {
       if (!identify) throw Error("Identified applicant recipient access required.");
       if (r.roundIds.length && await tx.pipelineRound.count({ where: { clubId, id: { in: r.roundIds } } }) !== new Set(r.roundIds).size) throw Error("Round unavailable in this club.");
+      if(r.cycleIds.length && await tx.recruitmentCycle.count({where:{clubId,id:{in:r.cycleIds}}})!==new Set(r.cycleIds).size)throw Error("Cycle unavailable in this club.");
       const now = new Date();
       const offers: Prisma.ApplicationWhereInput[] = r.offerStatuses.map(status => status === "NONE" ? { recruitmentOffer: null }
         : status === "EXPIRED" ? { recruitmentOffer: { OR: [{ status: "EXPIRED" }, { status: "PENDING", expiresAt: { lte: now } }] } }
         : { recruitmentOffer: { status, ...(status === "PENDING" ? { expiresAt: { gt: now } } : {}) } });
       where = { applications: { some: { clubId, ...identified,
         status: r.source === "REJECTED" ? "REJECTED" : r.statuses.length ? { in: r.statuses } : { notIn: ["DRAFTING", "REJECTED"] },
+        ...(r.cycleIds.length ? {recruitmentCycleId:{in:r.cycleIds}} : {}),
         ...(r.roundIds.length ? { roundId: { in: r.roundIds } } : {}),
         ...(r.interview === "INTERVIEWING" ? { AND: [{ status: "INTERVIEWING" }] } : {}),
         ...(r.interview === "BOOKED" ? { bookings: { some: {} } } : {}),

@@ -31,11 +31,12 @@ function RuleEditor({ rule, onChange, catalog }: { rule: AudienceRule; onChange:
    <div className="grid gap-3 sm:grid-cols-2">{(["joinedAfter","joinedBefore"] as const).map(key=><label key={key} className="text-sm">{key==="joinedAfter"?"Joined on/after":"Joined on/before"}<Input type="date" value={rule[key]?.slice(0,10)||""} onChange={e=>patch({[key]:e.target.value?`${e.target.value}T${key==="joinedBefore"?"23:59:59.999":"00:00:00.000"}Z`:undefined})} /></label>)}</div>
   </>}
   {(rule.source==="APPLICANTS"||rule.source==="REJECTED") && <>
+   {multi("Application recruitment cycles",rule.cycleIds,(catalog?.cycles||[]).map(c=>({value:c.id,label:c.name})),cycleIds=>patch({cycleIds}))}
    {multi("Recruitment rounds",rule.roundIds,(catalog?.rounds||[]).map(r=>({value:r.id,label:r.name})),roundIds=>patch({roundIds}))}
    {rule.source==="APPLICANTS"&&multi("Decision / application statuses",rule.statuses,["SUBMITTED","IN_REVIEW","INTERVIEWING","ACCEPTED","WAITLISTED"].map(value=>({value,label:value})),statuses=>patch({statuses}))}
    <label className="block text-sm">Interview / booking state<select className="w-full rounded border bg-background p-2" value={rule.interview} onChange={e=>patch({interview:e.target.value})}>{["ANY","INTERVIEWING","BOOKED","UNBOOKED","COMPLETED"].map(v=><option key={v}>{v}</option>)}</select></label>
    {multi("Offer statuses",rule.offerStatuses,["NONE","PENDING","ACCEPTED","DECLINED","REVOKED","EXPIRED"].map(value=>({value,label:value})),offerStatuses=>patch({offerStatuses}))}
-   <p className="text-xs text-muted-foreground">Recruitment cycle is not recorded. Anonymous-review applicants are excluded; identified applicant access is required.</p>
+   <p className="text-xs text-muted-foreground">Cycles use explicit application assignments; unknown legacy cycles remain unassigned. Anonymous-review applicants are excluded; identified applicant access is required.</p>
   </>}
   {(rule.source==="EVENT"||rule.source==="LEADS") && <>
    {multi("Selected club events (required)",rule.eventIds,(catalog?.events||[]).map(e=>({value:e.id,label:e.title})),eventIds=>patch({eventIds}))}

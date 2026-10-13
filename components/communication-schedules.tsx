@@ -7,15 +7,15 @@ import { Input } from "@/components/ui/input";
 export type ScheduledItem=Awaited<ReturnType<typeof getCommunicationSchedules>>[number];
 export type ScheduleTiming={localTime:string;timeZone:string;occurrence:"EARLIER"|"LATER";recipientMode:"FIXED"|"SEND_TIME"};
 export const initialTiming=():ScheduleTiming=>({localTime:"",timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,occurrence:"EARLIER",recipientMode:"SEND_TIME"});
-export function ScheduleFields({value,onChange,disabled}:{value:ScheduleTiming;onChange:(value:ScheduleTiming)=>void;disabled:boolean}) {
+export function ScheduleFields({value,onChange,disabled,fixedOnly=false}:{value:ScheduleTiming;onChange:(value:ScheduleTiming)=>void;disabled:boolean;fixedOnly?:boolean}) {
  let instant="";try{if(value.localTime)instant=resolveScheduleTime(value.localTime,value.timeZone,value.occurrence).toISOString();}catch(e){instant=e instanceof Error?e.message:"Invalid date or timezone.";}
- return <fieldset disabled={disabled} className="space-y-4 rounded-lg border p-4"><legend className="px-1 font-medium">Publication schedule</legend>
+ return <fieldset disabled={disabled} className="min-w-0 space-y-4 rounded-lg border p-4"><legend className="px-1 font-medium">Publication schedule</legend>
  <label className="block space-y-2 text-sm">Local date and time<Input required type="datetime-local" value={value.localTime} onChange={e=>onChange({...value,localTime:e.target.value})}/></label>
  <label className="block space-y-2 text-sm">Timezone (IANA name)<Input required list="schedule-timezones" value={value.timeZone} onChange={e=>onChange({...value,timeZone:e.target.value})}/><datalist id="schedule-timezones">{["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","Europe/London","Asia/Kolkata","UTC"].map(z=><option key={z} value={z}/>)}</datalist></label>
  <label className="block space-y-2 text-sm">If this hour occurs twice<select className="w-full rounded border bg-background p-3" value={value.occurrence} onChange={e=>onChange({...value,occurrence:e.target.value as ScheduleTiming["occurrence"]})}><option value="EARLIER">Earlier occurrence</option><option value="LATER">Later occurrence</option></select></label>
  {instant&&<p className="break-words text-xs" role="status">Resolved time: {instant}</p>}
- <label className="block space-y-2 text-sm">Recipient selection<select className="w-full rounded border bg-background p-3" value={value.recipientMode} onChange={e=>onChange({...value,recipientMode:e.target.value as ScheduleTiming["recipientMode"]})}><option value="SEND_TIME">Evaluate audience when published</option><option value="FIXED">Freeze current selection</option></select></label>
- <p className="text-xs text-muted-foreground">Fixed selection never adds new people. Disabled or no longer eligible recipients are excluded at publication. Email preferences are checked separately by delivery. Clock-change gaps are rejected.</p>
+ {!fixedOnly&&<label className="block space-y-2 text-sm">Recipient selection<select className="w-full rounded border bg-background p-3" value={value.recipientMode} onChange={e=>onChange({...value,recipientMode:e.target.value as ScheduleTiming["recipientMode"]})}><option value="SEND_TIME">Evaluate audience when published</option><option value="FIXED">Freeze current selection</option></select></label>}
+ <p className="text-xs text-muted-foreground">{fixedOnly?"Decisions use reviewed candidates. Sender authority and candidate state are rechecked atomically at publication. Clock-change gaps are rejected.":"Fixed selection never adds new people. Disabled or no longer eligible recipients are excluded at publication. Email preferences are checked separately by delivery. Clock-change gaps are rejected."}</p>
  </fieldset>;
 }
 export function ScheduledCommunications({clubId,refresh,onEdit}:{clubId:string;refresh:number;onEdit:(row:ScheduledItem)=>void}) {

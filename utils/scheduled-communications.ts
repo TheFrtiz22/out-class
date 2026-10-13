@@ -1,3 +1,4 @@
+import { publishScheduledDecision } from "@/utils/decision-scheduling";
 import { prisma } from "@/utils/prisma";
 import { publishAnnouncementTransaction } from "@/utils/announcement-publication";
 import { evaluateRecipientSnapshot, type AudienceSnapshot } from "@/utils/recipient-audience";
@@ -10,11 +11,15 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 // then intent, so an expired worker can never commit alongside a replacement.
 const leaseMs=120000;
 export async function processScheduledCommunications(limit=2) {
+ const invocationStarted=Date.now();
  const count=Math.min(2,Math.max(1,Math.floor(limit)));
  const now=new Date(),expired=new Date(now.getTime()-leaseMs);
  const candidates=await prisma.scheduledCommunication.findMany({where:{OR:[{status:"SCHEDULED",scheduledAt:{lte:now}},{status:"PROCESSING",updatedAt:{lt:expired}}]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:count,select:{id:true,clubId:true,revision:true}});
  let published=0,failed=0,skipped=0;
  for(const candidate of candidates) {
+  // A second worst-case claim/publication/failure marker must still fit the
+  // 60s route. Leave unclaimed work due once the 15s admission window closes.
+  if(Date.now()-invocationStarted>=15000){skipped++;continue;}
   let claimRevision:number|null=null;
   try {
    const claimed=await prisma.$transaction(async tx=>{
@@ -34,7 +39,13 @@ export async function processScheduledCommunications(limit=2) {
     await tx.$queryRaw`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate.id} FOR UPDATE`;
     const row=await tx.scheduledCommunication.findUniqueOrThrow({where:{id:candidate.id}});
     if(row.status!=="PROCESSING"||row.revision!==claimed.revision)return false;
-    if(row.kind!=="ANNOUNCEMENT"||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(!["ANNOUNCEMENT","DECISION"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(row.kind==="DECISION"){
+     const recipientCount=await publishScheduledDecision(tx,row);
+     await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",decisionPublishedAt:new Date(),recipientCount,failureCode:null}});
+     await tx.auditLog.create({data:{actorId:row.actorId,clubId:row.clubId,targetId:row.id,action:"communication.schedule.publish",details:{recipientCount,kind:"DECISION",revision:row.revision}}});
+     return true;
+    }
     await authorizeClubTransaction(tx,row.clubId,row.senderId,["meetings.manage"]);
     const audience=recipientAudienceSchema.parse(row.audience);
     const snapshot=row.snapshot as unknown as AudienceSnapshot;
@@ -46,7 +57,7 @@ export async function processScheduledCommunications(limit=2) {
     await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",publicationId:publication.id,recipientCount:publication.recipientCount,failureCode:null}});
     await tx.auditLog.create({data:{actorId:row.actorId,effectiveUserId:row.senderId,clubId:row.clubId,targetId:row.id,action:"communication.schedule.publish",details:{publicationId:publication.id,recipientCount:publication.recipientCount,revision:row.revision}}});
     return true;
-   },{maxWait:2000,timeout:12000});
+   },{maxWait:2000,timeout:claimed.kind==="DECISION"?20000:12000});
    if(result)published++;else skipped++;
   }catch{
    // Before a claim, a transient failure leaves SCHEDULED work due. After a

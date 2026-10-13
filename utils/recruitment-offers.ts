@@ -1,3 +1,4 @@
+import type { FrozenLetterSettings } from "@/lib/decision-schedule";
 import { publishDecisionCommunication, offerResponseNotification } from "@/utils/decision-communications";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import type { AppStatus } from "@prisma/client";
@@ -11,7 +12,7 @@ async function event(tx: AppTransactionClient, actorId: string, clubId: string, 
 /** Caller must recheck decision capability inside this transaction before invoking.
  * All offer, decision and membership mutations share the Club serialization lock.
  */
-export async function publishRecruitmentDecision(tx: AppTransactionClient, input: { clubId: string; applicationId: string; status: AppStatus; expectedStatus?: AppStatus; roundId?: string }, actorId: string) {
+export async function publishRecruitmentDecision(tx: AppTransactionClient, input: { clubId: string; applicationId: string; status: AppStatus; expectedStatus?: AppStatus; roundId?: string }, actorId: string, settings?: FrozenLetterSettings, names?: {firstName:string;fullName:string}) {
   await lockOperationalClub(tx, input.clubId);
   const app = await tx.application.findFirst({ where: { id: input.applicationId, clubId: input.clubId }, include: { round: true } });
   if (!app || input.roundId && input.roundId !== app.roundId || input.expectedStatus && input.expectedStatus !== app.status && input.status !== app.status)
@@ -19,7 +20,15 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
   assertRecruitmentTransition(app.status, input.status, app.round.type);
   if (app.status !== input.status) await tx.application.update({ where: { id: app.id }, data: { status: input.status, ...( ["ACCEPTED","WAITLISTED","REJECTED"].includes(input.status) ? { decisionVersion: { increment: 1 } } : {} ) } });
   const existing = await tx.clubInvitation.findUnique({ where: { applicationId: app.id } });
-  if (input.status === "ACCEPTED" && !existing) {
+  const reissue=!!existing&&app.status==="IN_REVIEW"&&input.expectedStatus==="IN_REVIEW"&&["REVOKED","EXPIRED","DECLINED"].includes(existing.status)&&!!await tx.auditLog.findFirst({where:{clubId:app.clubId,targetId:app.id,action:"recruitment.reconsidered",details:{path:["previousVersion"],equals:app.decisionVersion-1}}});
+  if (input.status === "ACCEPTED" && (!existing||reissue)) {
+    // Retain the original closed offer, response timestamps and audit history.
+    // Only the current offer occupies the unique application link. Historical
+    // letters stay immutable and cannot respond to this new decision's offer.
+    if(reissue){
+      await tx.clubInvitation.update({where:{id:existing!.id},data:{applicationId:null}});
+      await event(tx,actorId,app.clubId,existing!.id,"offer.superseded",app.id);
+    }
     const [club, student] = await Promise.all([
       tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { schoolId: true } }),
       tx.user.findUniqueOrThrow({ where: { id: app.studentId }, select: { email: true } }),
@@ -34,7 +43,7 @@ export async function publishRecruitmentDecision(tx: AppTransactionClient, input
     await revokeClubInvitations(tx, { id: existing.id }, actorId, "recruitment.decision.reversal");
   }
   if (app.status !== input.status) await tx.auditLog.create({ data: { actorId, clubId: app.clubId, targetId: app.id, action: "recruitment.decision.published", details: { previousStatus: app.status, status: input.status, roundId: app.roundId } } });
-  if (app.status !== input.status) await publishDecisionCommunication(tx, app.id, actorId);
+  if (app.status !== input.status) await publishDecisionCommunication(tx, app.id, actorId, settings, names);
   return { previousStatus: app.status };
 }
 

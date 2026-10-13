@@ -34,7 +34,7 @@ export function requireFutureSchedule(date: Date, now = Date.now()) {
   if (date.getTime() > now + 366 * 86400000) throw Error("Schedule within the next year.");
 }
 
-/** Future decision handlers must publish status/version/optional immutable letter,
+/** Decision handlers publish status/version/optional immutable letter,
  * canonical notification and outbox intent inside this same transaction. Never
  * stage visible outcomes while preparing a schedule. Unsupported kinds fail closed. */
-export type ScheduledPublicationKind = "ANNOUNCEMENT"; // Decisions deliberately not enabled.
+export type ScheduledPublicationKind = "ANNOUNCEMENT" | "DECISION";

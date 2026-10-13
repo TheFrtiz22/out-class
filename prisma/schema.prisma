@@ -102,8 +102,10 @@ model Experience {
 // ==========================================
 
 model Club {
+  recruitmentCycles RecruitmentCycle[]
   scheduledCommunications ScheduledCommunication[]
   recipientGroups RecipientGroup[]
+  sendFormalDecisionLetters Boolean @default(true)
   decisionLetterTemplates Json?
   decisionLetters DecisionLetter[]
   suspendedAt DateTime?
@@ -247,6 +249,9 @@ enum QuestionType {
 }
 
 model Application {
+  decisionStateRevision Int @default(0)
+  recruitmentCycleId String?
+  recruitmentCycle RecruitmentCycle? @relation(fields: [recruitmentCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
   decisionVersion Int @default(0)
   decisionLetters DecisionLetter[]
   recruitmentOffer ClubInvitation?
@@ -1373,6 +1378,7 @@ model RecipientGroupEntry {
 
 // Server-only publication intent. No notification exists before publication.
 model ScheduledCommunication {
+  decisionPublishedAt DateTime?
   id String @id @default(uuid())
   clubId String
   club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -1402,4 +1408,16 @@ model ScheduledCommunication {
   @@unique([clubId, requestKey])
   @@index([status, scheduledAt])
   @@index([clubId, createdAt])
+}
+
+model RecruitmentCycle {
+ id String @id @default(uuid())
+ clubId String
+ club Club @relation(fields: [clubId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+ name String
+ archivedAt DateTime?
+ createdAt DateTime @default(now())
+ applications Application[]
+ @@unique([id, clubId])
+ @@unique([clubId, name])
 }

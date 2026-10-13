@@ -33,6 +33,7 @@ export async function getRecipientGroups(clubId: string) {
     // Counts and identities are resolved on demand, never leaked from a stored group.
     return { groups, canEdit: hasPermission(member, "members.manage"), capabilities: audienceCapabilities,
       cohorts: (await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", cohort: { not: null } }, select: { cohort: true }, distinct: ["cohort"], take: 100 })).map(r=>r.cohort!),
+      cycles: await tx.recruitmentCycle.findMany({where:{clubId},select:{id:true,name:true},orderBy:{createdAt:"desc"},take:100}),
       rounds: await tx.pipelineRound.findMany({ where: { clubId, archivedAt: null, anonymousReview: false }, select: { id: true, name: true }, orderBy: { order: "asc" }, take: 100 }),
       events: await tx.meeting.findMany({ where: { clubId }, select: { id: true, title: true }, orderBy: { date: "desc" }, take: 100 }),
     };

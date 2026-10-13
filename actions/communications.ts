@@ -131,22 +131,38 @@ export async function getDecisionLetter(applicationId:string,letterId?:string) {
  z.string().uuid().parse(applicationId);if(letterId)z.string().uuid().parse(letterId);
  const {user}=await requireAuth();
  const app=await prisma.application.findFirst({where:{id:applicationId,studentId:user.id},select:{id:true,status:true,decisionVersion:true,clubId:true,club:{select:{name:true,logoUrl:true,color:true,suspendedAt:true}},recruitmentOffer:{select:{status:true,expiresAt:true}},decisionLetters:{where:letterId?{id:letterId}:{},orderBy:{version:'desc'},take:1,select:{id:true,version:true,decision:true,content:true,createdAt:true}}}});
- if(!app||!app.decisionLetters[0])return null;
+ if(!app)return null;
+ if(!app.decisionLetters[0]||!letterId&&app.decisionLetters[0].version!==app.decisionVersion) {
+  if(letterId||!['ACCEPTED','WAITLISTED','REJECTED'].includes(app.status))return null;
+  const notification=await prisma.userNotification.findUnique({where:{userId_eventKey:{userId:user.id,eventKey:`decision:${app.id}:${app.decisionVersion}`}},select:{id:true}});
+  return {notificationId:notification?.id,applicationId:app.id,clubId:app.clubId,currentStatus:app.status,isCurrent:true,suspended:!!app.club.suspendedAt,offer:app.recruitmentOffer,letter:null};
+ }
  const letter=app.decisionLetters[0];
  const notification=await prisma.userNotification.findUnique({where:{userId_eventKey:{userId:user.id,eventKey:`decision:${app.id}:${letter.version}`}},select:{id:true}});
  return {notificationId:notification?.id,applicationId:app.id,clubId:app.clubId,currentStatus:app.status,isCurrent:letter.version===app.decisionVersion,suspended:!!app.club.suspendedAt,offer:app.recruitmentOffer,letter:{...letter,content:letter.content as unknown as LetterContent}};
 }
 export async function getDecisionTemplates(clubId:string) {
  z.string().uuid().parse(clubId);await requireClubPermission(clubId,['recruitment.manage']);
- const club=await prisma.club.findUniqueOrThrow({where:{id:clubId},select:{name:true,logoUrl:true,color:true,decisionLetterTemplates:true}});
+ const club=await prisma.club.findUniqueOrThrow({where:{id:clubId},select:{name:true,logoUrl:true,color:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}});
  return {...club,templates:letterTemplatesSchema.parse(club.decisionLetterTemplates ?? {})};
 }
 export async function saveDecisionTemplates(clubId:string,input:unknown) {
  z.string().uuid().parse(clubId);const templates=letterTemplatesSchema.parse(input);
  const {user}=await requireClubPermission(clubId,['recruitment.manage']);
- await prisma.$transaction(async tx=>{
+ await clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,['recruitment.manage']);
   await tx.club.update({where:{id:clubId},data:{decisionLetterTemplates:templates as Prisma.InputJsonValue}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.templates.updated',details:{types:Object.keys(templates)}}});
  });return {success:true};
+}
+
+export async function setFormalDecisionLetters(clubId:string, enabled:boolean) {
+ uuid.parse(clubId);z.boolean().parse(enabled);
+ const {user}=await requireClubPermission(clubId,['recruitment.manage']);
+ return clubWriteTransaction(async tx=>{
+  await authorizeClubTransaction(tx,clubId,user.id,['recruitment.manage']);
+  await tx.club.update({where:{id:clubId},data:{sendFormalDecisionLetters:enabled}});
+  await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.setting.updated',details:{enabled}}});
+  return {success:true};
+ });
 }

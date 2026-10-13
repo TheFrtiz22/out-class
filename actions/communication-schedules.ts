@@ -18,7 +18,7 @@ export async function saveCommunicationSchedule(input: unknown) {
  if(await supportContext()) throw Error("Exit support impersonation before scheduling a future publication.");
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,data.clubId,user.id,["meetings.manage"]);
-  const previous=await tx.scheduledCommunication.findFirst({where:{id:data.id,clubId:data.clubId}});
+  const previous=await tx.scheduledCommunication.findFirst({where:{id:data.id,clubId:data.clubId,kind:"ANNOUNCEMENT"}});
   if(previous && previous.senderId!==user.id) throw Error("Only the sender can edit this scheduled send.");
   const values={title:data.title,body:data.body,audience:data.audience,recipientMode:data.recipientMode,scheduledAt,timeZone:data.timeZone,localTime:data.localTime,occurrence:data.occurrence};
   // Response-loss retries do not recapture a fixed snapshot or increment revision.
@@ -41,8 +41,8 @@ export async function getCommunicationSchedules(clubId:string) {
   await authorizeClubTransaction(tx,clubId,user.id,["meetings.manage"],{readOnly:true});
   // Snapshot identities stay server-only. Managers may inspect content/status, only sender edits.
   const select={id:true,senderId:true,title:true,body:true,audience:true,recipientMode:true,scheduledAt:true,timeZone:true,localTime:true,occurrence:true,status:true,revision:true,publicationId:true,recipientCount:true,failureCode:true} as const;
-  const queued=await tx.scheduledCommunication.findMany({where:{clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}},orderBy:{scheduledAt:"asc"},take:100,select});
-  const history=await tx.scheduledCommunication.findMany({where:{clubId,status:{in:["PUBLISHED","CANCELLED"]}},orderBy:{updatedAt:"desc"},take:50,select});
+  const queued=await tx.scheduledCommunication.findMany({where:{clubId,kind:"ANNOUNCEMENT",status:{in:["SCHEDULED","PROCESSING","FAILED"]}},orderBy:{scheduledAt:"asc"},take:100,select});
+  const history=await tx.scheduledCommunication.findMany({where:{clubId,kind:"ANNOUNCEMENT",status:{in:["PUBLISHED","CANCELLED"]}},orderBy:{updatedAt:"desc"},take:50,select});
   const rows=[...queued,...history];
   const publicationIds=history.flatMap(row=>row.publicationId?[row.publicationId]:[]);
   const emailRows=publicationIds.length?await tx.$queryRaw<{announcementId:string;outboxStatus:string;deliveryStatus:string|null;count:number}[]>`
@@ -68,7 +68,7 @@ export async function cancelCommunicationSchedule(clubId:string,id:string,revisi
  const {user}=await requireClubPermission(clubId,["meetings.manage"]);
  return clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,["meetings.manage"]);
-  const row=await tx.scheduledCommunication.findFirst({where:{id,clubId}});
+  const row=await tx.scheduledCommunication.findFirst({where:{id,clubId,kind:"ANNOUNCEMENT"}});
   if(!row) throw Error("Scheduled send unavailable.");
   if(row.status==="CANCELLED"&&row.revision===revision+1) return {cancelled:true};
   if(row.revision!==revision||!["SCHEDULED","FAILED"].includes(row.status)) throw Error("Scheduled send changed or already published. Refresh before cancelling.");

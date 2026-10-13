@@ -16,7 +16,7 @@ export async function getDecisionLetter(applicationId:string,letterId?:string){
  return {notificationId:letter.id,applicationId:app.id,clubId:app.clubId,currentStatus:app.status,isCurrent:letter.id===all.at(-1)?.id,suspended:false,offer:s.recruitmentOffers.find(o=>o.applicationId===app.id)??null,letter};
 }
 function authorized(clubId:string){const s=demoStore.get();if(s.perspective.role!=='leader'||s.perspective.clubId!==clubId||clubId!==s.clubs[0].id)throw Error('Recruitment access denied.');return s;}
-export async function getDecisionTemplates(clubId:string){const s=authorized(clubId),club=s.clubs.find(c=>c.id===clubId)!;return {name:club.name,logoUrl:club.logoUrl??null,color:club.color,decisionLetterTemplates:s.letterTemplates[clubId]??null,templates:s.letterTemplates[clubId]??{}};}
+export async function getDecisionTemplates(clubId:string){const s=authorized(clubId),club=s.clubs.find(c=>c.id===clubId)!;return {sendFormalDecisionLetters:true,name:club.name,logoUrl:club.logoUrl??null,color:club.color,decisionLetterTemplates:s.letterTemplates[clubId]??null,templates:s.letterTemplates[clubId]??{}};}
 export async function saveDecisionTemplates(clubId:string,input:unknown){authorized(clubId);const templates=letterTemplatesSchema.parse(input);demoStore.mutate(s=>{s.letterTemplates[clubId]=templates});return {success:true};}
 export function demoCommunicationRows(s:DemoState){
  const studentId=s.students[0].id;

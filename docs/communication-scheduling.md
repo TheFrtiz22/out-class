@@ -230,3 +230,14 @@ vercel.json
   and cycle filtering are future work; hosted cron/email and physical mobile devices
   were not tested. Failed sends require review/reschedule; throughput and hourly
   announcement limit are intentional, documented bounds.
+
+
+## Follow-up: implemented recruitment scheduling
+
+The earlier decision/cycle exclusions above describe the original scheduling commit.
+They are superseded by `docs/decision-recruitment-controls.md`: direct and voting
+publication now use the shared intent/worker, and explicit application cycles are
+recorded separately from rounds and membership cohorts. Mandatory security/auth
+messages and the other exclusions remain immediate. Announcement publication keeps
+its 12-second transaction limit; decision jobs have a measured 50-applicant cap,
+20-second transaction limit, and a 15-second invocation admission window.
