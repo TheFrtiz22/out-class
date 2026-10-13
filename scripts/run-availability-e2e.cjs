@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { spawn, spawnSync } = require('node:child_process'), { randomUUID } = require('node:crypto')
 const { PrismaClient } = require('@prisma/client'), { createClient } = require('@supabase/supabase-js')
 const repo = path.resolve(__dirname, '..'), root = path.join(os.tmpdir(), 'outclass-availability-e2e'), project = 'outclass-availability-e2e'
-const publication = process.argv.includes('--publication'); const panels = process.argv.includes('--panels')||publication; const keep = process.argv.includes('--keep'); let server, touched = false
+const buildOnly = process.argv.includes('--build-only'); const resume = process.argv.includes('--resume'); const ux = process.argv.includes('--ux'); const publication = process.argv.includes('--publication'); const panels = process.argv.includes('--panels')||publication||ux; const keep = process.argv.includes('--keep'); let server, touched = false
 const supabase = path.join(repo, 'node_modules/supabase/dist/supabase.js')
 function run(args, log, env, cwd = repo) {
   const fd = fs.openSync(path.join(root, log + '.log'), 'w')
@@ -19,7 +19,7 @@ function guards(config) {
   }
 }
 async function main() {
-  if (fs.existsSync(path.join(root, 'config.json'))) throw Error('A retained local fixture exists. Remove it with --cleanup before starting another run.')
+  if (!resume && fs.existsSync(path.join(root, 'config.json'))) throw Error('A retained local fixture exists. Remove it with --cleanup before starting another run.')
   fs.mkdirSync(path.join(root, 'supabase/templates'), { recursive: true, mode: 0o700 })
   const config = fs.readFileSync(path.join(repo, 'supabase/config.toml'), 'utf8').replace('project_id = "out-class"', `project_id = "${project}"`).replaceAll('5432', '5732').replaceAll('http://127.0.0.1:3000', 'http://127.0.0.1:3126').replaceAll('http://localhost:3000', 'http://127.0.0.1:3126')
   assert.ok(config.includes(`project_id = "${project}"`))
@@ -29,7 +29,7 @@ async function main() {
   run([supabase, 'start', '--workdir', root, '-x', 'studio,edge-runtime,logflare,vector,imgproxy'], 'supabase-start', process.env)
   const status = spawnSync(process.execPath, [supabase, 'status', '--workdir', root, '-o', 'json'], { cwd: repo, encoding: 'utf8' })
   if (status.status) throw Error('Local Supabase status unavailable')
-  const settings = { projectId: project, appUrl: 'http://127.0.0.1:3126', status: JSON.parse(status.stdout), buildDir: path.join(root, 'app/.next-publish') }; guards(settings)
+  const settings = resume ? JSON.parse(fs.readFileSync(path.join(root, 'config.json'))) : { projectId: project, appUrl: 'http://127.0.0.1:3126', status: JSON.parse(status.stdout), buildDir: path.join(root, 'app/.next-publish') }; guards(settings)
   const env = { ...process.env, DATABASE_URL: settings.status.DB_URL, POSTGRES_PRISMA_URL: settings.status.DB_URL, POSTGRES_URL: settings.status.DB_URL, POSTGRES_URL_NON_POOLING: settings.status.DB_URL,
     NEXT_PUBLIC_SUPABASE_URL: settings.status.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: settings.status.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: settings.status.ANON_KEY,
     SUPABASE_SECRET_KEY: settings.status.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: settings.status.SERVICE_ROLE_KEY, OUTCLASS_SITE_URL: settings.appUrl, OUTCLASS_PUBLISH_BUILD: '1',
@@ -39,11 +39,12 @@ async function main() {
     const relative = path.relative(repo, file), first = relative.split(path.sep)[0]
     return !['node_modules', '.git', '.agents', '.codex', '.claude', '.cursor', '.pnpm-store'].includes(first) && !first.startsWith('.next') && !path.basename(file).startsWith('.env') && !relative.startsWith('supabase' + path.sep + '.temp')
   } })
-  fs.symlinkSync(path.join(repo, 'node_modules'), path.join(root, 'app/node_modules'), 'dir')
+  if (!fs.existsSync(path.join(root, 'app/node_modules'))) fs.symlinkSync(path.join(repo, 'node_modules'), path.join(root, 'app/node_modules'), 'dir')
   run([path.join(repo, 'node_modules/prisma/build/index.js'), 'migrate', 'deploy'], 'migrate-local', env, path.join(root, 'app'))
   const db = new PrismaClient({ datasourceUrl: settings.status.DB_URL })
   const auth = createClient(settings.status.API_URL, settings.status.SECRET_KEY, { auth: { persistSession: false } })
   try {
+    if (!resume) {
     settings.actors = {}
     for (const role of ['owner', 'interviewer', 'outsider']) {
       const email = `availability.${role}.${randomUUID().slice(0, 8)}@virginia.edu`, password = 'Local-availability-only!' + randomUUID()
@@ -60,16 +61,19 @@ async function main() {
       settings.clubs.push({ id: club.id, roundId: round.id, memberId: member.id })
       await db.interviewRoom.create({ data: { clubId: club.id, roundId: round.id, name: 'Existing test room', location: 'Hall', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 20, slots: { create: { clubId: club.id, location: 'Hall', startTime: new Date('2026-10-12T13:00:00Z'), endTime: new Date('2026-10-12T13:20:00Z') } } } })
     }
-    if (panels) await require(publication?'../tests/panel-publication-browser.cjs':'../tests/panel-proposals-browser.cjs').prepare(db, auth, settings)
+    if (panels) await require(ux?'../tests/availability-scheduling-browser.cjs':publication?'../tests/panel-publication-browser.cjs':'../tests/panel-proposals-browser.cjs').prepare(db, auth, settings)
     fs.writeFileSync(path.join(root, 'config.json'), JSON.stringify(settings), { mode: 0o600 })
+    }
   } finally { await db.$disconnect() }
+  const existingPid = path.join(root, 'server.pid'); if (fs.existsSync(existingPid)) { try { process.kill(Number(fs.readFileSync(existingPid)), 'SIGTERM') } catch {} fs.rmSync(existingPid) }
   run([path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], 'build', env, path.join(root, 'app'))
+  if (buildOnly) return
   const fd = fs.openSync(path.join(root, 'server.log'), 'w')
   server = spawn(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'start', '-p', '3126', '-H', '127.0.0.1'], { cwd: path.join(root, 'app'), env, stdio: ['ignore', fd, fd] })
   fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid))
   fs.closeSync(fd)
   for (let i = 0; i < 100; i++) { try { const r = await fetch(settings.appUrl); if (r.ok) break } catch {} await new Promise(resolve => setTimeout(resolve, 100)) }
-  await require(publication?'../tests/panel-publication-browser.cjs':panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
+  await require(ux?'../tests/availability-scheduling-browser.cjs':publication?'../tests/panel-publication-browser.cjs':panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
   console.log('Browser → actual server actions → local Prisma/Postgres: PASS')
   if (keep) { server.unref(); fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid)); console.log('Local fixture retained at ' + settings.appUrl) }
 }

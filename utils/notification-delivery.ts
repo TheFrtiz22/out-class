@@ -3,6 +3,7 @@ import { prisma } from "@/utils/prisma";
 import { nextDigestAt, optionalEmailAllowed, requireCommunicationAccess } from "@/lib/communications-policy";
 import { buildNotificationEmail, communicationEmailConfig, NotificationDeliveryError, notificationEmailPayload, sendNotificationEmail } from "@/lib/notification-email";
 import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from "@/utils/official-panel-schedule";
+import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
@@ -34,6 +35,9 @@ export async function processNotificationEmails(limit = 10) {
         }
         if (row.notification.club?.suspendedAt) continue;
         if (row.notification.eventKey?.startsWith(assignmentNotificationPrefix) && row.notification.eventKey.includes(":assigned:") && !await currentAssignmentNotification(tx, row.notification, userId)) {
+          await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
+        }
+        if (row.notification.eventKey.startsWith(availabilityRequestPrefix) && !await currentAvailabilityRequest(tx, row.notification, userId)) {
           await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
         }
         if(row.notification.eventKey?.startsWith(panelScheduleNotificationPrefix)){
@@ -73,6 +77,9 @@ export async function processNotificationEmails(limit = 10) {
       let inaccessibleMessage = false;
       for (const item of row.items.filter(item => item.notification.eventKey?.startsWith(assignmentNotificationPrefix) && item.notification.eventKey.includes(":assigned:"))) {
         if (!await currentAssignmentNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
+      }
+      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(availabilityRequestPrefix))) {
+        if (!await currentAvailabilityRequest(tx, item.notification, row.userId)) inaccessibleMessage = true;
       }
       for(const snapshot of payload.panelSchedules??[]){const item=row.items.find(item=>item.notificationId===snapshot.notificationId);const context=item?await currentPanelScheduleNotification(tx,item.notification,row.userId):null;if(!context||context.panelSchedule.signature!==snapshot.signature)inaccessibleMessage=true}
       for (const item of row.items.filter(item => item.notification.type === "MESSAGE")) {

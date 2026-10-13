@@ -12,10 +12,12 @@
 .oc-av-cell:hover { box-shadow: inset 0 0 0 1px var(--foreground); }
 .oc-av-select { min-height: 44px; max-width: 100%; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); font-size: 14px; }
 .oc-av-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-@media (max-width: 640px) {
+@media (max-width: 639px) {
   .oc-av-row { grid-template-columns: 68px 1fr; min-width: 0; }
   .oc-av-day:not(.is-mobile-day) { display: none; }
   .oc-av-cell { height: 44px; }
   .oc-av-time { padding-top: 13px; }
   .oc-av-scroll { max-height: 520px; }
 }
+
+.oc-av-cell.is-unknown { background: repeating-linear-gradient(135deg, var(--card), var(--card) 5px, var(--muted) 5px, var(--muted) 7px); }

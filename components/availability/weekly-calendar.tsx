@@ -8,16 +8,18 @@ import "./availability.css"
 type Position = { day: number; slot: number }
 export function minuteLabel(minute: number) { return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}` }
 
-export function WeeklyCalendar({ days, dates, onChange, counts, onSelect, readOnly = false }: {
-  days: boolean[][]; dates?: string[]; onChange?: (days: boolean[][], changedDays: number[]) => void
+export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSelect, readOnly = false }: {
+  days: boolean[][]; dates?: string[]; knownDays?: boolean[]; onChange?: (days: boolean[][], changedDays: number[]) => void
   counts?: number[][]; onSelect?: (day: number, slot: number) => void; readOnly?: boolean
 }) {
   const [mobileDay, setMobileDay] = useState(0), [touchEdit, setTouchEdit] = useState(false), [mobile, setMobile] = useState(false)
   const [focus, setFocus] = useState<Position>({ day: 0, slot: 32 })
+  const [preview, setPreview] = useState<boolean[][] | null>(null)
+  const displayed = preview ?? days
   const grid = useRef<HTMLDivElement>(null), suppressClick = useRef(false)
-  const drag = useRef<{ pointer: number; from: Position; base: boolean[][]; on: boolean } | null>(null)
+  const drag = useRef<{ pointer: number; from: Position; base: boolean[][]; on: boolean; to: Position } | null>(null)
   useEffect(() => {
-    const query = window.matchMedia("(max-width: 640px)")
+    const query = window.matchMedia("(max-width: 639px)")
     const update = () => setMobile(query.matches)
     update(); query.addEventListener("change", update)
     return () => query.removeEventListener("change", update)
@@ -25,14 +27,21 @@ export function WeeklyCalendar({ days, dates, onChange, counts, onSelect, readOn
   useEffect(() => { if (grid.current) grid.current.scrollTop = 32 * (mobile ? 44 : 25) }, [mobile])
   function paint(from: Position, to: Position, base: boolean[][], on: boolean) {
     const changedDays = Array.from({ length: Math.abs(to.day - from.day) + 1 }, (_, i) => Math.min(from.day, to.day) + i)
-    onChange?.(paintCells(base, from, to, on), changedDays)
+    const next = paintCells(base, from, to, on)
+    if (drag.current) { drag.current.to = to; setPreview(next) } else onChange?.(next, changedDays)
   }
   function moveFocus(to: Position) {
     setFocus(to)
     grid.current?.querySelector<HTMLButtonElement>(`[data-av-cell="${to.day}:${to.slot}"]`)?.focus()
   }
-  function finish() { drag.current = null }
-  return <div className="oc-availability-calendar">
+  function finish() {
+    const active = drag.current
+    if (!active) return
+    drag.current = null; setPreview(null)
+    paint(active.from, active.to, active.base, active.on)
+  }
+  return <div className="oc-availability-calendar" data-unsaved={preview !== null}>
+    {!readOnly && <p role="status" className="mb-2 min-h-4 text-xs text-muted-foreground">{preview ? "Editing selection · release to save." : "Selections save after you release."}</p>}
     <div className="mb-3 flex flex-wrap items-center gap-2 sm:hidden" aria-label="Day to edit">
       {WEEK_DAYS.map((day, i) => <Button key={day} variant={mobileDay === i ? "default" : "outline"} className="min-h-11 px-3" aria-pressed={mobileDay === i} onClick={() => { setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}>{day.slice(0, 3)}</Button>)}
     </div>
@@ -50,10 +59,10 @@ export function WeeklyCalendar({ days, dates, onChange, counts, onSelect, readOn
       <div role="row" className="oc-av-row oc-av-header"><span aria-hidden="true">Time</span>{WEEK_DAYS.map((day, i) => <div key={day} role="columnheader" className={`oc-av-day ${mobileDay === i ? "is-mobile-day" : ""}`}>{day.slice(0, 3)}{dates && <small>{dates[i].slice(5)}</small>}</div>)}</div>
       {Array.from({ length: 96 }, (_, slot) => <div key={slot} role="row" className="oc-av-row">
         <span className="oc-av-time" aria-hidden="true">{slot % 4 === 0 || mobile ? minuteLabel(slot * 15) : ""}</span>
-        {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-selected={days[i][slot]} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
-          aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} available interviewers` : days[i][slot] ? "available" : "not marked available"}`}
+        {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-selected={displayed[i][slot]} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
+          aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} available interviewers` : displayed[i][slot] ? "available" : knownDays?.[i] === false ? "unknown" : "unavailable"}`}
           tabIndex={(mobile ? mobileDay === i : focus.day === i) && focus.slot === slot ? 0 : -1}
-          className={`oc-av-cell oc-av-day ${mobileDay === i ? "is-mobile-day" : ""} ${days[i][slot] ? "is-available" : ""} ${slot % 4 === 0 ? "is-hour" : ""}`}
+          className={`oc-av-cell oc-av-day ${mobileDay === i ? "is-mobile-day" : ""} ${displayed[i][slot] ? "is-available" : knownDays?.[i] === false ? "is-unknown" : ""} ${slot % 4 === 0 ? "is-hour" : ""}`}
           style={counts && counts[i][slot] > 0 ? { backgroundColor: `rgba(232, 91, 25, ${Math.min(.7, .15 + counts[i][slot] * .1)})`, color: "var(--foreground)", fontWeight: 600 } : undefined}
           onFocus={() => setFocus({ day: i, slot })}
           onPointerDown={event => {
@@ -61,7 +70,7 @@ export function WeeklyCalendar({ days, dates, onChange, counts, onSelect, readOn
             if (readOnly || event.button !== 0 || !event.isPrimary || event.pointerType === "touch" && !touchEdit) return
             event.preventDefault(); suppressClick.current = true
             const from = { day: i, slot }, on = !days[i][slot]
-            drag.current = { pointer: event.pointerId, from, base: days, on }
+            drag.current = { pointer: event.pointerId, from, to: from, base: days, on }
             grid.current?.setPointerCapture(event.pointerId)
             moveFocus(from); paint(from, from, days, on)
           }}

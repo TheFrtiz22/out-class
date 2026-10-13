@@ -21,6 +21,7 @@
     "test:onboarding:e2e": "node scripts/run-onboarding-e2e.cjs",
     "test:panel-publication:e2e": "node scripts/run-availability-e2e.cjs --publication",
     "test:panels:e2e": "node scripts/run-availability-e2e.cjs --panels",
+    "test:scheduling-ux:e2e": "node scripts/run-availability-e2e.cjs --ux",
     "test:availability:e2e": "node scripts/run-availability-e2e.cjs",
     "pdf:assets": "node scripts/copy-pdfjs-assets.cjs",
     "predev": "npm run pdf:assets",
