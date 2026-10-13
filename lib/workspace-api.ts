@@ -1,4 +1,5 @@
 "use client"
+import * as invitationSchedules from "@/actions/invitation-schedules";
 import * as decisionSchedules from "@/actions/decision-schedules";
 import * as recruitmentManagement from "@/actions/recruitment-management";
 import * as decisionCommunications from "@/actions/communications";
@@ -408,6 +409,7 @@ export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRul
 
 export const getRoomWorkspace = adapt(roomApi.getRoomWorkspace, demoRoomApi.getRoomWorkspace)
 export const createInterviewRoom = adapt(roomApi.createInterviewRoom, demoRoomApi.createInterviewRoom)
+export const setInterviewStaffingRequirement = adapt(roomApi.setInterviewStaffingRequirement, raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0]))
 export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, demoRoomApi.setInterviewRoomOpen)
 export const getApplicantSchedule = adapt(roomApi.getApplicantSchedule, demoRoomApi.getApplicantSchedule)
 export const reserveInterview = adapt(roomApi.reserveInterview, demoRoomApi.reserveInterview)
@@ -588,3 +590,8 @@ export const scheduleDecisionPublication = adapt(decisionSchedules.scheduleDecis
 export const getDecisionSchedules = adapt(decisionSchedules.getDecisionSchedules, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
 
 export const cancelDecisionSchedule = adapt(decisionSchedules.cancelDecisionSchedule, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const previewInvitationSchedule = adapt(invitationSchedules.previewInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const saveInvitationSchedule = adapt(invitationSchedules.saveInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const getInvitationSchedules = adapt(invitationSchedules.getInvitationSchedules, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const cancelInvitationSchedule = adapt(invitationSchedules.cancelInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});

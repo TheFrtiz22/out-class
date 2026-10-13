@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { sendRosterInvitations, requestInvitationDelivery } from '@/actions/invitation-emails';
+import {InvitationScheduleComposer,InvitationSchedules} from "@/components/invitation-schedules";
 import { Button } from '@/components/ui/button';
 
 export function InvitationEmailControls({ clubId, importId, onSent }: { clubId: string; importId?: string; onSent?: () => Promise<void> }) {
@@ -25,6 +26,7 @@ export function InvitationEmailControls({ clubId, importId, onSent }: { clubId: 
   return <section className="space-y-3 rounded-xl border bg-muted/20 p-4" aria-label="Invitation email delivery" aria-busy={busy} data-saving={busy}>
     <p className="text-sm leading-6 text-muted-foreground">Review invitations before emailing. Importing a CSV never sends emails automatically. Existing pending invitations from earlier imports are not emailed again by this import.</p>
     <Button className="min-h-11 w-full sm:w-auto" disabled={busy} onClick={() => void send()}>{busy ? 'Queueing invitations…' : importId ? 'Send invitations' : 'Send queued invitations'}</Button>
+    <InvitationScheduleComposer clubId={clubId} importId={importId}/>{!importId&&<InvitationSchedules clubId={clubId}/>}
     {message && <p role="status" className="text-sm">{message}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
   </section>;
 }

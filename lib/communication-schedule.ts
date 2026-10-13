@@ -37,4 +37,4 @@ export function requireFutureSchedule(date: Date, now = Date.now()) {
 /** Decision handlers publish status/version/optional immutable letter,
  * canonical notification and outbox intent inside this same transaction. Never
  * stage visible outcomes while preparing a schedule. Unsupported kinds fail closed. */
-export type ScheduledPublicationKind = "ANNOUNCEMENT" | "DECISION";
+export type ScheduledPublicationKind = "ANNOUNCEMENT" | "DECISION" | "INVITATION_EMAIL";

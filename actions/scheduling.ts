@@ -1,5 +1,7 @@
 "use server";
 
+import { panelPublicationLock } from "@/utils/panel-publication";
+import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { Prisma } from "@prisma/client";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { prisma } from "@/utils/prisma";
@@ -59,6 +61,8 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       booking = await prisma.$transaction(async (tx) => {
+        await panelPublicationLock(tx);
+        await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
         const application = await tx.application.findUnique({ where: { id: parsed.applicationId } });
         if (!application || application.studentId !== user.id) {
           throw new Error("Unauthorized to book for this application.");
@@ -80,8 +84,9 @@ export async function bookInterviewSlot(data: z.infer<typeof bookSlotSchema>) {
         if (otherBookings.some(b => b.applicationId === application.id || b.slot.startTime < slot.endTime && b.slot.endTime > slot.startTime)) {
           throw new Error("You already have an interview booking for this application or time.");
         }
+        await assertOfficialPanelConflicts(tx,[user.id],[{id:slot.id,startTime:slot.startTime.toISOString(),endTime:slot.endTime.toISOString(),buffer:0}]);
         return tx.interviewBooking.create({ data: parsed });
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
       break;
     } catch (error) {
       if (error && typeof error === "object" && "code" in error && error.code === "P2034") {

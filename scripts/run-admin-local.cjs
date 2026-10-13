@@ -16,6 +16,7 @@ if(mode==='migrate'){binary=process.execPath;args=['node_modules/prisma/build/in
 if(mode==='start'){binary=process.execPath;args=['node_modules/next/dist/bin/next','start','-p','3109','-H','127.0.0.1'];}
 if(mode==='integration'){binary=process.execPath;args=['--test','tests/admin-workspace-e2e.test.cjs'];env.OUTCLASS_ADMIN_E2E_CONFIG=filename;}
 if(mode==='audience-integration'){binary=process.execPath;args=['--test','tests/recipient-audiences-e2e.test.cjs'];env.OUTCLASS_AUDIENCE_E2E_CONFIG=filename;}
+if(mode==='invitation-scheduling-integration'){binary=process.execPath;args=['--test','tests/invitation-schedules-e2e.test.cjs'];env.OUTCLASS_INVITATION_SCHEDULE_E2E_CONFIG=filename;}
 if(mode==='decision-integration'){binary=process.execPath;args=['--test','tests/decision-publication-e2e.test.cjs'];env.OUTCLASS_DECISION_E2E_CONFIG=filename;}
 if(mode==='scheduling-integration'){binary=process.execPath;args=['--test','tests/communication-schedules-e2e.test.cjs'];env.OUTCLASS_SCHEDULING_E2E_CONFIG=filename;}
 if(mode==='session-integration'){binary=process.execPath;args=['--test','tests/admin-session-e2e.test.cjs'];env.OUTCLASS_ADMIN_SESSION_E2E_CONFIG=filename;}

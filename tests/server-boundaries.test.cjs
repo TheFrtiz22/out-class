@@ -9,7 +9,7 @@ function load(file, prisma, role = async () => ({})) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
   const mocks = { '@/utils/prisma': { prisma }, '@/utils/auth': { requireAuth: async () => ({ user: { id: 'student' } }), requireClubPermission: role }, 'next/cache': { revalidatePath() {} } }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") || name === "@/actions/meetings" ? load(name.replace("@/", "")+".ts", prisma, role) : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/") || name === "@/actions/meetings" ? load(name.replace("@/", "")+".ts", prisma, role) : require(name), mod, mod.exports)
   return mod.exports
 }
 test('legacy event reads expose public recruitment metadata only', async () => {
@@ -21,10 +21,10 @@ test('legacy static attendance endpoints fail closed without a current token',as
   await assert.rejects(api.recordEventAttendance('old-id'),/current meeting QR code/)
 })
 function bookingApi(overrides = {}, status = "INTERVIEWING") {
-  const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), capacity: 1, bookings: [], ...overrides }
+  const slot = { id: slotId, clubId, startTime: new Date(Date.now() + 60000), endTime:new Date(Date.now()+21*60000),capacity: 1, bookings: [], ...overrides }
   let writes = 0
-  const tx = { $queryRaw:async()=>[], application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
-  return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'Serializable'); return fn(tx) } }), writes: () => writes }
+  const tx = { $queryRaw:async()=>[],clubMember:{findMany:async()=>[]}, application: { findUnique: async () => ({ id: applicationId, studentId: 'student', clubId, status }) }, interviewSlot: { findUnique: async () => slot }, interviewBooking: { findMany: async () => [], create: async ({ data }) => { writes++; return { id: 'booking', ...data } } } }
+  return { api: load('actions/scheduling.ts', { $transaction: async (fn, options) => { assert.equal(options.isolationLevel, 'ReadCommitted'); return fn(tx) } }), writes: () => writes }
 }
 test('booking rejects foreign clubs, past slots, and full slots without writes', async () => {
   for (const override of [{ clubId: 'foreign' }, { startTime: new Date(0) }, { bookings: [{ applicationId: 'other' }] }]) {

@@ -1,0 +1,28 @@
+// Called only by the disposable native runner; no hosted connection is loaded.
+const {spawnSync,execFileSync}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const container=process.argv[2];if(container!=='outclass-decision-publication')throw Error('Dedicated fixture required.');
+const url=new URL(process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL||'');if(url.hostname!=='127.0.0.1'||url.port!=='58453'||url.pathname!=='/outclass_audiences_test')throw Error('Loopback fixture required.');
+const database='outclass_release_upgrade',root=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-release-schema-')),main='e8f33ecfd114fa5c0971623c7c139edeb0d2f6a5';
+function run(cmd,args,opts={}){const r=spawnSync(cmd,args,{stdio:opts.input?['pipe','inherit','inherit']:'inherit',...opts});if(r.status!==0)throw Error('Isolated upgrade check failed.');}
+const sql=input=>run('docker',['exec','-i',container,'psql','-U','fixture_superuser','-d',database,'-v','ON_ERROR_STOP=1'],{input});
+const env={...process.env,DATABASE_URL:process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL.replace('/outclass_audiences_test','/'+database)};
+try{
+ run('docker',['exec',container,'createdb','-U','fixture_superuser',database]);
+ fs.writeFileSync(path.join(root,'schema.prisma'),execFileSync('git',['show',`${main}:prisma/schema.prisma`]));fs.mkdirSync(path.join(root,'migrations'));
+ const files=execFileSync('git',['ls-tree','-r','--name-only',main,'--','prisma/migrations'],{encoding:'utf8'}).trim().split('\n');for(const file of files){const out=path.join(root,file.slice('prisma/'.length));fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,execFileSync('git',['show',`${main}:${file}`]));}
+ run(process.execPath,['node_modules/prisma/build/index.js','migrate','deploy','--schema',path.join(root,'schema.prisma')],{env});
+ sql(`INSERT INTO "User"(id,email)VALUES('release-user','release@demo.invalid'); INSERT INTO "Club"(id,slug,name,tagline,description,color,category)VALUES('release-club','release-club','Release fixture','','','#142d45','Other'); INSERT INTO "ClubMember"(id,"clubId","userId",cohort,groups)VALUES('release-member','release-club','release-user','Fall 2026',ARRAY['Finance']);
+ INSERT INTO "UserNotificationPreference"("userId","emailFrequency","updatedAt")VALUES('release-user','OFF',NOW());
+ INSERT INTO "PipelineRound"(id,"clubId",name,"order")VALUES('release-round','release-club','Review',0);
+ INSERT INTO "Application"(id,"clubId","roundId","studentId",status,"decisionVersion")VALUES('release-app','release-club','release-round','release-user','REJECTED',1);
+ INSERT INTO "DecisionLetter"(id,"applicationId","clubId",version,decision,content)VALUES('release-letter','release-app','release-club',1,'REJECTED','{"body":"Keep original"}');
+ INSERT INTO "UserNotification"(id,"userId","clubId","eventKey",type,title,body,href)VALUES('release-notification','release-user','release-club','release-event','INTERVIEW','Keep','Keep body','/settings/interviews');
+ INSERT INTO "AdminElevation"(id,"actorId","tokenHash","authSessionId","factorId","passwordVerifiedAt","mfaVerifiedAt","createdAt","expiresAt")VALUES('release-elevation','release-user',repeat('a',64),'fixture-session','fixture-factor','2026-10-13 10:00','2026-10-13 10:00','2026-10-13 10:00','2026-10-13 10:30');`);
+ // Prisma must discover the earlier-sorting pending Admin migration even though
+ // later main panel migrations have already completed; never resolve manually.
+ run(process.execPath,['node_modules/prisma/build/index.js','migrate','deploy'],{env});
+ run(process.execPath,['node_modules/prisma/build/index.js','migrate','status'],{env});
+ sql(`DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM "AdminElevation" WHERE id='release-elevation' AND "expiresAt"='2026-10-13 10:30' AND "revokedAt" IS NULL) OR NOT EXISTS(SELECT 1 FROM "UserNotificationPreference" WHERE "userId"='release-user' AND "emailFrequency"='OFF') OR NOT EXISTS(SELECT 1 FROM "ClubMember" WHERE id='release-member' AND cohort='Fall 2026' AND groups=ARRAY['Finance']) OR NOT EXISTS(SELECT 1 FROM "DecisionLetter" WHERE id='release-letter' AND content->>'body'='Keep original') OR NOT EXISTS(SELECT 1 FROM "UserNotification" n JOIN "NotificationEmailOutbox" o ON o."notificationId"=n.id WHERE n.id='release-notification' AND o.status='PENDING') OR NOT EXISTS(SELECT 1 FROM "Application" WHERE id='release-app' AND "recruitmentCycleId" IS NULL AND "decisionStateRevision"=0) THEN RAISE EXCEPTION 'Production-equivalent preservation failed'; END IF; END $$;
+ DO $$ DECLARE n text; BEGIN FOREACH n IN ARRAY ARRAY['RecipientGroup','RecipientGroupEntry','ScheduledCommunication','RecruitmentCycle','UserAvailability','InterviewPanelProposal','InterviewPanelScheduleVersion'] LOOP IF (SELECT pg_get_userbyid(relowner)<>'outclass_production_app' OR NOT relrowsecurity OR relforcerowsecurity FROM pg_class WHERE oid=format('public.%I',n)::regclass) OR has_table_privilege('anon',format('public.%I',n),'SELECT,INSERT,UPDATE,DELETE') OR has_table_privilege('authenticated',format('public.%I',n),'SELECT,INSERT,UPDATE,DELETE') THEN RAISE EXCEPTION 'Ownership/browser isolation failure'; END IF; END LOOP; END $$;`);
+ console.log('Current-main production-equivalent Prisma upgrade: all pending migrations applied in order, populated communications/letters/preferences/members and legacy Admin deadline preserved; bounded ownership/RLS/browser denial verified.');
+}finally{fs.rmSync(root,{recursive:true,force:true});}

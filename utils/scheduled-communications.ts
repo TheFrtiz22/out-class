@@ -1,3 +1,4 @@
+import {publishScheduledInvitations} from "@/utils/invitation-scheduling";
 import { publishScheduledDecision } from "@/utils/decision-scheduling";
 import { prisma } from "@/utils/prisma";
 import { publishAnnouncementTransaction } from "@/utils/announcement-publication";
@@ -14,11 +15,24 @@ export async function processScheduledCommunications(limit=2) {
  const invocationStarted=Date.now();
  const count=Math.min(2,Math.max(1,Math.floor(limit)));
  const now=new Date(),expired=new Date(now.getTime()-leaseMs);
- const candidates=await prisma.scheduledCommunication.findMany({where:{OR:[{status:"SCHEDULED",scheduledAt:{lte:now}},{status:"PROCESSING",updatedAt:{lt:expired}}]},orderBy:[{scheduledAt:"asc"},{id:"asc"}],take:count,select:{id:true,clubId:true,revision:true}});
- let published=0,failed=0,skipped=0;
+ const candidates=await prisma.$transaction(async tx=>{
+  await tx.$queryRaw`SELECT set_config('statement_timeout','3000',true)`;
+  // At most two candidates per club; clubs least recently serviced come first.
+  // Scan past locked clubs instead of allowing the oldest two rows to starve all
+  // other clubs. Query and transaction bounds also cover initial selection.
+  return tx.$queryRaw<{id:string;clubId:string;revision:number}[]>`
+   WITH due AS (
+    SELECT id,"clubId",revision,"scheduledAt",row_number() OVER(PARTITION BY "clubId" ORDER BY "scheduledAt",id) position
+    FROM "ScheduledCommunication" WHERE (status='SCHEDULED' AND "scheduledAt"<=${now}) OR (status='PROCESSING' AND "updatedAt"<${expired})
+   ) SELECT d.id,d."clubId",d.revision FROM due d
+   LEFT JOIN LATERAL (SELECT max("updatedAt") serviced FROM "ScheduledCommunication" WHERE "clubId"=d."clubId" AND status<>'SCHEDULED') h ON true
+   WHERE d.position<=2 ORDER BY d.position,h.serviced NULLS FIRST,d."scheduledAt",d.id LIMIT 16`;
+ },{maxWait:1000,timeout:4000});
+ let published=0,failed=0,skipped=0,claimedCount=0;
  for(const candidate of candidates) {
   // A second worst-case claim/publication/failure marker must still fit the
   // 60s route. Leave unclaimed work due once the 15s admission window closes.
+  if(claimedCount>=count)break;
   if(Date.now()-invocationStarted>=15000){skipped++;continue;}
   let claimRevision:number|null=null;
   try {
@@ -31,6 +45,7 @@ export async function processScheduledCommunications(limit=2) {
     return tx.scheduledCommunication.update({where:{id:candidate.id},data:{status:"PROCESSING",revision:{increment:1}}});
    },{maxWait:1000,timeout:4000});
    if(!claimed){skipped++;continue;}
+   claimedCount++;
    claimRevision=claimed.revision;
    const result=await prisma.$transaction(async tx=>{
     await tx.$queryRaw`SELECT set_config('lock_timeout','2000',true),set_config('statement_timeout','8000',true)`;
@@ -39,7 +54,13 @@ export async function processScheduledCommunications(limit=2) {
     await tx.$queryRaw`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate.id} FOR UPDATE`;
     const row=await tx.scheduledCommunication.findUniqueOrThrow({where:{id:candidate.id}});
     if(row.status!=="PROCESSING"||row.revision!==claimed.revision)return false;
-    if(!["ANNOUNCEMENT","DECISION"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(!["ANNOUNCEMENT","DECISION","INVITATION_EMAIL"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(row.kind==="INVITATION_EMAIL"){
+     const recipientCount=await publishScheduledInvitations(tx,row);
+     await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",invitationQueuedAt:new Date(),recipientCount,failureCode:null}});
+     await tx.auditLog.create({data:{actorId:row.actorId,clubId:row.clubId,targetId:row.id,action:"communication.schedule.publish",details:{recipientCount,kind:row.kind}}});
+     return true;
+    }
     if(row.kind==="DECISION"){
      const recipientCount=await publishScheduledDecision(tx,row);
      await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",decisionPublishedAt:new Date(),recipientCount,failureCode:null}});

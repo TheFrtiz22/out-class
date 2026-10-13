@@ -1,0 +1,76 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{fixture}=require('./helpers/panel-publication-fixture.cjs')
+const ok=result=>{assert.equal(result.ok,true,result.error);return result.value}
+test('A–D: proposal/manual changes save privately; owner confirmation publishes atomically and queues each affected member once',async t=>{
+ const h=await fixture(t),before=await h.snapshot(),generated=await h.generate(),draft=generated.proposal;assert.equal(draft.validation.filled,6);assert.deepEqual(await h.snapshot(),before)
+ const s1=h.slotIds[0],s2=h.slotIds[2],m1=draft.document.assignments.find(a=>a.slotId===s1&&!draft.document.assignments.some(b=>b.slotId===s2&&b.memberId===a.memberId)),m2=draft.document.assignments.find(a=>a.slotId===s2)
+ const swapped=draft.document.assignments.map(a=>a===m1?{...a,memberId:m2.memberId}:a===m2?{...a,memberId:m1.memberId}:a)
+ await h.api.previewPanelProposalEdits({...h.input(draft),assignments:swapped});const saved=await h.api.savePanelProposalDraft({...h.input(draft),assignments:swapped});assert.deepEqual((await h.api.getPanelProposalWorkspace(h.scope)).proposal.document.assignments,saved.document.assignments);assert.deepEqual(await h.snapshot(),before)
+ const reviewed=ok(await h.review());assert.equal(reviewed.filled,6);assert.equal(reviewed.unfilled,0);assert.deepEqual(await h.snapshot(),before);assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).proposal.status,'READY_FOR_APPROVAL')
+ const result=ok(await h.confirm(reviewed));assert.equal(result.version,1);const after=await h.snapshot();assert.equal(after.InterviewPanelAssignment.filter(a=>!a.revokedAt).length,2);assert.equal(after.UserNotification.length-before.UserNotification.length,3);assert.equal(after.NotificationEmailOutbox.length-before.NotificationEmailOutbox.length,3);assert.equal(after.InterviewPanelScheduleVersion.length,1)
+ const slots=after.InterviewSlot;assert.ok(slots.every(s=>s.panelScheduleVersionId===result.publicationId));assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).proposal,null)
+ const retry=ok(await h.confirm(reviewed));assert.equal(retry.idempotent,true);assert.deepEqual(await h.snapshot(),after)
+ h.as(h.ids.peer);const mine=await h.own.getMyInterviewPanelSchedule();assert.equal(mine.length,2);assert.ok(mine.every(s=>!('memberId'in s)&&!('applicant'in s)))
+})
+test('E–F: working revisions preserve official grants; publishing a replacement notifies only affected members and keeps unaffected access',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));let published=await h.api.getPanelProposalWorkspace(h.scope);const official=await h.snapshot(),beforeGrants=official.InterviewPanelAssignment
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));let draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ const first=h.slotIds[0],a=draft.document.assignments.find(a=>a.slotId===first),replacement=draft.document.assignments.find(p=>p.slotId===h.slotIds[2])
+ const changes=draft.document.assignments.map(p=>p.slotId===first&&p.memberId===a.memberId?{...p,memberId:replacement.memberId}:p.slotId===h.slotIds[2]&&p.memberId===replacement.memberId?{...p,memberId:a.memberId}:p)
+ const saved=await h.api.savePanelProposalDraft({...h.input(draft),assignments:changes});assert.deepEqual(await h.snapshot(),official)
+ const reviewed=ok(await h.review());ok(await h.confirm(reviewed));published=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(published.published.version,2);assert.equal(published.history.length,2);assert.equal(published.history[1].status,'SUPERSEDED')
+ const after=await h.snapshot(),notices=after.UserNotification.filter(n=>n.eventKey.startsWith(`panel-schedule:${published.published.id}:`));assert.equal(notices.length,2)
+ const unaffected=beforeGrants.find(g=>g.memberId!==a.memberId);assert.deepEqual(after.InterviewPanelAssignment.find(g=>g.id===unaffected.id),unaffected)
+ assert.equal(after.InterviewPanelAssignment.find(g=>g.memberId===a.memberId&&g.applicationId===h.ids.app).revokedAt instanceof Date,true);assert.equal(after.InterviewPanelAssignment.find(g=>g.memberId===replacement.memberId&&g.applicationId===h.ids.app).revokedAt,null)
+ assert.equal(saved.basePublishedVersion,1)
+})
+test('G, H, J: staleness, eligibility loss and conflicting official commitments cannot be overridden; draft and official version survive failures',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));const reviewed=ok(await h.review()),before=await h.snapshot()
+ await h.db.query('UPDATE "InterviewRoundParticipation" SET "confirmedAt"=NULL WHERE "memberId"=$1',[h.ids.panelMember]);const expected=await h.snapshot();const failed=await h.confirm(reviewed);assert.equal(failed.ok,false);assert.match(failed.error,/Participation|confirmed/);assert.deepEqual(await h.snapshot(),expected);assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).proposal.status,'READY_FOR_APPROVAL')
+ const draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;h.as(h.ids.peer);const unauthorized=await h.publish.publishPanelSchedule({...h.scope,proposalId:draft.id,revision:draft.revision,approvalToken:reviewed.approvalToken,understaffedOverride:true,overrideReason:'Attempted override'});assert.equal(unauthorized.ok,false);assert.match(unauthorized.error,/owner/)
+ h.as(h.ids.owner);await assert.rejects(h.api.savePanelProposalDraft({...h.input(draft),revision:draft.revision-1,assignments:draft.document.assignments}),/another tab/);assert.equal(before.InterviewPanelScheduleVersion.length,1)
+})
+test('understaffing defaults to blocked, safe explicit overrides are recorded, and booked zero-staff sessions cannot be approved',async t=>{
+ const h=await fixture(t),draft=(await h.generate()).proposal,first=h.slotIds[0],remaining=draft.document.assignments.filter((a,i)=>!(a.slotId===first&&a===draft.document.assignments.find(p=>p.slotId===first)))
+ await h.api.savePanelProposalDraft({...h.input(draft),assignments:remaining});let review=ok(await h.review());assert.equal(review.unfilled,1);assert.ok(review.overrideWarning)
+ const before=await h.snapshot();assert.equal((await h.confirm(review)).ok,false);assert.deepEqual(await h.snapshot(),before)
+ const pub=ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'One trained interviewer can host this booked interview.'}));assert.equal(pub.version,1)
+ let workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.published.understaffedOverride,true)
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1}));const d=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==first)})
+ const blocked=await h.review();assert.equal(blocked.ok,false);assert.match(blocked.error,/booked session cannot be left/)
+ workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.published.version,1)
+})
+test('K: applicant rescheduling after publication uses approved session panels; unstaffed sessions stay hidden and cannot be booked',async t=>{
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3]
+ await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Only staffed sessions will be offered for new bookings.'}))
+ const slots=(await h.snapshot()).InterviewSlot;h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.rooms.flatMap(r=>r.slots).some(s=>s.id===empty),false)
+ await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}),/no qualified interviewer/)
+ await h.rooms.reserveInterview({applicationId:h.ids.app,slotId:h.slotIds[2]});const grants=(await h.snapshot()).InterviewPanelAssignment.filter(g=>!g.revokedAt);assert.equal(grants.length,1);assert.equal(grants[0].memberId,slots.find(s=>s.id===h.slotIds[2]).publishedPanelMemberIds[0])
+ assert.deepEqual((await h.snapshot()).InterviewSlot,slots)
+ await h.rooms.cancelRoomBooking((await h.rooms.getApplicantSchedule(h.ids.app)).booking.id);assert.equal((await h.snapshot()).InterviewBooking.length,0)
+})
+test('ready tokens are owner-bound; editing clears readiness; history is immutable and recovery produces a revalidated working revision',async t=>{
+ const h=await fixture(t);await h.generate();const review=ok(await h.review()),ready=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
+ await h.api.savePanelProposalDraft({...h.input(ready),assignments:ready.document.assignments});assert.equal((await h.confirm(review)).ok,false);const fresh=ok(await h.review());ok(await h.confirm(fresh));const before=await h.snapshot()
+ await assert.rejects(h.db.query('UPDATE "InterviewPanelScheduleVersion" SET "overrideReason"=\'changed\''),/immutable/);await assert.rejects(h.db.query('DELETE FROM "InterviewPanelScheduleVersion"'),/immutable/);await assert.rejects(h.db.query('UPDATE "InterviewSlot" SET "publishedPanelMemberIds"=\'{}\''),/approved publication/)
+ for(const role of ['anon','authenticated']){await h.db.exec(`SET ROLE ${role}`);await assert.rejects(h.db.query('SELECT * FROM "InterviewPanelScheduleVersion"'),/permission denied/);await h.db.exec('RESET ROLE')}
+ ok(await h.publish.beginPanelScheduleRevision({...h.scope,publishedVersion:1,restoreVersion:1}));assert.deepEqual(await h.snapshot(),before)
+ const draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.db.query('UPDATE "InterviewSlot" SET "startTime"="startTime"+interval \'10 minutes\',"endTime"="endTime"+interval \'10 minutes\' WHERE id=$1',[h.slotIds[0]])
+ const changed=await h.review();assert.equal(changed.ok,false);assert.match(changed.error,/Session times/);assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).proposal.id,draft.id)
+})
+test('safe interviewer notices project only official details; cancellation and permission revocation suppress inaccessible contexts',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));const notice=(await h.snapshot()).UserNotification.find(n=>n.userId===h.ids.panel&&n.eventKey.startsWith('panel-schedule:')),helper=h.load('utils/official-panel-schedule.ts')
+ const projected=await helper.currentPanelScheduleNotification(h.prisma,notice,h.ids.panel);assert.ok(projected.body.includes('2030'));assert.ok(projected.body.includes('UTC'));assert.equal(projected.body.includes('student@'),false);assert.match(projected.href,/^\/settings\/interviews\?/)
+ await h.db.query('UPDATE "ClubMember" SET permissions=\'{}\' WHERE id=$1',[h.ids.panelMember]);assert.equal(await helper.currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
+})
+test('published session access survives legacy room-attestation edits but actual approving-owner revocation removes private grants',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));const active=(await h.snapshot()).InterviewPanelAssignment.filter(g=>!g.revokedAt)
+ await h.db.query('UPDATE "InterviewRoom" SET "panelMemberIds"=$1,"approvedPanelMemberIds"=$1,"panelApprovedBy"=$2 WHERE id=$3',['{'+h.ids.panelMember+'}',h.ids.owner,h.roomIds[0]])
+ await h.db.query('UPDATE "InterviewRoom" SET "approvedPanelMemberIds"=\'{}\',"panelApprovedBy"=NULL WHERE id=$1',[h.roomIds[0]])
+ assert.deepEqual((await h.snapshot()).InterviewPanelAssignment.filter(g=>!g.revokedAt),active)
+ await h.db.query('UPDATE "ClubMember" SET "isOwner"=true WHERE id=$1',[h.ids.schedulerMember])
+ await h.db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[h.ids.ownerMember])
+ assert.equal((await h.snapshot()).InterviewPanelAssignment.filter(g=>!g.revokedAt).length,0)
+ assert.equal((await h.snapshot()).InterviewPanelScheduleVersion.length,1)
+ const notice=(await h.snapshot()).UserNotification.find(n=>n.userId===h.ids.panel&&n.eventKey.startsWith('panel-schedule:'))
+ assert.equal(await h.load('utils/official-panel-schedule.ts').currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
+})

@@ -2,6 +2,8 @@
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
+import { panelPublicationLock } from "@/utils/panel-publication";
+import { assertOfficialPanelConflicts } from "@/utils/official-panel-conflicts";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { interviewCapabilities, interviewOfficesSchema, interviewScopeSchema } from "@/lib/interview-access";
 
@@ -41,6 +43,7 @@ export async function setInterviewPanelAssignment(input: unknown) {
   const data = interviewScopeSchema.extend({ memberId: id, assigned: z.boolean() }).strict().parse(input);
   const { user } = await requireAuth({ verifyEmail: true });
   return prisma.$transaction(async tx => {
+    await panelPublicationLock(tx);
     const actor = await actorFor(tx, data.clubId, user.id);
     // Assignment conveys private evidence access; ordinary schedulers cannot self-grant.
     if (!interviewCapabilities(actor).manageGrants) throw new Error("Only an active owner can grant panel access.");
@@ -52,6 +55,8 @@ export async function setInterviewPanelAssignment(input: unknown) {
     const key = { applicationId: app.id, roundId: round.id, memberId: target.id };
     const old = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: key } });
     if (data.assigned) {
+      const bookings=await tx.interviewBooking.findMany({where:{applicationId:app.id,roundId:round.id},include:{slot:{include:{room:true}}}});
+      await assertOfficialPanelConflicts(tx,[target.userId],bookings.filter(b=>!b.slot.panelScheduleVersionId||b.slot.publishedPanelMemberIds.includes(target.id)).map(b=>({id:b.slot.id,startTime:b.slot.startTime.toISOString(),endTime:b.slot.endTime.toISOString(),buffer:b.slot.room?.buffer??0})));
       const grant = await tx.interviewPanelAssignment.upsert({ where: { applicationId_roundId_memberId: key }, create: { ...key, grantedBy: user.id }, update: { revokedAt: null, grantedBy: user.id, ...(old?.revokedAt ? { grantedAt: new Date() } : {}), bookingManaged: false, bookingId: null } });
       if (!old || old.revokedAt) await notifyInterviewAssignment(tx, grant, "assigned");
     } else {

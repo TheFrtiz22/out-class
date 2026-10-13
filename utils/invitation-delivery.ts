@@ -82,6 +82,9 @@ async function eligible(tx: AppTransactionClient, deliveryId: string) {
 
 /** Each persisted claim is attempted once. Ambiguous SMTP outcomes require review, never automatic retry. */
 export async function processInvitationEmails(clubId: string, limit = 5) {
+  // An explicit global maintenance disable must cover optional SMTP too. Preserve
+  // queued rows untouched; undefined retains the established invitation setting.
+  if(process.env.COMMUNICATIONS_EMAIL_ENABLED === "false")return {sent:0,failed:0,cancelled:0,uncertain:0,remaining:await prisma.invitationDelivery.count({where:{invitation:{clubId},status:"QUEUED"}}),paused:true};
   invitationEmailConfig();
   const candidates = await prisma.invitationDelivery.findMany({ where: { invitation: { clubId }, status: 'QUEUED', nextAttemptAt: { lte: new Date() } }, select: { id: true }, orderBy: { createdAt: 'asc' }, take: Math.max(1, Math.min(limit, 25)) });
   let sent = 0, failed = 0, cancelled = 0, uncertain = 0;
@@ -136,9 +139,9 @@ export async function processInvitationEmails(clubId: string, limit = 5) {
 }
 
 /** Authorize once, inspect the whole selection, and insert the durable outbox in one write. */
-export async function enqueueInvitationEmails(tx: AppTransactionClient, clubId: string, userId: string, requests: { invitationId: string; key: string }[], skipUnavailable = false) {
+export async function enqueueInvitationEmails(tx: AppTransactionClient, clubId: string, userId: string, requests: { invitationId: string; key: string }[], skipUnavailable = false, scheduledClubAuthority = false) {
   await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
-  const actor = await deliveryActor(tx, clubId, userId);
+  const actor = scheduledClubAuthority ? await resolveDeliveryActor(tx, clubId, userId, false) : await deliveryActor(tx, clubId, userId);
   const preferences = await tx.club.findUnique({ where: { id: clubId }, select: { invitationEmailEnabled: true } });
   if (preferences?.invitationEmailEnabled === false) throw new Error('Invitation emails are disabled in club notification settings.');
   const now = new Date(), cutoff = new Date(+now - EMAIL_COOLDOWN_MS), since = new Date(+now - 3600000);
