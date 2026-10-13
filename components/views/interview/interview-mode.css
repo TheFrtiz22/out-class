@@ -90,6 +90,8 @@
 }
 .oc-interview-timer { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-size: .75rem; }
 .oc-interview-timer output { font-variant-numeric: tabular-nums; min-width: 3rem; }
+.oc-interview-timer[data-expired="true"] output { color: var(--destructive); }
+.oc-timer-change { max-width: 18rem; color: var(--muted-foreground); }
 .oc-earlier-rounds { margin-bottom: 20px; font-size: .8125rem; line-height: 1.6; }
 .oc-earlier-rounds > button { padding-left: 0 !important; }
 .oc-round-score { font-size: .875rem; border-block: 1px solid var(--border); padding-block: 12px; }
@@ -118,3 +120,33 @@
 .oc-room-invitation p { margin-bottom: .75rem; }
 .oc-room-invitation > div { display: flex; flex-wrap: wrap; gap: .5rem; }
 @media (max-width: 767px) { .oc-room-invitation { position: sticky; width: auto; margin: 1rem; bottom: calc(1rem + env(safe-area-inset-bottom)); } }
+
+/* Dedicated interview mode already removes the ordinary app header. Measure the
+ * remaining room header/presence naturally; only the content columns scroll.
+ * Small windows and zoomed/mobile layouts retain normal document scrolling. */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .oc-interview-room:has(.oc-focused-interview) { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .oc-interview-container, .oc-interview-session, .oc-interview-candidate { display: flex; flex-direction: column; flex: 1; width: 100%; min-height: 0; }
+  .oc-interview-session > [role="status"], .oc-interview-session > [role="alert"] { flex-shrink: 0; }
+  .oc-interview-room[data-workspace-detail] .oc-focused-interview { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .oc-room-header, .oc-room-collaboration { flex-shrink: 0; }
+  .oc-interview-room[data-workspace-detail] .oc-interview-columns { flex: 1; min-height: 0; }
+  .oc-interview-room[data-workspace-detail] :is(.oc-room-applicant,#interview-completed,.oc-question-workspace) { min-height: 0; padding-block: 18px; }
+  .oc-interview-room[data-workspace-detail] :is(#interview-completed,.oc-question-workspace) { overflow: auto; overscroll-behavior-y: contain; scrollbar-width: thin; }
+  .oc-room-applicant > .oc-candidate-content { height: 100%; min-height: 0; }
+  .oc-applicant-identity { flex-shrink: 0; }
+  .oc-resume-document, .oc-resume-mini { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .oc-resume-preview { height: auto; flex: 1; min-height: 120px; }
+  .oc-resume-trigger { flex-shrink: 0; }
+  .oc-question-workspace > .oc-candidate-content { display: flex; flex-direction: column; min-height: 100%; gap: 14px; }
+  .oc-question-workspace > .oc-candidate-content > :not(:last-child) { margin-bottom: 0; }
+  .oc-question-workspace #interview-bank { max-height: 15rem; overflow: auto; flex-shrink: 0; }
+  .oc-question-completion-source { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .oc-interview-room[data-workspace-detail] .oc-active-question { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 12px; }
+  .oc-interview-room[data-workspace-detail] .oc-active-question > :not(:first-child) { margin-top: 0; }
+  .oc-interview-room[data-workspace-detail] .oc-active-question textarea { flex: 1; min-height: 128px; }
+  .oc-active-question > [data-slot="button"]:last-child, .oc-post-interview > div:last-child { position: sticky; bottom: 0; z-index: 2; }
+  .oc-post-interview > div:last-child { background: var(--background); padding-block: 8px; }
+  .oc-miscellaneous-notes { margin-bottom: 18px; }
+  .oc-interview-room[data-workspace-detail] .oc-miscellaneous-notes textarea { min-height: 100px; height: 16dvh; }
+}

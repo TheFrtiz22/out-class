@@ -55,7 +55,7 @@ export function InterviewWorkspaceView({ onExit, scoped = false }: { onExit?: ()
         </div>
       </header>}
       <DemoInterviewGuide />
-      <div className="mx-auto max-w-[1800px]">
+      <div className="oc-interview-container mx-auto max-w-[1800px]">
         {loading ? (
           <p role="status">Loading interview workspace…</p>
         ) : !membership ? (
@@ -296,7 +296,7 @@ function InterviewSession({
       </div>
     )
   return (
-    <div>
+    <div className="oc-interview-session">
 
       {!active && <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border px-5 py-4 sm:px-8">
         <div className="flex flex-wrap items-end gap-3">

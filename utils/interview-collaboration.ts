@@ -18,7 +18,7 @@ export async function collaborationAccess(tx: AppTransactionClient, scope: Inter
   // A manually assigned, unscheduled panel has one candidate-specific room.
   // A booking is scoped to its actual room AND slot, never just club/round.
   const roomKey = booking ? `booking:${booking.id}:${room!.id}` : `panel:${scope.applicationId}`;
-  return { ...actor, roomKey };
+  return { ...actor, roomKey, booking };
 }
 
 export async function collaborationSession(tx: AppTransactionClient, scope: InterviewScope, userId: string, readOnly = false) {

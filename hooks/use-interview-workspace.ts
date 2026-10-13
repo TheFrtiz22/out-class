@@ -57,7 +57,7 @@ export function useInterviewWorkspace(scope: InterviewScope, enabled: boolean) {
     return () => { clearInterval(timer); window.removeEventListener("storage", sync); release(); };
   }, [invitationId, clientId]);
   return { clientId, view: view ? { ...view, invitation: view.invitation?.id === claimedInvitation ? view.invitation : null } : null, error, refresh,
-    select: async (questionId: string) => { const result = await selectSharedInterviewQuestion({ clubId, applicationId, roundId, clientId, questionId }); await refresh(); return result; },
+    select: async (questionId: string) => { const result = await selectSharedInterviewQuestion({ clubId, applicationId, roundId, clientId, questionId }); void refresh(); return result; },
     dismiss: async (invitationId: string) => { await dismissInterviewInvitation({ clubId, applicationId, roundId, clientId, invitationId }); await refresh(); },
   };
 }

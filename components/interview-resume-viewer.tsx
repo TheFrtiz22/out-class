@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { resumeCommentInput } from "@/lib/resume-comment-input";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { InterviewScope } from "@/lib/interview-access";
 import { annotationContentSchema } from "@/lib/interview-access";
@@ -17,7 +19,7 @@ import { InterviewResumePlaceholder } from "@/components/interview-resume-placeh
 type Annotation = { id: string; revision: number; kind: "TEXT_HIGHLIGHT" | "GENERAL_NOTE"; comment: string; anchor: ResumeAnchor | null; authorName: string; canEdit: boolean };
 type Draft = { id: string; revision?: number; kind: Annotation["kind"]; comment: string; anchor: ResumeAnchor | null };
 
-function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAnchor }: { pdf: PDFDocumentProxy; resource: InterviewResumeResource; pageNumber: number; zoom: number; annotations: Annotation[]; active?: string; onAnchor: (anchor: ResumeAnchor) => void }) {
+function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAnchor, onComposedText }: { pdf: PDFDocumentProxy; resource: InterviewResumeResource; pageNumber: number; zoom: number; annotations: Annotation[]; active?: string; onAnchor: (anchor: ResumeAnchor, initialText?: string) => boolean; onComposedText: (text: string) => void }) {
   const host = useRef<HTMLDivElement>(null), canvas = useRef<HTMLCanvasElement>(null), layer = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false), [text, setText] = useState(""), [error, setError] = useState(""), [find, setFind] = useState("");
   useEffect(() => {
@@ -58,13 +60,14 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
     })().catch(() => { if (current) setError("This page could not be rendered. Try another page or download the original PDF."); });
     return () => { current = false; cancel(); };
   }, [pdf, resource, pageNumber, zoom]);
-  function capture(range?: Range) {
+  function capture(range?: Range, initialText = "") {
     const selection = window.getSelection();
     const selected = range || (selection?.rangeCount ? selection.getRangeAt(0) : null);
-    if (!ready || !selected || !layer.current || !host.current) return;
+    if (!ready || !selected || !layer.current || !host.current || selected.collapsed) return false;
     const anchor = anchorFromRange(selected, layer.current, host.current, pageNumber);
-    if (anchor) { onAnchor(anchor); selection?.removeAllRanges(); setError(""); }
+    if (anchor) { if (!onAnchor(anchor, initialText)) return false; selection?.removeAllRanges(); setError(""); return true; }
     else setError("Select text on a single page. Image-only content cannot be highlighted.");
+    return false;
   }
   function findText() {
     if (!layer.current || !find.trim()) return;
@@ -73,8 +76,17 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
     if (text.indexOf(find, start + 1) >= 0) { setError("That text appears more than once. Include more surrounding words or select it directly."); return; }
     const range = rangeForText(layer.current, start, start + find.length); if (range) capture(range);
   }
-  return <div className="space-y-3">
-    <p className="text-xs text-muted-foreground" role="status">{ready ? text.trim() ? "Select text on this page, then choose Comment on selection. You can also find exact text below." : "Text highlighting is unavailable on this image-only page. General résumé notes and download are still available. No OCR is used." : "Rendering page…"}</p>
+  return <div className="space-y-3" onKeyDownCapture={event => {
+    const target = event.target as HTMLElement;
+    const intent = resumeCommentInput({ ...event, key: event.key, isComposing: event.nativeEvent.isComposing, keyCode: event.nativeEvent.keyCode, altGraph: event.getModifierState("AltGraph") }, !!target.closest('input,textarea,select,button,a,[role="textbox"],[role="button"],[contenteditable="true"]'));
+    if (!intent) return;
+    if (capture(undefined, intent.text) && !intent.nativeComposition) { event.preventDefault(); event.stopPropagation(); }
+  }} onCompositionStartCapture={event => {
+    if (layer.current?.contains(event.target as Node)) capture();
+  }} onCompositionEndCapture={event => {
+    if (layer.current?.contains(event.target as Node) && event.data) onComposedText(event.data);
+  }}>
+    <p className="text-xs text-muted-foreground" role="status">{ready ? text.trim() ? "Select résumé text and type a comment, or choose Comment on selection." : "Text highlighting is unavailable on this image-only page. General résumé notes and download are still available. No OCR is used." : "Rendering page…"}</p>
     {!!text.trim() && <div className="flex flex-wrap gap-2">
       <Button type="button" variant="outline" size="sm" onPointerDown={e => e.preventDefault()} onClick={() => capture()}>Comment on selection</Button>
       <Input aria-label="Exact text to highlight on this page" value={find} onChange={e => setFind(e.target.value)} className="min-w-36 flex-1" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); findText(); } }} />
@@ -86,7 +98,7 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
       <div ref={host} className="oc-pdf-page mx-auto" data-pdf-ready={ready} style={{ minHeight: 100, display: ready ? undefined : "none" }}>
         <canvas ref={canvas} aria-label={`Rendered résumé page ${pageNumber}`} style={{ visibility: ready ? "visible" : "hidden" }} />
         {ready && annotations.filter(a => a.anchor?.page === pageNumber && anchorMatchesText(a.anchor, text, pdf.numPages)).flatMap(a => a.anchor!.rectangles.map((r, i) => <div key={`${a.id}-${i}`} className="oc-pdf-highlight" data-active={a.id === active} aria-hidden="true" style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%` }} />))}
-        <div ref={layer} className="oc-pdf-text" aria-label="Selectable résumé text" style={{ visibility: ready ? "visible" : "hidden" }} />
+        <div ref={layer} tabIndex={0} role="document" className="oc-pdf-text" aria-label="Selectable résumé text" onPointerDown={event => { if (event.button === 0) layer.current?.focus({ preventScroll: true }); }} style={{ visibility: ready ? "visible" : "hidden" }} />
       </div>
     </div>
   </div>;
@@ -160,10 +172,15 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   const draftId = draft?.id;
   useEffect(() => { if (draftId) comment.current?.focus(); }, [draftId]); // Keep typing focus during refreshes.
 
-  function begin(anchor: ResumeAnchor | null) {
-    if (writing.current) return;
-    if (draft && !window.confirm("Discard the unsaved résumé comment?")) return;
-    setDraft({ id: crypto.randomUUID(), kind: anchor ? "TEXT_HIGHLIGHT" : "GENERAL_NOTE", comment: "", anchor }); setNotesOpen(true); setMobileTab("comments"); setError("");
+  function begin(anchor: ResumeAnchor | null, initialText = "") {
+    if (writing.current || !currentAccess) return false;
+    if (draft && !window.confirm("Discard the unsaved résumé comment?")) return false;
+    // Focus must exist before the browser's next input/composition event. The
+    // first printable key is seeded once rather than replaying synthetic keys.
+    flushSync(() => { setDraft({ id: crypto.randomUUID(), kind: anchor ? "TEXT_HIGHLIGHT" : "GENERAL_NOTE", comment: initialText, anchor }); setNotesOpen(true); setMobileTab("comments"); setError(""); });
+    comment.current?.focus({ preventScroll: false });
+    if (initialText) comment.current?.setSelectionRange(initialText.length, initialText.length);
+    return true;
   }
   async function save() {
     if (!draft || writing.current) return;
@@ -197,7 +214,11 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   }
   const latest = draft?.revision !== undefined ? annotations.find(a => a.id === draft.id) : undefined;
   const conflict = !!draft && draft.revision !== undefined && (!latest || latest.revision !== draft.revision || !latest.canEdit);
-  return <div className="flex min-h-0 flex-1 flex-col gap-3">
+  return <div className="flex min-h-0 flex-1 flex-col gap-3" onKeyDownCapture={event => {
+    if (event.key !== "Escape" || !draft || busy || event.nativeEvent.isComposing) return;
+    event.preventDefault(); event.stopPropagation(); setDraft(null); setError("");
+    comment.current?.closest<HTMLElement>("aside")?.focus({ preventScroll: true });
+  }}>
     <div className="flex flex-wrap items-center gap-2">
       <Button type="button" variant="ghost" size="sm" className="h-9 px-2" disabled={!currentAccess} onClick={download} aria-label="Download original PDF"><Download className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Download</span></Button>
       {currentAccess && pdf && <>
@@ -215,13 +236,13 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!currentAccess ? <>{status.startsWith("Access could") ? <Button type="button" variant="outline" size="sm" onClick={() => void refresh()}>Retry access</Button> : <div className="min-h-0 overflow-auto"><InterviewResumePlaceholder resource={resource} page={page} /></div>}</> : <div className={`grid min-h-0 flex-1 gap-4 overflow-auto ${notesOpen ? "lg:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
       <div className={`min-w-0 overflow-auto ${mobileTab === "document" ? "" : "hidden lg:block"}`}>
-        {pdf ? <PdfPage pdf={pdf} resource={resource} pageNumber={page} zoom={zoom} annotations={draft?.anchor ? [...annotations.filter(a => a.id !== draft.id), { ...draft, revision: draft.revision ?? 0, authorName: "Unsaved comment", canEdit: true }] : annotations} active={draft?.anchor ? draft.id : active} onAnchor={begin} /> : <div><p role="status" className="p-3 text-sm">{pdfError || "Loading saved document…"}</p>{pdfError && <Button type="button" variant="outline" size="sm" onClick={() => { resource.invalidate(); void refresh(); setRetry(v => v + 1); }}>Retry document</Button>}</div>}
+        {pdf ? <PdfPage pdf={pdf} resource={resource} pageNumber={page} zoom={zoom} annotations={draft?.anchor ? [...annotations.filter(a => a.id !== draft.id), { ...draft, revision: draft.revision ?? 0, authorName: "Unsaved comment", canEdit: true }] : annotations} active={draft?.anchor ? draft.id : active} onAnchor={begin} onComposedText={text => setDraft(d => d?.anchor && !d.comment ? { ...d, comment: text } : d)} /> : <div><p role="status" className="p-3 text-sm">{pdfError || "Loading saved document…"}</p>{pdfError && <Button type="button" variant="outline" size="sm" onClick={() => { resource.invalidate(); void refresh(); setRetry(v => v + 1); }}>Retry document</Button>}</div>}
       </div>
-      <aside id="resume-comments" className={`space-y-4 overflow-auto rounded-lg border p-3 ${mobileTab === "comments" ? "" : "hidden lg:block"} ${notesOpen ? "" : "lg:hidden"}`} aria-label="Shared résumé comments">
+      <aside id="resume-comments" tabIndex={-1} className={`space-y-4 overflow-auto rounded-lg border p-3 ${mobileTab === "comments" ? "" : "hidden lg:block"} ${notesOpen ? "" : "lg:hidden"}`} aria-label="Shared résumé comments">
         <h3 className="font-medium">Panel résumé comments</h3>
         <p className="text-xs text-muted-foreground">Shared with the authorized panel and president/vice-president moderators. Question notes remain private.</p>
         <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => begin(null)}>Add general résumé note</Button>
-        {draft && <div className="space-y-2 rounded border bg-muted/30 p-3">
+        {draft && <div data-resume-comment-draft className="space-y-2 rounded border bg-muted/30 p-3">
           {draft.anchor && <blockquote className="break-words text-xs">Page {draft.anchor.page}: “{draft.anchor.quote}”</blockquote>}
           <label htmlFor="resume-comment" className="text-sm font-medium">{draft.anchor ? "Highlight comment" : "General résumé note"}</label>
           <Textarea ref={comment} id="resume-comment" value={draft.comment} maxLength={10000} disabled={busy} onChange={e => setDraft(d => d && ({ ...d, comment: e.target.value }))} />

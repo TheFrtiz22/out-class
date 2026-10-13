@@ -1,5 +1,5 @@
 import { demoStore, demoMember } from "./store";
-import { getInterviewWorkspace, openInterviewSession } from "./interview-foundation";
+import { getInterviewWorkspace, openInterviewSession, demoInterviewTiming } from "./interview-foundation";
 import { nextInterviewApplicant } from "@/lib/interview-queue";
 import type { InterviewScope } from "@/lib/interview-access";
 import type { CollaborationView } from "@/lib/interview-collaboration";
@@ -24,7 +24,7 @@ export function getInterviewCollaboration(input: Input): CollaborationView {
   const r = room(input), s = demoStore.get(), member = demoMember();
   const invite = s.interviewFoundation.collaboration!.invites.find(i => i.source.applicationId === input.applicationId && i.source.roundId === input.roundId && !i.dismissed && i.expires > Date.now());
   const candidate = invite && getInterviewWorkspace(input.clubId).applications.find(a => a.id === invite.destination.applicationId && a.roundId === input.roundId && !a.completedRoundIds.includes(input.roundId));
-  return { sessionId: r.id, revision: r.revision, selection: r.selection, participants: [{ id: member.id, name: "You" }, { id: "simulated-alex", name: "Alex · simulated" }], invitation: invite && candidate ? { id: invite.id, sender: "Alex · simulated", candidate: candidate.name } : null, simulated: true };
+  return { sessionId: r.id, revision: r.revision, selection: r.selection, participants: [{ id: member.id, name: "You" }, { id: "simulated-alex", name: "Alex · simulated" }], invitation: invite && candidate ? { id: invite.id, sender: "Alex · simulated", candidate: candidate.name } : null, simulated: true, timing: demoInterviewTiming(input) };
 }
 export function selectSharedInterviewQuestion(input: Input & { questionId: string }) {
   const r = room(input), own = openInterviewSession(input);

@@ -11,6 +11,7 @@ import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilit
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
 import { collaborationAccess } from "@/utils/interview-collaboration";
+import { interviewTiming } from "@/lib/interview-session-timing";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
@@ -62,12 +63,12 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     const { app, round, member } = await authorizeInterview(tx, data, user.id);
     const key = { applicationId: app.id, roundId: round.id, interviewerId: member.id };
     let record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: key } });
+    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: round.id } }, include: { slot: { include: { room: true } } } });
+    const room = booking?.slot.room;
+    const inRoom = !booking || !!room && room.isOpen && room.panelMemberIds.includes(member.id) && room.approvedPanelMemberIds.includes(member.id) && !!room.panelApprovedBy && !!await tx.clubMember.findFirst({ where: { clubId: app.clubId, userId: room.panelApprovedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } });
     if (!record) {
       if (round.archivedAt) throw new Error("Archived rounds cannot start interviews.");
       if (app.roundId !== round.id) throw new Error("Cannot start an interview in a previous round.");
-      const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: round.id } }, include: { slot: { include: { room: true } } } });
-      const room = booking?.slot.room;
-      const inRoom = !booking || !!room && room.isOpen && room.panelMemberIds.includes(member.id) && room.approvedPanelMemberIds.includes(member.id) && !!room.panelApprovedBy && !!await tx.clubMember.findFirst({ where: { clubId: app.clubId, userId: room.panelApprovedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } });
       const common = inRoom ? await tx.interviewCollaboration.findUnique({ where: { applicationId_roundId_roomKey: { applicationId: app.id, roundId: round.id, roomKey: booking ? `booking:${booking.id}:${room!.id}` : `panel:${app.id}` } } }) : null;
       // A later panel member joins the same preserved bank, even if the master
       // kit changed since the first participant opened this candidate's room.
@@ -75,8 +76,9 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     }
     if (record.anonymousReview) throw new Error("Historical anonymous interview is protected.");
     if (!record.completedAt && app.roundId !== round.id) throw new Error("Applicant round changed.");
-    const settings = roundConfigurationSchema.parse(round.configuration || {});
-    return { ...await present(record, tx), instructions: settings.instructions, duration: settings.duration };
+    const settings = roundConfigurationSchema.safeParse(round.configuration || {});
+    const timing = inRoom ? interviewTiming(data, round.configuration, booking) : null;
+    return { ...await present(record, tx), instructions: settings.success ? settings.data.instructions : "", duration: timing ? timing.durationMs / 60000 : undefined, timing };
   }, interviewTransactionOptions);
 }
 export async function saveInterviewSession(input: z.infer<typeof scope> & { revision: number; draft: unknown; complete?: boolean }) {

@@ -10,6 +10,7 @@ export type CollaborationView = {
   participants: { id: string; name: string }[];
   invitation: { id: string; sender: string; candidate: string } | null;
   simulated?: boolean;
+  timing?: import("@/lib/interview-session-timing").InterviewTiming | null;
 };
 
 /** Recover from an older response without replaying a selection or notification. */
