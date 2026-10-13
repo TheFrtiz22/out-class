@@ -10,7 +10,7 @@ import { authorizeInterview, authorizeQuestionBank, interviewActor, interviewTra
 import { interviewScopeSchema as scope, interviewScoreSchema, interviewCapabilities } from "@/lib/interview-access";
 import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes, validateAdditionalQuestionSnapshots, type InterviewSessionData } from "@/lib/interview-kits";
 import type { InterviewRecord } from "@prisma/client";
-import { collaborationAccess } from "@/utils/interview-collaboration";
+import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 
@@ -63,9 +63,9 @@ export async function openInterviewSession(input: z.infer<typeof scope>): Promis
     const { app, round, member } = await authorizeInterview(tx, data, user.id);
     const key = { applicationId: app.id, roundId: round.id, interviewerId: member.id };
     let record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: key } });
-    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: round.id } }, include: { slot: { include: { room: true } } } });
+    const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: app.id, roundId: round.id } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
     const room = booking?.slot.room;
-    const inRoom = !booking || !!room && room.isOpen && room.panelMemberIds.includes(member.id) && room.approvedPanelMemberIds.includes(member.id) && !!room.panelApprovedBy && !!await tx.clubMember.findFirst({ where: { clubId: app.clubId, userId: room.panelApprovedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } });
+    const inRoom = !booking || !!(await approvedBookingPanel(tx, data, booking))?.includes(member.id);
     if (!record) {
       if (round.archivedAt) throw new Error("Archived rounds cannot start interviews.");
       if (app.roundId !== round.id) throw new Error("Cannot start an interview in a previous round.");
