@@ -1,3 +1,5 @@
+import {publishAvailabilityRequest} from "@/utils/availability-publication";
+import {availabilityScheduleScope} from "@/lib/availability-schedule";
 import {publishScheduledInvitations} from "@/utils/invitation-scheduling";
 import { publishScheduledDecision } from "@/utils/decision-scheduling";
 import { prisma } from "@/utils/prisma";
@@ -54,7 +56,13 @@ export async function processScheduledCommunications(limit=2) {
     await tx.$queryRaw`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate.id} FOR UPDATE`;
     const row=await tx.scheduledCommunication.findUniqueOrThrow({where:{id:candidate.id}});
     if(row.status!=="PROCESSING"||row.revision!==claimed.revision)return false;
-    if(!["ANNOUNCEMENT","DECISION","INVITATION_EMAIL"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(!["ANNOUNCEMENT","DECISION","INVITATION_EMAIL","AVAILABILITY_REQUEST"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
+    if(row.kind==="AVAILABILITY_REQUEST"){
+     const scope=availabilityScheduleScope.parse(row.snapshot);if(scope.clubId!==row.clubId)throw Error("Invalid schedule scope.");
+     const {sent}=await publishAvailabilityRequest(tx,scope,row.senderId);
+     await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",availabilityPublishedAt:new Date(),recipientCount:sent,failureCode:null}});
+     await tx.auditLog.create({data:{actorId:row.actorId,clubId:row.clubId,targetId:row.id,action:"communication.schedule.publish",details:{recipientCount:sent,kind:row.kind}}});return true;
+    }
     if(row.kind==="INVITATION_EMAIL"){
      const recipientCount=await publishScheduledInvitations(tx,row);
      await tx.scheduledCommunication.update({where:{id:row.id},data:{status:"PUBLISHED",invitationQueuedAt:new Date(),recipientCount,failureCode:null}});

@@ -38,6 +38,11 @@ export async function GET(request: Request) {
     const args: unknown = JSON.parse(params.get("args") || "[]")
     let data: unknown
     switch (params.get("kind")) {
+      case "myAvailability": noArgs.parse(args); data = await (await import("@/actions/availability")).getMyAvailability(); break
+      case "roundAvailability": data = await (await import("@/actions/availability")).getMyRoundAvailability(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "availabilityOverview": data = await (await import("@/actions/availability")).getAvailabilityOverview(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "staffingCoverage": data = await (await import("@/actions/availability")).getRoundStaffingCoverage(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "panelWorkspace": data = await (await import("@/actions/panel-proposals")).getPanelProposalWorkspace(z.tuple([z.unknown()]).parse(args)[0]); break
       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break

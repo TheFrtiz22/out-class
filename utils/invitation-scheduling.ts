@@ -5,6 +5,7 @@ import {invitationFingerprint,invitationSnapshot} from "@/lib/invitation-schedul
 import {enqueueInvitationEmails} from "@/utils/invitation-delivery";
 export async function validateScheduledInvitations(tx:AppTransactionClient,clubId:string,senderId:string,ids:string[],scheduledAt:Date) {
  const member=await authorizeClubTransaction(tx,clubId,senderId,["members.manage"]);
+ if(await tx.invitationDelivery.count({where:{invitationId:{in:ids},status:{in:["QUEUED","SENDING"]}}}))throw Error("Existing queued email cannot be postponed by a new schedule.");
  const rows=await tx.clubInvitation.findMany({where:{clubId,id:{in:ids}},orderBy:{id:"asc"}});
  if(rows.length!==ids.length||!rows.length||rows.length>50||rows.some(r=>r.purpose!=="ACCESS_GRANT"||r.status!=="PENDING"||r.expiresAt<=scheduledAt||r.acceptedAt||r.declinedAt||r.revokedAt||!canManageOrganizationInvitation(member,r)))throw Error("Invitation selection unavailable, expired, or above your authority.");
  if(await tx.user.count({where:{email:{in:rows.map(r=>r.email)},disabledAt:{not:null}}}))throw Error("Invitation recipient unavailable.");

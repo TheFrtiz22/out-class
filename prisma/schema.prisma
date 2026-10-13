@@ -407,6 +407,10 @@ model InterviewRoundParticipation {
   // Explicit confirmation freezes defaults; adjustments remain scoped to this round.
   availability Json?
   confirmedAt DateTime? @db.Timestamptz(3)
+  requestedAt DateTime? @db.Timestamptz(3)
+  lastReminderAt DateTime? @db.Timestamptz(3)
+  reminderSequence Int @default(0)
+  declinedAt DateTime? @db.Timestamptz(3)
   revision Int @default(1)
   updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
 
@@ -1481,6 +1485,7 @@ model RecipientGroupEntry {
 
 // Server-only publication intent. No notification exists before publication.
 model ScheduledCommunication {
+  availabilityPublishedAt DateTime?
   invitationQueuedAt DateTime?
   decisionPublishedAt DateTime?
   id String @id @default(uuid())

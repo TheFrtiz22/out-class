@@ -26,7 +26,7 @@ export async function saveCommunicationSchedule(input: unknown) {
   requireFutureSchedule(scheduledAt);
   if(previous && (previous.revision!==data.revision || !["SCHEDULED","FAILED"].includes(previous.status))) throw Error("Scheduled send changed or already published. Refresh before editing.");
   if(!previous && data.revision!==null) throw Error("Scheduled send unavailable.");
-  if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","FAILED"]}}})>=100) throw Error("This club has 100 queued sends. Cancel unused sends first.");
+  if(!previous && await tx.scheduledCommunication.count({where:{clubId:data.clubId,status:{in:["SCHEDULED","PROCESSING","FAILED"]}}})>=100) throw Error("This club has 100 queued sends. Cancel unused sends first.");
   const snapshot=await captureRecipientAudience(tx,data.clubId,user.id,data.audience);
   if(!snapshot.userIds.length) throw Error("No eligible recipients for this audience.");
   const json=snapshot as unknown as Prisma.InputJsonValue;

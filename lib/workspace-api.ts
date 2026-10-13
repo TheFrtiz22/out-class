@@ -1,4 +1,5 @@
 "use client"
+import * as availabilitySchedules from "@/actions/availability-schedules";
 import * as invitationSchedules from "@/actions/invitation-schedules";
 import * as decisionSchedules from "@/actions/decision-schedules";
 import * as recruitmentManagement from "@/actions/recruitment-management";
@@ -595,3 +596,7 @@ export const previewInvitationSchedule = adapt(invitationSchedules.previewInvita
 export const saveInvitationSchedule = adapt(invitationSchedules.saveInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
 export const getInvitationSchedules = adapt(invitationSchedules.getInvitationSchedules, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
 export const cancelInvitationSchedule = adapt(invitationSchedules.cancelInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+
+export const saveAvailabilitySchedule = adapt(availabilitySchedules.saveAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
+export const getAvailabilitySchedules = adapt(availabilitySchedules.getAvailabilitySchedules, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
+export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});

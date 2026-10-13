@@ -33,6 +33,7 @@ try{
  console.log('Populated integrated pre-controls-to-current upgrade: letters, answers, evaluations, queued intent, audiences, preferences, membership, notification/outbox preserved.');
  run(process.execPath,['scripts/test-integrated-release-upgrade.cjs',name],{env});
  run(process.execPath,['--test','tests/invitation-schedules-native.test.cjs'],{env});
+ run(process.execPath,['--test','tests/availability-schedules-native.test.cjs'],{env});
  run(process.execPath,['--test','tests/decision-publication-native.test.cjs'],{env});
  run(process.execPath,['--test','tests/recipient-audiences-native.test.cjs'],{env});
  run(process.execPath,['--test','tests/communication-schedules-native.test.cjs'],{env});

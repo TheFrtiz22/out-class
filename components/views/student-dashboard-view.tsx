@@ -1,4 +1,5 @@
 "use client"
+import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useEffect, useState } from "react"
 import {
@@ -253,6 +254,7 @@ export function StudentDashboardView({
         { label: "coming up", value: agenda.length },
         { label: "new updates", value: updates.filter(update => !update.read).length },
       ]} />}
+      <AvailabilityDashboardRequests />
       <div className="oc-home-columns">
       {unavailable ? (
         <section className="oc-home-next" role="status">

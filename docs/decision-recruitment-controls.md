@@ -302,3 +302,11 @@ utils/recruitment-offers.ts
 utils/scheduled-communications.ts
 utils/voting-publication.ts
 ```
+
+## Integrated release follow-up
+
+[workspace-integrated-release.md](workspace-integrated-release.md) records normal
+merges of the three originally newer main commits and two subsequent availability
+commits. Its current integrated validation supersedes the earlier pending-main
+integration limitation above; historical print evidence remains explicitly dated.
+The complete release manifest and all pending migration ordering are recorded there.

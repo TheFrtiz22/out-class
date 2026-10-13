@@ -10,7 +10,7 @@ import {invitationScheduleInput,invitationScheduleSelection,invitationFingerprin
 import {validateScheduledInvitations} from "@/utils/invitation-scheduling";
 async function targets(tx:Parameters<Parameters<typeof clubWriteTransaction>[0]>[0],selection:z.infer<typeof invitationScheduleSelection>) {
  if(selection.importId){const record=await tx.rosterImport.findFirst({where:{id:selection.importId,clubId:selection.clubId,status:"COMPLETED"}});if(!record)throw Error("Reviewed import unavailable.");}
- const rows=await tx.clubInvitation.findMany({where:{clubId:selection.clubId,status:"PENDING",purpose:"ACCESS_GRANT",...(selection.invitationId?{id:selection.invitationId}:{emailSendCount:0}),...(selection.importId?{rosterRows:{some:{importId:selection.importId,status:"INVITATION_CREATED"}}}:{} )},orderBy:{id:"asc"},take:51,select:{id:true}});
+ const rows=await tx.clubInvitation.findMany({where:{clubId:selection.clubId,status:"PENDING",purpose:"ACCESS_GRANT",deliveries:{none:{status:{in:["QUEUED","SENDING"]}}},...(selection.invitationId?{id:selection.invitationId}:{emailSendCount:0}),...(selection.importId?{rosterRows:{some:{importId:selection.importId,status:"INVITATION_CREATED"}}}:{} )},orderBy:{id:"asc"},take:51,select:{id:true}});
  if(!rows.length||rows.length>50)throw Error("Select between one and 50 pending invitations. Use smaller imports or individual invitations.");
  return rows.map(r=>r.id);
 }

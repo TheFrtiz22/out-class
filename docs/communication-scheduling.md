@@ -241,3 +241,13 @@ recorded separately from rounds and membership cohorts. Mandatory security/auth
 messages and the other exclusions remain immediate. Announcement publication keeps
 its 12-second transaction limit; decision jobs have a measured 50-applicant cap,
 20-second transaction limit, and a 15-second invocation admission window.
+
+## Integrated release follow-up
+
+The final inventory in [workspace-integrated-release.md](workspace-integrated-release.md)
+supersedes the earlier invitation exclusion: optional reviewed roster sends and
+individual invitation resends now use shared scheduled intents and the existing
+invitation outbox. Newly integrated main's explicit availability requests/reminders
+also support scheduling. The integrated report records fair candidate selection,
+all eight pending migrations, actual production-equivalent ledger/checksum checks,
+current validation and the complete producer-by-producer exclusions.

@@ -89,9 +89,18 @@ export function weekCells(week: string, zone: string): WeekCell[][] {
 export function interviewerEligible(member: { status?: string; accessRole: string; interviewerEligible?: boolean | null; user?: { disabledAt?: unknown } }, roles: readonly string[], roundOverride?: boolean | null) {
   return isActiveMembership(member) && !member.user?.disabledAt && (roundOverride ?? member.interviewerEligible ?? roles.includes(member.accessRole))
 }
-export type AvailabilityRound = { id: string; clubId: string; clubName: string; name: string; confirmed: boolean }
-export type OverviewMember = { id: string; name: string; role: string; submitted: boolean; confirmed: boolean; available: boolean[][] }
-export type AvailabilityOverview = { week: string; timezone: string; members: OverviewMember[]; cells: WeekCell[][]; slots: { id: string; roomName: string; startTime: string; endTime: string; availableMemberIds: string[] }[] }
+export type AvailabilityResponse = "NOT_REQUESTED" | "AWAITING" | "SUBMITTED" | "DECLINED"
+export const responseLabels: Record<AvailabilityResponse, string> = { NOT_REQUESTED: "Not requested", AWAITING: "Awaiting response", SUBMITTED: "Submitted", DECLINED: "Declined participation" }
+export function availabilityResponse(value?: { confirmedAt?: unknown; declinedAt?: unknown; requestedAt?: unknown } | null): AvailabilityResponse {
+  return value?.confirmedAt ? "SUBMITTED" : value?.declinedAt ? "DECLINED" : value?.requestedAt ? "AWAITING" : "NOT_REQUESTED"
+}
+export function availabilityHref(clubId?: string, roundId?: string) {
+  return `/settings/availability${clubId && roundId ? `?clubId=${encodeURIComponent(clubId)}&roundId=${encodeURIComponent(roundId)}` : ""}`
+}
+export type AvailabilityRound = { id: string; clubId: string; clubName: string; name: string; confirmed: boolean; response: AvailabilityResponse; requested: boolean }
+export type OverviewMember = { id: string; name: string; role: string; submitted: boolean; confirmed: boolean; response: AvailabilityResponse; canRemind: boolean; available: boolean[][] }
+export type SessionCoverage = { id: string; roomId: string; roomName: string; startTime: string; endTime: string; buffer?: number; required: number; assigned: number; active: boolean; availableMemberIds: string[] }
+export type AvailabilityOverview = { week: string; timezone: string; members: OverviewMember[]; cells: WeekCell[][]; slots: SessionCoverage[] }
 
 /** Serializable paint operation shared by pointer and keyboard editing. */
 export function paintCells(days: boolean[][], from: { day: number; slot: number }, to: { day: number; slot: number }, on: boolean) {

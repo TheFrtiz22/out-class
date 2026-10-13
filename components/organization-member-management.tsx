@@ -822,7 +822,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                   >
                                     Resend invitation
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem disabled={busy||row.status!=="Invited"} onSelect={()=>setScheduledInviteId(row.id)}>Schedule invitation email</DropdownMenuItem>
+                                  <DropdownMenuItem disabled={busy||row.status!=="Invited"||row.invitation.deliveries.some(d=>["QUEUED","SENDING"].includes(d.status))} onSelect={()=>setScheduledInviteId(row.id)}>Schedule invitation email</DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     disabled={busy}

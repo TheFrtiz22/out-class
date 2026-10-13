@@ -1,12 +1,16 @@
 "use server"
 
+import {publishAvailabilityRequest} from "@/utils/availability-publication"
+import {clubWriteTransaction} from "@/utils/club-write-transaction"
 import { z } from "zod"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { organizationRoles } from "@/lib/organization-authorization"
+import { sessionsOverlap, panelWindowSchema } from "@/lib/panel-proposals"
+import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
-import { addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
+import { availabilityResponse, availabilityHref, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()
@@ -30,13 +34,13 @@ export async function getMyAvailability(): Promise<{ document: AvailabilityDocum
     prisma.userAvailability.findUnique({ where: { userId: user.id } }),
     prisma.clubMember.findMany({ where: { userId: user.id, status: "ACTIVE", club: { suspendedAt: null } }, include: {
       club: { select: { name: true, interviewerRoles: true, pipelineRounds: { where: { archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true, type: true, _count: { select: { interviewRooms: true } } } } } },
-      interviewParticipation: { select: { roundId: true, eligibilityOverride: true, confirmedAt: true } },
+      interviewParticipation: { select: { roundId: true, eligibilityOverride: true, confirmedAt: true, requestedAt: true, declinedAt: true } },
     } }),
   ])
   const rounds = memberships.flatMap(member => member.club.pipelineRounds.flatMap(round => {
     const participation = member.interviewParticipation.find(p => p.roundId === round.id)
     return (round.type === "INTERVIEW" || /interview/i.test(round.name) || round._count.interviewRooms) && interviewerEligible(member, member.club.interviewerRoles, participation?.eligibilityOverride)
-      ? [{ id: round.id, clubId: member.clubId, clubName: member.club.name, name: round.name, confirmed: !!participation?.confirmedAt }] : []
+      ? [{ id: round.id, clubId: member.clubId, clubName: member.club.name, name: round.name, confirmed: !!participation?.confirmedAt, response: availabilityResponse(participation), requested: !!participation?.requestedAt }] : []
   }))
   return { document: document(saved, user.id), rounds }
 }
@@ -60,7 +64,8 @@ export async function getMyRoundAvailability(raw: unknown) {
     const participation = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: { memberId: member.id, roundId: round.id } } })
     if (!interviewerEligible(member, club.interviewerRoles, participation?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
     const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id)
-    return { document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, name: `${club.name} · ${round.name}` }
+    const firstSlot = await tx.interviewSlot.findFirst({ where: { clubId: scope.clubId, room: { roundId: round.id }, startTime: { gt: new Date() } }, orderBy: { startTime: "asc" }, select: { startTime: true } })
+    return { preferredWeek: firstSlot ? monday(localParts(firstSlot.startTime, participation?.availability ? parseSchedule(participation.availability).timezone : global.schedule.timezone).date) : undefined, document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, declined: !!participation?.declinedAt, name: `${club.name} · ${round.name}` }
   })
 }
 export async function saveMyRoundAvailability(raw: unknown) {
@@ -76,7 +81,7 @@ export async function saveMyRoundAvailability(raw: unknown) {
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
     if (input.confirm && !input.schedule.weeklySubmitted && !Object.keys(input.schedule.exceptions).length) throw new Error("Submit your availability before confirming participation. You can explicitly save an empty week.")
     const confirmedAt = input.confirm ? new Date() : null
-    const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, availability: input.schedule, confirmedAt }, update: { availability: input.schedule, confirmedAt, revision: { increment: 1 } } })
+    const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, availability: input.schedule, confirmedAt, declinedAt: null }, update: { availability: input.schedule, confirmedAt, declinedAt: null, revision: { increment: 1 } } })
     await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: saved.id, action: input.confirm ? "interview.participation.confirm" : "interview.participation.save" } })
     return { document: { accountId: user.id, schedule: parseSchedule(saved.availability), revision: saved.revision }, confirmed: !!saved.confirmedAt }
   })
@@ -130,27 +135,34 @@ export async function getAvailabilityOverview(raw: unknown): Promise<Availabilit
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"], { readOnly: true })
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)
-    const [club, members, slots] = await Promise.all([
+    const [club, members, planning] = await Promise.all([
       tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } }),
       tx.clubMember.findMany({ where: { clubId: input.clubId, status: "ACTIVE", user: { disabledAt: null }, ...(input.role ? { accessRole: input.role } : {}) }, include: { user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true } }, availability: true } }, interviewParticipation: { where: { clubId: input.clubId, roundId: input.roundId ?? "" } } } }),
-      tx.interviewSlot.findMany({ where: { clubId: input.clubId, room: { isOpen: true, ...(input.roundId ? { roundId: input.roundId } : {}) }, startTime: { gte: new Date(+new Date(`${monday(input.week)}T00:00:00Z`) - 86400000), lt: new Date(+new Date(`${addDays(monday(input.week), 7)}T00:00:00Z`) + 86400000) } }, include: { room: { select: { name: true, roundId: true } } }, orderBy: { startTime: "asc" } }),
+      input.roundId ? loadPanelPlanningScene(tx, { clubId: input.clubId, roundId: input.roundId }, { start: new Date(+new Date(`${monday(input.week)}T00:00:00Z`) - 86400000).toISOString(), end: new Date(+new Date(`${addDays(monday(input.week), 7)}T00:00:00Z`) + 86400000).toISOString() }) : null,
     ])
     const week = monday(input.week), cells = weekCells(week, input.timezone)
     const cache = new Map<string, ReturnType<typeof localParts>>()
     const parts = (time: number | Date, zone: string) => { const key = `${zone}:${+time}`; let p = cache.get(key); if (!p) { p = localParts(time, zone); cache.set(key, p) } return p }
     const eligible = members.filter(m => interviewerEligible(m, club.interviewerRoles, m.interviewParticipation[0]?.eligibilityOverride))
     const schedules = new Map<string, AvailabilitySchedule | null>()
+    const candidates = new Map(planning?.scene.members.map(member => [member.id, member]) ?? [])
     const projected = eligible.map(m => {
-      const participation = m.interviewParticipation[0]
+      const participation = m.interviewParticipation[0], candidate = candidates.get(m.id)
       const raw = input.roundId ? participation?.availability : m.user.availability?.schedule
       const schedule = raw ? parseSchedule(raw) : null
       const confirmed = !!participation?.confirmedAt
       const submitted = !!schedule && (schedule.weeklySubmitted || Object.keys(schedule.exceptions).length > 0)
       schedules.set(m.id, input.roundId && !confirmed ? null : schedule)
-      return { id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, submitted, confirmed, available: cells.map(day => day.map(cell => cell.start !== null && cell.end !== null && intervalAvailability(schedules.get(m.id) ?? null, cell.start, cell.end, parts) === "available")) }
+      const available = cells.map(day => day.map(cell => {
+        const start = cell.start, end = cell.end
+        if (start === null || end === null) return false
+        if (planning && (!candidate?.evidenceAccess || candidate.commitments?.some(commitment => sessionsOverlap(commitment, { startTime: new Date(start).toISOString(), endTime: new Date(end).toISOString(), buffer: 0 })))) return false
+        return intervalAvailability(schedules.get(m.id) ?? null, start, end, parts) === "available"
+      }))
+      return { id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, submitted, confirmed, response: availabilityResponse(participation), canRemind: !!participation?.requestedAt && !participation.confirmedAt && !participation.declinedAt && Date.now() - +(participation.lastReminderAt ?? participation.requestedAt) >= 86400000, available }
     })
     // Without a round, slot staffing is deliberately omitted: global declarations aren't round confirmations.
-    const coverage = input.roundId ? slots.filter(s => { const date = parts(+s.startTime, input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomName: s.room!.name, startTime: s.startTime.toISOString(), endTime: s.endTime.toISOString(), availableMemberIds: eligible.filter(m => intervalAvailability(schedules.get(m.id) ?? null, +s.startTime, +s.endTime, parts) === "available").map(m => m.id) })) : []
+    const coverage = planning ? planning.scene.sessions.filter(s => { const date = parts(+new Date(s.startTime), input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, required: s.required, assigned: s.existingMemberIds.length, active: s.active, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id) && eligible.some(e => e.id === m.id)).map(m => m.id) })) : []
     return { week, timezone: input.timezone, members: projected, cells, slots: coverage }
   }, { timeout: 20000 })
 }
@@ -165,4 +177,45 @@ export async function getEligibleInterviewerPool(raw: unknown) {
     const pool = await loadInterviewerPool(tx, input.clubId, input.roundId)
     return pool.members.filter(m => m.eligible && m.confirmed && intervalAvailability(m.availability, start, end) === "available").map(m => ({ memberId: m.id, evidenceAccess: m.evidenceAccess }))
   }, { timeout: 15000 })
+}
+
+/** Collection changes never write proposals, official panels or applicant bookings. */
+export async function requestRoundAvailability(raw: unknown) {
+  const input = scopeSchema.extend({ memberIds: z.array(id).min(1).max(1000), reminder: z.boolean().default(false) }).parse(raw)
+  const { user } = await requireAuth()
+  return clubWriteTransaction(tx=>publishAvailabilityRequest(tx,input,user.id),{maxWait:5000,timeout:20000})
+}
+
+export async function declineRoundParticipation(raw: unknown) {
+  const input = scopeSchema.extend({ revision: z.number().int().nonnegative(), accountId: id }).parse(raw), { user } = await requireAuth()
+  if (input.accountId !== user.id) throw new Error("Account changed. Reload before responding.")
+  return prisma.$transaction(async tx => {
+    const member = await authorizeClubTransaction(tx, input.clubId, user.id, [])
+    await roundFor(tx, input.clubId, input.roundId)
+    const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { interviewerRoles: true } })
+    const key = { memberId: member.id, roundId: input.roundId }
+    const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
+    if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
+    if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, declinedAt: new Date() }, update: { declinedAt: new Date(), confirmedAt: null, revision: { increment: 1 } } })
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: saved.id, action: "interview.participation.decline" } })
+    return { revision: saved.revision }
+  })
+}
+
+/** Round-wide coverage for inline room/session staffing; never one query per row. */
+export async function getRoundStaffingCoverage(raw: unknown) {
+  const scope = scopeSchema.extend({ window: panelWindowSchema.optional() }).parse(raw), { user } = await requireAuth()
+  return prisma.$transaction(async tx => {
+    const actor = await authorizeClubTransaction(tx, scope.clubId, user.id, ["interviews.manage"], { readOnly: true })
+    const planning = await loadPanelPlanningScene(tx, scope, scope.window)
+    const proposal = await tx.interviewPanelProposal.findUnique({ where: { roundId_clubId: { roundId: scope.roundId, clubId: scope.clubId } }, select: { status: true } })
+    return {
+      myEligible: !!planning.scene.members.find(m => m.id === actor.id)?.eligible,
+      eligible: planning.scene.members.filter(m => m.eligible).length,
+      confirmed: planning.scene.members.filter(m => m.eligible && m.confirmed).length,
+      state: planning.publishedRevision > 0 || planning.scene.sessions.some(s => s.existingMemberIds.length) ? proposal ? "Published · saved draft" : "Published" : proposal ? "Saved unpublished draft" : "No panel draft",
+      slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
+    }
+  }, { timeout: 20000 })
 }

@@ -94,7 +94,7 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
     rooms: rooms.map(r => ({ id:r.id,name:r.name,location:r.location,kind:r.kind,timezone:r.timezone,duration:r.duration,buffer:r.buffer,isOpen:r.isOpen,panelApprovalRevision:r.panelApprovalRevision,panelApprovedBy:r.panelApprovedBy,panelMemberIds:r.panelMemberIds,approvedPanelMemberIds:r.approvedPanelMemberIds,slots:r.slots.map(s=>({id:s.id,capacity:s.capacity,panelScheduleVersionId:s.panelScheduleVersionId,publishedPanelMemberIds:s.publishedPanelMemberIds})) })),
     sessions, candidates: pool.members, commitments: [...committed].map(([userId, rows]) => ({ userId, rows: [...rows.values()].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)) })) }
   const fingerprint = createHash("sha256").update(JSON.stringify(source)).digest("hex")
-  return { scene, fingerprint, roundName: round.name, suggestedWindow, timezone: rooms[0]?.timezone ?? "America/New_York", window: selected }
+  return { scene, fingerprint, publishedRevision: round.panelScheduleRevision, roundName: round.name, suggestedWindow, timezone: rooms[0]?.timezone ?? "America/New_York", window: selected }
 }
 
 /** Strip all foreign-club intervals and workloads at the identifiable admin boundary. */
