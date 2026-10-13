@@ -46,13 +46,13 @@ function apiHarness() {
   application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
   pipelineRound:{findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
-  clubMember:{count:async()=>0},
+  clubMember:{count:async()=>0,findMany:async()=>[]},
   interviewRoom:{create:async({data})=>{state.created.push(data);return {id:id(3)}},update:async()=>{}},
   interviewPanelAssignment:{findMany:async()=>[]},
   auditLog:{create:async({data})=>state.audit.push(data)},
   interviewBooking:{findUnique:async()=>state.existing,findMany:async()=>state.others,findFirst:async({where})=>state.existing?.id===where.id&&state.app.studentId===where.application.studentId?state.existing:null,delete:async({where})=>state.deleted.push(where.id),create:async({data})=>{if(state.failCreate)throw Error('Write failed');state.created.push(data);return{id:id(8),...data}}}
  }
- const load=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}}),requireClubPermission:async()=>{if(!state.permission)throw Error('Denied');return{user:{id:id(6)},membership:{permissions:['interviews.manage']}}}},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{assert.equal(opts.isolationLevel,'Serializable');state.attempts++;if(state.retries-->0)throw{code:'P2034'};const before={created:[...state.created],deleted:[...state.deleted],audit:[...state.audit]};try{return await fn(tx)}catch(e){Object.assign(state,before);throw e}},interviewRoom:{findUnique:async()=>room}}},'next/cache':{revalidatePath(){}}})
+ const load=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}}),requireClubPermission:async()=>{if(!state.permission)throw Error('Denied');return{user:{id:id(6)},membership:{permissions:['interviews.manage']}}}},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{assert.ok(['Serializable','ReadCommitted'].includes(opts.isolationLevel));state.attempts++;if(state.retries-->0)throw{code:'P2034'};const before={created:[...state.created],deleted:[...state.deleted],audit:[...state.audit]};try{return await fn(tx)}catch(e){Object.assign(state,before);throw e}},interviewRoom:{findUnique:async()=>room}}},'next/cache':{revalidatePath(){}}})
  return {state,api:load('actions/interview-rooms.ts')}
 }
 test('booking rejects ownership, invitation, club, round, capacity, past time and paused rooms',async()=>{

@@ -12,6 +12,10 @@ datasource db {
 // ==========================================
 
 model User {
+  publishedPanelSchedules InterviewPanelScheduleVersion[] @relation("PanelSchedulePublisher")
+  createdPanelProposals InterviewPanelProposal[] @relation("PanelProposalCreator")
+  modifiedPanelProposals InterviewPanelProposal[] @relation("PanelProposalModifier")
+  availability UserAvailability?
   schoolRequestReviews SchoolRequest[]
   adminElevations AdminElevation[]
   adminElevationChallenges AdminElevationChallenge[]
@@ -100,6 +104,8 @@ model Experience {
 // ==========================================
 
 model Club {
+  interviewerRoles MembershipAccessRole[] @default([INTERVIEWER])
+  interviewerEligibilityRevision Int @default(0)
   decisionLetterTemplates Json?
   decisionLetters DecisionLetter[]
   suspendedAt DateTime?
@@ -150,6 +156,8 @@ model Club {
 }
 
 model ClubMember {
+  interviewerEligible Boolean?
+  interviewParticipation InterviewRoundParticipation[]
   interviewOffices String[] @default([])
   interviewAssignments InterviewPanelAssignment[]
   resumeAnnotations InterviewResumeAnnotation[]
@@ -175,6 +183,7 @@ model ClubMember {
   evaluations Evaluation[]
 
   @@unique([userId, clubId])
+  @@unique([id, clubId])
   @@index([clubId], map: "ClubMember_clubId_idx")
   @@index([clubId, status, joinedAt])
 }
@@ -190,6 +199,10 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  panelScheduleRevision Int @default(0)
+  panelScheduleVersions InterviewPanelScheduleVersion[]
+  panelProposal InterviewPanelProposal?
+  interviewParticipation InterviewRoundParticipation[]
   stableEvaluations Evaluation[] @relation("EvaluationRound")
   interviewAssignments InterviewPanelAssignment[]
   resumeDocuments InterviewResumeDocument[]
@@ -215,6 +228,7 @@ model PipelineRound {
   applications Application[]
 
   @@index([clubId], map: "PipelineRound_clubId_idx")
+  @@unique([id, clubId])
   @@index([clubId, archivedAt, order])
 }
 
@@ -364,7 +378,91 @@ model EventAttendance {
 // 5. SCHEDULING
 // ==========================================
 
+// Compact wall-clock declarations, not another scheduling/room model.
+model UserAvailability {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule Json
+  revision Int @default(1)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+}
+
+model InterviewRoundParticipation {
+  id String @id @default(uuid())
+  clubId String
+  memberId String
+  member ClubMember @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Cascade)
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Cascade)
+  eligibilityOverride Boolean?
+  // Explicit confirmation freezes defaults; adjustments remain scoped to this round.
+  availability Json?
+  confirmedAt DateTime? @db.Timestamptz(3)
+  requestedAt DateTime? @db.Timestamptz(3)
+  lastReminderAt DateTime? @db.Timestamptz(3)
+  reminderSequence Int @default(0)
+  declinedAt DateTime? @db.Timestamptz(3)
+  revision Int @default(1)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@unique([memberId, roundId])
+  @@index([clubId, roundId, confirmedAt])
+  @@index([roundId])
+}
+
+// This document is never an active panel assignment or an applicant booking.
+model InterviewPanelProposal {
+  basePublishedVersion Int @default(0)
+  approvalToken String? @unique
+  readyBy String?
+  readyAt DateTime? @db.Timestamptz(3)
+  id String @id @default(uuid())
+  clubId String
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Cascade)
+  status String @default("UNPUBLISHED")
+  document Json
+  validation Json
+  sourceFingerprint String
+  revision Int @default(1)
+  createdBy String
+  creator User @relation("PanelProposalCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  modifiedBy String
+  modifier User @relation("PanelProposalModifier", fields: [modifiedBy], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+
+  @@index([clubId, updatedAt])
+  @@unique([roundId, clubId])
+}
+
+model InterviewPanelScheduleVersion {
+  sourceProposalId String
+  sourceProposalRevision Int
+  id String @id @default(uuid())
+  clubId String
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Restrict)
+  version Int
+  previousVersion Int @default(0)
+  status String @default("PUBLISHED")
+  document Json
+  changes Json
+  sourceFingerprint String
+  approvalToken String @unique
+  publishedBy String
+  publisher User @relation("PanelSchedulePublisher", fields: [publishedBy], references: [id], onDelete: Restrict)
+  publishedAt DateTime @default(now()) @db.Timestamptz(3)
+  understaffedOverride Boolean @default(false)
+  overrideReason String?
+  slots InterviewSlot[]
+  @@unique([roundId, clubId, version])
+  @@index([clubId, publishedAt])
+}
+
 model InterviewRoom {
+  interviewersNeeded Int @default(2)
+  staffingRevision Int @default(0)
   id             String          @id @default(uuid())
   clubId         String
   club           Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -385,10 +483,17 @@ model InterviewRoom {
   createdAt      DateTime        @default(now())
   slots          InterviewSlot[]
 
+  @@index([approvedPanelMemberIds], type: Gin, map: "InterviewRoom_approved_members_gin")
   @@index([clubId, roundId])
 }
 
 model InterviewSlot {
+  publishedPanelMemberIds String[] @default([])
+  panelScheduleVersionId String?
+  panelScheduleVersion InterviewPanelScheduleVersion? @relation(fields: [panelScheduleVersionId], references: [id], onDelete: Restrict)
+
+  interviewersNeeded Int?
+  staffingRevision Int @default(0)
   roomId String?
   room   InterviewRoom? @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
@@ -403,6 +508,8 @@ model InterviewSlot {
   bookings InterviewBooking[]
 
   @@index([clubId], map: "InterviewSlot_clubId_idx")
+  @@index([publishedPanelMemberIds], type: Gin)
+  @@index([panelScheduleVersionId])
   @@index([roomId, startTime])
   @@index([clubId, startTime])
 }
