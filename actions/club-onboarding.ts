@@ -28,7 +28,7 @@ const invitationInput = z.object({
 /** Creates identity-bound invitations only; no User is created for the recipient. */
 export async function createClubIdentityInvitation(input: unknown) {
   const data = invitationInput.parse(input);
-  const actor = data.platformDesignation ? await requirePlatformAdmin() : (await requireAuth()).user;
+  const actor = data.platformDesignation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return clubWriteTransaction(async tx => {
     return createIdentityInvitationInTransaction(tx, data, actor);
   });
@@ -80,7 +80,7 @@ export async function declineIdentityClubInvitation(invitationId: string) {
 
 export async function revokeIdentityClubInvitation(invitationId: string, platformOperation = false) {
   id.parse(invitationId); z.boolean().parse(platformOperation);
-  const user = platformOperation ? await requirePlatformAdmin() : (await requireAuth()).user;
+  const user = platformOperation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return prisma.$transaction(async tx => {
     const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
     if (!hint) throw new Error("Invitation unavailable.");

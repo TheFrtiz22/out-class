@@ -215,6 +215,18 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     await assert.rejects(other.run(() => api('actions/club-onboarding.ts').createClubIdentityInvitation({ clubId: f.club.id, identifierTypeId: 'school-uva-computing-id', identifier: 'outsider', requestedRole: 'MEMBER' })), /cannot grant/);
     await assertRollback(f); await assertRollback(other);
   });
+  await t.test('aged session-bound elevation allows support writes but cannot extend support expiry', async () => {
+    const f = await fixture();
+    const past = new Date(Date.now() - 3600000);
+    await operator.adminElevation.update({ where: { id: f.context.elevation.id }, data: { createdAt: past, passwordVerifiedAt: past, mfaVerifiedAt: past, expiresAt: null } });
+    f.context.elevation = await operator.adminElevation.findUniqueOrThrow({ where: { id: f.context.elevation.id } });
+    await direct(f); await assertPublished(f, 'WAITLISTED');
+    await operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { createdAt: past, expiresAt: new Date(past.getTime()+1800000) } });
+    await assert.rejects(f.run(() => api('utils/club-write-transaction.ts').clubWriteTransaction(async tx => {
+      await tx.club.update({ where: { id: f.club.id }, data: { tagline: 'Must not publish' } });
+    })), /Impersonation expired/);
+    assert.equal((await operator.club.findUniqueOrThrow({ where: { id: f.club.id } })).tagline, '');
+  });
   await t.test('session/elevation/grant/logout/target revocation between audited statements rolls back', async () => {
     const changes = [
       f => operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { endedAt: new Date() } }),

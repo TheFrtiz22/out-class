@@ -17,7 +17,7 @@ async function resolveDeliveryActor(tx: AppTransactionClient, clubId: string, us
       (await tx.platformAdmin.findUnique({ where: { userId } }))?.active) {
     if (authorizeRequest) {
       const { requirePlatformAdmin } = await import("@/utils/platform-admin");
-      const admin = await requirePlatformAdmin();
+      const admin = await requirePlatformAdmin({ fresh: true });
       if (admin.id !== userId) throw new Error("Invitation sending access denied.");
     }
     // Administrative invitation delivery does not grant any club membership.

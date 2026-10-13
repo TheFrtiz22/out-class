@@ -444,7 +444,7 @@ const operations = z.discriminatedUnion("kind", [
   }),
 ]);
 export async function changePlatformResource(input: unknown, reason: string) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   const data = operations.parse(input);
   const justification = z.string().trim().min(10).max(1000).parse(reason);
   if (data.kind === "content" && JSON.stringify(data.value).length > 4_000_000)
@@ -761,7 +761,7 @@ const administrativeProfileSelect = {
 
 /** Safe view-as: read-only snapshot, no target cookies/tokens and no delegated mutations. */
 export async function inspectPlatformUser(userId: string, reason: string) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   id.parse(userId);
   z.string().trim().min(10).max(1000).parse(reason);
   await prisma.auditLog.create({
@@ -789,7 +789,7 @@ export async function inspectPlatformRecord(
   recordId: string,
   reason?: string,
 ) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   resources.parse(resource);
   id.parse(recordId);
   if (reason !== undefined) z.string().trim().min(10).max(1000).parse(reason);

@@ -14,7 +14,7 @@ export async function listSchoolRequests(input: unknown) {
 }
 
 export async function reviewSchoolRequest(input: unknown) {
-  const actor = await requirePlatformAdmin()
+  const actor = await requirePlatformAdmin({ fresh: true })
   const data = reviewSchoolRequestSchema.parse(input)
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "SchoolRequest" WHERE id=${data.id} FOR UPDATE`

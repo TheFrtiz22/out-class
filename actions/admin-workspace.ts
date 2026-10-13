@@ -57,7 +57,7 @@ export async function submitPlatformReport(input: unknown) {
   });
 }
 export async function resolveAdminReport(input: unknown) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   const d = z.object({ id: uuid, revision: z.number().int().min(0), status: statuses, reason: reasonSchema }).strict().parse(input);
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "PlatformReport" WHERE id=${d.id} FOR UPDATE`;
@@ -70,7 +70,7 @@ export async function resolveAdminReport(input: unknown) {
   });
 }
 export async function inspectAdminClub(clubId: string, reason: string) {
-  const actor = await requirePlatformAdmin(); uuid.parse(clubId); reasonSchema.parse(reason);
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId); reasonSchema.parse(reason);
   const club = await prisma.club.findUnique({ where: { id: clubId }, include: {
     members: { include: { user: { select: { id: true, email: true, studentProfile: { select: { firstName: true, lastName: true } } } } }, take: 100 },
     invitations: { select: { id: true, email: true, requestedRole: true, status: true, acceptedAt: true, expiresAt: true, lastEmailSentAt: true }, take: 100 },
@@ -82,7 +82,7 @@ export async function inspectAdminClub(clubId: string, reason: string) {
   return { club, activity };
 }
 export async function setAdminClubSuspended(clubId: string, suspended: boolean, reason: string) {
-  const actor = await requirePlatformAdmin(); uuid.parse(clubId); z.boolean().parse(suspended); reasonSchema.parse(reason);
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId); z.boolean().parse(suspended); reasonSchema.parse(reason);
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${clubId} FOR UPDATE`;
     await tx.club.update({ where: { id: clubId }, data: { suspendedAt: suspended ? new Date() : null } });
@@ -101,7 +101,7 @@ export async function getAdminSettings() {
   return settingsSchema.parse(row?.value || {});
 }
 export async function saveAdminSettings(input: unknown, reason: string) {
-  const actor = await requirePlatformAdmin(), value = settingsSchema.parse(input); reasonSchema.parse(reason);
+  const actor = await requirePlatformAdmin({ fresh: true }), value = settingsSchema.parse(input); reasonSchema.parse(reason);
   await prisma.$transaction(async tx => {
     await tx.platformContent.upsert({ where: { key: "platform:settings" }, create: { key: "platform:settings", value }, update: { value } });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.settings.change", targetId: "platform:settings", reason, details: { result: "success", fields: Object.keys(value) } } });
@@ -109,7 +109,7 @@ export async function saveAdminSettings(input: unknown, reason: string) {
 }
 const studentSchema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), firstName: z.string().trim().min(1).max(100), lastName: z.string().trim().min(1).max(100), major: z.string().trim().max(120).optional(), gradYear: z.number().int().min(2000).max(2100).optional(), clubId: uuid.optional(), reason: reasonSchema }).strict();
 export async function createAdminStudent(input: unknown) {
-  const actor = await requirePlatformAdmin(), d = studentSchema.parse(input);
+  const actor = await requirePlatformAdmin({ fresh: true }), d = studentSchema.parse(input);
   const config = invitationEmailConfig();
   if (await prisma.user.findFirst({ where: { email: { equals: d.email, mode: "insensitive" } } })) throw Error("An account already exists. Inspect it in Users before resending an invitation.");
   const relationship = d.clubId ? await prisma.club.findUniqueOrThrow({ where: { id: d.clubId }, include: { school: { include: { identifierTypes: true } } } }) : null;
@@ -130,7 +130,7 @@ export async function createAdminStudent(input: unknown) {
   return { id: userId, email: d.email, status: "INVITED" };
 }
 export async function resendAdminStudentInvitation(userId: string, reason: string) {
-  const actor = await requirePlatformAdmin(); uuid.parse(userId); reasonSchema.parse(reason);
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
   const config = invitationEmailConfig(), client = adminAuth();
   const { data, error } = await client.auth.admin.getUserById(userId);
   if (error || !data.user?.email || !isUvaEmail(data.user.email) || !data.user.invited_at || data.user.email_confirmed_at) throw Error("Only unclaimed UVA invitations can be resent.");
@@ -148,7 +148,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
   return { success: true };
 }
 export async function createAdminClub(input: unknown) {
-  await requirePlatformAdmin();
+  await requirePlatformAdmin({ fresh: true });
   const d = z.object({ organization: z.object({ requestId: uuid, identifierTypeId: z.string().min(1), organizationName: z.string(), presidentName: z.string(), presidentIdentifier: z.string(), presidentYear: z.string(), reason: reasonSchema }), leaderEmail: z.string().trim().toLowerCase().email(), description: z.string().trim().max(2000), category: z.string().trim().min(1).max(100), organizationInfo: z.string().trim().max(2000).default(""), additionalLeaders: z.array(z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().min(1).max(200) })).max(10).default([]) }).strict().parse(input);
   invitationEmailConfig();
   const mapping = await prisma.schoolIdentifierType.findUniqueOrThrow({ where: { id: d.organization.identifierTypeId } });
@@ -156,7 +156,7 @@ export async function createAdminClub(input: unknown) {
   if (mapping.verification !== "EMAIL_LOCAL_PART" || !mapping.emailDomain || addresses.some(email => email.split("@")[1] !== mapping.emailDomain) || d.leaderEmail.split("@")[0] !== d.organization.presidentIdentifier.toLowerCase()) throw Error("Leader emails must match the selected institution's identity mapping.");
   const result = await createOrganizationAndInvitePresident(d.organization);
   if (!result.ok) throw Error(result.error);
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   await prisma.$transaction(async tx => {
     await tx.club.update({ where: { id: result.organization.id }, data: { description: d.description, category: d.category, marketing: { organizationInfo: d.organizationInfo } } });
     await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.club.details.create", targetId: result.organization.id, clubId: result.organization.id, reason: d.organization.reason, details: { result: "success" } } });
@@ -168,7 +168,7 @@ export async function createAdminClub(input: unknown) {
 }
 
 export async function resendAdminClubInvitation(clubId: string, invitationId: string, reason: string) {
-  const actor = await requirePlatformAdmin(); uuid.parse(clubId); uuid.parse(invitationId); reasonSchema.parse(reason); invitationEmailConfig();
+  const actor = await requirePlatformAdmin({ fresh: true }); uuid.parse(clubId); uuid.parse(invitationId); reasonSchema.parse(reason); invitationEmailConfig();
   const result = await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${clubId} FOR UPDATE`;
     const result = await enqueueInvitationEmail(tx, invitationId, clubId, actor.id, randomUUID());
@@ -179,7 +179,7 @@ export async function resendAdminClubInvitation(clubId: string, invitationId: st
   return result;
 }
 export async function changeAdminDesignatedLeader(input: unknown) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   const d = z.object({ clubId: uuid, invitationId: uuid, identifierTypeId: z.string().min(1), identifier: z.string().min(1).max(128), name: z.string().trim().min(1).max(200), reason: reasonSchema }).strict().parse(input);
   invitationEmailConfig();
   const next = await prisma.$transaction(async tx => {
@@ -197,7 +197,7 @@ export async function changeAdminDesignatedLeader(input: unknown) {
 }
 
 export async function inspectAdminStudent(userId: string, reason: string) {
-  await requirePlatformAdmin(); uuid.parse(userId); reasonSchema.parse(reason);
+  await requirePlatformAdmin({ fresh: true }); uuid.parse(userId); reasonSchema.parse(reason);
   const profile = await inspectPlatformRecord("users", userId, reason);
   const { data, error } = await adminAuth().auth.admin.getUserById(userId);
   if (error || !data.user) throw Error("Authentication identity unavailable. Retry before changing the account.");

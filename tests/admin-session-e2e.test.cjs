@@ -10,8 +10,9 @@ const filename = process.env.OUTCLASS_ADMIN_SESSION_E2E_CONFIG;
 
 test('real local Admin session survives elevation, navigation and refresh and rejects revoked authority', { skip: !filename }, async t => {
   const c = JSON.parse(fs.readFileSync(filename));
-  assert.equal(c.projectId, 'outclass-corkboard-e2e');
-  for (const [value, port] of [[c.status.API_URL, '56321'], [c.status.DB_URL, '56322']]) {
+  const ports = { 'outclass-corkboard-e2e': ['56321', '56322'], 'outclass-admin-session-e2e': ['60321', '60322'] }[c.projectId];
+  assert.ok(ports, 'Dedicated disposable Auth fixture required');
+  for (const [value, port] of [[c.status.API_URL, ports[0]], [c.status.DB_URL, ports[1]]]) {
     const url = new URL(value);
     assert.ok(['localhost', '127.0.0.1'].includes(url.hostname));
     assert.equal(url.port, port, 'Only the dedicated disposable services are permitted');
@@ -96,6 +97,26 @@ test('real local Admin session survives elevation, navigation and refresh and re
     assert.equal((await refreshedActor.client.auth.getClaims()).data.claims.session_id, before);
     admin.cookies = new Map(refreshedActor.cookies);
     await allowed('/platform');
+  });
+  await t.test('session-bound access after an hour, fresh sensitive action denial and disabled account enforcement', async () => {
+    assert.equal(elevation.expiresAt, null);
+    const past = new Date(Date.now() - 3600000);
+    try {
+      await db.adminElevation.update({ where: { id: elevation.id }, data: { createdAt: past, passwordVerifiedAt: past, mfaVerifiedAt: past } });
+      await allowed('/platform'); await allowed('/platform/users');
+      const users = await admin.action('actions/platform-admin.ts', 'readPlatformResource', ['users', 0, {}]);
+      assert.ok(users.some(user => user.id === c.identities.admin.id));
+      const before = await db.auditLog.count({ where: { actorId: c.identities.admin.id, action: 'platform.user.inspect' } });
+      await assert.rejects(admin.action('actions/platform-admin.ts', 'inspectPlatformUser', [c.identities.student.id, 'Isolated sensitive action verification']));
+      assert.equal(await db.auditLog.count({ where: { actorId: c.identities.admin.id, action: 'platform.user.inspect' } }), before);
+      await db.user.update({ where: { id: c.identities.admin.id }, data: { disabledAt: new Date() } });
+      await denied(admin);
+    } finally {
+      await db.user.update({ where: { id: c.identities.admin.id }, data: { disabledAt: null } });
+      await db.adminElevation.update({ where: { id: elevation.id }, data: { createdAt: elevation.createdAt, passwordVerifiedAt: elevation.passwordVerifiedAt, mfaVerifiedAt: elevation.mfaVerifiedAt } });
+    }
+    const inspection = await admin.action('actions/platform-admin.ts', 'inspectPlatformUser', [c.identities.student.id, 'Isolated fresh verification regression']);
+    assert.ok(inspection);
   });
   await t.test('expired elevation is denied and restoring the test expiry restores access', async () => {
     try {
