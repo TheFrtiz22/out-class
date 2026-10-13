@@ -1,6 +1,6 @@
 .oc-availability { --av-navy: var(--foreground); color: var(--foreground); }
 .oc-av-scroll { max-height: 560px; overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border); border-radius: 12px; user-select: none; }
-.oc-av-row { display: grid; grid-template-columns: 54px repeat(7, minmax(60px, 1fr)); min-width: 510px; }
+.oc-av-row { display: grid; grid-template-columns: 80px repeat(7, minmax(60px, 1fr)); min-width: 536px; }
 .oc-av-header { position: sticky; top: 0; z-index: 2; background: var(--card); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; }
 .oc-av-header > * { padding: 12px 3px; text-align: center; }
 .oc-av-header small { display: block; margin-top: 4px; font-weight: 400; color: var(--muted-foreground); }
@@ -13,7 +13,7 @@
 .oc-av-select { min-height: 44px; max-width: 100%; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); font-size: 14px; }
 .oc-av-select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (max-width: 639px) {
-  .oc-av-row { grid-template-columns: 68px 1fr; min-width: 0; }
+  .oc-av-row { grid-template-columns: 88px 1fr; min-width: 0; }
   .oc-av-day:not(.is-mobile-day) { display: none; }
   .oc-av-cell { height: 44px; }
   .oc-av-time { padding-top: 13px; }

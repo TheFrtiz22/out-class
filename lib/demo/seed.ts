@@ -1,3 +1,5 @@
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+import { dayKey, zonedInstant } from "@/lib/interview-rooms"
 import { resolveLetter, type LetterDecision, type LetterTemplate } from "@/lib/decision-letters";
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
 import { defaultVotingDisplay } from "@/lib/voting-presentation"
@@ -97,12 +99,18 @@ const skills = [
 ]
 export const uid = (kind: number, n: number) =>
   `de000000-0000-4000-8000-${String(kind * 100000 + n).padStart(12, "0")}`
-export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
+export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE)) {
+  const instants = new Map<string, number>()
   const at = (days: number, hour = 16, minute = 30) => {
+    const key = `${days}:${hour}:${minute}`, cached = instants.get(key)
+    if (cached !== undefined) return new Date(cached)
     const d = new Date(`${anchor}T12:00:00Z`)
     d.setUTCDate(d.getUTCDate() + days)
-    d.setUTCHours(hour + 4, minute, 0, 0)
-    return d
+    // Normalize overflowing minutes, then resolve the intended Eastern wall clock.
+    d.setUTCHours(hour, minute, 0, 0)
+    const instant = +zonedInstant(d.toISOString().slice(0, 10), d.toISOString().slice(11, 16), SCHEDULING_TIMEZONE)
+    instants.set(key, instant)
+    return new Date(instant)
   }
   const year = new Date(anchor).getUTCFullYear()
   const students = Array.from({ length: 200 }, (_, i) => ({
@@ -381,13 +389,13 @@ export function createDemoSeed(anchor = new Date().toISOString().slice(0, 10)) {
   // A booked historical interview and open future slots use the same room/calendar graph.
   const studentSlot = slots.find(slot => slot.applicationId === interviewPool[0].id)!
   const roomId = uid(34, 0), historicalSlot = uid(35, 0)
-  const interviewRooms: import("@/lib/interview-rooms").InterviewRoom[] = [{ id: roomId, clubId: mii.id, roundId: interviewRound.id, name: "Sample research panel", location: studentSlot.location, kind: "IN_PERSON", timezone: "America/New_York", duration: 20, buffer: 5, isOpen: true, panelMemberIds: [manager.id], slots: [{ id: historicalSlot, startTime: studentSlot.startTime.toISOString(), endTime: studentSlot.endTime.toISOString(), capacity: 1, booked: 0 }, ...[0, 1, 2].map(i => ({ id: uid(35, i + 1), startTime: at(4, 10, i * 25).toISOString(), endTime: at(4, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 }))] }]
+  const interviewRooms: import("@/lib/interview-rooms").InterviewRoom[] = [{ id: roomId, clubId: mii.id, roundId: interviewRound.id, name: "Sample research panel", location: studentSlot.location, kind: "IN_PERSON", timezone: SCHEDULING_TIMEZONE, duration: 20, buffer: 5, isOpen: true, panelMemberIds: [manager.id], slots: [{ id: historicalSlot, startTime: studentSlot.startTime.toISOString(), endTime: studentSlot.endTime.toISOString(), capacity: 1, booked: 0 }, ...[0, 1, 2].map(i => ({ id: uid(35, i + 1), startTime: at(4, 10, i * 25).toISOString(), endTime: at(4, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 }))] }]
   const roomBookings: import("@/lib/interview-rooms").RoomBooking[] = [{ id: studentSlot.id, applicationId: interviewPool[0].id, slotId: historicalSlot, roomId, roundId: interviewRound.id, candidate: "Jordan Avery", startTime: studentSlot.startTime.toISOString(), endTime: studentSlot.endTime.toISOString(), location: studentSlot.location }]
   // GMG is already on Jordan's Corkboard: its invitation demonstrates self-service booking.
   const invitedClub = clubs[1], invitedRound = invitedClub.rounds.find(r => r.name === "Interview")!
   const invitedApplication = applications.find(a => a.clubId === invitedClub.id && a.studentId === students[0].id)!
   invitedApplication.status = "INTERVIEWING"; invitedApplication.roundId = invitedRound.id
-  interviewRooms.push({ id: uid(34, 1), clubId: invitedClub.id, roundId: invitedRound.id, name: "Sample markets conversation", location: "Clemons · sample meeting room", kind: "IN_PERSON", timezone: "America/New_York", duration: 20, buffer: 5, isOpen: true, panelMemberIds: [memberships.find(m => m.clubId === invitedClub.id && m.role === "PRESIDENT")!.id], slots: [0, 1, 2].map(i => ({ id: uid(35, 10 + i), startTime: at(5, 10, i * 25).toISOString(), endTime: at(5, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 })) })
+  interviewRooms.push({ id: uid(34, 1), clubId: invitedClub.id, roundId: invitedRound.id, name: "Sample markets conversation", location: "Clemons · sample meeting room", kind: "IN_PERSON", timezone: SCHEDULING_TIMEZONE, duration: 20, buffer: 5, isOpen: true, panelMemberIds: [memberships.find(m => m.clubId === invitedClub.id && m.role === "PRESIDENT")!.id], slots: [0, 1, 2].map(i => ({ id: uid(35, 10 + i), startTime: at(5, 10, i * 25).toISOString(), endTime: at(5, 10, i * 25 + 20).toISOString(), capacity: 1, booked: 0 })) })
 
   const meetings = clubs.filter(club => club.claimed).flatMap((club,c) => Array.from({length:5},(_,i)=>({
     id: uid(17,c*10+i), clubId:club.id, club:{name:club.name}, title: `${club.name} · sample ${i<3?"interest meeting":"member meeting"} ${i+1}`,

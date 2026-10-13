@@ -2,18 +2,19 @@
 
 import { useEffect, useRef, useState } from "react"
 import { WEEK_DAYS, paintCells } from "@/lib/availability"
+import { AVAILABILITY_SLOTS, AVAILABILITY_FIRST_SLOT, AVAILABILITY_END_SLOT, minuteLabel } from "@/lib/scheduling-config"
 import { Button } from "@/components/ui/button"
 import "./availability.css"
 
 type Position = { day: number; slot: number }
-export function minuteLabel(minute: number) { return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}` }
+export { minuteLabel } from "@/lib/scheduling-config"
 
 export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSelect, readOnly = false }: {
   days: boolean[][]; dates?: string[]; knownDays?: boolean[]; onChange?: (days: boolean[][], changedDays: number[]) => void
   counts?: number[][]; onSelect?: (day: number, slot: number) => void; readOnly?: boolean
 }) {
   const [mobileDay, setMobileDay] = useState(0), [touchEdit, setTouchEdit] = useState(false), [mobile, setMobile] = useState(false)
-  const [focus, setFocus] = useState<Position>({ day: 0, slot: 32 })
+  const [focus, setFocus] = useState<Position>({ day: 0, slot: AVAILABILITY_FIRST_SLOT })
   const [preview, setPreview] = useState<boolean[][] | null>(null)
   const displayed = preview ?? days
   const grid = useRef<HTMLDivElement>(null), suppressClick = useRef(false)
@@ -24,7 +25,6 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
     update(); query.addEventListener("change", update)
     return () => query.removeEventListener("change", update)
   }, [])
-  useEffect(() => { if (grid.current) grid.current.scrollTop = 32 * (mobile ? 44 : 25) }, [mobile])
   function paint(from: Position, to: Position, base: boolean[][], on: boolean) {
     const changedDays = Array.from({ length: Math.abs(to.day - from.day) + 1 }, (_, i) => Math.min(from.day, to.day) + i)
     const next = paintCells(base, from, to, on)
@@ -46,7 +46,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
       {WEEK_DAYS.map((day, i) => <Button key={day} variant={mobileDay === i ? "default" : "outline"} className="min-h-11 px-3" aria-pressed={mobileDay === i} onClick={() => { setMobileDay(i); setFocus({ day: i, slot: focus.slot }) }}>{day.slice(0, 3)}</Button>)}
     </div>
     {!readOnly && <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"><p>Drag to add or remove. Arrow keys move; Space toggles; Shift + arrows extends.</p><label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={touchEdit} onChange={e => setTouchEdit(e.target.checked)} />Enable touch dragging (turn off to scroll)</label></div>}
-    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour"} aria-rowcount={97} aria-colcount={mobile ? 1 : 7}
+    <div ref={grid} className="oc-av-scroll" role="grid" aria-label={counts ? "Interviewer availability by quarter hour" : "Weekly availability by quarter hour"} aria-rowcount={AVAILABILITY_SLOTS.length + 1} aria-colcount={mobile ? 1 : 7}
       style={{ touchAction: touchEdit && !readOnly ? "none" : "pan-y" }}
       onPointerMove={event => {
         const active = drag.current
@@ -57,7 +57,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
         paint(active.from, { day, slot }, active.base, active.on)
       }} onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}>
       <div role="row" className="oc-av-row oc-av-header"><span aria-hidden="true">Time</span>{WEEK_DAYS.map((day, i) => <div key={day} role="columnheader" className={`oc-av-day ${mobileDay === i ? "is-mobile-day" : ""}`}>{day.slice(0, 3)}{dates && <small>{dates[i].slice(5)}</small>}</div>)}</div>
-      {Array.from({ length: 96 }, (_, slot) => <div key={slot} role="row" className="oc-av-row">
+      {AVAILABILITY_SLOTS.map(slot => <div key={slot} role="row" className="oc-av-row">
         <span className="oc-av-time" aria-hidden="true">{slot % 4 === 0 || mobile ? minuteLabel(slot * 15) : ""}</span>
         {WEEK_DAYS.map((day, i) => <button key={day} type="button" role="gridcell" aria-selected={displayed[i][slot]} aria-readonly={readOnly && !onSelect} data-av-cell={`${i}:${slot}`}
           aria-label={`${day}${dates ? ` ${dates[i]}` : ""}, ${minuteLabel(slot * 15)}–${minuteLabel((slot + 1) * 15)}: ${counts ? `${counts[i][slot]} available interviewers` : displayed[i][slot] ? "available" : knownDays?.[i] === false ? "unknown" : "unavailable"}`}
@@ -83,7 +83,7 @@ export function WeeklyCalendar({ days, dates, knownDays, onChange, counts, onSel
             const delta = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[event.key]
             if (!delta && event.key !== "Home" && event.key !== "End") return
             event.preventDefault()
-            const to = { day: Math.max(0, Math.min(6, i + (delta?.[0] ?? 0))), slot: event.key === "Home" ? 0 : event.key === "End" ? 95 : Math.max(0, Math.min(95, slot + (delta?.[1] ?? 0))) }
+            const to = { day: Math.max(0, Math.min(6, i + (delta?.[0] ?? 0))), slot: event.key === "Home" ? AVAILABILITY_FIRST_SLOT : event.key === "End" ? AVAILABILITY_END_SLOT - 1 : Math.max(AVAILABILITY_FIRST_SLOT, Math.min(AVAILABILITY_END_SLOT - 1, slot + (delta?.[1] ?? 0))) }
             if (event.shiftKey && !readOnly) paint({ day: i, slot }, to, days, days[i][slot])
             if (mobile && to.day !== mobileDay) { setMobileDay(to.day); requestAnimationFrame(() => moveFocus(to)) }
             else moveFocus(to)

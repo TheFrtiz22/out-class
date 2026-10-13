@@ -16,7 +16,7 @@ async function verify(config, root) {
   async function context(role, mobile = false) {
     const cookies = new Map(), auth = createServerClient(config.status.API_URL, config.status.PUBLISHABLE_KEY, { cookies: { getAll: () => [...cookies.values()], setAll: values => values.forEach(v => cookies.set(v.name, v)) } })
     const { error } = await auth.auth.signInWithPassword(config.actors[role]); if (error) throw error
-    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/New_York' })
+    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined, timezoneId: 'Asia/Tokyo' } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/Los_Angeles' })
     await ctx.addCookies([...cookies.values()].map(({ name, value }) => ({ name, value, url: config.appUrl, sameSite: 'Lax' })))
     const page = await ctx.newPage(); pages.push(page); page.on('pageerror', e => errors.push(e.message)); return { page, ctx }
   }
@@ -24,6 +24,22 @@ async function verify(config, root) {
   const workflow = page => page.getByRole('navigation', { name: 'Scheduling workflow' })
   try {
     assert.equal(await db.interviewPanelScheduleVersion.count(), 0, 'Rerun collection only on an unpublished disposable fixture')
+    const bookingBefore = await db.interviewBooking.findFirstOrThrow({ where: { applicationId: config.panels.applicationId }, include: { slot: true } })
+    for (const mobileBooking of [false, true]) {
+      const applicant = await context('outsider', mobileBooking)
+      await applicant.page.goto(`${config.appUrl}/interviews/book?clubId=${club.id}&roundId=${club.roundId}`)
+      await applicant.page.getByText('Interview confirmed', { exact: true }).waitFor()
+      assert.equal(await applicant.page.getByLabel('Your time zone', { exact: true }).count(), 0)
+      assert.equal(await applicant.page.getByLabel('Time zone', { exact: true }).count(), 0)
+      assert.ok((await applicant.page.locator('.ir-confirmed').innerText()).includes(new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', hour12: true }).format(bookingBefore.slot.startTime)))
+      assert.equal(await applicant.page.getByText('Eastern Time', { exact: true }).count(), 1)
+      assert.equal(await applicant.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+      await applicant.page.screenshot({ path: path.join(root, mobileBooking ? 'booking-eastern-mobile.png' : 'booking-eastern-desktop.png') })
+      await applicant.ctx.close()
+    }
+    assert.deepEqual(await db.interviewBooking.findFirstOrThrow({ where: { id: bookingBefore.id }, include: { slot: true } }), bookingBefore)
+    console.log('Applicant booking stays unchanged and displays Eastern Time on desktop/mobile in other browser timezones: PASS')
+
     await db.userNotification.deleteMany({ where: { clubId: { in: config.clubs.map(c => c.id) }, eventKey: { startsWith: 'availability-request:' } } })
     await db.interviewPanelProposal.deleteMany({ where: { clubId: club.id } })
     await db.interviewRoom.update({ where: { id: config.panels.roomId }, data: { interviewersNeeded: 2 } })
@@ -40,7 +56,7 @@ async function verify(config, root) {
     await member.page.getByRole('navigation', { name: 'Availability navigation' }).getByRole('link', { name: 'My Availability' }).waitFor()
     const tasks = member.page.getByRole('region', { name: 'Availability requests' }); await tasks.getByText('Awaiting response', { exact: true }).waitFor(); await tasks.getByRole('link', { name: 'Respond to request' }).click()
     await member.page.getByRole('button', { name: 'Submit round availability', exact: true }).waitFor(); assert.equal(new URL(member.page.url()).searchParams.get('roundId'), club.roundId)
-    const gridCell = member.page.locator('[data-av-cell="0:95"]'); await gridCell.scrollIntoViewIfNeeded(); await gridCell.click()
+    const gridCell = member.page.locator('[data-av-cell="0:83"]'); await gridCell.scrollIntoViewIfNeeded(); await gridCell.click()
     await member.page.getByText('All changes saved', { exact: true }).waitFor(); row = await db.interviewRoundParticipation.findUniqueOrThrow({ where: { id: row.id } }); assert.equal(row.confirmedAt, null)
     assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: config.actors.interviewer.id } })).schedule.exceptions, {})
     await member.page.getByRole('button', { name: 'Submit round availability', exact: true }).click(); await member.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor()

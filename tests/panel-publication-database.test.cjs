@@ -59,7 +59,7 @@ test('ready tokens are owner-bound; editing clears readiness; history is immutab
 })
 test('safe interviewer notices project only official details; cancellation and permission revocation suppress inaccessible contexts',async t=>{
  const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));const notice=(await h.snapshot()).UserNotification.find(n=>n.userId===h.ids.panel&&n.eventKey.startsWith('panel-schedule:')),helper=h.load('utils/official-panel-schedule.ts')
- const projected=await helper.currentPanelScheduleNotification(h.prisma,notice,h.ids.panel);assert.ok(projected.body.includes('2030'));assert.ok(projected.body.includes('UTC'));assert.equal(projected.body.includes('student@'),false);assert.match(projected.href,/^\/settings\/interviews\?/)
+ const projected=await helper.currentPanelScheduleNotification(h.prisma,notice,h.ids.panel);assert.ok(projected.body.includes('2030'));assert.ok(projected.body.includes('Eastern Time'));assert.equal(projected.body.includes('student@'),false);assert.match(projected.href,/^\/settings\/interviews\?/)
  await h.db.query('UPDATE "ClubMember" SET permissions=\'{}\' WHERE id=$1',[h.ids.panelMember]);assert.equal(await helper.currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
 })
 test('published session access survives legacy room-attestation edits but actual approving-owner revocation removes private grants',async t=>{

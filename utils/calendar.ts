@@ -8,6 +8,8 @@
  * @param details - Description or instructions for the interview
  * @returns A formatted URL to redirect the user to Google Calendar
  */
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
+
 export function generateGoogleCalendarLink(
   title: string,
   start: Date,
@@ -30,6 +32,7 @@ export function generateGoogleCalendarLink(
     dates: `${startStr}/${endStr}`,
     details: details,
     location: location,
+    ctz: SCHEDULING_TIMEZONE,
     sf: "true", // show formatting
     output: "xml",
   });

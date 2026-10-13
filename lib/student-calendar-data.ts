@@ -1,5 +1,6 @@
 import type { ClubEvent } from "@/lib/data"
-import { dateKey } from "@/lib/calendar"
+import { localParts } from "@/lib/availability"
+import { SCHEDULING_TIMEZONE, minuteLabel } from "@/lib/scheduling-config"
 
 type Timestamp = Date | string
 export type CalendarSource = {
@@ -30,11 +31,12 @@ export type CalendarSource = {
 export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent[] {
   const at = (value: Timestamp) => {
     const date = new Date(value)
+    const parts = localParts(date, SCHEDULING_TIMEZONE)
     return {
       startTime: date.toISOString(),
-      date: dateKey(date),
-      day: date.getDate(),
-      time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
+      date: parts.date,
+      day: Number(parts.date.slice(-2)),
+      time: minuteLabel(parts.minute),
     }
   }
   const attendances: ClubEvent[] = (source?.attendances || [])

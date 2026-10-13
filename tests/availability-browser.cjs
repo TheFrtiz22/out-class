@@ -9,7 +9,7 @@ async function verify(config, root) {
   async function context(role, mobile = false) {
     const cookies = new Map(), client = createServerClient(config.status.API_URL, config.status.PUBLISHABLE_KEY, { cookies: { getAll: () => [...cookies.values()], setAll: values => values.forEach(value => cookies.set(value.name, value)) } })
     const { error } = await client.auth.signInWithPassword(config.actors[role]); if (error) throw Error('Local fixture sign-in failed')
-    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/New_York' })
+    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined, timezoneId: 'Asia/Tokyo' } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/Los_Angeles' })
     await ctx.addCookies([...cookies.values()].map(({ name, value }) => ({ name, value, url: config.appUrl, sameSite: 'Lax' })))
     const page = await ctx.newPage(); page.on('pageerror', error => errors.push(error.message)); return { ctx, page }
   }
@@ -27,6 +27,12 @@ async function verify(config, root) {
     const { page } = await context('interviewer'); let posts = 0
     page.on('request', request => { if (request.method() === 'POST' && request.headers()['next-action']) posts++ })
     await page.goto(config.appUrl + '/settings/availability'); await page.getByRole('heading', { name: 'My Availability', exact: true }).waitFor()
+    assert.equal(await page.getByLabel('Time zone', { exact: true }).count(), 0)
+    assert.equal(await page.locator('.oc-availability').first().locator('[data-av-cell]').count(), 7 * 52)
+    assert.equal(await page.locator('.oc-availability').first().locator('[data-av-cell="0:31"]').count(), 0)
+    assert.match(await page.locator('.oc-availability').first().locator('[data-av-cell="0:32"]').getAttribute('aria-label'), /8:00 AM–8:15 AM/)
+    assert.match(await page.locator('.oc-availability').first().locator('[data-av-cell="6:83"]').getAttribute('aria-label'), /8:45 PM–9:00 PM/)
+    assert.equal(await page.locator('.oc-availability').first().locator('[data-av-cell="0:84"]').count(), 0)
     await drag(page, 0, 36, 39); await saved(page)
     assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: config.actors.interviewer.id } })).schedule.weekly[0], [[540, 600]])
     assert.equal(posts, 1, 'A drag autosaves once, not per cell')
@@ -54,6 +60,10 @@ async function verify(config, root) {
     assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: config.actors.interviewer.id } })).schedule, original.schedule)
     await round.getByRole('button', { name: 'Submit round availability', exact: true }).click(); await round.getByText('Participation confirmed.', { exact: false }).waitFor()
     const mobile = await context('interviewer', true); await mobile.page.goto(config.appUrl + '/settings/availability')
+    assert.equal(await mobile.page.locator('.oc-availability').first().locator('[data-av-cell]').count(), 7 * 52)
+    assert.equal(await mobile.page.locator('.oc-availability').first().locator('[data-av-cell="0:32"]').isVisible(), true)
+    const endCell = await cell(mobile.page, 0, 83); assert.equal(await endCell.isVisible(), true)
+    assert.ok(await mobile.page.locator('.oc-av-scroll').first().evaluate(el => el.scrollTop > 0))
     await mobile.page.getByRole('button', { name: 'Tue', exact: true }).tap()
     const tap = await cell(mobile.page, 1, 40); await tap.tap(); await saved(mobile.page)
     assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: config.actors.interviewer.id } })).schedule.weekly[1], [[600, 615]])

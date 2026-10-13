@@ -10,7 +10,7 @@ function load(file) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText
   const model = new Module(filename, module)
-  model.require = (name) => (name === "@/lib/calendar" ? load("lib/calendar.ts") : require(name))
+  model.require = (name) => (name.startsWith("@/") ? load(name.slice(2) + ".ts") : require(name))
   model._compile(source, filename)
   return model.exports
 }
