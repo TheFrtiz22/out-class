@@ -40,7 +40,7 @@ async function verify(config,root){
   const owner=await context('owner');await workspace(owner.page)
   assert.equal(await owner.page.getByLabel('Interviewers needed for Room A',{exact:true}).inputValue(),'2');assert.equal(await owner.page.getByLabel('Interviewers needed for Room B',{exact:true}).inputValue(),'1')
   await owner.page.getByRole('button',{name:'Auto-Fill',exact:true}).first().click()
-  const panel=owner.page.getByRole('region',{name:'Review Panel Assignments'});await panel.getByText('83% staffed',{exact:false}).waitFor();assert.equal(await panel.getByRole('button',{name:'Finalize Panels',exact:true}).isDisabled(),true)
+  const panel=owner.page.getByRole('region',{name:'Review Panel Assignments'});await panel.getByText('83% staffed',{exact:false}).waitFor();assert.equal(await db.interviewPanelScheduleVersion.count(),0)
   let draft=(await action('getPanelProposalWorkspace',scope)).proposal;assert.equal(draft.status,'UNPUBLISHED');assert.equal(draft.validation.filled,5);assert.equal(draft.validation.required,6)
   assert.deepEqual(await snapshot(),before);assert.deepEqual(await actors.owner.action('actions/interview-rooms.ts','getRoomWorkspace',[club.id]),managerBefore);assert.deepEqual(await actors.outsider.action('actions/interview-rooms.ts','getApplicantSchedule',[config.panels.applicationId]),applicantBefore)
   await panel.getByRole('button',{name:/^Lock /}).first().click();await panel.getByText('Change validated.',{exact:false}).waitFor()

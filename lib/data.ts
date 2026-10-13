@@ -82,6 +82,8 @@ export type ClubEvent = {
   /** Persisted booking/attendance: changes require a server action. */
   readOnly?: boolean
   date: string
+  /** Exact instant for persisted events, including repeated daylight-saving hours. */
+  startTime?: string
   clubId?: string
   location?: string
   description?: string

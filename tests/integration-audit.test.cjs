@@ -72,7 +72,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
 test('student dashboard queries exclude private manager review text',async()=>{
   const load=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:actorId}})},'@/utils/prisma':{prisma:{
     application:{findMany:async query=>{assert.deepEqual(query.where,{studentId:actorId});assert.deepEqual(query.omit,{anonymousReviewText:true});return []}},
-    eventAttendance:{findMany:async()=>[]},meeting:{findMany:async()=>[]},
+    eventAttendance:{findMany:async()=>[]},meeting:{findMany:async()=>[]},$transaction:async fn=>fn({clubMember:{findMany:async()=>[]}}),
   }},'next/cache':{revalidatePath(){}}})
   await load('actions/applications.ts').getStudentDashboardData()
 })

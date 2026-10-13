@@ -1,4 +1,5 @@
 "use server"
+import { ownPanelAssignments } from "@/utils/official-panel-schedule"
 
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { publicMeetingVisibility } from "@/lib/campus-events";
@@ -123,7 +124,7 @@ export async function getStudentApplications() {
 export async function getStudentDashboardData() {
   const { user } = await requireAuth()
 
-  const [applications, attendances, meetings] = await Promise.all([
+  const [applications, attendances, meetings, panelAssignments] = await Promise.all([
 prisma.application.findMany({
     where: { studentId: user.id },
     omit: { anonymousReviewText: true },
@@ -151,7 +152,8 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } })
+prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
-  return { applications, attendances, meetings }
+  return { applications, attendances, meetings, panelAssignments }
 }

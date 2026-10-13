@@ -10,6 +10,7 @@ export function timeMinutes(time: string) {
   return hour * 60 + Number(match[2])
 }
 export function eventStart(event: ClubEvent) {
+  if (event.startTime) return new Date(event.startTime)
   const date = dateFromKey(event.date)
   date.setHours(0, timeMinutes(event.time), 0, 0)
   return date

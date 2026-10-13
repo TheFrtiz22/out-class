@@ -5,7 +5,7 @@ const ts = require('typescript')
 function load(file, mocks = {}) {
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText
   const mod = { exports: {} }
-  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/lib/") ? load(name.replace("@/", "") + ".ts") : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name in mocks ? mocks[name] : name.startsWith("@/") ? load(name.replace("@/", "") + ".ts",mocks) : require(name), mod, mod.exports)
   return mod.exports
 }
 const helpers = load('lib/student-applications.ts')

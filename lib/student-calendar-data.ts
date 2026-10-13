@@ -3,6 +3,7 @@ import { dateKey } from "@/lib/calendar"
 
 type Timestamp = Date | string
 export type CalendarSource = {
+  panelAssignments?: {id:string;clubId:string;clubName:string;roundName:string;roomName:string;startTime:Timestamp;endTime:Timestamp;location:string}[]
   meetings?: { id: string; clubId: string; date: Timestamp; title: string; location: string; description?: string | null; audience: string; club: { name: string } }[]
   applications?: {
     clubId: string
@@ -30,6 +31,7 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
   const at = (value: Timestamp) => {
     const date = new Date(value)
     return {
+      startTime: date.toISOString(),
       date: dateKey(date),
       day: date.getDate(),
       time: `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`,
@@ -71,5 +73,6 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
       })),
   )
   const meetings: ClubEvent[] = (source?.meetings || []).map(m => ({ id: `meeting-${m.id}`, readOnly: true, clubId: m.clubId, ...at(m.date), title: m.title, club: m.club.name, color: "#142d4e", type: m.audience === "RECRUITMENT" ? "Interest Meeting" : "Other", location: m.location, description: m.description || undefined }))
-  return [...meetings, ...attendances, ...interviews]
+  const panels: ClubEvent[]=(source?.panelAssignments??[]).map(s=>({id:`panel-${s.id}`,readOnly:true,clubId:s.clubId,...at(s.startTime),title:`${s.clubName} interview panel`,club:s.clubName,color:"#142d4e",type:"Interview",location:s.location,description:`${s.roundName} · ${s.roomName}`,durationMinutes:Math.max(1,(+new Date(s.endTime)-+new Date(s.startTime))/60000),response:"confirmed"}))
+  return [...meetings, ...attendances, ...interviews, ...panels]
 }

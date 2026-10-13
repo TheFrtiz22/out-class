@@ -1,0 +1,6 @@
+import Link from "next/link"
+import { getMyInterviewPanelSchedule } from "@/actions/official-panel-schedule"
+import { PageHeader } from "@/components/product/page-header"
+import { MyInterviewPanelSchedule } from "@/components/interviews/my-panel-schedule"
+export const metadata={title:"My Interview Schedule | OutClass"}
+export default async function InterviewSchedulePage(){const assignments=await getMyInterviewPanelSchedule();return <main data-workspace-detail className="mx-auto min-h-svh max-w-5xl space-y-8 px-4 py-8 sm:px-8"><Link className="inline-flex min-h-11 items-center text-sm underline" href="/?workspace=student&view=calendar">Back to my calendar</Link><PageHeader eyebrow="My interviews" title="My Interview Schedule" description="Your approved panel assignments across all your clubs."/><MyInterviewPanelSchedule assignments={assignments}/><Link className="inline-flex min-h-11 items-center text-sm underline" href="/settings/availability">Update My Availability</Link></main>}

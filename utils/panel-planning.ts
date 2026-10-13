@@ -32,7 +32,7 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
     startTime: slot.startTime.toISOString(), endTime: slot.endTime.toISOString(), buffer: room.buffer,
     required: slot.interviewersNeeded ?? room.interviewersNeeded ?? 2,
     active: room.isOpen && +slot.startTime > now, roomRevision: room.staffingRevision, slotRevision: slot.staffingRevision,
-    existingMemberIds: room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : [],
+    existingMemberIds: slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.panelApprovedBy ? room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) : [],
   }))
   const replacementIds = new Set(sessions.filter(s => s.active).map(s => s.id))
   const userIds = [...new Set(pool.members.filter(m => m.eligible).map(m => m.userId))]
@@ -49,7 +49,7 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
     const memberships = await tx.clubMember.findMany({ where: { userId: { in: userIds } }, select: { id: true, userId: true } })
     const byMembership = new Map(memberships.map(m => [m.id, m.userId]))
     const [approvedSlots, grants, applicantBookings] = await Promise.all([
-      tx.interviewSlot.findMany({ where: { ...interval, room: { isOpen: true, panelApprovedBy: { not: null }, approvedPanelMemberIds: { hasSome: memberships.map(m => m.id) } } }, include: { room: true } }),
+      tx.interviewSlot.findMany({ where: { ...interval, room: { isOpen: true }, OR: [{ panelScheduleVersionId: { not: null }, publishedPanelMemberIds: { hasSome: memberships.map(m => m.id) } }, { panelScheduleVersionId: null, room: { panelApprovedBy: { not: null }, approvedPanelMemberIds: { hasSome: memberships.map(m => m.id) } } }] }, include: { room: true } }),
       tx.interviewPanelAssignment.findMany({ where: { revokedAt: null, member: { userId: { in: userIds } }, application: { bookings: { some: { slot: interval } } } }, include: {
         member: { select: { userId: true } }, application: { select: { bookings: { where: { slot: interval }, include: { slot: { include: { room: true } } } } } },
       } }),
@@ -58,13 +58,14 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
     for (const slot of approvedSlots) {
       const room = slot.room!
       if (room.clubId === scope.clubId && room.roundId === scope.roundId && replacementIds.has(slot.id)) continue
-      for (const memberId of room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))) {
+      for (const memberId of slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))) {
         const userId = byMembership.get(memberId); if (userId) add(userId, slot.startTime, slot.endTime, room.buffer)
       }
     }
     for (const grant of grants) for (const booking of grant.application.bookings) {
       if (booking.roundId !== grant.roundId) continue
       const slot = booking.slot
+      if (slot.panelScheduleVersionId && !slot.publishedPanelMemberIds.includes(grant.memberId)) continue
       if (grant.roundId === scope.roundId && slot.clubId === scope.clubId && replacementIds.has(slot.id)) {
         const session = sessions.find(s => s.id === slot.id)
         if (session && !session.existingMemberIds.includes(grant.memberId)) session.existingMemberIds.push(grant.memberId)
@@ -89,7 +90,8 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
       baselineWorkloadMinutes: commitments.reduce((n, c) => n + (+new Date(c.endTime) - +new Date(c.startTime)) / 60000 + c.buffer, 0), allowedSlotIds, blocks }
   })
   const scene: PanelScene = { sessions, members }
-  const source = { round: { id: round.id, archivedAt: round.archivedAt, type: round.type }, roles: pool.club,
+  const source = { round: { id: round.id, archivedAt: round.archivedAt, type: round.type, anonymousReview: round.anonymousReview, configuration: round.configuration, panelScheduleRevision: round.panelScheduleRevision }, roles: pool.club,
+    rooms: rooms.map(r => ({ id:r.id,name:r.name,location:r.location,kind:r.kind,timezone:r.timezone,duration:r.duration,buffer:r.buffer,isOpen:r.isOpen,panelApprovalRevision:r.panelApprovalRevision,panelApprovedBy:r.panelApprovedBy,panelMemberIds:r.panelMemberIds,approvedPanelMemberIds:r.approvedPanelMemberIds,slots:r.slots.map(s=>({id:s.id,capacity:s.capacity,panelScheduleVersionId:s.panelScheduleVersionId,publishedPanelMemberIds:s.publishedPanelMemberIds})) })),
     sessions, candidates: pool.members, commitments: [...committed].map(([userId, rows]) => ({ userId, rows: [...rows.values()].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)) })) }
   const fingerprint = createHash("sha256").update(JSON.stringify(source)).digest("hex")
   return { scene, fingerprint, roundName: round.name, suggestedWindow, timezone: rooms[0]?.timezone ?? "America/New_York", window: selected }

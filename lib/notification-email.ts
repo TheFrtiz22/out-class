@@ -3,6 +3,7 @@ import { emailButton, emailParagraph, emailSiteOrigin, transactionalEmailHtml } 
 
 export const notificationEmailPayload = z.object({
   from: z.string().email(), to: z.string().email(), subject: z.string().min(1).max(200),
+  panelSchedules:z.array(z.object({notificationId:z.string().uuid(),signature:z.string().regex(/^[a-f0-9]{64}$/)})).optional(),
   text: z.string(), html: z.string(), categories: z.array(z.string()).min(1), digest: z.boolean(),
 });
 export type NotificationEmailPayload = z.infer<typeof notificationEmailPayload>;
@@ -12,7 +13,7 @@ export function communicationEmailConfig() {
   if (!parsed.success) throw new Error("Communication email delivery is not configured.");
   return { ...parsed.data, siteUrl: emailSiteOrigin(parsed.data.siteUrl) };
 }
-export function buildNotificationEmail(input: { from: string; to: string; siteUrl: string; digest: boolean; items: { type: string; title: string; club: { name: string } | null; href?: string }[] }): NotificationEmailPayload {
+export function buildNotificationEmail(input: { from: string; to: string; siteUrl: string; digest: boolean; items: { type: string; title: string; club: { name: string } | null; href?: string; panelSchedule?: {notificationId:string;href:string;details:string[];signature:string} }[] }): NotificationEmailPayload {
   const decisionHref = (path: string | undefined) => new URL(z.string().regex(/^\/applications\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\/decision\?letterId=[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i).parse(path), emailSiteOrigin(input.siteUrl)).href;
   const decision = !input.digest && input.items.length === 1 && input.items[0].type === "DECISION" ? input.items[0] : null;
   if (decision) {
@@ -22,6 +23,13 @@ export function buildNotificationEmail(input: { from: string; to: string; siteUr
     return {from:input.from,to:input.to,subject,digest:false,categories:["DECISION"],
       text:`${subject}.\n\nSign in to read your formal letter.\n\nView Decision: ${href}`,
       html:transactionalEmailHtml({title:"Your decision is available",preview:subject,siteUrl:input.siteUrl,category:"Recruitment",variant:"invitation",body:emailParagraph(subject+".")+emailParagraph("Sign in to OutClass to read your formal letter and review any next steps.")+emailButton("View Decision",href),footer:"Your decision is available only after signing in. Application-email preferences apply; your in-app letter remains available."})};
+  }
+  const panels=input.items.flatMap(item=>item.panelSchedule?[item.panelSchedule]:[])
+  if(panels.length){
+    const path=(value:string)=>new URL(z.string().regex(/^\/settings\/interviews\?clubId=[\da-f-]{36}&roundId=[\da-f-]{36}$/i).parse(value),emailSiteOrigin(input.siteUrl)).href
+    const subject=input.digest?"Your daily OutClass updates":"Your interview panel schedule changed",preferences=new URL("/?workspace=student&view=inbox&tab=preferences",emailSiteOrigin(input.siteUrl)).href
+    const text=input.items.map(item=>item.panelSchedule?`${item.club?.name??"OutClass"}: ${item.title}\n${item.panelSchedule.details.join("\n")}\nView my interview schedule: ${path(item.panelSchedule.href)}`:item.type==="DECISION"?`Your decision from ${item.club?.name??"your club"} is available.\nView Decision: ${decisionHref(item.href)}`:`${item.club?.name??"OutClass"}: ${item.type==="MESSAGE"?"New private message":item.title}`).join("\n\n")
+    return{from:input.from,to:input.to,subject,digest:input.digest,categories:[...new Set(input.items.map(item=>item.type))],panelSchedules:panels.map(p=>({notificationId:p.notificationId,signature:p.signature})),text:`${subject}\n\n${text}\n\nEmail preferences: ${preferences}`,html:transactionalEmailHtml({title:subject,preview:"Your approved interview assignments",siteUrl:input.siteUrl,category:"Interview panels",variant:"welcome",body:input.items.map(item=>item.type==="DECISION"?emailParagraph(`Your decision from ${item.club?.name??"your club"} is available.`)+emailButton("View Decision",decisionHref(item.href)):emailParagraph(`${item.club?.name??"OutClass"}: ${item.type==="MESSAGE"?"New private message":item.title}`)+(item.panelSchedule?item.panelSchedule.details.map(line=>emailParagraph(line,true)).join("")+emailButton("View my interview schedule",path(item.panelSchedule.href)):"" )).join("")+emailButton("Email preferences",preferences),footer:"Only explicitly published panels appear in this schedule. Your OutClass email preferences apply."})}
   }
   const href = new URL("/?workspace=student&view=inbox", emailSiteOrigin(input.siteUrl)).href;
   const preferences = new URL("/?workspace=student&view=inbox&tab=preferences", input.siteUrl).href;
@@ -37,7 +45,7 @@ export class NotificationDeliveryError extends Error {
   constructor(public code: string, public retryable: boolean, public retryAfterMs = 0) { super(code); }
 }
 export async function sendNotificationEmail(payload: NotificationEmailPayload, deliveryId: string, key: string) {
-  const { categories: _categories, digest: _digest, ...message } = notificationEmailPayload.parse(payload);
+  const { categories: _categories, digest: _digest, panelSchedules:_panelSchedules, ...message } = notificationEmailPayload.parse(payload);
   let response: Response;
   try {
     response = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "Idempotency-Key": `outclass-notification/${deliveryId}` }, body: JSON.stringify(message), signal: AbortSignal.timeout(10000) });

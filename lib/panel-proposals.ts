@@ -21,7 +21,7 @@ export const panelSessionSchema = z.object({
   startTime: z.string().datetime(), endTime: z.string().datetime(), buffer: z.number().int().min(0).max(60),
   required: z.number().int().min(1).max(8), active: z.boolean(),
   roomRevision: z.number().int().nonnegative(), slotRevision: z.number().int().nonnegative(),
-  existingMemberIds: z.array(id).max(1000),
+  existingMemberIds: z.array(id).max(1000), originalRequired: z.number().int().min(1).max(8).optional(),
 }).strict()
 export const panelDocumentSchema = z.object({
   version: z.literal(1), window: panelWindowSchema, options: panelOptionsSchema,
@@ -69,10 +69,11 @@ export type PanelValidation = {
   search?: { nodes: number; limited: boolean; coverageUpperBound: number }
   warnings: string[]
 }
-export type PanelProposalView = { id: string; revision: number; status: "UNPUBLISHED"; document: PanelDocument; validation: PanelValidation; createdAt: string; updatedAt: string; createdBy: string; modifiedBy: string; stale: boolean }
+export type PanelProposalView = { id: string; revision: number; status: "UNPUBLISHED" | "READY_FOR_APPROVAL"; basePublishedVersion?: number; approvalToken?: string | null; document: PanelDocument; validation: PanelValidation; createdAt: string; updatedAt: string; createdBy: string; modifiedBy: string; stale: boolean }
 export type PanelWorkspace = {
   roundId: string; roundName: string; timezone: string; scene: PanelScene; proposal: PanelProposalView | null
   suggestedWindow: { start: string; end: string } | null; fingerprint: string
+  clubName?: string; canPublish?: boolean; published?: PanelPublishedView | null; history?: PanelPublishedView[]
 }
 export const assignmentKey = (a: Pick<PanelAssignment, "slotId" | "memberId">) => `${a.slotId}:${a.memberId}`
 export const sameSessionTime = (a: PanelSession, b: PanelSession) => a.startTime === b.startTime && a.endTime === b.endTime && a.buffer === b.buffer && a.roomId === b.roomId
@@ -279,4 +280,38 @@ export function generatePanelAssignments(scene: PanelScene, document: PanelDocum
   validation.search = { nodes, limited, coverageUpperBound: upper }
   if (limited) validation.warnings.push("The whole-window search reached its budget. This is the best feasible proposal found; review unfilled positions and locks.")
   return { document: result, validation }
+}
+
+export type PanelScheduleChange = { kind: "ADDED" | "REMOVED" | "REASSIGNED" | "ROOM_CHANGED" | "TIME_CHANGED" | "REQUIREMENT_CHANGED"; memberId?: string; before?: PanelSession; after?: PanelSession }
+export type PanelPublishedView = { id: string; version: number; previousVersion: number; status: "PUBLISHED" | "SUPERSEDED"; document: PanelDocument; changes: PanelScheduleChange[]; publishedAt: string; author: string; understaffedOverride: boolean; overrideReason: string | null; notifications: Record<string, number> }
+export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number }
+export const publishedPanelDocumentSchema = panelDocumentSchema.innerType().extend({ sessions: z.array(panelSessionSchema).max(5000), assignments: z.array(panelAssignmentSchema).max(40000) }).superRefine((d, ctx) => {
+  const slots = new Set(d.sessions.map(s => s.id))
+  if (slots.size !== d.sessions.length || d.assignments.some(a => !slots.has(a.slotId)) || new Set(d.assignments.map(assignmentKey)).size !== d.assignments.length) ctx.addIssue({code: z.ZodIssueCode.custom, message: "Invalid published session references."})
+})
+export function panelDraftScene(document: PanelDocument, scene: PanelScene): PanelScene {
+  const required = new Map(document.sessions.map(s => [s.id, s.required]))
+  return { ...scene, sessions: scene.sessions.map(s => ({ ...s, required: required.get(s.id) ?? s.required })) }
+}
+export function panelScheduleChanges(before: PanelDocument | null, after: PanelDocument): PanelScheduleChange[] {
+  const oldSessions = new Map(before?.sessions.map(s => [s.id, s]) ?? []), newSessions = new Map(after.sessions.map(s => [s.id, s]))
+  const changes: PanelScheduleChange[] = []
+  for (const memberId of new Set([...(before?.assignments ?? []),...after.assignments].map(a => a.memberId))) {
+    const old = (before?.assignments ?? []).filter(a => a.memberId === memberId).map(a => oldSessions.get(a.slotId)!).filter(Boolean)
+    const next = after.assignments.filter(a => a.memberId === memberId).map(a => newSessions.get(a.slotId)!).filter(Boolean)
+    const removed = old.filter(s => !next.some(n => n.id === s.id && sameSessionTime(n,s)))
+    const added = next.filter(s => !old.some(n => n.id === s.id && sameSessionTime(n,s)))
+    for (const from of removed) {
+      const i = added.findIndex(to => to.id === from.id || to.startTime === from.startTime && to.endTime === from.endTime)
+      const to = added.length ? added.splice(i >= 0 ? i : 0,1)[0] : undefined
+      changes.push({ kind: to ? to.roomId !== from.roomId && to.startTime === from.startTime && to.endTime === from.endTime ? "ROOM_CHANGED" : to.id === from.id ? "TIME_CHANGED" : "REASSIGNED" : "REMOVED",memberId,before:from,...(to?{after:to}:{}) })
+    }
+    added.forEach(to => changes.push({kind:"ADDED",memberId,after:to}))
+  }
+  for (const s of after.sessions) { const old = oldSessions.get(s.id); if (old && old.required !== s.required) changes.push({kind:"REQUIREMENT_CHANGED",before:old,after:s}) }
+  return changes
+}
+export function mergePanelPublication(previous: PanelDocument | null, proposal: PanelDocument): PanelDocument {
+  const replaced = new Set(proposal.sessions.map(s=>s.id))
+  return { ...proposal, sessions: [...(previous?.sessions.filter(s=>!replaced.has(s.id)) ?? []), ...proposal.sessions], assignments: [...(previous?.assignments.filter(a=>!replaced.has(a.slotId)) ?? []), ...proposal.assignments] }
 }
