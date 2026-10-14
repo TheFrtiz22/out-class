@@ -1,21 +1,5 @@
 /* Universal shell. Screen-specific compositions consume the same foundations. */
 [data-product-shell] { min-height: 100dvh; background: var(--background); color: var(--foreground); }
-.oc-product-header { display: flex; flex-direction: column; justify-content: center; position: sticky; top: 0; min-height: var(--oc-shell-header-height); padding: .5rem 2rem; margin-left: var(--oc-shell-rail-width); background: color-mix(in srgb, var(--background) 92%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); }
-.oc-product-header-row { padding: 0; gap: 1rem; min-height: 2.75rem; }
-.oc-product-header .oc-product-brand { display: none; }
-.oc-header-context { display: grid; gap: .2rem; min-width: 0; }
-.oc-header-context > span { font-size: var(--oc-text-caption); color: var(--muted-foreground); }
-.oc-header-context strong { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.oc-product-utilities { flex-shrink: 0; }
-.oc-global-search { border: 1px solid var(--border); background: var(--card); width: 15rem; justify-content: start; font-size: var(--oc-text-caption); }
-.oc-global-search kbd { margin-left: auto; border: 1px solid var(--border); padding: .1rem .3rem; border-radius: var(--oc-radius-sm); }
-.oc-account-initials { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--oc-surface-sage); font-size: var(--oc-text-caption); color: var(--primary); font-weight: 600; }
-.oc-product-club { display: none; }
-.oc-product-modes { padding: 0; position: absolute; left: 50%; transform: translateX(-50%); }
-.oc-product-modes nav { background: var(--muted); border-radius: var(--oc-radius-md); padding: .25rem; gap: .25rem; }
-.oc-product-modes nav :is(a,button) { min-height: 2.25rem; border: 0; border-radius: var(--oc-radius-sm); padding: .5rem 1rem; font-size: var(--oc-text-caption); }
-.oc-product-modes nav [aria-current="page"] { background: var(--card); box-shadow: var(--oc-shadow-surface); color: var(--primary); }
-.oc-product-modes > span { display: none; }
 [data-product-shell] > div:has(> aside) { display: block; margin-left: var(--oc-shell-rail-width); }
 [data-product-shell] > div > aside { position: fixed; inset: var(--support-banner-height, 0px) auto 0 0; width: var(--oc-shell-rail-width); height: calc(100dvh - var(--support-banner-height, 0px)); border: 0; z-index: 30; }
 .oc-context-sidebar { background: var(--oc-rail); color: var(--oc-rail-text); padding: 1rem; }
@@ -47,19 +31,7 @@
 .oc-pipeline-filter-fields { display: flex; flex-wrap: wrap; gap: .75rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--oc-radius-lg); background: var(--card); }
 .oc-pipeline-filter-fields > details { width: 100%; }
 @media (min-width: 640px) { .oc-pipeline-filter-fields { position: absolute; z-index: 10; top: calc(100% + .5rem); left: 0; width: min(28rem, 65vw); box-shadow: var(--oc-shadow-popover); } }
-@media (min-width: 1024px) and (max-width: 1399px) {
-  .oc-product-modes { position: static; transform: none; margin-top: .25rem; }
-  .oc-product-header { min-height: var(--oc-shell-header-height); }
-  [data-product-shell="manager"] .oc-product-header:has(.oc-product-modes nav :nth-child(2)) { min-height: 6.5rem; }
-}
 @media (max-width: 1023px) {
-  .oc-product-header { margin-left: 0; min-height: 4.5rem; padding: .75rem 1.25rem; }
-  .oc-product-header .oc-product-brand { display: block; }
-  .oc-product-brand img { height: 2.25rem; width: auto; }
-  .oc-header-context { display: none; }
-  .oc-product-modes { position: static; transform: none; padding-top: .5rem; }
-  .oc-product-modes nav { width: 100%; }
-  .oc-product-modes nav :is(a,button) { flex: 1; }
   [data-product-shell] > div:has(> aside) { margin-left: 0; }
   .oc-workspace-content { padding: 1.25rem var(--oc-space-page) calc(var(--oc-shell-mobile-height) + 1.5rem + env(safe-area-inset-bottom)); }
   .oc-mobile-navigation { display: flex; justify-content: space-around; position: fixed; z-index: 35; inset: auto 0 0; padding: .5rem .5rem max(.5rem, env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--card) 96%, transparent); backdrop-filter: blur(16px); border-top: 1px solid var(--border); box-shadow: 0 -6px 32px rgb(20 45 69 / 4%); }
@@ -68,22 +40,7 @@
   body:has([data-product-shell]) { --oc-toast-offset: calc(6rem + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 639px) {
-  .oc-product-header { padding: .75rem 1rem; }
-  .oc-product-header-row { gap: .5rem; }
-  .oc-product-header-row > [data-slot="sheet-trigger"] { display: none; }
-  .oc-product-brand img { max-width: 7rem; height: auto; }
-  .oc-product-modes nav :is(a,button) { padding-inline: .5rem; }
   .oc-workspace-content { padding-inline: 1rem; }
-}
-/* Personal Level 1 modes stay distinct from contextual rail / bottom navigation. */
-[data-product-shell="personal"] .oc-product-modes { display: flex; }
-[data-product-shell="personal"] .oc-product-modes nav :is(a,button) { min-height: 2.5rem; }
-[data-product-shell="personal"] .oc-header-context > span { font-size: var(--oc-text-small); }
-@media (max-width: 1023px) {
-  [data-product-shell="personal"] .oc-product-header { min-height: auto; gap: .5rem; }
-  [data-product-shell="personal"] .oc-product-modes { padding-top: 0; }
-  [data-product-shell="personal"] .oc-product-modes nav { width: 100%; }
-  [data-product-shell="personal"] .oc-product-modes nav :is(a,button) { flex: 1; min-height: 2.75rem; padding: .5rem; }
 }
 .oc-workspace-switcher-label { color: var(--oc-rail-muted); font-size: var(--oc-size-10); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
 .oc-workspace-switcher-trigger { display: flex; align-items: center; gap: .65rem; width: 100%; padding: .8rem .65rem; text-align: left; border-radius: var(--oc-radius-md); background: var(--oc-rail-selected); border: 1px solid #526675; color: var(--oc-rail-text); }
@@ -98,6 +55,3 @@
 
 .oc-context-sidebar > div:has(.oc-workspace-switcher-trigger) { margin-bottom: 1rem; }
 .oc-context-sidebar > div:has(> nav[aria-label="Review tools"]) { margin-top: 1.25rem; }
-
-/* Student mode labels remain readable on the quiet navigation surface. */
-[data-product-shell="personal"] .oc-product-modes button:not([aria-current]) { color: var(--foreground); }

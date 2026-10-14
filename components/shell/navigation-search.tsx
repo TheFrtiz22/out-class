@@ -39,6 +39,7 @@ export function NavigationSearch({
   onNavigate,
   leader = false,
   clubId,
+  onDismissAutoFocus,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -46,6 +47,7 @@ export function NavigationSearch({
   onNavigate: (view: ViewId) => void
   clubId?: string
   leader?: boolean
+  onDismissAutoFocus?: () => void
 }) {
   const { user } = useAuth()
   const { focusApplication, focusLeader } = useApplicationState()
@@ -148,6 +150,9 @@ export function NavigationSearch({
             event.preventDefault()
             selectedDestination.current = false
             document.getElementById("workspace-content")?.focus({ preventScroll: true })
+          } else if (onDismissAutoFocus) {
+            event.preventDefault()
+            onDismissAutoFocus()
           }
         }}
       >
