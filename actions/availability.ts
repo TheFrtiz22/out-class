@@ -1,5 +1,7 @@
 "use server"
 
+import {publishAvailabilityRequest} from "@/utils/availability-publication"
+import {clubWriteTransaction} from "@/utils/club-write-transaction"
 import { z } from "zod"
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
@@ -186,28 +188,7 @@ export async function getEligibleInterviewerPool(raw: unknown) {
 export async function requestRoundAvailability(raw: unknown) {
   const input = scopeSchema.extend({ memberIds: z.array(id).min(1).max(1000), reminder: z.boolean().default(false) }).parse(raw)
   const { user } = await requireAuth()
-  return prisma.$transaction(async tx => {
-    await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"])
-    const round = await roundFor(tx, input.clubId, input.roundId)
-    const club = await tx.club.findUniqueOrThrow({ where: { id: input.clubId }, select: { name: true } })
-    const pool = await loadInterviewerPool(tx, input.clubId, input.roundId)
-    const targets = pool.members.filter(m => input.memberIds.includes(m.id))
-    if (new Set(input.memberIds).size !== input.memberIds.length || targets.length !== input.memberIds.length || targets.some(m => !m.eligible)) throw new Error("Select eligible active interviewers from this club and round.")
-    let sent = 0
-    const now = new Date()
-    for (const member of targets) {
-      const key = { memberId: member.id, roundId: input.roundId }
-      const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
-      if (old?.confirmedAt || old?.declinedAt) continue
-      if (input.reminder ? !old?.requestedAt || +now - +(old.lastReminderAt ?? old.requestedAt) < 86400000 : !!old?.requestedAt) continue
-      const sequence = input.reminder ? (old?.reminderSequence ?? 0) + 1 : 0
-      const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, requestedAt: now }, update: { ...(input.reminder ? { lastReminderAt: now, reminderSequence: sequence } : { requestedAt: now }), revision: { increment: 1 } } })
-      await tx.userNotification.create({ data: { userId: member.userId, clubId: input.clubId, type: "INTERVIEW", eventKey: `availability-request:${saved.id}:${sequence}`, title: `${input.reminder ? "Reminder: " : ""}Availability requested · ${club.name}`, body: `Submit availability or decline participation for ${round.name}. Your global schedule will be prefilled.`, href: availabilityHref(input.clubId, input.roundId) } })
-      sent++
-    }
-    await tx.auditLog.create({ data: { actorId: user.id, clubId: input.clubId, targetId: input.roundId, action: input.reminder ? "interview.availability.remind" : "interview.availability.request", details: { sent } } })
-    return { sent }
-  }, { timeout: 20000 })
+  return clubWriteTransaction(tx=>publishAvailabilityRequest(tx,input,user.id),{maxWait:5000,timeout:20000})
 }
 
 export async function declineRoundParticipation(raw: unknown) {

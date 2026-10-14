@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
 export async function listClubClaims(status: string, page = 0) {
-  const actor = await requirePlatformAdmin();
+  const actor = await requirePlatformAdmin({ fresh: true });
   const filter = z.enum(["PENDING", "APPROVED", "REJECTED"]).parse(status);
   const skip = z.number().int().min(0).max(10000).parse(page) * 50;
   await prisma.auditLog.create({

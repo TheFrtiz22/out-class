@@ -35,7 +35,7 @@ export async function clubWriteTransaction<T>(
         JOIN auth.sessions a ON a.id=e."authSessionId"::uuid AND a.user_id=actor.id::uuid
         WHERE s.id=${session.id} AND s."actorId"=${session.actorId} AND s."targetUserId"=${session.targetUserId}
           AND s.mode='IMPERSONATION' AND s."endedAt" IS NULL AND s."expiresAt">clock_timestamp()
-          AND e."revokedAt" IS NULL AND e."expiresAt">clock_timestamp()
+          AND e."revokedAt" IS NULL AND (e."expiresAt" IS NULL OR e."expiresAt">clock_timestamp())
           AND e."authSessionId"=${elevation.authSessionId}
           AND e."passwordVerifiedAt"<=e."mfaVerifiedAt" AND e."mfaVerifiedAt"<=clock_timestamp()
           AND (a.not_after IS NULL OR a.not_after>clock_timestamp())

@@ -1,4 +1,5 @@
 "use client"
+import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
@@ -12,19 +13,29 @@ type Workspace=Awaited<ReturnType<typeof getJoinedVotingWorkspace>>
 const messages={NOT_FOUND:"This voting session was not found.",UNAUTHORIZED:"You do not have voting access for this club. Ask leadership to check your membership and permissions.",NOT_JOINABLE:"Leadership has not opened this session for joining yet.",FINISHED:"This session is finished. You can return if leadership reopens it.",ROSTER_LOCKED:"Voting has started and you are not on the frozen participant roster. Ask leadership about the next session."}
 export function VotingSessionJoin({sessionId,demoScoped}:{sessionId:string;demoScoped:boolean}){
   const auth=useAuth(),demo=useDemoMode()
-  const [info,setInfo]=useState<Awaited<ReturnType<typeof getVotingJoinInfo>>|null>(null),[data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[joined,setJoined]=useState(false),[busy,setBusy]=useState(false),[member,setMember]=useState("")
-  const epoch=useRef({value:0})
+  const identityScope=JSON.stringify([sessionId,auth.user?.id,demoScoped,demo.isDemoEnabled])
+  const [rawInfo,setInfo]=useState<Awaited<ReturnType<typeof getVotingJoinInfo>>|null>(null),[rawData,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[joinedScope,setJoinedScope]=useState<string|null>(null),[busy,setBusy]=useState(false),[member,setMember]=useState("")
+  const joined=joinedScope===identityScope
+  const scope=JSON.stringify([identityScope,joined,member])
+  const [dataScope,setDataScope]=useState("")
+  const data=dataScope===scope?rawData:null
+  const info=dataScope===scope?rawInfo:null
+  const reader=useRef<ReturnType<typeof serializedWorkspaceRead<unknown>>|null>(null)
   const permitted=demoScoped?demo.ready&&demo.isDemoEnabled:!auth.loading&&!!auth.user&&!demo.isDemoEnabled
-  const refresh=useCallback(async()=>{
-    const request=++epoch.current.value
-    try{
-      if(joined){const value=await getJoinedVotingWorkspace(sessionId,demoScoped?member||undefined:undefined);if(request!==epoch.current.value)return;setData(value)}
-      else{const value=await getVotingJoinInfo(sessionId);if(request!==epoch.current.value)return;setInfo(value)}
+  const refresh=useCallback(()=>reader.current?.refresh()??Promise.resolve(),[])
+  useEffect(()=>{
+    setData(null);setInfo(null);setError("")
+    if(!permitted)return
+    const reads=serializedWorkspaceRead(async()=>joined?getJoinedVotingWorkspace(sessionId,demoScoped?member||undefined:undefined):getVotingJoinInfo(sessionId),value=>{
+      setDataScope(scope)
+      if(joined)setData(value as Workspace);else setInfo(value as Awaited<ReturnType<typeof getVotingJoinInfo>>)
       setError("")
-    }catch(e){if(request!==epoch.current.value)return;setData(null);setInfo(null);setError(e instanceof Error?e.message:"Session temporarily unavailable. Retry shortly.")}
-  },[sessionId,joined,member,demoScoped])
-  useEffect(()=>{if(!permitted)return;const counter=epoch.current;void refresh();const timer=setInterval(()=>void refresh(),5000);return()=>{counter.value++;clearInterval(timer)}},[refresh,permitted])
-  async function join(){setBusy(true);setError("");try{await joinVotingSession(sessionId,demoScoped?member||undefined:undefined);setJoined(true)}catch(e){setError(e instanceof Error?e.message:"Could not join. Try again.")}finally{setBusy(false)}}
+    },error=>{setData(null);setInfo(null);setError(error instanceof Error?error.message:"Session temporarily unavailable. Retry shortly.")})
+    reader.current=reads;void reads.poll()
+    const timer=setInterval(()=>void reads.poll(),5000)
+    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
+  },[sessionId,joined,member,demoScoped,permitted,auth.user?.id,scope])
+  async function join(){setBusy(true);setError("");try{await joinVotingSession(sessionId,demoScoped?member||undefined:undefined);setJoinedScope(identityScope)}catch(e){setError(e instanceof Error?e.message:"Could not join. Try again.")}finally{setBusy(false)}}
   const s=data?.session,pass=s?.passes.find(p=>p.number===s.currentPass),candidate=pass?.candidates.find(c=>c.applicationId===s?.activeApplicationId),ballot=candidate?.ballots.find(b=>b.memberId===data?.memberId)
   if(demoScoped&&!demo.ready)return <main className="p-6" role="status">Opening isolated Demo session…</main>
   if(demoScoped&&!demo.isDemoEnabled)return <main className="mx-auto max-w-lg space-y-4 p-6"><h1 className="oc-page-title">Demo voting join</h1><p>This link belongs to the isolated Demo graph. Enable Demo Mode in your authorized workspace first; it never opens a production voting session.</p><Link className="underline" href="/?workspace=leader">Open workspace</Link></main>

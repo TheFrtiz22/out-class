@@ -32,6 +32,8 @@ export function anonymousApplication(
     roundId: app.roundId,
     status: app.status,
     decisionVersion: 0,
+    decisionStateRevision: 0,
+    recruitmentCycleId: null,
     studentId: `anonymous-${app.id}`,
     submittedAt: null,
     anonymousReviewText: null,

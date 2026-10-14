@@ -357,7 +357,7 @@ export async function listEventApprovals(status = "PENDING") {
 }
 export async function reviewCampusEvent(input: unknown) {
   const d = eventReviewSchema.parse(input),
-    actor = await requirePlatformAdmin();
+    actor = await requirePlatformAdmin({ fresh: true });
   const result = await prisma.$transaction(async (tx) => {
     const e = await locked(tx, d.eventId, undefined, d.revision),
       p = e.publication!;

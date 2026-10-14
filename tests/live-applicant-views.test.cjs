@@ -21,14 +21,14 @@ function nodes(node) {
 }
 const text = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(text).join('') : node?.props ? text(node.props.children) : ''
 const flush = () => new Promise(resolve => setImmediate(resolve))
-function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false) {
+function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
   const slots = [], effects = [], calls = [], lookups = []
   let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
   const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
   const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);if(input.expectedStatus!==pipeline.applications[0].status)throw Error('stale');pipeline.applications[0].status=input.status;if(input.status==='ACCEPTED')pipeline.applications[0].recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
   const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,lookups,addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly});while(effects.length)effects.shift()();return tree}}
+  return {calls,api,lookups,addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
@@ -43,9 +43,9 @@ test('List/Kanban toggle preserves the same filtered server data and does not mu
 })
 test('drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
-  h.setServerStatus('IN_REVIEW');button(tree,'Confirm status').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
 })
 test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
@@ -74,7 +74,7 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
   const h=harness(undefined,true);h.render();await flush();let tree=h.render()
   assert.equal(button(tree,'Kanban'),undefined)
   decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(decisionList(tree),undefined)
   decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
@@ -82,7 +82,7 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
 })
 test('Decisions preserves stale failures and hides mutation controls from anonymous reviewers', async () => {
   const h=harness(undefined,true);h.render();await flush();let tree=h.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=h.render()
-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
   assert.equal(decisionList(tree).props.applicants[0].status,'IN_REVIEW');assert.match(text(tree),/could not be saved/)
   const limited=harness(['applications.review'],true);limited.render();await flush();tree=limited.render();decisionList(tree).props.open(decisionList(tree).props.applicants[0]);tree=limited.render();assert.equal(decisionAction(tree,'Accepted'),undefined)
 })
@@ -111,7 +111,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
   button(tree,'Kanban').props.onClick();tree=h.render()
   view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
   button(tree,'Accepted').props.onClick();tree=h.render()
-  button(tree,'Confirm status').props.onClick();await flush();tree=h.render()
+  button(tree,'Send now').props.onClick();await flush();tree=h.render()
   assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW')
   assert.equal(applicantLane(view(tree).props.applicants[0].status),'closed')
   button(tree,'List').props.onClick();tree=h.render()
@@ -128,4 +128,9 @@ for(const roundId of [null,undefined,'different-round'])test(`drawer legacy labe
 
 test('moving from the drawer locates the target-round review by stable ID despite an old label',async()=>{
  const h=harness();h.addRound({id:'target',name:'Panel',order:1});h.setEvaluations([{id:'submitted',interviewerId:'member',roundId:'target',round:'Interview',score:8.5,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'target'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();assert.equal(h.lookups.at(-1).round.id,'target');assert.equal(h.lookups.at(-1).result.id,'submitted');
+});
+
+test('rejected applicants leave active queues and remain in the deliberate retained-history tab',async()=>{
+ const active=harness();active.setServerStatus('REJECTED');active.render();await flush();const activeTree=active.render();assert.equal(view(activeTree),undefined);
+ const rejected=harness(undefined,false,true);rejected.setServerStatus('REJECTED');rejected.render();await flush();const rejectedTree=rejected.render();assert.equal(view(rejectedTree).props.applicants.length,1);assert.equal(view(rejectedTree).props.applicants[0].status,'REJECTED');assert.match(text(rejectedTree),/retained here/);
 });

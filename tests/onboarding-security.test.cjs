@@ -15,7 +15,7 @@ test('university identity proof fails closed for auto-confirm, missing settings,
  t.after(()=>{global.fetch=saved.fetch;for(const [key,value]of [['NEXT_PUBLIC_SUPABASE_URL',saved.url],['NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',saved.key]])if(value===undefined)delete process.env[key];else process.env[key]=value;});
  process.env.NEXT_PUBLIC_SUPABASE_URL='https://auth.example.test';process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='public-test-key';
  const api=load('utils/verified-email-policy.ts');
- for(const settings of [{mailer_autoconfirm:true},{}, {mailer_autoconfirm:'false'}]){global.fetch=async()=>({ok:true,json:async()=>settings});await assert.rejects(api.requireVerifiedEmailPolicy(),/email confirmation enabled/);}
+ for(const settings of [{mailer_autoconfirm:true},{}, {mailer_autoconfirm:'false'}]){global.fetch=async()=>({ok:true,json:async()=>settings});await assert.rejects(api.requireVerifiedEmailPolicy(),error=>error.code==='UNIVERSITY_VERIFICATION_UNAVAILABLE');}
  global.fetch=async()=>({ok:false});await assert.rejects(api.requireVerifiedEmailPolicy());
  global.fetch=async()=>{throw Error('offline')};await assert.rejects(api.requireVerifiedEmailPolicy());
  global.fetch=async(url,options)=>{assert.equal(url,'https://auth.example.test/auth/v1/settings');assert.equal(options.cache,'no-store');assert.equal(options.headers.apikey,'public-test-key');return{ok:true,json:async()=>({mailer_autoconfirm:false})};};
@@ -24,7 +24,7 @@ test('university identity proof fails closed for auto-confirm, missing settings,
 
 test('changed verified mailbox never discovers historical university identities; client metadata cannot spoof the key',async()=>{
  const identities=[{id:'old',userId:'account'},{id:'current',userId:'account'}];let query,normalized;
- const tx={$queryRaw:async()=>[],schoolIdentifierType:{findMany:async({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'computing',schoolId:'uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];}},schoolIdentity:{upsert:async({create})=>{normalized=create.normalizedIdentifier;return{id:'current'};},findUniqueOrThrow:async()=>identities[1],findMany:async({where})=>{query=where;return identities.filter(i=>where.id.in.includes(i.id));}}};
+ const tx={user:{findUnique:async()=>({email:'newid@virginia.edu',disabledAt:null})},$queryRaw:async()=>[],schoolIdentifierType:{findMany:async({where})=>{assert.equal(where.emailDomain,'virginia.edu');return[{id:'computing',schoolId:'uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}];}},schoolIdentity:{upsert:async({create})=>{normalized=create.normalizedIdentifier;return{id:'current'};},findUniqueOrThrow:async()=>identities[1],findMany:async({where})=>{query=where;return identities.filter(i=>where.id.in.includes(i.id));}}};
  const helper=load('utils/school-identity.ts',{'@/utils/verified-email-policy':{...load('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}}});
  const account={user:{id:'account',email:'newid@virginia.edu'},supabaseUser:{id:'account',email:'NEWID@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-02',user_metadata:{computing_id:'victim'}}};
  assert.deepEqual((await helper.verifiedSchoolIdentities(tx,account)).map(i=>i.id),['current']);assert.equal(normalized,'newid');assert.deepEqual(query.id,{in:['current']});

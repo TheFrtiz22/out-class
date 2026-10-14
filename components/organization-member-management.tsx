@@ -2,6 +2,7 @@
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
+import {InvitationScheduleComposer} from "@/components/invitation-schedules";
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
   clubPermissions,
@@ -76,6 +77,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     [history, setHistory] = useState(false),
     [page, setPage] = useState(0);
   const [dirty, setDirty] = useState(false);
+  const [scheduledInviteId,setScheduledInviteId] = useState<string|null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]),
     [bulkRole, setBulkRole] = useState<Member["accessRole"]>("MEMBER"),
@@ -343,6 +345,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
         data && (
           <>
             <InvitationEmailControls clubId={clubId} onSent={reload} />
+            {scheduledInviteId&&<div className="space-y-3 border rounded p-4"><p>Selected individual invitation email</p><InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId}/><Button variant="outline" onClick={()=>setScheduledInviteId(null)}>Close selected invitation schedule</Button></div>}
             {caps.canManageMembers && <InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={selectedMembers.map(member => member.id)} refreshKey={String(Math.max(...data.members.map(member => +new Date(member.updatedAt))))} onSaved={() => reload()} />}
             {caps.canManageMembers && (
               <details className="rounded-xl border p-4">
@@ -819,6 +822,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                                   >
                                     Resend invitation
                                   </DropdownMenuItem>
+                                  <DropdownMenuItem disabled={busy||row.status!=="Invited"||row.invitation.deliveries.some(d=>["QUEUED","SENDING"].includes(d.status))} onSelect={()=>setScheduledInviteId(row.id)}>Schedule invitation email</DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-destructive"
                                     disabled={busy}

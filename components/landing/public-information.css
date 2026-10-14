@@ -93,7 +93,6 @@
 .oc-information h1 { font-size: clamp(2.5rem, 4.7vw, 4.5rem); line-height: 1.1; max-width: 15ch; letter-spacing: -.04em; }
 .oc-information-introduction { max-width: 48ch; font-size: clamp(16px, 1.4vw, 19px); line-height: 1.75; margin-top: 28px; }
 .oc-editorial-page .oc-information-content { max-width: none; padding: 0; }
-.oc-editorial-page .oc-public-footer { background: var(--background); }
 .oc-editorial-page .oc-public-section h2 { font-size: var(--oc-public-heading); margin: 0 0 24px; }
 .oc-editorial-page .oc-public-section h3 { font-size: 24px; font-weight: 400; margin-bottom: 16px; }
 .oc-editorial-page .oc-public-section .oc-public-kicker { line-height: 1.5; }

@@ -1,4 +1,6 @@
 "use server";
+import { clubWriteTransaction } from "@/utils/club-write-transaction";
+import { prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { respondToRecruitmentOffer } from "@/utils/recruitment-offers";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
@@ -13,7 +15,7 @@ import { clubPermissions, hasPermission } from "@/lib/permissions";
 import { onboardingRolePermissions } from "@/lib/club-onboarding";
 import { canControlOrganizationAccess, canManageOrganizationInvitation, organizationCapabilities } from "@/lib/organization-authorization";
 import { isUvaEmail } from "@/lib/auth";
-import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
+import { hasConfirmedUniversityEmail } from "@/utils/verified-email-policy";
 import { isActiveMembership } from "@/lib/permissions";
 
 const permissionsSchema = z
@@ -88,8 +90,8 @@ export async function acceptClubInvitation(invitationId: string) {
   const account = await requireAuth({ verifyEmail: true });
   const { user } = account;
   if (!hasConfirmedUniversityEmail(account)) throw new Error("Verify your UVA email before accepting an invitation.");
-  await requireVerifiedEmailPolicy();
-  return prisma.$transaction(async (tx) => {
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
     if (hint.applicationId) return respondToRecruitmentOffer(tx, hint.applicationId, user.id, "ACCEPT");
@@ -345,8 +347,8 @@ export async function declineClubInvitation(invitationId: string) {
   const account = await requireAuth({ verifyEmail: true });
   const { user } = account;
   if (!hasConfirmedUniversityEmail(account)) throw new Error("Verify your UVA email before responding to an invitation.");
-  await requireVerifiedEmailPolicy();
-  return prisma.$transaction(async (tx) => {
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(async (tx) => {
     const hint = await tx.clubInvitation.findUnique({ where: { id } });
     if (!hint) throw new Error("Invitation unavailable.");
     if (hint.applicationId) { await respondToRecruitmentOffer(tx, hint.applicationId, user.id, "DECLINE"); return; }

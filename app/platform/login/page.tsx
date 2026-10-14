@@ -45,7 +45,7 @@ export default function PlatformLogin() {
       <PageHeader title="Platform administrator sign-in" />
       <p className="text-sm font-semibold">Re-authenticating {user.email}</p>
       <p>
-        Verify your current account with your password and authenticator. Admin elevation expires after 30 minutes. A provisioned platform grant and server allowlist are required.
+        Verify your current account with your password and authenticator. Admin access lasts for this browser and authentication session. Sensitive actions require password and authenticator verification within the last five minutes. A provisioned platform grant and server allowlist are required.
         Club ownership does not grant access.
       </p>
       <form

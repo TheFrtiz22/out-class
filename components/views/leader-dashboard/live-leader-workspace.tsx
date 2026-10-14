@@ -1,4 +1,6 @@
 "use client"
+import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
+import { ScheduleDecision } from "@/components/decision-schedules";
 import { slotTime } from "@/lib/interview-rooms"
 import { SCHEDULING_TIMEZONE, schedulingDateTime } from "@/lib/scheduling-config"
 import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
@@ -19,7 +21,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, moveApplicantRound, setApplicationStatus, revokeRecruitmentOffer } from "@/lib/workspace-api"
+import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
@@ -58,7 +60,7 @@ const name = (app: Candidate) =>
 const average = (app: Candidate) =>
   app.roundScore?.average ?? null
 
-export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
+export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rejectedOnly = false, initialData, onData }: { scoped?: boolean; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: { clubId: string; pipeline: Pipeline }; onData?: (clubId: string, data: Pipeline | null) => void }) {
   const { user, activeClubId, selectClub } = useAuth()
   const demo = useDemoMode()
   const { leaderFocus } = useApplicationState()
@@ -104,13 +106,13 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, ini
           </select>
         )}
       </div>}
-      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
+      <ClubWorkspace key={club.clubId} membership={club} decisionsOnly={decisionsOnly} rejectedOnly={rejectedOnly} initialData={initialData?.clubId === club.clubId ? initialData.pipeline : null} onData={data => onData?.(club.clubId, data)} />
       {demo.isDemoEnabled && !decisionsOnly && <details className="text-xs text-muted-foreground"><summary className="min-h-11 cursor-pointer py-3">Sample recruiting target</summary><DemoRoundTarget /></details>}
     </div>
   )
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, onData }: { membership: ExtendedMembership; decisionsOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData }: { membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(initialData)
@@ -136,6 +138,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
   const [activeId, setActiveId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
+  const [reconsiderReason, setReconsiderReason] = useState("")
   const [score, setScore] = useState("")
   const [notes, setNotes] = useState("")
   const [baseline, setBaseline] = useState("")
@@ -192,7 +195,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
     window.addEventListener("beforeunload", warn)
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty, busy])
-  const applicants = useMemo(() => data?.applications || [], [data])
+  const applicants = useMemo(() => (data?.applications || []).filter(a=>rejectedOnly?a.status==="REJECTED":decisionsOnly||a.status!=="REJECTED"), [data,rejectedOnly,decisionsOnly])
   const filtered = useMemo(
     () =>
       applicants
@@ -202,6 +205,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
             `${name(app)} ${app.student.email} ${profile?.major || ""}`
               .toLowerCase()
               .includes(query.trim().toLowerCase()) &&
+            (rejectedOnly ? app.status === "REJECTED" : decisionsOnly || app.status !== "REJECTED") &&
             (!round || app.roundId === round) &&
             (!status || app.status === status) &&
             (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
@@ -233,6 +237,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
         }),
     [
       applicants,
+      rejectedOnly,
       decisionsOnly,
       decisionGroup,
       query,
@@ -576,7 +581,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
       </div>
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="score">Score</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Grouped by application status, not club round. Decision holds waitlists; Closed holds final outcomes. Open a card for explicit round and status actions.</p>}
-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
+      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
       <Sheet
         open={!!active}
         onOpenChange={(value) => {
@@ -801,9 +807,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
                     Move round
                   </Button>
                 </div>
+            {active&&hasPermission(membership,"recruitment.manage")&&hasPermission(membership,"applicants.identify")&&!data.rounds.find(r=>r.id===active.roundId)?.anonymousReview&&<ApplicationCycleAssignment key={active.id+active.recruitmentCycleId} clubId={membership.clubId} applicationId={active.id} cycleId={active.recruitmentCycleId} onSaved={()=>setRevision(v=>v+1)}/>}
                 <p className="text-xs leading-6 text-muted-foreground">
-                  Final decisions cannot move rounds or reopen. Moving out of an interview round returns the applicant to review. Save your review before moving.
+                  Final decisions cannot move rounds. Rejected Applicants provides explicit reconsideration; other final decisions can be corrected. Moving out of an interview round returns the applicant to review. Save your review before moving.
                 </p>
+      {rejectedOnly&&active&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"applicants.identify")&&<div className="space-y-2"><label>Reason for reconsideration (at least 10 characters)<textarea className="block w-full border rounded p-2" maxLength={1000} value={reconsiderReason} onChange={e=>setReconsiderReason(e.target.value)}/></label><Button disabled={busy||reconsiderReason.trim().length<10} onClick={async()=>{setBusy(true);try{await reconsiderRejectedApplication({clubId:membership.clubId,applicationId:active.id,expectedGuard:active.publicationGuard,reason:reconsiderReason});setReconsiderReason("");setActiveId(null);setRevision(v=>v+1);setMessage("Application returned to review. Historical decisions are preserved.")}catch{setMessage("Reconsideration failed. Refresh and check access.")}finally{setBusy(false)}}}>Reconsider selected application</Button></div>}
                 {active.recruitmentOffer?.status === "ACCEPTED" && <p className="text-xs text-muted-foreground">This offer was accepted. Decision changes preserve membership; use member management for access changes.</p>}
                 {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Only pending offers can be rescinded. Accepted memberships must be managed through member management.</p><Button variant="outline" disabled={busy || dirty} onClick={async()=>{setBusy(true);try{await revokeRecruitmentOffer(membership.clubId,active.id);setRevision(v => v + 1);setMessage("Pending offer rescinded.")}catch{setMessage("Only pending offers can be rescinded. Manage existing members through member management.")}finally{setBusy(false)}}}>Rescind pending offer</Button></div>}
                 {hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") ? (
@@ -840,13 +848,13 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
           if (!value && !busy) setDecision("")
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Update application status?</DialogTitle>
             <DialogDescription>
               {active && name(active)} will see their application marked{" "}
               {applicationStatusLabels[decision]}. The applicant will see this status in OutClass.
-              {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " A formal letter and notification will be published, and an email linking to the letter will follow the student’s application-email preferences.")}
+              {["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) && (demo.isDemoEnabled ? " A fictional letter and notification will be saved in Demo. No email is sent." : " Status and a notification publish with an optional formal letter according to club settings. Decision-availability email follows separate student preferences.")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
@@ -854,9 +862,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, initialData = null, 
               Cancel
             </Button>
             <Button disabled={busy} onClick={() => void mutate("decision")}>
-              {busy ? "Updating…" : "Confirm status"}
+              {busy ? "Updating…" : ["ACCEPTED","WAITLISTED","REJECTED"].includes(decision) ? "Send now" : "Confirm status"}
             </Button>
           </div>
+            {active&&["ACCEPTED","WAITLISTED","REJECTED"].includes(decision)&&<ScheduleDecision clubId={membership.clubId} selection={{kind:"DIRECT",applicationId:active.id,expectedGuard:active.publicationGuard,status:decision as "ACCEPTED"|"WAITLISTED"|"REJECTED"}} disabled={busy} onScheduled={()=>setDecision("")}/>}
           {decision && message && (
             <p role="status" className="text-sm">
               {message}

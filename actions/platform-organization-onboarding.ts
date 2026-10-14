@@ -29,7 +29,7 @@ export async function getOrganizationOnboardingSchools(): Promise<OrganizationOn
 export async function createOrganizationAndInvitePresident(input: unknown): Promise<OrganizationOnboardingResult> {
   let actor;
   try {
-    actor = await requirePlatformAdmin();
+    actor = await requirePlatformAdmin({ fresh: true });
   } catch {
     return { ok: false, error: "Platform administrator access is required. Verify your sign-in and MFA, then retry." };
   }

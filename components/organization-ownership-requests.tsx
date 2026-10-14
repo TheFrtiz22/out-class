@@ -68,9 +68,9 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
       {!loading && <Button size="sm" className="min-h-11" variant="ghost" onClick={refresh}>Refresh requests</Button>}
     </header>
     {onProfileDefaults && invitations.length > 0 && <p className="text-sm text-muted-foreground">Invitation details may fill blank profile fields. Review and edit your name and graduation year before saving.</p>}
-    {notice && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">{notice}</p>}
+    {notice && !failed && <p role="status" className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">{notice}</p>}
     {loading && !invitations.length ? <div role="status" className="rounded-xl border bg-muted/20 p-5 text-sm leading-6 text-muted-foreground">Checking organization invitations…</div>
-      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role="alert">Could not check organization invitations.</p><Button variant="outline" onClick={refresh}>Retry invitations</Button></div>
+      : failed ? <div className="rounded-xl border p-4 space-y-3"><p role="alert">{notice || "Could not check organization invitations."}</p><Button variant="outline" onClick={refresh}>Retry invitations</Button></div>
       : <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} allowDecline />)}</ul>}
     <p className="text-xs leading-5 text-muted-foreground">“Not now” hides a request without declining it. <Link href="/?workspace=student" className="underline underline-offset-4">Return to your dashboard</Link>.</p>
   </section>;

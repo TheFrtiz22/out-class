@@ -4,6 +4,7 @@ const fs = require('node:fs')
 const ts = require('typescript')
 function load(file, mocks = {}) {
   mocks = { "next/cache": { unstable_cache: fn => fn, revalidateTag() {}, revalidatePath() {} }, ...mocks }
+  if (mocks["@/utils/prisma"]) mocks["@/utils/club-write-transaction"] = { clubWriteTransaction: fn => mocks["@/utils/prisma"].prisma.$transaction(fn) }
   const mod = { exports: {} }
   new Function('require', 'module', 'exports', ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(n => n in mocks ? mocks[n] : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts', mocks) : require(n), mod, mod.exports)
   return mod.exports

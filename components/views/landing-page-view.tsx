@@ -3,7 +3,7 @@
 import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
 import type { LaunchClub } from "@/lib/launch-clubs"
-import { useState } from "react"
+import { useRef, useState, type MouseEvent } from "react"
 import { ArrowRight } from "lucide-react"
 import { PublicFooter } from "@/components/landing/public-footer"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ import { ProductJourney } from "@/components/landing/product-stories"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
 import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
+import "@/components/landing/public-footer.css"
 
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
@@ -35,6 +36,11 @@ export function LandingPageView({
   campusName = "University of Virginia",
 }: LandingPageViewProps) {
   const [info, setInfo] = useState<string | null>(null)
+  const infoTrigger = useRef<HTMLButtonElement | null>(null)
+  const openInfo = (event: MouseEvent<HTMLButtonElement>, label: string) => {
+    infoTrigger.current = event.currentTarget
+    setInfo(label)
+  }
   const { perspective, switchPerspective } = useLandingPerspective()
   const journeyNavigation = useJourneyNavigation()
   const createProfile = () => { window.location.href = "/signup" }
@@ -72,23 +78,23 @@ export function LandingPageView({
           </p>
         </SectionReveal>
       </main>
-      <PublicFooter homeHref="#top" overviewHref="#about">
-        {["Contact", "Privacy", "Terms"].map((label) => (
-          <button type="button" key={label} onClick={() => setInfo(label)}>
+      <PublicFooter homeHref="#top" overviewHref="#about" onPerspectiveChange={switchPerspective} contact={<button type="button" onClick={event => openInfo(event, "Contact")}>Contact</button>}>
+        {["Privacy", "Terms"].map((label) => (
+          <button type="button" key={label} onClick={event => openInfo(event, label)}>
             {label}
           </button>
         ))}
       </PublicFooter>
-      <p className="oc-photo-credit">
-        OutClass is an independent platform.
-      </p>
       <Dialog
         open={!!info}
         onOpenChange={(open) => {
           if (!open) setInfo(null)
         }}
       >
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={event => {
+          event.preventDefault()
+          infoTrigger.current?.focus({ preventScroll: true })
+        }}>
           <DialogHeader>
             <DialogTitle>{info}</DialogTitle>
             <DialogDescription>

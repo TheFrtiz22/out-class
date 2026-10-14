@@ -14,7 +14,7 @@ export async function uploadClubAsset(input: FormData) {
   if ([...input.keys()].some(k => !keys.includes(k)) || keys.some(k => input.getAll(k).length !== 1)) throw Error("Provide one club, file and upload mode.");
   const clubId = z.string().uuid().parse(input.get('clubId'));
   const admin = z.enum(['true','false']).parse(input.get('admin')) === 'true';
-  const actor = admin ? await requirePlatformAdmin() : (await requireClubPermission(clubId, ['club.settings'])).user;
+  const actor = admin ? await requirePlatformAdmin({ fresh: true }) : (await requireClubPermission(clubId, ['club.settings'])).user;
   const file = input.get('file');
   if (!file || typeof file === 'string' || !file.size || file.size > 5242880) throw Error("Choose a PNG, JPEG or WebP up to 5 MB.");
   if (/[\\/\x00-\x1f\x7f%?#]/.test(file.name)) throw Error("Invalid image filename.");

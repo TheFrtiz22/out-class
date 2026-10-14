@@ -8,8 +8,9 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { requireAuth } from "@/utils/auth";
 import { redirect } from "next/navigation";
-import { verifiedSchoolIdentities } from "@/utils/school-identity";
-import { hasConfirmedUniversityEmail, requireVerifiedEmailPolicy } from "@/utils/verified-email-policy";
+import { clubWriteTransaction } from "@/utils/club-write-transaction";
+import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
+import { UniversityVerificationError } from "@/utils/verified-email-policy";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 export default async function Invitation({
   params,
@@ -25,15 +26,26 @@ export default async function Invitation({
   const account = await requireAuth({ verifyEmail: true });
   const person = account.user;
   await requireCompletedStudentProfile(person.id, `/invitations/${id}`);
-  const verifiedEmail = hasConfirmedUniversityEmail(account) &&
-    await requireVerifiedEmailPolicy().then(() => true).catch(() => false);
-  // A delivery email is not identity proof. Legacy links retain their email binding.
-  const identities = await prisma.$transaction(tx => verifiedSchoolIdentities(tx, account)).catch(() => []);
+  let verificationError: UniversityVerificationError | undefined;
+  const identities = await (async () => {
+    try {
+      await prepareVerifiedSchoolAccount(account);
+      return await clubWriteTransaction(tx => verifiedSchoolIdentities(tx, account));
+    } catch (error) {
+      if (!(error instanceof UniversityVerificationError)) throw error;
+      verificationError = error;
+      return [];
+    }
+  })();
+  if (verificationError) return <main className="mx-auto min-h-svh max-w-xl space-y-4 px-4 py-8 sm:px-8 sm:py-12">
+    <h1 className="oc-page-title">{verificationError.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? "Verify your university email" : "Invitation verification unavailable"}</h1>
+    <p role="alert">{verificationError.message}</p><Link className="underline" href="/">Return to OutClass</Link>
+  </main>;
   const invitation = await prisma.clubInvitation.findFirst({
     where: {
       id,
       OR: [
-        ...(verifiedEmail ? [{ schoolIdentityId: null, email: person.email.toLowerCase() }] : []),
+        { schoolIdentityId: null, email: person.email.toLowerCase() },
         { schoolIdentityId: { in: identities.map(identity => identity.id) } },
       ],
       status: "PENDING",

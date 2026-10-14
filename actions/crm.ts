@@ -1,4 +1,5 @@
 "use server";
+import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
 import { assertRecruitmentRoundMove, isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle";
@@ -77,7 +78,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
         const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
         const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
         const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
-        return { ...projected, recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+        return { ...projected, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
       }),
     };
   }, { isolationLevel: "RepeatableRead" });

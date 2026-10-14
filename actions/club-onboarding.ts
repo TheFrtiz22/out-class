@@ -8,7 +8,7 @@ import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 import { requirePlatformAdmin } from "@/utils/platform-admin";
-import { verifiedSchoolIdentities } from "@/utils/school-identity";
+import { verifiedSchoolIdentities, prepareVerifiedSchoolAccount } from "@/utils/school-identity";
 import { canGrantOnboardingRole } from "@/lib/club-onboarding";
 import { acceptIdentityInvitationInTransaction, recipientInvitation, createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
 import { hasPermission, type ClubPermission } from "@/lib/permissions";
@@ -28,7 +28,7 @@ const invitationInput = z.object({
 /** Creates identity-bound invitations only; no User is created for the recipient. */
 export async function createClubIdentityInvitation(input: unknown) {
   const data = invitationInput.parse(input);
-  const actor = data.platformDesignation ? await requirePlatformAdmin() : (await requireAuth()).user;
+  const actor = data.platformDesignation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return clubWriteTransaction(async tx => {
     return createIdentityInvitationInTransaction(tx, data, actor);
   });
@@ -37,7 +37,8 @@ export async function createClubIdentityInvitation(input: unknown) {
 export async function getOrganizationInvitations(includeDismissed = false) {
   z.boolean().parse(includeDismissed);
   const account = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(async tx => {
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(async tx => {
     const identities = await verifiedSchoolIdentities(tx, account);
     return tx.clubInvitation.findMany({
       where: { schoolIdentityId: { in: identities.map(i => i.id) }, status: "PENDING", expiresAt: { gt: new Date() }, ...(includeDismissed ? {} : { dismissedAt: null }) },
@@ -50,14 +51,16 @@ export async function getOrganizationInvitations(includeDismissed = false) {
 export async function acceptIdentityClubInvitation(invitationId: string) {
   id.parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(tx => acceptIdentityInvitationInTransaction(tx, invitationId, account));
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(tx => acceptIdentityInvitationInTransaction(tx, invitationId, account));
 }
 
 /** Dismissal is reversible and never changes invitation status or membership. */
 export async function setOrganizationInvitationDismissed(invitationId: string, dismissed: boolean) {
   id.parse(invitationId); z.boolean().parse(dismissed);
   const account = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(async tx => {
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(async tx => {
     const invitation = await recipientInvitation(tx, invitationId, account);
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { dismissedAt: dismissed ? new Date() : null } });
     await tx.auditLog.create({ data: { actorId: account.user.id, action: dismissed ? "club.invite.dismiss" : "club.invite.restore", targetId: invitation.id, clubId: invitation.clubId } });
@@ -67,7 +70,8 @@ export async function setOrganizationInvitationDismissed(invitationId: string, d
 export async function declineIdentityClubInvitation(invitationId: string) {
   id.parse(invitationId);
   const account = await requireAuth({ verifyEmail: true });
-  return prisma.$transaction(async tx => {
+  await prepareVerifiedSchoolAccount(account);
+  return clubWriteTransaction(async tx => {
     const invitation = await recipientInvitation(tx, invitationId, account);
     await tx.clubInvitation.update({ where: { id: invitation.id }, data: { status: "DECLINED", declinedAt: new Date() } });
     await tx.auditLog.create({ data: { actorId: account.user.id, action: "club.invite.decline", targetId: invitation.id, clubId: invitation.clubId } });
@@ -76,7 +80,7 @@ export async function declineIdentityClubInvitation(invitationId: string) {
 
 export async function revokeIdentityClubInvitation(invitationId: string, platformOperation = false) {
   id.parse(invitationId); z.boolean().parse(platformOperation);
-  const user = platformOperation ? await requirePlatformAdmin() : (await requireAuth()).user;
+  const user = platformOperation ? await requirePlatformAdmin({ fresh: true }) : (await requireAuth()).user;
   return prisma.$transaction(async tx => {
     const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
     if (!hint) throw new Error("Invitation unavailable.");

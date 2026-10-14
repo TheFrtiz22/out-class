@@ -3,9 +3,9 @@ import { interviewerEligible, parseSchedule } from "@/lib/availability"
 import { interviewCapabilities } from "@/lib/interview-access"
 
 /** The shared Phase 1/2 candidate boundary. No grants, schedules or notifications are written. */
-export async function loadInterviewerPool(tx: AppTransactionClient, clubId: string, roundId: string) {
+export async function loadInterviewerPool(tx: AppTransactionClient, clubId: string, roundId: string, memberIds?: string[]) {
   const club = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { interviewerRoles: true, interviewerEligibilityRevision: true } })
-  const members = await tx.clubMember.findMany({ where: { clubId }, orderBy: { id: "asc" }, include: {
+  const members = await tx.clubMember.findMany({ where: { clubId, ...(memberIds?{id:{in:memberIds}}:{}) }, orderBy: { id: "asc" }, include: {
     user: { select: { email: true, disabledAt: true, studentProfile: { select: { firstName: true, lastName: true } } } },
     interviewParticipation: { where: { clubId, roundId } },
   } })

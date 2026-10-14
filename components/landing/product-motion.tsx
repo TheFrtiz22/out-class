@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 
 const ProgressContext = createContext(1)
-const PlaybackContext = createContext({ complete: true, reduced: true, paused: false, toggle: () => {}, replay: () => {} })
+const PlaybackContext = createContext({ complete: true, reduced: true, paused: false, toggle: () => {}, replay: () => {}, seek: (_progress: number) => {} })
 export const useProductProgress = () => useContext(ProgressContext)
+export const useProductPlayback = () => useContext(PlaybackContext)
 
 /** Normalize a named beat of a scene to 0–1. */
 export const phase = (progress: number, start: number, end: number) =>
@@ -24,6 +25,7 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
   const ref = useRef<HTMLDivElement>(null)
   const syncRef = useRef(() => {})
   const replayRef = useRef(() => {})
+  const seekRef = useRef((_progress: number) => {})
   const pausedRef = useRef(false)
   const [snapshot, setSnapshot] = useState({ key: resetKey, progress: 1 })
   const [paused, setPaused] = useState(false)
@@ -37,9 +39,10 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
     let visible = false
     let elapsed = 0
     let finished = false
+    let manual = false
     let frame: number | undefined
     let previous: number | undefined
-    let published = 0
+    let published = -1
     pausedRef.current = false
     setPaused(false)
     const publish = (value: number) => setSnapshot({ key: resetKey, progress: value })
@@ -52,10 +55,11 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
       if (previous !== undefined) elapsed = Math.min(duration, elapsed + now - previous)
       previous = now
       const complete = elapsed >= duration
-      // One clock, at most 25 React updates/sec. CSS handles the small reveal transitions.
-      if (now - published >= 40 || complete) {
-        publish(elapsed / duration)
-        published = now
+      // Twenty meaningful beats per example; CSS owns the movement between them.
+      const beat = Math.round(elapsed / duration * 20) / 20
+      if (beat !== published || complete) {
+        publish(complete ? 1 : Math.min(.95, beat))
+        published = beat
       }
       if (complete) { finished = true; stop() }
       else frame = requestAnimationFrame(tick)
@@ -64,6 +68,7 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
       stop()
       setReduced(preference.matches)
       if (preference.matches) {
+        if (manual) return
         elapsed = duration
         finished = true
         publish(1)
@@ -78,11 +83,21 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
       stop()
       elapsed = 0
       finished = false
-      published = 0
+      manual = false
+      published = -1
       pausedRef.current = false
       setPaused(false)
       publish(0)
       sync()
+    }
+    seekRef.current = value => {
+      stop()
+      manual = true
+      elapsed = Math.max(0, Math.min(1, value)) * duration
+      finished = elapsed >= duration
+      pausedRef.current = true
+      setPaused(true)
+      publish(elapsed / duration)
     }
     const observer = new IntersectionObserver(([entry]) => {
       // Start when a meaningful part of the preview is visible, even in landscape.
@@ -101,6 +116,7 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
       observer.disconnect()
       syncRef.current = () => {}
       replayRef.current = () => {}
+      seekRef.current = () => {}
       preference.removeEventListener("change", sync)
       document.removeEventListener("visibilitychange", sync)
     }
@@ -112,8 +128,11 @@ export function ProductMotion({ children, duration = 4000, resetKey = "default" 
     syncRef.current()
   }
   const replay = () => replayRef.current()
-  return <div ref={ref} className="oc-product-motion" data-demo-complete={progress === 1} data-demo-paused={paused}>
-    <PlaybackContext.Provider value={{ complete: progress === 1, reduced, paused, toggle, replay }}>
+  return <div ref={ref} className="oc-product-motion" data-demo-complete={progress === 1} data-demo-paused={paused} onFocusCapture={event => {
+    // A keyboard user owns the example while inspecting or editing a field.
+    if (progress < 1 && !pausedRef.current && !(event.target as HTMLElement).closest(".oc-preview-playback")) toggle()
+  }}>
+    <PlaybackContext.Provider value={{ complete: progress === 1, reduced, paused, toggle, replay, seek: value => seekRef.current(value) }}>
       <ProgressContext.Provider value={progress}>{children}</ProgressContext.Provider>
     </PlaybackContext.Provider>
   </div>

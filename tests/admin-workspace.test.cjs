@@ -44,7 +44,46 @@ test('complete isolated migration chain denies browser CRUD even with broad gran
    await assert.rejects(db.exec(`INSERT INTO "${table}" VALUES${inserts[table].replace(/\('([ecr])'/,"('new-$1'")}`),/row-level security/);await db.exec('RESET ROLE');
   }
  }
- await assert.rejects(db.exec(`UPDATE "AdminElevation" SET "expiresAt"="createdAt"+interval '31 minutes'`),/check constraint/);
+ await db.exec(`UPDATE "AdminElevation" SET "expiresAt"=NULL`);
+ assert.equal((await db.query(`SELECT "expiresAt" FROM "AdminElevation"`)).rows[0].expiresAt,null);
+ await assert.rejects(db.exec(`UPDATE "AdminElevation" SET "expiresAt"="createdAt"`),/check constraint/);
  await assert.rejects(db.exec(`UPDATE "AdminElevationChallenge" SET attempts=6`),/check constraint/);
  await assert.rejects(db.exec(`UPDATE "PlatformReport" SET status='RESOLVED'`),/check constraint/);
+});
+
+
+test('session-bound migration preserves legacy deadlines, revocations, ownership and restrictive RLS',async t=>{
+ const db=new PGlite();t.after(()=>db.close());await db.exec('CREATE ROLE anon;CREATE ROLE authenticated;');
+ const migration='20261012171752_admin_session_bound_elevation';
+ for(const name of fs.readdirSync('prisma/migrations').sort()){
+  if(name===migration)break;
+  const file=`prisma/migrations/${name}/migration.sql`;if(fs.existsSync(file))await db.exec(fs.readFileSync(file,'utf8'));
+ }
+ await db.exec(`INSERT INTO "User"(id,email)VALUES('legacy','legacy@virginia.edu');
+ INSERT INTO "AdminElevation"(id,"actorId","tokenHash","authSessionId","factorId","passwordVerifiedAt","mfaVerifiedAt","createdAt","expiresAt","revokedAt")
+ VALUES('expired','legacy','${'c'.repeat(64)}','session','factor','2026-01-01','2026-01-01','2026-01-01','2026-01-01 00:30',NULL),
+ ('revoked','legacy','${'d'.repeat(64)}','session','factor','2026-01-01','2026-01-01','2026-01-01','2026-01-01 00:30','2026-01-01 00:10');`);
+ const sql=`SELECT * FROM "AdminElevation" ORDER BY id`,before=(await db.query(sql)).rows;
+ const securitySql=`SELECT c.relowner,c.relrowsecurity,c.relforcerowsecurity,p.polname,p.polpermissive,pg_get_expr(p.polqual,p.polrelid) AS predicate FROM pg_class c JOIN pg_policy p ON p.polrelid=c.oid WHERE c.relname='AdminElevation'`;
+ const security=(await db.query(securitySql)).rows;
+ await db.exec(fs.readFileSync(`prisma/migrations/${migration}/migration.sql`,'utf8'));
+ assert.deepEqual((await db.query(sql)).rows,before);
+ assert.deepEqual((await db.query(securitySql)).rows,security);
+ for(const role of ['anon','authenticated'])assert.equal((await db.query(`SELECT has_table_privilege('${role}','"AdminElevation"','SELECT') allowed`)).rows[0].allowed,false);
+ await db.exec(`INSERT INTO "AdminElevation"(id,"actorId","tokenHash","authSessionId","factorId","passwordVerifiedAt","mfaVerifiedAt","createdAt","expiresAt") VALUES('session-bound','legacy','${'e'.repeat(64)}','session','factor',NOW(),NOW(),NOW(),NULL)`);
+});
+
+
+test('sensitive workspace operations demand fresh verification; ordinary settings reads do not',async()=>{
+ const checked=[];
+ const server=api({platformContent:{findUnique:async()=>null},auditLog:{create:async()=>({})}},async options=>{
+  checked.push(options);
+  if(options?.fresh)throw Error('Verify your password and authenticator again');
+  return{id:'actor'};
+ });
+ assert.deepEqual(await server.getAdminSettings(),{supportEmail:'',campusNotice:'',maintenanceNotice:''});
+ for(const [name,args]of Object.entries({resolveAdminReport:[{}],inspectAdminClub:['bad','bad'],setAdminClubSuspended:['bad',true,'bad'],saveAdminSettings:[{},'bad'],createAdminStudent:[{}],resendAdminStudentInvitation:['bad','bad'],createAdminClub:[{}],resendAdminClubInvitation:['bad','bad','bad'],changeAdminDesignatedLeader:[{}],inspectAdminStudent:['bad','bad']})){
+  await assert.rejects(server[name](...args),/Verify your password/);
+  assert.equal(checked.at(-1)?.fresh,true);
+ }
 });

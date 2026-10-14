@@ -373,43 +373,6 @@
   font-size: var(--oc-size-11);
   color: var(--muted-foreground);
 }
-.oc-public-footer {
-  width: 100%;
-  margin: auto;
-  padding: 36px 40px;
-  background: var(--background);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 28px;
-}
-.oc-public-footer > div > a {
-  display: inline-flex;
-}
-.oc-public-footer p {
-  font-size: var(--oc-size-11);
-  margin-top: 12px;
-  color: var(--muted-foreground);
-}
-.oc-public-footer nav {
-  max-width: 1160px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-  font-size: var(--oc-size-12);
-  color: var(--muted-foreground);
-}
-.oc-public-footer nav :is(a, button) {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-.oc-public-footer small {
-  font-size: var(--oc-size-11);
-  color: var(--muted-foreground);
-}
 @media (min-width: 1100px) and (min-height: 800px) and (prefers-reduced-motion: no-preference) {
   .oc-product-story > .oc-story-copy {
     position: sticky;
@@ -437,13 +400,6 @@
   }
   .oc-story-intro {
     padding-block: 26px;
-  }
-  .oc-public-footer {
-    flex-wrap: wrap;
-    padding: 30px 24px;
-  }
-  .oc-public-footer > div {
-    width: 100%;
   }
 }
 @media (max-width: 420px) {
