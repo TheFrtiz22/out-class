@@ -1,4 +1,5 @@
 "use client"
+import { schedulingDateTime } from "@/lib/scheduling-config"
 import { academicYear } from "@/lib/recruitment-profile"
 import { useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
@@ -179,13 +180,7 @@ export function DemoInterviewSchedule({ onNavigate }: { onNavigate: (view: ViewI
               <li key={slot.id} className="grid gap-4 py-5 md:grid-cols-[1fr_1fr_auto]">
                 <div className="text-sm">
                   <p className="font-medium">
-                    {slot.startTime.toLocaleString([], {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+                    {schedulingDateTime(slot.startTime)}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{slot.location}</p>
                   <p className="mt-1 text-xs text-muted-foreground">

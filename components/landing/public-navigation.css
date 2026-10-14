@@ -1,47 +1,189 @@
+/* Public header only. Override these tokens to customize the surface and motion. */
 .oc-public-nav {
+  --nav-ease: cubic-bezier(.22, 1, .36, 1);
+  --nav-duration: 400ms;
+  --nav-ink: var(--primary);
+  --nav-surface: rgb(255 251 245 / 94%);
+  --nav-border: rgb(20 45 78 / 10%);
+  --nav-hover: rgb(20 45 78 / 7%);
+  --nav-accent: var(--brand-orange);
   position: sticky;
   top: var(--support-banner-height, 0px);
   z-index: 40;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--background) 96%, transparent);
-  border-bottom: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  padding: 16px 24px;
+  color: var(--nav-ink);
+  pointer-events: none;
 }
-.oc-public-nav[data-hero="true"] { color: #fff7ec; background: rgb(20 45 78 / 24%); border-color: #fff7ec20; }
+.oc-public-nav[data-hero="true"] {
+  --nav-ink: #fff7ec;
+  --nav-surface: rgb(20 37 59 / 78%);
+  --nav-border: rgb(255 247 236 / 16%);
+  --nav-hover: rgb(255 247 236 / 12%);
+}
+.oc-public-nav[data-open="true"] { --nav-surface: rgb(255 251 245 / 98%); }
+.oc-public-nav[data-hero="true"][data-open="true"] { --nav-surface: rgb(20 37 59 / 97%); }
 .oc-landing > .oc-public-nav[data-hero] { position: fixed; inset-inline: 0; }
 .oc-information > .oc-public-nav[data-hero] { position: sticky; }
-.oc-public-nav-row { display: flex; align-items: center; gap: 24px; max-width: 1240px; min-height: 88px; padding: 16px 32px; margin: auto; }
-.oc-public-logo { display: flex; flex-shrink: 0; width: 140px; }
-.oc-public-logo img { width: 100%; height: auto; }
-.oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 22px; }
+.oc-public-nav-surface {
+  position: relative;
+  max-width: 1200px;
+  margin-inline: auto;
+  border: 1px solid var(--nav-border);
+  border-radius: 999px;
+  background: var(--nav-surface);
+  box-shadow: 0 8px 32px rgb(12 25 43 / 8%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  backdrop-filter: blur(20px) saturate(135%);
+  pointer-events: auto;
+  transition: background-color var(--nav-duration) var(--nav-ease), border-color var(--nav-duration) var(--nav-ease), border-radius var(--nav-duration) var(--nav-ease), color var(--nav-duration) var(--nav-ease);
+}
+.oc-public-nav-row { display: flex; align-items: center; gap: 20px; min-height: 68px; padding: 10px 12px 10px 24px; }
+.oc-public-logo { position: relative; display: flex; align-items: center; flex: 0 0 132px; height: 44px; border-radius: 8px; }
+.oc-public-logo > span { position: absolute; inset: 0; display: flex; align-items: center; transition: opacity 240ms var(--nav-ease); }
+.oc-public-logo img { display: block; width: 100%; height: auto; }
+.oc-public-logo-dark { opacity: 0; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-light { opacity: 0; }
+.oc-public-nav[data-hero="true"] .oc-public-logo-dark { opacity: 1; }
+.oc-public-desktop, .oc-public-account { display: flex; align-items: center; gap: 4px; }
 .oc-public-desktop { margin-left: auto; }
-.oc-public-account { gap: 18px; }
+.oc-public-account { gap: 8px; }
 .oc-public-nav a { text-decoration: none; white-space: nowrap; }
-.oc-public-desktop > a:not([data-slot]), .oc-public-login { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
-.oc-public-nav a[aria-current], .oc-public-nav a:not([data-slot]):hover { text-decoration: underline; text-underline-offset: 6px; text-decoration-color: var(--brand-orange); }
-.oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
-.oc-public-nav[data-hero="true"] :is(a, button):focus-visible { outline-color: #fff7ec; }
-.oc-public-nav .oc-public-request { background: transparent; border-color: currentColor; color: inherit; box-shadow: none; min-height: 44px; padding-inline: 16px; font-size: 14px; }
-.oc-public-nav .oc-public-request:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-.oc-public-nav .oc-public-primary { min-height: 44px; padding-inline: 20px; font-size: 14px; color: var(--primary); background: #fff7ec; }
-.oc-public-nav .oc-public-primary:hover { background: white; }
-.oc-public-menu-toggle { display: none; align-items: center; justify-content: center; width: 44px; height: 44px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: var(--oc-radius-md); }
+.oc-public-nav .oc-public-link, .oc-public-nav .oc-public-login {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -.01em;
+}
+.oc-public-nav .oc-public-link[aria-current] { background: var(--nav-hover); }
+.oc-public-link[aria-current]::after { content: ""; position: absolute; bottom: 5px; left: calc(50% - 2px); width: 4px; height: 4px; border-radius: 50%; background: var(--nav-accent); }
+.oc-public-nav .oc-public-primary {
+  min-height: 44px;
+  height: auto;
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #fff7ec;
+  background: var(--primary);
+  box-shadow: 0 2px 4px rgb(12 25 43 / 8%);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+}
+.oc-public-nav[data-hero="true"] .oc-public-primary { background: #fff7ec; color: var(--primary); }
+.oc-landing .oc-public-nav :is(a, button) {
+  transition: background-color 220ms var(--nav-ease), color 220ms var(--nav-ease), box-shadow 220ms var(--nav-ease), transform 220ms var(--nav-ease);
+}
+.oc-landing .oc-public-nav :is(a, button):focus-visible { outline: 2px solid var(--nav-ink); outline-offset: 3px; }
+.oc-public-nav :is(.oc-public-link, .oc-public-login):focus-visible { background: var(--nav-hover); }
+.oc-public-nav .oc-public-primary:focus-visible { box-shadow: 0 0 0 4px var(--nav-hover); }
+.oc-public-nav .oc-public-primary:active { transform: scale(.97); }
+
+/* Fixed metrics, staggered transforms: no reflow and one screen-reader label. */
+.oc-public-label { display: inline-flex; }
+.oc-public-label-accessible { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.oc-public-label-visual { display: inline-flex; height: 20px; overflow: clip; }
+.oc-public-letter { display: inline-block; }
+.oc-public-letter-track { position: relative; display: block; transition: transform var(--nav-duration) var(--nav-ease); transition-delay: var(--letter-delay, 0ms); }
+.oc-public-letter-copy { position: absolute; top: 100%; left: 0; }
+.oc-public-nav :is(a, button):focus-visible .oc-public-letter-track { transform: translateY(-100%); }
+@media (hover: hover) and (pointer: fine) {
+  .oc-public-nav :is(.oc-public-link, .oc-public-login):hover { background: var(--nav-hover); }
+  .oc-public-nav .oc-public-primary:hover { background: color-mix(in srgb, var(--primary) 88%, white); box-shadow: 0 4px 12px rgb(12 25 43 / 14%); }
+  .oc-public-nav[data-hero="true"] .oc-public-primary:hover { background: #ffffff; }
+  .oc-public-nav a:hover .oc-public-letter-track { transform: translateY(-100%); }
+}
+.oc-public-menu-toggle { display: none; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; color: inherit; background: var(--nav-hover); border: 1px solid var(--nav-border); border-radius: 50%; cursor: pointer; }
+.oc-public-menu-icon { position: relative; width: 18px; height: 18px; }
+.oc-public-menu-icon > span { position: absolute; left: 0; top: 8px; width: 18px; height: 1.5px; border-radius: 2px; background: currentColor; transform: translateY(-3px); transition: transform var(--nav-duration) var(--nav-ease); }
+.oc-public-menu-icon > span + span { transform: translateY(3px); }
+.oc-public-nav[data-open="true"] .oc-public-menu-icon > span { transform: rotate(45deg); }
+.oc-public-nav[data-open="true"] .oc-public-menu-icon > span + span { transform: rotate(-45deg); }
 .oc-public-mobile { display: none; }
 @media (max-width: 1099px) {
-  .oc-public-nav-row { min-height: 76px; padding: 12px 24px; gap: 16px; }
+  .oc-public-nav { padding: 12px 20px; }
+  .oc-public-nav-surface { border-radius: 34px; }
+  .oc-public-nav-row { min-height: 64px; padding: 9px 10px 9px 20px; gap: 16px; }
   .oc-public-desktop { display: none; }
-  .oc-public-account { margin-left: auto; gap: 16px; }
+  .oc-public-account { margin-left: auto; gap: 8px; }
   .oc-public-menu-toggle { display: flex; }
-  .oc-public-mobile:not([hidden]) { display: flex; flex-direction: column; gap: 8px; padding: 8px 24px 24px; max-height: calc(100dvh - 90px); overflow-y: auto; border-top: 1px solid var(--border); }
-  .oc-public-mobile > a { display: flex; align-items: center; min-height: 48px; }
-  .oc-public-mobile .oc-public-request { align-self: flex-start; margin-top: 8px; }
+  .oc-public-nav[data-open="true"] .oc-public-nav-surface { border-bottom-color: transparent; border-radius: 34px 34px 0 0; }
+  .oc-public-mobile {
+    position: absolute;
+    top: calc(100% - 1px);
+    left: -1px;
+    right: -1px;
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    opacity: 0;
+    border: 1px solid var(--nav-border);
+    border-top: 0;
+    border-radius: 0 0 34px 34px;
+    background: var(--nav-surface);
+    box-shadow: 0 20px 28px rgb(12 25 43 / 10%);
+    -webkit-backdrop-filter: blur(20px) saturate(135%);
+    backdrop-filter: blur(20px) saturate(135%);
+    transition: grid-template-rows var(--nav-duration) var(--nav-ease), opacity 200ms var(--nav-ease), visibility 0s var(--nav-duration), background-color var(--nav-duration) var(--nav-ease);
+  }
+  .oc-public-nav[data-open="true"] .oc-public-mobile { grid-template-rows: 1fr; visibility: visible; opacity: 1; transition-delay: 0s; }
+  .oc-public-mobile-clip { min-height: 0; overflow: hidden; }
+  .oc-public-mobile-links { display: flex; flex-direction: column; gap: 6px; max-height: calc(100dvh - var(--support-banner-height, 0px) - 112px); overflow-y: auto; overscroll-behavior: contain; padding: 12px 14px 18px; }
+  .oc-public-mobile-links::before { content: ""; height: 1px; background: var(--nav-border); margin: 0 10px 8px; flex-shrink: 0; }
+  .oc-public-mobile .oc-public-link { justify-content: flex-start; min-height: 48px; flex-shrink: 0; padding-inline: 16px; font-size: 15px; }
+  .oc-public-mobile .oc-public-link[aria-current]::after { bottom: calc(50% - 2px); left: auto; right: 18px; }
+  .oc-public-mobile .oc-public-mobile-login { display: none; }
 }
-@media (max-width: 480px) {
-  .oc-public-nav-row { padding-inline: 12px; gap: 10px; }
-  .oc-public-logo { width: clamp(78px, 23vw, 110px); }
-  .oc-public-account { gap: 10px; }
-  .oc-public-nav .oc-public-primary { padding-inline: 12px; font-size: 13px; }
-  .oc-public-login { font-size: 13px; }
-  .oc-public-menu-toggle { width: 40px; }
+@media (max-width: 540px) {
+  .oc-public-nav { padding: 12px; }
+  .oc-public-nav-row { padding-left: 16px; gap: 12px; }
+  .oc-public-logo { flex-basis: clamp(100px, 25vw, 124px); }
+  .oc-public-account { gap: 8px; }
+  .oc-public-account .oc-public-login { display: none; }
+  .oc-public-nav .oc-public-primary { padding-inline: 16px; }
+  .oc-public-mobile .oc-public-mobile-login { display: flex; }
 }
-@media (prefers-reduced-motion: reduce) { .oc-public-nav * { transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-public-nav *, .oc-landing .oc-public-nav :is(a, button) { transition: none !important; }
+  .oc-public-nav :is(a, button) .oc-public-letter-track { transform: none !important; }
+}
+
+/* The compact switcher uses the existing space between the brand and links.
+   Absolute positioning preserves every navbar/link metric during the handoff. */
+.oc-public-journey-desktop {
+  position: absolute;
+  top: 50%;
+  left: 168px;
+  width: 196px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(calc(-50% + 8px));
+  transition: opacity 280ms var(--nav-ease), transform 320ms var(--nav-ease), visibility 0s 320ms;
+}
+.oc-public-nav[data-journey="true"] .oc-public-journey-desktop { opacity: 1; visibility: visible; transform: translateY(-50%); transition-delay: 60ms, 0s, 0s; }
+.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--primary); border-radius: 999px; background: var(--primary); }
+.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border-radius: 999px; background: #fff7ec; border-bottom: 2px solid var(--brand-orange); box-shadow: 0 2px 8px rgb(7 21 41 / 15%); transition: transform 280ms var(--nav-ease); }
+.oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
+.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: #fff7ec; font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
+.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -3px; }
+.oc-public-journey-mobile { display: none; }
+@media (max-width: 1099px) { .oc-public-journey-desktop { left: 164px; } }
+@media (max-width: 767px) {
+  .oc-public-journey-desktop { display: none; }
+  .oc-public-journey-mobile { display: block; margin: 0 10px 8px; }
+  .oc-public-nav .oc-public-journey-mobile .oc-perspective-switcher button { font-size: 14px; min-height: 48px; }
+  .oc-public-nav[data-journey="true"] .oc-public-menu-toggle::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; background: var(--brand-orange); border-radius: 50%; }
+  .oc-public-menu-toggle { position: relative; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-public-journey-desktop, .oc-public-nav .oc-perspective-indicator { transition: none !important; }
+  .oc-public-journey-desktop { transform: translateY(-50%); }
+}

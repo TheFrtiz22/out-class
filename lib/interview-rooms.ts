@@ -1,11 +1,12 @@
 import { z } from "zod"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 export const roomInputSchema = z.object({
   clubId: z.string().uuid(), roundId: z.string().uuid(),
   name: z.string().trim().min(1, "Name your room.").max(100),
   location: z.string().trim().min(1, "Add a room location or meeting link.").max(2000),
   kind: z.enum(["IN_PERSON", "VIRTUAL"]),
-  timezone: z.string().refine(v => { try { new Intl.DateTimeFormat("en", { timeZone: v }); return true } catch { return false } }, "Choose a valid time zone."),
+  timezone: z.string().default(SCHEDULING_TIMEZONE).refine(v => { try { new Intl.DateTimeFormat("en", { timeZone: v }); return true } catch { return false } }, "Choose a valid time zone.").transform(() => SCHEDULING_TIMEZONE),
   dates: z.array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).min(1).max(14),
   start: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), end: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   duration: z.number().int().min(5).max(180), buffer: z.number().int().min(0).max(60),
@@ -50,4 +51,4 @@ export function overlaps(a: { startTime: string | Date; endTime: string | Date }
   return +new Date(a.startTime) < +new Date(b.endTime) + buffer * 60000 && +new Date(b.startTime) < +new Date(a.endTime) + buffer * 60000
 }
 export function dayKey(value: string | Date, timezone: string) { return wall(new Date(value), timezone).slice(0, 10) }
-export function slotTime(value: string | Date, timezone: string) { return new Date(value).toLocaleTimeString([], { timeZone: timezone, hour: "numeric", minute: "2-digit" }) }
+export function slotTime(value: string | Date, timezone: string) { return new Date(value).toLocaleTimeString("en-US", { timeZone: timezone, hour: "numeric", minute: "2-digit", hour12: true }) }

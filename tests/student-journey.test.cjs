@@ -70,8 +70,8 @@ test('student terminology shares canonical labels without changing custom round 
   assert.deepEqual(applicationStatusProgress({ ...app, status: 'DRAFTING' }).previous, [])
 })
 test('recruitment dates include UVA time zone and observe daylight saving changes', () => {
-  assert.match(recruitmentDate('2026-10-07T20:00:00Z'), /4:00 PM EDT/)
-  assert.match(recruitmentDate('2026-12-07T20:00:00Z'), /3:00 PM EST/)
+  assert.match(recruitmentDate('2026-10-07T20:00:00Z'), /4:00 PM.*Eastern Time/)
+  assert.match(recruitmentDate('2026-12-07T20:00:00Z'), /3:00 PM.*Eastern Time/)
 })
 
 test('public club entry retains unified Status, submitted responses, Calendar, and profile navigation', () => {

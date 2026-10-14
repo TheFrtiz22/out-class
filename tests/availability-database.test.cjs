@@ -46,7 +46,8 @@ test('admin overview and pool count only eligible confirmed participants and who
   await h.db.query('INSERT INTO "InterviewSlot"(id,"clubId","roomId","startTime","endTime",location) VALUES (\'covered\',$1,\'coverage-room\',\'2026-10-12 13:00\',\'2026-10-12 13:20\',\'Hall\'),(\'partial\',$1,\'coverage-room\',\'2026-10-12 13:45\',\'2026-10-12 14:05\',\'Hall\')', [ids.club])
   h.as(ids.owner)
   overview = await api.getAvailabilityOverview({ ...scope, week: '2026-10-12', timezone: 'Europe/London', role: 'INTERVIEWER' })
-  assert.equal(overview.members[0].available[0][56], true) // 14:00 London = 09:00 New York
+  assert.equal(overview.timezone, 'America/New_York') // Overrides caller timezone for the application display.
+  assert.equal(overview.members[0].available[0][36], true)
   assert.deepEqual(overview.slots.map(s => s.availableMemberIds.length), [1, 0])
   assert.equal('schedule' in overview.members[0], false); assert.equal('userId' in overview.members[0], false)
   const pool = await api.getEligibleInterviewerPool({ ...scope, start: '2026-10-12T13:00:00Z', end: '2026-10-12T14:00:00Z' })
@@ -116,4 +117,41 @@ test('eligibility changes preserve existing panel grants and room approval exact
   await api.setInterviewerEligibility({ clubId: ids.club, revision: 0, targets: [{ memberId: ids.panelMember, eligible: false }] })
   assert.deepEqual((await h.db.query('SELECT * FROM "InterviewPanelAssignment"')).rows, grants)
   assert.deepEqual((await h.db.query('SELECT * FROM "InterviewRoom"')).rows, rooms)
+})
+
+test('both save actions reject new hidden hours atomically and retain saved history on visible edits', async t => {
+  const h = await fixture(t), { api, core, ids } = h, scope = { clubId: ids.club, roundId: ids.round }
+  h.as(ids.panel)
+  const hidden = core.emptySchedule(); hidden.weeklySubmitted = true; hidden.weekly[0] = [[465, 495]]
+  await assert.rejects(api.saveMyAvailability({ revision: 0, schedule: hidden }), /8:00 AM and 9:00 PM/)
+  await assert.rejects(api.saveMyRoundAvailability({ ...scope, revision: 0, schedule: hidden, confirm: true }), /8:00 AM and 9:00 PM/)
+  assert.equal(await h.prisma.userAvailability.count({ where: {} }), 0)
+  assert.equal(await h.prisma.interviewRoundParticipation.count({ where: {} }), 0)
+  const legacy = core.emptySchedule(); legacy.weeklySubmitted = true; legacy.weekly[0] = [[0, 60], [480, 1260], [1380, 1440]]
+  await h.prisma.userAvailability.create({ data: { userId: ids.panel, schedule: legacy } })
+  const original = (await api.getMyAvailability()).document
+  const initial = await api.getMyRoundAvailability(scope)
+  await api.saveMyRoundAvailability({ ...scope, ...initial.document, confirm: true })
+  const snapshot = await Promise.all(['interviewRoom', 'interviewSlot', 'interviewBooking', 'interviewPanelAssignment', 'interviewPanelScheduleVersion'].map(model => h.prisma[model].findMany({})))
+  const days = core.availabilityEditorDays(legacy, '2026-10-12', true); days[0][83] = false
+  const edited = core.editAvailabilityDays(legacy, '2026-10-12', true, days, [0])
+  const saved = await api.saveMyAvailability({ ...original, schedule: edited })
+  assert.deepEqual(saved.schedule.weekly[0], [[0, 60], [480, 1245], [1380, 1440]])
+  assert.deepEqual((await api.getMyRoundAvailability(scope)).document.schedule, legacy)
+  assert.deepEqual(await Promise.all(['interviewRoom', 'interviewSlot', 'interviewBooking', 'interviewPanelAssignment', 'interviewPanelScheduleVersion'].map(model => h.prisma[model].findMany({}))), snapshot)
+  const bad = structuredClone(saved.schedule); bad.exceptions['2026-10-13'] = [[1260, 1275]]
+  await assert.rejects(api.saveMyAvailability({ ...saved, schedule: bad }), /8:00 AM and 9:00 PM/)
+  assert.deepEqual((await api.getMyAvailability()).document, saved)
+})
+
+test('eligibility and Auto-Fill candidates honor the final Eastern block on either side of DST', async t => {
+  const h = await fixture(t), { api, core, ids } = h, scope = { clubId: ids.club, roundId: ids.round }
+  h.as(ids.panel)
+  const schedule = core.emptySchedule(); schedule.weeklySubmitted = true; schedule.weekly[0] = [[1245, 1260]]
+  await api.saveMyRoundAvailability({ ...scope, revision: 0, schedule, confirm: true })
+  h.as(ids.owner)
+  for (const [start, end] of [['2026-10-27T00:45:00Z', '2026-10-27T01:00:00Z'], ['2026-11-03T01:45:00Z', '2026-11-03T02:00:00Z']]) {
+    assert.deepEqual(await api.getEligibleInterviewerPool({ ...scope, start, end }), [{ memberId: ids.panelMember, evidenceAccess: true }])
+    assert.deepEqual(await api.getEligibleInterviewerPool({ ...scope, start, end: new Date(+new Date(end) + 60000).toISOString() }), [])
+  }
 })

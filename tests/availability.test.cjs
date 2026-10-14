@@ -4,7 +4,7 @@ function load(file) {
   file = path.resolve(file); if (cache[file]) return cache[file].exports
   const m = { exports: {} }; cache[file] = m
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name.startsWith('@/') ? load(name.slice(2) + '.ts') : require(name), m, m.exports)
+  new Function('require', 'module', 'exports', code)(name => name.startsWith('@/') ? load(name.slice(2) + '.ts') : name.startsWith('.') ? load(path.resolve(path.dirname(file), name) + '.ts') : require(name), m, m.exports)
   return m.exports
 }
 const a = load('lib/availability.ts'), { AvailabilitySaveQueue } = load('lib/availability-save-queue.ts')
@@ -89,4 +89,89 @@ test('autosaves serialize requests, preserve edits during a save and keep failed
   const failed = new AvailabilitySaveQueue({ schedule: declared(), revision: 3 }, async value => { if (fail) throw Error('offline'); return { ...value, revision: 4 } }, () => {}, 10000)
   failed.change(one); await assert.rejects(failed.flush(), /offline/); assert.equal(failed.dirty, true); assert.equal(failed.document.revision, 3)
   fail = false; await failed.flush(); assert.equal(failed.dirty, false); assert.equal(failed.state, 'saved'); failed.dispose()
+})
+
+test('the shared window has 52 quarter-hours on every day and exact DST-aware boundaries', () => {
+  const c = load('lib/scheduling-config.ts')
+  assert.equal(c.AVAILABILITY_SLOTS.length, 52)
+  assert.equal(c.AVAILABILITY_SLOTS[0], 32); assert.equal(c.AVAILABILITY_SLOTS.at(-1), 83)
+  assert.equal(c.minuteLabel(480), '8:00 AM'); assert.equal(c.minuteLabel(1245), '8:45 PM'); assert.equal(c.minuteLabel(1260), '9:00 PM')
+  for (const [week, utcHour] of [['2026-03-02', 13], ['2026-03-09', 12], ['2026-10-26', 12], ['2026-11-02', 13]]) {
+    for (const day of a.weekCells(week, c.SCHEDULING_TIMEZONE)) {
+      for (const slot of c.AVAILABILITY_SLOTS) assert.equal(day[slot].end - day[slot].start, 900000)
+      const offset = day[32].date >= '2026-03-08' && day[32].date < '2026-11-01' ? 12 : 13
+      assert.equal(new Date(day[32].start).getUTCHours(), offset)
+      assert.equal(a.localParts(day[83].end, c.SCHEDULING_TIMEZONE).minute, 1260)
+    }
+    assert.equal(new Date(a.weekCells(week, c.SCHEDULING_TIMEZONE)[0][32].start).getUTCHours(), utcHour)
+  }
+})
+test('editing, clearing and copying visible hours retain overnight recurrence and exceptions', () => {
+  const s = declared(); s.weekly[0] = [[0, 60], [480, 1260], [1380, 1440]]
+  s.exceptions['2026-10-13'] = [[60, 120], [600, 660], [1320, 1380]]
+  let days = a.availabilityEditorDays(s, '2026-10-12', true)
+  days[0] = days[0].map(() => false)
+  const cleared = a.editAvailabilityDays(s, '2026-10-12', true, days, [0])
+  assert.deepEqual(cleared.weekly[0], [[0, 60], [1380, 1440]])
+  a.validateAvailabilityEdit(cleared, s)
+  days = a.availabilityEditorDays(s, '2026-10-12', false); days[1] = [...days[0]]
+  const copied = a.editAvailabilityDays(s, '2026-10-12', false, days, [1])
+  assert.deepEqual(copied.exceptions['2026-10-13'], [[60, 120], [480, 1260], [1320, 1380]])
+  a.validateAvailabilityEdit(copied, s)
+  const restored = a.restoreVisibleRecurring(s, '2026-10-13')
+  assert.deepEqual(restored.exceptions['2026-10-13'], [[60, 120], [1320, 1380]])
+  a.validateAvailabilityEdit(restored, s)
+  assert.deepEqual(s.exceptions['2026-10-13'], [[60, 120], [600, 660], [1320, 1380]])
+})
+test('new hidden selections are rejected while saved legacy hours and zone conversions remain valid', () => {
+  for (const range of [[465, 480], [1260, 1275], [0, 1440]]) {
+    const next = declared(); next.weekly[0] = [range]
+    assert.throws(() => a.validateAvailabilityEdit(next, a.emptySchedule()), /8:00 AM and 9:00 PM/)
+    next.weeklySubmitted = false
+    assert.throws(() => a.validateAvailabilityEdit(next, a.emptySchedule()), /8:00 AM and 9:00 PM/)
+    next.weekly[0] = []; next.exceptions['2026-10-12'] = [range]
+    assert.throws(() => a.validateAvailabilityEdit(next, a.emptySchedule()), /8:00 AM and 9:00 PM/)
+  }
+  const boundary = declared(); boundary.weekly[0] = [[480, 495], [1245, 1260]]
+  a.validateAvailabilityEdit(boundary, a.emptySchedule())
+  const legacy = declared('UTC'); legacy.weekly[0] = [[0, 1440]]
+  const days = a.availabilityEditorDays(legacy, '2026-10-12', false)
+  assert.equal(days[0][32], true)
+  days[0][36] = false
+  const edit = a.editAvailabilityDays(legacy, '2026-10-12', false, days, [0])
+  a.validateAvailabilityEdit(edit, legacy)
+  assert.equal(edit.timezone, 'UTC'); assert.deepEqual(edit.weekly, legacy.weekly)
+  assert.equal(a.intervalAvailability(edit, instant('2026-10-12T13:00Z'), instant('2026-10-12T13:15Z')), 'unavailable')
+  assert.equal(a.intervalAvailability(edit, instant('2026-10-12T02:00Z'), instant('2026-10-12T02:15Z')), 'available')
+  assert.throws(() => a.validateAvailabilityEdit({ ...boundary, timezone: 'UTC' }, a.emptySchedule()), /Eastern Time/)
+})
+test('calendar timestamp projections and exports use Eastern Time independently of the host zone', () => {
+  const calendar = load('lib/calendar.ts'), student = load('lib/student-calendar-data.ts')
+  const previous = process.env.TZ
+  try {
+    for (const zone of ['America/Los_Angeles', 'Asia/Tokyo']) {
+      process.env.TZ = zone
+      const rows = student.studentCalendarEvents({ applications: [{ clubId: 'c', club: { name: 'Club' }, bookings: [{ id: 'b', slot: { startTime: '2026-11-01T01:00:00Z', endTime: '2026-11-01T01:30:00Z', location: 'Hall' } }] }] })
+      assert.equal(rows[0].date, '2026-10-31'); assert.equal(rows[0].time, '9:00 PM')
+      assert.ok(calendar.calendarFile(rows[0]).includes('DTSTART:20261101T010000Z'))
+      assert.equal(calendar.eventStart({ date: '2026-03-09', time: '8:00 AM' }).toISOString(), '2026-03-09T12:00:00.000Z')
+    }
+  } finally { if (previous === undefined) delete process.env.TZ; else process.env.TZ = previous }
+})
+test('legacy exception knowledge follows the Eastern editing day across native date boundaries', () => {
+  const schedule = a.emptySchedule('Asia/Tokyo')
+  schedule.exceptions['2026-10-12'] = [[0, 1440]]
+  assert.equal(a.availabilityEditorKnownDays(schedule, '2026-10-12')[0], false)
+  schedule.exceptions['2026-10-13'] = [[0, 1440]]
+  assert.equal(a.availabilityEditorKnownDays(schedule, '2026-10-12')[0], true)
+  const days = a.availabilityEditorDays(schedule, '2026-10-12', false)
+  assert.equal(days[0][32], true); assert.equal(days[0][83], true)
+})
+test('new demo interviews use the same Eastern wall clock in winter and summer', () => {
+  const { createDemoSeed } = load('lib/demo/seed.ts')
+  for (const [anchor, utcHour] of [['2026-02-02', 15], ['2026-07-06', 14]]) {
+    const seed = createDemoSeed(anchor), slot = seed.interviewRooms[0].slots[1]
+    assert.equal(new Date(slot.startTime).getUTCHours(), utcHour)
+    assert.equal(a.localParts(new Date(slot.startTime), 'America/New_York').minute, 600)
+  }
 })

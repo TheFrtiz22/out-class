@@ -1,3 +1,4 @@
+import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { createHash } from "node:crypto"
 import type { AppTransactionClient } from "@/utils/prisma"
 import { interviewCapabilities } from "@/lib/interview-access"
@@ -19,8 +20,8 @@ export async function ownPanelAssignments(tx:AppTransactionClient,userId:string)
  })
 }
 export function panelScheduleLine(s:{roomName:string;timezone:string;startTime:string;endTime:string}){
- const date=new Intl.DateTimeFormat("en-US",{timeZone:s.timezone,weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(s.startTime)),time=(value:string)=>new Intl.DateTimeFormat("en-US",{timeZone:s.timezone,hour:"numeric",minute:"2-digit"}).format(new Date(value))
- return `${date} · ${s.roomName} · ${time(s.startTime)}–${time(s.endTime)} (${s.timezone})`
+ const date=new Intl.DateTimeFormat("en-US",{timeZone:SCHEDULING_TIMEZONE,weekday:"short",month:"short",day:"numeric",year:"numeric"}).format(new Date(s.startTime)),time=(value:string)=>new Intl.DateTimeFormat("en-US",{timeZone:SCHEDULING_TIMEZONE,hour:"numeric",minute:"2-digit",hour12:true}).format(new Date(value))
+ return `${date} · ${s.roomName} · ${time(s.startTime)}–${time(s.endTime)} (${SCHEDULING_TIMEZONE_LABEL})`
 }
 export async function currentPanelScheduleNotification(tx:AppTransactionClient,notification:{eventKey:string;clubId:string|null;href:string},userId:string){
  if(!notification.eventKey.startsWith(panelScheduleNotificationPrefix)||!notification.clubId)return null

@@ -1,6 +1,7 @@
+import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-export const EVENT_TIMEZONE = "America/New_York";
+export const EVENT_TIMEZONE = SCHEDULING_TIMEZONE;
 export const eventCategories = [
   "Academic",
   "Professional",
@@ -213,12 +214,9 @@ export const eventDateLabel = (value: string) =>
     year: "numeric",
   }).format(new Date(value));
 export const eventTimeLabel = (value: string) =>
-  new Intl.DateTimeFormat("en-US", {
-    timeZone: EVENT_TIMEZONE,
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  }).format(new Date(value));
+  `${new Intl.DateTimeFormat("en-US", {
+    timeZone: EVENT_TIMEZONE, hour: "numeric", minute: "2-digit", hour12: true,
+  }).format(new Date(value))} · ${SCHEDULING_TIMEZONE_LABEL}`;
 /** Ordinary legacy meetings remain visible. Moderated events require published approval. */
 export const publicMeetingVisibility = {
   club: { is: { suspendedAt: null } },

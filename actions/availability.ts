@@ -1,6 +1,7 @@
 "use server"
 
 import { z } from "zod"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
@@ -8,7 +9,7 @@ import { organizationRoles } from "@/lib/organization-authorization"
 import { sessionsOverlap, panelWindowSchema } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
-import { availabilityResponse, availabilityHref, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
+import { availabilityResponse, availabilityHref, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()
@@ -49,6 +50,7 @@ export async function saveMyAvailability(raw: unknown): Promise<AvailabilityDocu
     await accountLock(tx, user.id)
     const old = await tx.userAvailability.findUnique({ where: { userId: user.id } })
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    validateAvailabilityEdit(input.schedule, old ? parseSchedule(old.schedule) : emptySchedule())
     const saved = await tx.userAvailability.upsert({ where: { userId: user.id }, create: { userId: user.id, schedule: input.schedule }, update: { schedule: input.schedule, revision: { increment: 1 } } })
     return document(saved, user.id)
   })
@@ -63,7 +65,7 @@ export async function getMyRoundAvailability(raw: unknown) {
     if (!interviewerEligible(member, club.interviewerRoles, participation?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
     const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id)
     const firstSlot = await tx.interviewSlot.findFirst({ where: { clubId: scope.clubId, room: { roundId: round.id }, startTime: { gt: new Date() } }, orderBy: { startTime: "asc" }, select: { startTime: true } })
-    return { preferredWeek: firstSlot ? monday(localParts(firstSlot.startTime, participation?.availability ? parseSchedule(participation.availability).timezone : global.schedule.timezone).date) : undefined, document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, declined: !!participation?.declinedAt, name: `${club.name} · ${round.name}` }
+    return { preferredWeek: firstSlot ? monday(localParts(firstSlot.startTime, SCHEDULING_TIMEZONE).date) : undefined, document: { accountId: user.id, schedule: participation?.availability ? parseSchedule(participation.availability) : global.schedule, revision: participation?.revision ?? 0 }, global: global.schedule, confirmed: !!participation?.confirmedAt, declined: !!participation?.declinedAt, name: `${club.name} · ${round.name}` }
   })
 }
 export async function saveMyRoundAvailability(raw: unknown) {
@@ -77,6 +79,9 @@ export async function saveMyRoundAvailability(raw: unknown) {
     const old = await tx.interviewRoundParticipation.findUnique({ where: { memberId_roundId: key } })
     if (!interviewerEligible(member, club.interviewerRoles, old?.eligibilityOverride)) throw new Error("You are not eligible for this interview round.")
     if ((old?.revision ?? 0) !== input.revision) throw new Error(changed)
+    const global = document(await tx.userAvailability.findUnique({ where: { userId: user.id } }), user.id).schedule
+    const importingGlobal = JSON.stringify(input.schedule) === JSON.stringify(global)
+    validateAvailabilityEdit(input.schedule, importingGlobal || !old?.availability ? global : parseSchedule(old.availability))
     if (input.confirm && !input.schedule.weeklySubmitted && !Object.keys(input.schedule.exceptions).length) throw new Error("Submit your availability before confirming participation. You can explicitly save an empty week.")
     const confirmedAt = input.confirm ? new Date() : null
     const saved = await tx.interviewRoundParticipation.upsert({ where: { memberId_roundId: key }, create: { ...key, clubId: input.clubId, availability: input.schedule, confirmedAt, declinedAt: null }, update: { availability: input.schedule, confirmedAt, declinedAt: null, revision: { increment: 1 } } })
@@ -126,10 +131,10 @@ export async function setInterviewerEligibility(raw: unknown) {
     return { revision: club.interviewerEligibilityRevision + 1 }
   }, { timeout: 15000 })
 }
-const overviewSchema = z.object({ clubId: id, week: localDateSchema, timezone: timezoneSchema, roundId: id.optional(), role: z.enum(organizationRoles).optional() }).strict()
+const overviewSchema = z.object({ clubId: id, week: localDateSchema, timezone: timezoneSchema.default(SCHEDULING_TIMEZONE), roundId: id.optional(), role: z.enum(organizationRoles).optional() }).strict()
 /** Club-scoped projection. Raw schedules/snapshots never leave this admin boundary. */
 export async function getAvailabilityOverview(raw: unknown): Promise<AvailabilityOverview> {
-  const input = overviewSchema.parse(raw), { user } = await requireAuth()
+  const input = { ...overviewSchema.parse(raw), timezone: SCHEDULING_TIMEZONE }, { user } = await requireAuth()
   return prisma.$transaction(async tx => {
     await authorizeClubTransaction(tx, input.clubId, user.id, ["interviews.manage"], { readOnly: true })
     if (input.roundId) await roundFor(tx, input.clubId, input.roundId)

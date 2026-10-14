@@ -1,4 +1,5 @@
 "use client"
+import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 
 import { useEffect, useState } from "react"
 import { ArrowUpRight, Check, MapPin } from "lucide-react"
@@ -102,7 +103,7 @@ function CandidateProfile({ candidate }: { candidate: InterviewCandidate }) {
 
 export function InterviewerDashboard({
   interviewerName = "Sarah", schedule = mockInterviewerSchedule,
-  availability = mockInterviewerAvailability, now, timeZone = "America/New_York",
+  availability = mockInterviewerAvailability, now, timeZone = SCHEDULING_TIMEZONE,
   needsRoundTwoAvailability = true, onOpenWorkspace, onProvideAvailability,
 }: InterviewerDashboardProps) {
   const [liveNow, setLiveNow] = useState<Date | null>(null)
@@ -115,7 +116,7 @@ export function InterviewerDashboard({
   const current = now ? new Date(now) : liveNow
   if (!current) return <p role="status" className="font-sans text-sm text-neutral-500">Loading your itinerary…</p>
   const day = (value: string | Date) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value))
-  const time = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" }).format(new Date(value))
+  const time = (value: string) => new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(value))
   const date = (value: string | Date) => new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long", month: "short", day: "numeric" }).format(new Date(value))
   const range = (slot: InterviewerAvailability) => `${time(slot.startsAt)} – ${time(slot.endsAt)}`
   const today = schedule.filter(slot => day(slot.startsAt) === day(current)).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
@@ -134,7 +135,7 @@ export function InterviewerDashboard({
     ]} />
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
       <section aria-labelledby="itinerary-heading" className={card}>
-        <div className="border-b border-border p-4"><h2 id="itinerary-heading" className="oc-section-heading ">Today&apos;s itinerary</h2><p className="mt-1 text-xs text-neutral-500">{date(current)} · All times in {timeZone}</p></div>
+        <div className="border-b border-border p-4"><h2 id="itinerary-heading" className="oc-section-heading ">Today&apos;s itinerary</h2><p className="mt-1 text-xs text-neutral-500">{date(current)} · All times in {SCHEDULING_TIMEZONE_LABEL}</p></div>
         <ol className="divide-y divide-neutral-200">{today.map(slot => {
           const completed = Date.parse(slot.endsAt) <= current.getTime() && slot.evaluationStatus === "submitted"
           const overdue = pending.some(item => item.id === slot.id)

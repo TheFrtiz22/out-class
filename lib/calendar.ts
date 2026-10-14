@@ -1,4 +1,6 @@
 import type { ClubEvent, ManagedEvent } from "./data"
+import { zonedInstant } from "@/lib/interview-rooms"
+import { SCHEDULING_TIMEZONE, minuteLabel } from "@/lib/scheduling-config"
 
 export const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 export const dateFromKey = (value: string) => new Date(`${value}T12:00:00`)
@@ -11,9 +13,10 @@ export function timeMinutes(time: string) {
 }
 export function eventStart(event: ClubEvent) {
   if (event.startTime) return new Date(event.startTime)
-  const date = dateFromKey(event.date)
-  date.setHours(0, timeMinutes(event.time), 0, 0)
-  return date
+  const minutes = timeMinutes(event.time)
+  try {
+    return zonedInstant(event.date, `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`, SCHEDULING_TIMEZONE)
+  } catch { return new Date(NaN) }
 }
 export function calendarFile(event: ClubEvent) {
   const escape = (text: string) => text.replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;")
@@ -31,6 +34,6 @@ export function managedOccurrences(events: ManagedEvent[], from: Date, to: Date,
       if (weekday < 0) return []
       for (let day = new Date(from); day <= to; day.setDate(day.getDate() + 1)) if (day.getDay() === weekday) dates.push(dateKey(day))
     } else if (/^\d{4}-\d{2}-\d{2}$/.test(event.date)) dates.push(event.date)
-    return dates.map((date) => ({ id: `managed-${event.id}-${date}`, managedEventId: event.id, clubId: event.clubId, date, day: Number(date.slice(-2)), title: event.title, club: event.clubId, color: "#051B3D", type: "Interest Meeting" as const, time: event.time, location: event.location, meetingUrl: event.zoomLink, description: `${event.scope} club event${event.recurring ? " · Weekly recurring meeting" : ""}.` }))
+    return dates.map((date) => ({ id: `managed-${event.id}-${date}`, managedEventId: event.id, clubId: event.clubId, date, day: Number(date.slice(-2)), title: event.title, club: event.clubId, color: "#051B3D", type: "Interest Meeting" as const, time: minuteLabel(timeMinutes(event.time)), location: event.location, meetingUrl: event.zoomLink, description: `${event.scope} club event${event.recurring ? " · Weekly recurring meeting" : ""}.` }))
   })
 }

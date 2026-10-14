@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { isActiveMembership } from "@/lib/permissions"
+import { SCHEDULING_TIMEZONE, AVAILABILITY_FIRST_SLOT, AVAILABILITY_END_SLOT, AVAILABILITY_SLOTS } from "@/lib/scheduling-config"
 
 export const WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] as const
 export type MinuteRange = [number, number]
@@ -30,7 +31,7 @@ export const availabilityScheduleSchema = z.object({
   }),
 }).strict()
 export const availabilitySaveSchema = z.object({ revision: z.number().int().nonnegative(), schedule: availabilityScheduleSchema, accountId: z.string().uuid().optional() }).strict()
-export function emptySchedule(timezone = "America/New_York"): AvailabilitySchedule {
+export function emptySchedule(timezone = SCHEDULING_TIMEZONE): AvailabilitySchedule {
   return { timezone, weekly: Array.from({ length: 7 }, () => []), weeklySubmitted: false, exceptions: {} }
 }
 export function parseSchedule(raw: unknown): AvailabilitySchedule { return availabilityScheduleSchema.parse(raw) }
@@ -41,6 +42,79 @@ export function dayRanges(schedule: AvailabilitySchedule, date: string): MinuteR
 export function dayKnown(schedule: AvailabilitySchedule, date: string) { return Object.hasOwn(schedule.exceptions, date) || schedule.weeklySubmitted }
 export function rangesToCells(ranges: MinuteRange[]) { return Array.from({ length: 96 }, (_, i) => ranges.some(([a, b]) => i * 15 >= a && i * 15 < b)) }
 export function cellsToRanges(cells: boolean[]): MinuteRange[] { return mergeRanges(cells.flatMap((on, i) => on ? [[i * 15, (i + 1) * 15] as MinuteRange] : [])) }
+
+/** Editing/copy/clear operations only replace visible cells, retaining hidden history. */
+export function replaceVisibleCells(ranges: MinuteRange[], cells: boolean[]) {
+  return cellsToRanges(rangesToCells(ranges).map((old, i) => i >= AVAILABILITY_FIRST_SLOT && i < AVAILABILITY_END_SLOT ? cells[i] : old))
+}
+
+export function restoreVisibleRecurring(schedule: AvailabilitySchedule, date: string): AvailabilitySchedule {
+  const recurring = schedule.weeklySubmitted ? schedule.weekly[dayIndex(date)] : []
+  const restored = replaceVisibleCells(dayRanges(schedule, date), rangesToCells(recurring))
+  const exceptions = { ...schedule.exceptions }
+  if (JSON.stringify(restored) === JSON.stringify(recurring)) delete exceptions[date]
+  else exceptions[date] = restored
+  return { ...schedule, exceptions }
+}
+
+/** Read legacy zones in Eastern Time without rewriting their recurrence or exceptions. */
+export function availabilityEditorDays(schedule: AvailabilitySchedule, week: string, recurring: boolean) {
+  if (schedule.timezone === SCHEDULING_TIMEZONE) return Array.from({ length: 7 }, (_, i) => rangesToCells(recurring ? schedule.weekly[i] : dayRanges(schedule, addDays(week, i))))
+  const source = recurring ? { ...schedule, weeklySubmitted: true, exceptions: {} } : schedule
+  return weekCells(week, SCHEDULING_TIMEZONE).map(day => day.map(c => c.start !== null && intervalAvailability(source, c.start, c.end!) === "available"))
+}
+
+export function availabilityEditorKnownDays(schedule: AvailabilitySchedule, week: string) {
+  if (schedule.timezone === SCHEDULING_TIMEZONE) return Array.from({ length: 7 }, (_, i) => dayKnown(schedule, addDays(week, i)))
+  return weekCells(week, SCHEDULING_TIMEZONE).map(day => AVAILABILITY_SLOTS.every(slot => {
+    const instant = day[slot].start
+    return instant !== null && dayKnown(schedule, localParts(instant, schedule.timezone).date)
+  }))
+}
+
+/** Legacy schedules keep their original zone; Eastern edits become native date exceptions. */
+export function editAvailabilityDays(schedule: AvailabilitySchedule, week: string, recurring: boolean, days: boolean[][], changedDays: number[]): AvailabilitySchedule {
+  if (schedule.timezone === SCHEDULING_TIMEZONE) {
+    if (recurring) return { ...schedule, weeklySubmitted: true, weekly: schedule.weekly.map((ranges, i) => changedDays.includes(i) ? replaceVisibleCells(ranges, days[i]) : ranges) }
+    return { ...schedule, exceptions: { ...schedule.exceptions, ...Object.fromEntries(changedDays.map(i => { const date = addDays(week, i); return [date, replaceVisibleCells(dayRanges(schedule, date), days[i])] })) } }
+  }
+  const exceptions = { ...schedule.exceptions }, cells = weekCells(week, SCHEDULING_TIMEZONE)
+  for (const day of changedDays) for (const slot of AVAILABILITY_SLOTS) {
+    const instant = cells[day][slot].start
+    if (instant === null) continue
+    const p = localParts(instant, schedule.timezone), native = rangesToCells(exceptions[p.date] ?? dayRanges(schedule, p.date))
+    native[p.minute / 15] = days[day][slot]
+    exceptions[p.date] = cellsToRanges(native)
+  }
+  return { ...schedule, exceptions }
+}
+
+/** Validate additions against saved coverage, so hidden legacy hours remain valid. */
+export function validateAvailabilityEdit(next: AvailabilitySchedule, previous: AvailabilitySchedule) {
+  if (next.timezone !== SCHEDULING_TIMEZONE && next.timezone !== previous.timezone) throw new Error("Availability uses Eastern Time.")
+  if (next.timezone !== previous.timezone) {
+    // A different recurrence zone changes the meaning of every saved wall-clock range.
+    if (previous.weeklySubmitted || Object.keys(previous.exceptions).length) throw new Error("Keep the saved availability time zone.")
+  }
+  const sameZone = next.timezone === previous.timezone
+  const error = () => { throw new Error("Choose availability between 8:00 AM and 9:00 PM Eastern Time.") }
+  for (let day = 0; day < 7; day++) {
+    const old = rangesToCells(sameZone ? previous.weekly[day] : [])
+    for (const [slot, on] of rangesToCells(next.weekly[day]).entries()) {
+      if (!on || old[slot]) continue
+      if (next.timezone !== SCHEDULING_TIMEZONE || slot < AVAILABILITY_FIRST_SLOT || slot >= AVAILABILITY_END_SLOT) error()
+    }
+  }
+  for (const [date, ranges] of Object.entries(next.exceptions)) {
+    const old = rangesToCells(sameZone ? dayRanges(previous, date) : [])
+    const cells = next.timezone === SCHEDULING_TIMEZONE ? null : weekCells(monday(date), next.timezone)[dayIndex(date)]
+    for (const [slot, on] of rangesToCells(ranges).entries()) {
+      if (!on || old[slot]) continue
+      const minute = cells ? cells[slot].start === null ? -1 : localParts(cells[slot].start!, SCHEDULING_TIMEZONE).minute : slot * 15
+      if (minute < AVAILABILITY_FIRST_SLOT * 15 || minute + 15 > AVAILABILITY_END_SLOT * 15) error()
+    }
+  }
+}
 
 // Bounded formatter cache; no identities or schedules are cached across requests.
 const formatters = new Map<string, Intl.DateTimeFormat>()

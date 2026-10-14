@@ -47,13 +47,15 @@ async function destination(promise, path) {
 
 test('public header exposes separate signup and login links without identity-dependent administration routing', () => {
   const { PublicNavigation } = load('components/landing/public-navigation.tsx', {
-    react: { useState: v => [v, () => {}], useRef: () => ({ current: null }), useEffect() {} },
+    react: { useState: v => [v, () => {}], useRef: () => ({ current: null }), useId: () => 'public-mobile-menu', useEffect() {} },
     'next/navigation': { usePathname: () => '/' },
+    './rolling-navigation-label': { RollingNavigationLabel: 'RollingNavigationLabel' },
+    './perspective-switcher': { PerspectiveSwitcher: 'PerspectiveSwitcher' },
   })
   for (const hero of [true, false]) {
     const tree = nodes(PublicNavigation({ hero }))
-    assert.equal(tree.find(n => n.props?.children === 'Get Started').props.href, '/signup')
-    assert.equal(tree.find(n => n.props?.children === 'Log In').props.href, '/login')
+    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Get Started').props.href, '/signup')
+    assert.equal(tree.find(n => n.props?.href && n.props?.children?.props?.children === 'Log In').props.href, '/login')
     assert.ok(!tree.some(n => n.props?.href?.startsWith('/platform')))
     assert.equal(tree.find(n => n.props?.className === 'oc-public-account').props.children.length, 3)
   }

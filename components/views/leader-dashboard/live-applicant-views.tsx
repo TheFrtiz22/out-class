@@ -1,4 +1,5 @@
 "use client"
+import { schedulingDateTime } from "@/lib/scheduling-config"
 import { ShieldCheck } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
@@ -16,7 +17,7 @@ export function ApplicantInterview({ app }: { app: Candidate }) {
   if (app.studentId.startsWith("anonymous-")) return <span>Withheld for anonymous review</span>
   const selected = relevantInterview(app.bookings)
   if (!selected) return <span>No booking recorded</span>
-  return <span>{selected.past ? "Last: " : "Next: "}{new Date(selected.booking.slot.startTime).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+  return <span>{selected.past ? "Last: " : "Next: "}{schedulingDateTime(selected.booking.slot.startTime)}</span>
 }
 function ApplicantIdentity({ label, anonymous }: { label: string; anonymous: boolean }) {
   return <span className="oc-applicant-person"><Avatar aria-hidden="true"><AvatarFallback>{anonymous ? <ShieldCheck size={16} /> : label.split(/\s+/).map(part => part[0]).slice(0,2).join("")}</AvatarFallback></Avatar><span>{label}</span></span>

@@ -22,6 +22,6 @@ test('official panels and existing applicant bookings retain the second repeated
  const original=process.env.TZ;process.env.TZ='America/New_York'
  try{
   const startTime='2026-11-01T06:30:00.000Z',endTime='2026-11-01T07:00:00.000Z',events=load('lib/student-calendar-data.ts').studentCalendarEvents({panelAssignments:[{id:'s',clubId:'c',clubName:'Club',roundName:'Interview',roomName:'Hall',startTime,endTime,location:'Hall'}],applications:[{clubId:'c',club:{name:'Club'},bookings:[{id:'b',slot:{startTime,endTime,location:'Hall'}}]}]}),calendar=load('lib/calendar.ts')
-  for(const event of events){assert.equal(event.time,'01:30');assert.equal(calendar.eventStart(event).toISOString(),startTime);const ics=calendar.calendarFile(event);assert.ok(ics.includes('DTSTART:20261101T063000Z'));assert.ok(ics.includes('DTEND:20261101T070000Z'))}
+  for(const event of events){assert.equal(event.time,'1:30 AM');assert.equal(calendar.eventStart(event).toISOString(),startTime);const ics=calendar.calendarFile(event);assert.ok(ics.includes('DTSTART:20261101T063000Z'));assert.ok(ics.includes('DTEND:20261101T070000Z'))}
  }finally{if(original===undefined)delete process.env.TZ;else process.env.TZ=original}
 })
