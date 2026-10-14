@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import "./responsive-workspace.css"
 import "./authenticated-product.css"
 import "./floating-header.css"
+import { NotificationCenter } from "@/components/shell/notification-center"
 import { FloatingModeNavigation, FloatingSearchTrigger } from "@/components/shell/floating-header-controls"
 import { MobileNavigation } from "@/components/shell/mobile-navigation"
 import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
@@ -47,6 +48,8 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
   const mobileOrigin = useRef<HTMLElement | null>(null)
   const searchOrigin = useRef<HTMLElement | null>(null)
+  const [taskLoad, setTaskLoad] = useState({ loading: false, failed: false })
+  const [durableLoad, setDurableLoad] = useState({ loading: false, failed: false })
   const member = user?.memberships.find(m => m.clubId === clubId)
   const platform = workspaceKind === "admin"
   const personal = !platform && !manager && mode !== "preview"
@@ -60,8 +63,15 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const userId = user?.id
   useEffect(() => {
     if (!userId || demo.isDemoEnabled) return
-    let active=true
-    const refresh=()=>{void getTaskNotifications().then(items=>{if(active)syncTaskNotifications(items)}).catch(()=>{})}
+    let active = true, running = false, again = false
+    setTaskLoad({ loading: true, failed: false })
+    const refresh = async () => {
+      if (running) { again = true; return }
+      running = true
+      try { const items = await getTaskNotifications(); if (active) { syncTaskNotifications(items); setTaskLoad({ loading: false, failed: false }) } }
+      catch { if (active) setTaskLoad({ loading: false, failed: true }) }
+      finally { running = false; if (again && active) { again = false; void refresh() } }
+    }
     refresh()
     const timer=setInterval(refresh,60000)
     window.addEventListener("focus",refresh);window.addEventListener("outclass:tasks-changed",refresh)
@@ -70,11 +80,12 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   useEffect(() => {
     if (!userId || demo.isDemoEnabled) return
     let active = true, running = false, again = false
+    setDurableLoad({ loading: true, failed: false })
     const refresh = async () => {
       if (running) { again = true; return }
       running = true
-      try { const data = await getDurableNotifications(); if (active) syncDurableNotifications(data) }
-      catch { /* Keep the last successful inbox while offline; retry on focus/reconnect. */ }
+      try { const data = await getDurableNotifications(); if (active) { syncDurableNotifications(data); setDurableLoad({ loading: false, failed: false }) } }
+      catch { if (active) setDurableLoad({ loading: false, failed: true }) }
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     void refresh()
@@ -102,7 +113,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   }, [])
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]')) { e.preventDefault(); searchOrigin.current = document.activeElement as HTMLElement; setSearch(true) }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]:not(.oc-notification-panel)')) { e.preventDefault(); searchOrigin.current = document.activeElement as HTMLElement; setSearch(true) }
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
@@ -142,7 +153,10 @@ export function ProductShell({ children, mode, modes, items, active, title, club
         {modes.length > 0 && <div className="oc-product-modes"><FloatingModeNavigation aria-label="Product modes" modes={modes} mode={mode}>{modes.map(m => navLink(m, true))}</FloatingModeNavigation></div>}
         <div className="oc-product-utilities">
           <FloatingSearchTrigger open={search} onOpen={trigger => { searchOrigin.current = trigger; setSearch(true) }} />
-          <IconButton data-tour="notifications" aria-label={unread || pendingInvitations ? `Notifications, ${unread} unread${pendingInvitations ? `, ${pendingInvitations} pending invitation${pendingInvitations === 1 ? "" : "s"}` : ""}` : "Notifications"} className="oc-floating-circle" onClick={() => navigate("inbox")}><Bell />{unread + pendingInvitations > 0 && <span className="oc-floating-unread" />}</IconButton>
+          <NotificationCenter unread={unread} pendingInvitations={pendingInvitations} loadState={{ loading: !!userId && !demo.isDemoEnabled && (taskLoad.loading || durableLoad.loading), failed: !!userId && !demo.isDemoEnabled && (taskLoad.failed || durableLoad.failed) }} onRetry={() => {
+            setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
+            window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
+          }} onNavigate={onNavigate} />
           <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}`}><Avatar className="size-8"><AvatarImage src={profilePhotoSource(user?.profile?.headshotUrl)} alt="Your profile photo" /><AvatarFallback><span className="oc-account-initials" aria-hidden="true">{user?.profile ? `${user.profile.firstName.slice(0,1)}${user.profile.lastName.slice(0,1)}` : <UserRound />}</span></AvatarFallback></Avatar></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/availability") }}><CalendarDays />My Availability</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/organizations") }}><Settings />Organization settings</DropdownMenuItem>}<DemoMenuItems />{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>

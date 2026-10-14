@@ -10,14 +10,15 @@ const { chromium, webkit } = require('playwright')
 const repo = path.resolve(__dirname, '..')
 const fixture = path.join(repo, 'tests/fixtures/floating-header')
 const engine = process.env.OUTCLASS_NAV_BROWSER === 'webkit' ? webkit : chromium
-async function build(root) {
+async function build(root, { realNotificationState = false } = {}) {
   const tsLoader = path.join(root, 'typescript-loader.cjs'), cssLoader = path.join(root, 'style-loader.cjs')
   await fs.writeFile(tsLoader, `const ts=require(${JSON.stringify(require.resolve('typescript'))});module.exports=function(source){return ts.transpileModule(source,{fileName:this.resourcePath,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText}`)
   await fs.writeFile(cssLoader, 'module.exports = ' + function(source) { return 'const style=document.createElement("style");style.textContent=' + JSON.stringify(source) + ';document.head.append(style);' }.toString())
   const compiled = require('next/dist/compiled/webpack/webpack'); compiled.init()
   const boundaries = path.join(fixture, 'boundaries.jsx')
   const alias = { 'next/link$': path.join(fixture, 'navigation.jsx'), 'next/navigation$': path.join(fixture, 'navigation.jsx'), 'next/image$': boundaries }
-  for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
+  for (const key of ['@/contexts/auth-context', '@/contexts/demo-context', '@/contexts/organization-invitations-context', '@/lib/application-state', '@/lib/workspace-api', '@/actions/communications', '@/actions/club-onboarding', '@/utils/supabase/client', '@/components/tutorial-walkthrough']) alias[`${key}$`] = boundaries
+  if (realNotificationState) delete alias['@/lib/application-state$']
   alias['@'] = repo
   await new Promise((resolve, reject) => compiled.webpack({ mode: 'development', context: repo, entry: path.join(fixture, 'app.jsx'), output: { path: root, filename: 'bundle.js' }, devtool: false, resolve: { alias, extensions: ['.tsx', '.ts', '.jsx', '.js'], modules: ['node_modules'] }, module: { rules: [{ test: /\.[jt]sx?$/, exclude: /node_modules/, use: tsLoader }, { test: /\.css$/, use: cssLoader }] }, performance: { hints: false } }, (error, stats) => { if (error) reject(error); else if (stats.hasErrors()) reject(Error(stats.toString({ all: false, errors: true }))); else resolve() }))
   const postcss = require('postcss'), plugin = require('@tailwindcss/postcss')
@@ -95,7 +96,10 @@ async function check() {
     const bell = header.locator('[data-tour="notifications"]')
     assert.match(await bell.getAttribute('aria-label'), /2 unread, 1 pending invitation/)
     assert.equal(await bell.locator('.oc-floating-unread').count(), 1)
-    await bell.click(); await page.waitForURL('**view=inbox')
+    const currentURL = page.url()
+    await bell.click(); await page.getByRole('dialog', { name: 'Notifications', exact: true }).waitFor()
+    assert.equal(page.url(), currentURL)
+    await page.getByRole('button', { name: 'Expand notifications', exact: true }).click(); await page.waitForURL('**view=inbox')
     await page.evaluate(() => window.dispatchEvent(new CustomEvent('fixture:counts', { detail: { unread: 0, invitations: 0 } })))
     await page.waitForFunction(() => document.querySelector('[data-tour="notifications"]').getAttribute('aria-label') === 'Notifications')
     assert.equal(await bell.locator('.oc-floating-unread').count(), 0)
@@ -174,4 +178,5 @@ async function check() {
     console.log('PASS existing avatar, reduced motion, sign-out redirect, and no browser errors')
   } finally { await browser?.close(); if (server) await new Promise(resolve => server.close(resolve)); await fs.rm(root, { recursive: true, force: true }) }
 }
-check().catch(error => { console.error(error); process.exitCode = 1 })
+module.exports = { build }
+if (require.main === module) check().catch(error => { console.error(error); process.exitCode = 1 })

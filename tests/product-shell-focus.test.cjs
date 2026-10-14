@@ -38,12 +38,13 @@ test('pending invitations drive the notification bell and are reviewable in the 
  }
  const {ProductShell}=load('components/shell/product-shell.tsx'),{InboxView}=load('components/views/inbox-view.tsx');
  const render=()=>ProductShell({mode:'personal',active:'student-dashboard',title:'Overview',modes:[],items:[],onSelect(){},onNavigate:view=>navigations.push(view)});
- const bell=()=>nodes(render()).find(node=>node.props?.['data-tour']==='notifications');
- assert.equal(bell().props['aria-label'],'Notifications');assert.equal(nodes(bell()).some(node=>node.type==='span'),false);
+ const center=()=>nodes(render()).find(node=>node.type==='NotificationCenter');
+ assert.equal(center().props.unread,0);assert.equal(center().props.pendingInvitations,0);
  assert.equal(nodes(InboxView({onNavigate(){}})).some(node=>node.type==='OrganizationOwnershipRequests'),false);
  state.invitations=[{id:'invite'}];
- assert.equal(bell().props['aria-label'],'Notifications, 0 unread, 1 pending invitation');assert.ok(nodes(bell()).some(node=>node.type==='span'));
- bell().props.onClick();assert.deepEqual(navigations,['inbox']);
+ assert.equal(center().props.pendingInvitations,1);assert.equal(center().props.unread,0);
+ assert.deepEqual(navigations,[]); // opening is owned by the popover, not shell routing
+ center().props.onNavigate('inbox');assert.deepEqual(navigations,['inbox']);
  assert.equal(nodes(InboxView({onNavigate(){}})).find(node=>node.type==='OrganizationOwnershipRequests').props.includeDismissed,true);
- state.invitations=[];assert.equal(bell().props['aria-label'],'Notifications');assert.equal(nodes(bell()).some(node=>node.type==='span'),false);
+ state.invitations=[];assert.equal(center().props.pendingInvitations,0);
 });

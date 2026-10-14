@@ -18,8 +18,9 @@ Below 900px it becomes an icon. At narrow widths the three personal modes use a
 second row. Existing bottom navigation and the workspace drawer remain available.
 
 Search dismissals restore the initiating control's focus; selecting a result
-focuses the content. Notifications continue opening the inbox and retain the
-existing task, invitation, and realtime counts. Account menus use the existing
+focuses the content. Notifications open the anchored `NotificationCenter` popover and retain the
+existing task, invitation, and realtime counts. Expand and View all open the full
+inbox. See `docs/notification-center.md` for supported interactions. Account menus use the existing
 Radix portal and collision handling. No authentication or backend changes are
 required.
 
@@ -33,7 +34,7 @@ network operations. No app route, production auth, or database is modified.
 Local fonts are read from `.next`, so run the production build first.
 
 Checks cover route/history selection, keyboard shortcuts and focus return,
-search results and failure feedback, unread updates, account menus, club
+search results and failure feedback, unread updates, notification expand navigation, account menus, club
 switching, mobile drawer resizing, six roles at ten viewport widths, saving
 guards, avatars, reduced motion, and successful/failed logout. These checks do
 not replace a live authenticated backend test.

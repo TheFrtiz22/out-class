@@ -33,6 +33,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   const {
     notifications: items,
     markNotificationRead,
+    markAllNotificationsRead,
     setNotificationsRead,
     deleteNotifications,
     restoreNotifications,
@@ -130,12 +131,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           variant="outline"
           size="sm"
           disabled={!unread}
-          onClick={() =>
-            setNotificationsRead(
-              items.map((item) => item.id),
-              true,
-            )
-          }
+          onClick={() => void markAllNotificationsRead()}
         >
           <MailOpen className="size-4" /> Mark all as read
         </Button>

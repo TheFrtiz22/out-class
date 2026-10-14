@@ -1,5 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { ApplicationStateProvider } from '@/lib/application-state'
 import { ProductShell } from '@/components/shell/product-shell'
 import { Toaster } from '@/components/ui/sonner'
 import { FixtureBoundary, useAuth, clubs } from './boundaries'
@@ -28,4 +29,4 @@ function FixtureApp() {
     <section style={{ marginTop: 28, padding: 24, minHeight: 1200, background: '#fffefa', border: '1px solid #dfe2de', borderRadius: 12 }}><h2 style={{ fontSize: 20, marginBottom: 16 }}>Workspace content</h2><p>Scroll to verify floating controls and portaled menus.</p></section>
   </ProductShell><Toaster /></>
 }
-createRoot(document.getElementById('root')).render(<FixtureBoundary><FixtureApp /></FixtureBoundary>)
+createRoot(document.getElementById('root')).render(<FixtureBoundary><ApplicationStateProvider initialData={{}} persistLocalState={false}><FixtureApp /></ApplicationStateProvider></FixtureBoundary>)

@@ -1,0 +1,71 @@
+/* A portal surface: independent of the header's stacking/overflow context. */
+.oc-notification-panel {
+  display: flex; flex-direction: column; padding: 0; overflow: hidden;
+  width: min(400px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  max-height: min(540px, var(--radix-popover-content-available-height), calc(100dvh - 24px - env(safe-area-inset-bottom)));
+  border: 1px solid rgb(20 45 69 / 13%); border-radius: 20px;
+  background: #fffbf5; color: var(--primary);
+  box-shadow: 0 16px 48px rgb(20 45 69 / 14%), 0 3px 10px rgb(20 45 69 / 5%);
+  animation: oc-notification-in 200ms cubic-bezier(.22, 1, .36, 1) both;
+}
+.oc-notification-panel[data-state="closed"] { animation: oc-notification-out 140ms ease-in both; }
+.oc-notification-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 6px 18px; flex-shrink: 0; }
+.oc-notification-header h2 { display: flex; align-items: center; gap: 8px; font-family: var(--oc-font-sans); font-size: 15px; line-height: 22px; font-weight: 600; margin: 0; }
+.oc-notification-count { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #f0e9de; font-size: 11px; }
+.oc-notification-header-actions { display: flex; gap: 2px; }
+.oc-notification-header-actions button, .oc-notification-more { display: grid; place-items: center; min-width: 44px; min-height: 44px; border-radius: 999px; }
+.oc-notification-panel button:disabled { opacity: .4; cursor: default; }
+.oc-notification-panel :is(a,button):focus-visible, .oc-notification-detail h3:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 8px; }
+.oc-notification-filter { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 160px; padding: 3px; margin: 0 18px 10px; border-radius: 999px; background: #f0ebe3; flex-shrink: 0; }
+.oc-notification-filter > span { position: absolute; z-index: -1; inset: 3px auto 3px 3px; width: calc((100% - 6px) / 2); background: #fffbf5; border: 1px solid rgb(20 45 69 / 8%); border-radius: 999px; box-shadow: 0 1px 3px rgb(20 45 69 / 6%); transition: transform 240ms cubic-bezier(.22, 1, .36, 1); }
+.oc-notification-filter[data-filter="unread"] > span { transform: translateX(100%); }
+.oc-notification-filter button { min-height: 44px; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 400; color: var(--muted-foreground); transition: color 180ms ease; }
+.oc-notification-filter button[aria-pressed="true"] { color: var(--primary); font-weight: 500; }
+.oc-notification-feed { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #d4d0c8 transparent; border-top: 1px solid rgb(20 45 69 / 9%); }
+.oc-notification-items { list-style: none; padding: 0; margin: 0; }
+.oc-notification-items > li { border-bottom: 1px solid rgb(20 45 69 / 7%); transition: background-color 180ms ease; }
+.oc-notification-items > li:last-child { border-bottom: 0; }
+.oc-notification-items > li[data-unread="true"] { background: rgb(238 231 218 / 24%); }
+.oc-notification-row { display: flex; align-items: flex-start; padding-right: 6px; }
+.oc-notification-open { display: flex; gap: 10px; align-items: flex-start; flex: 1; min-width: 0; min-height: 96px; padding: 14px 4px 14px 16px; text-align: left; text-decoration: none; font-weight: 400; border-radius: 8px; }
+.oc-notification-open[aria-disabled="true"] { opacity: .5; cursor: progress; }
+.oc-notification-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 32px; border: 1px solid rgb(20 45 69 / 9%); background: #f4efe7; border-radius: 10px; }
+.oc-notification-copy { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.oc-notification-item-title { font-size: 13px; line-height: 19px; font-weight: 500; overflow-wrap: anywhere; }
+.oc-notification-preview { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12px; line-height: 18px; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.oc-notification-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 10px; line-height: 16px; color: var(--muted-foreground); }
+.oc-notification-meta > span { overflow-wrap: anywhere; }
+.oc-notification-meta time { white-space: nowrap; }
+.oc-notification-dot { width: 6px; height: 6px; flex: 0 0 6px; margin-top: 7px; border-radius: 50%; background: var(--brand-orange); }
+.oc-notification-more { flex: 0 0 44px; margin-top: 3px; color: var(--muted-foreground); }
+.oc-notification-item-menu [role="menuitem"] { min-height: 44px; }
+.oc-notification-panel > footer { flex-shrink: 0; border-top: 1px solid rgb(20 45 69 / 9%); padding: 2px 18px; }
+.oc-notification-panel > footer button { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; font-size: 12px; font-weight: 500; }
+.oc-notification-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 32px 20px; text-align: center; }
+.oc-notification-empty > svg { color: var(--muted-foreground); margin-bottom: 4px; }
+.oc-notification-empty p { font-size: 14px; font-weight: 500; }
+.oc-notification-empty span { font-size: 12px; color: var(--muted-foreground); }
+.oc-notification-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid rgb(20 45 69 / 9%); background: #f5eee4; font-size: 12px; line-height: 18px; flex-shrink: 0; }
+.oc-notification-error button { flex-shrink: 0; min-height: 44px; min-width: 44px; font-weight: 600; }
+.oc-notification-skeletons { padding: 16px; }
+.oc-notification-skeleton { display: flex; gap: 12px; padding-block: 12px; }
+.oc-notification-skeleton > span { height: 32px; width: 32px; border-radius: 10px; background: #eee8de; }
+.oc-notification-skeleton > span + span { width: 75%; height: 48px; border-radius: 6px; }
+.oc-notification-detail { padding: 8px 18px 18px; }
+.oc-notification-detail h3 { margin: 12px 0; font-family: var(--oc-font-sans); font-size: 15px; font-weight: 600; line-height: 22px; }
+.oc-notification-detail > p:not(.oc-notification-meta) { font-size: 13px; line-height: 22px; color: var(--muted-foreground); white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 12px; }
+.oc-notification-back { display: flex; align-items: center; gap: 6px; min-height: 44px; font-size: 12px; }
+.oc-notification-text-action { min-height: 44px; padding: 8px 10px; font-size: 12px; font-weight: 500; }
+.oc-notification-invitations { padding: 12px; border-bottom: 1px solid rgb(20 45 69 / 9%); }
+.oc-notification-invitations > p { font-size: 11px; color: var(--muted-foreground); margin: 0 4px 10px; }
+.oc-notification-invitations ul { display: grid; gap: 8px; padding: 0; list-style: none; }
+.oc-notification-invitations li { background: transparent; border-color: rgb(20 45 69 / 12%); padding: 12px; }
+.oc-notification-invitations li > article { flex-direction: column; align-items: stretch; gap: 10px; }
+.oc-notification-invitations li > article > div { min-width: 0; }
+.oc-notification-invitations li h3 { font-size: 13px; line-height: 19px; }
+.oc-notification-invitations li p { font-size: 12px; line-height: 18px; }
+.oc-notification-invitations [data-slot="button"] { font-size: 12px; padding-inline: 10px; }
+@media (hover: hover) and (pointer: fine) { .oc-notification-items > li:hover { background: #f2ede5; } .oc-notification-header-actions button:hover, .oc-notification-more:hover, .oc-notification-text-action:hover, .oc-notification-back:hover, .oc-notification-panel > footer button:hover { background: rgb(20 45 69 / 5%); } }
+@keyframes oc-notification-in { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes oc-notification-out { to { opacity: 0; transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .oc-notification-panel, .oc-notification-panel[data-state="closed"] { animation: none; } .oc-notification-panel * { transition: none !important; } }
