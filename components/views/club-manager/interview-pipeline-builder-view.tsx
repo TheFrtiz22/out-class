@@ -4,6 +4,7 @@ import { getPipelineSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { interviewSetupHref } from "@/lib/interview-setup";
+import { handleClubLink } from "@/lib/workspace-navigation";
 import { ArrowUp, ArrowDown, Plus, Trash2 } from "lucide-react";
 import {
   savePipelineSettings,
@@ -310,7 +311,7 @@ export function InterviewPipelineBuilderView({
                           if (dirty || busy || !savedRounds.some(saved => saved.id === r.id)) {
                             event.preventDefault();
                             setError("Save your pipeline changes before configuring this round. Your edits are still here.");
-                          }
+                          } else handleClubLink(event, interviewSetupHref(clubId, r.id));
                         }}
                       >
                         Configure this round’s kit, rooms, and interviewer panel
