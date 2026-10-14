@@ -14,17 +14,17 @@ const event = (id, date, time = '14:00', extra = {}) => ({ id, date, time, type:
 test('agenda uses local day boundaries across month/year changes and keeps current events', () => {
   const groups = agendaGroups([
     event('later', '2027-01-12'), event('tomorrow', '2027-01-01'), event('ongoing', '2026-12-31', '11:30'), event('next', '2027-01-03'), event('past', '2026-12-30'),
-  ], new Date(2026, 11, 31, 12))
+  ], new Date('2026-12-31T12:00:00-05:00'))
   assert.deepEqual(groups.map(group => group.label), ['Today', 'Tomorrow', 'Next 7 days', 'Later'])
   assert.equal(groups[0].events[0].id, 'ongoing')
 })
 test('past toggle restores history and invalid timestamps do not break grouping', () => {
-  const groups = agendaGroups([event('past', '2026-09-20'), event('invalid', 'invalid')], new Date(2026, 8, 22), true)
+  const groups = agendaGroups([event('past', '2026-09-20'), event('invalid', 'invalid')], new Date('2026-09-22T00:00:00-04:00'), true)
   assert.deepEqual(groups.map(group => group.label), ['Earlier'])
   assert.equal(groups[0].events.length, 1)
 })
 test('a passed deadline has no implicit one-hour grace period', () => {
-  assert.equal(agendaGroups([event('due', '2026-09-22', '11:59', { type: 'Deadline' })], new Date(2026, 8, 22, 12)).length, 0)
+  assert.equal(agendaGroups([event('due', '2026-09-22', '11:59', { type: 'Deadline' })], new Date('2026-09-22T12:00:00-04:00')).length, 0)
 })
 test('notification priority uses structured metadata rather than guesses from titles', () => {
   assert.equal(notificationPriority({ urgent: true, type: 'Announcement' }), 0)
