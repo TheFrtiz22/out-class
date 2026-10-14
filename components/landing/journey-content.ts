@@ -18,11 +18,12 @@ export const journeyChapters = {
     { stage: "belong", label: "Belong", title: "From applicant to part of the team.", description: "Find your joined organizations in My Clubs. Keep up with meetings and the work that comes next.", detail: "The application is only the beginning.", scene: "join" },
   ],
   leader: [
-    { stage: "discover", label: "Set Up", title: "A process that fits your club.", description: "Configure your application questions and recruitment rounds. Give students a clear place to start.", detail: "Your questions. Your recruitment.", scene: "build" },
-    { stage: "apply", label: "Review", title: "See the person behind the application.", description: "Read profiles and club-specific responses together. Use shared rubrics and notes to coordinate your team’s review.", detail: "Context for a more thoughtful read.", scene: "review" },
-    { stage: "interview", label: "Interview", title: "Get your team on the same page.", description: "Coordinate availability, bookings, and panels. Bring applicant context, shared questions, and collaborative notes into the interview.", detail: "A coordinated schedule. A shared conversation.", scene: "leader-interview" },
-    { stage: "track", label: "Decide", title: "Bring the decision into focus.", description: "Gather votes and feedback, advance applicants, and record decisions. Your club stays in control of its process.", detail: "Clarity from first review to final decision.", scene: "decide" },
-    { stage: "belong", label: "Belong", title: "Build your next class. Then keep going.", description: "Welcome accepted applicants into your club. Keep members, meetings, and tasks connected as the semester moves on.", detail: "More than recruitment day.", scene: "manage" },
+    { stage: "setup", label: "Set Up", title: "A process that fits your club.", description: "Start with your approved club workspace. Update your profile, prepare your questions, and shape a recruitment process that feels like you.", detail: "Claim requests are reviewed before access is granted.", scene: "build" },
+    { stage: "recruit", label: "Recruit", title: "Your recruitment. All together.", description: "Set your questions and rounds, then follow incoming applications in one organized pipeline. Keep the next step clear for your whole team.", detail: "From a ready application to an active applicant pool.", scene: "recruit" },
+    { stage: "review", label: "Review", title: "See the person behind the application.", description: "Read profiles and club-specific responses together. Save evaluations with shared rubrics, or use anonymous review when configured for a round.", detail: "A thoughtful read. A shared point of reference.", scene: "review" },
+    { stage: "interview", label: "Interview", title: "A schedule your team can trust.", description: "Bring availability and interview rooms together. Auto-fill a panel proposal, review the assignments, and approve the schedule before it goes live.", detail: "Suggested by OutClass. Reviewed and published by an owner.", scene: "leader-interview" },
+    { stage: "decide", label: "Decide", title: "Bring the decision into focus.", description: "Bring evaluations into the final conversation. Record acceptances, waitlists, or declines. An accepted decision gives the student an offer to respond to.", detail: "Your team’s judgment. A clear next step for every applicant.", scene: "decide" },
+    { stage: "manage", label: "Manage", title: "Build your next class. Then keep going.", description: "Once students accept their offers, welcome them into your roster. Manage member access, announcements, meetings, and tasks in the same workspace.", detail: "Recruitment ends. Your club keeps going.", scene: "manage" },
   ],
 } as const
 
@@ -38,9 +39,10 @@ export const journeySceneDurations: Record<JourneyScene, number> = {
   status: 3200,
   join: 3000,
   build: 3300,
+  recruit: 4200,
   review: 3200,
   schedule: 3300,
-  "leader-interview": 3400,
+  "leader-interview": 6600,
   decide: 3500,
   manage: 3100,
 }
@@ -60,3 +62,20 @@ export const journeyExample = {
   panel: "Panel A",
   room: "Room 204",
 } as const
+
+export type JourneyStage = (typeof journeyChapters)[LandingPerspective][number]["stage"]
+
+/** Preserve the task being read, rather than an index in differently sized stories. */
+export function equivalentJourneyStage(stage: JourneyStage, audience: LandingPerspective): JourneyStage {
+  if (journeyChapters[audience].some(chapter => chapter.stage === stage)) return stage
+  const equivalents: Partial<Record<JourneyStage, JourneyStage>> = audience === "leader"
+    ? { discover: "setup", apply: "recruit", track: "decide", belong: "manage" }
+    : { setup: "discover", recruit: "apply", review: "apply", decide: "track", manage: "belong" }
+  return equivalents[stage] ?? "interview"
+}
+
+export function journeyChapterHref(audience: LandingPerspective, index: number, search = "") {
+  const params = new URLSearchParams(search)
+  params.set("audience", audience)
+  return `?${params}#journey-${index + 1}`
+}

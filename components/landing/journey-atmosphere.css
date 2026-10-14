@@ -1,13 +1,6 @@
-/* The walkthrough uses a few deliberate paper / navy surfaces. */
-.oc-landing:has(.oc-product-stories) {
-  --oc-journey-linen: #eee7da;
-  --oc-journey-cool: #edf1f4;
-  --oc-journey-blue: #dce8f1;
-  --oc-journey-navy: #142d4e;
-  background: var(--oc-journey-cool);
-}
+/* Navy photography opens into one warm, continuous product story. */
+.oc-landing:has(.oc-product-stories) { --oc-journey-linen: #f3eee5; --oc-journey-cool: #f6f5f1; --oc-journey-navy: #142d4e; background: var(--oc-journey-linen); overflow-anchor: none; }
 .oc-landing:has(.oc-product-stories) main { background: var(--oc-journey-linen); }
-/* A crisp photo-to-paper boundary replaces the former gray gradient haze. */
 .oc-landing .oc-launch-clubs { background: var(--oc-journey-linen); }
 .oc-landing .oc-product-stories { --oc-journey-gutter: max(40px, calc((100% - 1120px) / 2)); max-width: none; padding: 0; background: var(--oc-journey-linen); }
 .oc-landing .oc-journey-controls { padding-inline: var(--oc-journey-gutter); background: var(--oc-journey-linen); }

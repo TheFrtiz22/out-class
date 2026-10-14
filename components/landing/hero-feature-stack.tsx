@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
-import { heroFeatures } from "./hero-features"
+import { heroFeatures, leaderHeroFeatures } from "./hero-features"
+import type { LandingPerspective } from "./journey-content"
 import "./hero-feature-stack.css"
 
 const count = heroFeatures.length
-const duration = 760
+const duration = 480
 const interval = 5400
 const easing = "cubic-bezier(.22, 1, .36, 1)"
 const depthOf = (index: number, active: number) => (index - active + count) % count
@@ -20,7 +21,8 @@ const pose = (depth: number) => {
 }
 
 /** Restrained index-card carousel. Each transition finishes before autoplay is rescheduled. */
-export function HeroFeatureStack() {
+export function HeroFeatureStack({ perspective = "student" }: { perspective?: LandingPerspective }) {
+  const features = perspective === "leader" ? leaderHeroFeatures : heroFeatures
   const root = useRef<HTMLDivElement>(null)
   const cards = useRef<(HTMLDivElement | null)[]>([])
   const current = useRef(0)
@@ -61,7 +63,7 @@ export function HeroFeatureStack() {
       })
       current.current = next
       setActive(next)
-      if (announce) setAnnouncement(`${heroFeatures[next].label}. ${heroFeatures[next].statement}`)
+      if (announce) setAnnouncement(`${features[next].label}. ${features[next].statement}`)
     }
     function move(direction: 1 | -1, requested: boolean) {
       if (disposed || moving) return
@@ -146,12 +148,12 @@ export function HeroFeatureStack() {
       navigate.current = () => {}
       updatePause.current = () => {}
     }
-  }, [])
+  }, [features])
 
   return (
     <div ref={root} className="oc-feature-stack" role="region" aria-roledescription="carousel" aria-label="OutClass features">
       <div className="oc-feature-stage">
-        {heroFeatures.map((feature, index) => {
+        {features.map((feature, index) => {
           const depth = depthOf(index, active)
           return (
             <div key={feature.number} ref={node => { cards.current[index] = node }}
@@ -166,7 +168,7 @@ export function HeroFeatureStack() {
         })}
       </div>
       <div className="oc-feature-controls">
-        <span className="oc-feature-position" aria-hidden="true">{heroFeatures[active].number}<span> / 06</span></span>
+        <span className="oc-feature-position" aria-hidden="true">{features[active].number}<span> / 06</span></span>
         <button type="button" aria-label="Previous feature" onClick={() => navigate.current(-1)}><ChevronLeft size={16} aria-hidden="true" /></button>
         <button type="button" className="oc-feature-autoplay" aria-label={paused ? "Play feature carousel" : "Pause feature carousel"} onClick={() => {
           updatePause.current(!paused)
