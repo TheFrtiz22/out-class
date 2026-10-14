@@ -50,6 +50,7 @@ docs/communication-scheduling.md
 docs/decision-recruitment-controls.md
 docs/recipient-audiences.md
 docs/scheduler-capacity.md
+docs/workspace-current-main-integration.md
 docs/workspace-integrated-release.md
 docs/workspace-migration-package.md
 docs/workspace-release-manifest.txt
@@ -112,6 +113,7 @@ tests/recipient-audience.test.cjs
 tests/recipient-audiences-e2e.test.cjs
 tests/recipient-audiences-native.test.cjs
 tests/serialized-workspace-read.test.cjs
+tests/student-agenda.test.cjs
 tests/voting-board.test.cjs
 tests/voting-join-ui.test.cjs
 tests/workspace-reliability.test.cjs

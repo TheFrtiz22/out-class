@@ -1,6 +1,8 @@
 "use client"
 import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
 import { ScheduleDecision } from "@/components/decision-schedules";
+import { slotTime } from "@/lib/interview-rooms"
+import { SCHEDULING_TIMEZONE, schedulingDateTime } from "@/lib/scheduling-config"
 import { isInterviewRecruitmentRound } from "@/lib/recruitment-lifecycle"
 import { findReviewerEvaluation } from "@/lib/reviewer-evaluation"
 import { profilePhotoSource } from "@/lib/profile-photo"
@@ -695,7 +697,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   <p className="text-sm text-muted-foreground">No profile provided.</p>
                 )}
               </section>
-              <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{new Date(booking.slot.startTime).toLocaleString()} – {new Date(booking.slot.endTime).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
+              <section className="space-y-3 border-b pb-6" aria-label="Interview information"><h3 className="oc-card-heading ">Interviews</h3>{active.studentId.startsWith("anonymous-") ? <p className="text-sm text-muted-foreground">Appointments are withheld during anonymous review.</p> : active.bookings.length ? <ul className="divide-y">{active.bookings.map(booking => <li key={booking.id} className="py-3 text-sm"><p>{schedulingDateTime(booking.slot.startTime)} – {slotTime(booking.slot.endTime, SCHEDULING_TIMEZONE)}</p><p className="mt-1 text-muted-foreground">{booking.slot.location || "Location not provided"}</p></li>)}</ul> : <p className="text-sm text-muted-foreground">No interview booking recorded.</p>}</section>
               <section className="space-y-5 border-b border-border pb-6">
                 <h3 className="oc-card-heading ">Application responses</h3>
                 {active.answers.map((answer) => (

@@ -1,4 +1,5 @@
 "use client"
+import { schedulingDateTime } from "@/lib/scheduling-config"
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -345,7 +346,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                           <span aria-hidden="true">·</span>
                           <time dateTime={item.createdAt}>
                             {item.fullDate === "Just now" && item.createdAt
-                              ? new Date(item.createdAt).toLocaleString()
+                              ? schedulingDateTime(item.createdAt)
                               : item.fullDate}
                           </time>
                         </div>

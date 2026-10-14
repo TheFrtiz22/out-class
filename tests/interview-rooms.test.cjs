@@ -25,6 +25,11 @@ test('slot generation respects time zones, buffers, repeated dates and unused tr
  assert.equal(slots[1].startTime.toISOString(),'2099-09-07T14:25:00.000Z')
  assert.equal(core.roomSlots({...input(),dates:['2099-09-07','2099-09-07','2099-09-08']}).length,10)
  assert.equal(core.dayKey('2099-09-08T02:00:00Z','America/New_York'),'2099-09-07')
+ const fixed=core.roomInputSchema.parse({...input(),timezone:'UTC'})
+ assert.equal(fixed.timezone,'America/New_York')
+ assert.equal(core.roomSlots(fixed)[0].startTime.toISOString(),'2099-09-07T14:00:00.000Z')
+ const withoutZone=input();delete withoutZone.timezone
+ assert.equal(core.roomInputSchema.parse(withoutZone).timezone,'America/New_York')
 })
 test('invalid dates, past windows, DST gaps/ambiguity and unsafe virtual links are rejected',()=>{
  assert.throws(()=>core.zonedInstant('2026-02-30','10:00','UTC'),/valid date/)

@@ -1,4 +1,6 @@
 "use client"
+import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
+import { localParts } from "@/lib/availability"
 import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
@@ -15,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useApplicationState } from "@/lib/application-state"
-import { dateKey, dateFromKey, eventStart, calendarFile } from "@/lib/calendar"
+import { dateKey, dateFromKey, eventStart, calendarFile, timeMinutes } from "@/lib/calendar"
 import { StudentBookingPreview } from "@/components/views/scheduler/student-booking-preview"
 import { agendaGroups } from "@/lib/student-agenda"
 import { cn } from "@/lib/utils"
@@ -45,7 +47,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     cancelInterview,
     setCalendarYear,
   } = useApplicationState()
-  const [date, setDate] = useState(() => dateKey(new Date()))
+  const [date, setDate] = useState(() => localParts(new Date(), SCHEDULING_TIMEZONE).date)
   const [view, setView] = useState<"agenda" | "month" | "week" | "day">("agenda")
   const [includePast, setIncludePast] = useState(false)
   const [includeDeclined, setIncludeDeclined] = useState(false)
@@ -60,7 +62,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     const timer = window.setInterval(() => setNow(new Date()), 60000)
     return () => window.clearInterval(timer)
   }, [])
-  const today = dateKey(now)
+  const today = localParts(now, SCHEDULING_TIMEZONE).date
   useEffect(() => {
     if (!focusEventId) return
     const event = events.find((item) => item.id === focusEventId)
@@ -161,7 +163,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             <Link href="/meetings" className="ml-2 underline">Club agendas and recaps</Link>
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Times shown in {Intl.DateTimeFormat().resolvedOptions().timeZone}.
+            Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
         {bookingDates.length > 0 && (
@@ -267,7 +269,8 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         >
                           <div className="w-16 shrink-0 text-sm">
                             <p className="font-medium tabular-nums">
-                              {eventStart(event).toLocaleTimeString([], {
+                              {eventStart(event).toLocaleTimeString("en-US", {
+                                timeZone: SCHEDULING_TIMEZONE, hour12: true,
                                 hour: "numeric",
                                 minute: "2-digit",
                               })}
@@ -372,14 +375,14 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               key={event.id}
                               type="button"
                               onClick={() => open(event)}
-                              title={`${event.time} · ${event.title}`}
+                              title={`${minuteLabel(timeMinutes(event.time))} · ${event.title}`}
                               className={cn(
                                 "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
                             >
-                              <span className="block font-semibold">{event.time}</span>
+                              <span className="block font-semibold">{minuteLabel(timeMinutes(event.time))}</span>
                               <span className="line-clamp-2">{event.title}</span>
                             </button>
                           ))}
@@ -427,7 +430,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                   eventStyle[event.type],
                                 )}
                               >
-                                <span className="w-24 font-medium">{event.time}</span>
+                                <span className="w-24 font-medium">{minuteLabel(timeMinutes(event.time))}</span>
                                 <span className="flex-1">
                                   <strong className="block">{event.title}</strong>
                                   <span className="text-xs">
@@ -494,7 +497,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         month: "short",
                         day: "numeric",
                       })}{" "}
-                      · {event.time}
+                      · {minuteLabel(timeMinutes(event.time))}
                     </p>
                     <p className="mt-1 text-sm font-medium">{event.title}</p>
                   </button>
@@ -526,7 +529,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   day: "numeric",
                   year: "numeric",
                 })}{" "}
-                · {selected.time}
+                · {minuteLabel(timeMinutes(selected.time))}
               </p>
               <p className="flex items-center gap-2 text-sm">
                 <MapPin className="size-4" />

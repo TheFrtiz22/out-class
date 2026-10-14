@@ -2,8 +2,11 @@
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path'), { randomUUID } = require('node:crypto')
 const { PrismaClient, Prisma } = require('@prisma/client'), { createServerClient } = require('@supabase/ssr'), { chromium, devices } = require('playwright')
 const { Actor, actionSourceMatches } = require('./helpers/onboarding-e2e.cjs')
+function core(file) { const mod = { exports: {} }; const code = require('typescript').transpileModule(fs.readFileSync(path.resolve(file), 'utf8'), { compilerOptions: { module: 1, target: 9 } }).outputText; new Function('require', 'module', 'exports', code)(name => name.startsWith('@/') ? core(name.slice(2) + '.ts') : require(name), mod, mod.exports); return mod.exports }
+const { zonedInstant } = core('lib/interview-rooms.ts')
+const easternClock = value => new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(value))
 const options = { maxConsecutiveMinutes: null, breakMinutes: 15 }, ok = result => { assert.equal(result.ok, true, result.error); return result.value }
-const schedule = (ranges = [[540, 780]]) => ({ timezone: 'UTC', weeklySubmitted: true, weekly: Array.from({ length: 7 }, () => ranges), exceptions: {} })
+const schedule = (ranges = [[540, 780]]) => ({ timezone: 'America/New_York', weeklySubmitted: true, weekly: Array.from({ length: 7 }, () => ranges), exceptions: {} })
 async function prepare(db, auth, config) {
   const club = config.clubs[0], foreign = config.clubs[1]
   await db.club.update({ where: { id: club.id }, data: { name: 'Scheduling Quality Audit' } })
@@ -11,7 +14,7 @@ async function prepare(db, auth, config) {
   const second = await db.pipelineRound.create({ data: { clubId: club.id, name: 'Practice interviews', type: 'INTERVIEW', order: 1, anonymousReview: false } })
   const empty = await db.pipelineRound.create({ data: { clubId: club.id, name: 'Unconfigured interviews', type: 'INTERVIEW', order: 2, anonymousReview: false } })
   const when = new Date(); when.setUTCDate(when.getUTCDate() + 14); when.setUTCHours(12, 0, 0, 0); when.setUTCDate(when.getUTCDate() - (when.getUTCDay() + 6) % 7)
-  const week = when.toISOString().slice(0, 10), at = (day, hour, minute = 0) => new Date(+new Date(`${week}T00:00:00Z`) + day * 86400000 + hour * 3600000 + minute * 60000)
+  const week = when.toISOString().slice(0, 10), at = (day, hour, minute = 0) => zonedInstant(new Date(+new Date(`${week}T12:00:00Z`) + day * 86400000).toISOString().slice(0, 10), `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`, 'America/New_York')
   async function actor(key, role, eligible, ranges, response) {
     if (!config.actors[key]) {
       const email = `quality-audit.${key}.${randomUUID().slice(0, 8)}@virginia.edu`, password = 'Disposable-quality!' + randomUUID()
@@ -30,18 +33,18 @@ async function prepare(db, auth, config) {
   await actor('coadmin', 'OWNER', false, [[540, 780]], null)
   const first = await db.interviewRoom.findFirstOrThrow({ where: { clubId: club.id }, include: { slots: true } })
   await db.interviewSlot.deleteMany({ where: { roomId: first.id } })
-  await db.interviewRoom.update({ where: { id: first.id }, data: { name: 'Alpha', timezone: 'UTC', interviewersNeeded: 2, duration: 30, buffer: 15 } })
-  const roomB = await db.interviewRoom.create({ data: { clubId: club.id, roundId: club.roundId, name: 'Beta', location: 'Hall B', kind: 'IN_PERSON', timezone: 'UTC', duration: 30, interviewersNeeded: 3 } })
-  const roomC = await db.interviewRoom.create({ data: { clubId: club.id, roundId: club.roundId, name: 'Gamma', location: 'Hall C', kind: 'IN_PERSON', timezone: 'UTC', duration: 30, interviewersNeeded: 1 } })
+  await db.interviewRoom.update({ where: { id: first.id }, data: { name: 'Alpha', timezone: 'America/New_York', interviewersNeeded: 2, duration: 30, buffer: 15 } })
+  const roomB = await db.interviewRoom.create({ data: { clubId: club.id, roundId: club.roundId, name: 'Beta', location: 'Hall B', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 30, interviewersNeeded: 3 } })
+  const roomC = await db.interviewRoom.create({ data: { clubId: club.id, roundId: club.roundId, name: 'Gamma', location: 'Hall C', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 30, interviewersNeeded: 1 } })
   const slots = []
   for (const [room, hours] of [[first, [9, 11]], [roomB, [9, 10.5]], [roomC, [10, 12]]]) for (const hour of hours) slots.push(await db.interviewSlot.create({ data: { clubId: club.id, roomId: room.id, location: room.location, startTime: at(0, Math.floor(hour), hour % 1 ? 30 : 0), endTime: new Date(+at(0, Math.floor(hour), hour % 1 ? 30 : 0) + 1800000) } }))
   const foreignMember = await db.clubMember.upsert({ where: { userId_clubId: { userId: eligible[5].userId, clubId: foreign.id } }, create: { userId: eligible[5].userId, clubId: foreign.id, accessRole: 'INTERVIEWER', permissions: ['applications.review', 'applicants.identify'] }, update: {} })
   const foreignRoom = await db.interviewRoom.findFirstOrThrow({ where: { clubId: foreign.id }, include: { slots: true } })
   await db.interviewSlot.update({ where: { id: foreignRoom.slots[0].id }, data: { startTime: at(0, 9), endTime: at(0, 9, 30) } })
-  await db.interviewRoom.update({ where: { id: foreignRoom.id }, data: { timezone: 'UTC', panelMemberIds: [foreignMember.id] } })
+  await db.interviewRoom.update({ where: { id: foreignRoom.id }, data: { timezone: 'America/New_York', panelMemberIds: [foreignMember.id] } })
   await db.interviewRoom.update({ where: { id: foreignRoom.id }, data: { approvedPanelMemberIds: [foreignMember.id], panelApprovedBy: config.actors.owner.id } })
   const application = await db.application.create({ data: { clubId: club.id, roundId: club.roundId, studentId: config.actors.outsider.id, status: 'INTERVIEWING' } })
-  const booked = slots.find(s => s.roomId === first.id && s.startTime.getUTCHours() === 11)
+  const booked = slots.find(s => s.roomId === first.id && +s.startTime === +at(0, 11))
   await db.interviewBooking.create({ data: { applicationId: application.id, roundId: club.roundId, slotId: booked.id } })
   config.audit = { clubId: club.id, roundId: club.roundId, secondRoundId: second.id, emptyRoundId: empty.id, week, date2: at(1, 12).toISOString().slice(0, 10), eligible, ineligible, rooms: [first.id, roomB.id, roomC.id], bookedSlotId: booked.id, foreignRoomId: foreignRoom.id, window: { start: at(0, 9).toISOString(), end: at(0, 12, 30).toISOString() }, baselineWindow: { start: at(0, 11).toISOString(), end: at(0, 11, 30).toISOString() } }
 }
@@ -58,7 +61,7 @@ async function verify(config, root) {
   async function context(key, mobile = false) {
     const cookies = new Map(), client = createServerClient(config.status.API_URL, config.status.PUBLISHABLE_KEY, { cookies: { getAll: () => [...cookies.values()], setAll: values => values.forEach(v => cookies.set(v.name, v)) } })
     const { error } = await client.auth.signInWithPassword(config.actors[key]); if (error) throw error
-    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/New_York' })
+    const ctx = await browser.newContext(mobile ? { ...devices['iPhone 13'], defaultBrowserType: undefined, timezoneId: 'Asia/Tokyo' } : { viewport: { width: 1440, height: 1000 }, timezoneId: 'America/Los_Angeles' })
     await ctx.addCookies([...cookies.values()].map(({ name, value }) => ({ name, value, url: config.appUrl, sameSite: 'Lax' })))
     const page = await ctx.newPage(); pages.push(page); page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()) }); page.on('pageerror', e => errors.push(e.message));
     page.on('request', request => { const id = request.headers()['next-action']; if (id) { const def = JSON.parse(fs.readFileSync(path.join(config.buildDir, 'server/server-reference-manifest.json'))).node[id]; network.push({ event: 'request', action: def?.exportedName }) } })
@@ -83,7 +86,7 @@ async function verify(config, root) {
     // Baseline probe executes before modifications: no-op edits must retain a real confirmation.
     const probe = await context('eligible2'); await probe.page.goto(`${config.appUrl}/settings/availability?clubId=${a.clubId}&roundId=${a.roundId}`)
     await probe.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor(); const beforeProbe = await db.interviewRoundParticipation.findUniqueOrThrow({ where: { memberId_roundId: { memberId: a.eligible[1].id, roundId: a.roundId } } })
-    await probe.page.getByRole('button', { name: 'Apply time zone', exact: true }).click()
+    assert.equal(await probe.page.getByLabel('Time zone', { exact: true }).count(), 0)
     await probe.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor({ timeout: 2500 })
     await probe.page.getByRole('button', { name: 'Use current global schedule', exact: true }).click(); await probe.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor({ timeout: 2500 })
     assert.deepEqual(await db.interviewRoundParticipation.findUniqueOrThrow({ where: { id: beforeProbe.id } }), beforeProbe); record('No-op confirmation UI/server agreement')
@@ -95,7 +98,7 @@ async function verify(config, root) {
     const baseline = await snapshot(); assert.ok(baseline.interviewPanelScheduleVersion.length); assert.ok(baseline.interviewPanelAssignment.length)
     record('Realistic fixture: 8 eligible, 2 ineligible, 3 rooms, multiple rounds, existing approved booking panels')
     const admin = await context('owner'); await open(admin.page)
-    for (const kind of ['availabilityOverview', 'staffingCoverage', 'panelWorkspace']) { const args = [{ ...scope, ...(kind === 'availabilityOverview' ? { week: a.week, timezone: 'UTC' } : {}) }]; const query = '/api/workspace?' + new URLSearchParams({ kind, args: JSON.stringify(args) }); const denied = await probe.page.request.get(config.appUrl + query); assert.equal(denied.status(), 403); assert.equal(denied.headers()['cache-control'], 'private, no-store'); assert.equal((await admin.page.request.get(config.appUrl + query)).status(), 200) }
+    for (const kind of ['availabilityOverview', 'staffingCoverage', 'panelWorkspace']) { const args = [{ ...scope, ...(kind === 'availabilityOverview' ? { week: a.week, timezone: 'America/New_York' } : {}) }]; const query = '/api/workspace?' + new URLSearchParams({ kind, args: JSON.stringify(args) }); const denied = await probe.page.request.get(config.appUrl + query); assert.equal(denied.status(), 403); assert.equal(denied.headers()['cache-control'], 'private, no-store'); assert.equal((await admin.page.request.get(config.appUrl + query)).status(), 200) }
     assert.equal((await admin.page.request.get(config.appUrl + '/api/workspace?kind=publishPanelSchedule&args=[]')).status(), 400); record('Authenticated read API boundaries: ordinary members denied identifiable overview/panels; no mutation dispatch; private uncached responses')
     await admin.page.getByRole('button', { name: 'Request availability from all', exact: true }).click(); await admin.page.getByText('2 requests sent.', { exact: false }).waitFor()
     await assert.rejects(action('requestRoundAvailability', { ...scope, memberIds: [a.ineligible[0].id] }, 'owner', 'actions/availability.ts'))
@@ -124,16 +127,15 @@ async function verify(config, root) {
     // Actual logout endpoint/sign-in, followed by a new browser context.
     await user.page.getByRole('link', { name: 'Back to Home', exact: true }).click(); await user.page.getByRole('button', { name: /^Account menu for/ }).click(); await user.page.getByRole('menuitem', { name: 'Sign out', exact: true }).click(); await user.page.getByRole('button', { name: /^Account menu for/ }).waitFor({ state: 'hidden' }); await user.ctx.close()
     const returned = await context('interviewer'); await returned.page.goto(config.appUrl + '/settings/availability'); assert.deepEqual((await db.userAvailability.findUniqueOrThrow({ where: { userId: global.userId } })).schedule, expected); await returned.page.getByRole('heading', { name: 'My Availability', exact: true }).waitFor(); assert.equal(await returned.page.locator('.oc-availability:visible').count(), 1); assert.equal(await returned.page.locator('[data-av-cell="0:36"]:visible').getAttribute('aria-selected'), 'true')
-    await returned.page.locator('main:visible').getByLabel('Time zone', { exact: true }).fill('America/New_York'); await returned.page.getByRole('button', { name: 'Apply time zone', exact: true }).click(); await saved(returned.page)
-    let overview = await action('getAvailabilityOverview', { clubId: a.clubId, week: a.week, timezone: 'UTC' }, 'owner', 'actions/availability.ts'); assert.equal(overview.members.find(m => m.id === a.eligible[0].id).available[0][36], false); assert.equal(overview.members.find(m => m.id === a.eligible[0].id).available[0][56], true)
-    await returned.page.locator('main:visible').getByLabel('Time zone', { exact: true }).fill('UTC'); await returned.page.getByRole('button', { name: 'Apply time zone', exact: true }).click(); await saved(returned.page)
+    assert.equal(await returned.page.getByLabel('Time zone', { exact: true }).count(), 0)
+    let overview = await action('getAvailabilityOverview', { clubId: a.clubId, week: a.week, timezone: 'UTC' }, 'owner', 'actions/availability.ts'); assert.equal(overview.timezone, 'America/New_York'); assert.equal(overview.members.find(m => m.id === a.eligible[0].id).available[0][36], true)
     await returned.page.locator('main:visible').getByLabel('Choose an interview round').selectOption(a.roundId); await returned.page.getByRole('button', { name: 'Submit round availability', exact: true }).click(); await returned.page.getByText('Submitted · Participation confirmed.', { exact: false }).waitFor()
-    record('Discoverability, drag/remove, weekly/exception persistence, real logout/login, offline retry, lost-save acknowledgement, timezone conversion')
-    await admin.page.getByRole('button', { name: 'Refresh overview', exact: true }).click(); await admin.page.getByLabel('Time zone', { exact: true }).fill('UTC'); await admin.page.getByRole('button', { name: 'Apply time zone', exact: true }).click()
+    record('Discoverability, drag/remove, weekly/exception persistence, real logout/login, offline retry, lost-save acknowledgement, fixed Eastern Time')
+    await admin.page.getByRole('button', { name: 'Refresh overview', exact: true }).click(); assert.equal(await admin.page.getByLabel('Time zone', { exact: true }).count(), 0)
     await admin.page.locator('[data-av-cell="0:36"]').scrollIntoViewIfNeeded(); await admin.page.locator('[data-av-cell="0:36"]').click(); await admin.page.getByText('4 eligible interviewers available; 5 needed', { exact: false }).waitFor()
     assert.match(await admin.page.locator('[data-av-cell="0:36"]').getAttribute('aria-label'), /4 available interviewers/)
-    overview = await action('getAvailabilityOverview', { ...scope, week: a.week, timezone: 'UTC' }, 'owner', 'actions/availability.ts'); assert.equal(overview.members.length, 8); assert.equal(overview.members.filter(m => m.confirmed).length, 6); assert.equal(overview.members.find(m => m.id === a.eligible[6].id).available[0][36], false); assert.equal(overview.members.find(m => m.id === a.eligible[7].id).available[0][36], false)
-    assert.ok(overview.slots.filter(s => s.startTime.endsWith('09:00:00.000Z')).every(s => !s.availableMemberIds.includes(a.eligible[5].id)))
+    overview = await action('getAvailabilityOverview', { ...scope, week: a.week, timezone: 'America/New_York' }, 'owner', 'actions/availability.ts'); assert.equal(overview.members.length, 8); assert.equal(overview.members.filter(m => m.confirmed).length, 6); assert.equal(overview.members.find(m => m.id === a.eligible[6].id).available[0][36], false); assert.equal(overview.members.find(m => m.id === a.eligible[7].id).available[0][36], false)
+    assert.ok(overview.slots.filter(s => easternClock(s.startTime) === '09:00').every(s => !s.availableMemberIds.includes(a.eligible[5].id)))
     await admin.page.getByText('2 sessions need coverage this week', { exact: true }).waitFor();
     record('Admin response tracking, exact heatmap/list/capacity counts, excluded ineligible/missing/declined participants and official commitments')
     // Creation through the actual existing form in a second round.
@@ -171,7 +173,7 @@ async function verify(config, root) {
     record('Manual edit/save/reopen, unsaved navigation, two-owner stale edit rejection, explicit publication and lost-response idempotent retry')
     // Revision edits one non-booked session; only its changed member receives a notice.
     await panel.getByRole('button', { name: 'Edit Panels', exact: true }).click(); await panel.getByText('Working revision created.', { exact: false }).waitFor(); draft = (await workspaceApi()).proposal
-    const target = draft.document.sessions.find(s => s.roomName === 'Beta' && s.startTime.endsWith('10:30:00.000Z')), removal = draft.document.assignments.find(x => x.slotId === target.id)
+    const target = draft.document.sessions.find(s => s.roomName === 'Beta' && easternClock(s.startTime) === '10:30'), removal = draft.document.assignments.find(x => x.slotId === target.id)
     await panel.getByRole('button', { name: new RegExp('^Edit Beta .*10:30') }).click(); await panel.getByLabel('Draft session interviewers needed').selectOption(String(target.required - 1)); await panel.getByText('Change validated.', { exact: false }).waitFor()
     const name = w.scene.members.find(m => m.id === removal.memberId).name
     await panel.getByRole('button', { name: new RegExp(`^Remove ${name} from Beta .*10:30`) }).click(); await panel.getByText('Change validated.', { exact: false }).waitFor(); await panel.getByRole('button', { name: 'Save Draft', exact: true }).click(); await panel.getByText('Draft saved.', { exact: true }).waitFor(); assert.deepEqual(await snapshot(), committed)

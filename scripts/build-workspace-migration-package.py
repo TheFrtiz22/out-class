@@ -4,12 +4,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = 'htlgjluegmdwfjkzzwic'
-BASE = 'b4a9efa10f1f0ea2bc269907fd28bc5ea6871dbc'
+BASE = '2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4'
 NAMES = ['20261012171752_admin_session_bound_elevation', '20261013002253_recipient_audiences', '20261013005624_scheduled_communications', '20261013014837_decision_letter_controls', '20261013014950_recruitment_cycles', '20261013015200_scheduled_decisions', '20261013140024_scheduled_invitation_emails', '20261013141510_scheduled_availability_requests']
 CRLF = {'20261005010000_public_corkboard', '20261006010000_admin_workspace', '20261006020000_profile_recruitment_visibility', '20261007010000_profile_gpa_private_photos'}
 def git(*args): return subprocess.check_output(['git', *args], cwd=ROOT)
 def sha(data): return hashlib.sha256(data).hexdigest()
-def build(source, output):
+def build(source, output, ledger_json):
     revision = git('rev-parse', source).decode().strip()
     output = Path(output).resolve()
     if output.exists(): raise SystemExit('Output already exists; preserve prior evidence.')
@@ -31,7 +31,15 @@ def build(source, output):
         name = path.split('/')[2]; lf = raw.replace(b'\r\n', b'\n')
         expected.append((name, sha(raw), sha(lf.replace(b'\n', b'\r\n')) if name in CRLF else sha(raw)))
     assert len(expected) == 43
-    manifest = {'source': revision, 'base': BASE, 'project_id': PROJECT, 'baseline': expected.copy(), 'migrations': []}
+    ledger_bytes = Path(ledger_json).read_bytes()
+    live = json.loads(ledger_bytes)
+    assert live['project_id'] == PROJECT and live['database'] == 'postgres' and live['operator'] == 'postgres', 'Wrong project/database/operator'
+    by_name = {name: (lf, crlf) for name, lf, crlf in expected}
+    assert len(live['ledger']) == len(expected) and {r['name'] for r in live['ledger']} == set(by_name), 'Live ledger differs from baseline: review all pending prerequisites'
+    assert all(r['completed'] and r['checksum'] in by_name[r['name']] for r in live['ledger']), 'Incomplete or changed live history'
+    assert not any(live['runtime'][key] for key in ['rolsuper','rolbypassrls','rolcreatedb','rolcreaterole','rolreplication','schema_create']), 'Runtime security changed'
+    manifest = {'source': revision, 'base': BASE, 'project_id': PROJECT, 'live_ledger_sha256': sha(ledger_bytes), 'baseline': expected.copy(), 'migrations': []}
+    (output / 'live-ledger.json').write_bytes(ledger_bytes)
     for index, name in enumerate(NAMES):
         raw = git('show', revision + ':prisma/migrations/' + name + '/migration.sql')
         assert raw.startswith(b'BEGIN;\n') and raw.endswith(b'COMMIT;\n')
@@ -88,5 +96,5 @@ VALUES(gen_random_uuid()::text,'{checksum}',current_setting('outclass.migration_
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print(json.dumps({'source': revision, 'package': str(output), 'migrations': len(NAMES)}))
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(); parser.add_argument('--source', default='HEAD'); parser.add_argument('--output', required=True)
-    args = parser.parse_args(); build(args.source, args.output)
+    parser = argparse.ArgumentParser(); parser.add_argument('--source', default='HEAD'); parser.add_argument('--output', required=True); parser.add_argument('--ledger-json', required=True)
+    args = parser.parse_args(); build(args.source, args.output, args.ledger_json)

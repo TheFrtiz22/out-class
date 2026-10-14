@@ -1,4 +1,5 @@
 "use client";
+import { SCHEDULING_TIMEZONE, schedulingDateTime } from "@/lib/scheduling-config"
 import type { Notification } from "@/lib/data";
 import type { getDurableNotifications } from "@/actions/communications";
 export const communicationsChanged = () => window.dispatchEvent(new Event("outclass:communications-changed"));
@@ -12,5 +13,5 @@ export function inboxNotification(item: Awaited<ReturnType<typeof getDurableNoti
     type: notificationTypes[item.type] ?? "OutClass Update", urgent: item.type === "INTERVIEW",
     club: item.club?.name || "OutClass", color: item.club?.color || "#142d45", logoUrl: item.club?.logoUrl, logoText: (item.club?.name || "OC").slice(0, 2),
     senderName: item.club?.name || "OutClass", senderTitle: item.type === "MESSAGE" ? "Private message" : "Club update",
-    title: item.title, preview: item.body.slice(0, 160), body: [item.body], timestamp: new Date(item.createdAt).toLocaleDateString(), fullDate: new Date(item.createdAt).toLocaleString(), createdAt: new Date(item.createdAt).toISOString(), read: !!item.readAt, cta: item.eventKey?.startsWith("interview-assignment:") ? "Open interview room" : item.type === "DECISION" ? "View Decision" : item.type === "OFFER_RESPONSE" ? "View response" : item.type === "MESSAGE" ? "Open conversation" : item.type === "TASK" ? "View task" : item.type === "APPLICATION" || item.type === "INTERVIEW" ? "View application" : item.type === "INVITATION" ? "Review invitation" : undefined };
+    title: item.title, preview: item.body.slice(0, 160), body: [item.body], timestamp: new Date(item.createdAt).toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE }), fullDate: schedulingDateTime(item.createdAt), createdAt: new Date(item.createdAt).toISOString(), read: !!item.readAt, cta: item.eventKey?.startsWith("interview-assignment:") ? "Open interview room" : item.type === "DECISION" ? "View Decision" : item.type === "OFFER_RESPONSE" ? "View response" : item.type === "MESSAGE" ? "Open conversation" : item.type === "TASK" ? "View task" : item.type === "APPLICATION" || item.type === "INTERVIEW" ? "View application" : item.type === "INVITATION" ? "Review invitation" : undefined };
 }

@@ -7,8 +7,8 @@ compatible serving application until all eight migrations have verified successf
 ## Build from the reviewed final commit
 
 ```sh
-python3 scripts/build-workspace-migration-package.py --source HEAD --output /tmp/outclass-workspace-release-package
-OUTCLASS_PACKAGE_TEST_PYTHON=/tmp/outclass-production-readonly-probe/venv/bin/python sh scripts/test-workspace-migration-package.sh /tmp/outclass-workspace-release-package
+python3 scripts/build-workspace-migration-package.py --source HEAD --ledger-json /tmp/outclass-current-main-live-ledger.json --output /tmp/outclass-current-main-release-package
+OUTCLASS_PACKAGE_TEST_PYTHON=/tmp/outclass-production-readonly-probe/venv/bin/python sh scripts/test-workspace-migration-package.sh /tmp/outclass-current-main-release-package
 ```
 
 The Python override selects the existing local psycopg environment; any Python with
@@ -18,8 +18,13 @@ An existing container/package directory is never replaced. Preserve earlier evid
 
 Builder resolves the full source SHA and reads **committed Git bytes**, never working
 copies. It rejects existing-migration rewrites and anything other than the exact eight
-pending migrations against main `b4a9efa10f1f0ea2bc269907fd28bc5ea6871dbc` (43 migrations).
-`manifest.json` contains source SHA, project, baseline ledger checksums, original SQL
+pending migrations against main `2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4` (43 migrations).
+The required `--ledger-json` is a fresh read-only connector snapshot containing project_id,
+database/operator, completed ledger rows and bounded-role attributes. The builder
+rejects missing/extra/incomplete or checksum-changed history before emitting payloads;
+review any discrepancy for genuinely pending prerequisites rather than assuming eight.
+The October 14 inspection matches all 43 current-main migrations; exactly eight remain.
+`manifest.json` contains source SHA, project, live-snapshot SHA256, baseline ledger checksums, original SQL
 SHA256 and adapted payload SHA256. `.source.sql` files are byte-identical to Git.
 `.connector.sql` and `.tool.json` are the concrete execution package. Temporary
 packages, logs and synthetic fixture data remain outside the repository.

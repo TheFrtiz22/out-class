@@ -1,4 +1,5 @@
 "use client"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 import { AvailabilityDashboardRequests } from "@/components/availability/dashboard-requests"
 
 import { useEffect, useState } from "react"
@@ -33,6 +34,7 @@ import "./student-home.css"
 
 function when(event: ClubEvent) {
   return eventStart(event).toLocaleString("en-US", {
+    timeZone: SCHEDULING_TIMEZONE, hour12: true,
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -115,8 +117,8 @@ function AgendaRow({ event, onOpen }: { event: ClubEvent; onOpen: () => void }) 
         aria-label={`${event.title}, ${when(event)}`}
       >
         <span className="oc-home-date" aria-hidden="true">
-          <span>{date.toLocaleDateString("en-US", { month: "short" })}</span>
-          <strong>{date.getDate()}</strong>
+          <span>{date.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short" })}</span>
+          <strong>{Number(event.date.slice(-2))}</strong>
         </span>
         <span className="oc-home-agenda-copy">
           <span className="oc-home-event-type">
@@ -125,7 +127,7 @@ function AgendaRow({ event, onOpen }: { event: ClubEvent; onOpen: () => void }) 
               : event.type === "Coffee Chat"
                 ? "Coffee chat"
                 : "Club event"}{" "}
-            · {date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+            · {date.toLocaleTimeString("en-US", { timeZone: SCHEDULING_TIMEZONE, hour: "numeric", minute: "2-digit", hour12: true })}
           </span>
           <strong>{event.title}</strong>
           {event.location && (

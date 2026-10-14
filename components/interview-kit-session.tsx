@@ -72,6 +72,20 @@ export function InterviewKitSession({
   const [pendingQuestion, setPendingQuestion] = useState<{ question: KitQuestion; by: string; revision: number } | null>(null);
   const [collaborationMessage, setCollaborationMessage] = useState("");
   const [selecting, setSelecting] = useState(false);
+  const selectionSequence = useRef(0);
+  const selectionIntent = useRef<{ question: KitQuestion; sequence: number } | null>(null);
+  const selectionFlight = useRef<Promise<void> | null>(null);
+  const [shareFailed, setShareFailed] = useState<KitQuestion | null>(null);
+  const activeQuestionRef = useRef(activeQuestion); activeQuestionRef.current = activeQuestion;
+  const activeNotes = useRef<HTMLTextAreaElement>(null);
+  const questionOpenedAt = useRef<number | null>(null);
+  function finishQuestionTiming() {
+    if (questionOpenedAt.current === null || !formRef.current) return;
+    // Opt-in, local DOM diagnostics only: no telemetry, content or credentials.
+    formRef.current.dataset.questionOpenMs = (performance.now() - questionOpenedAt.current).toFixed(1);
+    formRef.current.dataset.questionEditorFocused = String(document.activeElement === activeNotes.current);
+    questionOpenedAt.current = null;
+  }
   const composing = useRef(false);
   const [offScriptOpen, setOffScriptOpen] = useState(false);
   const activeHeading = useRef<HTMLHeadingElement>(null);
@@ -95,8 +109,7 @@ export function InterviewKitSession({
     let current = true;
     const source = completionSource.current, row = rowNodes.current.get(completionMotion.id);
     const finish = () => {
-      closingQuestionRef.current = false;
-      if (current && mounted.current) { setCompletionMotion(null); setClosingQuestion(false); bankControl.current?.focus({ preventScroll: true }); }
+      if (current && mounted.current) setCompletionMotion(null);
     };
     if (!source || !row) { finish(); return; }
     const cancel = animateQuestionCompletion(completionMotion.origin, source, row, finish);
@@ -134,9 +147,9 @@ export function InterviewKitSession({
       animations.push(row.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, delay: 720 + index * 90, easing: "ease", fill: "both" }));
     }
     const middle = closingHeading.current?.closest(".oc-post-interview");
-    if (middle) animations.push(middle.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 360, delay: 780 + Math.max(0, flights.length - 1) * 90, fill: "both", easing: "ease" }));
+    if (middle) animations.push(middle.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "translateY(0)" }], { duration: 360, fill: "both", easing: "ease" }));
     await Promise.allSettled(animations.map(a => a.finished));
-    if (current) { setFlights([]); if (document.activeElement !== miscellaneousNotes.current) closingHeading.current?.focus({ preventScroll: true }); }
+    if (current) setFlights([]);
     })();
     return () => { current = false; animations.forEach(a => a.cancel()); window.removeEventListener("resize", settle); reducedMotion.removeEventListener("change", settle); };
   }, [flights, formRef]);
@@ -164,7 +177,18 @@ export function InterviewKitSession({
     getInterviewKit(clubId, roundId).then(result => { if (current) setLibrary(result.questions) }).catch(() => { if (current) setLibraryError("Current kit unavailable. Your session snapshot is still available.") }).finally(() => { if (current) setLibraryLoading(false); });
     return () => { current = false };
   }, [clubId, roundId, libraryOpen, libraryRetry]);
-  useEffect(() => { if (activeQuestion && !suppressQuestionFocus.current) activeHeading.current?.focus({ preventScroll: false }); suppressQuestionFocus.current = false; }, [activeQuestion]);
+  useLayoutEffect(() => {
+    if (activeQuestion) {
+      setCompletionMotion(null);
+      if (!suppressQuestionFocus.current) (activeNotes.current || activeHeading.current)?.focus();
+      if (questionOpenedAt.current !== null && formRef.current) {
+        formRef.current.dataset.questionOpenMs = (performance.now() - questionOpenedAt.current).toFixed(1);
+        formRef.current.dataset.questionEditorFocused = String(document.activeElement === activeNotes.current);
+        questionOpenedAt.current = null;
+      }
+    }
+    suppressQuestionFocus.current = false;
+  }, [activeQuestion, formRef]);
   useEffect(() => {
     if (!closing || session?.completedAt) return;
     let current = true; setHistory(null); setHistoryError("");
@@ -172,7 +196,7 @@ export function InterviewKitSession({
     return () => { current = false; };
   }, [closing, session?.completedAt, clubId, applicationId, roundId, historyRetry]);
   const closingHeading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { if ((closing || session?.completedAt) && !ending && !flights.length && (typeof document === "undefined" || document.activeElement !== miscellaneousNotes.current)) { closingHeading.current?.focus({ preventScroll: true }) } }, [closing, session?.completedAt, flights.length, ending]);
+  useLayoutEffect(() => { if ((closing || session?.completedAt) && (typeof document === "undefined" || document.activeElement !== miscellaneousNotes.current)) closingHeading.current?.focus({ preventScroll: true }); }, [closing, session?.completedAt]);
   const savingRef = useRef(false),
     mounted = useRef(true),
     sessionRef = useRef<InterviewSessionData | null>(initialSession || null);
@@ -191,7 +215,7 @@ export function InterviewKitSession({
     }
     personalQuestion.current = false;
     suppressQuestionFocus.current = !focus;
-    setSharedQuestion(question); setActiveQuestion(question.id); setPendingQuestion(null);
+    setSharedQuestion(question); setActiveQuestion(question.id); setPendingQuestion(null); setLibraryOpen(false);
   }
   useEffect(() => {
     const view = collaboration.view;
@@ -202,25 +226,41 @@ export function InterviewKitSession({
     if (sharedQuestion?.id === question.id && activeQuestion === question.id) return;
     const element = document.activeElement;
     const typing = composing.current || !!element && !!formRef.current?.contains(element) && (element.tagName === "TEXTAREA" || element.tagName === "INPUT" || (element as HTMLElement).isContentEditable);
-    if (dirty || typing || personalQuestion.current || saving || closingQuestion || ending) setPendingQuestion({ question, by, revision: view.revision });
+    if (dirty || typing || personalQuestion.current || saving || selecting || closingQuestion || ending) setPendingQuestion({ question, by, revision: view.revision });
     else { openSharedQuestion(question, false); setCollaborationMessage(`${by} selected this question.`); }
   // Incoming state never substitutes a draft or focuses a field.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collaboration.view, closing, session?.completedAt]);
-  async function selectBankQuestion(question: KitQuestion) {
-    if (selecting || savingRef.current || sessionRef.current?.completedAt || draftRef.current.postInterview) return;
-    setSelecting(true); setCollaborationMessage("");
-    try {
-      if (dirty && !(await persist())) return;
-      const result = await collaboration.select(question.id);
-      sharedRevision.current = Math.max(sharedRevision.current, result.revision);
-      openSharedQuestion(result.question, true);
-    } catch { setCollaborationMessage("Could not share this question. Your notes remain here. Try selecting it again."); }
-    finally { setSelecting(false); }
+  function selectBankQuestion(question: KitQuestion) {
+    if (sessionRef.current?.completedAt || draftRef.current.postInterview || closingQuestionRef.current || endingRef.current) return;
+    if (typeof window !== "undefined" && new URLSearchParams(window.location?.search).has("interviewTiming")) questionOpenedAt.current = performance.now();
+    const pinned = sessionRef.current?.questions.find(q => q.id === question.id);
+    const extra = draftRef.current.additionalQuestions.find(q => q.id === question.id && q.bankQuestion);
+    const local = pinned || (extra ? { id: extra.id, prompt: extra.question, guidance: extra.bankQuestion!.guidance } : question);
+    openSharedQuestion(local, true);
+    if (activeQuestionRef.current === local.id) { activeNotes.current?.focus(); finishQuestionTiming(); }
+    selectionIntent.current = { question: local, sequence: ++selectionSequence.current };
+    setSelecting(true); setShareFailed(null); setCollaborationMessage("");
+    if (dirty && !savingRef.current) void persist();
+    if (selectionFlight.current) return;
+    const flight = (async () => {
+      while (selectionIntent.current && mounted.current && !sessionRef.current?.completedAt && !draftRef.current.postInterview) {
+        const intent = selectionIntent.current; selectionIntent.current = null;
+        try {
+          const result = await collaboration.select(intent.question.id);
+          sharedRevision.current = Math.max(sharedRevision.current, result.revision);
+          if (mounted.current && intent.sequence === selectionSequence.current && activeQuestionRef.current === intent.question.id && !draftRef.current.postInterview) setSharedQuestion(result.question);
+        } catch {
+          if (mounted.current && intent.sequence === selectionSequence.current) { setShareFailed(intent.question); setCollaborationMessage("This question is open locally, but could not be shared. Your private draft is retained."); }
+        }
+      }
+    })();
+    selectionFlight.current = flight;
+    void flight.finally(() => { if (selectionFlight.current === flight) selectionFlight.current = null; if (mounted.current) setSelecting(false); });
   }
   async function acceptPendingQuestion() {
     if (!pendingQuestion || composing.current) return;
-    if (dirty && !(await persist())) return;
+    if (dirty && !savingRef.current) void persist();
     openSharedQuestion(pendingQuestion.question, true);
     setCollaborationMessage(`${pendingQuestion.by} selected this question.`);
   }
@@ -289,9 +329,9 @@ export function InterviewKitSession({
         draft: snapshot,
         complete,
       });
-      sessionRef.current = result.session;
+      sessionRef.current = { ...record, ...result.session };
       if (mounted.current) {
-        setSession(result.session);
+        setSession(sessionRef.current);
         setSaved(JSON.stringify(snapshot));
         if (patch) setDraft(current => ({ ...current, ...patch }));
         if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
@@ -366,8 +406,8 @@ export function InterviewKitSession({
     }) : [];
     const ok = await persist(false, false, { postInterview: true });
     if (ok && mounted.current) {
-      setExpandedQuestions([]);
-      setFlights(moving);
+      setExpandedQuestions([]); setFlights(moving);
+      setAnnouncement("Post-interview draft saved. Choose your score when ready.");
     }
     endingRef.current = false; if (mounted.current) setEnding(false);
   }
@@ -380,7 +420,7 @@ export function InterviewKitSession({
     event.preventDefault();
     setDraft(current => ({ ...current, score: event.key === "Home" ? 1 : event.key === "End" ? 10 : Math.max(1, Math.min(10, Math.round((current.score ?? 1) * 2) / 2 + steps[event.key])) }));
   }
-  const libraryQuestions = library.filter(q => `${q.prompt} ${q.guidance}`.toLowerCase().includes(search.toLowerCase()));
+  const libraryQuestions = (library.length ? library : session.questions).filter(q => `${q.prompt} ${q.guidance}`.toLowerCase().includes(search.toLowerCase()));
   function addQuestion(prompt: string, bankId?: string, guidance?: string) {
     if (disabled || draft.additionalQuestions.length >= 30 || !prompt.trim()) return;
     const id = bankId || crypto.randomUUID();
@@ -398,7 +438,8 @@ export function InterviewKitSession({
     if (mounted.current) {
       if (ok) {
         setActiveQuestion(""); setLibraryOpen(false); setAnnouncement("Question saved and moved to your completed questions.");
-        if (origin) { setCompletionMotion({ id: active.id, origin }); return; }
+        setClosingQuestion(false); closingQuestionRef.current = false;
+        if (origin) setCompletionMotion({ id: active.id, origin });
         bankControl.current?.focus({ preventScroll: true });
       }
       setClosingQuestion(false);
@@ -433,7 +474,7 @@ export function InterviewKitSession({
   return <form ref={formRef} id="interview-evaluation" className="oc-focused-interview min-w-0" data-unsaved={dirty || !!newQuestion.trim()} data-saving={saving} onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }} onSubmit={e => { e.preventDefault(); if (!session.completedAt) void endInterview(); }}>
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
-      <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} />
+      <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
       <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
@@ -447,6 +488,8 @@ export function InterviewKitSession({
       <div className="oc-question-workspace min-w-0">
         <div className="oc-candidate-content">
         {collaborationMessage && <p role="status" className="text-xs text-muted-foreground">{collaborationMessage}</p>}
+        {selecting && <p role="status" className="text-xs text-muted-foreground">Sharing question… You can keep typing.</p>}
+        {shareFailed && <Button type="button" variant="ghost" disabled={!!session.completedAt || closing} onClick={() => selectBankQuestion(shareFailed)}>Retry sharing question</Button>}
         {pendingQuestion && !closing && !session.completedAt && <div className="oc-shared-question-pending" role="status"><span>{pendingQuestion.by} selected a question. Your private work stays here.</span><Button type="button" variant="outline" disabled={saving || completing || closingQuestion || ending} onClick={() => void acceptPendingQuestion()}>Open question</Button></div>}
         {error && <div role="alert" className="space-y-2 text-sm text-destructive">{error} Your text remains here.<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={saving || !!session.completedAt} onClick={() => void persist(failedFinish)}>{failedFinish ? "Retry end post-interview" : "Retry save"}</Button><Button type="button" variant="ghost" disabled={saving} onClick={() => void refreshRevision()}>Refresh revision, keep my text</Button></div></div>}
         {(!closing && !session.completedAt) || (session.completedAt && activeQuestion) ? <>
@@ -459,18 +502,18 @@ export function InterviewKitSession({
           <Input aria-label="Search question bank" placeholder="Search questions…" value={search} onChange={e => setSearch(e.target.value)} />
           {libraryLoading && <p role="status">Loading question bank…</p>}
           {libraryError && <p role="alert">{libraryError} <Button type="button" variant="ghost" onClick={() => setLibraryRetry(v => v + 1)}>Retry bank</Button></p>}
-          <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={disabled || selecting || (!existing && draft.additionalQuestions.length >= 30)} onClick={() => void selectBankQuestion(q)}>{existing ? "Open shared question" : "Use question"}</Button></li>; })}</ul>
+          <ul className="space-y-3">{libraryQuestions.map(q => { const existing = questions.find(item => item.id === q.id); return <li key={q.id} className="space-y-2 border-t pt-3"><p className="break-words text-sm font-medium">{q.prompt}</p>{key(q.guidance)}<Button type="button" size="sm" variant="outline" disabled={disabled || (!existing && draft.additionalQuestions.length >= 30)} onClick={() => void selectBankQuestion(q)}>{existing ? "Open shared question" : "Use question"}</Button></li>; })}</ul>
           {!libraryLoading && !libraryQuestions.length && <p className="text-sm text-muted-foreground">No matching questions in this bank.</p>}
         </section>}
         <div ref={completionSource} className="oc-question-completion-source">
-        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion || selecting} onClick={() => { if (!q.extra || ("bank" in q && q.bank)) void selectBankQuestion(q); else { personalQuestion.current = true; setActiveQuestion(q.id); } }} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
+        {!active && <section className="oc-question-agenda" aria-label="Available questions"><h3>Available questions · {available.length}</h3><ul>{available.map(q => <li key={q.id}><button ref={el => { if (el) questionNodes.current.set(q.id, el); else questionNodes.current.delete(q.id); }} type="button" disabled={ending || closingQuestion} onClick={() => { if (!q.extra || ("bank" in q && q.bank)) void selectBankQuestion(q); else { personalQuestion.current = true; setActiveQuestion(q.id); } }} className="oc-question-row"><span>{q.prompt}</span>{q.extra && !("bank" in q && q.bank) && <span className="oc-question-kind">Off-script</span>}</button></li>)}</ul>{!available.length && <p className="text-sm text-muted-foreground">Browse the bank or reopen a completed question.</p>}</section>}
         {active ? <section ref={el => { if (el) questionNodes.current.set(active.id, el); else questionNodes.current.delete(active.id); }} className="oc-active-question space-y-4" aria-label="Active question">
           <Button type="button" variant="ghost" onClick={() => { setActiveQuestion(""); setLibraryOpen(false); bankControl.current?.focus(); }}>Back to question bank</Button>
           <h3 ref={activeHeading} tabIndex={-1} className="break-words">{active.prompt}</h3>
           {completedIds.includes(active.id) && <p className="text-xs text-primary">Completed by you{session.completedAt ? " · Read only" : " · Notes can still be revised"}</p>}
           {key(active.guidance)}
           <label htmlFor={`active-notes-${active.id}`}>Your private notes</label>
-          <Textarea id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
+          <Textarea ref={activeNotes} id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
           <p className="text-xs text-muted-foreground">Draft question notes are private. Finalized notes are shared with assigned later-round interviewers after submission. Typing does not mark completion.</p>
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
@@ -486,7 +529,7 @@ export function InterviewKitSession({
             {session.completedAt ? <p>{draft.score === null ? "Not scored" : `${draft.score} / 10`}</p> : <input id="interview-score" type="range" min={1} max={10} step={0.5} value={draft.score ?? 1} disabled={disabled} aria-valuetext={draft.score === null ? "Not scored; interact to select a score" : `${draft.score} out of 10`} className="min-h-11 w-full accent-foreground cursor-pointer disabled:opacity-50" onChange={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onPointerUp={e => { const score = Number(e.currentTarget.value); setDraft(d => ({ ...d, score })); }} onKeyDown={scoreKey} />}
             {!session.completedAt && <p className="text-xs text-muted-foreground">1–10 in half-point steps. Select with pointer or touch, or use the arrow keys, Home and End.</p>}
           </fieldset>
-          {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || flights.length > 0 || draft.score === null} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={saving || flights.length > 0} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
+          {!session.completedAt ? <div className="flex flex-wrap gap-2"><Button type="button" disabled={completing || ending || draft.score === null} onClick={() => void persist(true)}>{completing ? "Submitting…" : "End post-interview"}</Button><Button type="button" variant="ghost" disabled={ending || completing} onClick={() => { setExpandedQuestions([]); setClosing(false); }}>Keep interviewing</Button></div> : <div className="space-y-3">
             {nextError && <p role="alert" className="text-sm text-destructive">{nextError}</p>}
             {noMoreApplicants && <p role="status" className="font-medium">No more applicants</p>}
             {onNextApplicant && <Button type="button" disabled={nextBusy} onClick={() => void nextApplicant()}>{nextBusy ? "Loading next candidate…" : noMoreApplicants ? "Check for new assignments" : "Next candidate →"}</Button>}

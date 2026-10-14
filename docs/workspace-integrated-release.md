@@ -1,5 +1,10 @@
 # Integrated workspace release
 
+Current integration: main `2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4`. See
+[workspace-current-main-integration.md](workspace-current-main-integration.md) for the
+resolved overlap, deadline root cause, current validation and refreshed release package.
+Historical validation counts below are superseded by that report.
+
 ## Baseline and merge resolutions
 
 Work began at `625def62abd79f138493db4f1ae3d3b5e8c90164` on
@@ -227,7 +232,7 @@ outbound enablement is performed by this preparation.
 ## Release manifest
 
 `workspace-release-manifest.txt` lists the exact diff against main
-`b4a9efa10f1f0ea2bc269907fd28bc5ea6871dbc`, including these reports and all earlier
+`2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4`, including these reports and all earlier
 branch features. The five credential-recovery files retain their original SHA256,
 remain untracked/unstaged, and are excluded. Temporary fixtures, screenshots, PDFs,
 logs and credential-bearing files are excluded.

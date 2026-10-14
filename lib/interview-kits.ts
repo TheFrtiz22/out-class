@@ -85,6 +85,7 @@ export type InterviewSessionData = {
   submittedQuestions?: import("zod").infer<typeof import("@/lib/interview-review-summary").submittedQuestionsSchema> | null;
   instructions?: string;
   duration?: number;
+  timing?: import("@/lib/interview-session-timing").InterviewTiming | null;
   feedbackSource?: "draft" | "evaluation" | "historical-snapshot";
   id: string;
   revision: number;

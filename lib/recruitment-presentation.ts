@@ -1,3 +1,4 @@
+import { SCHEDULING_TIMEZONE_LABEL, schedulingDateTime } from "@/lib/scheduling-config"
 /** Public recruitment facts; an unknown deadline never implies urgency or availability. */
 export function recruitmentDeadline(value?: Date | string | null) {
   if (!value) return null
@@ -5,10 +6,7 @@ export function recruitmentDeadline(value?: Date | string | null) {
   return Number.isFinite(+date) ? date : null
 }
 export function recruitmentDate(value: Date | string) {
-  return new Date(value).toLocaleString("en-US", {
-    timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric",
-    hour: "numeric", minute: "2-digit", timeZoneName: "short",
-  })
+  return `${schedulingDateTime(value)} · ${SCHEDULING_TIMEZONE_LABEL}`
 }
 export function clubRecruitment(club: {
   source?: string; claimed?: boolean; applicationAvailable?: boolean; applicationDeadline?: Date | string | null;

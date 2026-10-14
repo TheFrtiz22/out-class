@@ -150,3 +150,10 @@ tests/decision-publication-native.test.cjs
 tests/invitation-schedules-native.test.cjs
 utils/scheduled-communications.ts
 ```
+
+## Current-main integration follow-up
+
+The later integration into main `2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4` resolves
+the above conflict and corrects the host-local deadline test fixture. See
+[workspace-current-main-integration.md](workspace-current-main-integration.md).
+The scheduler budget is unchanged; mixed-backlog/native checks were rerun.

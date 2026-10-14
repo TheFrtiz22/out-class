@@ -1,13 +1,12 @@
-import { dateKey, eventStart } from "@/lib/calendar"
+import { eventStart } from "@/lib/calendar"
 import type { ClubEvent, Notification } from "@/lib/data"
+import { addDays, localParts } from "@/lib/availability"
+import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
 
 /** Local calendar boundaries, not fixed 24-hour intervals (DST-safe). */
 export function agendaGroups(events: ClubEvent[], now: Date, includePast = false) {
-  const tomorrow = new Date(now)
-  tomorrow.setDate(now.getDate() + 1)
-  const weekEnd = new Date(now)
-  weekEnd.setDate(now.getDate() + 7)
-  weekEnd.setHours(0, 0, 0, 0)
+  const today = localParts(now, SCHEDULING_TIMEZONE).date
+  const tomorrow = addDays(today, 1), weekEnd = addDays(today, 7)
   const groups = new Map<string, ClubEvent[]>()
   const sorted = events
     .filter((event) => Number.isFinite(eventStart(event).getTime()))
@@ -20,11 +19,11 @@ export function agendaGroups(events: ClubEvent[], now: Date, includePast = false
     if (past && !includePast) continue
     const label = past
       ? "Earlier"
-      : event.date === dateKey(now)
+      : event.date === today
         ? "Today"
-        : event.date === dateKey(tomorrow)
+        : event.date === tomorrow
           ? "Tomorrow"
-          : start < weekEnd
+          : event.date < weekEnd
             ? "Next 7 days"
             : "Later"
     groups.set(label, [...(groups.get(label) || []), event])

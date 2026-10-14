@@ -1,4 +1,5 @@
 "use client"
+import { schedulingDateTime, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { ArrowRight, CalendarDays } from "lucide-react"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusBadge } from "@/components/status-badge"
@@ -7,7 +8,7 @@ import { applicationStatusLabels, applicationNextStep } from "@/lib/student-appl
 import { applicationStatusProgress, currentApplicationInterview, applicationNeedsAttention, isApplicationDecision } from "@/lib/application-presentation"
 import type { StudentApplication } from "./application-form"
 
-export const applicantDate = (value: Date | string) => new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })
+export const applicantDate = (value: Date | string) => `${schedulingDateTime(value)} · ${SCHEDULING_TIMEZONE_LABEL}`
 export function ApplicationStatusProgress({ application }: { application: StudentApplication }) {
   const { stages, current, previous } = applicationStatusProgress(application)
   return <ol className="oc-status-stages" aria-label={`Recruitment stages for ${application.club.name}`}>

@@ -79,12 +79,35 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   const crm=load('actions/crm.ts'),pipeline=await crm.getClubPipeline(club.id),projected=pipeline.applications.find(a=>a.id===app.id);assert.equal(projected.student.email,'');assert.equal(projected.decisionVersion,0);assert.equal(projected.decisionStateRevision,0);assert.match(projected.publicationGuard,/^[a-f0-9]{64}$/);
   const d={...input(await db.application.findUniqueOrThrow({where:{id:app.id}}),'WAITLISTED'),selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:projected.publicationGuard,status:'WAITLISTED'}};await schedules.scheduleDecisionPublication(d);await schedules.cancelDecisionSchedule(club.id,d.id,0);await management.reconsiderRejectedApplication({clubId:club.id,applicationId:app.id,expectedGuard:projected.publicationGuard,reason:'Anonymous additional review authorized'});assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');
  });
+ await t.test('closed application deadline blocks new submissions but not authorized scheduled decisions or reconsideration',async()=>{
+  const app=await application(),submittedAt=app.submittedAt,d=input(app,'REJECTED');
+  await schedules.scheduleDecisionPublication(d);
+  await db.club.update({where:{id:club.id},data:{applicationOpen:false,applicationDeadline:new Date(Date.now()-1000)}});
+  try{
+   const applications=load('actions/applications.ts');
+   await assert.rejects(applications.submitApplication({clubId:club.id,answers:[]}),/Applications are closed/);
+   assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');
+   assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),0);
+   await due(d.id);assert.equal((await worker.processScheduledCommunications()).published,1);
+   const rejected=await db.application.findUniqueOrThrow({where:{id:app.id}});
+   assert.equal(rejected.submittedAt.getTime(),submittedAt.getTime());
+   await management.reconsiderRejectedApplication({clubId:club.id,applicationId:app.id,expectedGuard:guard(rejected),reason:'Authorized review after application deadline'});
+   const reconsidered=await db.application.findUniqueOrThrow({where:{id:app.id}});
+   assert.equal(reconsidered.status,'IN_REVIEW');assert.equal(reconsidered.submittedAt.getTime(),submittedAt.getTime());
+   assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),1);
+   const next=input(reconsidered,'WAITLISTED');await schedules.scheduleDecisionPublication(next);await due(next.id);
+   assert.equal((await worker.processScheduledCommunications()).published,1);
+   assert.equal(await db.decisionLetter.count({where:{applicationId:app.id}}),2);
+   assert.equal(await db.userNotification.count({where:{userId:app.studentId,type:'DECISION'}}),2);
+  }finally{await db.club.update({where:{id:club.id},data:{applicationOpen:true,applicationDeadline:null}});}
+ });
  await t.test('mixed backlog waves preserve capacity, atomic decisions and slow-job rollback',async()=>{
   for(let wave=0;wave<4;wave++){
   const apps=[];for(let i=0;i<50;i++)apps.push(await application());
   const session=await db.votingSession.create({data:{clubId:club.id,roundId:round.id,targetSize:50,createdBy:leader.id,state:'COMPLETED',currentPass:1,candidates:{create:apps.map((a,position)=>({applicationId:a.id,position,expectedStatus:a.status}))},passes:{create:{number:1,state:'COMPLETED',completedAt:new Date()}}}});
   await db.votingPassCandidate.createMany({data:apps.map((a,position)=>({sessionId:session.id,passNumber:1,applicationId:a.id,position,override:position%3===0?'PASS':position%3===1?'HOLD':'NOT_PASS'}))});
   const d={...input(apps[0]),selection:{kind:'VOTING',sessionId:session.id,revision:0,applicationIds:apps.map(a=>a.id)}};await schedules.scheduleDecisionPublication(d);await due(d.id);
+  await db.club.update({where:{id:club.id},data:{applicationOpen:false,applicationDeadline:new Date(Date.now()-1000)}});
   // Mixed due backlog: real announcements on four other clubs, plus a locked
   // club, cancelled send, revoked sender and an expired crashed claim. One slow
   // atomic 50-applicant decision must not monopolize small-send capacity.

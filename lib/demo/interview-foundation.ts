@@ -7,6 +7,7 @@ import { anchorMatchesText } from "@/lib/resume-anchors";
 import { demoResumeText } from "./resume-fixture";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { demoAssignmentNotice } from "./interview-improvements";
+import { interviewTiming } from "@/lib/interview-session-timing";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
@@ -53,13 +54,20 @@ export function saveInterviewKit(clubId: string, roundId: string, version: numbe
   if (!actor(clubId).caps.editKit) throw new Error("Explicit leadership office required.");
   return demoStore.mutate(s => { const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === roundId); if (!round || round.kitVersion !== version) throw new Error("Kit changed."); round.interviewKit = kitSchema.parse(questions); round.kitVersion++; return { questions: round.interviewKit, version: round.kitVersion }; });
 }
+export function demoInterviewTiming(input: InterviewScope) {
+  const { s, round } = access(input);
+  const booking = s.roomBookings?.find(b => b.applicationId === input.applicationId && b.roundId === input.roundId);
+  if (!booking) return interviewTiming(input, round.configuration, null);
+  const room = s.interviewRooms?.find(r => r.id === booking.roomId), slot = room?.slots.find(s => s.id === booking.slotId);
+  return room && slot ? interviewTiming(input, round.configuration, { ...booking, slot: { ...slot, room } }) : null;
+}
 export function openInterviewSession(input: InterviewScope) {
   const { app, round, member } = access(input);
   return demoStore.mutate(s => {
     let record = s.interviews.find(r => r.applicationId === app.id && r.roundId === round.id && r.interviewerId === member.id);
     if (!record) { if (app.roundId !== round.id) throw new Error("Applicant round changed."); record = { id: crypto.randomUUID(), ...input, interviewerId: member.id, anonymousReview: false, revision: 0, questions: structuredClone(round.interviewKit), draft: structuredClone(emptyInterviewDraft), completedAt: null }; s.interviews.push(record); }
     if (record.anonymousReview || (!record.completedAt && app.roundId !== round.id)) throw new Error("Interview unavailable.");
-    return structuredClone(record);
+    return { ...structuredClone(record), timing: demoInterviewTiming(input) };
   });
 }
 export function saveInterviewSession(input: InterviewScope & { revision: number; draft: unknown; complete?: boolean }) {

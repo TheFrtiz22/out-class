@@ -2,6 +2,20 @@ import type { AppTransactionClient } from "@/utils/prisma";
 import { authorizeInterview } from "@/utils/interview-access";
 import type { InterviewScope } from "@/lib/interview-access";
 import { kitSchema } from "@/lib/interview-kits";
+import type { Prisma } from "@prisma/client";
+
+type PanelBooking = Prisma.InterviewBookingGetPayload<{ include: { slot: { include: { room: true; panelScheduleVersion: true } } } }>;
+/** Reuse the official scheduling authority: published slot panels supersede
+ * legacy room attestations, while the approving owner must still be active. */
+export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
+  const { slot } = booking, room = slot.room;
+  if (!room || !room.isOpen || booking.applicationId !== scope.applicationId || booking.roundId !== scope.roundId || room.clubId !== scope.clubId || room.roundId !== scope.roundId) return null;
+  const version = slot.panelScheduleVersion;
+  if (slot.panelScheduleVersionId && (!version || version.id !== slot.panelScheduleVersionId || version.clubId !== scope.clubId || version.roundId !== scope.roundId)) return null;
+  const approvedBy = slot.panelScheduleVersionId ? version!.publishedBy : room.panelApprovedBy;
+  if (!approvedBy || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
+  return slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id));
+}
 
 export function collaborationScope(session: { clubId: string; applicationId: string; roundId: string }): InterviewScope {
   return { clubId: session.clubId, applicationId: session.applicationId, roundId: session.roundId };
@@ -11,14 +25,15 @@ export class CollaborationInitializationRequired extends Error {}
 
 export async function collaborationAccess(tx: AppTransactionClient, scope: InterviewScope, userId: string, applicationLock: "share" | "update" = "update") {
   const actor = await authorizeInterview(tx, scope, userId, "panel", applicationLock);
-  const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId } }, include: { slot: { include: { room: true } } } });
+  const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId } }, include: { slot: { include: { room: true, panelScheduleVersion: true } } } });
   const room = booking?.slot.room;
-  if (booking && (!room || !room.isOpen || room.clubId !== scope.clubId || room.roundId !== scope.roundId || !room.panelMemberIds.includes(actor.member.id) || !room.approvedPanelMemberIds.includes(actor.member.id))) throw Error("Current room assignment required.");
-  if (room && (!room.panelApprovedBy || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: room.panelApprovedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } }))) throw Error("Current room panel approval required.");
+  const panelIds = booking ? await approvedBookingPanel(tx, scope, booking) : null;
+  if (booking && !panelIds) throw Error("Current room panel approval required.");
+  if (booking && !panelIds?.includes(actor.member.id)) throw Error("Current room assignment required.");
   // A manually assigned, unscheduled panel has one candidate-specific room.
   // A booking is scoped to its actual room AND slot, never just club/round.
   const roomKey = booking ? `booking:${booking.id}:${room!.id}` : `panel:${scope.applicationId}`;
-  return { ...actor, roomKey };
+  return { ...actor, roomKey, booking, panelIds };
 }
 
 export async function collaborationSession(tx: AppTransactionClient, scope: InterviewScope, userId: string, readOnly = false) {

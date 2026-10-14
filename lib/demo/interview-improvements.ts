@@ -11,7 +11,7 @@ export function ensureInterviewImprovements(s: DemoState) {
   const first = club.rounds.find(r => r.name === "Round 1"), interview = club.rounds.find(r => r.name === "Interview");
   if (!owner || !peer || !first || !interview) return;
   let second = club.rounds.find(r => r.name === "Round 2");
-  if (!second) { const order = interview.order + 1; for (const r of club.rounds) if (r.order >= order) r.order++; second = { ...structuredClone(interview), id: id(1), name: "Round 2", order }; club.rounds.push(second); }
+  if (!second) { const order = interview.order + 1; for (const r of club.rounds) if (r.order >= order) r.order++; second = { ...structuredClone(interview), id: id(1), name: "Round 2", order, configuration: { instructions: "Fictional second-round interview", duration: 35 } }; club.rounds.push(second); }
   const base = s.applications.find(a => a.clubId === club.id)!;
   const free = s.students.filter(u => !members.some(m => m.userId === u.id) && !s.applications.some(a => a.clubId === club.id && a.studentId === u.id)).slice(-3);
   if (free.length < 3) return;

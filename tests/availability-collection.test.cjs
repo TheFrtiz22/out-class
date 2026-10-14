@@ -17,7 +17,7 @@ test('round requests are eligible/club scoped, idempotent and atomically queue t
   assert.equal(await h.prisma.notificationEmailOutbox.count({ where: {} }), 1)
   h.as(ids.panel); assert.equal((await api.getMyAvailability()).rounds[0].response, 'AWAITING')
   let value = await api.getMyRoundAvailability(scope)
-  const schedule = h.core.emptySchedule('UTC'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]]
+  const schedule = h.core.emptySchedule('America/New_York'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]]
   await api.saveMyRoundAvailability({ ...scope, ...value.document, schedule, confirm: false })
   h.as(ids.owner); const overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' })
   assert.equal(overview.members[0].response, 'AWAITING'); assert.equal(overview.members[0].available[0][36], false)
@@ -41,7 +41,7 @@ test('reminders skip responses, enforce a 24h cooldown and invalidate stale requ
   assert.equal(await delivery.currentAvailabilityRequest(h.prisma, note, ids.panel), null)
   h.as(ids.owner); assert.equal((await api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember], reminder: true })).sent, 0)
   h.as(ids.panel); value = await api.getMyRoundAvailability(scope)
-  const schedule = h.core.emptySchedule('UTC'); schedule.weeklySubmitted = true
+  const schedule = h.core.emptySchedule('America/New_York'); schedule.weeklySubmitted = true
   await api.saveMyRoundAvailability({ ...scope, ...value.document, schedule, confirm: true })
   assert.equal((await api.getMyAvailability()).rounds[0].response, 'SUBMITTED')
   assert.equal(await delivery.currentAvailabilityRequest(h.prisma, note, ids.panel), null)
@@ -55,14 +55,14 @@ test('responses across clubs are independent and coverage reuses actual requirem
   await h.prisma.pipelineRound.create({ data: { id: otherRound, clubId: otherClub, name: 'Interview', order: 0 } })
   await h.prisma.clubMember.create({ data: { id: otherMember, clubId: otherClub, userId: ids.panel, accessRole: 'INTERVIEWER' } })
   await api.requestRoundAvailability({ ...scope, memberIds: [ids.panelMember] })
-  h.as(ids.panel); const schedule = h.core.emptySchedule('UTC'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]]
+  h.as(ids.panel); const schedule = h.core.emptySchedule('America/New_York'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]]
   await api.saveMyAvailability({ revision: 0, schedule })
   const own = await api.getMyRoundAvailability(scope); await api.saveMyRoundAvailability({ ...scope, ...own.document, confirm: true })
   const foreign = await api.getMyRoundAvailability({ clubId: otherClub, roundId: otherRound }); assert.equal(foreign.confirmed, false)
   await api.declineRoundParticipation({ clubId: otherClub, roundId: otherRound, revision: foreign.document.revision, accountId: ids.panel })
   assert.equal((await api.getMyRoundAvailability(scope)).confirmed, true)
   const room = await h.prisma.interviewRoom.create({ data: { clubId: ids.club, roundId: ids.round, name: 'Existing room', location: 'Hall', kind: 'IN_PERSON', timezone: 'UTC', duration: 20, buffer: 15, interviewersNeeded: 3 } })
-  const slot = await h.prisma.interviewSlot.create({ data: { clubId: ids.club, roomId: room.id, startTime: new Date('2030-01-07T09:30:00Z'), endTime: new Date('2030-01-07T09:50:00Z'), location: 'Hall' } })
+  const slot = await h.prisma.interviewSlot.create({ data: { clubId: ids.club, roomId: room.id, startTime: new Date('2030-01-07T14:30:00Z'), endTime: new Date('2030-01-07T14:50:00Z'), location: 'Hall' } })
   h.as(ids.owner); let overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' })
   const inline = await api.getRoundStaffingCoverage(scope); assert.equal(inline.eligible, 1); assert.equal(inline.confirmed, 1); assert.equal(inline.myEligible, false); assert.equal(inline.slots[0].required, 3); assert.deepEqual(inline.slots[0].availableMemberIds, []);
   h.as(ids.panel); await assert.rejects(api.getRoundStaffingCoverage(scope), /access denied/); h.as(ids.owner)
@@ -70,7 +70,7 @@ test('responses across clubs are independent and coverage reuses actual requirem
   await h.prisma.interviewRoom.update({ where: { id: room.id }, data: { buffer: 0 } }); overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.deepEqual(overview.slots[0].availableMemberIds, [ids.panelMember])
   const busy = await h.prisma.interviewRoom.create({ data: { clubId: otherClub, roundId: otherRound, name: 'Secret room', location: 'Private', kind: 'IN_PERSON', timezone: 'UTC', duration: 20, panelMemberIds: [otherMember] } })
   await h.prisma.interviewRoom.update({ where: { id: busy.id }, data: { approvedPanelMemberIds: [otherMember], panelApprovedBy: ids.owner } })
-  await h.prisma.interviewSlot.create({ data: { clubId: otherClub, roomId: busy.id, startTime: new Date('2030-01-07T09:30:00Z'), endTime: new Date('2030-01-07T09:50:00Z'), location: 'Private' } })
+  await h.prisma.interviewSlot.create({ data: { clubId: otherClub, roomId: busy.id, startTime: new Date('2030-01-07T14:30:00Z'), endTime: new Date('2030-01-07T14:50:00Z'), location: 'Private' } })
   overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.deepEqual(overview.slots[0].availableMemberIds, []); assert.equal(JSON.stringify(overview).includes('Secret'), false); assert.equal(overview.members.find(m => m.id === ids.panelMember).available[0][38], false, 'busy members are excluded from quarter-hour heatmap counts too')
   await h.prisma.interviewSlot.update({ where: { id: slot.id }, data: { interviewersNeeded: 1 } }); overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.equal(overview.slots[0].required, 1)
 })

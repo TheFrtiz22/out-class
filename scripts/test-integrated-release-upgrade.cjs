@@ -2,7 +2,7 @@
 const {spawnSync,execFileSync}=require('node:child_process'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const container=process.argv[2];if(container!=='outclass-decision-publication')throw Error('Dedicated fixture required.');
 const url=new URL(process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL||'');if(url.hostname!=='127.0.0.1'||url.port!=='58453'||url.pathname!=='/outclass_audiences_test')throw Error('Loopback fixture required.');
-const database='outclass_release_upgrade',root=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-release-schema-')),main='b4a9efa10f1f0ea2bc269907fd28bc5ea6871dbc';
+const database='outclass_release_upgrade',root=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-release-schema-')),main='2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4';
 function run(cmd,args,opts={}){const r=spawnSync(cmd,args,{stdio:opts.input?['pipe','inherit','inherit']:'inherit',...opts});if(r.status!==0)throw Error('Isolated upgrade check failed.');}
 const sql=input=>run('docker',['exec','-i',container,'psql','-U','fixture_superuser','-d',database,'-v','ON_ERROR_STOP=1'],{input});
 const env={...process.env,DATABASE_URL:process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL.replace('/outclass_audiences_test','/'+database)};
