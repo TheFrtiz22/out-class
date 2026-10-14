@@ -12,49 +12,63 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 // token; a crashed process's claim becomes reclaimable after two minutes. Every
 // publication transaction is bounded well below that lease and locks the club
 // then intent, so an expired worker can never commit alongside a replacement.
-const leaseMs=120000;
-export async function processScheduledCommunications(limit=2) {
+// Three global database slots, with at most one decision job. Small sends can
+// use all slots when no decision is running. Claims serialize briefly under a
+// transaction-scoped advisory lock; durable PROCESSING leases count across
+// processes, so concurrent cron/manual invocations cannot multiply capacity.
+export const schedulerCapacity = { concurrency: 3, decisionConcurrency: 1, maxClaims: 128, admissionMs: 25000 } as const;
+export async function processScheduledCommunications(limit:number=schedulerCapacity.maxClaims) {
  const invocationStarted=Date.now();
- const count=Math.min(2,Math.max(1,Math.floor(limit)));
- const now=new Date(),expired=new Date(now.getTime()-leaseMs);
- const candidates=await prisma.$transaction(async tx=>{
-  await tx.$queryRaw`SELECT set_config('statement_timeout','3000',true)`;
-  // At most two candidates per club; clubs least recently serviced come first.
-  // Scan past locked clubs instead of allowing the oldest two rows to starve all
-  // other clubs. Query and transaction bounds also cover initial selection.
-  return tx.$queryRaw<{id:string;clubId:string;revision:number}[]>`
-   WITH due AS (
-    SELECT id,"clubId",revision,"scheduledAt",row_number() OVER(PARTITION BY "clubId" ORDER BY "scheduledAt",id) position
-    FROM "ScheduledCommunication" WHERE (status='SCHEDULED' AND "scheduledAt"<=${now}) OR (status='PROCESSING' AND "updatedAt"<${expired})
-   ) SELECT d.id,d."clubId",d.revision FROM due d
-   LEFT JOIN LATERAL (SELECT max("updatedAt") serviced FROM "ScheduledCommunication" WHERE "clubId"=d."clubId" AND status<>'SCHEDULED') h ON true
-   WHERE d.position<=2 ORDER BY d.position,h.serviced NULLS FIRST,d."scheduledAt",d.id LIMIT 16`;
- },{maxWait:1000,timeout:4000});
- let published=0,failed=0,skipped=0,claimedCount=0;
- for(const candidate of candidates) {
-  // A second worst-case claim/publication/failure marker must still fit the
-  // 60s route. Leave unclaimed work due once the 15s admission window closes.
-  if(claimedCount>=count)break;
-  if(Date.now()-invocationStarted>=15000){skipped++;continue;}
+ const count=Number.isFinite(limit)?Math.min(schedulerCapacity.maxClaims,Math.max(1,Math.floor(limit))):schedulerCapacity.maxClaims;
+ let published=0,failed=0,skipped=0,claimedCount=0,reserved=0;
+ async function lane() {
+ while(Date.now()-invocationStarted<schedulerCapacity.admissionMs && reserved<count) {
+  // Reserve before awaiting: the invocation claim cap also bounds empty scans.
+  reserved++;
   let claimRevision:number|null=null;
+  let candidate:{id:string;clubId:string}|null=null;
   try {
    const claimed=await prisma.$transaction(async tx=>{
     await tx.$queryRaw`SELECT set_config('lock_timeout','1000',true),set_config('statement_timeout','3000',true)`;
-    const clubs=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "Club" WHERE id=${candidate.clubId} FOR UPDATE SKIP LOCKED`;
-    if(!clubs.length)return null;
-    const rows=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate.id} AND "revision"=${candidate.revision} AND ((status='SCHEDULED' AND "scheduledAt"<=clock_timestamp()) OR (status='PROCESSING' AND "updatedAt"<clock_timestamp()-INTERVAL '2 minutes')) FOR UPDATE SKIP LOCKED`;
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(72707370)::text`;
+    const [active]=await tx.$queryRaw<{total:bigint;decisions:bigint}[]>`
+     SELECT count(*) total,count(*) FILTER(WHERE kind='DECISION') decisions FROM "ScheduledCommunication"
+     WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes'`;
+    if(Number(active.total)>=schedulerCapacity.concurrency)return null;
+    const decisionAvailable=Number(active.decisions)<schedulerCapacity.decisionConcurrency;
+    // One due head per club, least recently claimed/serviced club first.
+    // A live claim excludes its club entirely. SKIP LOCKED bypasses club edits
+    // and publications; a bulk job never occupies the small-send slots.
+    const [next]=await tx.$queryRaw<{id:string;clubId:string;revision:number}[]>`
+     WITH due AS (
+      SELECT s.id,s."clubId",s.revision,s."scheduledAt",
+       row_number() OVER(PARTITION BY s."clubId" ORDER BY s."scheduledAt",s.id) position
+      FROM "ScheduledCommunication" s
+      WHERE ((s.status='SCHEDULED' AND s."scheduledAt"<=clock_timestamp()) OR
+       (s.status='PROCESSING' AND s."updatedAt"<clock_timestamp()-INTERVAL '2 minutes'))
+      AND (${decisionAvailable} OR s.kind<>'DECISION')
+      AND NOT EXISTS(SELECT 1 FROM "ScheduledCommunication" a WHERE a."clubId"=s."clubId"
+       AND a.status='PROCESSING' AND a."updatedAt">=clock_timestamp()-INTERVAL '2 minutes')
+     ) SELECT d.id,d."clubId",d.revision FROM due d JOIN "Club" c ON c.id=d."clubId"
+     LEFT JOIN LATERAL (SELECT max("updatedAt") serviced FROM "ScheduledCommunication"
+      WHERE "clubId"=d."clubId" AND status<>'SCHEDULED') h ON true
+     WHERE d.position=1 ORDER BY h.serviced NULLS FIRST,d."scheduledAt",d.id
+     LIMIT 1 FOR UPDATE OF c SKIP LOCKED`;
+    if(!next)return null;
+    const rows=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "ScheduledCommunication" WHERE id=${next.id} AND revision=${next.revision} AND ((status='SCHEDULED' AND "scheduledAt"<=clock_timestamp()) OR (status='PROCESSING' AND "updatedAt"<clock_timestamp()-INTERVAL '2 minutes')) FOR UPDATE SKIP LOCKED`;
     if(!rows.length)return null;
-    return tx.scheduledCommunication.update({where:{id:candidate.id},data:{status:"PROCESSING",revision:{increment:1}}});
+    return tx.scheduledCommunication.update({where:{id:next.id},data:{status:"PROCESSING",revision:{increment:1}}});
    },{maxWait:1000,timeout:4000});
-   if(!claimed){skipped++;continue;}
+   if(!claimed){reserved--;skipped++;break;}
    claimedCount++;
+   candidate=claimed;
    claimRevision=claimed.revision;
    const result=await prisma.$transaction(async tx=>{
     await tx.$queryRaw`SELECT set_config('lock_timeout','2000',true),set_config('statement_timeout','8000',true)`;
     // Same lock order as edit/cancel/claim. Recheck the fencing token after waiting.
-    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${candidate.clubId} FOR UPDATE`;
-    await tx.$queryRaw`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate.id} FOR UPDATE`;
-    const row=await tx.scheduledCommunication.findUniqueOrThrow({where:{id:candidate.id}});
+    await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${candidate!.clubId} FOR UPDATE`;
+    await tx.$queryRaw`SELECT id FROM "ScheduledCommunication" WHERE id=${candidate!.id} FOR UPDATE`;
+    const row=await tx.scheduledCommunication.findUniqueOrThrow({where:{id:candidate!.id}});
     if(row.status!=="PROCESSING"||row.revision!==claimed.revision)return false;
     if(!["ANNOUNCEMENT","DECISION","INVITATION_EMAIL","AVAILABILITY_REQUEST"].includes(row.kind)||row.supportSessionId||row.actorId!==row.senderId)throw Error("Unsupported publication authority.");
     if(row.kind==="AVAILABILITY_REQUEST"){
@@ -92,15 +106,17 @@ export async function processScheduledCommunications(limit=2) {
    // Before a claim, a transient failure leaves SCHEDULED work due. After a
    // claim, mark only our own revision. A crashed/unavailable marker is safely
    // recovered by the lease. No raw exception or recipient data reaches output.
-   if(claimRevision===null){skipped++;continue;}
+   if(claimRevision===null){reserved--;skipped++;break;}
    try{
     const marked=await prisma.$transaction(async tx=>{
      await tx.$queryRaw`SELECT set_config('lock_timeout','1000',true),set_config('statement_timeout','3000',true)`;
-     return tx.scheduledCommunication.updateMany({where:{id:candidate.id,revision:claimRevision!,status:"PROCESSING"},data:{status:"FAILED",failureCode:"PUBLICATION_UNAVAILABLE"}});
+     return tx.scheduledCommunication.updateMany({where:{id:candidate!.id,revision:claimRevision!,status:"PROCESSING"},data:{status:"FAILED",failureCode:"PUBLICATION_UNAVAILABLE"}});
     },{maxWait:1000,timeout:4000});
     failed+=marked.count;if(!marked.count)skipped++;
    }catch{skipped++;}
   }
  }
- return {published,failed,skipped};
+ }
+ await Promise.all(Array.from({length:Math.min(schedulerCapacity.concurrency,count)},()=>lane()));
+ return {published,failed,skipped,claimed:claimedCount};
 }

@@ -7,11 +7,11 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  const sender=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}}),recipient=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});
  const club=await db.club.create({data:{slug:randomUUID(),name:'Scheduled fixture',tagline:'',description:'',category:'Other',color:'#142d45'}});
  const membership=await db.clubMember.create({data:{clubId:club.id,userId:sender.id,isOwner:true}});await db.clubMember.create({data:{clubId:club.id,userId:recipient.id,isOwner:true}});
- let support=null,failAudit=false,crashAudit=false,actingUser=sender;
+ let support=null,failAudit=false,crashAudit=false,terminated=false,actingUser=sender;
  const source={prisma:db};const load=loader({'@/utils/prisma':source,'@/utils/auth':{requireClubPermission:async id=>{assert.equal(id,club.id);return{user:actingUser};}},'@/utils/support-audit':{supportContext:async()=>support,supportTransactionScope:new AsyncLocalStorage()},'@/utils/admin-elevation':{requireAdminElevation:async()=>{throw Error('Unexpected elevation');}}});
  const actions=load('actions/communication-schedules.ts'),worker=load('utils/scheduled-communications.ts');
  // Inject a real transaction failure after notification writes, without replacing PostgreSQL.
- const actualTransaction=db.$transaction.bind(db);source.prisma=new Proxy(db,{get(target,key){if(key==='$transaction')return (fn,opts)=>actualTransaction(tx=>fn(new Proxy(tx,{get(t,k){if(k==='auditLog'&&(failAudit||crashAudit))return{create:async()=>{if(crashAudit){crashAudit=false;const[{pid}]=await t.$queryRaw`SELECT pg_backend_pid() pid`;await op.$queryRaw`SELECT pg_terminate_backend(${pid})`;}throw Error('Injected audit failure');}};return Reflect.get(t,k);}})),opts);return Reflect.get(target,key);}});
+ const actualTransaction=db.$transaction.bind(db);source.prisma=new Proxy(db,{get(target,key){if(key==='$transaction')return (fn,opts)=>actualTransaction(tx=>fn(new Proxy(tx,{get(t,k){if(k==='auditLog'&&(failAudit||crashAudit))return{create:async()=>{if(crashAudit){crashAudit=false;const[{pid}]=await t.$queryRaw`SELECT pg_backend_pid() pid`;const [result]=await op.$queryRaw`SELECT pg_terminate_backend(${pid}::integer) terminated`;terminated=result.terminated;}throw Error('Injected audit failure');}};return Reflect.get(t,k);}})),opts);return Reflect.get(target,key);}});
  const input=(extra={})=>({id:randomUUID(),clubId:club.id,revision:null,title:'Scheduled '+randomUUID(),body:'Immutable inbox intent',audience:{include:[{source:'MEMBERS'}]},recipientMode:'SEND_TIME',localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER',...extra});
  const due=async id=>op.scheduledCommunication.update({where:{id},data:{scheduledAt:new Date(Date.now()-1000)}});
  await t.test('bounded owner and restrictive browser denial including accidental grants',async()=>{
@@ -63,7 +63,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  });
  await t.test('terminated PostgreSQL transaction leaves no orphaned processing or partial inbox',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);await due(data.id);crashAudit=true;
-  assert.equal((await worker.processScheduledCommunications()).failed,1);
+  assert.equal((await worker.processScheduledCommunications()).failed,1);assert.equal(terminated,true,'The PostgreSQL backend was actually terminated');
   const row=await db.scheduledCommunication.findUniqueOrThrow({where:{id:data.id}});assert.equal(row.status,'FAILED');assert.equal(row.publicationId,null);assert.equal(await db.clubAnnouncement.count({where:{clubId:club.id,requestKey:data.id}}),0);
   await actions.saveCommunicationSchedule({...data,revision:row.revision});await due(data.id);assert.equal((await worker.processScheduledCommunications()).published,1);
  });
@@ -88,7 +88,7 @@ test('scheduled publication on bounded native PostgreSQL',{skip:!url,timeout:120
  await t.test('cancel winning race never publishes; due lock held by edit skips safely',async()=>{
   const data=input();await actions.saveCommunicationSchedule(data);await due(data.id);
   let release,entered;const gate=new Promise(r=>release=r),ready=new Promise(r=>entered=r);
-  const blocking=db.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;entered();await gate;},{timeout:10000});await ready;assert.equal((await worker.processScheduledCommunications()).skipped,1);release();await blocking;
+  const blocking=db.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;entered();await gate;},{timeout:10000});await ready;assert.ok((await worker.processScheduledCommunications()).skipped>=1);release();await blocking;
   await actions.cancelCommunicationSchedule(club.id,data.id,0);assert.equal((await worker.processScheduledCommunications()).published,0);
  });
  await t.test('private group changes, preference separation and suspended club denial',async()=>{

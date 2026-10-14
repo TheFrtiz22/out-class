@@ -20,7 +20,7 @@ test('future bounds and untrusted fields fail closed',()=>{
 });
 test('scheduled cron requires the existing secret and never gates on email',async()=>{
  const prior=process.env.CRON_SECRET;process.env.CRON_SECRET='synthetic-cron';let calls=0;
- try{const route=loader({'@/utils/scheduled-communications':{processScheduledCommunications:async n=>{assert.equal(n,2);calls++;return{published:1};}}})('app/api/internal/scheduled-communications/route.ts');
+ try{const route=loader({'@/utils/scheduled-communications':{processScheduledCommunications:async n=>{assert.equal(n,undefined);calls++;return{published:1};}}})('app/api/internal/scheduled-communications/route.ts');
  assert.equal((await route.GET(new Request('http://localhost/api/internal/scheduled-communications'))).status,401);
  assert.equal(calls,0);assert.equal((await route.GET(new Request('http://localhost/api/internal/scheduled-communications',{headers:{authorization:'Bearer synthetic-cron'}}))).status,200);assert.equal(calls,1);
  }finally{if(prior===undefined)delete process.env.CRON_SECRET;else process.env.CRON_SECRET=prior;}

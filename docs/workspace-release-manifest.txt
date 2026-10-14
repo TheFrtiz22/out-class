@@ -49,7 +49,9 @@ docs/admin-session-lifetime.md
 docs/communication-scheduling.md
 docs/decision-recruitment-controls.md
 docs/recipient-audiences.md
+docs/scheduler-capacity.md
 docs/workspace-integrated-release.md
+docs/workspace-migration-package.md
 docs/workspace-release-manifest.txt
 docs/workspace-reliability-repair.md
 lib/admin-elevation.ts
@@ -75,11 +77,14 @@ prisma/migrations/20261013015200_scheduled_decisions/migration.sql
 prisma/migrations/20261013140024_scheduled_invitation_emails/migration.sql
 prisma/migrations/20261013141510_scheduled_availability_requests/migration.sql
 prisma/schema.prisma
+scripts/build-workspace-migration-package.py
 scripts/run-admin-local.cjs
 scripts/test-communication-schedules-local.cjs
 scripts/test-decision-publication-local.cjs
 scripts/test-integrated-release-upgrade.cjs
 scripts/test-recipient-audiences-local.cjs
+scripts/test-workspace-migration-package.py
+scripts/test-workspace-migration-package.sh
 tests/admin-elevation.test.cjs
 tests/admin-session-e2e.test.cjs
 tests/admin-workspace.test.cjs

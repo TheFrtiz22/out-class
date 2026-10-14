@@ -4,7 +4,7 @@ const {loader}=require('./helpers/communications-loader.cjs');
 const url=process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL;
 test('decision controls, cycles and scheduled publication on bounded PostgreSQL',{skip:!url,timeout:180000},async t=>{
  const u=new URL(url);assert.equal(u.hostname,'127.0.0.1');assert.equal(u.port,'58453');assert.equal(u.pathname,'/outclass_audiences_test');
- const {PrismaClient}=require('@prisma/client'),op=new PrismaClient({datasourceUrl:url}),base=new PrismaClient({datasourceUrl:url.replace('fixture_superuser@','outclass_production_app@')});
+ const {PrismaClient}=require('@prisma/client'),op=new PrismaClient({datasourceUrl:url}),base=new PrismaClient({datasourceUrl:url.replace('fixture_superuser@','outclass_production_app@').replace('connection_limit=8','connection_limit=3')});
  let delay=0,failAudit=false,queryCount=0;
  const db=base.$extends({query:{$allModels:{$allOperations:async({model,operation,args,query})=>{queryCount++;if(delay)await new Promise(r=>setTimeout(r,delay));if(failAudit&&model==='AuditLog'&&operation==='create'&&args.data.action==='communication.schedule.publish')throw Error('Injected atomic failure');return query(args)}}}});
  t.after(async()=>{await base.$disconnect();await op.$disconnect()});
@@ -79,10 +79,48 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   const crm=load('actions/crm.ts'),pipeline=await crm.getClubPipeline(club.id),projected=pipeline.applications.find(a=>a.id===app.id);assert.equal(projected.student.email,'');assert.equal(projected.decisionVersion,0);assert.equal(projected.decisionStateRevision,0);assert.match(projected.publicationGuard,/^[a-f0-9]{64}$/);
   const d={...input(await db.application.findUniqueOrThrow({where:{id:app.id}}),'WAITLISTED'),selection:{kind:'DIRECT',applicationId:app.id,expectedGuard:projected.publicationGuard,status:'WAITLISTED'}};await schedules.scheduleDecisionPublication(d);await schedules.cancelDecisionSchedule(club.id,d.id,0);await management.reconsiderRejectedApplication({clubId:club.id,applicationId:app.id,expectedGuard:projected.publicationGuard,reason:'Anonymous additional review authorized'});assert.equal((await db.application.findUniqueOrThrow({where:{id:app.id}})).status,'IN_REVIEW');
  });
- await t.test('50 voting decisions publish atomically under simulated 10ms ORM latency',async()=>{
+ await t.test('mixed backlog waves preserve capacity, atomic decisions and slow-job rollback',async()=>{
+  for(let wave=0;wave<4;wave++){
   const apps=[];for(let i=0;i<50;i++)apps.push(await application());
   const session=await db.votingSession.create({data:{clubId:club.id,roundId:round.id,targetSize:50,createdBy:leader.id,state:'COMPLETED',currentPass:1,candidates:{create:apps.map((a,position)=>({applicationId:a.id,position,expectedStatus:a.status}))},passes:{create:{number:1,state:'COMPLETED',completedAt:new Date()}}}});
   await db.votingPassCandidate.createMany({data:apps.map((a,position)=>({sessionId:session.id,passNumber:1,applicationId:a.id,position,override:position%3===0?'PASS':position%3===1?'HOLD':'NOT_PASS'}))});
-  const d={...input(apps[0]),selection:{kind:'VOTING',sessionId:session.id,revision:0,applicationIds:apps.map(a=>a.id)}};await schedules.scheduleDecisionPublication(d);await due(d.id);queryCount=0;delay=10;const start=Date.now();const result=await worker.processScheduledCommunications();const elapsed=Date.now()-start;delay=0;console.log(JSON.stringify({bulkApplicants:50,simulatedOrmLatencyMs:10,elapsedMs:elapsed,ormOperations:queryCount,workerPublicationTimeoutMs:20000}));assert.equal(result.published,1);assert.ok(elapsed<18000);assert.equal(await db.decisionLetter.count({where:{applicationId:{in:apps.map(a=>a.id)}}}),50);assert.equal(await db.userNotification.count({where:{type:'DECISION',userId:{in:apps.map(a=>a.studentId)}}}),50);assert.ok((await db.votingSession.findUniqueOrThrow({where:{id:session.id}})).publishedAt);
+  const d={...input(apps[0]),selection:{kind:'VOTING',sessionId:session.id,revision:0,applicationIds:apps.map(a=>a.id)}};await schedules.scheduleDecisionPublication(d);await due(d.id);
+  // Mixed due backlog: real announcements on four other clubs, plus a locked
+  // club, cancelled send, revoked sender and an expired crashed claim. One slow
+  // atomic 50-applicant decision must not monopolize small-send capacity.
+  const announcements=load('actions/communication-schedules.ts'),small=[];
+  for(let c=0;c<4;c++){
+   const fixture=await db.club.create({data:{slug:randomUUID(),name:'Capacity '+c,tagline:'',description:'',category:'Other',color:'#142d45'}});
+   await db.clubMember.create({data:{clubId:fixture.id,userId:leader.id,isOwner:true}});
+   for(let i=0;i<16;i++){
+    const id=randomUUID();await announcements.saveCommunicationSchedule({id,clubId:fixture.id,revision:null,title:'Capacity '+i,body:'Synthetic inbox only',audience:{include:[{source:'MEMBERS'}]},recipientMode:'SEND_TIME',localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER'});await due(id);small.push({id,clubId:fixture.id});
+   }
+  }
+  const revokedClub=await db.club.create({data:{slug:randomUUID(),name:'Revoked capacity',tagline:'',description:'',category:'Other',color:'#142d45'}});
+  await db.clubMember.create({data:{clubId:revokedClub.id,userId:student.id,isOwner:true}});
+  const revokedMember=await db.clubMember.create({data:{clubId:revokedClub.id,userId:leader.id,isOwner:true}}),revokedId=randomUUID();
+  await announcements.saveCommunicationSchedule({id:revokedId,clubId:revokedClub.id,revision:null,title:'Revoked',body:'Must roll back',audience:{include:[{source:'MEMBERS'}]},recipientMode:'SEND_TIME',localTime:new Date(Date.now()+3600000).toISOString().slice(0,16),timeZone:'UTC',occurrence:'EARLIER'});await due(revokedId);await db.clubMember.update({where:{id:revokedMember.id},data:{status:'LEFT',isOwner:false}});
+  const cancelled=small.pop();await announcements.cancelCommunicationSchedule(cancelled.clubId,cancelled.id,0);
+  const crashed=small[0];await op.scheduledCommunication.update({where:{id:crashed.id},data:{status:'PROCESSING',revision:1,updatedAt:new Date(Date.now()-180000)}});
+  const lockedClub=small[16].clubId;
+  const lockedIds=small.filter(s=>s.clubId===lockedClub).map(s=>s.id);
+  let release,entered;const gate=new Promise(r=>release=r),ready=new Promise(r=>entered=r);
+  const holding=op.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${lockedClub} FOR UPDATE`;entered();await gate;},{timeout:55000});await ready;
+  let monitoring=true,maxActive=0,maxDecisions=0,maxClubActive=0;
+  const monitor=(async()=>{while(monitoring){const [m]=await op.$queryRaw`SELECT count(*)::int total,count(*) FILTER(WHERE kind='DECISION')::int decisions,COALESCE((SELECT max(n)::int FROM (SELECT count(*) n FROM "ScheduledCommunication" WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes' GROUP BY "clubId")c),0) club FROM "ScheduledCommunication" WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes'`;maxActive=Math.max(maxActive,m.total);maxDecisions=Math.max(maxDecisions,m.decisions);maxClubActive=Math.max(maxClubActive,m.club);await new Promise(r=>setTimeout(r,20));}})();
+  const intendedAt=new Date(Date.now()-1000);await op.scheduledCommunication.updateMany({where:{id:{in:[d.id,revokedId,...small.map(s=>s.id)]}},data:{scheduledAt:intendedAt}});await op.scheduledCommunication.update({where:{id:crashed.id},data:{updatedAt:new Date(Date.now()-180000)}});
+  queryCount=0;const latency=wave<2?10:wave===2?20:50;delay=latency;const start=Date.now();const invocationCount=Math.min(3,wave+1);const results=await Promise.all(Array.from({length:invocationCount},()=>worker.processScheduledCommunications(128)));const elapsed=Date.now()-start;
+  monitoring=false;await monitor;assert.ok(maxActive<=3);assert.ok(maxDecisions<=1);assert.ok(maxClubActive<=1);
+  release();await holding;
+  const beforeUnlock=await db.scheduledCommunication.findMany({where:{id:{in:small.map(s=>s.id)},status:'PUBLISHED'},select:{id:true,clubId:true,updatedAt:true}});
+  assert.equal((await db.scheduledCommunication.findUniqueOrThrow({where:{id:revokedId}})).status,'FAILED');assert.equal(await db.clubAnnouncement.count({where:{clubId:revokedClub.id}}),0);assert.equal(beforeUnlock.length,small.length-lockedIds.length);assert.ok(beforeUnlock.every(s=>!lockedIds.includes(s.id)));
+  const bulk=await db.scheduledCommunication.findUniqueOrThrow({where:{id:d.id}});assert.ok(beforeUnlock.some(s=>s.updatedAt<bulk.updatedAt),'Small jobs publish before the bulk decision finishes');
+  const follow={published:0};for(let tick=0;tick<3;tick++){const next=await worker.processScheduledCommunications(128);follow.published+=next.published;if(!await db.scheduledCommunication.count({where:{id:{in:small.map(s=>s.id)},status:'SCHEDULED'}}))break;}delay=0;
+  const rows=await db.scheduledCommunication.findMany({where:{id:{in:small.map(s=>s.id)},status:'PUBLISHED'},select:{updatedAt:true}});
+  const lateness=beforeUnlock.map(s=>s.updatedAt.getTime()-intendedAt.getTime()).sort((a,b)=>a-b),percentile=p=>lateness[Math.ceil(p*lateness.length)-1];
+  console.log(JSON.stringify({capacityBacklog:{wave,simulatedOrmLatencyMs:latency,maxActive,maxDecisions,maxClubActive,small:small.length,locked:lockedIds.length,bulkApplicants:50,overlappingInvocations:invocationCount,firstInvocationMs:elapsed,publishedBeforeUnlock:beforeUnlock.length,p50LatenessMs:percentile(.5),p95LatenessMs:percentile(.95),maxLatenessMs:percentile(1),conservativeMinuteCapacity:beforeUnlock.length+(wave===3?0:1),cronPhaseAdditionalMs:60000,afterUnlockPublished:follow.published}}));
+  assert.equal(rows.length,small.length);assert.equal((await db.scheduledCommunication.findUniqueOrThrow({where:{id:cancelled.id}})).status,'CANCELLED');assert.equal((await worker.processScheduledCommunications()).published,0);
+  const result={published:results.reduce((n,r)=>n+r.published,0)-beforeUnlock.length};console.log(JSON.stringify({bulkApplicants:50,simulatedOrmLatencyMs:latency,elapsedMs:elapsed,mixedOrmOperations:queryCount,workerPublicationTimeoutMs:20000}));assert.equal(result.published,wave===3?0:1);assert.ok(elapsed<52000);assert.equal(await db.decisionLetter.count({where:{applicationId:{in:apps.map(a=>a.id)}}}),wave===3?0:50);assert.equal(await db.userNotification.count({where:{type:'DECISION',userId:{in:apps.map(a=>a.studentId)}}}),wave===3?0:50);assert.equal(Boolean((await db.votingSession.findUniqueOrThrow({where:{id:session.id}})).publishedAt),wave!==3);if(wave===3){assert.equal(bulk.status,'FAILED');assert.equal(await db.application.count({where:{id:{in:apps.map(a=>a.id)},status:'IN_REVIEW'}}),50);}
+  }
  });
 });

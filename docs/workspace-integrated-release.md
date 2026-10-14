@@ -99,12 +99,14 @@ and canonical delivery crons remain. Publication is independent of email enablem
 Production activation is pending release; this is repository/local invocation evidence,
 not a claim that the unshipped endpoint is running on the host.
 
-Candidate selection now has its own 3s statement / 4s transaction / 1s acquisition
-bounds. It selects at most two candidates per club, ranks clubs least recently
-serviced, scans up to 16 candidates past locked clubs, and admits no more than two
-claims. The 15s admission window includes selection time. Busy clubs cannot occupy
-both candidate slots indefinitely; a native test holds the oldest club locked and
-verifies another club publishes two jobs while the locked work remains untouched.
+Capacity follow-up replaces the sequential two-intent ceiling with **three global
+active slots, at most one decision**, leaving two slots available while a slow bulk
+job runs. Each invocation uses three async lanes, a 25s admission window and at most
+128 claims; existing 60s function/transaction bounds remain. A short transaction-scoped
+advisory lock serializes claims across invocations; live PROCESSING leases enforce the
+global and per-club limits. One active claim per club, least-recently-serviced ordering,
+one due head per eligible club and SKIP LOCKED preserve fairness and bypass busy clubs.
+No new schema or database privileges are needed. See [capacity evidence](scheduler-capacity.md).
 
 Claim: 4s transaction / 1s acquisition / 1s lock / 3s statement. Publication: 12s
 (announcements, invitations, availability) or 20s (decisions), 2s acquisition/lock,
@@ -114,11 +116,12 @@ writes; expired claims recover. Crash-after-commit sees PUBLISHED and never repl
 Caught failures roll back all business writes and mark only the owned revision with
 benign PUBLICATION_UNAVAILABLE; marker failure leaves a recoverable lease.
 
-Capacity is deliberately global, not two jobs per club: at most 2 intents/minute,
-sometimes one when the first exceeds the admission window. A 100-job backlog can
-therefore take 50–100+ minutes plus contention/other clubs. This is not a precise-time
-or high-volume broadcast SLA. All kinds count SCHEDULED/PROCESSING/FAILED against the
-club's 100 queued-work cap; managers see all queued jobs and bounded completed history.
+This is a bounded service budget, not a guaranteed delivery timestamp. Shared timing
+UI explains no-earlier-than publication, minute processing, contention/recovery delays
+and separate email delivery. All kinds count SCHEDULED/PROCESSING/FAILED against the
+club's 100 queued-work cap. Per-club announcement quotas remain enforced. Hosted
+throughput is unverified; local mixed-backlog results and slower-job rollback are
+reported separately in the capacity report.
 Operators should monitor due age, FAILED jobs, stale PROCESSING leases and route
 503s. Read-only backlog query (no recipient data):
 
@@ -228,3 +231,11 @@ outbound enablement is performed by this preparation.
 branch features. The five credential-recovery files retain their original SHA256,
 remain untracked/unstaged, and are excluded. Temporary fixtures, screenshots, PDFs,
 logs and credential-bearing files are excluded.
+
+## Connector release package
+
+[workspace-migration-package.md](workspace-migration-package.md) documents the exact
+eight-migration committed-source package builder, atomic source-SQL/Prisma-ledger
+adapter, cumulative stale-baseline guards, and disposable PostgreSQL/Prisma validation.
+Production ledger and bounded-role assumptions were reconfirmed read-only. No
+production migrations or credential changes were performed.
