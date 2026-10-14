@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { hasPermission, type ClubAccess } from "@/lib/permissions";
+import { interviewCapabilities } from "@/lib/interview-access";
 export const roundTypes = [
   "APPLICATION_REVIEW",
   "INTERVIEW",
@@ -128,6 +129,7 @@ export function availableSettings(member: ClubAccess) {
   return settingsSections.filter(
     (s) =>
       hasPermission(member, s.permission) ||
+      (s.id === "interviews" && (hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)) ||
       ((s.id === "members" || s.id === "notifications") &&
         hasPermission(member, "leaders.manage")),
   );

@@ -8,6 +8,7 @@ import { demoResumeText } from "./resume-fixture";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
 import { demoAssignmentNotice } from "./interview-improvements";
 import { interviewTiming } from "@/lib/interview-session-timing";
+import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
 
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
@@ -39,6 +40,13 @@ export function getInterviewKit(clubId: string, roundId: string) {
   const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === roundId);
   if (!round || (!caps.editKit && !(caps.participate && s.interviewFoundation.assignments.some(a => a.roundId === roundId && a.memberId === member.id && !a.revokedAt)))) throw new Error("Question bank access denied.");
   return { questions: structuredClone(round.interviewKit), version: round.kitVersion };
+}
+export function getInterviewRounds(clubId: string): InterviewSetupRounds {
+  const { s, member, caps } = actor(clubId), discover = canDiscoverInterviewSetup(member);
+  if (!discover && !caps.participate) return { status: "denied", rounds: [] };
+  const rounds = s.clubs.find(c => c.id === clubId)!.rounds.filter(r => !r.archivedAt && ["INTERVIEW", "GROUP_INTERVIEW"].includes(r.type))
+    .map(r => ({ id: r.id, name: r.name, canReadKit: caps.editKit || caps.participate && s.interviewFoundation.assignments.some(a => a.roundId === r.id && a.memberId === member.id && !a.revokedAt && s.applications.some(app => app.id === a.applicationId && app.clubId === clubId && app.studentId !== member.userId && app.status !== "DRAFTING")) }));
+  return { status: "ready", rounds: discover ? rounds : rounds.filter(r => r.canReadKit) };
 }
 export function getInterviewWorkspace(clubId: string) {
   const { s, member, caps } = actor(clubId);

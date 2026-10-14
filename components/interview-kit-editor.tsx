@@ -1,5 +1,7 @@
 "use client";
 import { useAuth } from "@/contexts/auth-context";
+import Link from "next/link";
+import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { useEffect, useState } from "react";
 import {
@@ -15,13 +17,15 @@ import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,
   rounds,
+  initialRoundId,
 }: {
   clubId: string;
-  rounds: { id: string; name: string }[];
+  rounds: { id: string; name: string; canReadKit?: boolean }[];
+  initialRoundId?: string;
 }) {
   const { user } = useAuth();
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
-  const [round, setRound] = useState(rounds[0]?.id || ""),
+  const [round, setRound] = useState(rounds.find(r => r.id === initialRoundId)?.id || rounds[0]?.id || ""),
     [questions, setQuestions] = useState<KitQuestion[]>([]),
     [version, setVersion] = useState(0),
     [busy, setBusy] = useState(false),
@@ -29,10 +33,13 @@ export function InterviewKitEditor({
     [dirty, setDirty] = useState(false),
     [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0);
+  const canReadKit = rounds.find(r => r.id === round)?.canReadKit !== false;
+  const canManageGrants = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).manageGrants;
   useEffect(() => {
     let current = true;
     setLoaded(false);
     setMessage("");
+    if (!round || !canReadKit) return;
     getInterviewKit(clubId, round)
       .then((result) => {
         if (current) {
@@ -48,7 +55,7 @@ export function InterviewKitEditor({
     return () => {
       current = false;
     };
-  }, [clubId, round, retry]);
+  }, [clubId, round, retry, canReadKit]);
   useEffect(() => {
     if (!dirty) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -79,11 +86,18 @@ export function InterviewKitEditor({
       <div className="oc-kit-layout">
         <nav className="oc-kit-rounds" aria-label="Interview kit rounds"><h3>Rounds</h3>
           {rounds.map((r, index) => <button key={r.id} type="button" aria-current={r.id === round ? "true" : undefined} disabled={busy} onClick={() => {
-            if (r.id !== round && (!dirty || window.confirm("Discard unsaved kit changes?"))) setRound(r.id);
+            if (r.id !== round && (!dirty || window.confirm("Discard unsaved kit changes?"))) {
+              setRound(r.id);
+              if (window.location && window.history) {
+                const url = new URL(window.location.href); url.searchParams.set("roundId", r.id);
+                window.history.replaceState(null, "", url.pathname + url.search);
+              }
+            }
           }}><span>{index + 1}</span><strong>{r.name}</strong><ChevronRight size={17} aria-hidden="true" /></button>)}
         </nav>
         <div className="oc-kit-builder">
-          <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div><span>{loaded ? `${questions.length} questions` : "Loading…"}</span></header>
+          <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div>{canReadKit && <span>{loaded ? `${questions.length} questions` : "Loading…"}</span>}</header>
+          {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           <p className="mb-4 text-sm text-muted-foreground">{canEdit ? "You can edit the selected round master kit." : "Read-only question bank. Use questions in your assigned interview workspace."}</p>
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={busy || !loaded || !canEdit} className="space-y-5">
@@ -205,24 +219,28 @@ export function InterviewKitEditor({
         >
           Reload kit
         </Button>
+        </>}
         </div>
       </div>
     </section>
   );
 }
-export function ClubInterviewKitSettings({ clubId }: { clubId: string }) {
-  const [rounds, setRounds] = useState<{ id: string; name: string }[] | null>(
+export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: string; initialRoundId?: string }) {
+  const { user } = useAuth();
+  const member = user?.memberships.find(m => m.clubId === clubId);
+  const accessKey = JSON.stringify([user?.id, member?.id, member?.status, member?.isOwner, member?.permissions, member?.interviewOffices]);
+  const [result, setResult] = useState<InterviewSetupRounds | null>(
       null,
     ),
     [error, setError] = useState(false),
     [retry, setRetry] = useState(0);
   useEffect(() => {
     let current = true;
-    setRounds(null);
+    setResult(null);
     setError(false);
     getInterviewRounds(clubId)
       .then((value) => {
-        if (current) setRounds(value);
+        if (current) setResult(value);
       })
       .catch(() => {
         if (current) setError(true);
@@ -230,7 +248,7 @@ export function ClubInterviewKitSettings({ clubId }: { clubId: string }) {
     return () => {
       current = false;
     };
-  }, [clubId, retry]);
+  }, [clubId, retry, accessKey]);
   if (error)
     return (
       <div role="alert">
@@ -240,10 +258,13 @@ export function ClubInterviewKitSettings({ clubId }: { clubId: string }) {
         </Button>
       </div>
     );
-  if (!rounds) return <p role="status">Loading interview rounds…</p>;
+  if (!result) return <p role="status">Loading interview rounds…</p>;
+  if (result.status === "denied") return <p role="alert">Interview setup access denied. Ask your club owner to check your current membership and permissions.</p>;
+  const { rounds } = result;
   if (!rounds.length)
     return (
-      <p>Create a recruitment round before configuring an interview kit.</p>
+      <p>{member && canDiscoverInterviewSetup(member) ? "No active interview rounds. Configure an Interview or Group Interview round in Recruiting Pipeline." : "No assigned interview rounds. Ask your club owner to confirm your panel assignment."}</p>
     );
-  return <InterviewKitEditor key={clubId} clubId={clubId} rounds={rounds} />;
+  if (initialRoundId && !rounds.some(r => r.id === initialRoundId)) return <p role="alert">The requested round is unavailable under your current access or is no longer an active interview round. Return to Interview Setup to choose an eligible round.</p>;
+  return <InterviewKitEditor key={`${clubId}:${initialRoundId || ""}`} clubId={clubId} rounds={rounds} initialRoundId={initialRoundId} />;
 }

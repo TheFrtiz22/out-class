@@ -43,6 +43,15 @@ function ensureCurrentWorkflows(value: DemoState) {
 }
 function ensurePresentation(value: DemoState) {
   ensureCurrentWorkflows(value)
+  if (value.clubs.some(c => c.rounds.some(r => !r.type))) {
+    // Only upgrade known fictional fixture identities. Preserve explicit edits,
+    // archives, IDs and saved kits; never infer an arbitrary stage from its name.
+    const defaults = new Map(createDemoSeed(value.anchor).clubs.flatMap(c => c.rounds.map(r => [`${c.id}:${r.id}`, r.type] as const)))
+    for (const club of value.clubs) for (const round of club.rounds) {
+      const type = defaults.get(`${club.id}:${round.id}`)
+      if (!round.type && type) round.type = type
+    }
+  }
   if(!value.meetings){const additions=createDemoSeed(value.anchor);value.meetings=additions.meetings;value.meetingAttendances=additions.meetingAttendances}
   value.meetingTokens ??= []
   for (const application of value.applications) application.anonymousReviewText ??= null
@@ -50,7 +59,7 @@ function ensurePresentation(value: DemoState) {
     club.claimed ??= true
     club.earlyAdopter ??= value.clubs.indexOf(club) < 3
     club.testRequirement ??= "OPTIONAL"
-    for (const round of club.rounds) { round.configuration ??= { instructions: "Fictional sample interview", duration: round.name === "Round 2" ? 35 : 20 }; round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); for (const q of round.interviewKit) q.guidance ??= ""; round.kitVersion ??= 0 }
+    for (const round of club.rounds) { round.archivedAt ??= null; round.configuration ??= { instructions: "Fictional sample interview", duration: round.name === "Round 2" ? 35 : 20 }; round.anonymousReview ??= false; round.interviewKit ??= sampleInterviewKit(); for (const q of round.interviewKit) q.guidance ??= ""; round.kitVersion ??= 0 }
   }
   for (const student of value.students) {
     if (student.profile.resumeUrl === "/demo/sample-resume.txt") student.profile.resumeUrl = "/demo/sample-resume.pdf"
