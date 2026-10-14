@@ -202,6 +202,7 @@ function RecruitmentWorkspace({
   onInterview: () => void;
   initialTool?: "kits";
 }) {
+  const params = useSearchParams();
   const tools = recruitmentTools(member),
     [tool, setTool] = useState(initialTool ?? tools[0]?.id ?? "applicants");
   const active = tools.find((t) => t.id === tool)?.id ?? tools[0]?.id;
@@ -238,7 +239,7 @@ function RecruitmentWorkspace({
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}
-      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} />}
+      {active === "kits" && <InterviewManagementTabs key={`${clubId}:${params.get("roundId") || ""}`} clubId={clubId} initialTab="kits" initialRoundId={params.get("roundId") || undefined} />}
     </div>
   );
 }

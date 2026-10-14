@@ -308,10 +308,7 @@ export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInte
 export const getInterviewAnnotationHistory = adapt(interviewResumes.getInterviewAnnotationHistory, demoInterviews.getInterviewAnnotationHistory)
 export const setMemberInterviewOffices = adapt(interviewGrants.setMemberInterviewOffices, demoInterviews.setMemberInterviewOffices)
 export const setInterviewPanelAssignment = adapt(interviewGrants.setInterviewPanelAssignment, demoInterviews.setInterviewPanelAssignment)
-export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, clubId => {
-  demoMember(); if (clubId !== demoStore.get().clubs[0].id) throw new Error("Access denied.")
-  return demoStore.get().clubs[0].rounds.map(r => ({ id: r.id, name: r.name }))
-})
+export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, demoInterviews.getInterviewRounds)
 
 function demoMeetingAccess(id: string) {
   const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)

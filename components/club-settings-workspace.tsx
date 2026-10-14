@@ -180,9 +180,10 @@ export function ClubSettingsWorkspace({
               duration, location, capacity, and interviewer panels.
             </p>
             <Interviews
-              key={pipelineRevision}
+              key={`${pipelineRevision}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`}
               clubId={clubId}
-              initialTab="kits"
+              initialTab={params.get("interviewTab") || "kits"}
+              initialRoundId={params.get("roundId") || undefined}
             />
           </div>
         )}

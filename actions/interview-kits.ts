@@ -13,6 +13,8 @@ import type { InterviewRecord } from "@prisma/client";
 import { approvedBookingPanel, collaborationAccess } from "@/utils/interview-collaboration";
 import { interviewTiming } from "@/lib/interview-session-timing";
 import { snapshotSubmittedQuestions, submittedQuestionsSchema, submittedScoreSummary } from "@/lib/interview-review-summary";
+import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/interview-setup";
+import { CLUB_SUSPENDED_MESSAGE } from "@/lib/club-suspension";
 
 async function present(record: InterviewRecord, tx: AppTransactionClient): Promise<InterviewSessionData> {
   const draft = interviewDraftSchema.parse(record.draft);
@@ -157,12 +159,25 @@ export async function getInterviewRoundScore(input: unknown) {
     return submittedScoreSummary(evaluations, assignments.filter(a => interviewCapabilities(a.member).participate).map(a => a.memberId));
   }, interviewTransactionOptions);
 }
-export async function getInterviewRounds(clubId: string) {
+export async function getInterviewRounds(clubId: string): Promise<InterviewSetupRounds> {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
-  return prisma.$transaction(async tx => {
+  try { return await prisma.$transaction(async tx => {
     const { member, caps } = await interviewActor(tx, clubId, user.id);
-    return tx.pipelineRound.findMany({ where: { clubId, ...(!caps.editKit ? { interviewAssignments: { some: { memberId: member.id, revokedAt: null } } } : {}) }, select: { id: true, name: true }, orderBy: { order: "asc" } });
-  }, interviewTransactionOptions);
+    const discover = canDiscoverInterviewSetup(member);
+    if (!discover && !caps.participate) return { status: "denied", rounds: [] };
+    const assignment = { memberId: member.id, revokedAt: null, application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" as const } } };
+    const rounds = await tx.pipelineRound.findMany({
+      where: { clubId, archivedAt: null, type: { in: ["INTERVIEW", "GROUP_INTERVIEW"] }, ...(!discover ? { interviewAssignments: { some: assignment } } : {}) },
+      select: { id: true, name: true, interviewAssignments: { where: assignment, select: { id: true }, take: 1 } },
+      orderBy: [{ order: "asc" }, { id: "asc" }],
+    });
+    return { status: "ready", rounds: rounds.map(r => ({ id: r.id, name: r.name, canReadKit: caps.editKit || caps.participate && r.interviewAssignments.length > 0 })) };
+  }, interviewTransactionOptions); } catch (error) {
+    // Only confirmed authorization denials become denial state. Database/network
+    // failures remain failures, never an empty list or a reason to create a round.
+    if (error instanceof Error && ["Interview access unavailable.", CLUB_SUSPENDED_MESSAGE].includes(error.message)) return { status: "denied", rounds: [] };
+    throw error;
+  }
 }
 /** Closing projection deliberately never includes questions or private draft notes. */
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */

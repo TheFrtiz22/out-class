@@ -9,6 +9,7 @@ import { seedTasks } from "./task-seed"
 import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-kits"
 import { demoMonogram } from "./assets"
 import type { AppStatus as ApplicationStatus } from "@prisma/client"
+import type { RoundDraft } from "@/lib/club-settings"
 import { ensureInterviewImprovements } from "./interview-improvements"
 
 // Only the organization names below are real labels supplied for the presentation.
@@ -226,7 +227,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
       ...(i % 3 ? ["Round 2"] : []),
       "Interview",
       "Final Decision",
-    ].map((name, order) => ({ configuration: { instructions: "Fictional sample interview", duration: name === "Round 2" ? 35 : 20 }, interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: name === "Review", id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
+    ].map((name, order) => ({ type: (order < 2 ? "APPLICATION_REVIEW" : name === "Final Decision" ? "CUSTOM" : "INTERVIEW") as RoundDraft["type"], archivedAt: null as Date | null, configuration: { instructions: "Fictional sample interview", duration: name === "Round 2" ? 35 : 20 }, interviewKit: sampleInterviewKit(), kitVersion: 0, anonymousReview: name === "Review", id: uid(6, i * 10 + order), clubId: uid(4, i), name, order })),
   }))
   const memberships = clubs.filter(club => club.claimed).flatMap((club, c) =>
     Array.from({ length: 12 + (c % 12) }, (_, m) => ({
