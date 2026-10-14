@@ -116,12 +116,13 @@ Reviewed application revision: `88c7edbd805fa1b0c65de9004e65bf2ede59587c`.
 [PR #28](https://github.com/TheFrtiz22/out-class/pull/28) merged as
 `54d988d13b854390dc45151df00441cf45e3aad0`. Its automatic production deployment
 `dpl_7MSbhiCVgpJMkxLxA1j7yxhCfjv7` was READY and served `www.out-class.net`.
-The domain now serves newer main `537119b360b14430c2ed10c551a3687190143972`,
+At final acceptance on October 14, the domain served newer main
+`537119b360b14430c2ed10c551a3687190143972`,
 READY deployment `dpl_8vjxWqhoUEjGfWnNkzUTXXZiq3rR`. This newer revision contains
 the merge and preserves the interaction/countdown implementation; its subsequent
 scheduling/timezone changes were not overwritten. Final browser acceptance below
-ran on that current production deployment. Production environment metadata is
-unchanged and automatic promotion remains enabled.
+ran on that then-current production deployment. At that check, production
+environment metadata was unchanged and automatic promotion remained enabled.
 
 Required Linux CI run `38421864413` passed on the reviewed application revision:
 1,064 tests, 1,049 passed, 15 existing environment-gated skips, zero failures;
