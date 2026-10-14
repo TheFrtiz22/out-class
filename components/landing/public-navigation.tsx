@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState, type RefObject } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Button } from "@/components/ui/button"
 import { RollingNavigationLabel } from "./rolling-navigation-label"
+import { PerspectiveSwitcher } from "./perspective-switcher"
+import type { LandingPerspective } from "./journey-content"
 import "./public-navigation.css"
 
 const links = [
@@ -16,8 +18,10 @@ const links = [
 ] as const
 
 /** Shared marketing header. Account workspaces keep their own navigation. */
-export function PublicNavigation({ hero = false }: {
+export function PublicNavigation({ hero = false, journey, navigationRef }: {
   hero?: boolean
+  navigationRef?: RefObject<HTMLElement | null>
+  journey?: { perspective: LandingPerspective; onChange: (perspective: LandingPerspective) => void; merged: boolean }
 }) {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
@@ -69,7 +73,7 @@ export function PublicNavigation({ hero = false }: {
   }
   const close = () => setOpen(false)
   return (
-    <header ref={header} className="oc-public-nav" data-hero={hero && !scrolled} data-open={open} onBlur={event => {
+    <header ref={element => { header.current = element; if (navigationRef) navigationRef.current = element }} className="oc-public-nav" data-hero={hero && !scrolled} data-open={open} data-journey={journey?.merged || undefined} onBlur={event => {
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) close()
     }}>
       <div className="oc-public-nav-surface">
@@ -78,13 +82,16 @@ export function PublicNavigation({ hero = false }: {
             <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
             <span className="oc-public-logo-dark" aria-hidden="true"><OutClassLogo variant="dark" /></span>
           </Link>
+          {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
+            <PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} />
+          </div>}
           <nav className="oc-public-desktop" aria-label="Main navigation">
             {links.map(link => <a className="oc-public-link" key={link.href} href={link.href} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}><RollingNavigationLabel>{link.label}</RollingNavigationLabel></a>)}
           </nav>
           <div className="oc-public-account">
             <a className="oc-public-login" href="/login" onClick={close}><RollingNavigationLabel>Log In</RollingNavigationLabel></a>
             <Button className="oc-public-primary" asChild><Link prefetch={false} href="/signup" onClick={close}><RollingNavigationLabel>Get Started</RollingNavigationLabel></Link></Button>
-            <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls={mobileMenuId} aria-label={open ? "Close navigation menu" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
+            <button ref={toggle} type="button" className="oc-public-menu-toggle" aria-expanded={open} aria-controls={mobileMenuId} aria-label={open ? "Close navigation menu" : journey?.merged ? "Open navigation menu and perspective switcher" : "Open navigation menu"} onClick={() => setOpen(value => !value)}>
               <span className="oc-public-menu-icon" aria-hidden="true"><span /><span /></span>
             </button>
           </div>
@@ -92,6 +99,7 @@ export function PublicNavigation({ hero = false }: {
         <nav id={mobileMenuId} className="oc-public-mobile" aria-label="Mobile navigation" inert={!open} aria-hidden={!open}>
           <div className="oc-public-mobile-clip">
             <div className="oc-public-mobile-links">
+              {journey?.merged && <div className="oc-public-journey oc-public-journey-mobile"><PerspectiveSwitcher compact perspective={journey.perspective} onChange={journey.onChange} /></div>}
               {links.map(link => <a className="oc-public-link" key={link.href} href={link.href} onClick={close} aria-current={active(link.href) ? (link.href.includes("#") ? "location" : "page") : undefined}><RollingNavigationLabel>{link.label}</RollingNavigationLabel></a>)}
               <a className="oc-public-link oc-public-mobile-login" href="/login" onClick={close}><RollingNavigationLabel>Log In</RollingNavigationLabel></a>
             </div>

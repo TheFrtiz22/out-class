@@ -9,6 +9,11 @@ parents and all earlier feature commits. Main includes the previously inspected
 interview/countdown/timezone work plus the newer public-navigation commit. No schema
 or migration changed in those main commits.
 
+Main then advanced to `23b1ec16332c1bf943df95b57c4f050c4d345659`, a 12-file
+landing/journey-navigation update. It was integrated by a second normal merge with
+no conflicts. Final package/manifest baseline is 23b1ec1; no server, authorization,
+scheduler, schema or migration file changed in this additional main commit.
+
 The one textual conflict, `components/views/leader-dashboard/live-leader-workspace.tsx`,
 was an import overlap. Retained ApplicationCycleAssignment and ScheduleDecision plus
 main's slotTime, SCHEDULING_TIMEZONE and schedulingDateTime. The merged implementation
@@ -68,8 +73,8 @@ state and version fences. Deadline changes never authorize a new applicant submi
 
 ## Current validation
 
-- Standard `TZ=UTC npm run validate`: **1,086 passed, 24 gated skips, zero failures**
-  (1,110 total); all 51 migrations fresh/legacy, lint, TypeScript and production build.
+- Standard `TZ=UTC npm run validate`: **1,092 passed, 24 gated skips, zero failures**
+  (1,116 total); all 51 migrations fresh/legacy, lint, TypeScript and production build.
   Lint: zero errors and 28 existing warnings. A first run through the HTTP integration
   wrapper deliberately inherited outbound-disable and fixture Admin variables, which
   conflict with mocked unit-delivery defaults; it was not counted as a pass. Standard
@@ -82,9 +87,12 @@ state and version fences. Deadline changes never authorize a new applicant submi
   membership, retries and permission revocation remain covered.
 - Local built Next + Supabase Auth/Storage: **34 passed**: decisions/private branding 7,
   audiences 5, scheduling 5, invitation/availability 5, Admin sessions 12. Email stays
-  disabled; no external provider test or real-data changes.
+  disabled; no external provider test or real-data changes. After the landing-only
+  second merge, rebuilt/restarted the local app and repeated decisions/private
+  assets, scheduling and invitation/availability: another 17 checks passed.
 - Actual current-main 43→51 populated Prisma deploy/status repeated with the updated
-  baseline helper, plus full fresh 51-history and populated pre-controls upgrade.
+  baseline helper, plus full fresh 51-history and populated pre-controls upgrade. The final 23b1ec1-baseline upgrade
+  and 18 scheduling/security checks were repeated after its landing-only changes.
   Communications, letter snapshots, pending outbox/preferences, membership/cohort,
   availability participation and legacy Admin expiry survive. Bounded ownership,
   restrictive RLS and browser denial remain; no historical migration is rewritten.
@@ -94,8 +102,10 @@ state and version fences. Deadline changes never authorize a new applicant submi
 Logs: `/tmp/outclass-main-deadline-{UTC,America-New_York}.log` (reproduction),
 `/tmp/outclass-integrated-deadline-{UTC,America-New_York}.log` (pre-fix),
 `/tmp/outclass-main-integration-deadline-{UTC,NY,Kolkata}.log` (fixed),
-`/tmp/outclass-current-main-{validation,native,transactions,migration-upgrade,prisma,migration-path}.log`
-and `/tmp/outclass-current-main-{decision,scheduling,invitation,audience,session}-http.log`.
+`/tmp/outclass-current-main-{validation-final,native,transactions,migration-upgrade-final,prisma,migration-path}.log`
+and `/tmp/outclass-current-main-{decision,scheduling,invitation,audience,session}-http.log`;
+final-build repeats use `-http-final.log` for decision/scheduling/invitation and
+`/tmp/outclass-current-main-local-build-final.log`.
 
 ## Rendered browser QA
 
@@ -117,7 +127,7 @@ Supabase, desktop and 390×844 mobile. Evidence: `/tmp/outclass-current-main-qa/
   letter, decision notification or offer is exposed early. Synthetic history is retained.
 - Merged Eastern availability overview still exposes scheduled requests/reminders;
   zero eligible recipients clearly leaves submission disabled. Main navigation reaches
-  normal sign-in. No production browser mutation or email was performed.
+  normal sign-in. The second main update received a refreshed build/navigation check. No production browser mutation or email was performed.
 
 ## Reinspected migration package
 
@@ -135,7 +145,7 @@ No new prerequisite migrations exist in advanced main. Exactly these eight remai
 7. `20261013140024_scheduled_invitation_emails`
 8. `20261013141510_scheduled_availability_requests`
 
-The builder now uses current main 2ceb874 and **requires the fresh live-ledger JSON**.
+The builder now uses current main 23b1ec1 and **requires the fresh live-ledger JSON**.
 It verifies the actual names/checksums/completion/project/runtime assumptions and
 records that snapshot's SHA256. Missing/extra/incomplete/checksum-changed/wrong-project
 snapshots are tested to refuse before payload emission. A discrepancy requires review
@@ -153,7 +163,7 @@ are included. Production execution is **not** performed.
 ## Manifest and limitations
 
 [workspace-release-manifest.txt](workspace-release-manifest.txt) is the exact release
-diff against current main 2ceb874. All earlier reliability/Admin/audience/scheduler/
+diff against current main 23b1ec1. All earlier reliability/Admin/audience/scheduler/
 decision/capacity commits remain ancestors. Five recovery files retain their hashes,
 remain untracked and unstaged; temporary scripts/logs/screenshots/packages are excluded.
 

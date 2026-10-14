@@ -18,7 +18,7 @@ An existing container/package directory is never replaced. Preserve earlier evid
 
 Builder resolves the full source SHA and reads **committed Git bytes**, never working
 copies. It rejects existing-migration rewrites and anything other than the exact eight
-pending migrations against main `2ceb87487b18c2e7daa17585721f2a3b0d4ba0b4` (43 migrations).
+pending migrations against main `23b1ec16332c1bf943df95b57c4f050c4d345659` (43 migrations).
 The required `--ledger-json` is a fresh read-only connector snapshot containing project_id,
 database/operator, completed ledger rows and bounded-role attributes. The builder
 rejects missing/extra/incomplete or checksum-changed history before emitting payloads;

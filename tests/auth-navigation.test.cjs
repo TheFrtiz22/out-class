@@ -50,6 +50,7 @@ test('public header exposes separate signup and login links without identity-dep
     react: { useState: v => [v, () => {}], useRef: () => ({ current: null }), useId: () => 'public-mobile-menu', useEffect() {} },
     'next/navigation': { usePathname: () => '/' },
     './rolling-navigation-label': { RollingNavigationLabel: 'RollingNavigationLabel' },
+    './perspective-switcher': { PerspectiveSwitcher: 'PerspectiveSwitcher' },
   })
   for (const hero of [true, false]) {
     const tree = nodes(PublicNavigation({ hero }))

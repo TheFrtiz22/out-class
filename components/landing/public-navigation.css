@@ -154,3 +154,36 @@
   .oc-public-nav *, .oc-landing .oc-public-nav :is(a, button) { transition: none !important; }
   .oc-public-nav :is(a, button) .oc-public-letter-track { transform: none !important; }
 }
+
+/* The compact switcher uses the existing space between the brand and links.
+   Absolute positioning preserves every navbar/link metric during the handoff. */
+.oc-public-journey-desktop {
+  position: absolute;
+  top: 50%;
+  left: 168px;
+  width: 196px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(calc(-50% + 8px));
+  transition: opacity 280ms var(--nav-ease), transform 320ms var(--nav-ease), visibility 0s 320ms;
+}
+.oc-public-nav[data-journey="true"] .oc-public-journey-desktop { opacity: 1; visibility: visible; transform: translateY(-50%); transition-delay: 60ms, 0s, 0s; }
+.oc-public-nav .oc-perspective-switcher[data-compact="true"] { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; width: 100%; padding: 3px; border: 1px solid var(--primary); border-radius: 999px; background: var(--primary); }
+.oc-public-nav .oc-perspective-switcher .oc-perspective-indicator { position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 2); border-radius: 999px; background: #fff7ec; border-bottom: 2px solid var(--brand-orange); box-shadow: 0 2px 8px rgb(7 21 41 / 15%); transition: transform 280ms var(--nav-ease); }
+.oc-public-nav .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
+.oc-public-nav .oc-perspective-switcher button { min-height: 44px; padding: 8px 6px; border-radius: 999px; background: transparent; color: #fff7ec; font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.oc-public-nav .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
+.oc-landing .oc-public-nav .oc-perspective-switcher button:focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -3px; }
+.oc-public-journey-mobile { display: none; }
+@media (max-width: 1099px) { .oc-public-journey-desktop { left: 164px; } }
+@media (max-width: 767px) {
+  .oc-public-journey-desktop { display: none; }
+  .oc-public-journey-mobile { display: block; margin: 0 10px 8px; }
+  .oc-public-nav .oc-public-journey-mobile .oc-perspective-switcher button { font-size: 14px; min-height: 48px; }
+  .oc-public-nav[data-journey="true"] .oc-public-menu-toggle::after { content: ""; position: absolute; top: 4px; right: 4px; width: 5px; height: 5px; background: var(--brand-orange); border-radius: 50%; }
+  .oc-public-menu-toggle { position: relative; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-public-journey-desktop, .oc-public-nav .oc-perspective-indicator { transition: none !important; }
+  .oc-public-journey-desktop { transform: translateY(-50%); }
+}
