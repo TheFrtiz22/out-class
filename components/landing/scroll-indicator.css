@@ -1,0 +1,37 @@
+.oc-scroll-indicator, .oc-landing .oc-scroll-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: #fff7ec;
+  background: transparent;
+  opacity: 1;
+  visibility: visible;
+  cursor: pointer;
+  transition: opacity 240ms cubic-bezier(.22, 1, .36, 1), background-color 200ms, color 200ms, visibility 0s;
+}
+.oc-scroll-indicator[data-available="false"] { opacity: 0; visibility: hidden; pointer-events: none; transition-delay: 0s, 0s, 0s, 240ms; }
+.oc-scroll-indicator-motion { display: block; animation: oc-scroll-invitation 1650ms cubic-bezier(.45, 0, .3, 1) infinite; animation-play-state: paused; }
+.oc-scroll-indicator[data-running="true"] .oc-scroll-indicator-motion { animation-play-state: running; }
+.oc-scroll-indicator-arrow { display: block; transform: rotate(180deg); }
+.oc-landing .oc-scroll-indicator:focus-visible { outline: 2px solid #fff7ec; outline-offset: 3px; background: rgb(20 45 78 / 20%); }
+@media (hover: hover) and (pointer: fine) {
+  .oc-scroll-indicator:hover { color: #f3a16f; background: rgb(20 45 78 / 20%); }
+}
+/* The final fifth of the cycle rests; only the glyph's translation animates. */
+@keyframes oc-scroll-invitation {
+  0%, 12% { transform: translateY(0); }
+  36% { transform: translateY(9px); }
+  48% { transform: translateY(11px); }
+  68% { transform: translateY(-1px); }
+  82%, 100% { transform: translateY(0); }
+}
+@media (max-width: 800px) { .oc-scroll-indicator, .oc-landing .oc-scroll-indicator { width: 48px; height: 48px; } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-scroll-indicator-motion { animation: none !important; transform: none; }
+  .oc-scroll-indicator { transition: none !important; }
+}

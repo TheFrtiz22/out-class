@@ -11,7 +11,7 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
 }) {
   return (
     <section id="landing-content" tabIndex={-1} className="oc-hero-editorial" aria-labelledby="outclass-hero-title">
-      <div className="oc-hero-introduction">
+      <div className="oc-hero-introduction" data-scroll-indicator-content="">
         <div className="oc-hero-copy">
           <p className="oc-hero-context">Made for University of Virginia</p>
           <h1 id="outclass-hero-title" className="oc-hero-headline">
