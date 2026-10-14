@@ -6,6 +6,7 @@ import { ScrollMotion } from "@/components/motion/scroll-motion"
 import "@/components/views/landing.css"
 import "./public-foundations.css"
 import "./public-information.css"
+import "./public-footer.css"
 
 /** Public information stays server-rendered, using the landing page's brand and controls. */
 export function PublicInformationPage({ eyebrow, title, introduction, children, heroAside, heroActions, className = "" }: {
@@ -18,7 +19,7 @@ export function PublicInformationPage({ eyebrow, title, introduction, children, 
   className?: string
 }) {
   return (
-    <ScrollMotion className={`oc-landing oc-information ${className}`}>
+    <ScrollMotion id="top" className={`oc-landing oc-information ${className}`}>
       <LandingNavigation />
       <a className="oc-skip-link" href="#main-content">Skip to content</a>
       <PublicNavigation />
@@ -34,8 +35,7 @@ export function PublicInformationPage({ eyebrow, title, introduction, children, 
         </section>
         <div className="oc-information-content">{children}</div>
       </main>
-      <PublicFooter />
-      <p className="oc-photo-credit">OutClass is an independent platform, not an official University of Virginia service.</p>
+      <PublicFooter legalNote="OutClass is an independent platform, not an official University of Virginia service." />
     </ScrollMotion>
   )
 }

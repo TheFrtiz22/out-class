@@ -134,9 +134,17 @@ test('public information pages render factual content, consistent entity referen
 test('shared public footer connects all public pages with real HTML links', () => {
   const { renderToStaticMarkup } = require('react-dom/server')
   const React = require('react')
-  const { PublicFooter } = load('components/landing/public-footer.tsx', { '@/components/outclass-logo': { OutClassLogo: () => null } })
+  const { PublicFooter } = load('components/landing/public-footer.tsx', {
+    '@/components/outclass-logo': { OutClassLogo: () => null },
+    '@/components/landing/footer-controls': load('components/landing/footer-controls.tsx'),
+    '@/components/landing/interactive-footer-wordmark': load('components/landing/interactive-footer-wordmark.tsx'),
+  })
   const html = renderToStaticMarkup(React.createElement(PublicFooter))
-  for (const path of ['/', '/about', '/uva']) assert.ok(html.includes(`href="${path}"`))
+  for (const path of ['/', '/about', '/uva', '/uva#faq', '/request-school', '/signup', '/login', '/?audience=student#students', '/?audience=leader#club-leaders', '#top']) assert.ok(html.includes(`href="${path}"`))
+  assert.ok(html.includes('<span class="sr-only">OutClass</span>'))
+  assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
+  assert.ok(html.includes('OutClass is an independent platform.'))
+  assert.ok(!html.includes('href="/privacy"') && !html.includes('href="/terms"'))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {
   let role

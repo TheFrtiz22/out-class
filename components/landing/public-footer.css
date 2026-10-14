@@ -1,0 +1,40 @@
+/* The final invitation and brand signature share one quiet navy surface. */
+.oc-landing .oc-final-invitation { background: #142d4e; color: #fff7ec; border: 0; padding-block: clamp(72px, 7vw, 104px) 64px; }
+.oc-landing .oc-final-invitation h2 { color: #fff7ec; }
+.oc-landing .oc-final-invitation :is(.oc-invitation-note, p[data-motion="body"]) { color: #c6cbd1; }
+.oc-landing .oc-final-invitation .oc-invitation-campus { color: #ef9d70; }
+.oc-landing .oc-final-invitation .oc-invitation-cta { background: #fff7ec; color: #142d4e; }
+.oc-landing .oc-final-invitation .oc-invitation-cta:hover { background: #f0e5d5; }
+.oc-landing .oc-final-invitation :focus-visible { outline-color: #ef9d70; }
+.oc-landing .oc-public-footer { background: #142d4e; color: #fff7ec; width: 100%; padding: 0 clamp(20px, 4vw, 64px); }
+.oc-footer-inner { max-width: 1680px; margin-inline: auto; }
+.oc-footer-masthead { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-block: 36px; border-top: 1px solid #fff7ec26; }
+.oc-footer-masthead > a { display: inline-flex; align-items: center; min-height: 44px; }
+.oc-footer-masthead img { height: 30px; width: auto; }
+.oc-footer-masthead p { margin: 0; font-size: 13px; color: #c6cbd1; }
+.oc-footer-navigation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; padding-block: 12px 44px; }
+.oc-footer-group { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.oc-footer-group h3 { margin: 0 0 14px; font-family: var(--oc-font-sans); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: #adb7c4; }
+.oc-footer-group :is(a, button) { display: inline-flex; align-items: center; min-height: 44px; text-align: left; font-size: 14px; font-weight: 400; line-height: 1.5; color: #eee9e0; }
+.oc-landing .oc-public-footer :is(a, button):hover { color: #ef9d70; }
+.oc-landing .oc-public-footer :focus-visible { outline: 2px solid #ef9d70; outline-offset: 5px; border-radius: 2px; }
+.oc-footer-field { container-type: inline-size; display: flex; justify-content: center; align-items: center; padding-block: clamp(28px, 4vw, 64px); border-block: 1px solid #fff7ec26; }
+.oc-footer-letters { position: relative; display: flex; width: max-content; font-family: var(--oc-font-display); font-size: 17.1cqw; font-weight: 400; line-height: 1.18; letter-spacing: -.035em; color: #fff7ec; }
+.oc-footer-letter { display: block; }
+.oc-footer-field[data-active] .oc-footer-letter { will-change: transform; }
+.oc-footer-bottom { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px 36px; padding-block: 28px 36px; color: #c6cbd1; }
+.oc-footer-bottom small, .oc-footer-bottom p { margin: 0; font-size: 11px; line-height: 1.7; }
+.oc-footer-bottom p { text-align: center; }
+.oc-footer-top-link { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; padding-inline: 16px; border: 1px solid #fff7ec40; font-size: 12px; color: #fff7ec; white-space: nowrap; }
+.oc-information .oc-public-footer { padding-top: 40px; }
+@media (max-width: 800px) {
+  .oc-footer-navigation { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 24px; padding-bottom: 32px; }
+  .oc-footer-masthead { padding-block: 28px; }
+  .oc-footer-masthead p { max-width: 20ch; text-align: right; font-size: 12px; }
+  .oc-footer-group :is(a, button) { font-size: 13px; }
+  .oc-footer-bottom { grid-template-columns: 1fr auto; gap: 12px 16px; padding-block: 20px 28px; }
+  .oc-footer-bottom p { grid-column: 1 / -1; grid-row: 2; text-align: left; max-width: 56ch; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-landing .oc-public-footer :is(a, button), .oc-landing .oc-final-invitation [data-slot="button"] { transition: none; }
+}
