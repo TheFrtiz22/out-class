@@ -15,11 +15,11 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
         <div className="oc-hero-copy">
           <p className="oc-hero-context">Made for University of Virginia</p>
           <h1 id="outclass-hero-title" className="oc-hero-headline">
-            Find and apply to participating UVA clubs with one profile.
+            {perspective === "student" ? "Find and apply to participating UVA clubs with one profile." : "Build your next class. Bring your club together."}
           </h1>
-          <p className="oc-hero-tagline">One profile. Every opportunity.</p>
+          <p className="oc-hero-tagline">{perspective === "student" ? "One profile. Every opportunity." : "Your people. A clearer process."}</p>
           <div className="oc-hero-support">
-            <p>Stay on top of applications, interviews, and decisions, all in one place.</p>
+            <p>{perspective === "student" ? "Stay on top of applications, interviews, and decisions, all in one place." : "Applications, interview panels, decisions, and member life. One workspace for the team behind it all."}</p>
             <div className="oc-hero-ctas">
               <Button size="lg" onClick={perspective === "student" ? onCreateProfile : onLeaderEnter}>
                 {perspective === "student" ? "Create your profile" : "Explore club workspace"}
@@ -29,7 +29,7 @@ export function LandingHero({ perspective, onCreateProfile, onLeaderEnter }: {
             <p className="oc-hero-audience">For UVA students and the clubs they’ll call home.</p>
           </div>
         </div>
-        <HeroFeatureStack />
+        <HeroFeatureStack key={perspective} perspective={perspective} />
       </div>
     </section>
   )

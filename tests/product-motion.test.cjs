@@ -79,6 +79,8 @@ function harness({ reduced = false, compact = false, observerAvailable = true } 
       }
     },
     toggle() { render().props.children.props.value.toggle() },
+    seek(value) { render().props.children.props.value.seek(value) },
+    replay() { render().props.children.props.value.replay() },
     reset(value) { key = value; render() },
     dispose() { cleanups.forEach(cleanup => cleanup?.()) },
   }
@@ -175,5 +177,36 @@ test("short landscape viewports start when the preview fills their usable area",
   assert.equal(h.progress(), 0)
   h.visible(.25, 176, 580); h.advance(5000)
   assert.equal(h.progress(), 1)
+  h.dispose()
+})
+
+test("a manual interaction owns playback until resumed, and replay resets a finished example", () => {
+  const h = harness()
+  h.visible(.8)
+  h.seek(.65)
+  h.advance(6000)
+  assert.equal(h.progress(), .65)
+  assert.equal(h.scheduledFrames, 0)
+  h.toggle(); h.advance(2000)
+  assert.equal(h.progress(), 1)
+  h.replay()
+  assert.equal(h.progress(), 0)
+  h.advance(5000)
+  assert.equal(h.progress(), 1)
+  h.dispose()
+})
+
+test("reduced motion still supports deliberate state changes without an animation clock", () => {
+  const h = harness({ reduced: true })
+  h.seek(.3)
+  h.visible(0)
+  h.visible(.8)
+  h.advance(6000)
+  assert.equal(h.progress(), .3)
+  assert.equal(h.scheduledFrames, 0)
+  h.seek(4)
+  assert.equal(h.progress(), 1)
+  h.seek(-1)
+  assert.equal(h.progress(), 0)
   h.dispose()
 })
