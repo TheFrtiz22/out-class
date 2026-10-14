@@ -23,7 +23,7 @@ function loader(mocks, overrides = {}) {
   }
   return load;
 }
-test('decision/invitation transaction repair on isolated native PostgreSQL', { skip: !databaseUrl, timeout: 180000 }, async t => {
+test('decision/invitation transaction repair on isolated native PostgreSQL', { skip: !databaseUrl, timeout: 240000 }, async t => {
   const url = new URL(databaseUrl);
   assert.equal(url.hostname, '127.0.0.1'); assert.equal(url.port, '58452'); assert.equal(url.username, 'fixture_superuser'); assert.equal(url.pathname, '/outclass_recruitment_test');
   const operator = new PrismaClient({ datasourceUrl: databaseUrl });
@@ -32,7 +32,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   const [role] = await base.$queryRaw`SELECT current_user,rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user`;
   assert.deepEqual(role, { current_user: 'outclass_production_app', rolsuper: false, rolbypassrls: false });
   const request = new AsyncLocalStorage(); let providerCalls = 0, providerDelay = 0, queryCount = 0, sqlMs = 0;
-  let transactionStart, transactionMs;
+  let transactionStart, transactionMs, policyDelay = 0, policyCalls = 0;
   base.$on('query', e => {
     queryCount++; sqlMs += e.duration;
     if (e.query === 'BEGIN') transactionStart = Date.now();
@@ -42,7 +42,11 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   await operator.platformAdmin.create({ data: { userId: admin.id } });
   const previousAllowlist = process.env.OUTCLASS_PLATFORM_ADMIN_IDS; process.env.OUTCLASS_PLATFORM_ADMIN_IDS = admin.id;
   t.after(() => { if (previousAllowlist === undefined) delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS; else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = previousAllowlist; });
-  const state = { afterAuth: null, failAction: null, failAudit: false };
+  const state = { afterAuth: null, afterPolicy: null, failAction: null, failAudit: false };
+  await operator.$executeRawUnsafe('CREATE SCHEMA IF NOT EXISTS storage');
+  await operator.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS storage.objects(bucket_id text NOT NULL,name text NOT NULL,PRIMARY KEY(bucket_id,name))');
+  await operator.$executeRawUnsafe('GRANT USAGE ON SCHEMA storage TO outclass_production_app');
+  await operator.$executeRawUnsafe('GRANT SELECT ON storage.objects TO outclass_production_app');
   // Inject domain/audit failures through an actual extension; no in-memory ORM.
   const instrumented = base.$extends({ query: { auditLog: { async create({ args, query }) {
     if (state.failAudit || args.data.action === state.failAction) throw Error('Injected audit failure');
@@ -52,11 +56,16 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   const mocks = {
     '@prisma/client': { ...require('@prisma/client'), PrismaClient: Client },
     'next/headers': { cookies: async () => ({ has: () => !!request.getStore()?.session, get: () => request.getStore()?.session ? { value: request.getStore().token } : undefined }) },
-    'next/cache': { revalidatePath() {} },
+    'next/cache': { revalidatePath() {}, revalidateTag() {} },
+    'server-only': {},
+    '@/utils/verified-email-policy': { ...loader({})('utils/verified-email-policy.ts'), requireVerifiedEmailPolicy: async () => { policyCalls++; await sleep(policyDelay); if (state.afterPolicy) await state.afterPolicy(); } },
     '@/utils/platform-admin': { requirePlatformAdmin: async () => { providerCalls++; await sleep(providerDelay); return admin; } },
     '@/utils/admin-elevation': { requireAdminElevation: async () => request.getStore().elevation },
     '@/utils/auth': {
-      requireAuth: async () => ({ user: request.getStore().user }),
+      requireAuth: async () => {
+        const user = request.getStore().user;
+        return { user, supabaseUser: { id: user.id, email: user.email, confirmation_sent_at: '2026-09-01', email_confirmed_at: '2026-10-01', ...request.getStore().proof } };
+      },
       requireClubPermission: async (clubId, caps) => {
         const user = request.getStore().user;
         const membership = await base.clubMember.findUnique({ where: { userId_clubId: { userId: user.id, clubId } } });
@@ -206,6 +215,18 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     await assert.rejects(other.run(() => api('actions/club-onboarding.ts').createClubIdentityInvitation({ clubId: f.club.id, identifierTypeId: 'school-uva-computing-id', identifier: 'outsider', requestedRole: 'MEMBER' })), /cannot grant/);
     await assertRollback(f); await assertRollback(other);
   });
+  await t.test('aged session-bound elevation allows support writes but cannot extend support expiry', async () => {
+    const f = await fixture();
+    const past = new Date(Date.now() - 3600000);
+    await operator.adminElevation.update({ where: { id: f.context.elevation.id }, data: { createdAt: past, passwordVerifiedAt: past, mfaVerifiedAt: past, expiresAt: null } });
+    f.context.elevation = await operator.adminElevation.findUniqueOrThrow({ where: { id: f.context.elevation.id } });
+    await direct(f); await assertPublished(f, 'WAITLISTED');
+    await operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { createdAt: past, expiresAt: new Date(past.getTime()+1800000) } });
+    await assert.rejects(f.run(() => api('utils/club-write-transaction.ts').clubWriteTransaction(async tx => {
+      await tx.club.update({ where: { id: f.club.id }, data: { tagline: 'Must not publish' } });
+    })), /Impersonation expired/);
+    assert.equal((await operator.club.findUniqueOrThrow({ where: { id: f.club.id } })).tagline, '');
+  });
   await t.test('session/elevation/grant/logout/target revocation between audited statements rolls back', async () => {
     const changes = [
       f => operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { endedAt: new Date() } }),
@@ -259,4 +280,157 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     assert.notEqual(error.code, 'P2028'); assert.match(error.message, /lock timeout/); assert.ok(Date.now() - start < 5000); await assertRollback(f);
     t.diagnostic(`observed PostgreSQL Lock wait, cancelled after ${Date.now() - start}ms`);
   });
+  const profile = (f, use = api, fields = {}) => f.run(() => use('actions/club-workspace.ts').updateClubSettings({ clubId: f.club.id, name: 'Published fixture', tagline: 'Updated', description: 'Private local test', ...fields }));
+  await t.test('main-source profile publication reproduces P2028; bounded repair moves identical provider latency before acquisition', async () => {
+    const main = load({ 'actions/club-workspace.ts': execFileSync('git', ['show', 'ce2c014:actions/club-workspace.ts'], { encoding: 'utf8' }) });
+    providerDelay = 2700;
+    const f = await fixture();
+    await assert.rejects(profile(f, main), e => e.code === 'P2028');
+    assert.equal((await base.club.findUniqueOrThrow({ where: { id: f.club.id } })).name, 'Transaction fixture');
+    assert.equal(await base.auditLog.count({ where: { clubId: f.club.id } }), 0);
+    const before = providerCalls, start = Date.now();
+    await profile(f);
+    assert.equal(providerCalls - before, 1);
+    const audit = await base.auditLog.findFirstOrThrow({ where: { clubId: f.club.id, action: 'club.settings.update' } });
+    assert.equal(audit.actorId, admin.id); assert.equal(audit.effectiveUserId, f.user.id); assert.equal(audit.supportSessionId, f.context.session.id);
+    t.diagnostic(`profile simulated Auth=2700ms: elapsed=${Date.now()-start}ms, transaction=${transactionMs}ms; one pretransaction provider resolution`);
+    providerDelay = 0;
+  });
+  for (const support of [false, true]) {
+    await t.test(`profile publication retry, audit rollback and cross-club private image denial (support=${support})`, async () => {
+      const f = await fixture(support);
+      await Promise.all([profile(f), profile(f)]); await profile(f);
+      assert.equal((await base.club.findUniqueOrThrow({ where: { id: f.club.id } })).name, 'Published fixture');
+      state.failAction = 'club.settings.update';
+      await assert.rejects(profile(f, api, { name: 'Must roll back' }), /Injected audit failure/); state.failAction = null;
+      assert.equal((await base.club.findUniqueOrThrow({ where: { id: f.club.id } })).name, 'Published fixture');
+      const object = `${f.club.id}/${randomUUID()}.webp`;
+      await operator.$executeRaw`INSERT INTO storage.objects(bucket_id,name) VALUES ('club-assets',${object})`;
+      await profile(f, api, { logoUrl: `club-assets/${object}` });
+      assert.equal((await base.club.findUniqueOrThrow({where:{id:f.club.id}})).logoUrl,`club-assets/${object}`);
+      await assert.rejects(profile(f,api,{logoUrl:`club-assets/${f.club.id}/${randomUUID()}.webp`}),/unavailable/);
+      const other = await fixture(false);
+      await assert.rejects(profile(f, api, { logoUrl: `club-assets/${other.club.id}/${randomUUID()}.webp` }), /ownership mismatch/);
+      await assert.rejects(f.run(() => api('actions/club-workspace.ts').updateClubSettings({ clubId: other.club.id, name: 'Forbidden', tagline: '', description: '' })), /Permission denied/);
+    });
+    await t.test(`persisted voting draft reload, joining, ballots, retries and publication (support=${support})`, async () => {
+      const f = await fixture(support), voting = api('actions/voting.ts');
+      const id = await f.run(() => voting.createVotingSession({ clubId: f.club.id, roundId: f.round.id, applicationIds: [f.app.id], participantIds: [f.member.id], targetSize: 1, displayConfig: { version: 1, fields: ['name'] } }));
+      let view = await f.run(() => voting.getVotingWorkspace(f.club.id));
+      assert.equal(view.session.id, id); assert.equal(view.session.state, 'DRAFT');
+      const command = async (action, extra = {}) => {
+        view = await f.run(() => voting.getVotingWorkspace(f.club.id, id));
+        return f.run(() => voting.commandVotingSession({ clubId: f.club.id, sessionId: id, revision: view.session.revision, action, ...extra }));
+      };
+      await command('OPEN_JOIN');
+      await Promise.all([f.run(() => voting.joinVotingSession(id)), f.run(() => voting.joinVotingSession(id))]);
+      await command('START_PASS');
+      const ballot = () => f.run(() => voting.submitVotingBallot({ clubId: f.club.id, sessionId: id, passNumber: 1, applicationId: f.app.id, decision: 'PASS' }));
+      const results = await Promise.allSettled([ballot(), ballot()]);
+      assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
+      assert.equal(await base.votingBallot.count({ where: { sessionId: id } }), 1);
+      await command('COMPLETE_PASS'); await command('FINISH'); await command('PUBLISH', { applicationIds: [f.app.id] });
+      await assertPublished(f, 'ACCEPTED');
+      await operator.clubMember.create({ data: { userId: admin.id, clubId: f.club.id, isOwner: true } });
+      await operator.clubMember.update({ where: { id: f.member.id }, data: { isOwner: false, permissions: [] } });
+      await assert.rejects(f.run(() => voting.getVotingWorkspace(f.club.id, id)), /Permission denied/);
+      await assert.rejects(ballot(), /Permission denied/);
+    });
+  }
+  async function recipient(f, support) {
+    const context = { ...f.context, user: f.student, session: null };
+    if (support) {
+      context.token = randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', '');
+      context.session = await operator.platformViewSession.create({ data: { actorId: admin.id, targetUserId: f.student.id, tokenHash: createHash('sha256').update(context.token).digest('hex'), mode: 'IMPERSONATION', reason: 'Local recipient verification', expiresAt: new Date(Date.now()+600000) } });
+    }
+    return { context, run: fn => request.run(context, fn) };
+  }
+  await t.test('main invitation discovery holds a 5s transaction across provider policy fetch and expires', async () => {
+    const main = load({ 'actions/club-onboarding.ts': execFileSync('git', ['show', 'ce2c014:actions/club-onboarding.ts'], { encoding: 'utf8' }) });
+    const f = await fixture(false); await invitation(f); const r = await recipient(f, false);
+    policyDelay = 5500;
+    try { await assert.rejects(r.run(() => main('actions/club-onboarding.ts').getOrganizationInvitations(true)), e => e.code === 'P2028'); }
+    finally { policyDelay = 0; }
+    assert.equal(await base.schoolIdentity.count({ where: { userId: f.student.id } }), 0);
+  });
+  for (const support of [false, true]) {
+    await t.test(`verified invitation discovery/claim is atomic and concurrent retries reuse membership (support=${support})`, async () => {
+      const f = await fixture(support), invited = await invitation(f), r = await recipient(f, support), onboarding = api('actions/club-onboarding.ts');
+      policyDelay = 5500; const before = policyCalls;
+      const start = Date.now();
+      const discovered = await r.run(() => onboarding.getOrganizationInvitations(true));
+      assert.equal(discovered.length, 1); assert.equal(discovered[0].id, invited.id); assert.equal(policyCalls-before, 1);
+      t.diagnostic(`invitation discovery policy latency=5500ms: elapsed=${Date.now()-start}ms, transaction=${transactionMs}ms`);
+      policyDelay = 0;
+      const accept = () => r.run(() => onboarding.acceptIdentityClubInvitation(invited.id));
+      const results = await Promise.all([accept(), accept()]); await accept();
+      assert.ok(results.every(result => result.clubId === f.club.id));
+      assert.equal(await base.clubMember.count({ where: { clubId: f.club.id, userId: f.student.id } }), 1);
+      assert.equal(await base.auditLog.count({ where: { targetId: invited.id, action: 'club.invite.accept' } }), 1);
+      const audit = await base.auditLog.findFirstOrThrow({ where: { targetId: invited.id, action: 'club.invite.accept' } });
+      assert.equal(audit.actorId, support ? admin.id : f.student.id); assert.equal(audit.effectiveUserId, support ? f.student.id : null);
+      assert.equal(audit.supportSessionId, r.context.session?.id ?? null);
+      assert.deepEqual(await r.run(() => onboarding.getOrganizationInvitations()), []);
+      assert.equal(await base.invitationDelivery.count({ where: { invitationId: invited.id } }), 0);
+    });
+  }
+  for (const support of [false, true]) {
+    await t.test(`platform-designated owner claim preserves identity and grants exactly one owner (support=${support})`, async () => {
+      const f = await fixture(false), onboarding = api('actions/club-onboarding.ts');
+      const club = await operator.club.create({ data: { slug: randomUUID(), name: 'Unclaimed local club', tagline: '', description: '', category: 'Other', color: '#142d45' } });
+      const invited = await request.run({ ...f.context, user: admin, session: null }, () => onboarding.createClubIdentityInvitation({ clubId: club.id, identifierTypeId: 'school-uva-computing-id', identifier: f.student.email.split('@')[0], requestedRole: 'OWNER', platformDesignation: true }));
+      const r = await recipient(f, support);
+      assert.equal((await r.run(() => onboarding.getOrganizationInvitations(true)))[0].id, invited.id);
+      const claim = () => r.run(() => onboarding.acceptIdentityClubInvitation(invited.id));
+      await Promise.all([claim(), claim()]); await claim();
+      const member = await base.clubMember.findUniqueOrThrow({ where: { userId_clubId: { userId: f.student.id, clubId: club.id } } });
+      assert.equal(member.isOwner, true); assert.equal(member.accessRole, 'OWNER'); assert.equal(member.status, 'ACTIVE');
+      assert.equal(await base.clubMember.count({ where: { clubId: club.id, isOwner: true } }), 1);
+      assert.ok((await base.club.findUniqueOrThrow({ where: { id: club.id } })).claimedAt);
+      assert.equal((await base.user.findUniqueOrThrow({ where: { id: f.student.id } })).email, f.student.email);
+      assert.equal(await base.auditLog.count({ where: { targetId: invited.id, action: 'club.invite.accept' } }), 1);
+      const audit = await base.auditLog.findFirstOrThrow({ where: { targetId: invited.id, action: 'club.invite.accept' } });
+      assert.equal(audit.actorId, support ? admin.id : f.student.id); assert.equal(audit.effectiveUserId, support ? f.student.id : null);
+      assert.equal(audit.supportSessionId, r.context.session?.id ?? null);
+    });
+  }
+  await t.test('platform owner claim rechecks revoked Admin grant after provider preflight and grants nothing', async () => {
+    const f = await fixture(false), onboarding = api('actions/club-onboarding.ts');
+    const club = await operator.club.create({data:{slug:randomUUID(),name:'Revocation fixture',tagline:'',description:'',category:'Other',color:'#142d45'}});
+    const invited=await request.run({...f.context,user:admin,session:null},()=>onboarding.createClubIdentityInvitation({clubId:club.id,identifierTypeId:'school-uva-computing-id',identifier:f.student.email.split('@')[0],requestedRole:'OWNER',platformDesignation:true}));
+    const r=await recipient(f,false);
+    state.afterPolicy=()=>operator.platformAdmin.update({where:{userId:admin.id},data:{active:false}});
+    try { await assert.rejects(r.run(()=>onboarding.acceptIdentityClubInvitation(invited.id)),/authority was revoked/); }
+    finally {state.afterPolicy=null;await operator.platformAdmin.update({where:{userId:admin.id},data:{active:true}});}
+    assert.equal(await base.clubMember.count({where:{clubId:club.id}}),0);
+    assert.equal((await base.clubInvitation.findUniqueOrThrow({where:{id:invited.id}})).status,'PENDING');
+    assert.equal((await base.club.findUniqueOrThrow({where:{id:club.id}})).claimedAt,null);
+  });
+  await t.test('invitation missing proof, foreign recipient, revoked inviter, suspended club and audit failure deny without partial grants', async () => {
+    const onboarding = api('actions/club-onboarding.ts');
+    for (const failure of ['proof', 'foreign', 'inviter', 'suspension', 'audit', 'account']) {
+      const f = await fixture(false), invited = await invitation(f), r = await recipient(f, false);
+      if (failure === 'proof') r.context.proof = { confirmation_sent_at: undefined };
+      if (failure === 'foreign') r.context.user = (await fixture(false)).student;
+      if (failure === 'inviter') { await operator.clubMember.create({ data: { clubId:f.club.id, userId:admin.id, isOwner:true } }); await operator.clubMember.update({ where: {id:f.member.id}, data: {isOwner:false, permissions:[]} }); }
+      if (failure === 'suspension') await operator.club.update({ where:{id:f.club.id}, data:{suspendedAt:new Date()} });
+      if (failure === 'audit') state.failAction = 'club.invite.accept';
+      if (failure === 'account') await operator.user.update({ where:{id:f.student.id}, data:{disabledAt:new Date()} });
+      await assert.rejects(r.run(() => onboarding.acceptIdentityClubInvitation(invited.id)), /Verify|unavailable|no longer|suspended|Injected/);
+      state.failAction = null;
+      assert.equal(await base.clubMember.count({where:{clubId:f.club.id,userId:f.student.id}}),0);
+      assert.equal((await base.clubInvitation.findUniqueOrThrow({where:{id:invited.id}})).status,'PENDING');
+      assert.equal(await base.auditLog.count({where:{action:'club.invite.accept',targetId:invited.id}}),0);
+    }
+  });
+  await t.test('profile authority revoked while waiting on club lock is rechecked inside the transaction', async () => {
+    const f=await fixture(false);
+    await operator.clubMember.create({data:{clubId:f.club.id,userId:admin.id,isOwner:true}});
+    let ready,release;const gate=new Promise(r=>release=r),locked=new Promise(r=>ready=r);
+    const blocker=operator.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${f.club.id} FOR UPDATE`;ready();await gate;await tx.clubMember.update({where:{id:f.member.id},data:{isOwner:false,permissions:[]}})}, {timeout:10000});
+    await locked;const result=profile(f);await sleep(100);release();await blocker;
+    await assert.rejects(result,/access denied/);
+    assert.equal((await base.club.findUniqueOrThrow({where:{id:f.club.id}})).name,'Transaction fixture');
+  });
+
 });

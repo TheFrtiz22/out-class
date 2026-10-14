@@ -31,7 +31,7 @@ function setup() {
   const account = () => ({ user: { id: state.actorId, email: state.actorId+'@virginia.edu' }, supabaseUser: { id: state.actorId, email: state.actorId+'@virginia.edu', confirmation_sent_at: '2026-09-01', email_confirmed_at: state.verified ? '2026-10-01' : null, app_metadata: { email_verification_skipped: state.skipped } } });
   const tx = {
     $queryRaw: async () => [],
-    user: { findUnique: async () => ({ id: 'inviter', disabledAt: state.disabledInviter ? new Date() : null }), create: () => { throw Error('Fake User creation forbidden'); } },
+    user: { findUnique: async ({where}) => ({ id: where.id, email: where.id+'@virginia.edu', disabledAt: where.id==='inviter' && state.disabledInviter ? new Date() : null }), create: () => { throw Error('Fake User creation forbidden'); } },
     club: { findUniqueOrThrow: async () => ({ id: clubId, schoolId: 'school-uva', claimedAt: null }), update: async args => { state.writes.push(['club',args]); } },
     schoolIdentifierType: { findMany: async () => [{id:'computing',schoolId:'school-uva',normalization:'TRIM_LOWERCASE',validationRegex:'^[a-z0-9]+$'}], findUniqueOrThrow: async () => ({ id: 'computing', schoolId: 'school-uva', normalization: 'TRIM_LOWERCASE', validationRegex: '^[a-z0-9]+$', verification: 'EMAIL_LOCAL_PART', emailDomain: 'virginia.edu', school: { active: true } }) },
     schoolIdentity: { findUniqueOrThrow: async () => ({id:'identity',userId:state.actorId}), findMany: async ({where}) => { assert.equal(where.userId,state.actorId); return state.identityIds.filter(id => where.id.in.includes(id)).map(id => ({ id, userId: state.actorId })); }, upsert: async args => { state.queries.push(['identity',args]); return {id:'identity'}; } },
@@ -40,7 +40,7 @@ function setup() {
       findFirst: async () => null,
       findUnique: async ({where}) => where.userId_clubId.userId === 'inviter' ? state.inviter : state.recipient,
       count: async () => state.ownerCount,
-      upsert: async args => { state.writes.push(['membership',args]); return { id:'membership' }; },
+      upsert: async args => { state.writes.push(['membership',args]); state.recipient = { id:'membership', status:'ACTIVE', ...(state.recipient || {}), ...(state.recipient ? args.update : args.create) }; return state.recipient; },
     },
     clubInvitation: {
       findUnique: async () => state.invitation, findUniqueOrThrow: async () => state.invitation,
@@ -215,11 +215,11 @@ test('ownership claiming upgrades an existing member once and records claim time
   assert.equal(membership.update.accessRole,'OWNER');assert.equal(membership.update.isOwner,true);
   assert.equal(h.state.invitation.claimedUserId,'recipient');assert.ok(h.state.invitation.claimedAt instanceof Date);
   assert.ok(h.state.writes.some(([kind])=>kind==='club'));
-  await assert.rejects(h.api.acceptIdentityClubInvitation(inviteId),/unavailable/);
+  assert.deepEqual(await h.api.acceptIdentityClubInvitation(inviteId),{clubId});
   assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
 });
 
-test('concurrent claiming attempts revalidate after the organization transaction lock; only one succeeds',async()=>{
+test('concurrent claiming attempts revalidate after the organization transaction lock; only one grants access',async()=>{
   const h=setup();h.state.invitation.requestedRole='OWNER';
   // Model the database transaction lock with a queue, including two concurrent callers.
   let tail=Promise.resolve();
@@ -227,8 +227,8 @@ test('concurrent claiming attempts revalidate after the organization transaction
   const load=loader({'@/utils/verified-email-policy':{...loader({})('utils/verified-email-policy.ts'),requireVerifiedEmailPolicy:async()=>{}},'@/utils/prisma':{prisma},'@/utils/auth':{requireAuth:async()=>({user:{id:'recipient',email:'recipient@virginia.edu'},supabaseUser:{id:'recipient',email:'recipient@virginia.edu',confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-01'}})},'@/utils/platform-admin':{}});
   const api=load('actions/club-onboarding.ts');
   const results=await Promise.allSettled([api.acceptIdentityClubInvitation(inviteId),api.acceptIdentityClubInvitation(inviteId)]);
-  assert.equal(results.filter(result=>result.status==='fulfilled').length,1);
-  assert.equal(results.filter(result=>result.status==='rejected').length,1);
+  assert.equal(results.filter(result=>result.status==='fulfilled').length,2);
+  assert.equal(results.filter(result=>result.status==='rejected').length,0);
   assert.equal(h.state.writes.filter(([kind])=>kind==='membership').length,1);
   assert.equal(h.state.audits.filter(audit=>audit.action==='club.invite.accept').length,1);
 });

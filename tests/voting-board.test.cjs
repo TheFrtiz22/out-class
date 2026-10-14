@@ -3,17 +3,17 @@ const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,.
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 const flush=()=>new Promise(r=>setImmediate(r));
 function loadLibrary(file){const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n.startsWith('@/lib/')?loadLibrary(n.slice(2)+'.ts'):require(n),mod,mod.exports);return mod.exports}
-function harness({draft=false}={}){
- const slots=[],effects=[],commands=[],ballots=[];let cursor=0,poll,deny=false;
+function harness({draft=false,slow=false}={}){
+ const slots=[],effects=[],commands=[],ballots=[],cleanups=new Map();let cursor=0,poll,deny=false,reads=0,actorId="leader";const waiting=[];
  const session={id:'00000000-0000-4000-8000-000000000006',roundId:'round',clubId:'club',state:'OPEN',currentPass:1,revision:1,targetSize:1,participants:[{memberId:'member'}],candidates:[{applicationId:'candidate',position:0}],passes:[{number:1,state:'OPEN',candidates:[{applicationId:'candidate',position:0,ballots:[]}]}],createdAt:new Date(),publishedAt:null};
  if(draft){session.state="DRAFT";session.currentPass=0;session.passes=[]}
  const view=()=>({sessions:[session],session,summary:{total:1,processed:session.passes[0]?.candidates[0].ballots.length??0,passed:session.passes[0]?.candidates[0].ballots.length??0,held:0,notPassed:0,remaining:1-(session.passes[0]?.candidates[0].ballots.length??0),target:1,targetReached:!!session.passes[0]?.candidates[0].ballots.length,outcomes:[{applicationId:'candidate',outcome:session.passes[0]?.candidates[0].ballots.length?'PASS':'UNRESOLVED',passNumber:1,automatic:false}]},memberId:'member',canVote:true,canManage:true,canStart:true,canFinish:true,canReopen:true,canPublish:true,eligible:[],rounds:[{id:'round',name:'Round 1'}],academicYears:[{id:'candidate',academicYear:'Third Year'}]});
- const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){const i=cursor++;return slots[i]??=({current:initial})},useCallback(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev.deps[j]))slots[i]={fn,deps};return slots[i].fn},useEffect(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev[j])){slots[i]=deps;effects.push(fn)}}};
- const api={getVotingWorkspace:async()=>{if(deny)throw Error('Access revoked');return structuredClone(view())},createVotingSession:async()=>{throw Error('unused')},submitVotingBallot:async d=>{ballots.push(d);session.passes[0].candidates[0].ballots.push({...d,memberId:'member'});session.revision++},commandVotingSession:async d=>{commands.push(d);if(d.action==='CONFIGURE')session.displayConfig=d.displayConfig;if(d.action==='OPEN_JOIN')session.joinOpenedAt=new Date();if(d.action==='COMPLETE_PASS'){session.state='PAUSED';session.passes[0].state='COMPLETED'}if(d.action==='FINISH')session.state='COMPLETED';if(d.action==='PUBLISH')session.publishedAt=new Date();session.revision++}};
+ const react={useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>slots[i]=typeof v==='function'?v(slots[i]):v]},useRef(initial){const i=cursor++;return slots[i]??=({current:initial})},useCallback(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev.deps[j]))slots[i]={fn,deps};return slots[i].fn},useEffect(fn,deps){const i=cursor++,prev=slots[i];if(!prev||deps.some((v,j)=>v!==prev[j])){slots[i]=deps;effects.push([i,fn])}}};
+ const api={getVotingWorkspace:async()=>{reads++;if(slow)await new Promise(resolve=>waiting.push(resolve));if(deny)throw Error('Access revoked');return structuredClone(view())},createVotingSession:async()=>{throw Error('unused')},submitVotingBallot:async d=>{ballots.push(d);session.passes[0].candidates[0].ballots.push({...d,memberId:'member'});session.revision++},commandVotingSession:async d=>{commands.push(d);if(d.action==='CONFIGURE')session.displayConfig=d.displayConfig;if(d.action==='OPEN_JOIN')session.joinOpenedAt=new Date();if(d.action==='COMPLETE_PASS'){session.state='PAUSED';session.passes[0].state='COMPLETED'}if(d.action==='FINISH')session.state='COMPLETED';if(d.action==='PUBLISH')session.publishedAt=new Date();session.revision++}};
  const mod={exports:{}};const code=ts.transpileModule(fs.readFileSync('components/live-voting/board-decision-mode.tsx','utf8')+'\nexports.TestBoard=VotingBoard;',{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- new Function('require','module','exports','setInterval','clearInterval',code)(name=>name==='react'?react:name==='@/components/qr/qr-code-card'?{QrCodeCard:'QrCodeCard'}:name==='@/lib/workspace-api'?api:name==='@/lib/voting-presentation'?loadLibrary('lib/voting-presentation.ts'):name==='@/lib/applicant-display'?loadLibrary('lib/applicant-display.ts'):name==='@/contexts/demo-context'?{useDemoMode:()=>({isDemoEnabled:false})}:name==='@/components/ui/button'?{Button:'Button'}:name==='@/components/applicant-intelligence'?{ApplicantDisplayPanel:'ApplicantDisplayPanel'}:name.startsWith('@/')||name.endsWith('.css')?{}:require(name),mod,mod.exports,fn=>{poll=fn;return 1},()=>{});
+ new Function('require','module','exports','setInterval','clearInterval',code)(name=>name==='@/contexts/auth-context'?{useAuth:()=>({user:{id:actorId}})}:name==='react'?react:name==='@/components/qr/qr-code-card'?{QrCodeCard:'QrCodeCard'}:name==='@/lib/workspace-api'?api:name==='@/lib/serialized-workspace-read'?loadLibrary('lib/serialized-workspace-read.ts'):name==='@/lib/voting-presentation'?loadLibrary('lib/voting-presentation.ts'):name==='@/lib/applicant-display'?loadLibrary('lib/applicant-display.ts'):name==='@/contexts/demo-context'?{useDemoMode:()=>({isDemoEnabled:false})}:name==='@/components/ui/button'?{Button:'Button'}:name==='@/components/applicant-intelligence'?{ApplicantDisplayPanel:'ApplicantDisplayPanel'}:name.startsWith('@/')||name.endsWith('.css')?{}:require(name),mod,mod.exports,fn=>{poll=fn;return 1},()=>{});
  const changes=[];
- return {render(){cursor=0;const result=mod.exports.TestBoard({clubId:'club',applicants:[],onDecision:(...args)=>changes.push(args)});while(effects.length)effects.shift()();return result},poll:()=>poll(),revoke:()=>deny=true,commands,ballots,changes,session};
+ return {render(){cursor=0;const result=mod.exports.TestBoard({clubId:'club',applicants:[],onDecision:(...args)=>changes.push(args)});while(effects.length){const [i,effect]=effects.shift();cleanups.get(i)?.();cleanups.set(i,effect())}return result},poll:()=>poll(),revoke:()=>deny=true,commands,ballots,changes,session,asAccount:id=>actorId=id,reads:()=>reads,complete:()=>waiting.shift()?.()};
 }
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&text(n)===label);
 test('board uses shared presentation, saves a ballot without publishing, and continues past advisory target',async()=>{const h=harness();h.render();await flush();let tree=h.render();tree=h.render();assert.ok(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'&&n.props.mode==='voting'));await button(tree,'Pass').props.onClick();await flush();tree=h.render();assert.equal(h.ballots.length,1);assert.equal(h.commands.length,0);assert.equal(h.changes.length,0);assert.match(text(tree),/Target reached/);assert.equal(button(tree,'Pass').props.disabled,true);assert.equal(h.session.state,'OPEN')});
@@ -33,4 +33,25 @@ test('setup checkboxes use the shared preview and block opening until changes ar
 test('completed-pass browsing remains local and never changes the live candidate or ballots',async()=>{
  const h=harness();h.session.state='PAUSED';h.session.passes[0].state='COMPLETED';h.session.passes[0].candidates.push({applicationId:'second-candidate',position:1,ballots:[]});h.session.candidates.push({applicationId:'second-candidate',position:1});
  h.render();await flush();let tree=h.render();tree=h.render();assert.equal(button(tree,'Pass').props.disabled,true);assert.equal(button(tree,'Next candidate').props.disabled,false);button(tree,'Next candidate').props.onClick();tree=h.render();assert.ok(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'&&n.props.applicationId==='second-candidate'));assert.equal(h.commands.length,0);assert.equal(h.ballots.length,0);
+});
+
+test('persisted draft is displayed even when a read takes longer than several polling intervals; retry clears revoked content',async()=>{
+ const h=harness({draft:true,slow:true});h.render();
+ assert.equal(h.reads(),1);
+ h.poll();h.poll();h.poll();assert.equal(h.reads(),1,'polling cannot enqueue overlapping server reads');
+ h.complete();await flush();let tree=h.render();tree=h.render();
+ assert.ok(!text(tree).includes('Loading voting workspace'));
+ assert.match(text(tree),/Session display setup/);
+ h.revoke();h.poll();h.complete();await flush();tree=h.render();
+ assert.match(text(tree),/Access revoked/);assert.equal(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'),false);
+ button(tree,'Refresh').props.onClick();h.complete();await flush();assert.match(text(h.render()),/Access revoked/);
+});
+
+test('account changes conceal an existing voting snapshot immediately and discard a late old-account response',async()=>{
+ const h=harness({draft:true,slow:true});h.render();h.complete();await flush();h.render();
+ assert.match(text(h.render()),/Session display setup/);
+ h.poll();h.asAccount('different-account');let tree=h.render();
+ assert.match(text(tree),/Loading voting workspace/);assert.equal(nodes(tree).some(n=>n.type==='ApplicantDisplayPanel'),false);
+ h.complete();await flush();assert.match(text(h.render()),/Loading voting workspace/);
+ h.complete();await flush();assert.match(text(h.render()),/Session display setup/);
 });

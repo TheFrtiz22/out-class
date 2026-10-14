@@ -37,7 +37,7 @@ export async function saveAdminClub(input: unknown): Promise<{ id?: string; erro
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const d = parsed.data;
   try {
-    const actor = await requirePlatformAdmin();
+    const actor = await requirePlatformAdmin({ fresh: true });
     const result = await prisma.$transaction(async tx => {
       if (d.id) await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${d.id} FOR UPDATE`;
       await authorizeAdminTransaction(tx, actor.id);

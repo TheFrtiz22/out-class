@@ -18,8 +18,8 @@ function loader(mocks, diagnostics, faults) {
 const id='00000000-0000-4000-8000-000000000001';
 function harness(faults = {}) {
   let identity=id, grant=true, disabled=false, aal='aal2', sessionId='normal-session', passwordOk=true, mfaOk=true, verifiedActor=id, attempts=0, liveSession=true, providerStatus=400, internalSyntax=false;
-  const jar = new Map(), logs=[], diagnostics=[], elevations=[], challenges=[];
-  const cookieJar={has:k=>jar.has(k),get:k=>jar.has(k)?{value:jar.get(k)}:undefined,set:(k,v,options)=>{assert.equal(options.httpOnly,true);assert.equal(options.sameSite,'strict');if(!v)jar.delete(k);else jar.set(k,v);}};
+  const jar = new Map(), cookieOptions = new Map(), logs=[], diagnostics=[], elevations=[], challenges=[];
+  const cookieJar={has:k=>jar.has(k),get:k=>jar.has(k)?{value:jar.get(k)}:undefined,set:(k,v,options)=>{cookieOptions.set(k,options);assert.equal(options.httpOnly,true);assert.equal(options.sameSite,'strict');if(!v)jar.delete(k);else jar.set(k,v);}};
   function matches(row, where) { return Object.entries(where).every(([key,v])=>v && typeof v==='object' && 'gte' in v ? row[key]>=v.gte : row[key]===v); }
   function model(rows) { return {
     findUnique:async({where})=>rows.find(r=>matches(r,where))||null,
@@ -51,7 +51,7 @@ function harness(faults = {}) {
   }, diagnostics, faults);
   const guard=load('utils/platform-admin.ts'), route=load('app/api/platform/elevation/route.ts'), logout=load('app/api/auth/logout/route.ts');
   const post=(body,origin='http://localhost')=>route.POST(new NextRequest('http://localhost/api/platform/elevation',{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify(body)}));
-  return{guard,post,logs,diagnostics,rawPost:body=>route.POST(new NextRequest('http://localhost/api/platform/elevation',{method:'POST',headers:{origin:'http://localhost','Content-Type':'application/json'},body})),elevations,challenges,jar,attempts:()=>attempts,
+  return{guard,post,logs,diagnostics,rawPost:body=>route.POST(new NextRequest('http://localhost/api/platform/elevation',{method:'POST',headers:{origin:'http://localhost','Content-Type':'application/json'},body})),elevations,challenges,jar,cookieOptions,attempts:()=>attempts,
     logout:()=>logout.POST(new NextRequest('http://localhost/api/auth/logout',{method:'POST',headers:{origin:'http://localhost'}})),
     set(p){if('internalSyntax'in p)internalSyntax=p.internalSyntax;if('providerStatus'in p)providerStatus=p.providerStatus;if('liveSession'in p)liveSession=p.liveSession;if('identity'in p)identity=p.identity;if('grant'in p)grant=p.grant;if('disabled'in p)disabled=p.disabled;if('aal'in p)aal=p.aal;if('sessionId'in p)sessionId=p.sessionId;if('passwordOk'in p)passwordOk=p.passwordOk;if('mfaOk'in p)mfaOk=p.mfaOk;if('verifiedActor'in p)verifiedActor=p.verifiedActor;},
     elevate:async()=>{assert.equal((await post({action:'password',password:'fresh-password'})).status,200);assert.equal((await post({action:'verify',code:'123456'})).status,200);},
@@ -139,4 +139,35 @@ for(const faults of [{logger:true},{uuid:true},{logger:true,uuid:true}])test(`el
  if(faults.uuid)assert.match(body.supportCode,/:fallback-\d+$/);
  assert.ok(!JSON.stringify(body).includes('private'));assert.equal(h.elevations.length,0);
  h.set({providerStatus:400});assert.equal((await h.post({action:'password',password:'password'})).status,403);
+}));
+
+
+test('session-bound Admin survives 30 minutes; sensitive actions require fresh password AND MFA',async()=>configured(async()=>{
+ const h=harness();await h.elevate();
+ assert.equal(h.elevations[0].expiresAt,null);
+ const options=h.cookieOptions.get('outclass-admin-elevation');
+ assert.equal(options.maxAge,undefined);assert.equal(options.expires,undefined);
+ const past=new Date(Date.now()-61*60*1000);
+ Object.assign(h.elevations[0],{createdAt:past,passwordVerifiedAt:past,mfaVerifiedAt:past});
+ assert.equal((await h.guard.requirePlatformAdmin()).id,id);
+ await assert.rejects(h.guard.requirePlatformAdmin({fresh:true}),/Verify your password/);
+ h.elevations[0].mfaVerifiedAt=new Date();
+ await assert.rejects(h.guard.requirePlatformAdmin({fresh:true}),/Verify your password/);
+ await h.elevate();assert.equal((await h.guard.requirePlatformAdmin({fresh:true})).id,id);
+ assert.ok(h.elevations[0].revokedAt);
+}));
+test('aged session-bound elevation still enforces grant, account, AAL2, live session, logout and revocation',async()=>configured(async()=>{
+ for(const change of [h=>h.set({grant:false}),h=>h.set({disabled:true}),h=>h.set({aal:'aal1'}),h=>h.set({liveSession:false}),h=>h.elevations[0].revokedAt=new Date(),h=>h.logout()]){
+  const h=harness();await h.elevate();const past=new Date(Date.now()-3600000);
+  Object.assign(h.elevations[0],{createdAt:past,passwordVerifiedAt:past,mfaVerifiedAt:past});
+  await change(h);await assert.rejects(h.guard.requirePlatformAdmin());
+ }
+}));
+test('support impersonation remains separately restricted with session-bound Admin',async()=>configured(async()=>{
+ const h=harness();await h.elevate();const past=new Date(Date.now()-3600000);
+ Object.assign(h.elevations[0],{createdAt:past,passwordVerifiedAt:past,mfaVerifiedAt:past});
+ h.jar.set('outclass-platform-view','a'.repeat(64));
+ await assert.rejects(h.guard.requirePlatformAdmin(),/Exit impersonation/);
+ assert.equal((await h.guard.requirePlatformAdmin({allowViewAs:true})).id,id);
+ await assert.rejects(h.guard.requirePlatformAdmin({allowViewAs:true,fresh:true}),/Verify your password/);
 }));

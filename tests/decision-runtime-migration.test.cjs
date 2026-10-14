@@ -17,10 +17,11 @@ for(const mode of ['fresh','current-main','original-reconciliation'])test(`Decis
  await db.exec(`INSERT INTO "User"(id,email) VALUES('student','student@demo.invalid'),('leader','leader@demo.invalid'); INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('club','club','Club','','','#142d45','Other'); INSERT INTO "PipelineRound"(id,"clubId",name,"order") VALUES('round','club','Review',0); INSERT INTO "Application"(id,"studentId","clubId","roundId",status,"submittedAt") VALUES('app','student','club','round','IN_REVIEW',NOW()); INSERT INTO "ClubAnnouncement"(id,"clubId","authorId",title,body,audience,"requestKey") VALUES('announcement','club','leader','Keep','Keep body','MEMBERS','request'); INSERT INTO "UserNotificationPreference"("userId","emailApplications","emailFrequency","updatedAt") VALUES('student',false,'DAILY',NOW()); INSERT INTO "UserNotification"(id,"userId","clubId","eventKey",type,title,body,href) VALUES('existing','student','club','keep','ANNOUNCEMENT','Keep','Body','/');`);
  if(applied.has(decision))await db.exec(`INSERT INTO "DecisionLetter"(id,"applicationId","clubId",version,decision,content) VALUES('historical','app','club',1,'WAITLISTED','{"body":"Original immutable copy"}')`);
  const tables=['ClubAnnouncement','UserNotification','UserNotificationPreference','NotificationEmailOutbox',...(applied.has(decision)?['DecisionLetter']:[])],before={};
- for(const t of tables)before[t]=(await db.query(`SELECT to_jsonb(t)::text AS data FROM "${t}" t ORDER BY 1`)).rows;
+ for(const t of tables)before[t]=(await db.query(`SELECT (to_jsonb(t) - 'audienceSpec')::text AS data FROM "${t}" t ORDER BY 1`)).rows;
  // Pending older decision migration is applied after current-main's newer migration.
  for(const n of names.filter(n=>!applied.has(n)))await apply(n);
- for(const t of tables)assert.deepEqual((await db.query(`SELECT to_jsonb(t)::text AS data FROM "${t}" t ORDER BY 1`)).rows,before[t],t);
+ for(const t of tables)assert.deepEqual((await db.query(`SELECT (to_jsonb(t) - 'audienceSpec')::text AS data FROM "${t}" t ORDER BY 1`)).rows,before[t],t);
+ assert.equal((await db.query(`SELECT "audienceSpec" FROM "ClubAnnouncement" WHERE id='announcement'`)).rows[0].audienceSpec,null);
  assert.deepEqual((await db.query(`SELECT c.relowner::regrole::text AS owner,c.relrowsecurity AS rls FROM pg_class c WHERE c.relname='DecisionLetter'`)).rows[0],{owner:'outclass_production_app',rls:true});
  assert.deepEqual((await db.query(`SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname='outclass_production_app'`)).rows[0],{rolsuper:false,rolbypassrls:false});
  assert.equal((await db.query(`SELECT has_schema_privilege('outclass_production_app','public','CREATE') AS allowed`)).rows[0].allowed,false);

@@ -1,10 +1,13 @@
 "use client"
+import { ScheduleDecision } from "@/components/decision-schedules";
+import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import type { AppStatus } from "@prisma/client"
+import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { QrCodeCard } from "@/components/qr/qr-code-card"
 import { liveVotingFields, defaultVotingDisplay, readVotingDisplay, votingJoinPath, votingDisplayWarning, votingSessionStage } from "@/lib/voting-presentation"
@@ -22,16 +25,26 @@ export function BoardDecisionMode(props: { applicants: Pipeline["applications"];
 }
 export function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeof BoardDecisionMode>[0]) {
   const demo = useDemoMode()
-  const requestRevision = useRef({value:0})
+  const auth = useAuth()
+  const reader = useRef<ReturnType<typeof serializedWorkspaceRead<Workspace>> | null>(null)
   const initializedSession = useRef<string | undefined>(undefined)
-  const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
+  const [rawData,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(false)
   const [sessionId,setSessionId]=useState<string>(),[round,setRound]=useState(""),[target,setTarget]=useState(40),[rule,setRule]=useState("NONE"),[threshold,setThreshold]=useState(100),[members,setMembers]=useState<string[]>([])
+  const scope=JSON.stringify([clubId,sessionId,demo.isDemoEnabled,auth.user?.id])
+  const [dataScope,setDataScope]=useState("")
+  const data=dataScope===scope?rawData:null
   const [previewCandidate,setPreviewCandidate]=useState("")
   const [previewFits,setPreviewFits]=useState<boolean|null>(null),[presentFits,setPresentFits]=useState<boolean|null>(null)
   const [present,setPresent]=useState(false),[displayFields,setDisplayFields]=useState<ApplicantField[]>(defaultVotingDisplay.fields),[creationCandidates,setCreationCandidates]=useState<string[]>([])
   const [index,setIndex]=useState(0),[ballotFilter,setBallotFilter]=useState("ALL"),[filter,setFilter]=useState("ALL"),[year,setYear]=useState("ALL"),[viewPass,setViewPass]=useState(0),[selected,setSelected]=useState<string[]>([]),[publishReview,setPublishReview]=useState(false),[override,setOverride]=useState<Decision>("HOLD"),[reason,setReason]=useState("")
-  const refresh=useCallback(async()=>{const request=++requestRevision.current.value;try{const v=await getVotingWorkspace(clubId,sessionId);if(request!==requestRevision.current.value)return;setData(v);setError("")}catch(e){if(request!==requestRevision.current.value)return;setData(null);setError(e instanceof Error?e.message:"Session unavailable.")}},[clubId,sessionId])
-  useEffect(()=>{const revision=requestRevision.current;let live=true;const poll=async()=>{if(live)await refresh()};void poll();const timer=setInterval(()=>void poll(),5000);return()=>{live=false;revision.value++;clearInterval(timer)}},[refresh])
+  const refresh=useCallback(()=>reader.current?.refresh()??Promise.resolve(),[])
+  useEffect(()=>{
+    setData(null);setError("")
+    const reads=serializedWorkspaceRead(()=>getVotingWorkspace(clubId,sessionId),value=>{setDataScope(scope);setData(value);setError("")},error=>{setData(null);setError(error instanceof Error?error.message:"Session unavailable.")})
+    reader.current=reads;void reads.poll()
+    const timer=setInterval(()=>void reads.poll(),5000)
+    return()=>{reads.dispose();if(reader.current===reads)reader.current=null;clearInterval(timer)}
+  },[clubId,sessionId,demo.isDemoEnabled,auth.user?.id,scope])
   async function run(work:()=>Promise<unknown>){if(busy)return;setBusy(true);try{await work();await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not save.")}finally{setBusy(false)}}
   const s=data?.session,summary=data?.summary,current=s?.passes.find(p=>p.number===s.currentPass),shown=s?.passes.find(p=>p.number===(viewPass||s.currentPass))
   const liveNavigation=!!s&&current?.state==="OPEN"&&["OPEN","PAUSED"].includes(s.state)&&(!viewPass||viewPass===s.currentPass)
@@ -56,7 +69,7 @@ export function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeo
     {presentFits===false&&<p role="alert" className="text-destructive">The selected content does not fit this live slide. Return to session controls and use a larger presentation viewport; voting is disabled in this view.</p>}
     <footer className="space-y-3"><p role="status">Outcome: {outcome?labels[outcome.outcome]:"Unresolved"} · Your ballot: {mine?labels[mine.decision as Decision]:"Not recorded"} · {entry?.ballots.length??0} / {s.participants.length} ballots{summary.targetReached&&" · Target reached; voting can continue."}</p><div className="flex flex-wrap items-center justify-between gap-3"><Button variant="outline" disabled={busy||!data.canStart||filteredQueue.findIndex(c=>c.applicationId===app?.applicationId)<=0} onClick={()=>navigate(-1)}>Previous candidate</Button>{voteControls}<Button variant="outline" disabled={busy||!data.canStart||filteredQueue.findIndex(c=>c.applicationId===app?.applicationId)>=filteredQueue.length-1} onClick={()=>navigate(1)}>Next candidate</Button></div></footer>
   </section>
-  return <div className="mx-auto w-full max-w-5xl space-y-5 py-5">
+  return <div className="mx-auto min-w-0 w-full max-w-5xl break-words space-y-5 py-5 [&_select]:max-w-full">
     <p className="text-xs text-muted-foreground">{demo.isDemoEnabled ? "Saved in this isolated demo browser" : "Saved on the server"} · refreshes every 5 seconds · votes never change application statuses until publication.</p>
     {error&&<p role="alert" className="text-destructive">{error}<Button variant="ghost" onClick={()=>void refresh()}>Refresh</Button></p>}
     {!data&&!error&&<p role="status">Loading voting workspace…</p>}
@@ -95,7 +108,7 @@ export function VotingBoard({ clubId, applicants, onDecision }: Parameters<typeo
           {data.canReopen&&s.state==="COMPLETED"&&<Button variant="outline" disabled={busy} onClick={()=>void run(()=>command("REOPEN"))}>Reopen for review / another pass</Button>}
           {data.canManage&&s.state!=="COMPLETED"&&<form className="flex gap-3" onSubmit={e=>{e.preventDefault();void run(()=>command("CONFIGURE",{targetSize:target}))}}><label>Update target <input required type="number" min={1} max={2000} className="w-24 rounded border bg-background p-2" value={target} onChange={e=>setTarget(Number(e.target.value))}/></label><Button variant="outline" disabled={busy}>Save target</Button></form>}
         </div>}
-        {data.canPublish&&s.state==="COMPLETED"&&!s.publishedAt&&<section className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Review and publish application decisions</h3><p>Pass → Accepted · Hold → Waitlisted · Do Not Pass → Rejected. Unselected candidates keep their application status. Publication seals this session. {demo.isDemoEnabled ? "Fictional letters and notifications are saved in Demo; no email is sent." : "Formal letters and notifications will be published, and decision-availability emails follow application-email preferences."}</p>{summary.outcomes.filter(o=>o.outcome!=="UNRESOLVED").map((o,i)=><label key={o.applicationId} className="block min-h-9"><input type="checkbox" checked={selected.includes(o.applicationId)} onChange={e=>{setPublishReview(false);setSelected(v=>e.target.checked?[...v,o.applicationId]:v.filter(id=>id!==o.applicationId))}}/> Candidate {i+1} · {o.applicationId} · {labels[o.outcome]} · Pass {o.passNumber}</label>)}<label className="block"><input type="checkbox" checked={publishReview} onChange={e=>setPublishReview(e.target.checked)}/> I reviewed these candidates and confirm the student-visible statuses.</label><Button disabled={busy||!publishReview||!selected.length} onClick={()=>void run(async()=>{await command("PUBLISH",{applicationIds:selected});for(const id of selected){const o=summary.outcomes.find(o=>o.applicationId===id);if(o)onDecision(id,o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED")}setSelected([]);setPublishReview(false)})}>Publish {selected.length} decisions</Button></section>}
+        {data.canPublish&&s.state==="COMPLETED"&&!s.publishedAt&&<section className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Review and publish application decisions</h3><p>Pass → Accepted · Hold → Waitlisted · Do Not Pass → Rejected. Unselected candidates keep their application status. Publication seals this session. {demo.isDemoEnabled ? "Fictional letters and notifications are saved in Demo; no email is sent." : "Decisions and notifications publish with optional formal letters according to the club setting. Decision-availability emails follow separate application-email preferences."}</p>{summary.outcomes.filter(o=>o.outcome!=="UNRESOLVED").map((o,i)=><label key={o.applicationId} className="block min-h-9"><input type="checkbox" checked={selected.includes(o.applicationId)} onChange={e=>{setPublishReview(false);setSelected(v=>e.target.checked?[...v,o.applicationId]:v.filter(id=>id!==o.applicationId))}}/> Candidate {i+1} · {o.applicationId} · {labels[o.outcome]} · Pass {o.passNumber}</label>)}<label className="block"><input type="checkbox" checked={publishReview} onChange={e=>setPublishReview(e.target.checked)}/> I reviewed these candidates and confirm the student-visible statuses.</label><ScheduleDecision clubId={clubId} selection={{kind:"VOTING",sessionId:s.id,revision:s.revision,applicationIds:selected}} disabled={busy||!publishReview||demo.isDemoEnabled} onScheduled={()=>{setSelected([]);setPublishReview(false)}}/><Button disabled={busy||!publishReview||!selected.length} onClick={()=>void run(async()=>{await command("PUBLISH",{applicationIds:selected});for(const id of selected){const o=summary.outcomes.find(o=>o.applicationId===id);if(o)onDecision(id,o.outcome==="PASS"?"ACCEPTED":o.outcome==="HOLD"?"WAITLISTED":"REJECTED")}setSelected([]);setPublishReview(false)})}>Publish {selected.length} decisions</Button></section>}
       </>:<div><p>No voting session yet.</p>{demo.isDemoEnabled && <Button disabled={busy} onClick={()=>void run(async()=>{setSessionId(await seedVotingDemo(clubId))})}>Load sample two-pass voting session</Button>}</div>}
     </>}
   </div>

@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { ApplicationStateProvider } from "@/lib/application-state";
@@ -9,6 +10,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   if (path === "/platform/login") return children;
   const active = path.split("/")[2] || "overview";
   return <ApplicationStateProvider initialData={{ applications: [], events: [], memberships: [] }} persistLocalState={false}><ProductShell workspaceKind="admin" manager mode="platform" modes={[]} items={adminNavigation} active={active} title={adminNavigation.find(i => i.id === active)?.label || "Admin"} onSelect={id => router.push(adminNavigation.find(i => i.id === id)?.href || "/platform")} onNavigate={view => router.push(view === "student-profile" ? "/?workspace=student&view=student-profile" : view === "inbox" ? "/?workspace=student&view=inbox" : "/?workspace=student")}>
+    <div className="flex justify-end px-5 pt-3 text-sm sm:px-8"><Link href="/platform/login" className="text-muted-foreground underline underline-offset-4">Verify for sensitive actions</Link></div>
     {children}
   </ProductShell></ApplicationStateProvider>;
 }

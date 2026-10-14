@@ -25,7 +25,7 @@ test('native decision communications: atomic snapshots, ownership, history, retr
   await s.communications.setDurableNotificationsArchived([n.id],true);assert.equal((await s.communications.getDurableNotifications()).items.length,0);await s.communications.setDurableNotificationsArchived([n.id],false);assert.equal((await s.communications.getDurableNotifications()).items.length,1);
  });
  await t.test('templates do not expose anonymous identity; published copy stays stable after edits and correction',async()=>{
-  const before=await s.communications.getDecisionLetter(a.id);assert.deepEqual(Object.keys(await l.communications.getDecisionTemplates(club.id)).sort(),['color','decisionLetterTemplates','logoUrl','name','templates']);
+  const before=await s.communications.getDecisionLetter(a.id);assert.deepEqual(Object.keys(await l.communications.getDecisionTemplates(club.id)).sort(),['color','decisionLetterTemplates','logoUrl','name','sendFormalDecisionLetters','templates']);
   await l.communications.saveDecisionTemplates(club.id,{ACCEPTED:{title:'Welcome {{student.firstName}}',body:'A new letter',closing:'Sincerely,',signer:'{{club.name}}',footer:''}});assert.deepEqual((await s.communications.getDecisionLetter(a.id)).letter,before.letter);
   await l.crm.setApplicationStatus({clubId:club.id,applicationId:a.id,status:'WAITLISTED'});const corrected=await s.communications.getDecisionLetter(a.id);assert.equal(corrected.letter.decision,'WAITLISTED');assert.equal(corrected.offer.status,'REVOKED');
   const old=await s.communications.getDecisionLetter(a.id,before.letter.id);assert.equal(old.isCurrent,false);assert.deepEqual(old.letter,before.letter);

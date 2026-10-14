@@ -14,15 +14,15 @@ export function communicationEmailConfig() {
   return { ...parsed.data, siteUrl: emailSiteOrigin(parsed.data.siteUrl) };
 }
 export function buildNotificationEmail(input: { from: string; to: string; siteUrl: string; digest: boolean; items: { type: string; title: string; club: { name: string } | null; href?: string; panelSchedule?: {notificationId:string;href:string;details:string[];signature:string} }[] }): NotificationEmailPayload {
-  const decisionHref = (path: string | undefined) => new URL(z.string().regex(/^\/applications\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\/decision\?letterId=[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i).parse(path), emailSiteOrigin(input.siteUrl)).href;
+  const decisionHref = (path: string | undefined) => new URL(z.string().regex(/^\/applications\/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\/decision(?:\?letterId=[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12})?$/i).parse(path), emailSiteOrigin(input.siteUrl)).href;
   const decision = !input.digest && input.items.length === 1 && input.items[0].type === "DECISION" ? input.items[0] : null;
   if (decision) {
     // Only server-generated canonical letter paths can become email destinations.
     const href = decisionHref(decision.href);
     const subject = `Your decision from ${(decision.club?.name || "your club").slice(0,150)} is available`;
     return {from:input.from,to:input.to,subject,digest:false,categories:["DECISION"],
-      text:`${subject}.\n\nSign in to read your formal letter.\n\nView Decision: ${href}`,
-      html:transactionalEmailHtml({title:"Your decision is available",preview:subject,siteUrl:input.siteUrl,category:"Recruitment",variant:"invitation",body:emailParagraph(subject+".")+emailParagraph("Sign in to OutClass to read your formal letter and review any next steps.")+emailButton("View Decision",href),footer:"Your decision is available only after signing in. Application-email preferences apply; your in-app letter remains available."})};
+      text:`${subject}.\n\nSign in to review your decision.\n\nView Decision: ${href}`,
+      html:transactionalEmailHtml({title:"Your decision is available",preview:subject,siteUrl:input.siteUrl,category:"Recruitment",variant:"invitation",body:emailParagraph(subject+".")+emailParagraph("Sign in to OutClass to review your decision and review any next steps.")+emailButton("View Decision",href),footer:"Your decision is available only after signing in. Application-email preferences apply; your in-app decision remains available."})};
   }
   const panels=input.items.flatMap(item=>item.panelSchedule?[item.panelSchedule]:[])
   if(panels.length){

@@ -10,7 +10,7 @@ import { prisma } from "@/utils/prisma";
 import { createClient } from "@/utils/supabase/server";
 import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { authSessionId, freshAuthClient, elevationHash, encryptChallenge, decryptChallenge } from "@/utils/admin-elevation";
-import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, ADMIN_ELEVATION_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
+import { ADMIN_CHALLENGE_COOKIE, ADMIN_ELEVATION_COOKIE, ADMIN_CHALLENGE_LIFETIME, adminCookieOptions } from "@/lib/admin-elevation";
 const inputSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("password"), password: z.string().min(1).max(200) }).strict(),
   z.object({ action: z.literal("verify"), code: z.string().regex(/^\d{6}$/) }).strict(),
@@ -109,9 +109,9 @@ export async function POST(request: NextRequest) {
       if (challenge.expiresAt <= new Date()) return { error: "Authentication challenge expired. Start again." };
       const now = new Date(), elevationToken = randomBytes(32).toString("hex");
       await tx.adminElevation.updateMany({ where: { actorId: actor.id, revokedAt: null }, data: { revokedAt: now } });
-      const elevation = await tx.adminElevation.create({ data: { actorId: actor.id, tokenHash: elevationHash(elevationToken), authSessionId: claims.data.claims.session_id, factorId: challenge.factorId, passwordVerifiedAt: challenge.passwordVerifiedAt, mfaVerifiedAt: now, createdAt: now, expiresAt: new Date(now.getTime() + ADMIN_ELEVATION_LIFETIME) } });
+      const elevation = await tx.adminElevation.create({ data: { actorId: actor.id, tokenHash: elevationHash(elevationToken), authSessionId: claims.data.claims.session_id, factorId: challenge.factorId, passwordVerifiedAt: challenge.passwordVerifiedAt, mfaVerifiedAt: now, createdAt: now, expiresAt: null } });
       await tx.adminElevationChallenge.update({ where: { id: challenge.id }, data: { consumedAt: now, encryptedCredentials: "" } });
-      await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.elevation.create", targetId: elevation.id, details: { result: "success", factorId: challenge.factorId, expiresAt: elevation.expiresAt.toISOString() } } });
+      await tx.auditLog.create({ data: { actorId: actor.id, action: "platform.elevation.create", targetId: elevation.id, details: { result: "success", factorId: challenge.factorId, expiresAt: null, lifetime: "provider-session" } } });
       return { elevationToken, session: { access_token: verified.data.access_token, refresh_token: verified.data.refresh_token } };
     }, { timeout: 20000 });
     if ("error" in result) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", result.error ?? "Admin authentication failed.");
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     const attached = await normal.auth.setSession(result.session);
     if (attached.error && !providerAuthFailure(attached.error)) throw attached.error;
     if (attached.error) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", "Could not attach verified sign-in. Authenticate again.");
-    jar.set(ADMIN_ELEVATION_COOKIE, result.elevationToken, { ...adminCookieOptions, maxAge: ADMIN_ELEVATION_LIFETIME / 1000 });
+    jar.set(ADMIN_ELEVATION_COOKIE, result.elevationToken, adminCookieOptions);
     jar.set(ADMIN_CHALLENGE_COOKIE, "", { ...adminCookieOptions, maxAge: 0 });
     return NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {

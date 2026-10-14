@@ -1,4 +1,8 @@
 "use client"
+import * as availabilitySchedules from "@/actions/availability-schedules";
+import * as invitationSchedules from "@/actions/invitation-schedules";
+import * as decisionSchedules from "@/actions/decision-schedules";
+import * as recruitmentManagement from "@/actions/recruitment-management";
 import * as decisionCommunications from "@/actions/communications";
 import * as demoDecisionCommunications from "@/lib/demo/communications";
 import * as offers from "@/actions/recruitment-offers";
@@ -487,7 +491,7 @@ export const deleteApplicantObservation = adapt(applicantIntelligence.deleteAppl
 });
 
 // Persisted voting follows the same Demo Mode boundary as recruitment and applicant display.
-export const getVotingWorkspace = adapt(votingApi.getVotingWorkspace, demoVoting.getVotingWorkspace)
+export const getVotingWorkspace = adapt((...args: Parameters<typeof votingApi.getVotingWorkspace>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingWorkspace>>>("voting", args), demoVoting.getVotingWorkspace)
 export const createVotingSession = adapt(votingApi.createVotingSession, demoVoting.createVotingSession)
 export const submitVotingBallot = adapt(votingApi.submitVotingBallot, demoVoting.submitVotingBallot)
 export const commandVotingSession = adapt(votingApi.commandVotingSession, demoVoting.commandVotingSession)
@@ -531,7 +535,7 @@ export const saveTutorial = adapt(tutorials.saveTutorial, input => {
   })
 })
 
-export const getVotingJoinInfo = adapt(votingApi.getVotingJoinInfo, demoVoting.getVotingJoinInfo)
+export const getVotingJoinInfo = adapt((...args: Parameters<typeof votingApi.getVotingJoinInfo>) => readWorkspace<Awaited<ReturnType<typeof votingApi.getVotingJoinInfo>>>("votingJoin", args), demoVoting.getVotingJoinInfo)
 export async function joinVotingSession(sessionId:string,demoMemberId?:string){
   if(demoStore.active())return demoVoting.joinVotingSession(sessionId,demoMemberId)
   if(demoMemberId)throw Error("Demo identities are not valid in production.")
@@ -540,9 +544,9 @@ export async function joinVotingSession(sessionId:string,demoMemberId?:string){
 export async function getJoinedVotingWorkspace(sessionId:string,demoMemberId?:string){
   if(demoStore.active())return demoVoting.getJoinedVotingWorkspace(sessionId,demoMemberId)
   if(demoMemberId)throw Error("Demo identities are not valid in production.")
-  const info=await votingApi.getVotingJoinInfo(sessionId)
+  const info=await getVotingJoinInfo(sessionId)
   if(!("clubId" in info)||!info.clubId)throw Error(`Session ${info.status.toLowerCase().replaceAll("_"," ")}.`)
-  return votingApi.getVotingWorkspace(info.clubId,sessionId)
+  return getVotingWorkspace(info.clubId,sessionId)
 }
 
 export const prepareResumeImport = adapt(resumeImport.prepareResumeImport, () => { throw new Error("PDF importing is disabled in Demo Mode.") })
@@ -573,3 +577,26 @@ export const getDecisionLetter = adapt(decisionCommunications.getDecisionLetter,
 export const getDecisionTemplates = adapt(decisionCommunications.getDecisionTemplates, demoDecisionCommunications.getDecisionTemplates);
 export const saveDecisionTemplates = adapt(decisionCommunications.saveDecisionTemplates, demoDecisionCommunications.saveDecisionTemplates);
 export const setDecisionNotificationsRead = adapt(decisionCommunications.setDurableNotificationsRead, demoDecisionCommunications.setDurableNotificationsRead);
+
+export const setFormalDecisionLetters = adapt(decisionCommunications.setFormalDecisionLetters, async()=>{throw Error("Formal-letter settings are unavailable in Demo.")});
+
+// These management operations are deliberately unavailable in Demo; no server calls.
+export const getRecruitmentCycles = adapt(recruitmentManagement.getRecruitmentCycles, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const saveRecruitmentCycle = adapt(recruitmentManagement.saveRecruitmentCycle, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const assignApplicationCycle = adapt(recruitmentManagement.assignApplicationCycle, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+export const reconsiderRejectedApplication = adapt(recruitmentManagement.reconsiderRejectedApplication, async()=>{throw Error("Recruitment management is unavailable in Demo.")});
+
+export const scheduleDecisionPublication = adapt(decisionSchedules.scheduleDecisionPublication, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const getDecisionSchedules = adapt(decisionSchedules.getDecisionSchedules, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const cancelDecisionSchedule = adapt(decisionSchedules.cancelDecisionSchedule, async()=>{throw Error("Decision scheduling is unavailable in Demo.")});
+
+export const previewInvitationSchedule = adapt(invitationSchedules.previewInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const saveInvitationSchedule = adapt(invitationSchedules.saveInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const getInvitationSchedules = adapt(invitationSchedules.getInvitationSchedules, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+export const cancelInvitationSchedule = adapt(invitationSchedules.cancelInvitationSchedule, async()=>{throw Error("Invitation scheduling is unavailable in Demo.")});
+
+export const saveAvailabilitySchedule = adapt(availabilitySchedules.saveAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
+export const getAvailabilitySchedules = adapt(availabilitySchedules.getAvailabilitySchedules, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
+export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});

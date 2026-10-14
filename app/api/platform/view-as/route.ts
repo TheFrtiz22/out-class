@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     return response;
   }
   try {
-    const actor = await requirePlatformAdmin(),
+    const actor = await requirePlatformAdmin({ fresh: true }),
       data = startSchema.parse(input);
     if (data.userId === actor.id || (process.env.OUTCLASS_PLATFORM_ADMIN_IDS || "").split(",").map(v => v.trim()).includes(data.userId)) throw new Error("Choose a different user.");
     const token = randomBytes(32).toString("hex"),

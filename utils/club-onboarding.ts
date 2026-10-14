@@ -7,20 +7,26 @@ import { verifiedSchoolIdentities } from "@/utils/school-identity";
 import { canGrantOnboardingRole, invitationPurpose, normalizeSchoolIdentifier, onboardingRolePermissions } from "@/lib/club-onboarding";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
 
-export async function recipientInvitation(tx: AppTransactionClient, invitationId: string, account: Awaited<ReturnType<typeof requireAuth>>) {
+export async function recipientInvitation(tx: AppTransactionClient, invitationId: string, account: Awaited<ReturnType<typeof requireAuth>>, acceptedRetry = false) {
   const hint = await tx.clubInvitation.findUnique({ where: { id: invitationId } });
   if (!hint) throw new Error("Invitation unavailable.");
   await lockOperationalClub(tx, hint.clubId);
   const identities = await verifiedSchoolIdentities(tx, account);
   const invitation = await tx.clubInvitation.findUniqueOrThrow({ where: { id: invitationId } });
-  if (invitation.applicationId || invitation.status !== "PENDING" || invitation.acceptedAt || invitation.declinedAt || invitation.revokedAt || invitation.expiredAt || invitation.expiresAt <= new Date() || !identities.some(i => i.id === invitation.schoolIdentityId)) {
+  const alreadyAccepted = acceptedRetry && invitation.status === "ACCEPTED" && invitation.claimedUserId === account.user.id && !!invitation.acceptedAt;
+  if (invitation.applicationId || (!alreadyAccepted && (invitation.status !== "PENDING" || invitation.acceptedAt)) || invitation.declinedAt || invitation.revokedAt || invitation.expiredAt || (!alreadyAccepted && invitation.expiresAt <= new Date()) || !identities.some(i => i.id === invitation.schoolIdentityId)) {
     throw new Error("Invitation unavailable or expired.");
   }
   return invitation;
 }
 
 export async function acceptIdentityInvitationInTransaction(tx: AppTransactionClient, invitationId: string, account: Awaited<ReturnType<typeof requireAuth>>) {
-    const invitation = await recipientInvitation(tx, invitationId, account);
+    const invitation = await recipientInvitation(tx, invitationId, account, true);
+    if (invitation.status === "ACCEPTED") {
+      const membership = await tx.clubMember.findUnique({ where: { userId_clubId: { userId: account.user.id, clubId: invitation.clubId } } });
+      if (!isActiveMembership(membership)) throw new Error("Invitation unavailable. Membership is inactive.");
+      return { clubId: invitation.clubId };
+    }
     const inviterAccount = await tx.user.findUnique({ where: { id: invitation.invitedBy } });
     if (!inviterAccount || inviterAccount.disabledAt) throw new Error("Inviter account unavailable.");
     if (invitation.authoritySource === "PLATFORM_ADMIN") {
