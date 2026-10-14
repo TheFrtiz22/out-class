@@ -4,7 +4,7 @@
 .oc-how-introduction h2 { margin: 0; }
 .oc-how-introduction > p:not(.oc-public-kicker) { font-size: 18px; color: var(--muted-foreground); max-width: 42ch; align-self: center; }
 .oc-how-introduction > .oc-public-note { grid-column: 2; margin-top: 12px; }
-.oc-landing .oc-journey-controls { border-block: 1px solid color-mix(in srgb, var(--primary) 15%, transparent); padding-block: 16px; top: calc(88px + var(--support-banner-height, 0px)); }
+.oc-landing .oc-journey-controls { border-block: 1px solid color-mix(in srgb, var(--primary) 15%, transparent); padding-block: 16px; }
 .oc-journey-index { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: var(--oc-public-width); margin: auto; padding: 24px 0 8px; }
 .oc-journey-index a { display: flex; flex-direction: column; gap: 10px; min-height: 72px; padding: 8px 20px; border-left: 1px solid #142d4e25; font-size: 16px; color: var(--primary); }
 .oc-journey-index a:first-child { border-left: 0; padding-left: 0; }
@@ -34,7 +34,6 @@
 .oc-landing .oc-final-invitation .oc-invitation-cta { min-height: 52px; width: auto; padding: 14px 28px; font-size: 16px; box-shadow: none; }
 @media (max-width: 1099px) {
   .oc-journey-index { margin-inline: var(--oc-public-gutter); }
-  .oc-landing .oc-journey-controls { top: calc(76px + var(--support-banner-height, 0px)); }
 }
 @media (max-width: 800px) {
   .oc-landing .oc-how-introduction { grid-template-columns: 1fr; gap: 24px; padding-block: 64px 32px; }

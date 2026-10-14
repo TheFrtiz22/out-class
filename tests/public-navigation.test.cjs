@@ -28,6 +28,7 @@ function headerHarness({ pathname = '/', hash = '', scrollY = 0 } = {}) {
     '@/components/outclass-logo': { OutClassLogo: 'Logo' },
     '@/components/ui/button': { Button: 'Button' },
     './rolling-navigation-label': { RollingNavigationLabel },
+    './perspective-switcher': { PerspectiveSwitcher: 'PerspectiveSwitcher' },
   }, { window, document })
   function render() { cursor = 0; refCursor = 0; effects.length = 0; return PublicNavigation({ hero: true }) }
   render()

@@ -20,6 +20,7 @@ import { LandingIntro } from "@/components/landing/landing-intro"
 import { PublicNavigation } from "@/components/landing/public-navigation"
 import { ProductJourney } from "@/components/landing/product-stories"
 import { useLandingPerspective } from "@/hooks/use-landing-perspective"
+import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
 
 interface LandingPageViewProps {
@@ -35,6 +36,7 @@ export function LandingPageView({
 }: LandingPageViewProps) {
   const [info, setInfo] = useState<string | null>(null)
   const { perspective, switchPerspective } = useLandingPerspective()
+  const journeyNavigation = useJourneyNavigation()
   const createProfile = () => { window.location.href = "/signup" }
   const enterLeader = () => { window.location.href = "/signup?intent=leader" }
   const start = () => perspective === "student" ? createProfile() : enterLeader()
@@ -42,13 +44,13 @@ export function LandingPageView({
     <ScrollMotion className="oc-landing" id="top">
       <LandingNavigation />
       <a className="oc-skip-link" href="#about">Skip to product overview</a>
-      <PublicNavigation hero />
+      <PublicNavigation hero navigationRef={journeyNavigation.headerRef} journey={{ perspective, onChange: switchPerspective, merged: journeyNavigation.merged }} />
       <main>
         <LandingIntro>
           <LandingHero perspective={perspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
         </LandingIntro>
         <LaunchClubs clubs={launchClubs} />
-        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} />
+        <ProductJourney perspective={perspective} onPerspectiveChange={switchPerspective} onCreateProfile={createProfile} onLeaderEnter={enterLeader} navigation={journeyNavigation} />
         <SectionReveal
           id="create-account"
           className="oc-final-invitation"
