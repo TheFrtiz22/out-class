@@ -56,10 +56,11 @@ type ApplicationStateValue = {
   appliedClubIds: Set<string>
   isApplied: (clubId: string) => boolean
   applyToClub: (club: ClubRef) => void
-  markNotificationRead: (id: string) => void
-  setNotificationsRead: (ids: string[], read: boolean) => void
-  deleteNotifications: (ids: string[]) => void
-  restoreNotifications: (items: Notification[]) => void
+  markNotificationRead: (id: string) => Promise<boolean>
+  setNotificationsRead: (ids: string[], read: boolean) => Promise<boolean>
+  deleteNotifications: (ids: string[]) => Promise<boolean>
+  restoreNotifications: (items: Notification[]) => Promise<boolean>
+  markAllNotificationsRead: () => Promise<boolean>
   /** clubId of the application the Dashboard wants the Tracker to open, if any. */
   focusApplicationClubId: string | null
   focusApplication: (clubId: string) => void
@@ -108,16 +109,33 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
   const clearLeaderFocus = useCallback(() => focusLeader(null), [])
   const [trackedApps, setTrackedApps] = useState<TrackedApplication[]>(initialData ? serverApps : seedTrackedApplications)
   const dismissedTaskNotifications = useRef(new Set<string>())
+  const [notifications, storeNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
+  // Keep action snapshots current even when React batches multiple updates.
+  const notificationSnapshot = useRef(notifications)
+  const setNotifications = useCallback((next: SetStateAction<Notification[]>) => {
+    const value = typeof next === "function" ? next(notificationSnapshot.current) : next
+    notificationSnapshot.current = value
+    storeNotifications(value)
+  }, [])
   const syncTaskNotifications = useCallback((items: Notification[]) => {
     setNotifications(previous => [...previous.filter(item => !item.taskHref || item.durableId), ...items.filter(item => !dismissedTaskNotifications.current.has(item.id) && !previous.some(old => old.durableId && old.taskHref === item.taskHref)).map(item => ({...item, read:previous.find(old=>old.id===item.id)?.read ?? item.read}))])
-  }, [])
-  const [notifications, setNotifications] = useState<Notification[]>(initialData ? [] : seedNotifications)
+  }, [setNotifications])
+  const pendingNotifications = useRef(new Map<string, { token: symbol; read?: boolean; archived?: boolean }>())
   const [durableUnread, setDurableUnread] = useState(0), [durableCursor, setDurableCursor] = useState<string | null>(null)
   const syncDurableNotifications = useCallback((data: Awaited<ReturnType<typeof getDurableNotifications>>, append = false) => {
-    const next = data.items.map(inboxNotification)
-    setNotifications(previous => [...previous.filter(item => (append || !item.durableId) && !next.some(n => n.id === item.id || n.taskHref && n.taskHref === item.taskHref)), ...next])
-    setDurableUnread(data.unread); setDurableCursor(data.nextCursor)
-  }, [])
+    let unread = data.unread
+    const next = data.items.map(inboxNotification).flatMap(item => {
+      const pending = pendingNotifications.current.get(item.id)
+      if (pending?.archived) { if (!item.read) unread--; return [] }
+      if (pending?.read !== undefined) {
+        unread += Number(!pending.read) - Number(!item.read)
+        return [{ ...item, read: pending.read }]
+      }
+      return [item]
+    })
+    setNotifications(previous => [...previous.filter(item => (append || !item.durableId) && !next.some(n => n.id === item.id || !item.durableId && n.taskHref && n.taskHref === item.taskHref) && !pendingNotifications.current.get(item.id)?.archived), ...next])
+    setDurableUnread(Math.max(0, unread)); setDurableCursor(data.nextCursor)
+  }, [setNotifications])
   
   const serverEvents = studentCalendarEvents(initialData)
 
@@ -142,7 +160,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       }
     } catch { /* Keep the sample data if browser storage is unavailable. */ }
     setHydrated(true)
-  }, [persistLocalState, activeStorageKey])
+  }, [persistLocalState, activeStorageKey, setNotifications])
   
   useEffect(() => {
     if (!hydrated || !persistLocalState) return
@@ -154,7 +172,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setEvents([...studentCalendarEvents(demoDashboard()).map(event => event.type === "Other" && !event.id.startsWith("meeting-") ? { ...event, type: event.title.includes("coffee chat") ? "Coffee Chat" as const : "Interest Meeting" as const } : event), ...demoDeadlines()])
     setNotifications(demoNotifications())
     setResponses(demo.state.responses)
-  }, [demo.state, demo.isDemoEnabled])
+  }, [demo.state, demo.isDemoEnabled, setNotifications])
   const events = useMemo(() => baseEvents.map((event) => ({ ...event, response: responses[event.id] ?? event.response })), [baseEvents, responses])
   const syncApplicationBookings = useCallback((applications: NonNullable<CalendarSource["applications"]>) => {
     if (demo.isDemoEnabled) return // Demo bookings already refresh from the shared demo store.
@@ -222,39 +240,117 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
 
 
     },
-    [appliedClubIds],
+    [appliedClubIds, setNotifications],
   )
 
-  const markNotificationRead = useCallback((id: string) => {
-    if (demoStore.active()) { demoStore.mutate(s => { if (!s.readNotifications.includes(id)) s.readNotifications.push(id) }); return }
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
-    if (id.startsWith("durable-")) void setDurableNotificationsRead([id.slice(8)], true).then(communicationsChanged).catch(() => { toast.error("Could not mark notification as read."); communicationsChanged() })
-  }, [])
-
-  const setNotificationsRead = useCallback((ids: string[], read: boolean) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return }
+  const setNotificationsRead = useCallback(async (ids: string[], read: boolean) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.readNotifications = [...s.readNotifications.filter(id => !ids.includes(id)), ...(read ? ids : [])] }); return true }
     const targets = new Set(ids)
-    setNotifications((prev) => prev.map((item) => targets.has(item.id) ? { ...item, read } : item))
-    const durable = ids.filter(id => id.startsWith("durable-")).map(id => id.slice(8))
-    if (durable.length) void setDurableNotificationsRead(durable, read).then(communicationsChanged).catch(() => { toast.error("Could not update notifications."); communicationsChanged() })
-  }, [])
+    const original = notificationSnapshot.current.filter(item => targets.has(item.id))
+    const durable = original.filter(item => item.durableId && item.read !== read)
+    // A refresh can replace a page while an explicit bulk action is paging.
+    // Keep its supplied durable IDs even when they have left the current cache.
+    const durableIds = [...new Set([...durable.map(item => item.durableId!), ...ids.filter(id => id.startsWith("durable-") && !original.some(item => item.id === id)).map(id => id.slice(8))])]
+    const token = Symbol("notification-read")
+    durable.forEach(item => pendingNotifications.current.set(item.id, { token, read }))
+    setNotifications(previous => previous.map(item => targets.has(item.id) ? { ...item, read } : item))
+    const delta = durable.reduce((sum, item) => sum + Number(!read) - Number(!item.read), 0)
+    setDurableUnread(count => Math.max(0, count + delta))
+    try {
+      // The existing endpoint accepts at most 100 IDs per request.
+      for (let index = 0; index < durableIds.length; index += 100) await setDurableNotificationsRead(durableIds.slice(index, index + 100), read)
+      return true
+    } catch {
+      const rollback = new Map(durable.filter(item => pendingNotifications.current.get(item.id)?.token === token).map(item => [item.id, item.read]))
+      let correction = 0
+      setNotifications(previous => previous.map(item => {
+        const old = rollback.get(item.id)
+        if (old === undefined) return item
+        correction += Number(!old) - Number(!item.read)
+        return { ...item, read: old }
+      }))
+      setDurableUnread(count => Math.max(0, count + correction))
+      toast.error("Could not update notifications. Please try again.")
+      return false
+    } finally {
+      durable.forEach(item => { if (pendingNotifications.current.get(item.id)?.token === token) pendingNotifications.current.delete(item.id) })
+      if (durableIds.length) communicationsChanged()
+    }
+  }, [setNotifications])
 
-  const deleteNotifications = useCallback((ids: string[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return }
+  const markNotificationRead = useCallback((id: string) => setNotificationsRead([id], true), [setNotificationsRead])
+
+  const deleteNotifications = useCallback(async (ids: string[]) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications.push(...ids) }); return true }
+    const targets = new Set(ids), original = notificationSnapshot.current.filter(item => targets.has(item.id))
+    const durable = original.filter(item => item.durableId), token = Symbol("notification-archive")
+    durable.forEach(item => pendingNotifications.current.set(item.id, { token, archived: true }))
     ids.forEach(id => { if (id.startsWith("task-update-")) dismissedTaskNotifications.current.add(id) })
-    const targets = new Set(ids)
-    setNotifications((prev) => prev.filter((item) => !targets.has(item.id)))
-    const durable = ids.filter(id => id.startsWith("durable-")).map(id => id.slice(8))
-    if (durable.length) void setDurableNotificationsArchived(durable, true).then(communicationsChanged).catch(() => { toast.error("Could not archive notifications."); communicationsChanged() })
-  }, [])
+    setNotifications(previous => previous.filter(item => !targets.has(item.id)))
+    setDurableUnread(count => Math.max(0, count - durable.filter(item => !item.read).length))
+    try {
+      for (let index = 0; index < durable.length; index += 100) await setDurableNotificationsArchived(durable.slice(index, index + 100).map(item => item.durableId!), true)
+      return true
+    } catch {
+      const rollback = durable.filter(item => pendingNotifications.current.get(item.id)?.token === token)
+      setNotifications(previous => [...previous, ...rollback.filter(item => !previous.some(existing => existing.id === item.id))])
+      setDurableUnread(count => count + rollback.filter(item => !item.read).length)
+      toast.error("Could not archive notifications. Please try again.")
+      return false
+    } finally {
+      durable.forEach(item => { if (pendingNotifications.current.get(item.id)?.token === token) pendingNotifications.current.delete(item.id) })
+      if (durable.length) communicationsChanged()
+    }
+  }, [setNotifications])
 
-  const restoreNotifications = useCallback((items: Notification[]) => {
-    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return }
-    items.forEach(item=>dismissedTaskNotifications.current.delete(item.id))
-    setNotifications((prev) => [...prev, ...items.filter((item) => !prev.some((existing) => existing.id === item.id))])
-    const durable = items.flatMap(item => item.durableId ? [item.durableId] : [])
-    if (durable.length) void setDurableNotificationsArchived(durable, false).then(communicationsChanged).catch(() => { toast.error("Could not restore notifications."); communicationsChanged() })
-  }, [])
+  const restoreNotifications = useCallback(async (items: Notification[]) => {
+    if (demoStore.active()) { demoStore.mutate(s => { s.deletedNotifications = s.deletedNotifications.filter(id => !items.some(n => n.id === id)) }); return true }
+    items.forEach(item => dismissedTaskNotifications.current.delete(item.id))
+    const added = items.filter(item => !notificationSnapshot.current.some(existing => existing.id === item.id))
+    setNotifications(previous => [...previous, ...added])
+    const durable = added.filter(item => item.durableId)
+    setDurableUnread(count => count + durable.filter(item => !item.read).length)
+    try {
+      for (let index = 0; index < durable.length; index += 100) await setDurableNotificationsArchived(durable.slice(index, index + 100).map(item => item.durableId!), false)
+      return true
+    } catch {
+      setNotifications(previous => previous.filter(item => !durable.some(old => old.id === item.id)))
+      setDurableUnread(count => Math.max(0, count - durable.filter(item => !item.read).length))
+      toast.error("Could not restore notifications. Please try again.")
+      return false
+    } finally { if (durable.length) communicationsChanged() }
+  }, [setNotifications])
+
+  const markAllInFlight = useRef<Promise<boolean> | null>(null)
+  const markAllNotificationsRead = useCallback(async () => {
+    if (markAllInFlight.current) return markAllInFlight.current
+    const operation = (async () => {
+      const ids = new Set(notificationSnapshot.current.filter(item => !item.read).map(item => item.id))
+      try {
+        // Read further owned pages only for an explicit bulk action, when unread
+        // records exist beyond the loaded feed. No new endpoint or subscription.
+        if (!demoStore.active() && durableUnread > notificationSnapshot.current.filter(item => item.durableId && !item.read).length) {
+          let cursor = durableCursor
+          const seen = new Set<string>()
+          while (cursor) {
+            if (seen.has(cursor)) throw Error("Notification cursor repeated")
+            seen.add(cursor)
+            const page = await getDurableNotifications(cursor)
+            page.items.filter(item => !item.readAt).forEach(item => ids.add(`durable-${item.id}`))
+            syncDurableNotifications(page, true)
+            cursor = page.nextCursor
+          }
+        }
+        return await setNotificationsRead([...ids], true)
+      } catch {
+        toast.error("Could not load all notifications. Please try again.")
+        return false
+      }
+    })()
+    markAllInFlight.current = operation
+    try { return await operation }
+    finally { if (markAllInFlight.current === operation) markAllInFlight.current = null }
+  }, [durableCursor, durableUnread, setNotificationsRead, syncDurableNotifications])
 
   const respondToEvent = useCallback((id: string, response: "going" | "confirmed" | "declined") => {
     if (demoStore.active()) { demoStore.mutate(s => { s.responses[id] = response }); return }
@@ -268,7 +364,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const club = clubs.find((item) => item.id === clubId)
     const body = `${title}: ${response === "declined" ? "attendance cancelled" : response === "confirmed" ? "interview confirmed" : "RSVP confirmed"}.`
     setNotifications((previous) => [{ id: `response-${id}`, eventId: id, clubId, type: "Announcement", urgent: false, club: club?.name ?? studentMemberships.find((member) => member.clubId === clubId)?.clubName ?? event?.club ?? "Club event", color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "OutClass", senderTitle: "Calendar update", title: body, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `response-${id}`)])
-  }, [events, managedEvents])
+  }, [events, managedEvents, setNotifications])
 
   const bookInterview = useCallback((blockId: string, slotId: string): string | null => {
     const block = scheduleBlocks.find((item) => item.id === blockId)
@@ -291,7 +387,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const body = `Your interview is booked for ${block.date} at ${slot.time}, ${block.locationName}.`
     setNotifications((previous) => [{ id: "booking-vvf", eventId: id, clubId: "vvf", type: "Interview Invite", urgent: false, club: "Virginia Venture Fund", color: "#051B3D", logoText: "VVF", senderName: "Recruitment Team", senderTitle: "Interview booking", title: "Interview booking confirmed", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== "booking-vvf")])
     return null
-  }, [scheduleBlocks])
+  }, [scheduleBlocks, setNotifications])
 
   const cancelInterview = useCallback(() => {
     setScheduleBlocks((previous) => previous.map((block) => ({ ...block, slots: block.slots.map((slot) => {
@@ -301,7 +397,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setEvents((previous) => previous.filter((event) => event.id !== "interview-vvf-current"))
     setTrackedApps((previous) => previous.map((app) => app.clubId === "vvf" ? { ...app, nextDeadline: "Choose a new interview time" } : app))
     setNotifications((previous) => previous.map((item) => item.id === "booking-vvf" ? { ...item, eventId: undefined, title: "Interview booking cancelled", preview: "Your interview slot was released. Choose a new time from Calendar.", body: ["Your interview slot was released. Choose a new time from Calendar."], read: false, createdAt: new Date().toISOString(), fullDate: new Date().toLocaleString() } : item))
-  }, [])
+  }, [setNotifications])
 
   const notifyEventChange = useCallback((event: ManagedEvent, cancelled = false) => {
     if (event.scope === "Members Only" && !studentMemberships.some((membership) => membership.clubId === event.clubId)) return
@@ -309,7 +405,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     const body = cancelled ? `${event.title} has been cancelled.` : `${event.title} · ${event.date} at ${event.time}. Location: ${event.location}.`
     const eventId = !cancelled && !event.recurring ? `managed-${event.id}-${event.date}` : undefined
     setNotifications((previous) => [{ id: `managed-update-${event.id}`, eventId, clubId: event.clubId, type: "Announcement", urgent: cancelled, club: club?.name ?? studentMemberships.find((member) => member.clubId === event.clubId)?.clubName ?? event.clubId, color: club?.color ?? "#051B3D", logoText: club?.logoText ?? "OC", senderName: "Club leadership", senderTitle: "Club calendar update", title: `${event.title} ${cancelled ? "cancelled" : "scheduled / updated"}`, preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `managed-update-${event.id}`)])
-  }, [])
+  }, [setNotifications])
 
   const submitApplication = useCallback((id: string) => {
     const app = trackedApps.find((item) => item.id === id)
@@ -317,7 +413,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     setTrackedApps((previous) => previous.map((app) => app.id === id ? { ...app, status: "Submitted", questionsCompleted: app.questionsTotal } : app))
     const body = `Your application to ${app.clubName} has been submitted.`
     setNotifications((previous) => [{ id: `submission-${id}`, clubId: app.clubId, type: "Announcement", urgent: false, club: app.clubName, color: app.color, logoText: app.logoText, senderName: "OutClass", senderTitle: "Application update", title: "Application submitted", preview: body, body: [body], timestamp: "Just now", fullDate: new Date().toLocaleString(), createdAt: new Date().toISOString(), read: false }, ...previous.filter((item) => item.id !== `submission-${id}`)])
-  }, [trackedApps])
+  }, [trackedApps, setNotifications])
 
   const calendarEvents = useMemo(() => {
     const now = new Date()
@@ -332,7 +428,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       syncApplications: setTrackedApps,
       syncApplicationBookings,
       trackedApps,
-      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications,
+      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
       events: calendarEvents,
       appliedClubIds,
       isApplied,
@@ -351,7 +447,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
       leaderFocus, clearLeaderFocus, syncApplicationBookings,
       hydrated,
       trackedApps,
-      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications,
+      notifications, syncTaskNotifications, durableUnread, durableCursor, syncDurableNotifications, markAllNotificationsRead,
       calendarEvents,
       appliedClubIds,
       isApplied,

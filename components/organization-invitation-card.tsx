@@ -10,10 +10,11 @@ import { clubWorkspaceHref } from "@/lib/club-workspace";
 export type OrganizationInvitation = Awaited<ReturnType<typeof getOrganizationInvitations>>[number];
 export type InvitationChange = { id: string; kind: "accepted" | "dismissed" | "restored" | "declined"; clubName: string };
 
-export function OrganizationInvitationCard({ invitation, onChanged, allowDecline = false, compact = false }: {
+export function OrganizationInvitationCard({ invitation, onChanged, allowDecline = false, compact = false, tabIndex }: {
   invitation: OrganizationInvitation;
   allowDecline?: boolean;
   compact?: boolean;
+  tabIndex?: 0;
   onChanged: (change: InvitationChange) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<InvitationChange["kind"] | null>(null);
@@ -57,19 +58,19 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
         </div>
       </div>
       <div className={compact ? "flex shrink-0 flex-wrap gap-2" : "flex shrink-0 flex-wrap gap-2 lg:max-w-72"} aria-label={`Respond to ${invitation.club.name}`}>
-        {compact && <Button asChild variant="ghost" className="min-h-11 px-3"><Link href={`/invitations/${invitation.id}`}>View invitation</Link></Button>}
-        <Button className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
+        {compact && <Button tabIndex={tabIndex} asChild variant="ghost" className="min-h-11 px-3"><Link tabIndex={tabIndex} href={`/invitations/${invitation.id}`}>View invitation</Link></Button>}
+        <Button tabIndex={tabIndex} className={actionClass} disabled={!!busy} aria-describedby={error ? `invitation-error-${invitation.id}` : undefined} onClick={() => void respond("accepted")}>
           {busy === "accepted" ? owner ? "Claiming…" : "Accepting…" : owner ? "Claim organization" : "Accept"}
         </Button>
-        <Button className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
+        <Button tabIndex={tabIndex} className={actionClass} variant="outline" disabled={!!busy} onClick={() => void respond(invitation.dismissedAt ? "restored" : "dismissed")}>
           {busy === "dismissed" ? "Hiding…" : busy === "restored" ? "Restoring…" : invitation.dismissedAt ? "Show on dashboard" : "Not now"}
         </Button>
-        {allowDecline && <Button className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
+        {allowDecline && <Button tabIndex={tabIndex} className="min-h-11" variant="ghost" disabled={!!busy} aria-expanded={confirmDecline} aria-controls={`invitation-decline-${invitation.id}`} onClick={() => setConfirmDecline(true)}>Decline</Button>}
       </div>
     </article>
     {confirmDecline && <div id={`invitation-decline-${invitation.id}`} role="group" aria-label={`Confirm decline from ${invitation.club.name}`} className="mt-4 space-y-3 rounded-lg border bg-muted/30 p-4">
       <p className="text-sm">Decline the invitation from {invitation.club.name}? You’ll need a new invitation to join later.</p>
-      <div className="flex flex-wrap gap-2"><Button variant="destructive" className="min-h-11" disabled={!!busy} onClick={() => void respond("declined")}>{busy === "declined" ? "Declining…" : "Confirm decline"}</Button><Button variant="outline" className="min-h-11" disabled={!!busy} onClick={() => setConfirmDecline(false)}>Cancel</Button></div>
+      <div className="flex flex-wrap gap-2"><Button tabIndex={tabIndex} variant="destructive" className="min-h-11" disabled={!!busy} onClick={() => void respond("declined")}>{busy === "declined" ? "Declining…" : "Confirm decline"}</Button><Button tabIndex={tabIndex} variant="outline" className="min-h-11" disabled={!!busy} onClick={() => setConfirmDecline(false)}>Cancel</Button></div>
     </div>}
     {error && <p role="alert" id={`invitation-error-${invitation.id}`} className="mt-3 text-sm text-destructive">{error}</p>}
   </li>;

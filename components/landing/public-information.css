@@ -1,3 +1,5 @@
+/* Continue the hero's linen behind the transparent floating navigation. */
+.oc-landing.oc-information { background: var(--oc-public-linen); }
 .oc-information .oc-information-hero {
   padding: clamp(56px, 8vw, 104px) max(24px, calc((100vw - 1080px) / 2));
   background: var(--background);

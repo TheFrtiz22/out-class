@@ -179,3 +179,26 @@ PR #29 after pushing, distinct from local passes.
 
 No production migration, main merge, production deployment, credential/configuration
 change, real preference/queue mutation or outbound email enablement occurred.
+
+## October 14 release integration with f68c172
+
+Merged main `f68c17270779fd3aef71062b1b805353f80cd51f` without rebasing.
+The AdminShell conflict preserves both main's inbox destination and the release's
+Verify for sensitive actions link. Main's notification-state implementation is
+retained byte-for-byte; workspace navigation retains permission-derived recruitment
+visibility plus decision letters, cycles, rejected applicants and scheduling routes.
+No main migration was added or rewritten; the same eight pending migrations remain.
+The package builder baseline is updated to this reviewed main.
+
+Rerun integrated repository validation: 1,109 passed, 24 gated skips, zero failures
+(1,133 total); all 51 fresh/legacy migrations and 74-table browser denial checks pass.
+TypeScript, lint (zero errors, 28 existing warnings), production build and diff checks
+pass. Native recipient/scheduling checks: 16 + 18 passed on disposable PostgreSQL.
+Native transaction/support and decision/offer checks are recorded separately in
+`/tmp/outclass-pr29-transactions.log`.
+
+Chrome rendered QA uses the real merged ProductShell and notification state with
+isolated fictional identity/backend boundaries: 94 unread updates become zero after
+explicit mark-all-read while the pending invitation remains actionable. Decision
+links retain owned letter destinations. Screenshots and logs are outside the repository
+in `/tmp/outclass-pr29-release-evidence/`. Production release verification is pending.

@@ -3,18 +3,20 @@ import { profilePhotoSource } from "@/lib/profile-photo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import "./responsive-workspace.css"
 import "./authenticated-product.css"
+import "./floating-header.css"
+import { NotificationCenter } from "@/components/shell/notification-center"
+import { FloatingModeNavigation, FloatingSearchTrigger } from "@/components/shell/floating-header-controls"
 import { MobileNavigation } from "@/components/shell/mobile-navigation"
 import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, Search, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
+import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video } from "lucide-react"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
 import { DemoMenuItems } from "@/components/demo-controls"
 import { NavigationSearch } from "@/components/shell/navigation-search"
-import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
@@ -45,6 +47,9 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const contextKey = `${clubId}:${mode}:${active}`
   const main = useRef<HTMLElement>(null), previous = useRef(contextKey), moved = useRef(false)
   const mobileOrigin = useRef<HTMLElement | null>(null)
+  const searchOrigin = useRef<HTMLElement | null>(null)
+  const [taskLoad, setTaskLoad] = useState({ loading: false, failed: false })
+  const [durableLoad, setDurableLoad] = useState({ loading: false, failed: false })
   const member = user?.memberships.find(m => m.clubId === clubId)
   const platform = workspaceKind === "admin"
   const personal = !platform && !manager && mode !== "preview"
@@ -58,8 +63,15 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   const userId = user?.id
   useEffect(() => {
     if (!userId || demo.isDemoEnabled) return
-    let active=true
-    const refresh=()=>{void getTaskNotifications().then(items=>{if(active)syncTaskNotifications(items)}).catch(()=>{})}
+    let active = true, running = false, again = false
+    setTaskLoad({ loading: true, failed: false })
+    const refresh = async () => {
+      if (running) { again = true; return }
+      running = true
+      try { const items = await getTaskNotifications(); if (active) { syncTaskNotifications(items); setTaskLoad({ loading: false, failed: false }) } }
+      catch { if (active) setTaskLoad({ loading: false, failed: true }) }
+      finally { running = false; if (again && active) { again = false; void refresh() } }
+    }
     refresh()
     const timer=setInterval(refresh,60000)
     window.addEventListener("focus",refresh);window.addEventListener("outclass:tasks-changed",refresh)
@@ -68,11 +80,12 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   useEffect(() => {
     if (!userId || demo.isDemoEnabled) return
     let active = true, running = false, again = false
+    setDurableLoad({ loading: true, failed: false })
     const refresh = async () => {
       if (running) { again = true; return }
       running = true
-      try { const data = await getDurableNotifications(); if (active) syncDurableNotifications(data) }
-      catch { /* Keep the last successful inbox while offline; retry on focus/reconnect. */ }
+      try { const data = await getDurableNotifications(); if (active) { syncDurableNotifications(data); setDurableLoad({ loading: false, failed: false }) } }
+      catch { if (active) setDurableLoad({ loading: false, failed: true }) }
       finally { running = false; if (again && active) { again = false; void refresh() } }
     }
     void refresh()
@@ -100,7 +113,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   }, [])
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]')) { e.preventDefault(); setSearch(true) }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !document.querySelector('[role="dialog"][data-state="open"]:not(.oc-notification-panel)')) { e.preventDefault(); searchOrigin.current = document.activeElement as HTMLElement; setSearch(true) }
     }
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
@@ -114,7 +127,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   function navigate(view: ViewId) { if (canLeaveWorkspace()) onNavigate(view) }
   function navLink(item: ProductNavItem, top = false) {
     const selected = top ? item.id === mode : item.id === active
-    const className = cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring", top ? "flex-1 justify-center border-b-2 rounded-b-none whitespace-nowrap px-2 sm:flex-none sm:px-5" : "w-full text-left", selected ? top ? "border-brand-orange font-semibold text-primary" : "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
+    const className = top ? "oc-floating-mode-link" : cn("flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-ring w-full text-left", selected ? "bg-accent font-semibold text-primary" : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground")
     const NavIcon = navigationIcons[item.id]
     const content = <>{!top && NavIcon && <NavIcon aria-hidden="true" className="size-[18px] shrink-0" />}{item.label}{item.preview && <span className="ml-auto text-[length:var(--oc-size-10)] font-normal text-muted-foreground">Preview</span>}</>
     if (item.quiet && onReviewTool) return <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
@@ -134,22 +147,19 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   </div> }
   return <div className="min-h-dvh bg-background text-foreground" data-product-shell={platform ? "admin" : manager ? "manager" : "personal"} style={{ "--oc-club-accent": member?.club.color || "var(--brand-orange)" } as CSSProperties}>
     <a href="#workspace-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-card focus:p-3">Skip to content</a>
-    <header className="oc-product-header sticky top-0 z-20 border-b border-border bg-card">
-      <div className="oc-product-header-row flex min-h-16 items-center gap-3 px-4 sm:px-6">
-        <Sheet open={mobile} onOpenChange={setMobile}><SheetTrigger asChild><IconButton aria-label="Open navigation" className="lg:hidden"><Menu /></IconButton></SheetTrigger><SheetContent side="left" className="oc-navigation-sheet w-[min(88vw,300px)] p-0" onCloseAutoFocus={e => { if (moved.current) { e.preventDefault(); main.current?.focus(); moved.current = false; mobileOrigin.current = null } else if (mobileOrigin.current?.isConnected) { e.preventDefault(); mobileOrigin.current.focus(); mobileOrigin.current = null } }}><SheetTitle className="oc-modal-title sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Choose a workspace or contextual destination.</SheetDescription>{sidebar()}</SheetContent></Sheet>
-        <button aria-label="OutClass home" onClick={() => navigate("student-dashboard")} className="oc-product-brand shrink-0 rounded focus-visible:outline-2 focus-visible:outline-ring"><OutClassLogo variant="light" className="h-8 w-auto" /></button>
-
-        <div className="oc-header-context"><span>{platform ? "Admin workspace" : manager ? "Club workspace" : "Personal workspace"}</span>{!personal && <strong>{manager ? clubName : title}</strong>}</div>
-        <div className="oc-product-utilities ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-          <Button variant="ghost" className="oc-global-search hidden text-muted-foreground md:inline-flex" onClick={() => setSearch(true)}><Search />Search OutClass <kbd className="ml-2 text-[length:var(--oc-size-10)]">⌘ K</kbd></Button>
-          <IconButton aria-label="Search OutClass" className="md:hidden" onClick={() => setSearch(true)}><Search /></IconButton>
-          <IconButton data-tour="notifications" aria-label={unread || pendingInvitations ? `Notifications, ${unread} unread${pendingInvitations ? `, ${pendingInvitations} pending invitation${pendingInvitations === 1 ? "" : "s"}` : ""}` : "Notifications"} className="relative" onClick={() => navigate("inbox")}><Bell />{unread + pendingInvitations > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-brand-orange" />}</IconButton>
-          {manager && <div className="oc-product-club hidden min-w-0 border-l pl-4 sm:block"><p className="max-w-72 truncate text-sm font-semibold text-primary">{clubName}</p><p className="text-[length:var(--oc-size-11)] text-muted-foreground">Club workspace</p></div>}
-          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" aria-label={`Account menu for ${name}`}><Avatar className="size-8"><AvatarImage src={profilePhotoSource(user?.profile?.headshotUrl)} alt="Your profile photo" /><AvatarFallback><span className="oc-account-initials" aria-hidden="true">{user?.profile ? `${user.profile.firstName.slice(0,1)}${user.profile.lastName.slice(0,1)}` : <UserRound />}</span></AvatarFallback></Avatar></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/availability") }}><CalendarDays />My Availability</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/organizations") }}><Settings />Organization settings</DropdownMenuItem>}<DemoMenuItems />{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
+    <header className="oc-product-header" data-mode-count={modes.length}>
+      <div className="oc-product-header-row">
+        <Sheet open={mobile} onOpenChange={setMobile}><SheetTrigger asChild><IconButton aria-label="Open navigation" className="oc-floating-circle oc-floating-drawer"><Menu /></IconButton></SheetTrigger><SheetContent side="left" className="oc-navigation-sheet w-[min(88vw,300px)] p-0" onCloseAutoFocus={e => { if (moved.current) { e.preventDefault(); main.current?.focus(); moved.current = false; mobileOrigin.current = null } else if (mobileOrigin.current?.isConnected) { e.preventDefault(); mobileOrigin.current.focus(); mobileOrigin.current = null } }}><SheetTitle className="oc-modal-title sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Choose a workspace or contextual destination.</SheetDescription>{sidebar()}</SheetContent></Sheet>
+        {modes.length > 0 && <div className="oc-product-modes"><FloatingModeNavigation aria-label="Product modes" modes={modes} mode={mode}>{modes.map(m => navLink(m, true))}</FloatingModeNavigation></div>}
+        <div className="oc-product-utilities">
+          <FloatingSearchTrigger open={search} onOpen={trigger => { searchOrigin.current = trigger; setSearch(true) }} />
+          <NotificationCenter unread={unread} pendingInvitations={pendingInvitations} loadState={{ loading: !!userId && !demo.isDemoEnabled && (taskLoad.loading || durableLoad.loading), failed: !!userId && !demo.isDemoEnabled && (taskLoad.failed || durableLoad.failed) }} onRetry={() => {
+            setTaskLoad({ loading: true, failed: false }); setDurableLoad({ loading: true, failed: false })
+            window.dispatchEvent(new Event("outclass:tasks-changed")); window.dispatchEvent(new Event("outclass:communications-changed"))
+          }} onNavigate={onNavigate} />
+          <DropdownMenu><DropdownMenuTrigger asChild><IconButton data-tour="profile" className="oc-floating-circle oc-floating-profile" aria-label={`Account menu for ${name}`}><Avatar className="size-8"><AvatarImage src={profilePhotoSource(user?.profile?.headshotUrl)} alt="Your profile photo" /><AvatarFallback><span className="oc-account-initials" aria-hidden="true">{user?.profile ? `${user.profile.firstName.slice(0,1)}${user.profile.lastName.slice(0,1)}` : <UserRound />}</span></AvatarFallback></Avatar></IconButton></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={10} collisionPadding={16} className="oc-floating-account-menu w-64"><p className="truncate px-2 py-2 text-sm font-medium">{name}</p><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/availability") }}><CalendarDays />My Availability</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-profile")}>Your profile</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("student-dashboard")}>Personal overview</DropdownMenuItem><DropdownMenuItem onSelect={() => navigate("landing")}><Home />OutClass home</DropdownMenuItem>{user && !demo.isDemoEnabled && <DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/settings/organizations") }}><Settings />Organization settings</DropdownMenuItem>}<DemoMenuItems />{user && !demo.isDemoEnabled && !isImpersonating && <DropdownMenuItem disabled={signingOut} onSelect={async () => { if (!canLeaveWorkspace()) return; setSigningOut(true); try { const response = await fetch("/api/auth/logout", { method: "POST" }); if (!response.ok) throw Error("Could not sign out."); const { error } = await createClient().auth.signOut(); if (error) throw error; window.location.assign("/") } catch { toast.error("Could not sign out. Try again."); setSigningOut(false) } }}><LogOut />Sign out</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
         </div>
       </div>
-      <div className="oc-product-modes flex items-center justify-between gap-2 px-4 sm:px-6 lg:pl-[248px]"><nav aria-label="Product modes" className="flex min-w-0 flex-1 overflow-x-auto sm:flex-none">{modes.map(m => navLink(m, true))}</nav>{demo.isDemoEnabled && <span className="hidden shrink-0 text-[length:var(--oc-size-10)] text-muted-foreground sm:inline">Demo Mode</span>}</div>
-      {manager && <p className="truncate px-5 pb-2 text-xs text-muted-foreground sm:hidden">{clubName}</p>}
     </header>
     <div className="lg:grid lg:grid-cols-[224px_minmax(0,1fr)]"><aside className="sticky top-28 hidden h-[calc(100dvh-7rem)] border-r border-border lg:block">{sidebar()}</aside><main data-tour="workspace" id="workspace-content" ref={main} tabIndex={-1} aria-label={title} className="oc-workspace-content mx-auto w-full min-w-0 max-w-[1440px] outline-none">
       {demo.isDemoEnabled && <p className="oc-demo-note mb-6 text-xs text-muted-foreground">Fictional demo data · changes stay in this browser; no messages are sent.</p>}{children}
@@ -160,6 +170,10 @@ export function ProductShell({ children, mode, modes, items, active, title, club
       if ("view" in step) navigate(step.view)
       else router.push(`/club/${encodeURIComponent(clubId)}/workspace?section=${step.section}${step.tool ? `&tool=${step.tool}` : ""}`)
     }} />}
-    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} items={[...searchItems, { id: "inbox", title: "Notifications", icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} onNavigate={onNavigate} />
+    <NavigationSearch clubId={manager ? clubId : undefined} leader={manager} open={search} onOpenChange={setSearch} onDismissAutoFocus={() => {
+      const origin = searchOrigin.current
+      if (origin?.isConnected && origin !== document.body) origin.focus({ preventScroll: true })
+      else document.querySelector<HTMLButtonElement>(".oc-global-search")?.focus({ preventScroll: true })
+    }} items={[...searchItems, { id: "inbox", title: "Notifications", icon: Bell }, { id: "student-profile", title: "Profile", icon: UserRound }]} onNavigate={onNavigate} />
   </div>
 }

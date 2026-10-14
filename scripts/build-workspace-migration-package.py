@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = 'htlgjluegmdwfjkzzwic'
-BASE = '23b1ec16332c1bf943df95b57c4f050c4d345659'
+BASE = 'f68c17270779fd3aef71062b1b805353f80cd51f'
 NAMES = ['20261012171752_admin_session_bound_elevation', '20261013002253_recipient_audiences', '20261013005624_scheduled_communications', '20261013014837_decision_letter_controls', '20261013014950_recruitment_cycles', '20261013015200_scheduled_decisions', '20261013140024_scheduled_invitation_emails', '20261013141510_scheduled_availability_requests']
 CRLF = {'20261005010000_public_corkboard', '20261006010000_admin_workspace', '20261006020000_profile_recruitment_visibility', '20261007010000_profile_gpa_private_photos'}
 def git(*args): return subprocess.check_output(['git', *args], cwd=ROOT)

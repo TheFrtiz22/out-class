@@ -65,6 +65,6 @@ test("hero-to-paper boundary stays crisp with a readable scroll cue", () => {
   // The original fade laid a gray translucent strip across the bottom of the photo.
   assert.doesNotMatch(atmosphere, /\.oc-landing\s+\.oc-landing-intro::after\s*\{/)
   assert.match(atmosphere, /\.oc-landing:has\(\.oc-product-stories\) main\s*\{\s*background: var\(--oc-journey-linen\);/)
-  assert.match(intro, /\.oc-intro-scroll\s*\{[^}]*z-index: 1;[^}]*bottom: clamp\(30px, 4vw, 52px\)/)
-  assert.match(introMarkup, /href="#about"/)
+  assert.match(intro, /\.oc-intro-scroll\s*\{[^}]*z-index: 1;[^}]*safe-area-inset-bottom/)
+  assert.match(introMarkup, /<ScrollIndicator[^>]*targetId="about"/)
 })

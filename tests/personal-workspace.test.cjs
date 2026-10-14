@@ -109,13 +109,13 @@ test('personal shell keeps page headings in content once, with universal and con
   const layout=h.render(()=>boundary.props.children.type(boundary.props.children.props));
   assert.equal(nodes(layout).filter(node=>node.type==='PageHeader').length,own?0:1,view);
   const shell=h.render(()=>ProductShell(layout.props));
-  const context=nodes(shell).find(node=>node.props?.className==='oc-header-context');assert.equal(text(context),'Personal workspace',view);
+  assert.equal(nodes(shell).some(node=>node.props?.className==='oc-header-context'),false,view);
   assert.deepEqual(nodes(shell).find(node=>node.props?.['aria-label']==='Product modes').props.children.map(node=>text(node)),['Explore','Apply','My Clubs']);
   assert.ok(nodes(shell).some(node=>node.props?.['aria-label']==='Universal navigation'));
   assert.ok(nodes(shell).some(node=>node.props?.['aria-label']==='Account navigation'));
  }
  const manager=h.render(()=>ProductShell({mode:'recruiting',manager:true,clubName:'Club name',active:'overview',title:'Overview',modes:[],items:[],onSelect(){},onNavigate(){}}));
- assert.equal(text(nodes(manager).find(node=>node.props?.className==='oc-header-context')),'Club workspaceClub name');assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Universal navigation'),false);
+ assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Universal navigation'),false);
 });
 
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{
