@@ -11,3 +11,5 @@ Used by the site:
 Others are included for email, future mobile apps, and alternate compositions. Previous logo assets are retained for rollback.
 
 Brand palette: navy #0F2E56; orange #F26522; ivory #FFF9F1.
+
+Additional board-traced variants: [`premium-board/`](premium-board/README.md) (10 independent SVG files; preserved separately from live assets).
