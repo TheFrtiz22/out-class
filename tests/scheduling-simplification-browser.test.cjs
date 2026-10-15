@@ -3,6 +3,23 @@ const {chromium}=require('playwright'),{fixture}=require('./helpers/scheduling-u
 async function launch(){return chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})})}
 async function shot(page,name){if(!process.env.OUTCLASS_SCHEDULING_SCREENSHOTS)return;fs.mkdirSync(process.env.OUTCLASS_SCHEDULING_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.OUTCLASS_SCHEDULING_SCREENSHOTS,name+'.png'),fullPage:true,animations:'disabled'})}
 
+test('browser: adding the first times after visiting an empty panel initializes assignment dates without reload',async()=>{
+ const f=await fixture({fresh:true});let browser
+ try{
+  browser=await launch();const page=await browser.newPage();page.setDefaultTimeout(15000)
+  await page.goto(`${f.url}/?roundId=${f.scope.roundId}&schedule=review`)
+  await page.getByRole('heading',{name:'No upcoming interview sessions',exact:true}).waitFor()
+  await page.getByRole('button',{name:'Go to Rooms',exact:true}).click()
+  await page.getByRole('button',{name:'Add interview times',exact:true}).click()
+  const dialog=page.getByRole('dialog');await dialog.getByLabel('Room name',{exact:true}).fill('Synthetic first times')
+  await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click()
+  const assign=page.getByRole('region',{name:'Review Panel Assignments'}).getByRole('button',{name:'Assign available interviewers',exact:true})
+  await assign.click();await page.locator('.ir-schedule-row').first().waitFor()
+  assert.equal(f.state().bookingFlow.panels[f.scope.roundId].draft.document.sessions.length,6)
+  assert.equal(f.liveCalls(),0)
+ }finally{await browser?.close();await f.close()}
+})
+
 test('browser: times → confirmed interviewers → booking, issue editor/override, pause and edits preserve reservations in isolated Demo',async()=>{
  const f=await fixture({fresh:true});let browser
  try{
@@ -54,7 +71,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   await applicant.reload();await applicant.getByText('Interview confirmed',{exact:true}).waitFor();await applicant.getByText(/paused new bookings/).waitFor();assert.deepEqual(f.state().roomBookings,reservation)
   const publishedBeforeAddingTimes=structuredClone(f.state().bookingFlow.panels[f.scope.roundId].published);await nav.getByRole('button',{name:/Set interview times/}).click();await page.getByRole('button',{name:'Add interview times',exact:true}).click();await dialog.getByLabel('Room name',{exact:true}).fill('Synthetic Hall B');await dialog.getByLabel('End time',{exact:true}).fill('10:20');await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click();assert.deepEqual(f.state().roomBookings,reservation)
   await page.setViewportSize({width:390,height:844});await shot(page,'scheduling-publish-mobile');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)
-  await nav.getByRole('button',{name:/Confirm interviewers/}).click();await panel.getByRole('button',{name:'Edit interviewers',exact:true}).click();await panel.locator('.ir-schedule-row').nth(1).waitFor();await panel.locator('.ir-schedule-row').nth(1).focus();await page.keyboard.press('Enter');await editor.getByLabel('Add interviewer',{exact:true}).waitFor();await shot(page,'scheduling-slot-mobile');await editor.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{}))));const bounds=await editor.evaluate(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return{left:r.left,right:r.right,width:r.width,viewport:innerWidth,transform:s.transform,position:s.position,overflow:el.scrollWidth>el.clientWidth+1}});console.log('Mobile editor geometry:',bounds);assert.ok(bounds.left>=0&&bounds.right<=bounds.viewport+1,'slot editor must fit the phone viewport');assert.equal(bounds.overflow,false,'slot fields must fit inside the editor');await editor.getByRole('button',{name:'Done',exact:true}).click();await editor.waitFor({state:'hidden'});assert.equal(await panel.locator('.ir-schedule-row').nth(1).evaluate(el=>el===document.activeElement),true)
+  await nav.getByRole('button',{name:/Confirm interviewers/}).click();await panel.getByRole('button',{name:'Edit interviewers',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.ir-schedule-row')[1]?.disabled===false);await panel.locator('.ir-schedule-row').nth(1).focus();await page.keyboard.press('Enter');await editor.getByLabel('Add interviewer',{exact:true}).waitFor();await shot(page,'scheduling-slot-mobile');await editor.evaluate(el=>Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{}))));const bounds=await editor.evaluate(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return{left:r.left,right:r.right,width:r.width,viewport:innerWidth,transform:s.transform,position:s.position,overflow:el.scrollWidth>el.clientWidth+1}});console.log('Mobile editor geometry:',bounds);assert.ok(bounds.left>=0&&bounds.right<=bounds.viewport+1,'slot editor must fit the phone viewport');assert.equal(bounds.overflow,false,'slot fields must fit inside the editor');await editor.getByRole('button',{name:'Done',exact:true}).click();await editor.waitFor({state:'hidden'});assert.equal(await panel.locator('.ir-schedule-row').nth(1).evaluate(el=>el===document.activeElement),true)
   assert.deepEqual(f.state().bookingFlow.panels[f.scope.roundId].published,publishedBeforeAddingTimes);assert.equal(f.state().bookingFlow.panels[f.scope.roundId].draft.document.sessions.length,2);assert.deepEqual(f.state().roomBookings,reservation);assert.equal(f.liveCalls(),0);assert.deepEqual(errors,[])
  }finally{await browser?.close();await f.close()}
 })
