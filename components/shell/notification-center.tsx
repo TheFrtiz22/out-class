@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Bell, Maximize2, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "lucide-react"
+import { Bell, Maximize2, CheckCheck, Check, Mail, Archive, MoreHorizontal, ArrowLeft, ArrowUpRight, CalendarDays, FileText, Megaphone, ListChecks, Users2 } from "@/components/icons"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { IconButton } from "@/components/ui/icon-button"

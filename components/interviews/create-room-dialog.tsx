@@ -2,7 +2,7 @@
 import { NativeSelect } from "@/components/ui/native-select"
 import { roundConfigurationSchema } from "@/lib/club-settings"
 import { useMemo, useState } from "react"
-import { CalendarDays, Clock3, Plus, Users, X } from "lucide-react"
+import { CalendarDays, Clock3, Plus, Users, X } from "@/components/icons"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

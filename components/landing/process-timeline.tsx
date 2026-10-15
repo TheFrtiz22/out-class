@@ -1,4 +1,4 @@
-import { UserRound, Search, FileText, ChartNoAxesColumnIncreasing } from "lucide-react"
+import { UserRound, Search, FileText, ChartNoAxesColumnIncreasing } from "@/components/icons"
 import { SectionReveal, StaggerReveal, TextReveal } from "@/components/motion/scroll-motion"
 const steps = [
   {

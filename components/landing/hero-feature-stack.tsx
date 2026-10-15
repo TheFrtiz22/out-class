@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight, Pause, Play } from "@/components/icons"
 import { heroFeatures, leaderHeroFeatures } from "./hero-features"
 import type { LandingPerspective } from "./journey-content"
 import "./hero-feature-stack.css"

@@ -1,4 +1,4 @@
-import { CalendarDays, Check } from "lucide-react"
+import { CalendarDays, Check } from "@/components/icons"
 
 /** A visibly illustrative product state, never represented as live club activity. */
 export function ProductPreviewCards() {

@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarDays, ChevronRight, FileText } from "lucide-react"
+import { ArrowUpRight, CalendarDays, ChevronRight, FileText } from "@/components/icons"
 import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"

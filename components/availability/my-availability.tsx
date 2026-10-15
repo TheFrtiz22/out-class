@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy } from "lucide-react"
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Copy } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { canLeaveWorkspace } from "@/lib/product-navigation"

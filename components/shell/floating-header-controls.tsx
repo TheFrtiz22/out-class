@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
-import { Search } from "lucide-react"
+import { Search } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import type { ProductNavItem } from "@/lib/product-navigation"
 

@@ -2,7 +2,7 @@
 
 import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
-import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "lucide-react"
+import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { managerNavigation } from "@/lib/product-navigation"
 import { hasPermission } from "@/lib/permissions"

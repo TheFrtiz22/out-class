@@ -1,6 +1,6 @@
 "use client"
 
-import { Video } from "lucide-react"
+import { Video } from "@/components/icons"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

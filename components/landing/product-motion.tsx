@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
-import { Pause, Play, RotateCcw } from "lucide-react"
+import { Pause, Play, RotateCcw } from "@/components/icons"
 import { createDemoClock, prominentDemo, type DemoSample } from "./demo-clock"
 import { demoTimelines, type DemoTimeline } from "./demo-timelines"
 

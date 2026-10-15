@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Info } from "lucide-react";
+import { Info, ArrowUpRight } from "@/components/icons";
 import type { DirectoryClub } from "@/lib/club-directory";
 import {
   Popover,
@@ -40,7 +40,7 @@ export function UnclaimedProfileNotice({ club }: { club: DirectoryClub }) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    View university directory source ↗
+                    View university directory source <ArrowUpRight size={14} className="inline-block align-text-bottom" />
                   </a>
                 </PopoverContent>
               </Popover>

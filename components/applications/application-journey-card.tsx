@@ -1,5 +1,5 @@
 "use client"
-import { ArrowRight, CalendarDays, Clock3, FileCheck2, FilePenLine } from "lucide-react"
+import { ArrowRight, CalendarDays, Clock3, FileCheck2, FilePenLine } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusBadge } from "@/components/status-badge"
 import { RecruitmentTimeline } from "@/components/clubs/recruitment-timeline"

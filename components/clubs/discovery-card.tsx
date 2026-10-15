@@ -3,7 +3,7 @@ import { clubAssetSource } from "@/lib/club-assets"
 
 import { useState, type ReactNode, type CSSProperties } from "react"
 import Image from "next/image"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { clubRecruitment, recruitmentDate } from "@/lib/recruitment-presentation"
 import type { DirectoryClub } from "@/lib/club-directory"

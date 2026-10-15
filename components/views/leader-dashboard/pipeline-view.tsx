@@ -2,7 +2,7 @@
 import { NativeSelect } from "@/components/ui/native-select"
 
 import { useState } from "react"
-import { MoreHorizontal, Mail, UserRound, XCircle, ChevronRight, ChevronLeft, GripVertical } from "lucide-react"
+import { MoreHorizontal, Mail, UserRound, XCircle, ChevronRight, ChevronLeft, GripVertical } from "@/components/icons"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {

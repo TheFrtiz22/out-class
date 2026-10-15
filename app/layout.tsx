@@ -94,6 +94,7 @@ export default async function RootLayout({
             </ClubCustomizationProvider></CorkboardProvider>
             </OrganizationInvitationsProvider>
           </AuthProvider>
+          <div className="oc-icon-credit"><a href="https://icons8.com" target="_blank" rel="noopener noreferrer">Icons by Icons8</a></div>
           <Toaster />
           {process.env.VERCEL && <><Analytics /><SpeedInsights /></>}
         </DemoDataProvider>

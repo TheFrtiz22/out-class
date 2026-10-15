@@ -2,7 +2,7 @@
 
 import { Children, type ReactNode } from "react"
 import Image from "next/image"
-import { ArrowRight, CalendarDays, Check, CheckCircle2, ChevronDown, Clock3, FileText, MapPin, Search, ShieldCheck, Users } from "lucide-react"
+import { ArrowRight, CalendarDays, Check, CheckCircle2, ChevronDown, Clock3, FileText, MapPin, Search, ShieldCheck, Users } from "@/components/icons"
 import { Badge } from "@/components/ui/badge"
 import { useDemoState } from "./product-motion"
 import { journeySample as sample } from "./journey-example-state"

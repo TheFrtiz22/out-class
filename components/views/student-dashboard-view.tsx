@@ -10,7 +10,7 @@ import {
   FileText,
   Bell,
   MapPin,
-} from "lucide-react"
+} from "@/components/icons"
 import { PageHeader } from "@/components/product/page-header"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { Button } from "@/components/ui/button"

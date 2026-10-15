@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, X } from "lucide-react"
+import { Check, X } from "@/components/icons"
 import { currentStudent, type Application } from "@/lib/data"
 import { useClubCustomization } from "@/lib/club-customization"
 import { cn } from "@/lib/utils"

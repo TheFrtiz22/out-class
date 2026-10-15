@@ -1,7 +1,7 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { ArrowDown, ArrowUpRight } from "lucide-react"
+import { ArrowDown, ArrowUpRight } from "@/components/icons"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { useFeatureOrbit } from "@/hooks/use-feature-orbit"
 import { DemoCursor, DemoPlaybackProvider, ProductMotion, ProductMotionControl, ProductDemoProgress } from "./product-motion"
@@ -18,7 +18,7 @@ export function FeatureOrbit({ perspective, onComplete }: { perspective: Landing
       {chapters.map((chapter, index) => <div key={chapter.stage} id={`journey-${index + 1}`} tabIndex={-1} role="group" aria-label={`${chapter.label} feature`} data-orbit-anchor="" data-stage={chapter.stage} style={{ top: `calc(var(--oc-orbit-step, 80svh) * ${index})` }} />)}
     </div>
     <div className="oc-orbit-stage">
-      <div className="oc-orbit-heading"><span>{perspective === "student" ? "Your next chapter" : "Your next class"}</span><span>One connected journey <span aria-hidden="true">↘</span></span></div>
+      <div className="oc-orbit-heading"><span>{perspective === "student" ? "Your next chapter" : "Your next class"}</span><span>One connected journey <ArrowUpRight size={16} className="inline-block rotate-90 align-text-bottom" /></span></div>
       <DemoPlaybackProvider activeScene={enhanced ? settled === null ? null : chapters[settled].scene : undefined}>
         <div className="oc-orbit-scenes">
           {chapters.map((chapter, index) => <article key={chapter.stage} data-orbit-card="" className="oc-orbit-card" aria-labelledby={`orbit-${chapter.stage}-title`}>

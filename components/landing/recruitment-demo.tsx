@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
-import { Check, FileText, MessageSquare, Pause, Play, RotateCcw, CalendarDays } from "lucide-react"
+import { Check, FileText, MessageSquare, Pause, Play, RotateCcw, CalendarDays } from "@/components/icons"
 import { OutClassLogo } from "@/components/outclass-logo"
 import {
   demoApplicants,
@@ -18,7 +18,7 @@ function ReviewerVotes({ voting, votes }: { voting: boolean; votes: number }) {
       <span>AJ</span>
       <span>SK</span>
       <span>MT</span>
-      <small>{voting ? ["✓", "✓", "—", "✓"].slice(0, votes).join("  ") : "3 reviewers"}</small>
+      <small>{voting ? [true, true, false, true].slice(0, votes).map((approved, index) => approved ? <Check key={index} size={12} className="inline-block" /> : <span key={index}>—</span>) : "3 reviewers"}</small>
     </div>
   )
 }

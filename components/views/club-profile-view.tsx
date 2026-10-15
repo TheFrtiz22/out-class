@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
@@ -221,8 +221,8 @@ export function ClubProfileView({
             <p className="oc-club-about">{about || "This club hasn’t added a description yet."}</p>
           </section>
       <nav aria-label="Club profile links" className="my-4 flex flex-wrap gap-x-6 gap-y-2">
-        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps ↗</Link>}
-        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace ↗</Link>}
+        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps <ArrowUpRight size={14} className="inline-block align-text-bottom" /></Link>}
+        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace <ArrowUpRight size={14} className="inline-block align-text-bottom" /></Link>}
       </nav>
           <MarketingSections profile={publicProfile} />
           <section className="oc-club-events" aria-labelledby="club-events">

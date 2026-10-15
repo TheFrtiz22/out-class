@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useId, useState, type ReactNode } from "react"
-import { CheckCircle2, ChevronDown, Users2 } from "lucide-react"
+import { CheckCircle2, ChevronDown, Users2 } from "@/components/icons"
 import { navigationGroupLabels, type ProductNavItem } from "@/lib/product-navigation"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"

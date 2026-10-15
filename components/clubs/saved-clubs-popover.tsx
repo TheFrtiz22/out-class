@@ -2,7 +2,7 @@
 import Link from "next/link"
 import "./club-discovery.css"
 import { useState } from "react"
-import { Bookmark, ArrowUpRight, X } from "lucide-react"
+import { Bookmark, ArrowUpRight, X } from "@/components/icons"
 import { useCorkboard } from "@/contexts/corkboard-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import type { ViewId } from "@/lib/views"

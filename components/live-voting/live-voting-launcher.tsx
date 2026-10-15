@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Radio } from "lucide-react"
+import { Radio } from "@/components/icons"
 import { type VotingApplicant, type VotingSession, validateVotingSetup } from "@/lib/live-voting"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

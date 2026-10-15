@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, ChevronsUpDown, Shield } from "lucide-react"
+import { Check, ChevronsUpDown, Shield } from "@/components/icons"
 import { AccountAvatar } from "@/components/account-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"

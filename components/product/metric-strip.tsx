@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import Link from "next/link"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "@/components/icons"
 
 export function MetricStrip({ items, label, density = "compact" }: { label: string; density?: "compact" | "roomy"; items: { label: string; value: ReactNode; detail?: string; href?: string; action?: string }[] }) {
   return <dl className="oc-metric-strip" data-density={density} aria-label={label}>{items.map(item => <div key={item.label}>

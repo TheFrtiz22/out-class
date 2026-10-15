@@ -2,7 +2,7 @@
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 
 import { useEffect, useState } from "react"
-import { ArrowUpRight, Check, MapPin } from "lucide-react"
+import { ArrowUpRight, Check, MapPin } from "@/components/icons"
 import { PageHeader } from "@/components/product/page-header"
 import { MetricStrip } from "@/components/product/metric-strip"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

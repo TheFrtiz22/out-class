@@ -4,7 +4,7 @@ import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling
 import { LoadingState } from "@/components/ui/loading-state"
 import { NativeSelect } from "@/components/ui/native-select"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Copy, DoorOpen, MapPin, Plus, Video } from "lucide-react"
+import { Copy, DoorOpen, MapPin, Plus, Video } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { getRoomWorkspace, setInterviewRoomOpen, setInterviewStaffingRequirement } from "@/lib/workspace-api"

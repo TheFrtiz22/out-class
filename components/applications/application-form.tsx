@@ -9,7 +9,7 @@ import { applicationAvailability } from "@/lib/club-settings"
 import { testRequirementLabels } from "@/lib/test-scores"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { Check, FileText } from "lucide-react"
+import { Check, FileText } from "@/components/icons"
 import {
   saveApplicationDraft,
   submitApplication,

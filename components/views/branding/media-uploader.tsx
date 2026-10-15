@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, type DragEvent } from "react"
-import { ImageIcon, Upload, X } from "lucide-react"
+import { ImageIcon, Upload, X } from "@/components/icons"
 import { cn } from "@/lib/utils"
 
 type MediaUploaderProps = {

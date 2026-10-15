@@ -246,3 +246,9 @@ html:has([aria-label="Administrator view-as session"]) .oc-product-header {
 @media (prefers-reduced-motion: reduce) {
   .oc-invitation-attention { transition: none; }
 }
+
+/* Attribution for the Icons8 PNG assets, shared by every app route. */
+.oc-icon-credit { display: flex; justify-content: center; padding: 8px 16px; color: var(--muted-foreground); background: var(--background); font-size: 12px; line-height: 16px; }
+.oc-icon-credit a { text-underline-offset: 3px; }
+.oc-icon-credit a:hover { text-decoration: underline; }
+@media print { .oc-icon-credit { display: none; } }

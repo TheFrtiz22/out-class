@@ -1,4 +1,6 @@
 "use client";
+
+import { ArrowUpRight } from "@/components/icons"
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -240,12 +242,12 @@ export function ClubSettingsWorkspace({
                 className="oc-profile-link"
                 href={`/club/${clubId}/workspace?section=settings&setting=members`}
               >
-                Manage owners and member access ↗
+                Manage owners and member access <ArrowUpRight size={14} className="inline-block align-text-bottom" />
               </Link>
             )}
             {!member.club.claimedAt && (
               <Link className="oc-profile-link" href={`/club-claims/${clubId}`}>
-                View claim process ↗
+                View claim process <ArrowUpRight size={14} className="inline-block align-text-bottom" />
               </Link>
             )}
           </div>

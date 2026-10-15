@@ -5,7 +5,7 @@ import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDemoMode } from "@/contexts/demo-context";
 import { communicationsChanged } from "@/lib/communications-client";
-import { Plus, Send } from "lucide-react";
+import { Plus, Send } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Triangle } from "lucide-react"
+import { Triangle } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import "./scroll-indicator.css"
 

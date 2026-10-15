@@ -5,7 +5,7 @@ import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { NativeSelect } from "@/components/ui/native-select"
 import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
-import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "lucide-react";
+import { Plus, ArrowUp, ArrowDown, Trash2, Eye } from "@/components/icons";
 import {
   saveApplicationSettings,
 } from "@/actions/club-settings";
