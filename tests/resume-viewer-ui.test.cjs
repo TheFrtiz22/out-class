@@ -13,6 +13,7 @@ function ui(api, options={}) {
     useMemo(fn,deps) { const i=index++; if(!slots[i] || changed(slots[i].deps,deps)) slots[i]={deps,value:fn()}; return slots[i].value; },
     useCallback(fn,deps) { return react.useMemo(()=>fn,deps); },
     useEffect(fn,deps) { const i=index++; if(changed(slots[i],deps)){slots[i]=deps; effects.push(()=>{cleanups[i]?.();cleanups[i]=fn();});} },
+    useLayoutEffect(fn,deps) { react.useEffect(fn,deps); },
   };
   global.window={addEventListener(){},removeEventListener(){},confirm:()=>true,matchMedia:()=>({matches:true,addEventListener(){},removeEventListener(){}})};
   global.document={hidden:false,addEventListener(){},removeEventListener(){}};
