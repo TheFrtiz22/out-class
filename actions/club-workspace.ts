@@ -3,25 +3,31 @@
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { lockOperationalClub } from "@/lib/club-suspension";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { clubProfileSchema } from "@/lib/club-marketing";
+import { clubProfileSchema, profileDraft } from "@/lib/club-marketing";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireAuth, requireClubPermission } from "@/utils/auth";
 
 export async function updateClubSettings(input: {
-  clubId: string; name: string; tagline: string; description: string;
+  clubId: string; name: string; tagline: string; description: string; expectedProfile?: string;
 } & Partial<import("@/lib/club-marketing").ClubProfileDraft>) {
   const data = clubProfileSchema.partial().extend({
+    expectedProfile: z.string().max(300000).optional(),
     clubId: z.string().uuid(), name: z.string().trim().min(1).max(150),
     tagline: z.string().max(300), description: z.string().max(10000),
   }).parse(input);
   const { user } = await requireClubPermission(data.clubId, ["club.settings"]);
-  const { clubId, ...fields } = data;
+  const { clubId, expectedProfile, ...fields } = data;
   const { clubWriteTransaction } = await import("@/utils/club-write-transaction");
   const { assertClubImageAssignment } = await import("@/utils/club-asset-storage");
   const result = await clubWriteTransaction(async (tx) => {
     await authorizeClubTransaction(tx, data.clubId, user.id, ["club.settings"]);
-    const previous = await tx.club.findUniqueOrThrow({ where: { id: clubId }, select: { logoUrl: true, bannerUrl: true, marketing: true } });
+    const previous = await tx.club.findUniqueOrThrow({ where: { id: clubId } });
+    if (expectedProfile !== undefined) {
+      const actual = JSON.stringify(clubProfileSchema.parse(profileDraft(previous)));
+      const next = JSON.stringify(clubProfileSchema.parse(profileDraft({ ...previous, ...fields })));
+      if (actual !== expectedProfile && actual !== next) throw Error("This club profile changed while you were editing. Your private draft is retained. Reopen to compare before publishing.");
+    }
     await assertClubImageAssignment(tx, clubId, fields, previous);
     await tx.club.update({ where: { id: clubId }, data: fields });
     await tx.auditLog.create({

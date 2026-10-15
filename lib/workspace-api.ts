@@ -68,7 +68,7 @@ import {
   presentDemoMeeting,
 } from "@/lib/demo/store"
 import { readVotingDisplay } from "@/lib/voting-presentation"
-import { applicationInputSchema, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
+import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import { genderValues, profileSectionSchema } from "@/lib/student-profile"
 export type { WorkspaceSearchResult } from "@/actions/workspace-search"
 function adapt<F extends (...args: never[]) => Promise<unknown>>(
@@ -196,6 +196,7 @@ async function persist(input: Parameters<typeof apps.saveApplicationDraft>[0], s
   return demoStore.mutate((next) => {
     const app = next.applications.find((a) => a.id === applicationId)!
     if (app.status !== "DRAFTING") throw new Error("Application already submitted.")
+    if (parsed.expectedAnswers !== undefined && applicationAnswersKey(app.answers) !== parsed.expectedAnswers && applicationAnswersKey(app.answers) !== applicationAnswersKey(parsed.answers)) throw Error("This application changed in another tab.")
     app.answers = parsed.answers.map((answer, i) => ({
       ...answer,
       id: `${app.id}-answer-${i}`,

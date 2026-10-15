@@ -1,4 +1,6 @@
 "use client"
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
 import { ScheduleDecision } from "@/components/decision-schedules";
 import { slotTime } from "@/lib/interview-rooms"
@@ -186,15 +188,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     window.addEventListener("keydown", key)
     return () => window.removeEventListener("keydown", key)
   }, [activeId])
-  useEffect(() => {
-    if (!dirty && !busy) return
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-      event.returnValue = ""
-    }
-    window.addEventListener("beforeunload", warn)
-    return () => window.removeEventListener("beforeunload", warn)
-  }, [dirty, busy])
   const applicants = useMemo(() => (data?.applications || []).filter(a=>rejectedOnly?a.status==="REJECTED":decisionsOnly||a.status!=="REJECTED"), [data,rejectedOnly,decisionsOnly])
   const filtered = useMemo(
     () =>
@@ -255,6 +248,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     ],
   )
   const active = applicants.find((app) => app.id === activeId)
+  const draftSave = useEditorDraft({
+    scope: { kind: "review", clubId: membership.clubId, resourceId: `${active?.id ?? "none"}:${active?.roundId ?? "none"}` },
+    value: { score, notes }, restore: value=>{setScore(value.score);setNotes(value.notes)},
+    enabled: !!active && hasPermission(membership, "applications.review"), base: baseline,
+  })
   const activeIndex = filtered.findIndex((app) => app.id === activeId)
   useEffect(() => {
     if (!data || loading || !leaderFocus || leaderFocus.clubId !== membership.clubId) return
@@ -266,7 +264,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     clearLeaderFocus()
   }, [data, loading, leaderFocus, membership.clubId, clearLeaderFocus])
   function open(app?: Candidate) {
-    if (busy || (dirty && !window.confirm("Discard your unsaved review changes?"))) return
+    if (busy) return
+    const apply = () => {
     setActiveId(app?.id || null)
     setMessage("")
     setDecision("")
@@ -288,6 +287,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           .find((button) => button.getClientRects().length > 0)
           ?.focus()
       })
+    }
+    if (active && hasPermission(membership, "applications.review")) void draftSave.flush().then(apply).catch(() => {})
+    else apply()
   }
   async function mutate(kind: "review" | "round" | "decision") {
     if (!active || mutating.current) return
@@ -302,6 +304,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
+        await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
         const result = await submitEvaluation({
@@ -329,6 +332,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               }
             : previous,
         )
+        await draftSave.clear()
         setBaseline(JSON.stringify([score, notes]))
         setMessage("Evaluation saved.")
       } else if (kind === "round") {
@@ -386,7 +390,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       </div>
     )
   return (
-    <div className="oc-live-pipeline space-y-6" data-unsaved={dirty} data-saving={busy}>
+    <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
       {decisionsOnly && <>
         <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
         <p className="text-sm text-muted-foreground">{decisionGroup === "pending" ? "Submitted, in-review, and interviewing applications without a recorded decision. Round and status remain separate." : "Recorded application outcomes, visible to the applicant."} Acceptance does not automatically create club membership.</p>
@@ -742,13 +746,14 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {!active.evaluations.length && (
                   <p className="text-sm text-muted-foreground">No evaluations yet.</p>
                 )}
-                <form
+                <form data-autosave-editor="true" onBlur={draftSave.onBlur}
                   onSubmit={(event) => {
                     event.preventDefault()
                     void mutate("review")
                   }}
                   className="space-y-3"
                 >
+                  <AutosaveStatus save={draftSave} />
                   <p className="text-sm font-medium">
                     Your review · {data.rounds.find((item) => item.id === active.roundId)?.name}
                   </p>
@@ -761,7 +766,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     max={10}
                     step="any"
                     value={score}
-                    disabled={busy}
+                    disabled={busy || !draftSave.ready || draftSave.recovery != null}
                     onChange={(event) => setScore(event.target.value)}
                   />
                   <Label htmlFor="review-notes">Overall evaluation feedback</Label>
@@ -769,15 +774,15 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                     id="review-notes"
                     rows={4}
                     value={notes}
-                    disabled={busy}
+                    disabled={busy || !draftSave.ready || draftSave.recovery != null}
                     onChange={(event) => setNotes(event.target.value)}
                   />
                   <div className="flex flex-wrap items-center gap-3">
                     <Button disabled={busy || !hasPermission(membership, "applications.review")} type="submit">
-                      {busy ? "Saving…" : "Save evaluation"}
+                      {busy ? "Saving…" : "Finalize evaluation"}
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      {dirty ? "Unsaved changes" : score ? "Saved review" : "No review saved"}
+                      {dirty ? "Draft · not finalized" : score ? "Finalized review" : "No review finalized"}
                     </span>
                   </div>
                 </form>

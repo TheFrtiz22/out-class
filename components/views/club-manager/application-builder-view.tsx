@@ -1,4 +1,7 @@
 "use client";
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+
 import { NativeSelect } from "@/components/ui/native-select"
 import { getApplicationSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
@@ -89,15 +92,11 @@ export function ApplicationBuilderView({
       current = false;
     };
   }, [clubId, demo.ready, demo.isDemoEnabled, retry]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  const draftSave = useEditorDraft({
+    scope: { kind: "application-builder", clubId }, value: { questions, open, deadline },
+    restore: draft => { setQuestions(draft.questions); setOpen(draft.open); setDeadline(draft.deadline) },
+    enabled: loaded && !!clubId, base: baseline,
+  });
   function edit(id: string, patch: Partial<QuestionDraft>) {
     setQuestions((items) =>
       items.map((q) => (q.id === id ? { ...q, ...patch } : q)),
@@ -133,7 +132,9 @@ export function ApplicationBuilderView({
     setError("");
     setNotice("");
     try {
+      await draftSave.flush();
       const result = await saveApplicationSettings(input);
+      await draftSave.clear();
       setVersion(result.version);
       setBaseline(snapshot);
       setNotice(
@@ -167,8 +168,8 @@ export function ApplicationBuilderView({
   return (
     <div
       className="oc-settings-editor space-y-6"
-      data-unsaved={dirty}
-      data-saving={busy}
+      data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
+      data-saving={busy || draftSave.saving}
     >
       <div>
         <h2 className="oc-section-heading">Application</h2>
@@ -177,12 +178,13 @@ export function ApplicationBuilderView({
           experience, and résumé. Add questions specific to your club.
         </p>
       </div>
+      <AutosaveStatus save={draftSave} />
       {error && (
         <div role="alert" className="space-y-2 text-sm text-destructive">
           <p>{error}</p>
           <Button
             variant="outline"
-            disabled={busy}
+            disabled={busy || !draftSave.ready || draftSave.recovery != null}
             onClick={() => {
               if (
                 !dirty ||
@@ -207,7 +209,7 @@ export function ApplicationBuilderView({
       ) : (
         <>
           <fieldset
-            disabled={busy}
+            disabled={busy || !draftSave.ready || draftSave.recovery != null}
             className="grid gap-4 border-b pb-6 sm:grid-cols-2"
           >
             <label className="inline-flex min-h-11 items-center gap-3 text-sm">
@@ -230,7 +232,7 @@ export function ApplicationBuilderView({
           <ol className="space-y-5">
             {questions.map((q, index) => (
               <li key={q.id} className="oc-settings-question">
-                <fieldset disabled={busy} className="space-y-4">
+                <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="oc-card-heading">Question {index + 1}</h3>
                     <div className="flex gap-1">
@@ -418,14 +420,14 @@ export function ApplicationBuilderView({
             </Button>
             <Button
               variant="ghost"
-              disabled={busy}
+              disabled={busy || !draftSave.ready || draftSave.recovery != null}
               onClick={() => setPreview(true)}
             >
               <Eye size={16} />
               Preview as student
             </Button>
             <Button disabled={busy || !dirty} onClick={() => void save()}>
-              {busy ? "Saving…" : "Save application"}
+              {busy ? "Saving…" : "Publish application changes"}
             </Button>
           </div>
         </>

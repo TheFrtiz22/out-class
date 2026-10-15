@@ -13,6 +13,7 @@ datasource db {
 
 model User {
   interviewAvailabilityOverrides InterviewAvailabilityOverride[]
+  editorDrafts EditorDraft[]
   scheduledCommunications ScheduledCommunication[]
   recipientGroupEntries RecipientGroupEntry[]
   publishedPanelSchedules InterviewPanelScheduleVersion[] @relation("PanelSchedulePublisher")
@@ -1567,4 +1568,19 @@ model RecruitmentCycle {
  applications Application[]
  @@unique([id, clubId])
  @@unique([clubId, name])
+}
+
+// Private working copies; consequential domain actions remain separate.
+model EditorDraft {
+  id         String   @id @default(uuid())
+  userId     String
+  key        String
+  content    Json?
+  base       String
+  mutationId String
+  revision   Int      @default(1)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamptz(3)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
 }

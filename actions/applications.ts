@@ -9,7 +9,7 @@ import { meetsTestRequirement } from "@/lib/test-scores"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { revalidatePath } from "next/cache"
-import { applicationInputSchema, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
+import { applicationInputSchema, applicationAnswersKey, answerErrors, normalizeApplicationAttachments, assertApplicationAttachmentOwnership } from "@/lib/student-applications"
 import type { z } from "zod"
 
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
@@ -40,6 +40,12 @@ async function persistApplication(input: z.infer<typeof applicationInputSchema>,
     const existing = await tx.application.findUnique({
       where: { studentId_clubId: { studentId: user.id, clubId: parsed.clubId } },
     })
+    if (existing && parsed.expectedAnswers !== undefined) {
+      const current = await tx.applicationAnswer.findMany({ where: { applicationId: existing.id }, select: { questionId: true, response: true } })
+      const key = applicationAnswersKey(current)
+      if (key !== parsed.expectedAnswers && key !== applicationAnswersKey(parsed.answers))
+        throw Error("This application changed in another tab. Your responses are retained. Reopen it to compare before saving.")
+    }
     const transition = submit
       ? { status: "SUBMITTED" as const, roundId: firstRound.id, submittedAt: new Date() }
       : { status: "DRAFTING" as const }

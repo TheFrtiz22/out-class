@@ -1,4 +1,7 @@
 "use client"
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -72,13 +75,18 @@ function Submission({
     [error, setError] = useState("");
   const closed = !!a.reviewedAt || task.status === "DONE";
   const [submitted, setSubmitted] = useState(false);
+  const [response,setResponse] = useState({ text: a.text ?? "", link: a.link ?? "" });
+  const draftSave = useEditorDraft({ scope: { kind: "task-submission", clubId: task.clubId, resourceId: a.id }, value: response, restore: setResponse, enabled: !closed, base: String(a.revision) });
+
   return (
     <form
+      data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
       data-task-uploading={uploading}
       data-saving={uploading || busy}
       className="oc-task-submission max-w-3xl space-y-5 rounded-xl border p-5"
       onSubmit={async (e) => {
         e.preventDefault();
+        try { await draftSave.flush() } catch { return }
         const data = new FormData(e.currentTarget);
         setSubmitted(false);
         const success = await run(() =>
@@ -90,9 +98,10 @@ function Submission({
             fileIds: files.map((f) => f.id),
           }),
         );
-        if (success) setSubmitted(true);
+        if (success) { await draftSave.clear(); setSubmitted(true); }
       }}
     >
+      <AutosaveStatus save={draftSave} />
       <h3 className="oc-card-heading flex items-center gap-2"><FilePenLine size={20} />Your submission</h3>
       <p className="text-sm text-muted-foreground">
         {a.submittedAt
@@ -107,7 +116,7 @@ function Submission({
         .{" "}
         {closed
           ? "This submission is closed."
-          : "Responses are saved when you submit."}
+          : "Your private draft saves automatically. Submit when ready to share it."}
       </p>
       <label className="oc-task-submission-field">
         <span><FileText size={17} />Written response <small>{task.requirements.includes("TEXT") ? "Required" : "Optional"}</small></span>
@@ -115,9 +124,10 @@ function Submission({
           name="text"
           rows={5}
           maxLength={30000}
-          disabled={closed || busy}
+          disabled={closed || busy || !draftSave.ready || draftSave.recovery != null}
           required={task.requirements.includes("TEXT")}
-          defaultValue={a.text}
+          value={response.text}
+          onChange={event=>setResponse(current=>({...current,text:event.target.value}))}
         />
       </label>
       <label className="oc-task-submission-field">
@@ -126,9 +136,10 @@ function Submission({
           name="link"
           type="url"
           maxLength={2000}
-          disabled={closed || busy}
+          disabled={closed || busy || !draftSave.ready || draftSave.recovery != null}
           required={task.requirements.includes("LINK")}
-          defaultValue={a.link}
+          value={response.link}
+          onChange={event=>setResponse(current=>({...current,link:event.target.value}))}
           placeholder="https://…"
         />
       </label>

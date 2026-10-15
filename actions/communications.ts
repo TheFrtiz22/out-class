@@ -155,11 +155,17 @@ export async function getDecisionTemplates(clubId:string) {
  const club=await prisma.club.findUniqueOrThrow({where:{id:clubId},select:{name:true,logoUrl:true,color:true,decisionLetterTemplates:true,sendFormalDecisionLetters:true}});
  return {...club,templates:letterTemplatesSchema.parse(club.decisionLetterTemplates ?? {})};
 }
-export async function saveDecisionTemplates(clubId:string,input:unknown) {
+export async function saveDecisionTemplates(clubId:string,input:unknown,expectedTemplates?:string) {
  z.string().uuid().parse(clubId);const templates=letterTemplatesSchema.parse(input);
  const {user}=await requireClubPermission(clubId,['recruitment.manage']);
  await clubWriteTransaction(async tx=>{
   await authorizeClubTransaction(tx,clubId,user.id,['recruitment.manage']);
+  if(expectedTemplates !== undefined) {
+   z.string().max(50000).parse(expectedTemplates);
+   const current=await tx.club.findUniqueOrThrow({where:{id:clubId},select:{decisionLetterTemplates:true}});
+   const saved=JSON.stringify(letterTemplatesSchema.parse(current.decisionLetterTemplates??{}));
+   if(saved!==expectedTemplates && saved!==JSON.stringify(templates))throw Error('Letter templates changed in another tab. Your text is retained. Reopen to compare.');
+  }
   await tx.club.update({where:{id:clubId},data:{decisionLetterTemplates:templates as Prisma.InputJsonValue}});
   await tx.auditLog.create({data:{actorId:user.id,clubId,targetId:clubId,action:'recruitment.letter.templates.updated',details:{types:Object.keys(templates)}}});
  });return {success:true};

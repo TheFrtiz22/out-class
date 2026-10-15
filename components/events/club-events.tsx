@@ -1,4 +1,7 @@
 "use client";
+import { useEditorDraft } from "@/hooks/use-editor-draft";
+import { AutosaveStatus } from "@/components/ui/autosave-status";
+
 import { useEffect, useRef, useState } from "react";
 import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
 import { eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, eventTimeLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
@@ -107,6 +110,12 @@ function EventEditor({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  const draftSave = useEditorDraft({
+    scope: { kind: "event", clubId, resourceId: event?.id ?? "new" },
+    value: { title, description, start, end, location, category, contact, enabled, required, capacity, deadline, template, useTemplate },
+    restore: d => { setTitle(d.title); setDescription(d.description); setStart(d.start); setEnd(d.end); setLocation(d.location); setCategory(d.category); setContact(d.contact); setEnabled(d.enabled); setRequired(d.required); setCapacity(d.capacity); setDeadline(d.deadline); setTemplate(d.template); setUseTemplate(d.useTemplate) },
+    base: event ? String(event.revision) : "new",
+  });
   const operation = useRef(false);
   let date = "2026-10-16T23:00:00Z",
     endDate = "2026-10-17T01:00:00Z";
@@ -141,6 +150,7 @@ function EventEditor({
     setError("");
     setNotice("");
     try {
+      await draftSave.flush();
       const result = await saveCampusEvent({
         ...(saved ? { id: saved.id } : {}),
         clubId,
@@ -160,7 +170,7 @@ function EventEditor({
         useTemplate,
       });
       setSaved(result);
-      if (finish) onSaved();
+      if (finish) { await draftSave.clear(); onSaved(); }
       else setNotice("Draft saved. You can now upload a flyer.");
       return result;
     } catch (e) {
@@ -175,7 +185,7 @@ function EventEditor({
     const current = await save(false, true);
     if (!current) { operation.current = false; setBusy(false); return; }
     setBusy(true);
-    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); onSaved("Pending Approval") }
+    try { await commandCampusEvent({ clubId, eventId: current.id, revision: current.revision, command: "SUBMIT" }); await draftSave.clear(); onSaved("Pending Approval") }
     catch { setError("Draft saved, but submission failed. Refresh and try again.") }
     finally { operation.current = false; setBusy(false) }
   }
@@ -197,7 +207,7 @@ function EventEditor({
         flyerUrl: `/api/event-flyers?eventId=${current.id}&revision=${result.revision}&preview=1`,
       });
       setUseTemplate(false);
-      setNotice("Flyer uploaded privately. Save your draft to finish.");
+      setNotice("Flyer uploaded privately. Apply event changes when ready.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Flyer upload failed.");
     } finally {
@@ -210,24 +220,25 @@ function EventEditor({
         <h2 className="font-serif text-2xl">
           {event ? "Edit event" : "Create Corkboard Event"}
         </h2>
-        <Button variant="ghost" disabled={busy} onClick={onClose}>
+        <Button variant="ghost" disabled={busy} onClick={() => void draftSave.flush().then(onClose).catch(() => {})}>
           Back to events
         </Button>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Save a draft, preview your flyer, then submit for approval. Editing an
+        Your private draft saves automatically. Preview your flyer, then submit for approval. Applying changes to an
         approved event withdraws it until an administrator approves the new
         revision.
       </p>
       {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-slate-900">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
-      <form
+      <AutosaveStatus save={draftSave} />
+      <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
         className="oc-event-editor"
         onSubmit={(e) => {
           e.preventDefault();
           void save(true);
         }}
       >
-        <fieldset disabled={busy} className="oc-event-editor-fields min-w-0">
+        <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="oc-event-editor-fields min-w-0">
           <label>
             Event name
             <Input
@@ -386,7 +397,7 @@ function EventEditor({
           <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => document.getElementById("event-flyer-preview")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Preview</Button>
           <Button type="button" disabled={busy} onClick={() => void submit()}>Submit for Approval</Button>
           <Button type="submit" disabled={busy}>
-            {busy ? "Saving…" : "Save draft"}
+            {busy ? "Applying…" : "Apply event changes"}
           </Button></div>
         </fieldset>
         <aside className="oc-event-editor-preview" id="event-flyer-preview" aria-label="Flyer preview">

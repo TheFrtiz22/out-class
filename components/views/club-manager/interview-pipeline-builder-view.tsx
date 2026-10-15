@@ -1,4 +1,7 @@
 "use client";
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+
 import { NativeSelect } from "@/components/ui/native-select"
 import { getPipelineSettings } from "@/lib/workspace-read";
 import { useEffect, useRef, useState } from "react";
@@ -84,15 +87,7 @@ export function InterviewPipelineBuilderView({
       current = false;
     };
   }, [clubId, demo.ready, demo.isDemoEnabled, retry]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  const draftSave = useEditorDraft({ scope: { kind: "pipeline", clubId }, value: rounds, restore: setRounds, enabled: loaded && !!clubId, base: baseline });
   function edit(id: string, patch: Partial<RoundDraft>) {
     setRounds((items) =>
       items.map((r) => (r.id === id ? { ...r, ...patch } : r)),
@@ -122,7 +117,9 @@ export function InterviewPipelineBuilderView({
     setError("");
     setNotice("");
     try {
+      await draftSave.flush();
       await savePipelineSettings(input);
+      await draftSave.clear();
       setBaseline(snapshot);
       setNotice("Recruiting pipeline saved.");
       setRetry((n) => n + 1);
@@ -155,8 +152,8 @@ export function InterviewPipelineBuilderView({
   return (
     <div
       className="oc-settings-editor space-y-6"
-      data-unsaved={dirty}
-      data-saving={busy}
+      data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
+      data-saving={busy || draftSave.saving}
     >
       <div>
         <h2 className="oc-section-heading">Recruiting Pipeline</h2>
@@ -166,12 +163,13 @@ export function InterviewPipelineBuilderView({
           these rounds.
         </p>
       </div>
+      <AutosaveStatus save={draftSave} />
       {error && (
         <div role="alert" className="space-y-2 text-sm text-destructive">
           <p>{error}</p>
           <Button
             variant="outline"
-            disabled={busy}
+            disabled={busy || !draftSave.ready || draftSave.recovery != null}
             onClick={() => {
               if (
                 !dirty ||
@@ -196,7 +194,7 @@ export function InterviewPipelineBuilderView({
           <ol className="space-y-4">
             {rounds.map((r, i) => (
               <li className="oc-settings-question" key={r.id}>
-                <fieldset disabled={busy} className="space-y-4">
+                <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">
                       Round {i + 1}
