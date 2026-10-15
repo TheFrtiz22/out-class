@@ -27,7 +27,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   await shot(page,'scheduling-confirm-desktop')
   await step('Review interviewer approval',panel.getByRole('button',{name:'Confirm interviewers',exact:true}))
   await step('Explicit owner approval',dialog.getByRole('button',{name:'Approve interviewers',exact:true}))
-  await publication.getByText('1 slots ready',{exact:true}).waitFor()
+  await publication.getByText('1 slot ready',{exact:true}).waitFor()
   await shot(page,'scheduling-publish-desktop')
   await step('Publish booking',publication.getByRole('button',{name:'Publish booking',exact:true}))
   await page.getByRole('heading',{name:'Bookings',exact:true}).waitFor();assert.equal(steps.length,6)
