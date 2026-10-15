@@ -17,16 +17,16 @@
 .oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--brand-orange); outline-offset: -4px; }
 .oc-perspective-copy > p:last-child { margin-top: 20px; color: var(--muted-foreground); }
 .oc-story-frame { --card: #fffefa; --background: #f6f5f1; --foreground: #1c2d40; --muted-foreground: #52606d; --primary: #142d45; --border: #dfe3dd; --accent: #e7ebe7; --brand-orange: #e8793e; --brand-ink: #9f3d12; --input: #8793a0; color: var(--foreground); }
-.oc-landing .oc-story-toolbar { gap: 12px; padding: 12px 20px; background: #f6f5f1; min-height: 54px; }
+.oc-landing .oc-story-toolbar { gap: 12px; padding: 2px 16px; background: #f6f5f1; min-height: 48px; }
 .oc-demo-wordmark { width: 88px; height: auto; flex-shrink: 0; }
 .oc-story-toolbar strong { font-size: 11px; }
 .oc-story-toolbar .oc-preview-playback { min-width: 44px; min-height: 44px; margin: -10px -6px; padding: 8px 6px; border-radius: 6px; font: inherit; color: inherit; }
 .oc-preview-playback:disabled { cursor: default; }
-.oc-demo-workspace-context { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted-foreground); }
+.oc-demo-workspace-context { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 16px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--muted-foreground); }
 .oc-demo-workspace-context > span:first-child { display: flex; align-items: center; gap: 10px; }
 .oc-demo-workspace-context > span:last-child { display: grid; place-items: center; width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 50%; background: #e9efe8; color: var(--primary); font-size: 9px; }
-.oc-landing .oc-story-interface { padding: 24px; min-height: 480px; }
-.oc-perspective-scene { display: flex; flex-direction: column; min-height: 480px; min-width: 0; gap: 16px; }
+.oc-landing .oc-story-interface { padding: 12px 16px; height: clamp(236px, 31svh, 320px); min-height: 0; }
+.oc-perspective-scene { display: flex; flex-direction: column; min-height: 100%; min-width: 0; gap: 10px; }
 .oc-perspective-scene :is(h3, h4) { color: var(--foreground); text-wrap: pretty; }
 .oc-landing .oc-story-interface h3 { font-size: 17px; font-weight: 600; line-height: 1.4; }
 .oc-landing .oc-story-interface h4 { font-size: 13px; line-height: 1.5; }
@@ -41,8 +41,8 @@
 .oc-demo-club p, .oc-demo-person p { margin-top: 4px; color: var(--muted-foreground); font-size: 11px; line-height: 1.55; }
 .oc-demo-club > [data-slot="badge"] { font-size: 10px; }
 .oc-demo-views { display: grid; min-width: 0; flex: 1; }
-.oc-demo-views > [data-demo-view] { grid-area: 1 / 1; min-width: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--oc-motion-state) var(--oc-motion-ease), visibility var(--oc-motion-state); }
-.oc-demo-views > [data-demo-view="true"] { opacity: 1; visibility: visible; pointer-events: auto; }
+.oc-demo-views > [data-demo-view] { display: none; grid-area: 1 / 1; min-width: 0; opacity: 0; visibility: hidden; pointer-events: none; }
+.oc-demo-views > [data-demo-view="true"] { display: block; opacity: 1; visibility: visible; pointer-events: auto; }
 .oc-demo-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; min-height: 44px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
 .oc-landing .oc-demo-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; padding: 10px 14px; min-height: 44px; max-width: 100%; font-size: 11px; line-height: 1.5; font-weight: 600; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fffefa; transition: background-color var(--oc-motion-press) var(--oc-motion-ease), border-color var(--oc-motion-press) var(--oc-motion-ease); }
 .oc-landing .oc-demo-button[data-secondary="true"] { color: var(--primary); background: transparent; border-color: var(--border); }
@@ -170,8 +170,8 @@
 @media (max-width: 540px) {
   .oc-journey-controls > h2 { font-size: 16px; }
   .oc-perspective-switcher { width: 100%; }
-  .oc-landing .oc-story-interface { padding: 20px 16px; min-height: 0; }
-  .oc-perspective-scene { min-height: 420px; gap: 16px; }
+  .oc-landing .oc-story-interface { padding: 12px; height: clamp(260px, 40svh, 340px); }
+  .oc-perspective-scene { gap: 10px; }
   .oc-landing .oc-story-toolbar { padding-inline: 16px; }
   .oc-story-toolbar strong { font-size: 10px; }
   .oc-demo-wordmark { width: 75px; }

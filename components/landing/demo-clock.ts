@@ -1,4 +1,4 @@
-import type { DemoTimeline } from "./demo-timelines"
+import { demoPacing, type DemoTimeline } from "./demo-timelines"
 
 export type DemoSample = { elapsed: number; progress: number; state: number; beat: number; movement: number; pressing: number; response: number; viewOpacity: number; label: string; complete: boolean }
 
@@ -11,7 +11,7 @@ export function sampleDemo(timeline: DemoTimeline, elapsed: number): DemoSample 
     if (time >= timeline.beats[i].respond) state = timeline.beats[i].state
   }
   const current = timeline.beats[beat]
-  const response = time < current.respond ? 1 : Math.max(0, Math.min(1, (time - current.respond) / 480))
+  const response = time < current.respond ? 1 : Math.max(0, Math.min(1, (time - current.respond) / demoPacing.response))
   const previousState = beat > 0 ? timeline.beats[beat - 1].state : 0
   return { elapsed: time, progress: time / timeline.duration, state, beat,
     movement: Math.max(0, Math.min(1, (time - current.start) / (current.arrive - current.start))),

@@ -6,7 +6,7 @@ const ts = require('typescript')
 function load(file) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file,'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require','module','exports',code)(name => load(path.join(path.dirname(file), `${name}.tsx`)), mod, mod.exports)
+  new Function('require','module','exports',code)(name => load(['.ts','.tsx'].map(ext => path.join(path.dirname(file), `${name}${ext}`)).find(file => fs.existsSync(file))), mod, mod.exports)
   return mod.exports
 }
 const { createDemoClock, sampleDemo, prominentDemo } = load('components/landing/demo-clock.ts')
@@ -17,21 +17,24 @@ function harness(timeline = demoTimelines.apply) {
   const clock = createDemoClock(timeline, sample => renders.push(sample), callback => { frames.set(++serial, callback); return serial }, id => frames.delete(id))
   return { clock, renders, get frames() { return frames.size }, advance(ms) { const end = now + ms; while (now < end) { now = Math.min(end,now+20); const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(now)) } } }
 }
-test('every scene has one finite, deliberate timeline with a readable completed state', () => {
+test('every scene is 35–50% shorter while retaining a readable completed state and natural travel', () => {
+  const baseline = { discover:13760, apply:20080, 'student-interview':12860, status:9840, join:12860, build:15060, recruit:17880, review:20100, 'leader-interview':27940, decide:12860, manage:20100 }
   assert.equal(Object.keys(demoTimelines).length, 11)
-  for (const timeline of Object.values(demoTimelines)) {
-    assert.ok(timeline.duration >= 9000 && timeline.duration <= 30000)
+  for (const [scene,timeline] of Object.entries(demoTimelines)) {
+    assert.ok(timeline.duration >= baseline[scene] * .5 && timeline.duration <= baseline[scene] * .65, scene)
+    assert.ok(timeline.duration >= 6000 && timeline.duration <= 15000)
     assert.ok(timeline.summary.length > 80)
     assert.equal(sampleDemo(timeline,0).progress,0)
     assert.equal(sampleDemo(timeline,timeline.duration).progress,1)
     assert.equal(sampleDemo(timeline,timeline.duration).state,timeline.finalState)
     assert.equal(sampleDemo(timeline,timeline.duration).complete,true)
     for (const beat of timeline.beats) {
-      assert.ok(beat.arrive - beat.start >= 500 && beat.arrive - beat.start <= 900)
-      assert.ok(beat.press - beat.arrive >= 300 && beat.press - beat.arrive <= 600)
-      assert.equal(beat.clickEnd - beat.press,160)
-      assert.equal(beat.end - beat.respond - (beat.hold ?? (beat === timeline.beats.at(-1) ? 2600 : 1800)),480)
+      assert.ok(beat.arrive - beat.start >= 400 && beat.arrive - beat.start <= 760)
+      assert.ok(beat.press - beat.arrive >= 80 && beat.press - beat.arrive <= 150)
+      assert.ok(beat.clickEnd - beat.press >= 100 && beat.clickEnd - beat.press <= 160)
+      assert.ok(beat.end - beat.respond >= 650, 'each outcome has time to settle')
     }
+    assert.ok(timeline.duration - timeline.beats.at(-1).respond >= 1500)
   }
 })
 test('interface responses occur after the click and any text entry, from the same progress clock', () => {

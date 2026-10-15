@@ -42,6 +42,8 @@ import { RecruitmentReviewSettings } from "@/components/recruitment-review-setti
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { navigateWithinClub } from "@/lib/workspace-navigation";
+import { WorkspaceLoading } from "@/components/workspace-loading";
+import { clubWorkspaceEntryHref, clubWorkspacePreferenceKey, readClubWorkspacePreference, saveClubWorkspacePreference } from "@/lib/club-workspace-preference";
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>;
 type Directory = Awaited<ReturnType<typeof import("@/actions/organization-members").getOrganizationMemberManagement>>;
 type Pipeline = Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>;
@@ -75,9 +77,18 @@ export function ClubWorkspace({
   const { user, loading, activeClubId, selectClub } = useAuth(),
     demo = useDemoMode();
   const membership = user?.memberships.find((m) => m.clubId === clubId);
+  const manager = !!membership && hasWorkspace(membership);
+  const preferenceKey = user ? clubWorkspacePreferenceKey(user.id, clubId, demo.isDemoEnabled ? "demo" : user.impersonating ? "preview" : "live") : "";
   const suspended = !demo.isDemoEnabled && !!membership?.club.suspendedAt;
+  // Resolve only general entries. Explicit page URLs always retain their destination.
+  const resolvingEntry = params.size === 0 && (!demo.ready || loading || manager);
+  useEffect(() => {
+    if (!resolvingEntry || !demo.ready || loading || !membership || !manager || suspended) return;
+    const href = clubWorkspaceEntryHref(clubId, membership, readClubWorkspacePreference(preferenceKey));
+    if (!navigateWithinClub(href, true)) router.replace(href);
+  }, [resolvingEntry, demo.ready, loading, membership, manager, suspended, clubId, preferenceKey, router]);
   const membershipKey = membership ? `${membership.id}:${membership.status}:${membership.accessRole}:${membership.isOwner}:${membership.permissions.join(",")}:${membership.interviewOffices?.join(",") ?? ""}:${membership.club.pipelineVersion}:${membership.club.applicationVersion}:${membership.club.suspendedAt ?? ""}` : "";
-  const canLoadWorkspace = !!membership && !suspended;
+  const canLoadWorkspace = !!membership && !suspended && !resolvingEntry;
   // Resource state belongs to this mounted workspace, never a module/global cache.
   // Account, grant or privacy changes immediately hide prior resources.
   const scope = `${demo.isDemoEnabled ? "demo" : "live"}:${user?.id}:${clubId}:${membershipKey}:${privacyRevision}`;
@@ -136,11 +147,11 @@ export function ClubWorkspace({
   ]);
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
   if (suspended) return <main className="mx-auto max-w-2xl p-8"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></main>;
-  const manager = !!membership && hasWorkspace(membership);
+  if (resolvingEntry) return <WorkspaceLoading label="Opening club workspace…" />;
   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
   const active = section === "announcements" ? "announcements" : mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
   const nav = manager ? managerNavigation(membership, clubId, mode) : [
-    { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId) },
+    { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId, "overview") },
     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
   ];
@@ -157,7 +168,8 @@ export function ClubWorkspace({
     <RecruitmentFocus />
     {interviewMode && membership && !loading && !needsSelection && hasPermission(membership, "applications.review") ? <InterviewWorkspaceView scoped onExit={() => setInterviewMode(false)} /> :
       <ProductShell manager={manager} clubId={clubId} clubName={current?.club.name || membership?.club.name} mode={manager ? mode : "clubs"}
-        modes={manager ? [...(recruitmentTools(membership!).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }] : []), { id: "club", label: "Club", href: clubWorkspaceHref(clubId) }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
+        modes={manager ? [...(recruitmentTools(membership!).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubWorkspaceHref(clubId, "recruitment")}&tool=overview` }] : []), { id: "club", label: "Club", href: clubWorkspaceHref(clubId, "overview") }] : personalModes.map(item => { const destination = personalDestination(item.id); const params = new URLSearchParams({ workspace: "student", view: destination.view }); if (destination.section) params.set("section", destination.section); return { ...item, href: `/?${params}` } })}
+        onModeSelect={id => { if (manager && (id === "recruiting" || id === "club")) saveClubWorkspacePreference(preferenceKey, id) }}
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}

@@ -13,13 +13,13 @@
 .oc-journey-thread { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 20px var(--oc-journey-gutter) 0; font-size: 12px; color: var(--primary); }
 .oc-journey-thread > span:first-child { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-orange); }
 .oc-journey-thread > span:last-child { color: var(--muted-foreground); }
-.oc-landing[data-scroll-motion] .oc-product-story { padding-block: 56px; gap: clamp(36px, 6vw, 88px); align-items: center; }
+.oc-landing[data-scroll-motion] .oc-product-story { align-items: center; }
 .oc-stage-marker { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--brand-ink); }
 .oc-stage-marker > span { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #a6431735; border-radius: 50%; font-size: 12px; letter-spacing: 0; background: var(--oc-journey-linen); position: relative; z-index: 1; }
 .oc-landing .oc-story-copy { position: static; padding-top: 0; }
-.oc-landing .oc-story-copy h2 { font-size: clamp(2rem, 3.3vw, 2.85rem); max-width: 17ch; font-weight: 400; line-height: 1.18; }
+.oc-landing .oc-story-copy h2 { font-size: clamp(2rem, 3.6vw, 3.15rem); max-width: 17ch; font-weight: 400; line-height: 1.14; }
 .oc-landing .oc-perspective-copy > p:last-child { font-size: 16px; max-width: 38ch; line-height: 1.75; }
-.oc-stage-detail { font-size: 12px; border-top: 1px solid #142d4e25; padding-top: 16px; margin-top: 28px; max-width: 36ch; color: var(--muted-foreground); line-height: 1.6; }
+.oc-stage-detail { font-size: 12px; border-top: 1px solid #142d4e25; padding-top: 12px; margin-top: 20px; max-width: 36ch; color: var(--muted-foreground); line-height: 1.6; }
 .oc-story-continuation { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; font-size: 12px; color: var(--primary); }
 .oc-story-continuation:hover { text-decoration: underline; text-underline-offset: 4px; }
 .oc-landing .oc-product-story::after { display: none; }
@@ -30,6 +30,9 @@
 .oc-landing .oc-final-invitation { min-height: 420px; background: var(--oc-public-paper); padding-block: 80px; border-top: 1px solid #142d4e12; }
 .oc-landing .oc-final-invitation .oc-invitation-cta { min-height: 52px; width: auto; padding: 14px 28px; font-size: 16px; box-shadow: none; }
 @media (max-width: 1099px) { .oc-journey-index { margin-inline: var(--oc-public-gutter); } }
+@media (min-width: 801px) and (max-width: 1099px) {
+  .oc-landing[data-scroll-motion] .oc-product-story { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 28px; }
+}
 @media (max-width: 800px) {
   .oc-landing .oc-how-introduction { grid-template-columns: 1fr; gap: 24px; padding-block: 64px 32px; }
   .oc-how-introduction .oc-public-kicker { margin-bottom: 0; }
@@ -41,7 +44,7 @@
   .oc-journey-index a { padding: 8px 0; border: 0; font-size: 12px; min-height: 60px; }
   .oc-journey-thread { padding-top: 8px; }
   .oc-journey-thread > span:last-child { flex-basis: 100%; padding-left: 18px; }
-  .oc-landing[data-scroll-motion] .oc-product-story { padding-block: 36px; gap: 24px; align-items: start; }
+  .oc-landing[data-scroll-motion] .oc-product-story { align-items: start; }
   .oc-landing .oc-product-story::after { display: none; }
   .oc-stage-marker { margin-bottom: 18px; }
   .oc-landing .oc-story-copy h2 { max-width: 24ch; }

@@ -6,7 +6,7 @@ The site now uses the path-based, font-independent SVGs in [premium-board/](prem
 
 | Surface | Artwork | Path |
 | --- | --- | --- |
-| Light public navigation | Two-tone sword-free wordmark (legible at compact sizes) | `premium-board/04_wordmark_no_sword.svg` |
+| Light public navigation | Primary two-tone wordmark with sword | `premium-board/02_primary_lockup.svg` |
 | Light-background full logo | Primary two-tone wordmark with sword | `premium-board/02_primary_lockup.svg` |
 | Navy navigation, login panel, sidebar, footer | Ivory/orange sword lockup with transparent background | `premium-board/10_hero_transparent.svg` |
 | Compact OC / app tile | Primary navy rounded-square monogram | `premium-board/05_app_icon_primary.svg` |
