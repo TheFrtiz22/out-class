@@ -45,7 +45,7 @@ export function ResumeImportDialog({ profile, onSaved }: { profile: FullStudentP
     finally { setBusy(false) }
   }
   return <Dialog open={open} onOpenChange={close}>
-    <DialogTrigger asChild><Button variant="outline" className="mt-4" disabled={demo.isDemoEnabled}>Import PDF into profile</Button></DialogTrigger>
+    <DialogTrigger asChild><Button variant="outline" size="sm" disabled={demo.isDemoEnabled}>Import PDF into profile</Button></DialogTrigger>
     {demo.isDemoEnabled && <p className="mt-2 text-xs text-muted-foreground">PDF importing is unavailable in Demo Mode; sample profiles stay isolated.</p>}
     <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl" onEscapeKeyDown={e => { if (busy) e.preventDefault() }} onPointerDownOutside={e => { if (busy) e.preventDefault() }}>
       <DialogHeader><DialogTitle>Import your résumé</DialogTitle><DialogDescription>Upload a text-based PDF, review the suggestions, then confirm. Nothing changes in your profile before confirmation.</DialogDescription></DialogHeader>

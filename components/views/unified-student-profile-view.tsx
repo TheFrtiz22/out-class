@@ -4,8 +4,7 @@ import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarNames } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "@/components/icons"
-import Link from "next/link"
+import { ArrowUpRight, Check, FileText, Linkedin, Pencil, Eye, ChevronDown } from "@/components/icons"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -18,6 +17,7 @@ import type { StudentMembership } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { ResumeImportDialog } from "@/components/resume-import-dialog"
 import { EditStudentProfileDialog } from "@/components/edit-student-profile-dialog"
 
@@ -89,7 +89,7 @@ export function UnifiedStudentProfileView() {
     )
   const checklist = profileChecklist(profile)
   const completed = checklist.filter((item) => item.complete).length
-  function edit(section: ProfileSection) {
+  function edit(section: ProfileSection, label?: string) {
     return (
       <EditStudentProfileDialog
         profile={profile!}
@@ -100,13 +100,13 @@ export function UnifiedStudentProfileView() {
         }}
         trigger={
           <Button
-            variant="ghost"
+            variant={section === "links" ? "outline" : "ghost"}
             size="sm"
-            aria-label={`Edit ${section === "identity" ? "name and photo" : section}`}
+            aria-label={label ?? `Edit ${section === "identity" ? "name and photo" : section}`}
             className="shrink-0 text-muted-foreground"
           >
             <Pencil className="size-3.5" />
-            <span>{section === "experience" ? "Edit structured experience" : "Edit"}</span>
+            <span>{label ?? (section === "experience" ? "Edit structured experience" : "Edit")}</span>
           </Button>
         }
       />
@@ -153,32 +153,31 @@ export function UnifiedStudentProfileView() {
             Class of {profile.gradYear}
           </p>
           {edit("identity")}
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm">
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
             <AvailabilityButton />
-            {safeProfileUrl(profile.linkedinUrl) && (
-              <a
-                href={safeProfileUrl(profile.linkedinUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
-              >
-                <Linkedin className="size-4" />
-                LinkedIn<span className="sr-only"> (opens in a new tab)</span>
-                <ArrowUpRight className="size-3" />
-              </a>
-            )}
-            {resolveResumeUrl(profile.resumeUrl) && (
-              <a
-                href={resolveResumeUrl(profile.resumeUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
-              >
-                <FileText className="size-4" />
-                View résumé<span className="sr-only"> (opens in a new tab)</span>
-                <ArrowUpRight className="size-3" />
-              </a>
-            )}
+            <div role="group" aria-label="Links and résumé" className="flex flex-wrap items-center gap-2">
+              {edit("links", "Edit links & résumé")}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label="Preview links and résumé" disabled={!safeProfileUrl(profile.linkedinUrl) && !resolveResumeUrl(profile.resumeUrl)}>
+                    <Eye className="size-4" />Preview<ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {safeProfileUrl(profile.linkedinUrl) && <DropdownMenuItem asChild>
+                    <a href={safeProfileUrl(profile.linkedinUrl)} target="_blank" rel="noopener noreferrer">
+                      <Linkedin className="size-4" />LinkedIn<ArrowUpRight className="ml-auto size-3" /><span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </DropdownMenuItem>}
+                  {resolveResumeUrl(profile.resumeUrl) && <DropdownMenuItem asChild>
+                    <a href={resolveResumeUrl(profile.resumeUrl)} target="_blank" rel="noopener noreferrer">
+                      <FileText className="size-4" />View résumé<ArrowUpRight className="ml-auto size-3" /><span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ResumeImportDialog key={profile.userId} profile={profile} onSaved={value => { setProfile(value); setSaved(true) }} />
+            </div>
           </div>
         </div>
       </header>
@@ -254,16 +253,6 @@ export function UnifiedStudentProfileView() {
               </li>
             ))}
           </ul>
-          <div className="mt-8 border-t border-border pt-6">
-            <div className="flex items-center justify-between">
-              <h3 className="oc-card-heading ">Links & résumé</h3>
-              {edit("links")}
-            </div>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Store your résumé, or import a text-based PDF and review proposed profile changes.
-            </p>
-          </div>
-          <ResumeImportDialog key={profile.userId} profile={profile} onSaved={value => { setProfile(value); setSaved(true) }} />
           <div className="mt-4">{edit("experience")}</div>
         </aside>
       </div>

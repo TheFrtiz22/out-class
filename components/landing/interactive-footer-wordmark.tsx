@@ -125,7 +125,7 @@ export function InteractiveFooterWordmark() {
   return <div ref={fieldRef} className="oc-footer-field">
     <span className="sr-only">OutClass</span>
     <div ref={lettersRef} className="oc-footer-letters" aria-hidden="true">
-      {Array.from("OUTCLASS", (letter, index) => <span className="oc-footer-letter" key={index}>{letter}</span>)}
+      {Array.from("OUTCLASS", (letter, index) => <span className="oc-footer-letter" data-accent={index >= 3 || undefined} key={index}>{letter}</span>)}
     </div>
   </div>
 }

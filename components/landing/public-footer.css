@@ -21,6 +21,7 @@
 .oc-footer-field { container-type: inline-size; display: flex; justify-content: center; align-items: center; padding-block: clamp(28px, 4vw, 64px); border-block: 1px solid #fff7ec26; }
 .oc-footer-letters { position: relative; display: flex; width: max-content; font-family: var(--oc-font-display); font-size: 17.1cqw; font-weight: 400; line-height: 1.18; letter-spacing: -.035em; color: #fff7ec; }
 .oc-footer-letter { display: block; }
+.oc-footer-letter[data-accent="true"] { color: var(--brand-orange); }
 .oc-footer-field[data-active] .oc-footer-letter { will-change: transform; }
 .oc-footer-bottom { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px 36px; padding-block: 28px 36px; color: #c6cbd1; }
 .oc-footer-bottom small, .oc-footer-bottom p { margin: 0; font-size: 11px; line-height: 1.7; }

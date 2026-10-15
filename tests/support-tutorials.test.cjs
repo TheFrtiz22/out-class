@@ -217,7 +217,7 @@ test('feature migration preserves old data, keeps historical tokens read-only, i
 });
 
 test('tutorial UI advances, goes back, skips with Escape, restarts, highlights context and remains dismissible on save failure', async () => {
-  const slots = [], pendingEffects = [], listeners = {}; let cursor = 0, saved = [], fail = false;
+  const slots = [], pendingEffects = [], listeners = {}, preferences = new Map(); let cursor = 0, saved = [], fail = false;
   const react = {
     useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
     useRef(value) { const i = cursor++; return slots[i] ??= { current: value }; },
@@ -229,11 +229,11 @@ test('tutorial UI advances, goes back, skips with Escape, restarts, highlights c
   };
   const old = { window: global.window, document: global.document, ResizeObserver: global.ResizeObserver };
   global.window = { addEventListener(name,fn) { listeners[name] = fn; }, removeEventListener() {} };
-  global.document = { activeElement: null, querySelectorAll: () => [], querySelector: () => ({ getBoundingClientRect: () => ({ top: 100, left: 10, width: 200, height: 50 }) }), body: {} };
+  global.document = { activeElement: null, querySelectorAll: () => [], querySelector: () => ({ focus() {}, getBoundingClientRect: () => ({ top: 100, left: 10, width: 200, height: 50 }) }), body: {} };
   global.ResizeObserver = class { observe() {} disconnect() {} };
   global.HTMLElement ??= class {};
   try {
-    const { TutorialWalkthrough } = loader({ react, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'tutorial-user' } }) }, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/tutorial-dismissal': { tutorialDismissalKey: () => 'fixture', tutorialDismissed: () => false, setTutorialDismissed() {} }, '@/components/ui/button': { Button: 'button' }, '@/lib/workspace-api': api })('components/tutorial-walkthrough.tsx');
+    const { TutorialWalkthrough } = loader({ react, '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'tutorial-user' } }) }, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/tutorial-dismissal': { tutorialDismissalKey: () => 'fixture', tutorialDismissed: key => preferences.get(key) === true, setTutorialDismissed(key, value) { preferences.set(key, value); } }, '@/components/ui/button': { Button: 'button' }, '@/lib/workspace-api': api })('components/tutorial-walkthrough.tsx');
     let tree;
     const walk = node => !node || typeof node !== 'object' ? [] : Array.isArray(node) ? node.flatMap(walk) : [node, ...walk(node.props?.children)];
     const label = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(label).join('') : node?.props ? label(node.props.children) : '';
@@ -251,6 +251,14 @@ test('tutorial UI advances, goes back, skips with Escape, restarts, highlights c
     await click('Tutorial help'); assert.equal(saved.at(-1).action, 'restart');
     fail = true; await click('Next'); assert.ok(button('Close for now'));
     await click('Close for now'); assert.ok(button('Tutorial help'));
+    const hide = walk(tree).find(node => node.type === 'button' && node.props['aria-label'] === 'Hide Tutorial help');
+    assert.ok(hide); hide.props.onClick(); await render();
+    assert.equal(button('Tutorial help'), undefined);
+    assert.equal(preferences.get('fixture:help'), true);
+    // A new mount respects the saved launcher preference, including offline progress.
+    slots.length = 0; await render();
+    assert.equal(button('Tutorial help'), undefined);
+    assert.equal(walk(tree).some(node => node.props?.role === 'dialog'), false);
   } finally { Object.assign(global, old); }
 });
 

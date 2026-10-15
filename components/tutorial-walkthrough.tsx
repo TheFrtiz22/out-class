@@ -19,6 +19,8 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
   const [progress, setProgress] = useState<TutorialProgress | null>(null);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const [dismissed, setDismissed] = useState(false);
+  const [helpHidden, setHelpHidden] = useState(true);
+  const helpKey = `${identity}:help`;
   const [rect, setRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const help = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLDivElement>(null), previousFocus = useRef<HTMLElement | null>(null);
@@ -30,13 +32,15 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
     owner.current = identity;
     const loadIntent = intent.current;
     setDismissed(tutorialDismissed(identity, preview));
+    setHelpHidden(tutorialDismissed(helpKey, preview));
     getTutorial(experience, clubId).then(value => {
       if (!active || owner.current !== identity || intent.current !== loadIntent) return;
       setProgress(value);
       if (tutorialDismissed(identity, preview) && value.status === "IN_PROGRESS") void enqueue("skip", value.step).catch(() => {});
     }).catch(() => { if (active && owner.current === identity && intent.current === loadIntent) setError("Tutorial could not load. You can keep working and retry from Tutorial help."); });
     const syncDismissal = (event: Event) => {
-      if (event instanceof StorageEvent && event.key !== identity) return;
+      if (event instanceof StorageEvent && event.key !== identity && event.key !== helpKey && event.key !== null) return;
+      setHelpHidden(tutorialDismissed(helpKey, preview));
       if (tutorialDismissed(identity, preview)) {
         intent.current++; setDismissed(true); setRect(null); setBusy(false);
         void enqueue("skip", 0).catch(() => {});
@@ -47,7 +51,7 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
     return () => { active = false; owner.current = ""; window.removeEventListener("online", syncDismissal); window.removeEventListener("storage", syncDismissal); };
   // enqueue captures this authorized scope; stale responses are checked below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [experience, clubId, identity, preview]);
+  }, [experience, clubId, identity, helpKey, preview]);
   useEffect(() => {
     if (!open) {
       if (previousFocus.current) {
@@ -119,8 +123,15 @@ export function TutorialWalkthrough({ experience, clubId, preview, onOpenStep }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, identity, stepIndex]);
   return <>
-    {!open && <div className="fixed bottom-20 left-4 lg:bottom-4 z-30 max-w-[calc(100vw-2rem)]">
-      <Button ref={help} variant="outline" className="bg-card shadow-sm" disabled={busy || (!progress && !error)} onClick={() => void change("restart", 0)}><CircleHelp className="size-4" />Tutorial help</Button>
+    {!open && !helpHidden && <div className="fixed bottom-20 left-4 lg:bottom-4 z-30 max-w-[calc(100vw-2rem)]">
+      <div className="flex items-center rounded-md border bg-card shadow-sm">
+      <Button ref={help} variant="outline" className="border-0 bg-transparent shadow-none" disabled={busy || (!progress && !error)} onClick={() => void change("restart", 0)}><CircleHelp className="size-4" />Tutorial help</Button>
+      <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0 mr-1" aria-label="Hide Tutorial help" title="Hide Tutorial help" onClick={() => {
+        setHelpHidden(true);
+        setTutorialDismissed(helpKey, true, preview);
+        document.querySelector<HTMLElement>("#workspace-content")?.focus({ preventScroll: true });
+      }}><X className="size-4" /></Button>
+      </div>
       {error && <p role="status" className="mt-2 max-w-xs rounded border bg-card p-3 text-xs">{error}</p>}
     </div>}
     {open && <>
