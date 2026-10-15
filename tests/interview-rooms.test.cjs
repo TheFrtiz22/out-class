@@ -44,20 +44,20 @@ test('invalid dates, past windows, DST gaps/ambiguity and unsafe virtual links a
 function apiHarness() {
  const room={...input(),id:id(3),isOpen:true}
  const slot={id:id(4),clubId:id(1),roomId:room.id,room,startTime:new Date('2099-09-07T14:00Z'),endTime:new Date('2099-09-07T14:20Z'),capacity:1,_count:{bookings:0}}
- const app={id:id(5),studentId:id(6),clubId:id(1),roundId:id(2),status:'INTERVIEWING'}
+ const app={id:id(5),studentId:id(6),clubId:id(1),roundId:id(2),status:'INTERVIEWING',recruitmentCycleId:null}
  const state={room,slot,app,existing:null,others:[],created:[],deleted:[],audit:[],permission:true,retries:0,attempts:0,failCreate:false}
  const tx={
   $queryRaw:async()=>[],
   application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
-  pipelineRound:{findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
+  pipelineRound:{findUnique:async()=>({bookingAllowCancellation:true}),findUniqueOrThrow:async()=>({id:id(2),type:"INTERVIEW",bookingPublishedAt:new Date(),bookingSlots:[core.bookingSlotSnapshot(state.slot,state.room)],bookingCycleId:null,bookingAllowRescheduling:true}),findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
   clubMember:{count:async()=>0,findMany:async()=>[]},
   interviewRoom:{create:async({data})=>{state.created.push(data);return {id:id(3)}},update:async()=>{}},
   interviewPanelAssignment:{findMany:async()=>[]},
   auditLog:{create:async({data})=>state.audit.push(data)},
   interviewBooking:{findUnique:async()=>state.existing,findMany:async()=>state.others,findFirst:async({where})=>state.existing?.id===where.id&&state.app.studentId===where.application.studentId?state.existing:null,delete:async({where})=>state.deleted.push(where.id),create:async({data})=>{if(state.failCreate)throw Error('Write failed');state.created.push(data);return{id:id(8),...data}}}
  }
- const load=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}}),requireClubPermission:async()=>{if(!state.permission)throw Error('Denied');return{user:{id:id(6)},membership:{permissions:['interviews.manage']}}}},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{assert.ok(['Serializable','ReadCommitted'].includes(opts.isolationLevel));state.attempts++;if(state.retries-->0)throw{code:'P2034'};const before={created:[...state.created],deleted:[...state.deleted],audit:[...state.audit]};try{return await fn(tx)}catch(e){Object.assign(state,before);throw e}},interviewRoom:{findUnique:async()=>room}}},'next/cache':{revalidatePath(){}}})
+ const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[{slotId:state.slot.id,bookable:true}]},'@/utils/auth':{requireAuth:async()=>({user:{id:id(6)}}),requireClubPermission:async()=>{if(!state.permission)throw Error('Denied');return{user:{id:id(6)},membership:{permissions:['interviews.manage']}}}},'@/utils/prisma':{prisma:{$transaction:async(fn,opts)=>{assert.ok(['Serializable','ReadCommitted'].includes(opts.isolationLevel));state.attempts++;if(state.retries-->0)throw{code:'P2034'};const before={created:[...state.created],deleted:[...state.deleted],audit:[...state.audit]};try{return await fn(tx)}catch(e){Object.assign(state,before);throw e}},interviewRoom:{findUnique:async()=>room}}},'next/cache':{revalidatePath(){}}})
  return {state,api:load('actions/interview-rooms.ts')}
 }
 test('booking rejects ownership, invitation, club, round, capacity, past time and paused rooms',async()=>{
@@ -131,6 +131,6 @@ test('SQL migration preserves legacy data and enforces capacity, round, overlap 
 for(const historical of [false,true])for(const current of [false,true])for(const identify of [false,true])test(`room names: historical anonymous=${historical}, current anonymous=${current}, identify=${identify}`,async()=>{
  const member={status:'ACTIVE',permissions:['interviews.manage',...(identify?['applicants.identify']:[])]};
  const booking={id:id(8),slotId:id(4),applicationId:id(5),roundId:id(2),round:{anonymousReview:historical},application:{round:{anonymousReview:current},student:{studentProfile:{firstName:'Private',lastName:'Student'}}},slot:{roomId:id(3),startTime:new Date(),endTime:new Date(),location:'Room'}};
- const load=loader({'@/utils/auth':{requireClubPermission:async()=>({membership:member})},'@/utils/prisma':{prisma:{club:{findUniqueOrThrow:async()=>({name:'Club'})},pipelineRound:{findMany:async()=>[]},clubMember:{findMany:async()=>[]},interviewRoom:{findMany:async()=>[]},interviewBooking:{findMany:async({include})=>{assert.equal(include.application.select.round.select.anonymousReview,true);return[booking]}}}},'next/cache':{revalidatePath(){}}});
+ const load=loader({'@/utils/applicant-booking-notifications':{notifyApplicantBooking:async()=>{}},'@/utils/interview-booking':{interviewBookingCoverage:async()=>[{slotId:state.slot.id,bookable:true}]},'@/utils/auth':{requireClubPermission:async()=>({membership:member})},'@/utils/prisma':{prisma:{recruitmentCycle:{findMany:async()=>[]},club:{findUniqueOrThrow:async()=>({name:'Club'})},pipelineRound:{findMany:async()=>[]},clubMember:{findMany:async()=>[]},interviewRoom:{findMany:async()=>[]},interviewBooking:{findMany:async({include})=>{assert.equal(include.application.select.round.select.anonymousReview,true);return[booking]}}}},'next/cache':{revalidatePath(){}}});
  const view=await load('actions/interview-rooms.ts').getRoomWorkspace(id(1));assert.equal(view.bookings[0].candidate,identify&&!historical&&!current?'Private Student':`Applicant ${id(5).slice(-6)}`);
 });

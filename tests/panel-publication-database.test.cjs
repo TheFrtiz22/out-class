@@ -39,15 +39,11 @@ test('understaffing defaults to blocked, safe explicit overrides are recorded, a
  const blocked=await h.review();assert.equal(blocked.ok,false);assert.match(blocked.error,/booked session cannot be left/)
  workspace=await h.api.getPanelProposalWorkspace(h.scope);assert.equal(workspace.published.version,1)
 })
-test('K: applicant rescheduling after publication uses approved session panels; unstaffed sessions stay hidden and cannot be booked',async t=>{
- const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3]
- await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Only staffed sessions will be offered for new bookings.'}))
- const slots=(await h.snapshot()).InterviewSlot;h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.rooms.flatMap(r=>r.slots).some(s=>s.id===empty),false)
- await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}),/no qualified interviewer/)
- await h.rooms.reserveInterview({applicationId:h.ids.app,slotId:h.slotIds[2]});const grants=(await h.snapshot()).InterviewPanelAssignment.filter(g=>!g.revokedAt);assert.equal(grants.length,1);assert.equal(grants[0].memberId,slots.find(s=>s.id===h.slotIds[2]).publishedPanelMemberIds[0])
- assert.deepEqual((await h.snapshot()).InterviewSlot,slots)
- await h.rooms.cancelRoomBooking((await h.rooms.getApplicantSchedule(h.ids.app)).booking.id);assert.equal((await h.snapshot()).InterviewBooking.length,0)
+test('K: booking publication is separate from safe understaffed panel publication and preserves existing reservations',async t=>{
+ const h=await fixture(t),d=(await h.generate()).proposal,empty=h.slotIds[3];await h.api.savePanelProposalDraft({...h.input(d),assignments:d.document.assignments.filter(a=>a.slotId!==empty)});const review=ok(await h.review());ok(await h.publish.publishPanelSchedule({...h.scope,proposalId:review.proposalId,revision:review.revision,approvalToken:review.approvalToken,understaffedOverride:true,overrideReason:'Existing reservations are retained while staffing is completed.'}));
+ const before=await h.snapshot(),booking=h.load('actions/interview-booking-publication.ts');await assert.rejects(booking.setInterviewBookingPublication({...h.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true}),/unfilled/);h.as(h.ids.student);const schedule=await h.rooms.getApplicantSchedule(h.ids.app);assert.equal(schedule.publicationState,'NOT_PUBLISHED');assert.equal(schedule.rooms.length,0);assert.ok(schedule.booking);await assert.rejects(h.rooms.reserveInterview({applicationId:h.ids.app,slotId:empty}),/published/);assert.deepEqual(await h.snapshot(),before);await h.rooms.cancelRoomBooking(schedule.booking.id);assert.equal((await h.snapshot()).InterviewBooking.length,0)
 })
+
 test('ready tokens are owner-bound; editing clears readiness; history is immutable and recovery produces a revalidated working revision',async t=>{
  const h=await fixture(t);await h.generate();const review=ok(await h.review()),ready=(await h.api.getPanelProposalWorkspace(h.scope)).proposal
  await h.api.savePanelProposalDraft({...h.input(ready),assignments:ready.document.assignments});assert.equal((await h.confirm(review)).ok,false);const fresh=ok(await h.review());ok(await h.confirm(fresh));const before=await h.snapshot()

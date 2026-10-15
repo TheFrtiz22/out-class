@@ -1,5 +1,6 @@
 import { SCHEDULING_TIMEZONE } from "@/lib/scheduling-config"
-import { dayKey, zonedInstant } from "@/lib/interview-rooms"
+import { emptyDemoBookingFlow, defaultBookingSettings } from "./interview-booking"
+import { dayKey, zonedInstant, bookingSlotSnapshot } from "@/lib/interview-rooms"
 import { resolveLetter, type LetterDecision, type LetterTemplate } from "@/lib/decision-letters";
 import type { DemoRecruitingRule, DemoRecruitingFlag, DemoRuleAudit } from "./recruiting-rules"
 import { defaultVotingDisplay } from "@/lib/voting-presentation"
@@ -408,6 +409,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
   const meetingAttendances = meetings.filter(m=>m.date<at(0,0)).flatMap((meeting,i)=>students.filter(student=>meeting.audience==="RECRUITMENT" ? students.indexOf(student)%4===i%4 : memberships.some(m=>m.clubId===meeting.clubId&&m.userId===student.id)).slice(0,15).map((student,j)=>({id:uid(19,i*20+j),eventId:meeting.id,studentId:student.id,checkedInAt:new Date(meeting.date.getTime()+j*60000)})))
   const meetingTokens: {meetingId:string;token:string;expiresAt:string;issuedBy:string}[] = []
   const result = {
+    bookingFlow: emptyDemoBookingFlow(),
     letterTemplates: {} as Record<string, Partial<Record<LetterDecision,LetterTemplate>>>,
     decisionLetters: applications.filter(a=>['ACCEPTED','WAITLISTED','REJECTED'].includes(a.status)).map((a,i)=>{
       const club=clubs.find(c=>c.id===a.clubId)!,student=students.find(u=>u.id===a.studentId)!;
@@ -444,6 +446,12 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
     responses: {} as Record<string, "going" | "confirmed" | "declined">,
   }
   ensureInterviewImprovements(result)
+  const sampleRoom = result.interviewRooms.find(r => r.clubId === invitedClub.id)!
+  sampleRoom.interviewersNeeded = 1
+  sampleRoom.approvedPanelMemberIds = [...sampleRoom.panelMemberIds]
+  sampleRoom.panelApprovedBy = memberships.find(m => m.id === sampleRoom.panelMemberIds[0])!.userId
+  result.bookingFlow.publishedSlots[invitedRound.id] = sampleRoom.slots.map(slot=>bookingSlotSnapshot(slot,sampleRoom))
+  result.bookingFlow.settings[invitedRound.id] = { ...defaultBookingSettings(), bookingPublishedAt: at(-1).toISOString() }
   return result
 }
 export type DemoState = ReturnType<typeof createDemoSeed>

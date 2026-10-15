@@ -1,5 +1,10 @@
 "use client"
 import * as availabilitySchedules from "@/actions/availability-schedules";
+import * as panelApi from "@/actions/panel-proposals";
+import * as publicationApi from "@/actions/panel-publication";
+import * as availabilityOverrideApi from "@/actions/interview-availability-overrides";
+import * as bookingPublicationApi from "@/actions/interview-booking-publication";
+import * as demoBookingApi from "@/lib/demo/interview-booking";
 import * as invitationSchedules from "@/actions/invitation-schedules";
 import * as decisionSchedules from "@/actions/decision-schedules";
 import * as recruitmentManagement from "@/actions/recruitment-management";
@@ -73,6 +78,19 @@ function adapt<F extends (...args: never[]) => Promise<unknown>>(
   return (async (...args: Parameters<F>) =>
     demoStore.active() ? demo(...args) : real(...args)) as F
 }
+export const getPanelProposalWorkspace = adapt((scope: Parameters<typeof panelApi.getPanelProposalWorkspace>[0]) => readWorkspace<Awaited<ReturnType<typeof panelApi.getPanelProposalWorkspace>>>("panelWorkspace", [scope]), (scope) => demoBookingApi.getPanelProposalWorkspace(scope as Parameters<typeof demoBookingApi.getPanelProposalWorkspace>[0]))
+export const generatePanelProposal = adapt(panelApi.generatePanelProposal, (scope) => demoBookingApi.generatePanelProposal(scope as Parameters<typeof demoBookingApi.generatePanelProposal>[0]))
+export const previewPanelProposalEdits = adapt(panelApi.previewPanelProposalEdits, (scope) => demoBookingApi.previewPanelProposalEdits(scope as Parameters<typeof demoBookingApi.previewPanelProposalEdits>[0]))
+export const savePanelProposalDraft = adapt(panelApi.savePanelProposalDraft, (scope) => demoBookingApi.savePanelProposalDraft(scope as Parameters<typeof demoBookingApi.savePanelProposalDraft>[0]))
+export const discardPanelProposal = adapt(panelApi.discardPanelProposal, (scope) => demoBookingApi.discardPanelProposal(scope as Parameters<typeof demoBookingApi.discardPanelProposal>[0]))
+export const beginPanelScheduleRevision = adapt(publicationApi.beginPanelScheduleRevision, (scope) => demoBookingApi.beginPanelScheduleRevision(scope as Parameters<typeof demoBookingApi.beginPanelScheduleRevision>[0]))
+export const revalidatePanelDraft = adapt(publicationApi.revalidatePanelDraft, (scope) => demoBookingApi.revalidatePanelDraft(scope as Parameters<typeof demoBookingApi.revalidatePanelDraft>[0]))
+export const reviewPanelPublication = adapt(publicationApi.reviewPanelPublication, (scope) => demoBookingApi.reviewPanelPublication(scope as Parameters<typeof demoBookingApi.reviewPanelPublication>[0]))
+export const publishPanelSchedule = adapt(publicationApi.publishPanelSchedule, (scope) => demoBookingApi.publishPanelSchedule(scope as Parameters<typeof demoBookingApi.publishPanelSchedule>[0]))
+export const assignPanelAvailabilityOverride = adapt(availabilityOverrideApi.assignPanelAvailabilityOverride, (scope) => demoBookingApi.assignPanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.assignPanelAvailabilityOverride>[0]))
+export const revokePanelAvailabilityOverride = adapt(availabilityOverrideApi.revokePanelAvailabilityOverride, (scope) => demoBookingApi.revokePanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.revokePanelAvailabilityOverride>[0]))
+export const getInterviewBookingPublication = adapt(bookingPublicationApi.getInterviewBookingPublication, (scope) => demoBookingApi.getInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.getInterviewBookingPublication>[0]))
+export const setInterviewBookingPublication = adapt(bookingPublicationApi.setInterviewBookingPublication, (scope) => demoBookingApi.setInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.setInterviewBookingPublication>[0]))
 function scopedApplication(clubId: string, id: string) {
   const s = demoStore.get()
   if (s.perspective.role !== "leader" || s.perspective.clubId !== clubId || clubId !== s.clubs[0].id)

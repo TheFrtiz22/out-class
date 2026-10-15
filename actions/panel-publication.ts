@@ -35,7 +35,7 @@ async function draftFor(tx:AppTransactionClient,input:z.infer<typeof draftScope>
  return{row,active,document:panelDocumentSchema.parse(row.document)}
 }
 function currentOfficialDocument(previous:PanelDocument|null,document:PanelDocument,live:Awaited<ReturnType<typeof loadPanelPlanningScene>>){
- const oldScope={...document,sessions:live.scene.sessions.filter(s=>document.sessions.some(d=>d.id===s.id)),assignments:live.scene.sessions.flatMap(s=>document.sessions.some(d=>d.id===s.id)?s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const})):[])}
+ const oldScope={...document,sessions:live.scene.sessions.filter(s=>document.sessions.some(d=>d.id===s.id)),assignments:live.scene.sessions.flatMap(s=>document.sessions.some(d=>d.id===s.id)?s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(previous?.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)?.availabilityOverrideId?{availabilityOverrideId:previous?.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)!.availabilityOverrideId}:{})})):[])}
  return mergePanelPublication(previous,oldScope)
 }
 export async function beginPanelScheduleRevision(raw:unknown){
@@ -49,7 +49,7 @@ export async function beginPanelScheduleRevision(raw:unknown){
   const source=publicationDocument(restore)!,live=await loadPanelPlanningScene(tx,input)
   if(!live.window||!live.scene.sessions.some(s=>s.active))throw new PanelPublicationError("There are no upcoming open sessions to revise.")
   const sessions=live.scene.sessions.filter(s=>s.active).map(s=>{const previous=source.sessions.find(old=>old.id===s.id);return input.restoreVersion&&previous?{...previous,originalRequired:s.required,roomRevision:s.roomRevision,slotRevision:s.slotRevision}:{...s,originalRequired:s.required}}),ids=new Set(sessions.map(s=>s.id))
-  const assignments=input.restoreVersion?source.assignments.filter(a=>ids.has(a.slotId)):sessions.flatMap(s=>s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const})))
+  const assignments=input.restoreVersion?source.assignments.filter(a=>ids.has(a.slotId)):sessions.flatMap(s=>s.existingMemberIds.map(memberId=>({slotId:s.id,memberId,locked:false,source:"EXISTING" as const,...(source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)?.availabilityOverrideId?{availabilityOverrideId:source.assignments.find(a=>a.slotId===s.id&&a.memberId===memberId)!.availabilityOverrideId}:{})})))
   const document:PanelDocument=panelDocumentSchema.parse({version:1,window:live.window,options:source.options,sessions,assignments})
   const {validatePanelDocument,panelDraftScene}=await import("@/lib/panel-proposals")
   const row=await tx.interviewPanelProposal.create({data:{clubId:input.clubId,roundId:input.roundId,basePublishedVersion:active.version,createdBy:actorId,modifiedBy:actorId,document,validation:validatePanelDocument(document,panelDraftScene(document,live.scene)),sourceFingerprint:live.fingerprint}})

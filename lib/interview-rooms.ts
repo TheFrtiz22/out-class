@@ -18,8 +18,18 @@ export type RoomInput = z.infer<typeof roomInputSchema>
 export type RoomSlot = { publishedPanelMemberIds?: string[]; panelScheduleVersionId?: string | null; interviewersNeeded?: number | null; staffingRevision?: number; id: string; startTime: string; endTime: string; capacity: number; booked: number }
 export type InterviewRoom = { interviewersNeeded?: number; staffingRevision?: number; approvedPanelMemberIds?: string[]; panelApprovedBy?: string | null; panelApprovalRevision?: number; id: string; clubId: string; roundId: string; name: string; location: string; kind: string; timezone: string; duration: number; buffer: number; isOpen: boolean; panelMemberIds: string[]; slots: RoomSlot[] }
 export type RoomBooking = { id: string; applicationId: string; slotId: string; roomId: string; roundId: string; candidate: string; startTime: string; endTime: string; location: string }
-export type RoomWorkspace = { clubName: string; rounds: { id: string; name: string; configuration?: unknown; type?: string }[]; members: { id: string; name: string }[]; rooms: InterviewRoom[]; bookings: RoomBooking[] }
-export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null }
+export type BookingSettings = { bookingPublishedAt: string | null; bookingPaused: boolean; bookingRevision: number; bookingCycleId: string | null; bookingAllowCancellation: boolean; bookingAllowRescheduling: boolean }
+export type RoomWorkspace = { clubName: string; rounds: { id: string; name: string; configuration?: unknown; type?: string; booking?: BookingSettings }[]; cycles?: { id: string; name: string }[]; members: { id: string; name: string }[]; rooms: InterviewRoom[]; bookings: RoomBooking[] }
+export type ApplicantSchedule = { applicationId: string; clubName: string; roundName: string; rooms: InterviewRoom[]; booking: RoomBooking | null; publicationState?: "NOT_PUBLISHED" | "PAUSED" | "PUBLISHED"; allowCancellation?: boolean; allowRescheduling?: boolean }
+export function bookingSlotSnapshot(slot: { id: string; startTime: Date | string; endTime: Date | string; capacity: number }, room: { id: string; duration: number; buffer: number }) {
+  return { id: slot.id, roomId: room.id, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), capacity: slot.capacity, duration: room.duration, buffer: room.buffer }
+}
+export function isPublishedBookingSlot(snapshot: unknown, slot: Parameters<typeof bookingSlotSnapshot>[0], room: Parameters<typeof bookingSlotSnapshot>[1]) {
+  const instant = z.union([z.string(), z.date()]).transform(v => v instanceof Date ? v.toISOString() : v)
+  const parsed = z.array(z.object({ id: z.string(), roomId: z.string(), startTime: instant, endTime: instant, capacity: z.number(), duration: z.number(), buffer: z.number() })).max(500).safeParse(snapshot)
+  const current = bookingSlotSnapshot(slot, room)
+  return parsed.success && parsed.data.some(saved => Object.keys(current).every(key => saved[key as keyof typeof saved] === current[key as keyof typeof current]))
+}
 
 function wall(date: Date, timezone: string) {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(date).map(p => [p.type, p.value]))
