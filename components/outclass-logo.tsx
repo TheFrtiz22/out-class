@@ -1,39 +1,51 @@
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 
+/**
+ * Centralized OutClass identity. All paths point to the approved premium-board
+ * vector collection; the older public/brand files remain available for rollback.
+ *
+ * light: full two-tone sword lockup on ivory/white
+ * dark: ivory/orange sword lockup on brand navy
+ * wordmark: compact sword-free two-tone logo for narrow, light-background headers
+ * mark: sword-free interlocking OC app icon
+ */
 type OutClassLogoProps = {
-  /**
-   * "dark" renders the transparent white/orange SVG — use this on surfaces that are always
-   * Brand Navy (e.g. sidebar and marketing hero).
-   * "light" renders the transparent navy/orange SVG — use this on white surfaces (e.g. the login card).
-   * "mark" renders just the sword-free interlocking "OC" icon — use this for the collapsed sidebar rail,
-   * the mobile header, and other tight spaces (without a sword).
-   */
-  variant?: "light" | "dark" | "mark"
+  variant?: "light" | "dark" | "wordmark" | "mark"
   className?: string
 }
+
+const brandRoot = "/brand/premium-board"
 
 export function OutClassLogo({ variant = "light", className }: OutClassLogoProps) {
   if (variant === "mark") {
     return (
       <Image
-        src="/brand/12-app-icon-navy.svg"
+        src={`${brandRoot}/05_app_icon_primary.svg`}
         alt="OutClass"
-        width={32}
-        height={32}
-        className={cn("size-8 rounded-md object-cover", className)}
+        width={175}
+        height={175}
+        sizes="32px"
+        className={cn("size-8 rounded-md object-contain", className)}
         priority
+        unoptimized
       />
     )
   }
 
+  const artwork = variant === "dark"
+    ? { name: "10_hero_transparent.svg", width: 1079, height: 258 }
+    : variant === "wordmark"
+      ? { name: "04_wordmark_no_sword.svg", width: 466, height: 105 }
+      : { name: "02_primary_lockup.svg", width: 457, height: 141 }
+
   return (
     <Image
-      src={variant === "dark" ? "/brand/03-logo-dark-transparent.svg" : "/brand/02-logo-primary-transparent.svg"}
+      src={`${brandRoot}/${artwork.name}`}
       alt="OutClass"
-      width={1280}
-      height={332}
-      className={cn("h-8 w-auto rounded-sm object-contain", className)}
+      width={artwork.width}
+      height={artwork.height}
+      className={cn("h-8 w-auto object-contain", className)}
       priority
       unoptimized
     />

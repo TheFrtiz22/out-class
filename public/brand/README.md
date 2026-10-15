@@ -1,15 +1,20 @@
-# OutClass serif SVG identity
+# OutClass SVG identity
 
-The 16 scalable, path-based identity assets live here. Artwork is outlined as vectors, so the design requires no external fonts or raster-image embedding.
+## Active premium-board identity
 
-Used by the site:
-- `02-logo-primary-transparent.svg`: public header on light backgrounds
-- `03-logo-dark-transparent.svg`: public header on navy backgrounds, product rail, public footer
-- `12-app-icon-navy.svg`: compact app mark / generated Apple touch icon
-- `14-favicon.svg`: sword-free browser favicon and loading mark
+The site now uses the path-based, font-independent SVGs in [premium-board/](premium-board/README.md).
 
-Others are included for email, future mobile apps, and alternate compositions. Previous logo assets are retained for rollback.
+| Surface | Artwork | Path |
+| --- | --- | --- |
+| Light public navigation | Two-tone sword-free wordmark (legible at compact sizes) | `premium-board/04_wordmark_no_sword.svg` |
+| Light-background full logo | Primary two-tone wordmark with sword | `premium-board/02_primary_lockup.svg` |
+| Navy navigation, login panel, sidebar, footer | Ivory/orange sword lockup with transparent background | `premium-board/10_hero_transparent.svg` |
+| Compact OC / app tile | Primary navy rounded-square monogram | `premium-board/05_app_icon_primary.svg` |
+| Browser favicon and light loading | Circular OC monogram | `premium-board/07_favicon.svg` |
+| Navy loading | Ivory tile OC monogram | `premium-board/06_app_icon_light.svg` |
 
-Brand palette: navy #0F2E56; orange #F26522; ivory #FFF9F1.
+`components/outclass-logo.tsx` is the single rendering source for in-product and marketing logos. `app/icon.tsx`, `app/apple-icon.tsx`, `app/manifest.ts`, and `components/outclass-loading-screen.tsx` manage metadata and loading marks. The legacy `public/icon.svg` file is synchronized to the same favicon artwork.
 
-Additional board-traced variants: [`premium-board/`](premium-board/README.md) (10 independent SVG files; preserved separately from live assets).
+The original 16 SVGs remain in this directory for rollback and comparison. No originals were deleted.
+
+**Palette:** navy `#0F2E56`, orange `#F26522`, ivory `#FFF9F1`.

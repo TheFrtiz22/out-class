@@ -5,7 +5,7 @@ export function OutClassLoadingScreen({ variant = "light" }: { variant?: "light"
   return (
     <div className="oc-loading-screen" data-variant={variant} role="status" aria-busy="true">
       <Image
-        src="/brand/14-favicon.svg"
+        src={variant === "navy" ? "/brand/premium-board/06_app_icon_light.svg" : "/brand/premium-board/07_favicon.svg"}
         alt=""
         aria-hidden="true"
         width={72}
