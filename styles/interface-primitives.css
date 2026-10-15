@@ -33,3 +33,11 @@
   [data-slot="button"][data-size^="icon"] { min-width: var(--oc-control-height-large); }
   .oc-loading-cards { grid-template-columns: minmax(0,1fr); }
 }
+
+/* Keep the arrow clear of the border without replacing the native menu. */
+.oc-native-select-field { position: relative; display: inline-grid; vertical-align: middle; min-width: 0; max-width: 100%; }
+.oc-native-select-field > select { appearance: none; width: 100%; padding-inline-end: 2.5rem; }
+.oc-native-select-caret { position: absolute; inset-inline-end: .75rem; top: 50%; transform: translateY(-50%); width: 1rem; height: 1rem; color: var(--muted-foreground); pointer-events: none; }
+.oc-native-select-field:has(select:disabled) .oc-native-select-caret { opacity: .5; }
+
+.oc-native-select-field > select:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

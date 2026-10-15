@@ -29,7 +29,7 @@
 [data-product-shell] .oc-recruitment-timeline li[data-complete="true"] > span { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
 [data-product-shell] .oc-recruitment-timeline li[data-complete="true"]::after { background: var(--primary); }
 [data-product-shell] .oc-application-detail > section[aria-label="Application update"] { padding: 1.5rem; border: 0; background: var(--oc-surface-blue); border-radius: var(--oc-radius-lg); }
-[data-product-shell] .oc-applications .oc-segmented-control [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
+[data-product-shell] .oc-applications .oc-segmented-control:not([data-sliding="true"]) [aria-pressed="true"] { background: var(--primary); color: var(--primary-foreground); }
 @container (max-width: 740px) {
   .oc-application-row { grid-template-columns: minmax(0,1fr); padding: 1.25rem; }
   .oc-application-next { grid-column: 1; grid-row: auto; border: 0; border-top: 1px solid var(--border); padding: 1rem 0 0; }
@@ -96,3 +96,6 @@
   .oc-application-management-row > .oc-management-state { justify-self: start; }
 }
 .oc-applications .oc-segmented-control button[aria-pressed="false"] { color: var(--foreground); }
+
+[data-product-shell] .oc-applications .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { background: var(--primary); }
+[data-product-shell] .oc-applications .oc-segmented-control[data-sliding="true"] [aria-pressed="true"] { color: var(--primary-foreground); }
