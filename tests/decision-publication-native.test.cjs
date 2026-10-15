@@ -8,6 +8,9 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
  let delay=0,failAudit=false,queryCount=0;
  const db=base.$extends({query:{$allModels:{$allOperations:async({model,operation,args,query})=>{queryCount++;if(delay)await new Promise(r=>setTimeout(r,delay));if(failAudit&&model==='AuditLog'&&operation==='create'&&args.data.action==='communication.schedule.publish')throw Error('Injected atomic failure');return query(args)}}}});
  t.after(async()=>{await base.$disconnect();await op.$disconnect()});
+ const pollBase=new PrismaClient({datasourceUrl:url.replace('fixture_superuser@','outclass_production_app@').replace('connection_limit=8','connection_limit=4')});
+ const pollDb=pollBase.$extends({query:{$allModels:{$allOperations:async({args,query})=>{await new Promise(r=>setTimeout(r,70));return query(args)}}}});
+ t.after(()=>pollBase.$disconnect());
  const leader=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}}),student=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});
  const club=await db.club.create({data:{slug:randomUUID(),name:'Decision fixture',tagline:'',description:'',category:'Other',color:'#142d45'}});
  const member=await db.clubMember.create({data:{clubId:club.id,userId:leader.id,isOwner:true}}),round=await db.pipelineRound.create({data:{clubId:club.id,name:'Review',order:0,type:'CUSTOM'}});
@@ -132,7 +135,13 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   let monitoring=true,maxActive=0,maxDecisions=0,maxClubActive=0;
   const monitor=(async()=>{while(monitoring){const [m]=await op.$queryRaw`SELECT count(*)::int total,count(*) FILTER(WHERE kind='DECISION')::int decisions,COALESCE((SELECT max(n)::int FROM (SELECT count(*) n FROM "ScheduledCommunication" WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes' GROUP BY "clubId")c),0) club FROM "ScheduledCommunication" WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes'`;maxActive=Math.max(maxActive,m.total);maxDecisions=Math.max(maxDecisions,m.decisions);maxClubActive=Math.max(maxClubActive,m.club);await new Promise(r=>setTimeout(r,20));}})();
   const intendedAt=new Date(Date.now()-1000);await op.scheduledCommunication.updateMany({where:{id:{in:[d.id,revokedId,...small.map(s=>s.id)]}},data:{scheduledAt:intendedAt}});await op.scheduledCommunication.update({where:{id:crashed.id},data:{updatedAt:new Date(Date.now()-180000)}});
+  // Two continuously overlapping real voting snapshots use their own bounded
+  // pool, isolating lock contention from worker pool acquisition pressure.
+  const voting=loader({'@/utils/prisma':{prisma:pollDb},'@/utils/auth':{requireClubPermission:async()=>({user:leader,membership:await pollBase.clubMember.findUniqueOrThrow({where:{id:member.id}})})},'next/cache':{revalidatePath(){}}})('actions/voting.ts');
+  let polling=true,pollReads=0;const pollLoop=async()=>{while(polling){await voting.getVotingWorkspace(club.id,session.id);pollReads++;}};
+  const polls=[pollLoop(),pollLoop()];
   queryCount=0;const latency=wave<2?10:wave===2?20:50;delay=latency;const start=Date.now();const invocationCount=Math.min(3,wave+1);const results=await Promise.all(Array.from({length:invocationCount},()=>worker.processScheduledCommunications(128)));const elapsed=Date.now()-start;
+  polling=false;await Promise.all(polls);assert.ok(pollReads>2,"Polling remains active throughout publication");
   monitoring=false;await monitor;assert.ok(maxActive<=3);assert.ok(maxDecisions<=1);assert.ok(maxClubActive<=1);
   release();await holding;
   const beforeUnlock=await db.scheduledCommunication.findMany({where:{id:{in:small.map(s=>s.id)},status:'PUBLISHED'},select:{id:true,clubId:true,updatedAt:true}});
@@ -141,7 +150,7 @@ test('decision controls, cycles and scheduled publication on bounded PostgreSQL'
   const follow={published:0};for(let tick=0;tick<3;tick++){const next=await worker.processScheduledCommunications(128);follow.published+=next.published;if(!await db.scheduledCommunication.count({where:{id:{in:small.map(s=>s.id)},status:'SCHEDULED'}}))break;}delay=0;
   const rows=await db.scheduledCommunication.findMany({where:{id:{in:small.map(s=>s.id)},status:'PUBLISHED'},select:{updatedAt:true}});
   const lateness=beforeUnlock.map(s=>s.updatedAt.getTime()-intendedAt.getTime()).sort((a,b)=>a-b),percentile=p=>lateness[Math.ceil(p*lateness.length)-1];
-  console.log(JSON.stringify({capacityBacklog:{wave,simulatedOrmLatencyMs:latency,maxActive,maxDecisions,maxClubActive,small:small.length,locked:lockedIds.length,bulkApplicants:50,overlappingInvocations:invocationCount,firstInvocationMs:elapsed,publishedBeforeUnlock:beforeUnlock.length,p50LatenessMs:percentile(.5),p95LatenessMs:percentile(.95),maxLatenessMs:percentile(1),conservativeMinuteCapacity:beforeUnlock.length+(wave===3?0:1),cronPhaseAdditionalMs:60000,afterUnlockPublished:follow.published}}));
+  console.log(JSON.stringify({capacityBacklog:{wave,pollReads,simulatedOrmLatencyMs:latency,maxActive,maxDecisions,maxClubActive,small:small.length,locked:lockedIds.length,bulkApplicants:50,overlappingInvocations:invocationCount,firstInvocationMs:elapsed,publishedBeforeUnlock:beforeUnlock.length,p50LatenessMs:percentile(.5),p95LatenessMs:percentile(.95),maxLatenessMs:percentile(1),conservativeMinuteCapacity:beforeUnlock.length+(wave===3?0:1),cronPhaseAdditionalMs:60000,afterUnlockPublished:follow.published}}));
   assert.equal(rows.length,small.length);assert.equal((await db.scheduledCommunication.findUniqueOrThrow({where:{id:cancelled.id}})).status,'CANCELLED');assert.equal((await worker.processScheduledCommunications()).published,0);
   const result={published:results.reduce((n,r)=>n+r.published,0)-beforeUnlock.length};console.log(JSON.stringify({bulkApplicants:50,simulatedOrmLatencyMs:latency,elapsedMs:elapsed,mixedOrmOperations:queryCount,workerPublicationTimeoutMs:20000}));assert.equal(result.published,wave===3?0:1);assert.ok(elapsed<52000);assert.equal(await db.decisionLetter.count({where:{applicationId:{in:apps.map(a=>a.id)}}}),wave===3?0:50);assert.equal(await db.userNotification.count({where:{type:'DECISION',userId:{in:apps.map(a=>a.studentId)}}}),wave===3?0:50);assert.equal(Boolean((await db.votingSession.findUniqueOrThrow({where:{id:session.id}})).publishedAt),wave!==3);if(wave===3){assert.equal(bulk.status,'FAILED');assert.equal(await db.application.count({where:{id:{in:apps.map(a=>a.id)},status:'IN_REVIEW'}}),50);}
   }

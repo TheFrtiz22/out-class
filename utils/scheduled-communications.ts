@@ -17,10 +17,20 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 // transaction-scoped advisory lock; durable PROCESSING leases count across
 // processes, so concurrent cron/manual invocations cannot multiply capacity.
 export const schedulerCapacity = { concurrency: 3, decisionConcurrency: 1, maxClaims: 128, admissionMs: 25000 } as const;
+// Never log exception messages/meta, SQL, recipients, or identifiers. Even a
+// broken log sink must not replace a publication result or interfere with fencing.
+function schedulerDiagnostic(stage: "claim" | "publication" | "failure_marker" | "queue_health", error: unknown) {
+ let code="UNKNOWN";
+ try {
+  if (error && typeof error === "object" && "code" in error && typeof error.code === "string" && /^P[0-9]{4}$/.test(error.code)) code=error.code;
+  console.error("scheduler.failure", { stage, code });
+ } catch { /* best effort */ }
+}
 export async function processScheduledCommunications(limit:number=schedulerCapacity.maxClaims) {
  const invocationStarted=Date.now();
  const count=Number.isFinite(limit)?Math.min(schedulerCapacity.maxClaims,Math.max(1,Math.floor(limit))):schedulerCapacity.maxClaims;
- let published=0,failed=0,skipped=0,claimedCount=0,reserved=0;
+ let published=0,failed=0,skipped=0,claimedCount=0,reserved=0,claimErrors=0;
+ const deferrals={capacity:0,noCandidate:0,intentRace:0};
  async function lane() {
  while(Date.now()-invocationStarted<schedulerCapacity.admissionMs && reserved<count) {
   // Reserve before awaiting: the invocation claim cap also bounds empty scans.
@@ -34,7 +44,7 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
     const [active]=await tx.$queryRaw<{total:bigint;decisions:bigint}[]>`
      SELECT count(*) total,count(*) FILTER(WHERE kind='DECISION') decisions FROM "ScheduledCommunication"
      WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes'`;
-    if(Number(active.total)>=schedulerCapacity.concurrency)return null;
+    if(Number(active.total)>=schedulerCapacity.concurrency){deferrals.capacity++;return null;}
     const decisionAvailable=Number(active.decisions)<schedulerCapacity.decisionConcurrency;
     // One due head per club, least recently claimed/serviced club first.
     // A live claim excludes its club entirely. SKIP LOCKED bypasses club edits
@@ -54,9 +64,9 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
       WHERE "clubId"=d."clubId" AND status<>'SCHEDULED') h ON true
      WHERE d.position=1 ORDER BY h.serviced NULLS FIRST,d."scheduledAt",d.id
      LIMIT 1 FOR UPDATE OF c SKIP LOCKED`;
-    if(!next)return null;
+    if(!next){deferrals.noCandidate++;return null;}
     const rows=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "ScheduledCommunication" WHERE id=${next.id} AND revision=${next.revision} AND ((status='SCHEDULED' AND "scheduledAt"<=clock_timestamp()) OR (status='PROCESSING' AND "updatedAt"<clock_timestamp()-INTERVAL '2 minutes')) FOR UPDATE SKIP LOCKED`;
-    if(!rows.length)return null;
+    if(!rows.length){deferrals.intentRace++;return null;}
     return tx.scheduledCommunication.update({where:{id:next.id},data:{status:"PROCESSING",revision:{increment:1}}});
    },{maxWait:1000,timeout:4000});
    if(!claimed){reserved--;skipped++;break;}
@@ -102,21 +112,32 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
     return true;
    },{maxWait:2000,timeout:claimed.kind==="DECISION"?20000:12000});
    if(result)published++;else skipped++;
-  }catch{
+  }catch(error){
+   schedulerDiagnostic(claimRevision===null?"claim":"publication",error);
    // Before a claim, a transient failure leaves SCHEDULED work due. After a
    // claim, mark only our own revision. A crashed/unavailable marker is safely
    // recovered by the lease. No raw exception or recipient data reaches output.
-   if(claimRevision===null){reserved--;skipped++;break;}
+   if(claimRevision===null){reserved--;claimErrors++;break;}
    try{
     const marked=await prisma.$transaction(async tx=>{
      await tx.$queryRaw`SELECT set_config('lock_timeout','1000',true),set_config('statement_timeout','3000',true)`;
      return tx.scheduledCommunication.updateMany({where:{id:candidate!.id,revision:claimRevision!,status:"PROCESSING"},data:{status:"FAILED",failureCode:"PUBLICATION_UNAVAILABLE"}});
     },{maxWait:1000,timeout:4000});
     failed+=marked.count;if(!marked.count)skipped++;
-   }catch{skipped++;}
+   }catch(error){schedulerDiagnostic("failure_marker",error);skipped++;}
   }
  }
  }
  await Promise.all(Array.from({length:Math.min(schedulerCapacity.concurrency,count)},()=>lane()));
- return {published,failed,skipped,claimed:claimedCount};
+ let dueCount:number|null=null,oldestDueAgeMs:number|null=null;
+ try {
+  const [health]=await prisma.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT set_config('statement_timeout','2000',true)`;
+   return tx.$queryRaw<{count:bigint;age:number|null}[]>`SELECT count(*) count, extract(epoch FROM (clock_timestamp()-min("scheduledAt")))*1000::float8 age FROM "ScheduledCommunication" WHERE (status='SCHEDULED' AND "scheduledAt"<=clock_timestamp()) OR (status='PROCESSING' AND "updatedAt"<clock_timestamp()-INTERVAL '2 minutes')`;
+  },{maxWait:1000,timeout:3000});
+  if(health){dueCount=Number(health.count);oldestDueAgeMs=health.age===null?null:Math.max(0,Math.round(health.age));}
+ }catch(error){schedulerDiagnostic("queue_health",error);}
+ const result={published,failed,skipped,claimed:claimedCount,claimErrors,deferrals,dueCount,oldestDueAgeMs};
+ try {console.info("scheduler.invocation",{...result,durationMs:Date.now()-invocationStarted});}catch{/* best effort */}
+ return result;
 }

@@ -27,8 +27,17 @@ test('browser: debounce, slow writes, caret, retry, refresh recovery, navigation
  let browser
  try{
   browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const context=await browser.newContext(),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept())
-  await page.goto(url);const field=page.getByRole('textbox',{name:'Draft'});await field.fill('rapid');await page.waitForTimeout(500);await field.press('End');await field.pressSequentially(' typing',{delay:30});assert.equal(writes.length,0)
-  await page.getByRole('status').filter({hasText:/^Saved$/}).waitFor();assert.equal(document.value,'rapid typing');assert.equal(writes.length,1)
+  // CI scheduling pauses are not user idle time. Drive only this debounce
+  // boundary with browser time; keep the actual hook, typing and HTTP save.
+  const epoch=new Date('2026-10-15T12:00:00Z');await page.clock.install({time:epoch});await page.clock.pauseAt(epoch)
+  await page.goto(url);const field=page.getByRole('textbox',{name:'Draft'});await field.fill('rapid');await page.clock.runFor(500);await field.press('End')
+  for(const char of ' typing'){await field.pressSequentially(char);await page.clock.runFor(30)}
+  assert.equal(writes.length,0)
+  // The final keystroke was 30 ms ago: 819 more milliseconds is still before
+  // the 850 ms deadline. The next millisecond must trigger exactly one save.
+  await page.clock.runFor(819);assert.equal(writes.length,0)
+  const persisted=page.waitForResponse(r=>r.url().endsWith('/save')&&r.request().method()==='POST');await page.clock.runFor(1);await persisted
+  await page.getByRole('status').filter({hasText:/^Saved$/}).waitFor();assert.equal(document.value,'rapid typing');assert.equal(writes.length,1);await page.clock.resume()
   delay=1100;await field.fill('first slow');await page.waitForTimeout(900);await field.fill('latest slow');await field.press('ArrowLeft');const caret=await field.evaluate(el=>el.selectionStart)
   await page.getByRole('status').filter({hasText:/^Saved$/}).waitFor();assert.equal(document.value,'latest slow');assert.equal(await field.inputValue(),'latest slow');assert.equal(await field.evaluate(el=>el.selectionStart),caret);assert.equal(await field.evaluate(el=>document.activeElement===el),true);delay=0
   await page.reload();assert.equal(await field.inputValue(),'latest slow')
