@@ -13,10 +13,12 @@ const PlaybackContext = createContext({ title: "Product", summary: "Illustrative
 export const useDemoState = () => useContext(StateContext)
 
 /** One prominence coordinator for the whole journey, including short landscape viewports. */
-export function DemoPlaybackProvider({ children }: { children: ReactNode }) {
+export function DemoPlaybackProvider({ children, activeScene }: { children: ReactNode; activeScene?: string | null }) {
   const entries = useRef(new Map<string, Registration>())
   const observer = useRef<IntersectionObserver | null>(null)
   const update = useRef(() => {})
+  const selectedScene = useRef(activeScene)
+  useLayoutEffect(() => { selectedScene.current = activeScene; update.current() }, [activeScene])
   const register = useCallback((id: string, entry: Registration) => {
     entries.current.set(id, entry)
     observer.current?.observe(entry.node)
@@ -30,7 +32,7 @@ export function DemoPlaybackProvider({ children }: { children: ReactNode }) {
     const registrations = entries.current
     const choose = () => {
       frame = 0
-      active = document.hidden ? undefined : prominentDemo(Array.from(registrations, ([id, entry]) => {
+      active = document.hidden ? undefined : prominentDemo(Array.from(registrations).filter(([, entry]) => selectedScene.current === undefined || entry.node.dataset.demoScene === selectedScene.current).map(([id, entry]) => {
         const bounds = entry.node.getBoundingClientRect()
         return { id, top: bounds.top, height: bounds.height }
       }), window.innerHeight, active)
