@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { equivalentJourneyStage, perspectiveFromHash, perspectiveHash, type JourneyStage, type LandingPerspective } from "@/components/landing/journey-content"
+import { audienceFromPreference, audienceFromQuery, DEFAULT_LANDING_AUDIENCE, LANDING_AUDIENCE_PREFERENCE, setLandingAudienceGate } from "@/lib/landing-audience"
 
-export function useLandingPerspective() {
-  const [perspective, setPerspective] = useState<LandingPerspective>("student")
+export function useLandingPerspective(initial: LandingPerspective = DEFAULT_LANDING_AUDIENCE) {
+  const [perspective, setPerspective] = useState<LandingPerspective>(initial)
   const position = useRef<{ stage?: JourneyStage; selector?: string; fraction: number; line: number } | null>(null)
 
   useLayoutEffect(() => {
@@ -19,13 +20,23 @@ export function useLandingPerspective() {
     window.scrollTo({ top: window.scrollY + bounds.top + bounds.height * saved.fraction - saved.line, behavior: "instant" })
   }, [perspective])
 
+  useLayoutEffect(() => {
+    let saved: LandingPerspective | null = null
+    try { saved = audienceFromPreference(window.localStorage.getItem(LANDING_AUDIENCE_PREFERENCE)) } catch { /* Public preference storage may be blocked. */ }
+    const explicit = perspectiveFromHash(window.location.hash) ?? audienceFromQuery(new URLSearchParams(window.location.search).get("audience"))
+    const next = explicit ?? saved ?? initial
+    setLandingAudienceGate(next)
+    if (/^#journey-\d+$/.test(window.location.hash)) position.current = { selector: window.location.hash, fraction: 0, line: 112 }
+    setPerspective(next)
+  }, [initial])
+
   useEffect(() => {
     const sync = () => {
       const requested = new URLSearchParams(window.location.search).get("audience")
       const next = perspectiveFromHash(window.location.hash) ?? (requested === "student" || requested === "leader" ? requested : null)
       if (next) {
-        // A leader deep link initially receives student SSR markup. Resolve the
-        // anchor again against the hydrated audience, before the next paint.
+        setLandingAudienceGate(next)
+        // Resolve a numbered anchor against the requested audience before paint.
         if (/^#journey-\d+$/.test(window.location.hash)) position.current = { selector: window.location.hash, fraction: 0, line: 112 }
         setPerspective(next)
       }
@@ -40,6 +51,11 @@ export function useLandingPerspective() {
   }, [])
 
   const switchPerspective = useCallback((next: LandingPerspective) => {
+    const value = next === "student" ? "students" : "club-leaders"
+    try { window.localStorage.setItem(LANDING_AUDIENCE_PREFERENCE, value) } catch { /* Keep the current selection without storage. */ }
+    // Mirror the public preference so returning visitors receive matching SSR HTML.
+    try { document.cookie = `${LANDING_AUDIENCE_PREFERENCE}=${value}; Path=/; Max-Age=31536000; SameSite=Lax${window.location.protocol === "https:" ? "; Secure" : ""}` } catch { /* A blocked cookie does not prevent an explicit choice. */ }
+    setLandingAudienceGate(next)
     if (next === perspective) return
     const line = Math.min(window.innerHeight * .35, 260)
     const chapter = Array.from(document.querySelectorAll<HTMLElement>("#product-journey [data-stage]")).find(element => {

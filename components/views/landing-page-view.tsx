@@ -23,17 +23,20 @@ import { useLandingPerspective } from "@/hooks/use-landing-perspective"
 import { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 import "./landing.css"
 import "@/components/landing/public-footer.css"
+import type { LandingPerspective } from "@/components/landing/journey-content"
 
 interface LandingPageViewProps {
   onNavigateToApp: (role?: "student" | "leader") => void
   launchClubs?: LaunchClub[]
   campusName?: string
+  initialAudience?: LandingPerspective
 }
 
 export function LandingPageView({
   onNavigateToApp,
   launchClubs = [],
   campusName = "University of Virginia",
+  initialAudience = "leader",
 }: LandingPageViewProps) {
   const [info, setInfo] = useState<string | null>(null)
   const infoTrigger = useRef<HTMLButtonElement | null>(null)
@@ -41,13 +44,13 @@ export function LandingPageView({
     infoTrigger.current = event.currentTarget
     setInfo(label)
   }
-  const { perspective, switchPerspective } = useLandingPerspective()
+  const { perspective, switchPerspective } = useLandingPerspective(initialAudience)
   const journeyNavigation = useJourneyNavigation()
   const createProfile = () => { window.location.href = "/signup" }
   const enterLeader = () => { window.location.href = "/signup?intent=leader" }
   const start = () => perspective === "student" ? createProfile() : enterLeader()
   return (
-    <ScrollMotion className="oc-landing" id="top">
+    <ScrollMotion className="oc-landing" id="top" data-landing-audience={perspective}>
       <LandingNavigation />
       <a className="oc-skip-link" href="#about">Skip to product overview</a>
       <PublicNavigation hero navigationRef={journeyNavigation.headerRef} journey={{ perspective, onChange: switchPerspective, merged: journeyNavigation.merged }} />

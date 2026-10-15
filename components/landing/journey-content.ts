@@ -29,24 +29,6 @@ export const journeyChapters = {
 
 export type JourneyScene = (typeof journeyChapters)[LandingPerspective][number]["scene"] | "profile" | "schedule"
 
-// One deliberate interaction per preview, followed by a useful final state.
-// Timings are identical across devices; mobile no longer rushes through the story.
-export const journeySceneDurations: Record<JourneyScene, number> = {
-  discover: 2700,
-  profile: 3000,
-  apply: 3500,
-  "student-interview": 3100,
-  status: 3200,
-  join: 3000,
-  build: 3300,
-  recruit: 4200,
-  review: 3200,
-  schedule: 3300,
-  "leader-interview": 6600,
-  decide: 3500,
-  manage: 3100,
-}
-
 // Both perspectives use the same applicant, organization, and interview.
 export const journeyExample = {
   person: "Jordan Avery",
