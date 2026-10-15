@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { SegmentedControl } from "@/components/product/segmented-control"
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"

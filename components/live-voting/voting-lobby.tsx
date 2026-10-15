@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
-import { ArrowRight, Users } from "lucide-react"
+import { ArrowRight, Users } from "@/components/icons"
 import { connectedParticipants, type VotingSession } from "@/lib/live-voting"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"

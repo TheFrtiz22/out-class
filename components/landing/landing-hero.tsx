@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { HeroFeatureStack } from "./hero-feature-stack"
 import type { LandingPerspective } from "./journey-content"

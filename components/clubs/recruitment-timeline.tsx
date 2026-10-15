@@ -1,5 +1,5 @@
 "use client"
-import { Check } from "lucide-react"
+import { Check } from "@/components/icons"
 import { applicationStatusLabel } from "@/lib/application-status"
 import { recruitmentStage } from "@/lib/club-directory"
 import "./club-discovery.css"

@@ -21,7 +21,7 @@ function IndicatorHarness({ reduced = false, href = 'https://outclass.test/?camp
   const code = ts.transpileModule(fs.readFileSync('components/landing/scroll-indicator.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   new Function('require', 'module', 'exports', 'window', 'document', 'getComputedStyle', 'IntersectionObserver', 'ResizeObserver', 'HashChangeEvent', code)(name => {
     if (name === 'react') return { useState: initial => { const i = cursor++; states[i] ??= initial; return [states[i], value => { states[i] = value }] }, useRef: () => ref, useEffect: effect => effects.push(effect) }
-    if (name === 'lucide-react') return { Triangle: 'Triangle' }
+    if (name === '@/components/icons') return { Triangle: 'Triangle' }
     if (name === '@/lib/utils') return { cn: (...args) => args.filter(Boolean).join(' ') }
     if (name.endsWith('.css')) return {}
     return require(name)

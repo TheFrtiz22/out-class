@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react"
-import { Search as SearchIcon } from "lucide-react"
+import { Search as SearchIcon } from "@/components/icons"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 

@@ -12,7 +12,7 @@ import { scholarNames } from "@/lib/scholar-status";
 import type { InterviewScope } from "@/lib/interview-access";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Maximize2, UserRound, X } from "lucide-react";
+import { FileText, Maximize2, UserRound, X } from "@/components/icons";
 
 const ResumePreview = dynamic(() => import("@/components/interview-resume-preview"), { ssr: false, loading: () => <p role="status" className="text-xs text-muted-foreground">Loading résumé…</p> });
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type MouseEvent } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight } from "@/components/icons"
 import { publicFaqGroups } from "@/lib/public-faq"
 
 function FaqEntry({ id, question, answer }: { id: string; question: string; answer: string }) {

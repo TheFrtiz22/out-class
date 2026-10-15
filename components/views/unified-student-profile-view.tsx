@@ -4,7 +4,7 @@ import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarNames } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
+import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "@/components/icons"
 import Link from "next/link"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"

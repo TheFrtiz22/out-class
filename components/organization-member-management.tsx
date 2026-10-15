@@ -15,7 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy } from "lucide-react";
+import { MoreHorizontal, Copy } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {

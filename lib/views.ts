@@ -15,8 +15,8 @@ import {
   UserRound,
   Megaphone,
   Globe,
-  type LucideIcon,
-} from "lucide-react"
+  type IconComponent,
+} from "@/components/icons"
 
 export type ViewId =
   | "my-clubs"
@@ -39,7 +39,7 @@ export type ViewId =
   | "interview-workspace"
   | "broadcast-messages"
 
-export type NavItem = { id: ViewId; title: string; icon: LucideIcon }
+export type NavItem = { id: ViewId; title: string; icon: IconComponent }
 
 export type AppMode = "student" | "admin"
 

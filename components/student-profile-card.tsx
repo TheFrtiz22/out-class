@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Camera, FileText, GraduationCap, Linkedin, Plus, ShieldCheck, Trash2, Upload } from "lucide-react"
+import { Camera, FileText, GraduationCap, Linkedin, Plus, ShieldCheck, Trash2, Upload } from "@/components/icons"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

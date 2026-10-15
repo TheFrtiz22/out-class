@@ -21,7 +21,7 @@ import { hasPermission } from "@/lib/permissions"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react"
+import { ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
 import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"

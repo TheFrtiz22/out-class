@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { listMeetings } from "@/lib/workspace-api"
-import { CalendarDays, ArrowRight } from "lucide-react"
+import { CalendarDays, ArrowRight } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 export type MemberOverviewData = Awaited<ReturnType<typeof getClubWorkspaceOverview>>

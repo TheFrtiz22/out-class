@@ -1,7 +1,7 @@
 "use client"
 
 import { ClubLogo } from "@/components/club-logo"
-import { Globe, Instagram, Linkedin, Mail, Trophy, Users } from "lucide-react"
+import { Globe, Instagram, Linkedin, Mail, Trophy, Users } from "@/components/icons"
 import { Badge } from "@/components/ui/badge"
 import type { ClubBrandingProfile } from "@/lib/data"
 

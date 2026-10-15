@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Bookmark, ArrowRight, RefreshCw } from "lucide-react";
+import { Bookmark, ArrowRight, RefreshCw } from "@/components/icons";
 import { useCorkboard } from "@/contexts/corkboard-context";
 import { PageHeader } from "@/components/product/page-header";
 import { DiscoveryCard } from "@/components/clubs/discovery-card";

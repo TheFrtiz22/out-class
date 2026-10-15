@@ -1,7 +1,7 @@
 "use client"
 
 import { type FormEvent, useMemo, useState } from "react"
-import { CalendarDays, Clock, DoorOpen, Plus, Users } from "lucide-react"
+import { CalendarDays, Clock, DoorOpen, Plus, Users } from "@/components/icons"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"

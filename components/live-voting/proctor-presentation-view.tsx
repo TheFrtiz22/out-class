@@ -2,7 +2,7 @@
 
 import "./voting-mode.css"
 import { useState } from "react"
-import { ArrowLeft, ArrowRight, Copy, ExternalLink, Monitor, Smartphone, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, Copy, ExternalLink, Monitor, Smartphone, X } from "@/components/icons"
 import { type VotingSession, applicantTally, votingProgress } from "@/lib/live-voting"
 import { useProctorSession } from "@/lib/use-live-voting"
 import { Button } from "@/components/ui/button"

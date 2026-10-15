@@ -17,7 +17,7 @@ This change is limited to public landing components, their styles, licensed loca
 - `components/landing/process-timeline.tsx`: four linked steps using existing stagger/reveal primitives; vertical on mobile.
 - `components/landing/product-stories.tsx`: retained profile, discovery, apply, tracking, and club stories, with alternating desktop composition and accessible existing Radix tabs for applicant, rubric, and interview previews.
 
-Existing CSS motion, IntersectionObserver, Radix, Lucide, Georgia display typography, Geist functional typography, and design tokens are reused. No animation or other application dependency was added. Browser automation and formatting tools were installed only in a temporary directory.
+Existing CSS motion, IntersectionObserver, Radix, Phosphor, Georgia display typography, Geist functional typography, and design tokens are reused. No animation or other application dependency was added. Browser automation and formatting tools were installed only in a temporary directory.
 
 ## Photograph license
 

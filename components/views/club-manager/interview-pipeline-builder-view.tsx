@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { interviewSetupHref } from "@/lib/interview-setup";
 import { handleClubLink } from "@/lib/workspace-navigation";
-import { ArrowUp, ArrowDown, Plus, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, Plus, Trash2, ArrowUpRight } from "@/components/icons";
 import {
   savePipelineSettings,
 } from "@/actions/club-settings";
@@ -313,7 +313,7 @@ export function InterviewPipelineBuilderView({
                         }}
                       >
                         Configure this round’s kit, rooms, and interviewer panel
-                        ↗
+                        <ArrowUpRight size={14} className="inline-block align-text-bottom" />
                       </Link>
                     </>
                   )}

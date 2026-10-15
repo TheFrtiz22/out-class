@@ -1,7 +1,7 @@
 "use client"
 
 import type { MouseEvent } from "react"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp } from "@/components/icons"
 import type { LandingPerspective } from "./journey-content"
 
 const scrollBehavior = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" as const : "smooth" as const

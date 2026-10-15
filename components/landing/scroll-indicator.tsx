@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Triangle } from "lucide-react"
+import { Triangle } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import "./scroll-indicator.css"
 
@@ -78,7 +78,7 @@ export function ScrollIndicator({ targetId = "about", label = "Scroll to learn h
 
   return (
     <button ref={buttonRef} type="button" className={cn("oc-scroll-indicator", className)} aria-label={label} aria-controls={targetId} aria-hidden={!available} disabled={!available} tabIndex={available ? 0 : -1} data-available={available} data-running={available && pageVisible} onClick={explore}>
-      <span className="oc-scroll-indicator-motion" aria-hidden="true"><Triangle className="oc-scroll-indicator-arrow" size={26} fill="currentColor" strokeWidth={0} /></span>
+      <span className="oc-scroll-indicator-motion" aria-hidden="true"><Triangle className="oc-scroll-indicator-arrow" size={26} weight="fill" /></span>
     </button>
   )
 }

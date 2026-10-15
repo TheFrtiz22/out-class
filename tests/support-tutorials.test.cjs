@@ -13,6 +13,7 @@ function loader(mocks = {}) {
     const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     new Function('require', 'module', 'exports', source)(name => {
       if (name in mocks) return mocks[name];
+      if (name === '@/components/icons') return require('./helpers/icons.cjs');
       if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
       if (name.startsWith('.')) return load(path.resolve(path.dirname(file), name) + '.ts');
       return require(name);

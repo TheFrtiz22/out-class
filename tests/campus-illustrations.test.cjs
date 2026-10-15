@@ -7,7 +7,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function load(file) {
  const mod = { exports: {} }
  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
- new Function('require','exports',code)(name => name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
+ new Function('require','exports',code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
  return mod.exports
 }
 const { campusIllustrations } = load('lib/campus-illustrations.ts')

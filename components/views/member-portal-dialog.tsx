@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
-import { CalendarClock, Download, Megaphone, Video } from "lucide-react"
+import { CalendarClock, Download, Megaphone, Video } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"

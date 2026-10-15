@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation"
 import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/product/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "lucide-react"
+import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { LoadingState } from "@/components/ui/loading-state"
@@ -151,7 +151,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             aria-pressed={filters.category === "all"}
             onClick={() => change("category", "all")}
           >
-            <Users size={18} aria-hidden="true" />All interests <span>{clubs.length}</span>
+            <Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span>
           </button>
           {categories.map((category) => {
             const CategoryIcon = categoryIcon(category)
@@ -162,7 +162,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
               aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
               onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
             >
-              <CategoryIcon size={18} aria-hidden="true" />{category}
+              <CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}
               <span>{clubs.filter((club) => club.category === category).length}</span>
             </button>
           )})}

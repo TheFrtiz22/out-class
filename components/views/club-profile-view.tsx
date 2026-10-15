@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CorkboardButton } from "@/components/clubs/corkboard-button"
@@ -177,22 +177,24 @@ export function ClubProfileView({
             {recruitment.expired && " The deadline has passed. Existing drafts remain available."}
           </p>
           {application && <RecruitmentTimeline status={application.status} rounds={real ? club.rounds : undefined} roundId={actualApplication?.roundId} />}
-          <Button
-            style={customized ? { backgroundColor: accent, color: contrast } : undefined}
-            className="oc-club-apply"
-            disabled={applyDisabled}
-            onClick={() => void apply()}
-          >
-            {applyLabel}
-            <ArrowRight size={15} />
-          </Button>
-          {error && (
-            <p role="alert" className="text-destructive">
-              {error}
-            </p>
-          )}
-          {!preview && <CorkboardButton club={club} onNavigate={onNavigate} />}
-          <SubscribeButton clubId={club.id} disabled={preview} />
+          <div className="oc-club-actions" role="group" aria-label="Club actions">
+            <Button
+              style={customized ? { backgroundColor: accent, color: contrast } : undefined}
+              className="oc-club-apply"
+              disabled={applyDisabled}
+              onClick={() => void apply()}
+            >
+              {applyLabel}
+              <ArrowRight size={15} />
+            </Button>
+            {error && (
+              <p role="alert" className="text-destructive">
+                {error}
+              </p>
+            )}
+            {!preview && <CorkboardButton club={club} onNavigate={onNavigate} />}
+            <SubscribeButton clubId={club.id} disabled={preview} />
+          </div>
           <div className="oc-club-requirements">
             <h3>Before you apply</h3>
             <p>Your OutClass profile is the starting point for your application.</p>
@@ -221,8 +223,8 @@ export function ClubProfileView({
             <p className="oc-club-about">{about || "This club hasn’t added a description yet."}</p>
           </section>
       <nav aria-label="Club profile links" className="my-4 flex flex-wrap gap-x-6 gap-y-2">
-        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps ↗</Link>}
-        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace ↗</Link>}
+        {real && <Link className="oc-profile-link" href={`/meetings?clubId=${club.id}`}>Meetings, agendas, and recaps <ArrowUpRight size={14} className="inline-block align-text-bottom" /></Link>}
+        {user?.memberships.some(m=>m.clubId===club.id) && <Link className="oc-profile-link" href={`/club/${club.id}/workspace`}>Open club workspace <ArrowUpRight size={14} className="inline-block align-text-bottom" /></Link>}
       </nav>
           <MarketingSections profile={publicProfile} />
           <section className="oc-club-events" aria-labelledby="club-events">

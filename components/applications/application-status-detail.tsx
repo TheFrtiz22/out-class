@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { RecruitmentOffer } from "./recruitment-offer"
-import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "lucide-react"
+import { ArrowLeft, ArrowRight, CalendarDays, RefreshCw } from "@/components/icons"
 import { ApplicantBooking } from "@/components/interviews/applicant-booking"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusBadge } from "@/components/status-badge"

@@ -3,7 +3,7 @@
 import { DesignPatterns } from "@/components/product/design-patterns"
 import { PageHeader } from "@/components/product/page-header"
 import { useState } from "react"
-import { ArrowRight, Bell, FileText, Plus } from "lucide-react"
+import { ArrowRight, Bell, FileText, Plus } from "@/components/icons"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { IconButton } from "@/components/ui/icon-button"

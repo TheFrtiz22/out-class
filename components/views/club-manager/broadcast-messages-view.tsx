@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Check, ChevronDown, MapPinned, Megaphone, RotateCcw, Send, Trash2 } from "lucide-react"
+import { Check, ChevronDown, MapPinned, Megaphone, RotateCcw, Send, Trash2 } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"

@@ -14,7 +14,7 @@ import {
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ListChecks, ChevronRight } from "lucide-react";
+import { ListChecks, ChevronRight } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,

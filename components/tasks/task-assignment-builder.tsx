@@ -3,7 +3,7 @@ import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, ArrowRight, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Plus, Trash2 } from "@/components/icons"
 import { taskAudienceSchema, taskInputSchema, type TaskAudience, type TaskInput } from "@/lib/tasks"
 import { taskAudienceMode, taskLocalDate, taskDate, type TaskWorkspace, type ClubTask, type TaskRun, type TaskMember } from "@/lib/task-presentation"
 import { saveTask, previewTaskAudience } from "@/lib/workspace-api"

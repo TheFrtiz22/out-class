@@ -13,7 +13,7 @@ import {
   Mail,
   RotateCcw,
   UploadCloud,
-} from "lucide-react"
+} from "@/components/icons"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
