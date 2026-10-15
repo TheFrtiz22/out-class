@@ -7,8 +7,8 @@ import type { LandingPerspective } from "./journey-content"
 import "./hero-feature-stack.css"
 
 const count = heroFeatures.length
-const duration = 480
-const interval = 5400
+const duration = 360
+const interval = 3200
 const easing = "cubic-bezier(.22, 1, .36, 1)"
 const depthOf = (index: number, active: number) => (index - active + count) % count
 // Only three layers are visible. The others sit invisibly at the back.

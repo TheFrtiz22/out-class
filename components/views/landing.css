@@ -53,10 +53,10 @@
 }
 .oc-landing[data-scroll-motion] .oc-product-story {
   display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr);
   align-items: start;
-  gap: clamp(32px, 5vw, 80px);
-  padding-block: 64px;
+  gap: clamp(28px, 3.5vw, 48px);
+  padding-block: clamp(28px, 4svh, 44px);
 }
 .oc-story-copy {
   padding-top: 22px;
@@ -389,8 +389,8 @@
   }
   .oc-landing[data-scroll-motion] .oc-product-story {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
-    padding-block: 40px;
+    gap: 20px;
+    padding-block: 28px;
   }
   .oc-story-copy {
     padding-top: 0;
