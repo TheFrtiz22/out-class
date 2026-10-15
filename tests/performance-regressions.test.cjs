@@ -33,6 +33,31 @@ function hooks() {
 }
 const clubId = '00000000-0000-4000-8000-000000000001';
 
+test('Recruiting Interviews retains the scheduling tab when round navigation remounts it', () => {
+  let query = 'section=recruitment&tool=interviews&interviewTab=schedule&roundId=round-one';
+  const member = { id: 'membership', userId: 'user', clubId, isOwner: true, status: 'ACTIVE', accessRole: 'OWNER', permissions: [], interviewOffices: [], club: { id: clubId, name: 'Synthetic club' } };
+  const react = { ...hooks().react, useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}], useEffect() {} };
+  const load = loader({
+    react, 'next/dynamic': { __esModule: true, default: () => 'Dynamic' }, 'next/link': { __esModule: true, default: 'Link' },
+    'next/navigation': { useRouter: () => ({ push() {}, replace() {} }), useSearchParams: () => new URLSearchParams(query) },
+    '@/contexts/auth-context': { useAuth: () => ({ user: { id: 'user', memberships: [member] }, loading: false, activeClubId: clubId, selectClub() {} }) },
+    '@/contexts/demo-context': { useDemoMode: () => ({ ready: true, isDemoEnabled: true, state: { perspective: { role: 'leader' } } }) },
+    '@/lib/workspace-api': {}, '@/lib/application-state': { ApplicationStateProvider: 'Provider', useApplicationState: () => ({}) },
+  });
+  const { ClubWorkspace } = load('components/club-workspace.tsx');
+  function entry() {
+    const workspace = nodes(ClubWorkspace({ clubId })).find(n => n.type?.name === 'RecruitmentWorkspace');
+    assert.ok(workspace);
+    return nodes(workspace.type(workspace.props)).find(n => n.props?.initialTab);
+  }
+  assert.equal(entry().props.initialTab, 'schedule');
+  query = query.replace('round-one', 'round-two') + '&schedule=review';
+  assert.equal(entry().props.initialTab, 'schedule');
+  assert.equal(entry().props.initialRoundId, 'round-two');
+  query = 'section=recruitment&tool=interviews';
+  assert.equal(entry().props.initialTab, 'kits', 'Unspecified tab preserves the existing master-kit entry');
+});
+
 test('read API preserves dates and user JSON, validates scope, and never caches private responses', async () => {
   const dates = { joinedAt: new Date('2026-10-01'), deliveries: [{ sentAt: new Date('2026-10-02') }], json: { $type: 'date', value: 'not-a-date' } };
   const seen = [];
