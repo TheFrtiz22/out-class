@@ -1,0 +1,9 @@
+# Demo interview navigation repair
+
+Selecting a round in Interview Setup establishes `leaderFocus`. Opening interview mode mounts `InterviewWorkspaceView`, whose existing effect synchronizes that club through `AuthProvider.selectClub`. In Demo Mode this calls `DemoDataProvider.viewAs("leader", clubId)`. Previously that call always removed `section` and changed the provider's subtree key, even when the same leader/club perspective was already active. The room URL consequently resolved to Club Overview.
+
+The failure was reproduced on the live site without editing interview data: select the fictional MII Interview round, then Enter interview mode. The resulting URL retained `tool=interviews`, `roundId` and `interview=1`, but lost `section=recruitment`.
+
+`viewAs` now leaves an already active perspective and mounted editors alone. A real switch into the leader perspective preserves a deep link belonging to that exact demo club. Obsolete student routing is still cleared when switching contexts, legacy `demoClub` cleanup remains supported, and management of other demo clubs remains denied. No stored fixtures, interview drafts, permissions, live actions, database schema or credentials are changed.
+
+Verification: two new regressions failed before the fix; all 67 focused Demo, authorization, navigation and interview checks subsequently passed. The isolated browser regression uses the actual providers and interview queue, with synthetic Auth/database data and a fixture writing surface. It verifies room entry, repeated selection without losing unsaved input, reload recovery and a saved student perspective, with no API requests. Type checking, lint and the production build passed. Hosted release evidence belongs to the fix pull request; local verification alone does not establish deployment.
