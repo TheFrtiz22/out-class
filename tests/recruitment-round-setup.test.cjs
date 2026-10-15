@@ -7,7 +7,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function ui(file,name,props,mocks){
  const slots=[],effects=[],cleanups=[];let cursor=0;const cache={};
  const react={useState(value){const i=cursor++;if(!(i in slots))slots[i]=typeof value==='function'?value():value;return[slots[i],next=>slots[i]=typeof next==='function'?next(slots[i]):next]},useRef(value){const i=cursor++;return slots[i]??=( {current:value})},useEffect(fn,deps){const i=cursor++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(()=>{cleanups[i]?.();cleanups[i]=fn()})}}};
- function load(file){if(cache[file])return cache[file];const m={exports:{}};new Function('require','module','exports',compile(file))(n=>n==='react'?react:n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='next/link'?{default:'Link'}:n.startsWith('@/components/')?new Proxy({},{get:(_,k)=>k}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
+ function load(file){if(cache[file])return cache[file];const m={exports:{}};new Function('require','module','exports',compile(file))(n=>n==='react'?react:n==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:n==='@/hooks/use-autosave'?require('./helpers/autosave-ui-harness.cjs').autosaveHook(react):n in mocks?mocks[n]:n.endsWith('.css')?{}:n==='next/link'?{default:'Link'}:n.startsWith('@/components/')?new Proxy({},{get:(_,k)=>k}):n.startsWith('@/lib/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
  const component=load(file)[name];return{render(){cursor=0;const result=component(props);effects.splice(0).forEach(fn=>fn());return result},close(){cleanups.forEach(fn=>fn?.())}};
 }
 function persisted(){
@@ -17,7 +17,7 @@ function persisted(){
  h.tx.pipelineRound.update=async({where,data})=>Object.assign(rounds.find(r=>r.id===where.id),data);
  h.tx.pipelineRound.create=async({data})=>{assert.ok(!rounds.some(r=>r.id===data.id));rounds.push({...data,_count:{},archivedAt:null});};
  h.tx.club={findUniqueOrThrow:async()=>club,update:async()=>{club.pipelineVersion++}};
- const cache={};function load(file){if(cache[file])return cache[file];const m={exports:{}},mocks={'@/utils/prisma':{prisma:{...h.tx,$transaction:fn=>fn(h.tx)}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:id(10)}})},'next/cache':{revalidatePath(){},revalidateTag(){}}};new Function('require','module','exports',compile(file))(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
+ const cache={};function load(file){if(cache[file])return cache[file];const m={exports:{}},mocks={'@/utils/prisma':{prisma:{...h.tx,$transaction:fn=>fn(h.tx)}},'@/utils/auth':{requireClubPermission:async()=>({user:{id:id(10)}})},'next/cache':{revalidatePath(){},revalidateTag(){}}};new Function('require','module','exports',compile(file))(n=>n==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return cache[file]=m.exports;}
  return{h,rounds,club,settings:load('actions/club-settings.ts'),kits:h.load('actions/interview-kits.ts'),get query(){return query}};
 }
 test('a persisted pipeline interview round is discoverable without applicant assignments, and kit writes preserve its ID',async()=>{

@@ -131,3 +131,11 @@ export function profileChecklist(profile: FullStudentProfile) {
     { label: "LinkedIn", complete: Boolean(safeProfileUrl(profile.linkedinUrl)) },
   ]
 }
+
+/** Compare only this section so independent profile sections can save concurrently. */
+export function profileSectionSnapshot(profile: object, section: ProfileSection) {
+  const source = profile as Record<string, unknown>
+  if (section === "experience") return JSON.stringify((source.experiences as { title: string; subtitle: string; period: string }[] ?? []).map(({ title, subtitle, period }) => ({ title, subtitle, period })))
+  const keys = section === "identity" ? ["firstName", "lastName", "headshotUrl"] : section === "links" ? ["linkedinUrl", "resumeUrl"] : ["highSchool", "gender", "pronouns", "transferStudent", "major", "gradYear", "scholarStatus", "gpa", "satScore", "actScore", "actEnglish", "actMath", "actReading", "actScience"]
+  return JSON.stringify(keys.map(key => [key, source[key] ?? null]))
+}

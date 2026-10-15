@@ -1,9 +1,11 @@
 "use client";
+import { useAutosave } from "@/hooks/use-autosave";
+import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
 import Link from "next/link";
 import { canDiscoverInterviewSetup, interviewSetupHref, type InterviewSetupRounds } from "@/lib/interview-setup";
 import { interviewCapabilities } from "@/lib/interview-access";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getInterviewKit,
   saveInterviewKit,
@@ -24,13 +26,11 @@ export function InterviewKitEditor({
   initialRoundId?: string;
 }) {
   const { user } = useAuth();
+  const version = useRef(0);
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
   const [round, setRound] = useState(rounds.find(r => r.id === initialRoundId)?.id || rounds[0]?.id || ""),
     [questions, setQuestions] = useState<KitQuestion[]>([]),
-    [version, setVersion] = useState(0),
-    [busy, setBusy] = useState(false),
-    [loaded, setLoaded] = useState(false),
-    [dirty, setDirty] = useState(false),
+        [loaded, setLoaded] = useState(false),
     [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0);
   const canReadKit = rounds.find(r => r.id === round)?.canReadKit !== false;
@@ -44,9 +44,8 @@ export function InterviewKitEditor({
       .then((result) => {
         if (current) {
           setQuestions(result.questions);
-          setVersion(result.version);
+          version.current = result.version;
           setLoaded(true);
-          setDirty(false);
         }
       })
       .catch(() => {
@@ -56,15 +55,14 @@ export function InterviewKitEditor({
       current = false;
     };
   }, [clubId, round, retry, canReadKit]);
-  useEffect(() => {
-    if (!dirty) return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty]);
+  const autosave = useAutosave({
+    identity: `${user?.id}:kit:${clubId}:${round}`,
+    value: questions, restore: setQuestions, enabled: loaded && canEdit && canReadKit,
+    save: async value => { const result = await saveInterviewKit(clubId, round, version.current, value); version.current = result.version; },
+  });
+  const dirty = autosave.dirty, busy = autosave.saving;
   function edit(value: KitQuestion[]) {
     setQuestions(value);
-    setDirty(true);
   }
   function move(index: number, direction: number) {
     const items = [...questions];
@@ -75,7 +73,7 @@ export function InterviewKitEditor({
     edit(items);
   }
   return (
-    <section className="oc-kit-editor" data-unsaved={dirty} data-saving={busy} aria-label="Interview kit editor">
+    <section className="oc-kit-editor" data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={dirty} data-saving={busy} aria-label="Interview kit editor">
       <header className="oc-kit-heading"><h2>Interview master kit</h2>
       <div>
         <p className="text-sm text-muted-foreground">
@@ -85,8 +83,9 @@ export function InterviewKitEditor({
       </div></header>
       <div className="oc-kit-layout">
         <nav className="oc-kit-rounds" aria-label="Interview kit rounds"><h3>Rounds</h3>
-          {rounds.map((r, index) => <button key={r.id} type="button" aria-current={r.id === round ? "true" : undefined} disabled={busy} onClick={() => {
-            if (r.id !== round && (!dirty || window.confirm("Discard unsaved kit changes?"))) {
+          {rounds.map((r, index) => <button key={r.id} type="button" aria-current={r.id === round ? "true" : undefined} disabled={busy} onClick={async () => {
+            try { await autosave.flush() } catch { return }
+            if (r.id !== round) {
               setRound(r.id);
               if (window.location && window.history) {
                 const url = new URL(window.location.href); url.searchParams.set("roundId", r.id);
@@ -100,7 +99,7 @@ export function InterviewKitEditor({
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           <p className="mb-4 text-sm text-muted-foreground">{canEdit ? "You can edit the selected round master kit." : "Read-only question bank. Use questions in your assigned interview workspace."}</p>
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
-        <fieldset disabled={busy || !loaded || !canEdit} className="space-y-5">
+        <fieldset disabled={!loaded || !canEdit || autosave.recovery != null} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">
               <label htmlFor={`prompt-${q.id}`}>Question {i + 1}</label>
@@ -178,43 +177,19 @@ export function InterviewKitEditor({
             >
               Add question
             </Button>
-            <Button
-              type="button"
-              disabled={!dirty}
-              onClick={async () => {
-                setBusy(true);
-                setMessage("");
-                try {
-                  const result = await saveInterviewKit(
-                    clubId,
-                    round,
-                    version,
-                    questions,
-                  );
-                  setVersion(result.version);
-                  setDirty(false);
-                  setMessage("Kit saved.");
-                } catch (e) {
-                  setMessage(
-                    e instanceof Error ? e.message : "Could not save.",
-                  );
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Save kit
-            </Button>
           </div>}
         </fieldset>
+        <AutosaveStatus save={autosave} />
         <p role="status">{message}</p>
         <Button
           type="button"
           variant="ghost"
           disabled={busy}
-          onClick={() => {
-            if (!dirty || window.confirm("Discard unsaved changes and reload?"))
+          onClick={async () => {
+            if (!dirty || window.confirm("Discard unsaved changes and reload?")) {
+              await autosave.discardRecovery?.();
               setRetry((v) => v + 1);
+            }
           }}
         >
           Reload kit

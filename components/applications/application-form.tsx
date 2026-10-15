@@ -1,9 +1,14 @@
 "use client"
+import { useAutosave } from "@/hooks/use-autosave"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+import { useAuth } from "@/contexts/auth-context"
+import { useDemoMode } from "@/contexts/demo-context"
+import { applicationAnswersKey } from "@/lib/student-applications"
 import { QuestionField } from "@/components/applications/question-field"
 import { applicationAvailability } from "@/lib/club-settings"
 import { testRequirementLabels } from "@/lib/test-scores"
 
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Check, FileText } from "lucide-react"
 import {
   saveApplicationDraft,
@@ -43,17 +48,29 @@ export function ApplicationForm({
   const [responses, setResponses] = useState<Record<string, string>>(() =>
     Object.fromEntries(application.answers.map((answer) => [answer.questionId, answer.response])),
   )
-  const [baseline, setBaseline] = useState(JSON.stringify(responses))
+  const { user } = useAuth()
+  const demo = useDemoMode()
+  const expected = useRef(applicationAnswersKey(application.answers))
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [confirm, setConfirm] = useState(false)
-  const dirty = JSON.stringify(responses) !== baseline
   const answers = questions.map((question) => ({
     questionId: question.id,
     response: responses[question.id] || "",
   }))
+  const autosave = useAutosave({
+    identity: `${demo.isDemoEnabled ? "demo:" : ""}${user?.id}:application:${application.id}`,
+    value: responses, restore: setResponses,
+    save: async snapshot => {
+      const savedAnswers = questions.map(q => ({ questionId: q.id, response: snapshot[q.id] || "" }))
+      await saveApplicationDraft({ clubId: application.clubId, answers: savedAnswers, expectedAnswers: expected.current })
+      expected.current = applicationAnswersKey(savedAnswers)
+      onSaved(false, savedAnswers)
+    },
+  })
+  const dirty = autosave.dirty
   const required = questions.filter((question) => question.required)
   const progress = applicationResponseProgress(questions, answers)
   const completed = progress.completed
@@ -61,33 +78,6 @@ export function ApplicationForm({
     onDirty(dirty)
     onBusy(busy)
   }, [dirty, busy, onDirty, onBusy])
-  useEffect(() => {
-    if (!dirty && !busy) return
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault()
-      event.returnValue = ""
-    }
-    window.addEventListener("beforeunload", warn)
-    // The shell uses buttons rather than URL navigation. Guard leaving an unsaved form there too.
-    const navigate = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      if (
-        !target.closest("[data-application-form]") &&
-        !target.closest("[data-product-shell] nav") &&
-        target.closest("nav button, nav a, [data-shell-navigation]")
-      ) {
-        if (busy || !window.confirm("Leave this application? Your unsaved changes will be lost.")) {
-          event.preventDefault()
-          event.stopPropagation()
-        }
-      }
-    }
-    document.addEventListener("click", navigate, true)
-    return () => {
-      window.removeEventListener("beforeunload", warn)
-      document.removeEventListener("click", navigate, true)
-    }
-  }, [dirty, busy])
   function change(id: string, value: string) {
     setResponses((current) => ({ ...current, [id]: value }))
     setMessage("")
@@ -112,11 +102,13 @@ export function ApplicationForm({
     setError("")
     setMessage("")
     try {
+      await autosave.flush()
       await (final ? submitApplication : saveApplicationDraft)({
         clubId: application.clubId,
         answers,
+        expectedAnswers: expected.current,
       })
-      setBaseline(JSON.stringify(responses))
+      await autosave.reset()
       setConfirm(false)
       setMessage(final ? "Application submitted." : "Draft saved to your account.")
       onSaved(final, answers)
@@ -149,7 +141,7 @@ export function ApplicationForm({
       input.set("file", file)
       const upload = await uploadProfileFile(input)
       change(id, upload.reference)
-      setMessage("Document uploaded. Save your draft to keep the attachment.")
+      setMessage("Document uploaded. Your attachment will save automatically.")
     } catch {
       setError("The document upload failed. Your previous response has not changed.")
     } finally {
@@ -167,16 +159,14 @@ export function ApplicationForm({
     } else setConfirm(true)
   }
   return (
-    <div data-application-form data-unsaved={dirty} data-saving={busy} className="space-y-7">
+    <div data-autosave-editor="true" data-application-form data-unsaved={dirty} data-saving={busy || autosave.saving} onBlur={autosave.onBlur} className="space-y-7">
       <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4 text-sm">
         <p>
           {required.length
             ? `${completed} of ${required.length} required responses ready`
             : "No required questions"}
         </p>
-        <span role="status" className="text-xs text-muted-foreground">
-          {busy ? "Working…" : dirty ? "Unsaved changes" : message || "Saved responses loaded"}
-        </span>
+        <AutosaveStatus save={autosave} />
       </div>
       <div className="oc-draft-progress-summary"><Progress value={progress.percent} aria-label="Required application responses ready" />{progress.nextQuestionId && <Button type="button" variant="link" className="px-0" disabled={busy} onClick={() => { const field = document.getElementById(`answer-${progress.nextQuestionId}`); field?.scrollIntoView({ block: "center", behavior: "instant" }); field?.focus({ preventScroll: true }) }}>Continue to next response</Button>}</div>
       <div className="flex items-start gap-3 text-sm leading-relaxed">
@@ -237,7 +227,7 @@ export function ApplicationForm({
                 {question.type === "ESSAY"
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
                   : question.type === "FILE_UPLOAD"
-                    ? "Use a document link the club can access. Uploading does not save or submit your application."
+                    ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
                     : "Enter your selection from the choices in the prompt. If no choices are listed, ask the club for clarification."}
                 {errors[question.id] && (
                   <p className="mt-2 text-destructive" role="alert">
@@ -256,17 +246,9 @@ export function ApplicationForm({
         </fieldset>
         <div className="oc-application-actions flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-5">
           <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-            Save and come back whenever you need. Nothing is submitted until you confirm.
+            Your draft saves automatically. Nothing is submitted until you confirm.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={() => void persist(false)}
-            >
-              Save draft
-            </Button>
             <Button type="submit" disabled={busy || closed}>
               Review & submit
             </Button>

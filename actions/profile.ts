@@ -4,7 +4,7 @@ import { scholarStatusSchema } from "@/lib/scholar-status";
 
 
 import { actShape } from "@/lib/test-scores";
-import { gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
+import { profileSectionSnapshot, gpaSchema, profileEducationFields, resumeReferenceSchema, linkedinUrlSchema, headshotUrlSchema, isPrivateResume, profileSectionSchema } from "@/lib/student-profile";
 
 import { prisma } from "@/utils/prisma";
 import { requireAuth } from "@/utils/auth";
@@ -109,7 +109,7 @@ export async function upsertStudentProfile(data: z.infer<typeof profileSchema>) 
 
 // Section updates deliberately omit unrelated fields and relations.
 // Editing education must never clear a résumé or replace experience records.
-export async function updateStudentProfileSection(input: unknown) {
+export async function updateStudentProfileSection(input: unknown, expected?: string) {
   const { user } = await requireAuth();
   const parsed = profileSectionSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check your entries." };
@@ -127,14 +127,23 @@ export async function updateStudentProfileSection(input: unknown) {
     data = { ...fields, ...("scholarStatus" in fields && fields.scholarStatus === null ? { scholarStatus: Prisma.DbNull } : {}) };
   }
   try {
-    const profile = await prisma.studentProfile.update({
-      where: { userId: user.id },
-      data: data as import("@prisma/client").Prisma.StudentProfileUpdateInput,
-      include: { experiences: true },
+    const update = (tx: Pick<typeof prisma, "studentProfile">) => tx.studentProfile.update({ where: { userId: user.id }, data: data as Prisma.StudentProfileUpdateInput, include: { experiences: true } });
+    const profile = expected === undefined ? await update(prisma) : await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT id FROM "User" WHERE id=${user.id} FOR UPDATE`;
+      const account = await tx.user.findUnique({ where: { id: user.id }, select: { disabledAt: true } });
+      if (!account || account.disabledAt) throw Error("Account unavailable.");
+      if (expected !== undefined) {
+        z.string().max(100000).parse(expected);
+        const current = await tx.studentProfile.findUniqueOrThrow({ where: { userId: user.id }, include: { experiences: true } });
+        const next = { ...current, ...fields };
+        const actual = profileSectionSnapshot(current, section);
+        if (actual !== expected && actual !== profileSectionSnapshot(next, section)) throw Error("This profile section changed in another tab. Reopen it to compare. Your text is retained.");
+      }
+      return update(tx);
     });
     revalidatePath("/");
     return { profile };
-  } catch {
-    return { error: "Your changes could not be saved. Please try again." };
+  } catch (error) {
+    return { error: error instanceof Error && error.message.includes("changed in another tab") ? error.message : "Your changes could not be saved. Please try again." };
   }
 }

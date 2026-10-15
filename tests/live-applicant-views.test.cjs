@@ -5,7 +5,7 @@ const ts = require('typescript')
 function compile(file, mocks = {}, extra = '') {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
+  new Function('require', 'module', 'exports', 'window', 'requestAnimationFrame', code)(name => mocks[name] || (name==='@/hooks/use-editor-draft'?require('./helpers/autosave-ui-harness.cjs').draftStub:name.startsWith('@/lib/') ? compile(name.replace('@/', '') + '.ts') : name.startsWith('@/') || name.startsWith('./') ? new Proxy({}, { get: (_, key) => String(key) }) : require(name)), mod, mod.exports, { addEventListener(){}, removeEventListener(){}, confirm(){ return true } }, () => {})
   return mod.exports
 }
 const { applicantLane } = compile('lib/applicant-board.ts')
@@ -49,7 +49,7 @@ test('drawer status writes send expectedStatus, reject stale outcomes, and refre
 })
 test('read/review access alone never exposes enabled round moves or decision buttons', async () => {
   const h=harness(['applications.review']);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
-  assert.equal(button(tree,'Accepted'),undefined);assert.equal(button(tree,'Move round').props.disabled,true);assert.equal(button(tree,'Save evaluation').props.disabled,false)
+  assert.equal(button(tree,'Accepted'),undefined);assert.equal(button(tree,'Move round').props.disabled,true);assert.equal(button(tree,'Finalize evaluation').props.disabled,false)
 })
 test('evaluation save updates both presentations and explicit round movement reloads anonymous identity', async () => {
   const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
@@ -120,7 +120,7 @@ test('Kanban decisions use expected status and appear in List after server reloa
 
 for(const name of ['Panel','Review'])test(`drawer renders stable-ID review with historical label when current name is ${name}`,async()=>{
  const h=harness();h.renameRound(name);h.setEvaluations([{id:'legacy',interviewerId:'member',roundId:null,round:name,score:2,notes:null},{id:'submitted',interviewerId:'member',roundId:'round',round:'Review',score:8.5,notes:null}]);
- h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.value,'8.5');assert.match(text(tree),/Saved review/);assert.ok(nodes(tree).some(n=>Array.isArray(n.props?.children)&&n.props.children.includes('Review')&&n.props.children.includes(8.5)));
+ h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.value,'8.5');assert.match(text(tree),/Finalized review/);assert.ok(nodes(tree).some(n=>Array.isArray(n.props?.children)&&n.props.children.includes('Review')&&n.props.children.includes(8.5)));
 });
 for(const roundId of [null,undefined,'different-round'])test(`drawer legacy label compatibility, roundId=${roundId}`,async()=>{
  const h=harness();h.setEvaluations([{id:'evaluation',interviewerId:'member',roundId,round:'Review',score:7,notes:null}]);h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();assert.equal(nodes(tree).find(n=>n.props?.id==='review-score').props.value,roundId==='different-round'?'':'7');

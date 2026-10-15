@@ -83,3 +83,20 @@ test('shared public renderer displays marketing content and respects empty and h
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile })), />Members</)
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile: profileDraft({ name: 'Empty' }) })), /Frequently asked|Life in the club|A look inside/)
 })
+
+test('published profile compare tokens reject concurrent authors and recover identical retries', async () => {
+  let current = clubProfileSchema.parse(draft()), writes = 0
+  const expectedProfile = JSON.stringify(current)
+  const tx = { club: { findUniqueOrThrow: async () => current, update: async q => { writes++; current = { ...current, ...q.data } } }, auditLog: { create: async () => {} } }
+  const actions = load('actions/club-workspace.ts', {
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async () => {} },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/auth': { requireClubPermission: async () => ({ user: { id: 'editor' } }) },
+    '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
+  })
+  const next = { ...current, description: 'The acknowledged public description' }
+  await actions.updateClubSettings({ clubId, ...next, expectedProfile })
+  await actions.updateClubSettings({ clubId, ...next, expectedProfile })
+  await assert.rejects(actions.updateClubSettings({ clubId, ...next, description: 'Stale competing draft', expectedProfile }), /changed while you were editing/)
+  assert.equal(current.description, next.description); assert.equal(writes, 2)
+})

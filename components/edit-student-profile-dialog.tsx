@@ -1,13 +1,15 @@
 "use client"
+import { useAutosave } from "@/hooks/use-autosave"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
 
-import { useEffect, useState, type ReactNode, type FormEvent } from "react"
+import { useEffect, useRef, useState, type ReactNode, type FormEvent } from "react"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { ProfilePhotoCrop } from "@/components/profile-photo-crop"
 import { Plus, Trash2 } from "lucide-react"
 import { getStudentProfile, updateStudentProfileSection } from "@/lib/workspace-api"
 import { uploadProfileFile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
-import { gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
+import { profileSectionSnapshot, gpaSchema, genderValues, pronounValues, type FullStudentProfile, type ProfileSection } from "@/lib/student-profile"
 import {
   Dialog,
   DialogContent,
@@ -38,7 +40,8 @@ export function EditStudentProfileDialog({
   section?: ProfileSection
   onSaved?: (profile: FullStudentProfile) => void
 }) {
-  const { user, refreshUser } = useAuth()
+  const { user } = useAuth()
+  const expected = useRef("")
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FullStudentProfile | null>(null)
   const [busy, setBusy] = useState(false)
@@ -50,11 +53,13 @@ export function EditStudentProfileDialog({
   useEffect(() => () => { if (photoSource?.startsWith("blob:")) URL.revokeObjectURL(photoSource) }, [photoSource])
   async function begin(value: boolean) {
     if (busy) return
+    if (!value) { try { await autosave.flush(); setOpen(false) } catch { return }; return }
     setOpen(value)
     setPhotoSource(null)
     setError("")
     if (!value) return
     setDraft(profile || null)
+    if (profile) expected.current = profileSectionSnapshot(profile, section)
     setOriginalGpa(profile?.gpa ?? null)
     setOriginalPhoto(profile?.headshotUrl ?? null)
     setScholarYes(!!(profile?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -62,6 +67,7 @@ export function EditStudentProfileDialog({
       try {
         const loaded = (await getStudentProfile()).profile
         setDraft(loaded)
+        if (loaded) expected.current = profileSectionSnapshot(loaded, section)
         setOriginalGpa(loaded?.gpa ?? null)
         setOriginalPhoto(loaded?.headshotUrl ?? null)
         setScholarYes(!!(loaded?.scholarStatus as { selections?: string[] } | null)?.selections?.some(v => v !== "NOT_APPLICABLE"))
@@ -71,47 +77,38 @@ export function EditStudentProfileDialog({
       }
     }
   }
-  async function save(event: FormEvent) {
-    event.preventDefault()
-    if (!draft) return
-    if (section === "education") {
-      if (scholarYes && !draft.scholarStatus) { setError("Choose at least one scholar program."); return }
-      const scholar = scholarStatusSchema.safeParse(draft.scholarStatus ?? null)
-      if (!scholar.success) { setError(scholar.error.issues[0].message); return }
-    }
-    setBusy(true)
-    setError("")
-    try {
+  async function persist(snapshot: FullStudentProfile) {
+    if (section === "education" && scholarYes && !snapshot.scholarStatus) throw Error("Choose at least one scholar program.")
       const payload =
         section === "identity"
-          ? { section, firstName: draft.firstName, lastName: draft.lastName, ...(draft.headshotUrl !== originalPhoto ? { headshotUrl: draft.headshotUrl } : {}) }
+          ? { section, firstName: snapshot.firstName, lastName: snapshot.lastName, ...(snapshot.headshotUrl !== originalPhoto ? { headshotUrl: snapshot.headshotUrl } : {}) }
           : section === "education"
             ? {
                 section,
-                highSchool: draft.highSchool, gender: draft.gender, pronouns: draft.pronouns, transferStudent: draft.transferStudent,
-                major: draft.major,
-                gradYear: draft.gradYear,
-                scholarStatus: draft.scholarStatus ?? null,
-                ...(draft.gpa !== originalGpa ? { gpa: draft.gpa } : {}),
-                satScore: draft.satScore,
-                actScore: draft.actScore, actEnglish: draft.actEnglish, actMath: draft.actMath, actReading: draft.actReading, actScience: draft.actScience,
+                highSchool: snapshot.highSchool, gender: snapshot.gender, pronouns: snapshot.pronouns, transferStudent: snapshot.transferStudent,
+                major: snapshot.major,
+                gradYear: snapshot.gradYear,
+                scholarStatus: snapshot.scholarStatus ?? null,
+                ...(snapshot.gpa !== originalGpa ? { gpa: snapshot.gpa } : {}),
+                satScore: snapshot.satScore,
+                actScore: snapshot.actScore, actEnglish: snapshot.actEnglish, actMath: snapshot.actMath, actReading: snapshot.actReading, actScience: snapshot.actScience,
               }
             : section === "experience"
-              ? { section, experiences: draft.experiences }
-              : { section, linkedinUrl: draft.linkedinUrl, resumeUrl: draft.resumeUrl }
-      const result = await updateStudentProfileSection(payload)
-      if ("error" in result) {
-        setError(result.error || "Unable to save.")
-        return
-      }
+              ? { section, experiences: snapshot.experiences }
+              : { section, linkedinUrl: snapshot.linkedinUrl, resumeUrl: snapshot.resumeUrl }
+      const result = await updateStudentProfileSection(payload, expected.current)
+      if ("error" in result) throw Error(result.error || "Unable to save.")
+      expected.current = profileSectionSnapshot(result.profile, section)
       onSaved?.(result.profile)
-      setOpen(false)
-      await refreshUser()
-    } catch {
-      setError("Your changes could not be saved. Please try again.")
-    } finally {
-      setBusy(false)
-    }
+  }
+  const autosave = useAutosave({
+    identity: `${user?.id}:profile:${section}`,
+    value: draft, restore: setDraft, enabled: open && !!draft,
+    save: async snapshot => { if (snapshot) await persist(snapshot) },
+  })
+  async function save(event: FormEvent) {
+    event.preventDefault()
+    try { await autosave.flush(); setOpen(false) } catch { /* Retry remains beside the editor. */ }
   }
   async function upload(file?: File, kind: "resume" | "headshot" = "resume") {
     if (!file || !draft) return
@@ -178,8 +175,9 @@ export function EditStudentProfileDialog({
             {error ? "Close this window to return to your profile." : "Loading profile…"}
           </p>
         ) : (
-          <form onSubmit={save} className="space-y-6">
-            <fieldset disabled={busy} className="min-w-0 space-y-5">
+          <form data-autosave-editor="true" data-unsaved={autosave.dirty} data-saving={autosave.saving} onBlur={autosave.onBlur} onSubmit={save} className="space-y-6">
+            <AutosaveStatus save={autosave} />
+            <fieldset disabled={busy || autosave.recovery != null} className="min-w-0 space-y-5">
               {section === "identity" && (
                 <>
                   {field("firstName", "First name", true)}
@@ -353,18 +351,18 @@ export function EditStudentProfileDialog({
                     />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Save to attach this document to your profile. Clear the résumé URL to remove the
+                    The document attachment saves automatically. Clear the résumé URL to remove the
                     attachment. LinkedIn and résumé details are not imported automatically.
                   </p>
                 </>
               )}
             </fieldset>
             <div className="flex justify-end gap-2 border-t border-border pt-4">
-              <Button type="button" variant="ghost" disabled={busy} onClick={() => setOpen(false)}>
-                Cancel
+              <Button type="button" variant="ghost" disabled={busy} onClick={() => void begin(false)}>
+                Close
               </Button>
               <Button type="submit" disabled={busy || !!photoSource}>
-                {busy ? "Saving…" : "Save changes"}
+                {busy ? "Working…" : "Done"}
               </Button>
             </div>
           </form>

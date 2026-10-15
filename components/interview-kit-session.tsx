@@ -1,4 +1,6 @@
 "use client";
+import { useAutosaveRecovery } from "@/hooks/use-autosave-recovery";
+import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { animateQuestionCompletion, captureQuestionCompletion, type QuestionCompletionOrigin } from "@/lib/interview-question-motion";
 import {
@@ -200,7 +202,8 @@ export function InterviewKitSession({
   const savingRef = useRef(false),
     mounted = useRef(true),
     sessionRef = useRef<InterviewSessionData | null>(initialSession || null);
-  const draftRef = useRef(draft);
+  const draftRef = useRef(draft), savedRef = useRef(saved);
+  savedRef.current = saved;
   const pendingSave = useRef<Promise<boolean | undefined> | null>(null);
   const finishingRef = useRef(false);
   draftRef.current = draft;
@@ -300,7 +303,7 @@ export function InterviewKitSession({
     return () => onState(false, false);
   }, [dirty, saving, closingQuestion, newQuestion, onState]);
   async function persist(complete = false, next = false, patch?: Partial<InterviewDraft>): Promise<boolean | undefined> {
-    if (complete && finishingRef.current) return;
+    if (complete && (finishingRef.current || recovery.recovery != null)) return;
     if (complete) { finishingRef.current = true; setCompleting(true); }
     if (pendingSave.current) await pendingSave.current;
     const record = sessionRef.current;
@@ -332,7 +335,8 @@ export function InterviewKitSession({
       sessionRef.current = { ...record, ...result.session };
       if (mounted.current) {
         setSession(sessionRef.current);
-        setSaved(JSON.stringify(snapshot));
+        savedRef.current = JSON.stringify(snapshot);
+        setSaved(savedRef.current);
         if (patch) setDraft(current => ({ ...current, ...patch }));
         if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
       }
@@ -352,14 +356,27 @@ export function InterviewKitSession({
     pendingSave.current = request;
     try { return await request; } finally { if (pendingSave.current === request) pendingSave.current = null; }
   }
+  async function flushLatest() {
+    if (pendingSave.current) await pendingSave.current;
+    while (sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
+      if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
+    }
+  }
+  const recovery = useAutosaveRecovery({ identity: `interview:${session?.id}`, value: draft, baseline: saved, dirty, enabled: !!session && !session.completedAt, restore: setDraft, flush: flushLatest });
   useEffect(() => {
-    if (!dirty || !session || session.completedAt || error) return;
+    const form = formRef.current;
+    if (!form) return;
+    form.addEventListener("focusout", recovery.onBlur);
+    return () => form.removeEventListener("focusout", recovery.onBlur);
+  }, [formRef, recovery.onBlur]);
+  useEffect(() => {
+    if (!dirty || !session || session.completedAt || error || recovery.recovery != null) return;
     const timer = setTimeout(() => {
       if (!savingRef.current && !finishingRef.current && !endingRef.current) void persist();
     }, 800);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serialized, saved, session?.id, saving, error]);
+  }, [serialized, saved, session?.id, saving, error, recovery.recovery]);
   if (!session)
     return (
       <div className="space-y-3" role="status">
@@ -391,7 +408,7 @@ export function InterviewKitSession({
   const available = questions.filter(q => !completedIds.includes(q.id));
   const used = questions.filter(q => completedIds.includes(q.id) || (q.extra ? draft.additionalQuestions.some(n => n.id === q.id) : draft.questionNotes.some(n => n.questionId === q.id)));
   const reviewed = closing || session.completedAt ? used : completed;
-  const disabled = !!session.completedAt || completing || closingQuestion;
+  const disabled = !!session.completedAt || completing || closingQuestion || recovery.recovery != null;
   function questionNotes(id: string) { return draft.additionalQuestions.find(q => q.id === id)?.notes ?? draft.questionNotes.find(q => q.questionId === id)?.notes ?? ""; }
   function key(guidance: string) { return guidance ? <details className="oc-answer-key"><summary>Club answer key</summary><p className="oc-question-guidance">{guidance}</p></details> : null; }
   async function endInterview() {
@@ -475,6 +492,7 @@ export function InterviewKitSession({
     <header className="oc-room-header">
       {toolbar?.(!!session.completedAt)}
       <InterviewTimer key={session.id} recordId={session.id} paused={closing || !!session.completedAt} timing={collaboration.view?.timing !== undefined ? collaboration.view.timing : session.timing} />
+      {recovery.recovery != null && <AutosaveStatus save={{ ...recovery, state: "idle", error: "", flush: flushLatest }} />}
       <div className="oc-room-save"><span role="status" aria-live="polite">{session.completedAt ? "Submitted · Read only" : error ? "Couldn’t save" : saving || dirty ? "Saving…" : "All changes saved"}</span>{error && !session.completedAt && <Button type="button" variant="ghost" disabled={saving} onClick={() => void persist(failedFinish)}>Retry</Button>}{!session.completedAt && !closing && <Button type="button" variant="outline" disabled={advancing || ending || closingQuestion || completing} onClick={() => void endInterview()}>{ending ? "Saving interview…" : "End current interview"}</Button>}</div>
     </header>
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
@@ -540,7 +558,7 @@ export function InterviewKitSession({
       </div>
       <aside id="interview-completed" tabIndex={-1} aria-label="Your notes and completed questions" className="min-w-0">
         <div className="oc-candidate-content">
-        <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
+        <div className="oc-miscellaneous-notes"><label htmlFor="additional-interview-notes">Miscellaneous notes</label><Textarea ref={miscellaneousNotes} id="additional-interview-notes" rows={5} maxLength={20000} disabled={!!session.completedAt || completing || recovery.recovery != null} value={draft.additionalNotes ?? draft.overallReview} onChange={e => setDraft(d => ({ ...d, additionalNotes: e.target.value }))} /></div>
         <EarlierRounds key={`${applicationId}:${roundId}`} scope={{ clubId, applicationId, roundId }} />
         <h2>{closing || session.completedAt ? "Your question notes" : "Completed questions"} <span className="oc-completed-count">{reviewed.length}</span></h2>
         <ul>{reviewed.map(q => { const notes = questionNotes(q.id), open = expandedQuestions.includes(q.id), done = completedIds.includes(q.id); return <li key={q.id} style={flights.some(f => f.id === q.id) ? { opacity: 0 } : undefined} ref={el => { if (el) rowNodes.current.set(q.id, el); else rowNodes.current.delete(q.id); }}>

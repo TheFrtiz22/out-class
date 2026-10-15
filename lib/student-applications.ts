@@ -3,6 +3,7 @@ import { storagePathSchema, resumeReferenceSchema } from "@/lib/student-profile"
 
 export const applicationInputSchema = z.object({
   clubId: z.string().uuid(),
+  expectedAnswers: z.string().max(300000).optional(),
   answers: z
     .array(z.object({ questionId: z.string().uuid(), response: z.string().max(100000) }))
     .max(200),
@@ -113,4 +114,9 @@ export function applicationResponseProgress(questions: ApplicationQuestion[], an
   const completed = required.filter(question => answers.some(answer => answer.questionId === question.id && answer.response.trim()) && !errors[question.id]).length
   return { completed, total: required.length, percent: required.length ? completed / required.length * 100 : 100,
     ready: Object.keys(errors).length === 0, nextQuestionId: questions.find(question => errors[question.id])?.id }
+}
+
+/** Canonical compare token without requiring a database revision column. */
+export function applicationAnswersKey(answers: { questionId: string; response: string }[]) {
+  return JSON.stringify(answers.filter(a => a.response !== "").map(a => [a.questionId, a.response]).sort((a, b) => a[0].localeCompare(b[0])))
 }

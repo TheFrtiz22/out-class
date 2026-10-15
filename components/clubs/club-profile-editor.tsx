@@ -1,5 +1,8 @@
 "use client"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+
+import { useState, type ReactNode } from "react"
 import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, Sparkles, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,23 +21,24 @@ function Records<T extends Record<string, string>>({ title, value, onChange, emp
 }
 const sections = [{ id: "identity", title: "Identity & media", icon: IdCard }, { id: "theme", title: "Brand & theme", icon: Palette }, { id: "metrics", title: "Stats & achievements", icon: BarChart3 }, { id: "membership", title: "Member experience", icon: Users }, { id: "showcase", title: "Showcase & FAQs", icon: Sparkles }, { id: "links", title: "Socials & links", icon: Link2 }]
 
-export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, externalDirty = false }: { initial: ClubProfileDraft; onSave: (profile: ClubProfileDraft) => Promise<void>; demo?: boolean; onUpload?: (file: File) => Promise<string>; externalDirty?: boolean }) {
+export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, externalDirty = false, clubId }: { clubId?: string; initial: ClubProfileDraft; onSave: (profile: ClubProfileDraft, expected?: ClubProfileDraft) => Promise<void>; demo?: boolean; onUpload?: (file: File) => Promise<string>; externalDirty?: boolean }) {
   const [draft, setDraft] = useState(initial), [saved, setSaved] = useState(initial)
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(""), [error, setError] = useState("")
   const [preview, setPreview] = useState(false)
   const dirty = externalDirty || JSON.stringify(draft) !== JSON.stringify(saved)
-  useEffect(() => { if (!dirty && !busy) return; const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = "" }; window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn) }, [dirty, busy])
+  const draftSave = useEditorDraft({ scope: { kind: "club-profile", clubId }, value: draft, restore: setDraft, enabled: !!clubId, base: JSON.stringify(initial) })
+
   function set<K extends keyof ClubProfileDraft>(key: K, value: ClubProfileDraft[K]) { setDraft(d => ({ ...d, [key]: value })); setMessage(""); setError("") }
   function marketing<K extends keyof ClubMarketing>(key: K, value: ClubMarketing[K]) { set("marketing", { ...draft.marketing, [key]: value }) }
   function jump(id: string) { const node = document.getElementById(`profile-${id}`); if (node instanceof HTMLDetailsElement) { node.open = true; node.scrollIntoView({ behavior: "smooth", block: "start" }); node.querySelector("summary")?.focus() } }
   const m = draft.marketing
-  return <form data-unsaved={dirty} data-saving={busy} className="space-y-5" onSubmit={async e => {
+  return <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={clubId ? draftSave.dirty || externalDirty : dirty} data-saving={busy || draftSave.saving} className="space-y-5" onSubmit={async e => {
     e.preventDefault(); setError(""); setMessage("")
     if (e.currentTarget.querySelector('[data-saving="true"]')) { setError("Wait for the image to finish preparing."); return }
     const result = clubProfileSchema.safeParse(draft)
     if (!result.success) { const issue = result.error.issues[0]; setError(`${issue.path.filter(p => p !== "marketing").map(p => typeof p === "number" ? p + 1 : p.replace(/([A-Z])/g, " $1")).join(" · ")}: ${issue.message}`); return }
     setBusy(true)
-    try { await onSave(result.data); setDraft(result.data); setSaved(result.data); setMessage(demo ? "Profile saved in this demo. Open Explore to see your changes." : "Profile published. Your changes are now visible in Explore.") }
+    try { if (clubId) await draftSave.flush(); await onSave(result.data, saved); if (clubId) await draftSave.clear(); setDraft(result.data); setSaved(result.data); setMessage(demo ? "Profile saved in this demo. Open Explore to see your changes." : "Profile published. Your changes are now visible in Explore.") }
     catch (error) { setError(error instanceof Error ? error.message : "Could not publish. Your edits are still here.") }
     finally { setBusy(false) }
   }}>
@@ -43,7 +47,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
     {preview ? <div className="mx-auto max-w-3xl space-y-5"><MarketingProfile assetPreview profile={draft} /><section className="rounded-xl border p-6"><h3 className="oc-card-heading ">About us</h3><p className="mt-3 whitespace-pre-line text-sm leading-7">{draft.description}</p></section><MarketingSections assetPreview profile={draft} /></div> : <>
       <nav aria-label="Profile editor sections" className="flex flex-wrap gap-2">{sections.map(s => <Button key={s.id} type="button" size="sm" variant="outline" onClick={() => jump(s.id)}>{s.title}</Button>)}</nav>
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(300px,2fr)]">
-        <fieldset disabled={busy} className="min-w-0 space-y-4">
+        <fieldset disabled={busy || !!clubId && (!draftSave.ready || draftSave.recovery != null)} className="min-w-0 space-y-4">
           {sections.map(({ id, title, icon: Icon }) => <details key={id} id={`profile-${id}`} open className="scroll-mt-36 rounded-xl border bg-card p-5"><summary className="cursor-pointer text-sm font-semibold"><span className="ml-2 inline-flex items-center gap-2"><Icon size={18} />{title}</span></summary><div className="space-y-5 pt-6">
             {id === "identity" && <><div className="grid gap-4 sm:grid-cols-2"><Field label="Club name"><Input required maxLength={150} value={draft.name} onChange={e => set("name", e.target.value)} /></Field><Field label="Category"><Input required maxLength={100} list="club-categories" value={draft.category} onChange={e => set("category", e.target.value)} /><datalist id="club-categories">{["Finance", "Consulting", "Technology", "Arts & Culture", "Community Service", "Sports", "Academic", "Other"].map(c => <option key={c} value={c} />)}</datalist></Field></div><Field label="One-line pitch"><Input maxLength={300} value={draft.tagline} onChange={e => set("tagline", e.target.value)} placeholder="What makes your club different?" /></Field><Field label="About your club"><Textarea rows={6} maxLength={10000} value={draft.description} onChange={e => set("description", e.target.value)} /></Field><ProfileImageInput onUpload={onUpload} label="Club logo" value={draft.logoUrl} onChange={v => set("logoUrl", v)} /><ProfileImageInput onUpload={onUpload} label="Cover banner" banner value={draft.bannerUrl} onChange={v => set("bannerUrl", v)} /></>}
             {id === "theme" && <><ColorPicker value={draft.color} onChange={v => set("color", v)} /><p className="text-xs leading-6 text-muted-foreground">Your accent color appears on your profile cover and club identity. Use a six-digit hex code for a custom color.</p></>}
@@ -67,6 +71,7 @@ export function ClubProfileEditor({ initial, onSave, demo = false, onUpload, ext
         <aside className="hidden space-y-3 xl:sticky xl:top-36 xl:block"><p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"><Eye size={15} />Live public profile preview</p><MarketingProfile assetPreview profile={draft} compact action={<span className="rounded-md bg-primary px-4 py-2 text-xs text-primary-foreground">Apply now</span>} /><p className="text-xs leading-5 text-muted-foreground">Preview updates as you type. Publish when you’re ready.</p></aside>
       </div>
     </>}
-    <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card/95 p-4 shadow-sm backdrop-blur"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty}>{busy ? "Publishing…" : demo ? "Save demo profile" : "Publish profile"}</Button></div></div>
+    {clubId && <AutosaveStatus save={draftSave} />}
+    <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card/95 p-4 shadow-sm backdrop-blur"><div className="min-w-0 text-sm" aria-live="polite">{error ? <p role="alert" className="text-destructive">{error}</p> : message || (dirty ? "Unpublished changes" : "All changes saved")}</div><div className="flex gap-2"><Button type="button" variant="outline" disabled={busy || !dirty} onClick={() => { setDraft(saved); void draftSave.clear().catch(() => {}); setError(""); setMessage("Changes discarded.") }}><RotateCcw size={15} />Discard</Button><Button type="submit" disabled={busy || !dirty}>{busy ? "Publishing…" : demo ? "Save demo profile" : "Publish profile"}</Button></div></div>
   </form>
 }

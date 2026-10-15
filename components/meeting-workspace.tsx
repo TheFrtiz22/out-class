@@ -1,4 +1,7 @@
 "use client";
+import { useEditorDraft } from "@/hooks/use-editor-draft"
+import { AutosaveStatus } from "@/components/ui/autosave-status"
+
 import { LoadingState } from "@/components/ui/loading-state"
 import { EmptyState } from "@/components/ui/empty-state"
 import { NativeSelect } from "@/components/ui/native-select"
@@ -97,8 +100,11 @@ function MeetingEditor({
   const [resources, setResources] = useState(
     initial.success ? initial.data : [],
   );
+  const [fields,setFields] = useState(() => ({ title: meeting?.title ?? "", description: meeting?.description ?? "", date: localDate(meeting ? new Date(meeting.date) : new Date()), endDate: meeting?.endDate ? localDate(new Date(meeting.endDate)) : "", location: meeting?.location ?? "", audience: meeting?.audience ?? "RECRUITMENT", agenda: meeting?.agenda ?? "", recap: meeting?.recap ?? "" }));
+  const draftSave = useEditorDraft({ scope: { kind: "meeting", clubId, resourceId: meeting?.id ?? "new" }, value: { fields,resources }, restore: d=>{setFields(d.fields);setResources(d.resources)}, base: meeting ? String(meeting.revision) : "new" });
+  const change = (key: keyof typeof fields, value: string) => setFields(current=>({...current,[key]:value}));
   return (
-    <form
+    <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
       className="space-y-4 py-4"
       onSubmit={async (e) => {
         e.preventDefault();
@@ -107,6 +113,7 @@ function MeetingEditor({
         setBusy(true);
         setMessage("");
         try {
+          await draftSave.flush();
           await saveMeeting({
             id: meeting?.id,
             clubId,
@@ -123,9 +130,10 @@ function MeetingEditor({
             resources,
             revision: meeting?.revision || 0,
           });
-          setMessage("Meeting saved.");
+          await draftSave.clear();
+          setMessage("Meeting published.");
           if (!meeting) {
-            form.reset();
+            setFields(current=>({...current,title:"",description:"",location:"",agenda:"",recap:""}));
             setResources([]);
           }
           onSaved();
@@ -138,21 +146,22 @@ function MeetingEditor({
         }
       }}
     >
-      <fieldset disabled={busy} className="space-y-4">
+      <AutosaveStatus save={draftSave} />
+      <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="space-y-4">
         <label className="block">
           Title
           <Input
             name="title"
             required
             maxLength={200}
-            defaultValue={meeting?.title}
+            value={fields.title} onChange={e=>change("title",e.target.value)}
           />
         </label>
         <label className="block">
           Audience
           <NativeSelect
             name="audience"
-            defaultValue={meeting?.audience || "RECRUITMENT"}
+            value={fields.audience} onChange={e=>change("audience",e.target.value)}
             className="ml-3 rounded border p-2"
           >
             <option value="RECRUITMENT">Recruitment / Interest</option>
@@ -166,9 +175,7 @@ function MeetingEditor({
               name="date"
               type="datetime-local"
               required
-              defaultValue={localDate(
-                meeting ? new Date(meeting.date) : new Date(),
-              )}
+              value={fields.date} onChange={e=>change("date",e.target.value)}
             />
           </label>
           <label>
@@ -176,9 +183,7 @@ function MeetingEditor({
             <Input
               name="endDate"
               type="datetime-local"
-              defaultValue={
-                meeting?.endDate ? localDate(new Date(meeting.endDate)) : ""
-              }
+              value={fields.endDate} onChange={e=>change("endDate",e.target.value)}
             />
           </label>
         </div>
@@ -188,7 +193,7 @@ function MeetingEditor({
             name="location"
             required
             maxLength={500}
-            defaultValue={meeting?.location}
+            value={fields.location} onChange={e=>change("location",e.target.value)}
           />
         </label>
         {(["description", "agenda", "recap"] as const).map((key) => (
@@ -198,7 +203,7 @@ function MeetingEditor({
               name={key}
               rows={4}
               maxLength={key === "description" ? 10000 : 20000}
-              defaultValue={meeting?.[key] || ""}
+              value={fields[key]} onChange={e=>change(key,e.target.value)}
             />
           </label>
         ))}

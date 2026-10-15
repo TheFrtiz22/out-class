@@ -1,4 +1,5 @@
 "use client"
+import { flushEditors } from "@/lib/autosave-navigation"
 import { ApplicationManagementCard } from "@/components/applications/application-management-card"
 import { ApplicationStatusCard } from "@/components/applications/application-status-card"
 import { ApplicationStatusDetail } from "@/components/applications/application-status-detail"
@@ -61,7 +62,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [dirty, setDirty] = useState(false)
+  const [, setDirty] = useState(false)
   const [working, setWorking] = useState(false)
   const [filter, setFilter] = useState("All")
   const [notice, setNotice] = useState("")
@@ -129,10 +130,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   const app = applications.find((item) => item.id === activeId)
   function leave(action: () => void) {
     if (working) return
-    if (dirty && !window.confirm("Leave this application? Your unsaved changes will be lost."))
-      return
-    setDirty(false)
-    action()
+    void flushEditors().then(() => { setDirty(false); action() }).catch(() => {})
   }
   function saved(submitted: boolean, answers: StudentApplication["answers"]) {
     const updated = applications.map((item) =>
@@ -147,10 +145,11 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
     )
     setApplications(updated)
     sync(updated)
-    setWorking(false)
-    setDirty(false)
-    setNotice(submitted ? "Your application was submitted successfully." : "Your draft is saved.")
-    void refreshUser()
+    if (submitted) {
+      setWorking(false); setDirty(false)
+      setNotice("Your application was submitted successfully.")
+      void refreshUser()
+    }
   }
   if (pending || loading)
     return (

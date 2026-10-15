@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 const text=n=>typeof n==='string'||typeof n==='number'?String(n):Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function load(file,mocks={}) {
- mocks={ '@/actions/communications':{}, ...mocks };
+ mocks={ '@/lib/autosave-navigation':{flushEditors:async()=>{}}, '@/actions/communications':{}, ...mocks };
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  new Function('require','module','exports','window','document','setInterval','clearInterval',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name.startsWith('@/components/')?new Proxy({},{get:(_,key)=>String(key)}):name.startsWith('@/')?load(path.resolve(name.slice(2)+'.ts'),mocks):require(name)),mod,mod.exports,mocks.window,{querySelector:()=>null},()=>1,()=>{});
  return mod.exports;
@@ -69,7 +69,7 @@ test('booking changes refresh the same application and synchronize calendar book
  const h=trackerHarness([app('Invite','INTERVIEWING')]);h.render();await h.flush();cards(h.render())[0].props.onOpen();let detail=nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');
  h.setRecords([app('Invite','INTERVIEWING',{bookings:[booking()]})]);detail.props.onBookingChanged();await h.flush();detail=nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail');assert.equal(detail.props.application.bookings.length,1);assert.equal(h.calls.filter(call=>call[0]==='read').length,2);
  assert.equal(h.calls.filter(call=>call[0]==='bookings').at(-1)[1][0].bookings.length,1);
- detail.props.onResponses();assert.deepEqual(h.navigation,['tracker']);assert.deepEqual(h.calls.find(call=>call[0]==='focus'),['focus','club-Invite']);
+ detail.props.onResponses();await h.flush();assert.deepEqual(h.navigation,['tracker']);assert.deepEqual(h.calls.find(call=>call[0]==='focus'),['focus','club-Invite']);
 });
 test('application deep links focus only an owned submitted application in Status',async()=>{
  const h=trackerHarness([app('Draft','DRAFTING'),app('Owned')],'status','applicationId=Owned');h.render();await h.flush();h.render();await h.flush();assert.equal(nodes(h.render()).find(node=>node.type==='ApplicationStatusDetail').props.application.id,'Owned');
