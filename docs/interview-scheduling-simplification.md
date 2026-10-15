@@ -10,6 +10,9 @@ staffing requirement, buffers, capacity and optional panels. A room name initial
 fills the location so it need not be typed twice; a customized location remains
 independent. The redundant round selector is absent when the dialog is scoped to
 one round. Demo now includes round configuration in the same DTO as live.
+Demo revision creation also includes newly added current times, matching live;
+existing assignments and override IDs are retained without rewriting the
+published version, rooms or reservations.
 
 Assignments appear as compact day/room/time rows. One accessible side panel
 contains add, replace, move, swap, lock/remove, session requirements, regeneration,
@@ -40,8 +43,8 @@ privacy and authorization remain in their existing services.
   requiring historical Git objects in shallow CI checkouts.
 - Browser coverage: create times with saved round defaults, assign, approve,
   publish, eligible applicant reserve/reload, full state, issue-to-slot editor,
-  president availability override, subsequent approval, pause, edits preserving
-  exact reservations, existing published entry, loading failure versus empty,
+  president availability override, subsequent approval, pause, edits/new times
+  preserving exact reservations, existing published entry, loading failure versus empty,
   390px layout, keyboard activation and focus return. Demo live-action counter
   must remain zero. Physical touchscreen is not claimed.
 - Focused SQL-backed tests: 11 passed using disposable PGlite fixtures, covering
