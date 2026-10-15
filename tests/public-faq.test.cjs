@@ -7,7 +7,7 @@ const React = require('react')
 function load(file, mocks = {}, globals = {}) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
-  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => name in mocks ? mocks[name] : require(name), mod, mod.exports, ...Object.values(globals))
+  new Function('require', 'module', 'exports', ...Object.keys(globals), code)(name => name in mocks ? mocks[name] : name === '@/components/icons' ? require('./helpers/icons.cjs') : require(name), mod, mod.exports, ...Object.values(globals))
   return mod.exports
 }
 const content = load('lib/public-faq.ts')

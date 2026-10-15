@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { resumeCommentInput } from "@/lib/resume-comment-input";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -65,7 +65,14 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
     const selected = range || (selection?.rangeCount ? selection.getRangeAt(0) : null);
     if (!ready || !selected || !layer.current || !host.current || selected.collapsed) return false;
     const anchor = anchorFromRange(selected, layer.current, host.current, pageNumber);
-    if (anchor) { if (!onAnchor(anchor, initialText)) return false; selection?.removeAllRanges(); setError(""); return true; }
+    if (anchor) {
+      // Snapshot the passage and clear the PDF selection BEFORE moving focus.
+      // Clearing it afterward can also clear the new textarea's caret.
+      const previous = selected.cloneRange();
+      selection?.removeAllRanges();
+      if (!onAnchor(anchor, initialText)) { selection?.addRange(previous); return false; }
+      setError(""); return true;
+    }
     else setError("Select text on a single page. Image-only content cannot be highlighted.");
     return false;
   }
@@ -81,6 +88,11 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
     const intent = resumeCommentInput({ ...event, key: event.key, isComposing: event.nativeEvent.isComposing, keyCode: event.nativeEvent.keyCode, altGraph: event.getModifierState("AltGraph") }, !!target.closest('input,textarea,select,button,a,[role="textbox"],[role="button"],[contenteditable="true"]'));
     if (!intent) return;
     if (capture(undefined, intent.text) && !intent.nativeComposition) { event.preventDefault(); event.stopPropagation(); }
+  }} onPasteCapture={event => {
+    const target = event.target as HTMLElement;
+    if (target.closest('input,textarea,select,button,a,[role="textbox"],[role="button"],[contenteditable="true"]')) return;
+    const text = event.clipboardData.getData("text/plain");
+    if (text && capture(undefined, text)) { event.preventDefault(); event.stopPropagation(); }
   }} onCompositionStartCapture={event => {
     if (layer.current?.contains(event.target as Node)) capture();
   }} onCompositionEndCapture={event => {
@@ -170,7 +182,12 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     return () => { current = false; };
   }, [currentAccess, resource, retry]);
   const draftId = draft?.id;
-  useEffect(() => { if (draftId) comment.current?.focus(); }, [draftId]); // Keep typing focus during refreshes.
+  useLayoutEffect(() => {
+    if (!draftId || !comment.current) return;
+    const field = comment.current;
+    field.focus({ preventScroll: false });
+    field.setSelectionRange(field.value.length, field.value.length);
+  }, [draftId]); // Only a new/edit composer takes focus; polling and typing never do.
 
   function begin(anchor: ResumeAnchor | null, initialText = "") {
     if (writing.current || !currentAccess) return false;
@@ -178,8 +195,6 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     // Focus must exist before the browser's next input/composition event. The
     // first printable key is seeded once rather than replaying synthetic keys.
     flushSync(() => { setDraft({ id: crypto.randomUUID(), kind: anchor ? "TEXT_HIGHLIGHT" : "GENERAL_NOTE", comment: initialText, anchor }); setNotesOpen(true); setMobileTab("comments"); setError(""); });
-    comment.current?.focus({ preventScroll: false });
-    if (initialText) comment.current?.setSelectionRange(initialText.length, initialText.length);
     return true;
   }
   async function save() {

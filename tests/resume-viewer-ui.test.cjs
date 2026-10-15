@@ -13,6 +13,7 @@ function ui(api, options={}) {
     useMemo(fn,deps) { const i=index++; if(!slots[i] || changed(slots[i].deps,deps)) slots[i]={deps,value:fn()}; return slots[i].value; },
     useCallback(fn,deps) { return react.useMemo(()=>fn,deps); },
     useEffect(fn,deps) { const i=index++; if(changed(slots[i],deps)){slots[i]=deps; effects.push(()=>{cleanups[i]?.();cleanups[i]=fn();});} },
+    useLayoutEffect(fn,deps) { react.useEffect(fn,deps); },
   };
   global.window={addEventListener(){},removeEventListener(){},confirm:()=>true,matchMedia:()=>({matches:true,addEventListener(){},removeEventListener(){}})};
   global.document={hidden:false,addEventListener(){},removeEventListener(){}};
@@ -20,7 +21,7 @@ function ui(api, options={}) {
   const code=ts.transpileModule(fs.readFileSync('components/interview-resume-viewer.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const m={exports:{}}, h=harness();
   class Resource { key='actor-context'; getPdf(){return options.pdf ? Promise.resolve(options.pdf) : new Promise(()=>{})} invalidate(){} }
-  new Function('require','module','exports',code)(n=>n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
+  new Function('require','module','exports',code)(n=>n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n==='@/contexts/auth-context'?{useAuth:()=>({user:{id:'actor'}})}:n==='@/components/interview-resume-placeholder'?{InterviewResumePlaceholder:'Placeholder'}:n==='@/lib/interview-resume-resource'?{InterviewResumeResource:Resource,ResumeAccessError:Error}:n==='@/lib/workspace-api'?api:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   let lost=0;
   const scope={clubId:'club',applicationId:'app',roundId:'round'};
   return { warm(){return m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++,preloadOnly:true})},render(){index=0;const wrapper=m.exports.default({scope,documentId:'doc',isDemo:false,onAccessLost:()=>lost++});const tree=wrapper.type(wrapper.props);const original=setInterval;global.setInterval=fn=>{poll=fn;return 123};try{while(effects.length) effects.shift()();}finally{global.setInterval=original;}return tree;}, poll:()=>poll(), get lost(){return lost;}, close(){cleanups.forEach(c=>c?.());global.fetch=previousFetch;} };
@@ -58,7 +59,7 @@ test('lazy viewer failure stays inside overlay and retry creates a fresh loader 
   const react={Component:require('react').Component,useState:()=>[attempt,fn=>attempt=fn(attempt)],useMemo:fn=>{if(lastAttempt!==attempt){loader=fn();lastAttempt=attempt;}return loader;}};
   const code=ts.transpileModule(fs.readFileSync('components/interview-resume-loader.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   const m={exports:{}};
-  new Function('require','module','exports',code)(n=>n==='react'?react:n.endsWith('.css')?{}:n==='next/dynamic'?{default:()=>{created++;return function LazyViewer(){};}}:n==='@/components/ui/button'?{Button:'Button'}:require(n),m,m.exports);
+  new Function('require','module','exports',code)(n=>n==='@/components/icons'?require('./helpers/icons.cjs'):n==='react'?react:n.endsWith('.css')?{}:n==='next/dynamic'?{default:()=>{created++;return function LazyViewer(){};}}:n==='@/components/ui/button'?{Button:'Button'}:require(n),m,m.exports);
   const props={scope:{clubId:'c',applicationId:'a',roundId:'r'},documentId:'version',isDemo:false,onAccessLost(){}};
   const first=m.exports.InterviewResumeLoader(props), boundary=new first.type(first.props);
   boundary.state=first.type.getDerivedStateFromError(new Error('Chunk unavailable'));
@@ -79,7 +80,7 @@ test('management shows moderation only for active explicit presidents/VPs, indep
   const h=harness(), code=ts.transpileModule(fs.readFileSync('components/interview-management-tabs.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   let offices=[],status='ACTIVE'; const m={exports:{}};
   const mocks={'@/components/availability/admin-overview':{AdminAvailabilityOverview:'Availability'},'@/components/interview-access-setup':{InterviewAccessSetup:'AccessSetup'},'@/components/interview-submitted-reviews':{InterviewSubmittedReviews:'Reviews'},react:{useState:v=>[v,()=>{}]},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices}]}})},'@/lib/product-navigation':{canLeaveWorkspace:()=>true},'@/components/interview-kit-editor':{ClubInterviewKitSettings:'Kit'},'@/components/interview-resume-moderation':{InterviewResumeModeration:'Moderation'},'@/components/interviews/room-manager':{RoomManager:'Rooms'}};
-  new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
+  new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n==='@/components/icons'?require('./helpers/icons.cjs'):n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   const render=()=>m.exports.InterviewManagementTabs({clubId:'c',onInterview(){}});
   assert.doesNotMatch(text(render()),/Résumé moderation/); offices=['BOARD'];assert.match(text(render()),/Submitted reviews/);assert.doesNotMatch(text(render()),/Résumé moderation/);
   offices=['VICE_PRESIDENT'];assert.match(text(render()),/Résumé moderation/); offices=['PRESIDENT'];assert.match(text(render()),/Résumé moderation/);
