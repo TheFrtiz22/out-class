@@ -571,7 +571,7 @@ model InterviewAvailabilityOverride {
   reason String?
   createdAt DateTime @default(now())
   revokedAt DateTime?
-  @@index([clubId, roundId, slotId, revokedAt])
+  @@index([clubId, roundId, slotId, revokedAt], map: "InterviewAvailabilityOverride_clubId_roundId_slotId_revokedAt_i")
 }
 
 model InterviewRecord {

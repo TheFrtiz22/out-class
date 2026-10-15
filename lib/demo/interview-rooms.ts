@@ -78,6 +78,8 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
     s.roomBookings.push({ id, applicationId, slotId, roomId: room.id, roundId: room.roundId, candidate: `${s.students[0].profile.firstName} ${s.students[0].profile.lastName}`, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), location: room.location })
     s.slots.push({ id, clubId: room.clubId, applicationId, startTime: new Date(slot.startTime), endTime: new Date(slot.endTime), location: room.location, interviewerId: room.panelMemberIds[0] || s.memberships.find(m => m.clubId === room.clubId)!.id })
   })
+  syncDemoBookingPanel(app.id, app.roundId)
+  demoBookingNotice(app.studentId, app.clubId, `booking-confirmed:${id}`, "Interview confirmed", "Your reserved interview details are available.", `/interviews/book?clubId=${app.clubId}&roundId=${app.roundId}`)
   return { id }
 }
 export async function cancelRoomBooking(id: string) {

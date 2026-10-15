@@ -28,6 +28,7 @@ export async function setInterviewBookingPublication(raw: unknown) {
     const round = await tx.pipelineRound.findFirst({ where: { id: input.roundId, clubId: input.clubId, archivedAt: null, type: { in: ["INTERVIEW", "GROUP_INTERVIEW"] } } })
     if (!round || round.anonymousReview) throw new Error("Choose an active identified interview round.")
     if (input.cycleId && !await tx.recruitmentCycle.findFirst({ where: { id: input.cycleId, clubId: input.clubId, archivedAt: null } })) throw new Error("Choose an active recruitment cycle from this club.")
+    if (input.action !== "PUBLISH" && input.cycleId !== round.bookingCycleId) throw new Error("Publish booking to change the recruitment cycle. Existing reservations are retained.")
     // Exact retries do not republish or send another notification.
     if (input.action === "PUBLISH" && round.bookingPublishedAt && !round.bookingPaused && round.bookingCycleId === input.cycleId && round.bookingAllowCancellation === input.allowCancellation && round.bookingAllowRescheduling === input.allowRescheduling && round.bookingRevision === input.revision + 1) return { revision: round.bookingRevision }
     if (round.bookingRevision !== input.revision) throw new Error("Booking settings changed in another tab. Reload before publishing.")
