@@ -3,7 +3,7 @@ import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
 import { useState, type ReactNode } from "react"
-import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, Sparkles, Users, X } from "lucide-react"
+import { BarChart3, Eye, IdCard, Link2, Palette, Plus, RotateCcw, Sparkles, Users, X } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"

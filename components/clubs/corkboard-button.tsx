@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Bookmark, BookmarkCheck } from "lucide-react"
+import { Bookmark, BookmarkCheck } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { useCorkboard } from "@/contexts/corkboard-context"
 import type { DirectoryClub } from "@/lib/club-directory"

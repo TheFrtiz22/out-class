@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import Link from "next/link"
 import Image from "next/image"
 import { PublicInformationPage } from "@/components/landing/public-information-page"

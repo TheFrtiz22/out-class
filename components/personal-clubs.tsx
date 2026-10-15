@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
 import { hasWorkspace } from "@/lib/permissions"
 import { getClubWorkspaceOverview } from "@/lib/workspace-api"

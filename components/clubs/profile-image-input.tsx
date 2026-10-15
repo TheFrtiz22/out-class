@@ -1,7 +1,7 @@
 "use client"
 import { clubAssetSource } from "@/lib/club-assets"
 import { useState } from "react"
-import { ImagePlus, X } from "lucide-react"
+import { ImagePlus, X } from "@/components/icons"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 

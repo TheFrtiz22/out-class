@@ -1,6 +1,6 @@
 "use client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays } from "@/components/icons"
 import { availabilityHref } from "@/lib/availability"
 import { flushEditors } from "@/lib/autosave-navigation"
 import { canLeaveWorkspace } from "@/lib/product-navigation"

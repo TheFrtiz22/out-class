@@ -1,7 +1,7 @@
 "use client"
 import { NativeSelect } from "@/components/ui/native-select"
 import { useRef, useState } from "react"
-import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin } from "lucide-react"
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { dayKey, slotTime, type InterviewRoom, type RoomBooking } from "@/lib/interview-rooms"
 import "./scheduling.css"

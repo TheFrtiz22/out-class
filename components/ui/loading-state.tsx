@@ -1,4 +1,4 @@
-import { LoaderCircle } from "lucide-react"
+import { LoaderCircle } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 

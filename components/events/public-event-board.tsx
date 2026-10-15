@@ -4,7 +4,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { useSearchParams } from "next/navigation";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Check } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import {
   getPublicCorkboard,
@@ -532,7 +532,7 @@ function RsvpControls({
       {going ? (
         <>
           <p role="status" className="oc-youre-going">
-            You’re going ✓
+            You’re going <Check size={16} className="inline-block align-text-bottom" />
           </p>
           <Button
             variant="outline"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, ArrowRight, FileText, LinkIcon, PartyPopper } from "lucide-react"
+import { ArrowLeft, ArrowRight, FileText, LinkIcon, PartyPopper } from "@/components/icons"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"

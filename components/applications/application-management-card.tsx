@@ -1,5 +1,5 @@
 "use client"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/status-badge"
 import { Progress } from "@/components/ui/progress"

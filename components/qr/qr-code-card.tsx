@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
-import { Download, Copy } from "lucide-react"
+import { Download, Copy } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 
 function saveBlob(blob: Blob, filename: string) {

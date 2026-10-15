@@ -11,7 +11,7 @@ import { getInterviewResumeAnnotations, saveInterviewResumeAnnotation, deleteInt
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Download, StickyNote } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, StickyNote } from "@/components/icons";
 import { useAuth } from "@/contexts/auth-context";
 import { InterviewResumeResource, ResumeAccessError } from "@/lib/interview-resume-resource";
 import { InterviewResumePlaceholder } from "@/components/interview-resume-placeholder";

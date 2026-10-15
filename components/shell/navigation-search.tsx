@@ -2,7 +2,7 @@
 
 import { AccountAvatar } from "@/components/account-avatar"
 import { useEffect, useRef, useState } from "react"
-import { ArrowUpRight, Building2, FileText, Layers, UserRound } from "lucide-react"
+import { ArrowUpRight, Building2, FileText, Layers, UserRound } from "@/components/icons"
 import {
   Dialog,
   DialogContent,

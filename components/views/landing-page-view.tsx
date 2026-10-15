@@ -4,7 +4,7 @@ import { LandingNavigation } from "@/components/landing/landing-navigation"
 import { LaunchClubs } from "@/components/landing/launch-clubs"
 import type { LaunchClub } from "@/lib/launch-clubs"
 import { useRef, useState, type MouseEvent } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight } from "@/components/icons"
 import { PublicFooter } from "@/components/landing/public-footer"
 import { Button } from "@/components/ui/button"
 import {

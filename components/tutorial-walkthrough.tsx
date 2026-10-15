@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useDemoMode } from "@/contexts/demo-context";
 import { tutorialDismissalKey, tutorialDismissed, setTutorialDismissed } from "@/lib/tutorial-dismissal";
 import { useEffect, useRef, useState } from "react";
-import { CircleHelp, ArrowLeft, ArrowRight, X } from "lucide-react";
+import { CircleHelp, ArrowLeft, ArrowRight, X } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { getTutorial, saveTutorial } from "@/lib/workspace-api";
 import { tutorialSteps, type TutorialExperience, type TutorialProgress } from "@/lib/tutorials";

@@ -2,7 +2,7 @@
 
 import { clubAssetSource } from "@/lib/club-assets"
 import type { ReactNode } from "react"
-import { Globe, Instagram, Linkedin, Mail, ExternalLink, Trophy, Users, Check, Play } from "lucide-react"
+import { Globe, Instagram, Linkedin, Mail, ExternalLink, Trophy, Users, Check, Play } from "@/components/icons"
 import { readMarketing, type ClubProfileDraft } from "@/lib/club-marketing"
 
 export function MarketingProfile({ profile, action, compact = false, assetPreview = false }: { profile: ClubProfileDraft; action?: ReactNode; compact?: boolean; assetPreview?: boolean }) {

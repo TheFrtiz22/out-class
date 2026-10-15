@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { applicationAttachmentUrl } from "@/lib/student-applications"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowLeft, ArrowRight, RefreshCw, FilePenLine } from "lucide-react"
+import { ArrowLeft, ArrowRight, RefreshCw, FilePenLine } from "@/components/icons"
 import { getStudentApplications } from "@/lib/workspace-api"
 import { useDemoMode } from "@/contexts/demo-context"
 import { useAuth } from "@/contexts/auth-context"

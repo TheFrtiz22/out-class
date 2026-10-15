@@ -2,7 +2,7 @@
 import { NativeSelect } from "@/components/ui/native-select"
 import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useState } from "react"
-import { Search, Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "lucide-react"
+import { Search, Shuffle, Users, UserRound, GraduationCap, Shield, Layers, SlidersHorizontal } from "@/components/icons"
 import { taskAudienceSchema, resolveTaskRecipients, type TaskAudience } from "@/lib/tasks"
 import { taskAudienceMode, taskMemberName, taskRoleLabels, type TaskWorkspace, type TaskMember } from "@/lib/task-presentation"
 import { Button } from "@/components/ui/button"

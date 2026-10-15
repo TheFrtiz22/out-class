@@ -3,7 +3,7 @@
 import "./voting-mode.css"
 import { useEffect, useRef } from "react"
 import { MobileJoinScreen } from "./mobile-join-screen"
-import { Check, X, CheckCircle2, Radio, Loader2 } from "lucide-react"
+import { Check, X, CheckCircle2, Radio, Loader2 } from "@/components/icons"
 import { useMemberSession } from "@/lib/use-live-voting"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 

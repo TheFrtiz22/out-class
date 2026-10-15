@@ -8,7 +8,7 @@ import { NativeSelect } from "@/components/ui/native-select"
 import "@/components/shell/responsive-workspace.css"
 import Link from "next/link";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
-import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
+import { CalendarDays, MapPin, ArrowRight } from "@/components/icons";
 import { useEffect, useState } from "react";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";

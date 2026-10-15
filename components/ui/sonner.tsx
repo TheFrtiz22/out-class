@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties } from 'react'
+import { CheckCircle2, Info, Loader2, TriangleAlert, XCircle } from '@/components/icons'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
 const Toaster = ({ style, ...props }: ToasterProps) => {
@@ -8,6 +9,7 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
     <Sonner
       theme="light"
       richColors
+      icons={{ success: <CheckCircle2 size={20} />, info: <Info size={20} />, warning: <TriangleAlert size={20} />, error: <XCircle size={20} />, loading: <Loader2 size={20} className="animate-spin" /> }}
       offset={{ bottom: "var(--oc-toast-offset, 24px)" }}
       mobileOffset={{ bottom: "var(--oc-toast-offset, 24px)", left: "16px", right: "16px" }}
       className="toaster group"

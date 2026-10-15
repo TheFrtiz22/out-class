@@ -1,6 +1,6 @@
 "use client"
 import { schedulingDateTime } from "@/lib/scheduling-config"
-import { ShieldCheck } from "lucide-react"
+import { ShieldCheck } from "@/components/icons"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { getClubPipeline } from "@/lib/workspace-api"
 import { applicantLane, applicantLanes } from "@/lib/applicant-board"

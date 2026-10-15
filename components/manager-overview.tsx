@@ -1,7 +1,7 @@
 "use client"
 import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck } from "lucide-react"
+import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { hasPermission } from "@/lib/permissions"

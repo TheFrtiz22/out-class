@@ -3,7 +3,7 @@
 import { EventQrDashboard } from "@/components/qr/event-qr-dashboard"
 import { useState } from "react"
 import { toast } from "sonner"
-import { CalendarPlus, Globe, MapPin, Pencil, Trash2, Users, Video } from "lucide-react"
+import { CalendarPlus, Globe, MapPin, Pencil, Trash2, Users, Video } from "@/components/icons"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

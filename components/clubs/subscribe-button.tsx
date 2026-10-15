@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import { useDemoMode } from "@/contexts/demo-context"
 import { demoStore } from "@/lib/demo/store"
-import { Bell, Check } from "lucide-react"
+import { Bell, Check } from "@/components/icons"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 export function SubscribeButton({

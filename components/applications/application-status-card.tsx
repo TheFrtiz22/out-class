@@ -1,6 +1,6 @@
 "use client"
 import { schedulingDateTime, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
-import { ArrowRight, CalendarDays } from "lucide-react"
+import { ArrowRight, CalendarDays } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"

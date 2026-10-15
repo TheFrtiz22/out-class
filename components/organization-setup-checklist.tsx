@@ -3,7 +3,7 @@
 import { onboardingFocus } from '@/lib/onboarding-presentation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
+import { CheckCircle2, Circle } from '@/components/icons';
 import { getOrganizationSetupChecklist } from '@/actions/organization-onboarding';
 import { Button } from '@/components/ui/button';
 import { canLeaveWorkspace } from '@/lib/product-navigation';

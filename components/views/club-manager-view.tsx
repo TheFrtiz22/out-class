@@ -1,7 +1,7 @@
 "use client"
 
 import { QrCodeCard } from "@/components/qr/qr-code-card"
-import { Users2, ListChecks, Palette, CalendarClock, CalendarPlus } from "lucide-react"
+import { Users2, ListChecks, Palette, CalendarClock, CalendarPlus } from "@/components/icons"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RosterRolesView } from "@/components/views/club-manager/roster-roles-view"
 import { ApplicationBuilderView } from "@/components/views/club-manager/application-builder-view"
