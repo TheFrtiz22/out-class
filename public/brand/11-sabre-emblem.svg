@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1190" height="113" viewBox="0 0 1190 113" role="img" aria-label="OutClass standalone sabre">
+<g transform="translate(-46 -214)"><g id="sabre" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M 180 247 C 474 294, 839 308, 1220 246 C 887 311, 476 304, 181 259 Z" fill="#0F2E56"/>
+      <path d="M 212 259 C 520 301, 870 303, 1152 263" fill="none" stroke="#0F2E56" stroke-width="1.5" opacity=".8"/>
+      <path d="M 174 227 C 193 243, 197 264, 185 284 C 165 320, 116 312, 100 278 C 90 257, 87 252, 76 254" fill="none" stroke="#F26522" stroke-width="8.5"/>
+      <path d="M 177 226 C 185 242 188 253 183 264" fill="none" stroke="#F26522" stroke-width="5"/>
+      <path d="M 77 252 Q 68 240 61 253 Q 57 261 68 266" fill="none" stroke="#F26522" stroke-width="6.5"/>
+      <path d="M 84 231 C 105 228 133 231 175 238" fill="none" stroke="#F26522" stroke-width="8"/>
+      <path d="M 85 231 Q 81 221 76 225" fill="none" stroke="#F26522" stroke-width="5"/>
+      <path d="M 103 230 L 104 244 M 117 231 L 118 245 M 131 232 L 132 246 M 145 234 L 146 247 M 159 235 L 160 249" stroke="#F26522" stroke-width="5" fill="none"/>
+      <path d="M 175 238 C 178 243 180 246 181 250" stroke="#F26522" stroke-width="7" fill="none"/>
+    </g></g>
+</svg>
+

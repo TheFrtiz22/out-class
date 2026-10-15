@@ -28,7 +28,7 @@ export function publicPageMetadata(title: string, description: string, path: str
 export const websiteStructuredData = {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "OutClass", url: `${SITE_URL}/`, description: ORGANIZATION_DESCRIPTION, logo: { "@type": "ImageObject", url: `${SITE_URL}/outclass-brand-mark.png`, width: 1254, height: 1254 } },
+    { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "OutClass", url: `${SITE_URL}/`, description: ORGANIZATION_DESCRIPTION, logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/12-app-icon-navy.svg`, width: 512, height: 512 } },
     { "@type": "WebSite", "@id": `${SITE_URL}/#website`, name: "OutClass", alternateName: ["OutClass UVA", "Out Class"], url: `${SITE_URL}/`, description: SITE_DESCRIPTION, inLanguage: "en", publisher: { "@id": `${SITE_URL}/#organization` } },
   ],
 }

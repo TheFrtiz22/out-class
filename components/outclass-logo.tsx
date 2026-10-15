@@ -4,10 +4,10 @@ import { cn } from "@/lib/utils"
 type OutClassLogoProps = {
   /**
    * "dark" renders the transparent white/orange SVG — use this on surfaces that are always
-   * Brand Navy (e.g. the sidebar, the landing page pitch panel).
+   * Brand Navy (e.g. sidebar and marketing hero).
    * "light" renders the transparent navy/orange SVG — use this on white surfaces (e.g. the login card).
-   * "mark" renders just the square Sabre "OC" icon — use this for the collapsed sidebar rail,
-   * the mobile header, and other tight spaces.
+   * "mark" renders just the sword-free interlocking "OC" icon — use this for the collapsed sidebar rail,
+   * the mobile header, and other tight spaces (without a sword).
    */
   variant?: "light" | "dark" | "mark"
   className?: string
@@ -17,7 +17,7 @@ export function OutClassLogo({ variant = "light", className }: OutClassLogoProps
   if (variant === "mark") {
     return (
       <Image
-        src="/outclass-mark.png"
+        src="/brand/12-app-icon-navy.svg"
         alt="OutClass"
         width={32}
         height={32}
@@ -29,10 +29,10 @@ export function OutClassLogo({ variant = "light", className }: OutClassLogoProps
 
   return (
     <Image
-      src={variant === "dark" ? "/outclass_white_orange_sharp.svg" : "/outclass_navy_orange_sharp.svg"}
+      src={variant === "dark" ? "/brand/03-logo-dark-transparent.svg" : "/brand/02-logo-primary-transparent.svg"}
       alt="OutClass"
-      width={variant === "dark" ? 658 : 894}
-      height={variant === "dark" ? 188 : 253}
+      width={1280}
+      height={332}
       className={cn("h-8 w-auto rounded-sm object-contain", className)}
       priority
       unoptimized
