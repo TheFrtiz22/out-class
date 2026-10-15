@@ -5,15 +5,15 @@ import { useSearchParams } from "next/navigation"
 import { ArrowDown, ArrowUpRight } from "lucide-react"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { StickyStory } from "@/components/motion/scroll-motion"
-import { ProductMotion, ProductMotionControl } from "./product-motion"
+import { DemoCursor, DemoPlaybackProvider, ProductMotion, ProductMotionControl, ProductDemoProgress } from "./product-motion"
 import { PerspectiveSwitcher } from "./perspective-switcher"
 import { JourneyScenePreview } from "./journey-scenes"
-import { JourneyExampleProvider } from "./journey-example-state"
-import { journeyChapters, journeyChapterHref, journeyExample, journeySceneDurations, type LandingPerspective } from "./journey-content"
+import { journeyChapters, journeyChapterHref, journeyExample, type LandingPerspective } from "./journey-content"
 import "./journey.css"
 import "./journey-atmosphere.css"
 import "./public-foundations.css"
 import "./product-story-editorial.css"
+import "./demo-playback.css"
 import type { useJourneyNavigation } from "@/hooks/use-journey-navigation"
 
 export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfile, onLeaderEnter, navigation }: {
@@ -59,7 +59,7 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
       </nav>
       <p className="oc-journey-thread"><span aria-hidden="true" />One club. One connected journey.<span>Follow {perspective === "student" ? "Jordan’s next chapter" : "Jordan through your recruitment"} below.</span></p>
       <p className="sr-only" role="status">Showing the {perspective === "student" ? "student" : "club leader"} walkthrough.</p>
-      <JourneyExampleProvider><div id="product-journey" data-perspective={perspective}>
+      <DemoPlaybackProvider key={perspective}><div id="product-journey" data-perspective={perspective}>
         {chapters.map((chapter, index) => (
           <StickyStory key={chapter.stage} id={`journey-${index + 1}`} data-stage={chapter.stage} data-chapter={index} className="oc-product-story" aria-labelledby={`journey-${index + 1}-title`}>
             <div className="oc-story-copy">
@@ -75,18 +75,18 @@ export function ProductJourney({ perspective, onPerspectiveChange, onCreateProfi
               </button>}
             </div>
             <div className="oc-story-visual">
-              <ProductMotion duration={journeySceneDurations[chapter.scene]} resetKey={`${perspective}-${chapter.scene}`}>
+              <ProductMotion scene={chapter.scene} resetKey={`${perspective}-${chapter.scene}`}>
                 <figure className="oc-story-frame">
                   <div className="oc-story-toolbar"><OutClassLogo className="oc-demo-wordmark" /><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span><ProductMotionControl /></span></div>
                   <div className="oc-demo-workspace-context"><span>{journeyExample.clubMark} <span aria-hidden="true">/</span> {chapter.label}</span><span>{perspective === "student" ? journeyExample.initials : "AJ"}</span></div>
-                  <div className="oc-story-interface"><div key={perspective} className="oc-perspective-scene" data-scene={chapter.scene}><JourneyScenePreview scene={chapter.scene} /></div></div>
-                  <figcaption><span>{chapter.label} with OutClass</span><span>Illustrative interface · sample information</span></figcaption>
+                  <div className="oc-story-interface"><div className="oc-demo-observation" inert aria-hidden="true"><div key={perspective} className="oc-perspective-scene" data-scene={chapter.scene}><JourneyScenePreview scene={chapter.scene} /></div></div><DemoCursor /></div>
+                  <figcaption><span>{chapter.label} with OutClass</span><ProductDemoProgress /></figcaption>
                 </figure>
               </ProductMotion>
             </div>
           </StickyStory>
         ))}
-      </div></JourneyExampleProvider>
+      </div></DemoPlaybackProvider>
       <span ref={navigation.endRef} className="oc-journey-end-sentinel" aria-hidden="true" />
     </section>
   )

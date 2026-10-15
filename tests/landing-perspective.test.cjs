@@ -12,23 +12,28 @@ function compile(filename, mocks, window, document) {
   return mod.exports
 }
 
-function perspectiveHarness(hash, search = "") {
-  let selected = "student"
+function perspectiveHarness(hash, search = "", preference = null, storageBlocked = false) {
+  let selected
+  const storage = new Map(preference ? [["outclass-landing-audience", preference]] : [])
   const effects = [], listeners = new Map(), navigation = []
   const window = {
-    location: { hash, search }, innerHeight: 1000,
+    location: { hash, search, protocol: "https:" }, innerHeight: 1000,
+    localStorage: { getItem: key => { if (storageBlocked) throw Error("blocked"); return storage.get(key) ?? null }, setItem: (key, value) => { if (storageBlocked) throw Error("blocked"); storage.set(key, value) } },
     history: { replaceState: (_state, _title, url) => navigation.push({ method: "replaceState", url }) },
     addEventListener: (name, listener) => listeners.set(name, listener),
     removeEventListener: (name, listener) => { if (listeners.get(name) === listener) listeners.delete(name) },
   }
   const content = compile("components/landing/journey-content.ts", {}, window)
+  const audience = compile("lib/landing-audience.ts", {}, window)
+  const document = { querySelectorAll: () => [], querySelector: () => null, documentElement: { dataset: {} }, cookie: "" }
   const hook = compile("hooks/use-landing-perspective.ts", {
-    react: { useState: () => [selected, next => { selected = next }], useRef: value => ({ current: value }), useLayoutEffect: () => {}, useCallback: callback => callback, useEffect: effect => effects.push(effect) },
+    react: { useState: initial => { selected ??= initial; return [selected, next => { selected = next }] }, useRef: value => ({ current: value }), useLayoutEffect: effect => effects.push(effect), useCallback: callback => callback, useEffect: effect => effects.push(effect) },
     "@/components/landing/journey-content": content,
-  }, window, { querySelectorAll: () => [], querySelector: () => null })
+    "@/lib/landing-audience": audience,
+  }, window, document)
   const result = hook.useLandingPerspective()
-  const cleanup = effects.map(effect => effect())
-  return { get selected() { return selected }, navigation, listeners, cleanup, switch: result.switchPerspective, visit(hash, event = "hashchange") { window.location.hash = hash; listeners.get(event)?.() } }
+  const cleanup = effects.map(effect => effect()).filter(value => typeof value === "function")
+  return { get selected() { return selected }, storage, document, navigation, listeners, cleanup, switch: next => hook.useLandingPerspective().switchPerspective(next), visit(hash, event = "hashchange") { window.location.hash = hash; listeners.get(event)?.() } }
 }
 
 test("refreshing either perspective and legacy club links selects the correct walkthrough", () => {
@@ -61,7 +66,24 @@ test("leaving the landing page removes both navigation listeners", () => {
 test("direct numbered chapter links retain their audience, while legacy hashes take precedence", () => {
   assert.equal(perspectiveHarness("#journey-4", "?audience=leader").selected, "leader")
   assert.equal(perspectiveHarness("#students", "?audience=leader").selected, "student")
-  assert.equal(perspectiveHarness("#journey-3", "?audience=invalid").selected, "student")
+  assert.equal(perspectiveHarness("#journey-3", "?audience=invalid").selected, "leader")
+})
+
+test("first visits default to leaders, manual choices persist, and explicit navigation wins", () => {
+  assert.equal(perspectiveHarness("").selected,"leader")
+  assert.equal(perspectiveHarness("","","students").selected,"student")
+  assert.equal(perspectiveHarness("","","club-leaders").selected,"leader")
+  assert.equal(perspectiveHarness("","","invalid").selected,"leader")
+  assert.equal(perspectiveHarness("","","students",true).selected,"leader")
+  assert.equal(perspectiveHarness("","?audience=leader","students").selected,"leader")
+  assert.equal(perspectiveHarness("#students","?audience=leader","club-leaders").selected,"student")
+  const page = perspectiveHarness("")
+  page.switch("student")
+  assert.equal(page.storage.get("outclass-landing-audience"),"students")
+  assert.match(page.document.cookie,/outclass-landing-audience=students; Path=\//)
+  const blocked = perspectiveHarness("","",null,true)
+  blocked.switch("student")
+  assert.equal(blocked.selected,"student")
 })
 
 test("audience and chapter navigation preserve existing campaign parameters", () => {
