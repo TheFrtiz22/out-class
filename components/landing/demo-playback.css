@@ -35,6 +35,10 @@
 .oc-demo-status-card > span { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 11px; }
 .oc-demo-field + .oc-demo-field { margin-top: 16px; }
 .oc-demo-score-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.oc-demo-rubric .oc-demo-score-row { display: grid; grid-template-columns: minmax(0, 1fr) 80px; align-items: center; min-height: 60px; }
+.oc-demo-rubric .oc-demo-select-wrap { width: 100%; }
+.oc-demo-rubric .oc-demo-select { display: flex; align-items: center; width: 100%; min-height: 44px; line-height: 1; font-variant-numeric: tabular-nums; }
+.oc-demo-rubric .oc-demo-select > svg { flex-shrink: 0; }
 .oc-demo-select-wrap { position: relative; }
 .oc-demo-select { display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; min-height: 44px; font-size: 11px; border: 1px solid var(--input); border-radius: 6px; background: var(--card); }
 .oc-demo-select-options { position: absolute; top: calc(100% + 4px); right: 0; min-width: 100%; width: max-content; max-width: 240px; padding: 4px; border: 1px solid var(--input); border-radius: 7px; background: var(--card); z-index: 3; box-shadow: 0 4px 10px #142d4510; visibility: hidden; opacity: 0; }
@@ -57,7 +61,8 @@
 .oc-demo-observation .oc-demo-profile-attached { padding: 10px; margin-bottom: 12px; }
 .oc-demo-observation .oc-demo-panel-steps { padding-bottom: 10px; }
 .oc-demo-observation .oc-demo-panel-steps > span { flex-direction: row; gap: 4px; }
-.oc-demo-observation .oc-demo-panel-steps :is(b, svg) { width: 16px; height: 16px; padding: 2px; }
+.oc-demo-observation .oc-demo-panel-steps :is(b, svg) { width: 16px; height: 16px; }
+.oc-demo-observation .oc-demo-panel-steps svg { padding: 2px; }
 .oc-demo-observation .oc-demo-availability > div { padding-block: 10px; }
 .oc-demo-observation .oc-demo-success > svg { margin-bottom: 8px; }
 .oc-demo-observation .oc-demo-field textarea { min-height: 84px; }

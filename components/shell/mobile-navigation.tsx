@@ -1,10 +1,10 @@
 "use client"
 import Link from "next/link"
-import { Home, Compass, Bookmark, FileText, Users2, Menu, Video, CalendarDays, CheckCircle2, Megaphone, Settings, type IconComponent } from "@/components/icons"
+import { Home, Compass, Bookmark, FileText, Users2, Menu, Video, CalendarDays, CheckCircle2, Megaphone, Settings, RefreshCw, type IconComponent } from "@/components/icons"
 import { mobileDestinations, type ProductNavItem } from "@/lib/product-navigation"
 import { handleClubLink } from "@/lib/workspace-navigation"
 
-const icons: Record<string, IconComponent> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: Bookmark, applications: FileText, clubs: Users2, overview: Home, applicants: Users2, interviews: Video, meetings: Users2, tasks: FileText, members: Users2, decisions: CheckCircle2, "scheduled-decisions": CheckCircle2, letters: FileText, announcements: Megaphone, settings: Settings }
+const icons: Record<string, IconComponent> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, calendar: CalendarDays, corkboard: Bookmark, applications: FileText, clubs: Users2, overview: Home, applicants: Users2, interviews: Video, meetings: Users2, tasks: FileText, members: Users2, decisions: CheckCircle2, "scheduled-decisions": CheckCircle2, letters: FileText, announcements: Megaphone, settings: Settings, cycles: RefreshCw }
 export function MobileNavigation({ items, active, manager, onSelect, onLink, onMore }: {
   items: ProductNavItem[]; active: string; manager: boolean; onSelect: (id: string) => void; onLink: (event: React.MouseEvent<HTMLAnchorElement>) => void; onMore: () => void
 }) {
