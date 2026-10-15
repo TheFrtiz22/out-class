@@ -12,7 +12,7 @@ fs.mkdirSync(output,{ recursive:true })
 function load(file) {
   const mod = { exports:{} }
   const code = ts.transpileModule(fs.readFileSync(file,'utf8'),{ compilerOptions:{ module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require','module','exports',code)(name=>load(path.join(path.dirname(file),`${name}.tsx`)),mod,mod.exports)
+  new Function('require','module','exports',code)(name=>load(['.ts','.tsx'].map(ext=>path.join(path.dirname(file),`${name}${ext}`)).find(file=>fs.existsSync(file))),mod,mod.exports)
   return mod.exports
 }
 const { demoTimelines } = load('components/landing/demo-timelines.ts')
@@ -104,6 +104,7 @@ async function verify() {
       await button.click({force:true})
     }
     const capture=async(scene,label)=>{
+      if(process.env.OUTCLASS_LANDING_QA_SCREENSHOTS==='0')return
       await playback.locator('.oc-public-nav').evaluate(el=>{el.style.visibility='hidden'})
       let done=false
       const shot=frame(scene).screenshot({path:path.join(output,`${label}-${scene}.png`),animations:'disabled'}).finally(()=>{done=true})
@@ -116,7 +117,8 @@ async function verify() {
     const single=async()=>assert.ok(await playback.locator('[data-demo-playing="true"]').count()<=1,'one active demonstration')
     const pause=async scene=>{if(await frame(scene).getAttribute('data-demo-complete')!=='true'&&await frame(scene).getAttribute('data-demo-paused')!=='true')await clickControl(scene,'Pause')}
     const resume=async scene=>{if(await frame(scene).getAttribute('data-demo-paused')==='true')await clickControl(scene,'Resume')}
-    for(const [width,height] of [[1440,1000],[390,844],[768,1024]]){
+    const viewports=process.env.OUTCLASS_LANDING_QA_VIEWPORTS?JSON.parse(process.env.OUTCLASS_LANDING_QA_VIEWPORTS):[[1366,768],[1440,900],[1920,1080],[390,844],[768,1024]]
+    for(const [width,height] of viewports){
       await playback.setViewportSize({width,height})
       for(const audience of ['student','leader']){
         await openPlayback(audience)
@@ -132,13 +134,14 @@ async function verify() {
             await playback.clock.runFor(Math.max(0,beat.press+65-await elapsed(scene)))
             await pause(scene)
             const position=await frame(scene).evaluate((el,target)=>{
-              const surface=el.querySelector('.oc-story-interface').getBoundingClientRect(),cursor=el.querySelector('.oc-demo-cursor').getBoundingClientRect()
+              const surface=el.querySelector('.oc-story-interface').getBoundingClientRect(),cursor=el.querySelector('.oc-demo-cursor').getBoundingClientRect(),viewport=el.querySelector('.oc-demo-observation').getBoundingClientRect()
               const action=[...el.querySelectorAll(`[data-demo-target="${target}"]`)].find(node=>!node.closest('[data-demo-view="false"]'))
               const box=action?.getBoundingClientRect()
-              return { target:!!box, tipX:cursor.left+2,tipY:cursor.top+2,box:box&&{left:box.left,top:box.top,right:box.right,bottom:box.bottom},bounded:cursor.left>=surface.left&&cursor.right<=surface.right&&cursor.top>=surface.top&&cursor.bottom<=surface.bottom,state:Number(el.dataset.demoState),inert:el.querySelector('.oc-demo-observation').inert,opacity:getComputedStyle(el.querySelector('.oc-demo-cursor')).opacity }
+              return { target:!!box, visible:!!box&&box.top+box.height/2>=viewport.top&&box.top+box.height/2<=viewport.bottom,tipX:cursor.left+2,tipY:cursor.top+2,box:box&&{left:box.left,top:box.top,right:box.right,bottom:box.bottom},bounded:cursor.left>=surface.left&&cursor.right<=surface.right&&cursor.top>=surface.top&&cursor.bottom<=surface.bottom,state:Number(el.dataset.demoState),inert:el.querySelector('.oc-demo-observation').inert,opacity:getComputedStyle(el.querySelector('.oc-demo-cursor')).opacity }
             },beat.target)
             assert.equal(position.target,true,`${scene} target ${beat.target}: ${JSON.stringify(position)} at ${await elapsed(scene)}ms`)
             assert.equal(position.inert,true)
+            assert.equal(position.visible,true,`${scene} scroll reveals ${beat.target} before pressing`)
             assert.equal(position.bounded,true,`${scene} cursor stays inside interface`)
             assert.ok(position.tipX>=position.box.left-2&&position.tipX<=position.box.right+2&&position.tipY>=position.box.top-2&&position.tipY<=position.box.bottom+2,`${scene} cursor aligns with ${beat.target}`)
             assert.equal(position.state,i===0?0:timeline.beats[i-1].state,`${scene}: response follows click at ${await elapsed(scene)}ms`)
@@ -170,7 +173,7 @@ async function verify() {
         }
       }
     }
-    console.log('PASS all eleven scenes on desktop, tablet and phone, shared progress, observational interfaces and no layout shifts')
+    if(viewports.length)console.log('PASS all eleven scenes on desktop, tablet and phone, shared progress, observational interfaces and no layout shifts')
 
     await playback.setViewportSize({width:1440,height:1000})
     await openPlayback('leader')
@@ -203,11 +206,24 @@ async function verify() {
     assert.equal(await elapsed('build'),offscreen)
     await show('build');await playback.clock.runFor(500)
     assert.ok(await elapsed('build')>offscreen,'reverse scrolling resumes without restarting')
+    await clickControl('build','Replay')
+    await playback.clock.runFor(demoTimelines.build.beats[0].start+200)
+    const beforeResize=await elapsed('build')
+    await playback.setViewportSize({width:390,height:844});await show('build')
+    assert.ok(await elapsed('build')>=beforeResize,'resize preserves elapsed progress')
+    await playback.clock.runFor(Math.max(0,demoTimelines.build.beats[0].press+55-await elapsed('build')))
+    await pause('build')
+    assert.equal(await frame('build').evaluate(el=>{const cursor=el.querySelector('.oc-demo-cursor').getBoundingClientRect(),target=el.querySelector('[data-demo-target="edit-profile"]').getBoundingClientRect();return cursor.left+2>=target.left&&cursor.left+2<=target.right&&cursor.top+2>=target.top&&cursor.top+2<=target.bottom}),true,'cursor remeasures its target mid-movement after resize')
+    const pausedResize=await elapsed('build')
+    await playback.setViewportSize({width:768,height:1024});await show('build')
+    assert.equal(await elapsed('build'),pausedResize,'resize never advances a paused clock')
+    assert.equal(await frame('build').evaluate(el=>{const cursor=el.querySelector('.oc-demo-cursor').getBoundingClientRect(),target=el.querySelector('[data-demo-target="edit-profile"]').getBoundingClientRect();return cursor.left+2>=target.left&&cursor.left+2<=target.right&&cursor.top+2>=target.top&&cursor.top+2<=target.bottom}),true,'paused cursor stays aligned after reflow')
+    await playback.setViewportSize({width:1440,height:1000});await show('build')
     await playback.locator('.oc-public-journey-desktop [data-perspective-option="student"]').click({force:true})
     await playback.waitForFunction(()=>document.querySelector('#product-journey')?.dataset.perspective==='student')
     assert.equal(await frame('build').count(),0)
     for(const top of [3000,800,7500,2000,0]){await playback.evaluate(y=>{scrollTo({top:y,behavior:'instant'});dispatchEvent(new Event('scroll'))},top);await playback.clock.runFor(80);await single()}
-    console.log('PASS repeated Replay, simulated tab visibility, offscreen pause, reverse/rapid scrolling and audience cancellation')
+    console.log('PASS repeated Replay, mid-movement resize, simulated tab visibility, offscreen pause, reverse/rapid scrolling and audience cancellation')
 
     await playback.emulateMedia({reducedMotion:'reduce'})
     for(const [width,height] of [[320,844],[1024,768],[844,390]]){

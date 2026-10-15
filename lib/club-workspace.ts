@@ -56,7 +56,8 @@ export const clubSectionLabels: Record<ClubSection, string> = {
 };
 export function clubWorkspaceHref(
   clubId: string,
-  section: ClubSection = "overview",
+  section?: ClubSection,
 ) {
-  return `/club/${encodeURIComponent(clubId)}/workspace${section === "overview" ? "" : `?section=${section}`}`;
+  // A bare URL is a workspace entry; an explicit overview is always Club.
+  return `/club/${encodeURIComponent(clubId)}/workspace${section ? `?section=${section}` : ""}`;
 }

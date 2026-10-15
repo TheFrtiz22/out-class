@@ -23,7 +23,7 @@ function Facts({ items }: { items: [string, ReactNode][] }) {
 function Action({ children, target, secondary = false, disabled = false }: { children: ReactNode; target?: string; secondary?: boolean; disabled?: boolean }) {
   return <button type="button" tabIndex={-1} className="oc-demo-button" data-demo-target={target} data-secondary={secondary} disabled={disabled}>{children}</button>
 }
-/** All views reserve their layout. The enclosing observational surface is inert. */
+/** Only the active view lays out inside the stable, scrollable preview viewport. */
 function Views({ active, children }: { active: number; children: ReactNode }) {
   return <div className="oc-demo-views">{Children.toArray(children).map((child, index) => <div key={index} data-demo-view={index === active} aria-hidden={index !== active}>{child}</div>)}</div>
 }

@@ -13,10 +13,12 @@ const PlaybackContext = createContext({ title: "Product", summary: "Illustrative
 export const useDemoState = () => useContext(StateContext)
 
 /** One prominence coordinator for the whole journey, including short landscape viewports. */
-export function DemoPlaybackProvider({ children }: { children: ReactNode }) {
+export function DemoPlaybackProvider({ children, activeScene }: { children: ReactNode; activeScene?: string | null }) {
   const entries = useRef(new Map<string, Registration>())
   const observer = useRef<IntersectionObserver | null>(null)
   const update = useRef(() => {})
+  const selectedScene = useRef(activeScene)
+  useLayoutEffect(() => { selectedScene.current = activeScene; update.current() }, [activeScene])
   const register = useCallback((id: string, entry: Registration) => {
     entries.current.set(id, entry)
     observer.current?.observe(entry.node)
@@ -30,7 +32,7 @@ export function DemoPlaybackProvider({ children }: { children: ReactNode }) {
     const registrations = entries.current
     const choose = () => {
       frame = 0
-      active = document.hidden ? undefined : prominentDemo(Array.from(registrations, ([id, entry]) => {
+      active = document.hidden ? undefined : prominentDemo(Array.from(registrations).filter(([, entry]) => selectedScene.current === undefined || entry.node.dataset.demoScene === selectedScene.current).map(([id, entry]) => {
         const bounds = entry.node.getBoundingClientRect()
         return { id, top: bounds.top, height: bounds.height }
       }), window.innerHeight, active)
@@ -70,6 +72,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
   const coordinator = useContext(CoordinatorContext)
   const root = useRef<HTMLDivElement>(null)
   const commands = useRef({ toggle: () => {}, replay: () => {} })
+  const refreshLayout = useRef(() => {})
   const [snapshot, setSnapshot] = useState<{ key: string; value: Snapshot }>(() => ({ key: resetKey, value: completed(timeline) }))
   const state = snapshot.key === resetKey ? snapshot.value : completed(timeline)
 
@@ -77,6 +80,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     const element = root.current
     if (!element) return
     const surface = element.querySelector<HTMLElement>(".oc-story-interface")!
+    const observation = element.querySelector<HTMLElement>(".oc-demo-observation")!
     const cursor = element.querySelector<HTMLElement>(".oc-demo-cursor")!
     const pointer = cursor.querySelector<SVGElement>(".oc-demo-cursor-pointer")!
     const click = cursor.querySelector<HTMLElement>(".oc-demo-click")!
@@ -86,6 +90,16 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     let active = false, paused = false, dirty = true, measuredBeat = -1, lastPercent = -1
     let from = { x: 0, y: 0 }, to = { x: 0, y: 0 }, position = { x: 0, y: 0 }
     let previousSize = { width: 0, height: 0 }
+    let scrollFrom = 0, scrollTo = 0, scrollMovement = 0
+    let visibleView: Element | null = null
+    refreshLayout.current = () => {
+      const next = observation.querySelector('[data-demo-view="true"]')
+      if (next !== visibleView) {
+        observation.scrollTop = Number(element.dataset.demoState) === timeline.finalState ? observation.scrollHeight : 0
+        visibleView = next
+      }
+      dirty = true
+    }
     let published = "", hoveredTarget: HTMLElement | undefined
     const publish = (sample: DemoSample) => {
       const value: Snapshot = { state: sample.state, label: sample.label, complete: sample.complete, reduced: preference.matches, paused, playing: active && !paused && !preference.matches && !sample.complete }
@@ -105,6 +119,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
       publish(sample)
       if (sample.elapsed === 0) {
         measuredBeat = -1; dirty = true
+        observation.scrollTop = 0
         hoveredTarget?.removeAttribute("data-demo-hover")
         hoveredTarget?.removeAttribute("data-demo-press")
         hoveredTarget = undefined
@@ -133,7 +148,14 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
         if (target) {
           if (hoveredTarget !== target) { hoveredTarget?.removeAttribute("data-demo-hover"); hoveredTarget?.removeAttribute("data-demo-press"); hoveredTarget = target }
           const box = target.getBoundingClientRect()
-          const next = { x: clamp(box.left + box.width * .5 - bounds.left - 2, bounds.width - 26), y: clamp(box.top + box.height * .5 - bounds.top - 2, bounds.height - 32) }
+          const viewport = observation.getBoundingClientRect()
+          const footer = observation.querySelector<HTMLElement>(".oc-perspective-scene > .oc-demo-actions")
+          const inset = footer && !footer.contains(target) ? footer.getBoundingClientRect().height : 0
+          scrollFrom = observation.scrollTop
+          const adjustment = box.bottom > viewport.bottom - inset - 12 ? box.bottom - viewport.bottom + inset + 12 : box.top < viewport.top + 12 ? box.top - viewport.top - 12 : 0
+          scrollTo = Math.max(0, Math.min(observation.scrollHeight - observation.clientHeight, scrollFrom + adjustment))
+          scrollMovement = measuredBeat === sample.beat ? sample.movement : 0
+          const next = { x: clamp(box.left + box.width * .5 - bounds.left - 2, bounds.width - 26), y: clamp(box.top + box.height * .5 - bounds.top - 2 - (scrollTo - scrollFrom), bounds.height - 32) }
           if (measuredBeat === -1) position = { x: clamp(next.x - 52, bounds.width - 26), y: clamp(next.y + 38, bounds.height - 32) }
           else if (dirty && previousSize.width && measuredBeat === sample.beat) {
             position = { x: position.x * bounds.width / previousSize.width, y: position.y * bounds.height / previousSize.height }
@@ -146,7 +168,11 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
         measuredBeat = sample.beat
         dirty = false
       }
-      const eased = 1 - (1 - sample.movement) ** 3
+      // Smoothstep starts and finishes at rest, with a quiet curved path.
+      const eased = sample.movement ** 2 * (3 - 2 * sample.movement)
+      const scrolling = sample.movement === 1 ? 1 : Math.min(1, (sample.movement - scrollMovement) / Math.max(.001, 1 - scrollMovement))
+      const scroll = scrollFrom + (scrollTo - scrollFrom) * scrolling ** 2 * (3 - 2 * scrolling)
+      if (Math.abs(observation.scrollTop - scroll) > .5) observation.scrollTop = scroll
       const arc = Math.min(previousSize.width < 480 ? 6 : 12, Math.hypot(to.x - from.x, to.y - from.y) * .06) * (sample.beat % 2 ? -1 : 1)
       position = { x: clamp(from.x + (to.x - from.x) * eased, previousSize.width - 26), y: clamp(from.y + (to.y - from.y) * eased + Math.sin(Math.PI * eased) * arc, previousSize.height - 32) }
       cursor.style.transform = `translate3d(${position.x.toFixed(2)}px,${position.y.toFixed(2)}px,0)`
@@ -181,7 +207,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
       toggle: () => { if (preference.matches || clock.sample().complete) return; paused = !paused; clock.setPaused(paused); publish(clock.sample()) },
       replay: () => { paused = false; published = ""; measuredBeat = -1; dirty = true; clock.replay(); publish(clock.sample()) },
     }
-    const resize = window.ResizeObserver ? new ResizeObserver(() => { dirty = true }) : null
+    const resize = window.ResizeObserver ? new ResizeObserver(() => { dirty = true; if (paused || !active) render(clock.sample()) }) : null
     resize?.observe(surface)
     preference.addEventListener("change", reduce)
     return () => {
@@ -190,8 +216,12 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
       resize?.disconnect()
       preference.removeEventListener("change", reduce)
       commands.current = { toggle: () => {}, replay: () => {} }
+      refreshLayout.current = () => {}
     }
   }, [coordinator, resetKey, timeline])
+
+  // Read targets after React has committed a new view; never aim at hidden DOM.
+  useLayoutEffect(() => { refreshLayout.current() }, [state.state])
 
   return <div ref={root} className="oc-product-motion" role="group" aria-label={`${timeline.title} product demonstration`} aria-describedby={`${resetKey}-summary`} data-demo-scene={scene} data-demo-complete={state.complete} data-demo-paused={state.paused} data-demo-playing={state.playing}>
     <PlaybackContext.Provider value={{ ...state, title: timeline.title, summary: timeline.summary, toggle: () => commands.current.toggle(), replay: () => commands.current.replay() }}>
