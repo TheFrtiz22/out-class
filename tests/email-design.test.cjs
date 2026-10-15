@@ -8,7 +8,7 @@ test('Auth publication files reproduce the shared generator and preserve each su
     assert.ok(m.text.trim());
     assert.ok(m.html.includes('[data-ogsc]')); assert.ok(m.html.includes('[data-ogsb]'));
     assert.ok(m.html.includes('width="560"')); assert.ok(m.html.includes('PixelsPerInch'));
-    assert.ok(m.html.includes('/outclass-logo-light.jpeg'));
+    assert.ok(m.html.includes('/brand/premium-board/email_wordmark.png'));
   }
   for (const type of ['confirmation', 'magic-link', 'reauthentication']) {
     assert.equal(templates[type].html.match(/\{\{ \.Token \}\}/g).length, 1);

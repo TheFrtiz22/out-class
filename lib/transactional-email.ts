@@ -11,6 +11,9 @@ export function emailSiteOrigin(siteUrl: string) {
 // bot challenge. Keep email artwork on this public asset URL until a dedicated
 // brand CDN is approved; this does not publish or upload any files.
 export const emailArtworkRoot = 'https://raw.githubusercontent.com/TheFrtiz22/out-class/93502dde5e5d9155d5d8d6751cefddbb385c5da9/public';
+// Email clients (notably Outlook) need a raster logo. Pin this versioned PNG
+// instead of embedding an SVG or relying on site-hosted, bot-protected images.
+const premiumEmailArtworkRoot = 'https://raw.githubusercontent.com/TheFrtiz22/out-class/71c116dcd803fb90a1d966b4a15fa59e880c9349/public/brand/premium-board';
 const bundledArtwork = new Set(['/outclass-logo-light.jpeg', '/logos/180-degrees-globe.png', '/logos/180-degrees.png', '/logos/enactus-wordmark.png', '/logos/enactus.png', '/logos/mii.webp', '/logos/vvf.webp']);
 export function emailArtworkUrl(url: URL, siteOrigin: string) {
   return url.origin === siteOrigin && !url.search && !url.hash && bundledArtwork.has(url.pathname) ? emailArtworkRoot + url.pathname : url.href;
@@ -88,7 +91,7 @@ ${outlookDark}
 <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0f0f0" style="width:100%;background-color:#f0f0f0"><tr><td class="outer" align="center" style="padding:32px 16px">
 <!--[if mso]><table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
 <table role="presentation" class="email-paper" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:560px;background-color:#ffffff">
-<tr><td class="inset masthead" style="padding:32px 40px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="left" valign="middle"><a href="${esc(origin)}/" style="display:inline-block"><img src="${emailArtworkRoot}/outclass-logo-light.jpeg" width="174" height="48" alt="OutClass" style="display:block;width:174px;height:48px;background-color:#ffffff;color:#142d4e;font-family:Arial,sans-serif;font-size:22px;font-weight:bold"></a></td><td class="campus-label muted" align="right" valign="middle" style="color:#596575;font-size:9px;line-height:15px;letter-spacing:1.5px;text-transform:uppercase">Beginning at<br>Virginia</td></tr></table></td></tr>
+<tr><td class="inset masthead" style="padding:32px 40px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="left" valign="middle"><a href="${esc(origin)}/" style="display:inline-block"><img src="${premiumEmailArtworkRoot}/email_wordmark.png" width="180" height="51" alt="OutClass" style="display:block;width:180px;height:51px;background-color:#FFF9F1;color:#142d4e;font-family:Arial,sans-serif;font-size:22px;font-weight:bold"></a></td><td class="campus-label muted" align="right" valign="middle" style="color:#596575;font-size:9px;line-height:15px;letter-spacing:1.5px;text-transform:uppercase">Beginning at<br>Virginia</td></tr></table></td></tr>
 <tr><td class="inset" style="padding:18px 40px 0">${signatureRule()}</td></tr>
 <tr><td class="inset main" style="padding:30px 40px 8px;overflow-wrap:anywhere;word-break:normal">
 <p class="eyebrow" style="margin:0 0 14px;color:#a83d0c;font-size:10px;line-height:16px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase">${esc(input.category || 'Account security')}</p>

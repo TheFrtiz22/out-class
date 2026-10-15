@@ -73,7 +73,7 @@ test('structured data identifies only the established organization and website',
   assert.equal(data['@context'], 'https://schema.org')
   assert.deepEqual(data['@graph'].map(item => item['@type']), ['Organization', 'WebSite'])
   assert.equal(data['@graph'][1].publisher['@id'], data['@graph'][0]['@id'])
-  assert.equal(data['@graph'][0].logo.url, 'https://www.out-class.net/brand/12-app-icon-navy.svg')
+  assert.equal(data['@graph'][0].logo.url, 'https://www.out-class.net/apple-icon.png')
   assert.deepEqual(data['@graph'][1].alternateName, ['OutClass UVA', 'Out Class'])
   for (const item of data['@graph']) {
     assert.equal(item.name, 'OutClass')

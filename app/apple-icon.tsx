@@ -4,6 +4,6 @@ export const size = { width: 180, height: 180 }
 export const contentType = "image/png"
 
 export default function AppleIcon() {
-  // Keep the artwork name here so replacing it also changes Next's icon URL.
-  return brandIcon(size.width, "brand/premium-board/05_app_icon_primary.svg")
+  // Serve the PNG traced from the primary OC vector for reliable iOS/Next rendering.
+  return brandIcon(size.width, "apple-icon.png")
 }

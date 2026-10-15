@@ -34,3 +34,7 @@ These files **do not replace or rename** any previously used `/public/brand` ide
 ## Source and limitations
 
 These are traced vector reconstructions based on a raster brand board. They are close visual matches but not original designer-authored editable master artwork, and fine details may differ from the source.
+
+## Email compatibility
+
+`email_wordmark.png` is a high-resolution, ivory-backed **PNG fallback** rendered from the board's sword-free wordmark SVG. It is pinned to a versioned GitHub URL in the shared transactional email template for Outlook and dark-mode legibility. Keep the SVG as the design source; use the PNG only where SVG isn't supported.

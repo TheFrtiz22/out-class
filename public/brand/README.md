@@ -18,3 +18,5 @@ The site now uses the path-based, font-independent SVGs in [premium-board/](prem
 The original 16 SVGs remain in this directory for rollback and comparison. No originals were deleted.
 
 **Palette:** navy `#0F2E56`, orange `#F26522`, ivory `#FFF9F1`.
+
+Raster fallbacks: `/apple-icon.png` and the 32×32 browser icons are generated from the premium-board OC tiles. The email masthead uses `premium-board/email_wordmark.png` (ivory-backed wordmark) through an immutable public GitHub URL to support Outlook and other clients that do not reliably render SVGs.
