@@ -7,6 +7,7 @@ import { publishAnnouncementTransaction } from "@/utils/announcement-publication
 import { evaluateRecipientSnapshot, type AudienceSnapshot } from "@/utils/recipient-audience";
 import { recipientAudienceSchema } from "@/lib/recipient-audience";
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
+import { createSchedulerClaimTrace, schedulerErrorCodes } from "@/lib/scheduler-claim-diagnostics";
 
 // A committed claim makes PROCESSING observable. Its revision is the fencing
 // token; a crashed process's claim becomes reclaimable after two minutes. Every
@@ -17,13 +18,12 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 // transaction-scoped advisory lock; durable PROCESSING leases count across
 // processes, so concurrent cron/manual invocations cannot multiply capacity.
 export const schedulerCapacity = { concurrency: 3, decisionConcurrency: 1, maxClaims: 128, admissionMs: 25000 } as const;
-// Never log exception messages/meta, SQL, recipients, or identifiers. Even a
+// Never log raw exception messages/meta, SQL, recipients, or identifiers. Even a
 // broken log sink must not replace a publication result or interfere with fencing.
-function schedulerDiagnostic(stage: "claim" | "publication" | "failure_marker" | "queue_health", error: unknown) {
- let code="UNKNOWN";
+function schedulerDiagnostic(stage: "claim" | "publication" | "failure_marker" | "queue_health", error: unknown, claim?: ReturnType<typeof createSchedulerClaimTrace>) {
  try {
-  if (error && typeof error === "object" && "code" in error && typeof error.code === "string" && /^P[0-9]{4}$/.test(error.code)) code=error.code;
-  console.error("scheduler.failure", { stage, code });
+  console.error("scheduler.failure", { stage, ...schedulerErrorCodes(error),
+   ...(claim ? { ...claim.snapshot(), maxWaitMs: 1000, timeoutMs: 4000 } : {}) });
  } catch { /* best effort */ }
 }
 export async function processScheduledCommunications(limit:number=schedulerCapacity.maxClaims) {
@@ -37,18 +37,23 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
   reserved++;
   let claimRevision:number|null=null;
   let candidate:{id:string;clubId:string}|null=null;
+  const claimTrace=createSchedulerClaimTrace();
   try {
    const claimed=await prisma.$transaction(async tx=>{
+    claimTrace.enter();
     await tx.$queryRaw`SELECT set_config('lock_timeout','1000',true),set_config('statement_timeout','3000',true)`;
+    claimTrace.step("advisory_lock");
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(72707370)::text`;
+    claimTrace.step("capacity_scan");
     const [active]=await tx.$queryRaw<{total:bigint;decisions:bigint}[]>`
      SELECT count(*) total,count(*) FILTER(WHERE kind='DECISION') decisions FROM "ScheduledCommunication"
      WHERE status='PROCESSING' AND "updatedAt">=clock_timestamp()-INTERVAL '2 minutes'`;
-    if(Number(active.total)>=schedulerCapacity.concurrency){deferrals.capacity++;return null;}
+    if(Number(active.total)>=schedulerCapacity.concurrency){deferrals.capacity++;claimTrace.step("commit");return null;}
     const decisionAvailable=Number(active.decisions)<schedulerCapacity.decisionConcurrency;
     // One due head per club, least recently claimed/serviced club first.
     // A live claim excludes its club entirely. SKIP LOCKED bypasses club edits
     // and publications; a bulk job never occupies the small-send slots.
+    claimTrace.step("candidate_scan");
     const [next]=await tx.$queryRaw<{id:string;clubId:string;revision:number}[]>`
      WITH due AS (
       SELECT s.id,s."clubId",s.revision,s."scheduledAt",
@@ -64,10 +69,14 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
       WHERE "clubId"=d."clubId" AND status<>'SCHEDULED') h ON true
      WHERE d.position=1 ORDER BY h.serviced NULLS FIRST,d."scheduledAt",d.id
      LIMIT 1 FOR UPDATE OF c SKIP LOCKED`;
-    if(!next){deferrals.noCandidate++;return null;}
+    if(!next){deferrals.noCandidate++;claimTrace.step("commit");return null;}
+    claimTrace.step("intent_lock");
     const rows=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "ScheduledCommunication" WHERE id=${next.id} AND revision=${next.revision} AND ((status='SCHEDULED' AND "scheduledAt"<=clock_timestamp()) OR (status='PROCESSING' AND "updatedAt"<clock_timestamp()-INTERVAL '2 minutes')) FOR UPDATE SKIP LOCKED`;
-    if(!rows.length){deferrals.intentRace++;return null;}
-    return tx.scheduledCommunication.update({where:{id:next.id},data:{status:"PROCESSING",revision:{increment:1}}});
+    if(!rows.length){deferrals.intentRace++;claimTrace.step("commit");return null;}
+    claimTrace.step("claim_update");
+    const result=await tx.scheduledCommunication.update({where:{id:next.id},data:{status:"PROCESSING",revision:{increment:1}}});
+    claimTrace.step("commit");
+    return result;
    },{maxWait:1000,timeout:4000});
    if(!claimed){reserved--;skipped++;break;}
    claimedCount++;
@@ -113,7 +122,7 @@ export async function processScheduledCommunications(limit:number=schedulerCapac
    },{maxWait:2000,timeout:claimed.kind==="DECISION"?20000:12000});
    if(result)published++;else skipped++;
   }catch(error){
-   schedulerDiagnostic(claimRevision===null?"claim":"publication",error);
+   schedulerDiagnostic(claimRevision===null?"claim":"publication",error,claimRevision===null?claimTrace:undefined);
    // Before a claim, a transient failure leaves SCHEDULED work due. After a
    // claim, mark only our own revision. A crashed/unavailable marker is safely
    // recovered by the lease. No raw exception or recipient data reaches output.

@@ -34,7 +34,9 @@ export async function saveEditorDraft(input: unknown) {
     await authorize(tx, data.scope, user.id)
     // Serialize first creation as well as updates, including personal drafts.
     const key = editorDraftKey(data.scope)
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${user.id + ":" + key}, 0))`
+    // PostgreSQL returns void; Prisma cannot deserialize that raw result type.
+    // Cast only the result, retaining the transaction-scoped serialization lock.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${user.id + ":" + key}, 0))::text`
     const where = { userId_key: { userId: user.id, key } }
     const current = await tx.editorDraft.findUnique({ where })
     // Recover a lost acknowledgement without overwriting a later revision.
