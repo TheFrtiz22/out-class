@@ -74,7 +74,7 @@ export function InterviewApplicantPanel({ clubId, applicationId, roundId, initia
       {url && resource ? <ResumePreview resource={resource} name={name} focusRef={previewFocus} onExpand={page => { openedFromPreview.current = true; setInitialPage(page); setOpen(true); }} /> : <FileText className="size-10 text-muted-foreground" aria-hidden="true" />}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild><Button ref={resumeTrigger} type="button" variant="ghost" disabled={!resource} onClick={() => { openedFromPreview.current = false; setInitialPage(1); }} className="oc-resume-trigger" aria-label={`Open résumé for ${name}`}>
-          <span className="oc-resume-label">Expand résumé <Maximize2 className="size-4" aria-hidden="true" /></span>
+          <Maximize2 className="size-4" aria-hidden="true" />
         </Button></DialogTrigger>
         <DialogContent showCloseButton={false} aria-describedby={undefined} className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onEscapeKeyDown={event => { if ((event.target as Element)?.closest('[role="dialog"]')?.querySelector('[data-resume-comment-draft]')) event.preventDefault(); }} onCloseAutoFocus={e => { e.preventDefault(); (openedFromPreview.current ? previewFocus.current : resumeTrigger.current)?.focus(); }}>
           <DialogHeader className="pr-10"><DialogTitle className="text-base font-medium">{name} · Résumé</DialogTitle></DialogHeader>

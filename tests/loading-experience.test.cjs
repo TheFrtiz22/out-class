@@ -143,7 +143,7 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(light.props["aria-busy"], "true")
   assert.equal(light.props["data-variant"], "light")
   const [mark, label] = light.props.children
-  assert.equal(mark.props.src, "/brand/14-favicon.svg")
+  assert.equal(mark.props.src, "/brand/premium-board/07_favicon.svg")
   assert.equal(mark.props.width, 72)
   assert.equal(mark.props.height, 72)
   assert.equal(mark.props.alt, "")

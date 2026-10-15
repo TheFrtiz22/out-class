@@ -230,7 +230,7 @@ export function InterviewKitSession({
     const element = document.activeElement;
     const typing = composing.current || !!element && !!formRef.current?.contains(element) && (element.tagName === "TEXTAREA" || element.tagName === "INPUT" || (element as HTMLElement).isContentEditable);
     if (dirty || typing || personalQuestion.current || saving || selecting || closingQuestion || ending) setPendingQuestion({ question, by, revision: view.revision });
-    else { openSharedQuestion(question, false); setCollaborationMessage(`${by} selected this question.`); }
+    else { openSharedQuestion(question, false); setCollaborationMessage(by === "You" ? "" : `${by} selected this question.`); }
   // Incoming state never substitutes a draft or focuses a field.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collaboration.view, closing, session?.completedAt]);
@@ -265,7 +265,7 @@ export function InterviewKitSession({
     if (!pendingQuestion || composing.current) return;
     if (dirty && !savingRef.current) void persist();
     openSharedQuestion(pendingQuestion.question, true);
-    setCollaborationMessage(`${pendingQuestion.by} selected this question.`);
+    setCollaborationMessage(pendingQuestion.by === "You" ? "" : `${pendingQuestion.by} selected this question.`);
   }
   useEffect(() => {
     mounted.current = true;
@@ -532,7 +532,6 @@ export function InterviewKitSession({
           {key(active.guidance)}
           <label htmlFor={`active-notes-${active.id}`}>Your private notes</label>
           <Textarea ref={activeNotes} id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
-          <p className="text-xs text-muted-foreground">Draft question notes are private. Finalized notes are shared with assigned later-round interviewers after submission. Typing does not mark completion.</p>
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
         </div>
