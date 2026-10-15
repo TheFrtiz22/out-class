@@ -1,7 +1,8 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, ChevronsUpDown, UserRound, Shield } from "lucide-react"
+import { Check, ChevronsUpDown, Shield } from "lucide-react"
+import { AccountAvatar } from "@/components/account-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { hasWorkspace } from "@/lib/permissions"
@@ -31,11 +32,11 @@ export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, admin
     <p className="oc-workspace-switcher-label">Workspace</p>
     <DropdownMenu>
       <DropdownMenuTrigger asChild><button type="button" aria-label="Switch workspace" className="oc-workspace-switcher-trigger">
-        {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <span className="oc-workspace-personal-icon"><UserRound size={18} /></span>}
+        {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}
         <span><strong>{adminActive ? "Admin" : current?.club.name || "Personal"}</strong><small>{adminActive ? "Platform administration" : current ? "Club workspace" : user.profile?.firstName || "Your campus"}</small></span><ChevronsUpDown size={14} aria-hidden="true" />
       </button></DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="oc-workspace-menu w-72">
-        <DropdownMenuItem onSelect={() => switchTo("")}><UserRound /><span className="flex-1">Personal workspace</span>{!clubId && !adminActive && <Check />}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => switchTo("")}><AccountAvatar user={user} className="size-6" /><span className="flex-1">Personal workspace</span>{!clubId && !adminActive && <Check />}</DropdownMenuItem>
         {memberships.length > 0 && <DropdownMenuSeparator />}
         {memberships.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchTo(member.clubId)}>
           <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} color={member.club.color || "#142d45"} text={member.club.name.slice(0,2)} />

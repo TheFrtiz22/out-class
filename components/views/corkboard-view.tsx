@@ -1,9 +1,9 @@
 "use client";
-import Link from "next/link";
+import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover";
 import { PageHeader } from "@/components/product/page-header";
 import { PublicEventBoard } from "@/components/events/public-event-board";
 import type { ViewId } from "@/lib/views";
-export function CorkboardView(_props: { onNavigate?: (view: ViewId) => void }) {
+export function CorkboardView({ onNavigate }: { onNavigate?: (view: ViewId) => void }) {
   return (
     <div className="oc-corkboard-events">
       <PageHeader
@@ -15,9 +15,7 @@ export function CorkboardView(_props: { onNavigate?: (view: ViewId) => void }) {
       <PublicEventBoard />
       <p className="mt-5 text-sm text-muted-foreground">
         Looking for clubs you saved?{" "}
-        <Link className="underline underline-offset-4" href="/saved-clubs">
-          Open Saved Clubs
-        </Link>
+        <SavedClubsPopover onNavigate={onNavigate} />
       </p>
     </div>
   );

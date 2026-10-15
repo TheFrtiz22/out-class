@@ -9,7 +9,7 @@ let users = 0, replaying = false
 async function navigate(event: MouseEvent) {
   if (replaying || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
   const target = event.target instanceof Element ? event.target.closest<HTMLElement>("nav a, nav button, [data-shell-navigation], a[href]") : null
-  if (!target || target.closest('[data-autosave-editor="true"]')) return
+  if (!target || target.closest('[data-autosave-editor="true"], [data-navigation-toggle]')) return
   const pending: Promise<void>[] = []
   window.dispatchEvent(new CustomEvent("outclass:flush-editors", { detail: pending }))
   if (!pending.length) return

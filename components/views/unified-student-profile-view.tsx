@@ -1,9 +1,10 @@
 "use client"
+import { AvailabilityButton } from "@/components/availability/availability-button"
 import { profilePhotoSource } from "@/lib/profile-photo"
 import { scholarNames } from "@/lib/scholar-status"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowUpRight, CalendarDays, Check, FileText, Linkedin, Pencil } from "lucide-react"
+import { ArrowUpRight, Check, FileText, Linkedin, Pencil } from "lucide-react"
 import Link from "next/link"
 import { getStudentProfile } from "@/lib/workspace-api"
 import { useAuth } from "@/contexts/auth-context"
@@ -83,7 +84,7 @@ export function UnifiedStudentProfileView() {
             ? "Complete student onboarding to create your recruiting profile."
             : "Sign in to see your saved education, experience, and résumé. This preview contains no sample personal details."}
         </p>
-        {user && <Link href="/settings/availability" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4"><CalendarDays className="size-4" />My Availability</Link>}
+        {user && <AvailabilityButton />}
       </div>
     )
   const checklist = profileChecklist(profile)
@@ -156,7 +157,7 @@ export function UnifiedStudentProfileView() {
           </p>
           {edit("identity")}
           <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 text-sm">
-            <Link href="/settings/availability" className="inline-flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"><CalendarDays className="size-4" />My Availability</Link>
+            <AvailabilityButton />
             {safeProfileUrl(profile.linkedinUrl) && (
               <a
                 href={safeProfileUrl(profile.linkedinUrl)}

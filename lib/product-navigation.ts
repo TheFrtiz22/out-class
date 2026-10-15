@@ -3,7 +3,7 @@ import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
-export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean }
+export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions" }
 export const personalModes: ProductNavItem[] = [
   { id: "explore", label: "Explore" }, { id: "apply", label: "Apply" }, { id: "clubs", label: "My Clubs" },
 ]
@@ -36,19 +36,31 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     return [item("overview", "Overview", "recruitment"),
-      ...(read ? [item("applicants", "Applicants", "recruitment"), item("rejected", "Rejected Applicants", "recruitment")] : []),
+      ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const }), item("rejected", "Rejected Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
-      ...(read ? [item("decisions", "Decisions", "recruitment")] : []),
-      ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment")] : []),
-      ...(hasPermission(member, "recruitment.manage") ? [item("cycles", "Recruitment Cycles", "recruitment"), item("letters", "Decision Letters", "recruitment"), item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : [])]
+      ...(read ? [item("decisions", "All Decisions", "recruitment", { navGroup: "decisions" as const })] : []),
+      ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
+      ...(hasPermission(member, "recruitment.manage") ? [item("cycles", "Recruitment Cycles", "recruitment"), item("letters", "Decision Letters", "recruitment", { navGroup: "decisions" as const }), item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
+      ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : [])]
   }
   return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
     ...(hasPermission(member, "meetings.manage") ? [item("announcements", "Announcements", "announcements")] : []),
-    ...(availableSettings(member).length ? [item("settings", "Appearance")] : [])]
+    ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
 }
 /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */
 export function canLeaveWorkspace() {
   if (document.querySelector('[data-saving="true"]')) return false
   return !document.querySelector('[data-unsaved="true"]') || window.confirm("Leave this page? Your unsaved changes will be lost.")
+}
+
+export const navigationGroupLabels = { applicants: "Applicants", decisions: "Decisions" } as const
+export function mobileDestinations(items: ProductNavItem[]) {
+  const groups = new Set<string>()
+  return items.filter(item => !item.quiet).flatMap(item => {
+    if (!item.navGroup) return [item]
+    if (groups.has(item.navGroup)) return []
+    groups.add(item.navGroup)
+    return [{ ...item, label: navigationGroupLabels[item.navGroup] }]
+  })
 }

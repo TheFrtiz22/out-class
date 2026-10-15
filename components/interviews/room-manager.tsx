@@ -1,4 +1,5 @@
 "use client"
+import { AvailabilityButton } from "@/components/availability/availability-button"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { LoadingState } from "@/components/ui/loading-state"
 import { NativeSelect } from "@/components/ui/native-select"
@@ -16,7 +17,7 @@ import { PanelPreviewWorkspace } from "./panel-preview-workspace"
 import { getRoundStaffingCoverage } from "@/lib/availability-workspace-read"
 import Link from "next/link"
 import { AdminAvailabilityOverview } from "@/components/availability/admin-overview"
-import { addDays, availabilityHref, localDateSchema, monday, today, type AvailabilityOverview, type SessionCoverage } from "@/lib/availability"
+import { addDays, localDateSchema, monday, today, type AvailabilityOverview, type SessionCoverage } from "@/lib/availability"
 import { staffingShortageSessionIds } from "@/lib/interview-staffing-capacity"
 import { interviewRoundWeek } from "@/lib/interview-scheduling-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
@@ -91,7 +92,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
   const roundName = data?.rounds.find(r => r.id === round)?.name
   const state = draftSummary?.state ?? coverage?.state ?? (slots.some(({ s }) => s.panelScheduleVersionId) ? "Published" : "No panel draft")
   return <div className="ir-manager space-y-4">
-    <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Interview Scheduling</h2><div className="flex flex-wrap gap-3">{coverage?.myEligible && <Link href={availabilityHref(clubId, round)} className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Set My Availability</Link>}{tab !== "availability" && <Button variant="outline" onClick={() => navigateSection("availability")}>View Team Availability</Button>}</div></header>
+    <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Interview Scheduling</h2><div className="flex flex-wrap gap-3">{coverage?.myEligible && <AvailabilityButton clubId={clubId} roundId={round} />}{tab !== "availability" && <Button variant="outline" onClick={() => navigateSection("availability")}>View Team Availability</Button>}</div></header>
     {error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}{notice && <p role="status" className="text-sm">{notice}</p>}
     {!data && loading ? <LoadingState label="Loading interview scheduling…" rows={3} /> : data && <>
       <div className="flex flex-wrap items-end gap-3"><label className="ir-field">Interview round<NativeSelect aria-label="Recruitment round" value={round} onChange={e => { if (!canLeaveWorkspace()) return; const nextWeek = interviewRoundWeek(data, e.target.value); setWeek(nextWeek); setDate(""); setRound(e.target.value); setPanelVisited(false); setAutoStart(false); setDraftSummary(null); setOverview(null); setCoverage(null); setSelectedSession(""); window.history.pushState(null, "", url(tab, e.target.value, "", nextWeek, "")) }}>{data.rounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</NativeSelect></label><label className="ir-field">Interview date<Input aria-label="Filter interview date" type="date" value={date} onChange={e => { setDate(e.target.value); if (e.target.value) setWeek(monday(e.target.value)); window.history.pushState(null, "", url(tab, round, e.target.value, e.target.value ? monday(e.target.value) : week)) }} /></label>{date && <Button variant="ghost" onClick={() => { setDate(""); window.history.pushState(null, "", url(tab, round, "")) }}>All dates</Button>}<span className="pb-2 text-xs font-medium text-muted-foreground">{state}</span></div>

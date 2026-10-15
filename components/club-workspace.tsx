@@ -137,18 +137,18 @@ export function ClubWorkspace({
   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
   if (suspended) return <main className="mx-auto max-w-2xl p-8"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></main>;
   const manager = !!membership && hasWorkspace(membership);
-  const mode = section === "recruitment" ? "recruiting" : "club";
-  const active = mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
+  const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
+  const active = section === "announcements" ? "announcements" : mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
   const nav = manager ? managerNavigation(membership, clubId, mode) : [
     { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId) },
     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
   ];
-  const allowed = mode === "recruiting" ? manager && recruitmentTools(membership!).length > 0 && nav.some(n => n.id === active) : nav.some(n => n.id === active);
+  const allowed = mode === "recruiting" ? manager && (active === "announcements" || recruitmentTools(membership!).length > 0) && nav.some(n => n.id === active) : nav.some(n => n.id === active);
   function navigate(view: ViewId) {
     if (view === "interview-workspace") { setInterviewMode(true); return }
     if (["leader-dashboard", "interview-scheduler", "club-manager", "broadcast-messages"].includes(view)) {
-      const href = view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `/club/${clubId}/workspace?section=announcements` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`;
+      const href = view === "club-manager" ? clubWorkspaceHref(clubId, "settings") : view === "broadcast-messages" ? `/club/${clubId}/workspace?section=announcements${mode === "recruiting" ? "&mode=recruiting" : ""}` : `${clubWorkspaceHref(clubId, "recruitment")}&tool=${view === "interview-scheduler" ? "interviews" : "applicants"}`;
       if (!navigateWithinClub(href)) router.push(href); return;
     }
     router.push(view === "landing" ? "/" : `/?workspace=student&view=${view}${view === "calendar" ? "&section=clubs" : ""}`);

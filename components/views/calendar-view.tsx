@@ -1,5 +1,6 @@
 "use client"
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL, minuteLabel } from "@/lib/scheduling-config"
+import { AvailabilityButton } from "@/components/availability/availability-button"
 import { localParts } from "@/lib/availability"
 import Link from "next/link";
 
@@ -166,11 +167,11 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
             Times shown in {SCHEDULING_TIMEZONE_LABEL}.
           </p>
         </div>
-        {bookingDates.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3"><AvailabilityButton />{bookingDates.length > 0 && (
           <Button variant="outline" onClick={() => setBooking(true)}>
             Book / change interview
           </Button>
-        )}
+        )}</div>
       </header>
       <SegmentedControl label="Calendar view" value={view} onChange={setView} options={(["agenda", "month", "week", "day"] as const).map(value => ({ value, label: value[0].toUpperCase() + value.slice(1) }))} />
       {view !== "agenda" && (
