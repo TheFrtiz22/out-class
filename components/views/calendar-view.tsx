@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight, CalendarDays, Download, MapPin } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NativeSelectField } from "@/components/ui/native-select"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -215,17 +216,17 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
           onChange={(event) => setQuery(event.target.value)}
           className="max-w-sm"
         />
-        <select
+        <NativeSelectField
           aria-label="Filter event type"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
-          className="h-10 max-w-full rounded-md border border-border bg-background px-3 text-sm"
+          className="max-w-full"
         >
           <option value="all">All event types</option>
           {Object.keys(eventStyle).map((type) => (
             <option key={type}>{type}</option>
           ))}
-        </select>
+        </NativeSelectField>
         {view === "agenda" && (
           <>
             <label className="flex items-center gap-2 text-xs text-muted-foreground">

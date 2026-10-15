@@ -12,6 +12,7 @@ import { Search, Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays }
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NativeSelectField } from "@/components/ui/native-select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useApplicationState } from "@/lib/application-state"
@@ -22,8 +23,6 @@ import { OrganizationOwnershipRequests } from "@/components/organization-ownersh
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
-const selectStyle =
-  "h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
 
 export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }) {
   const params = useSearchParams(), demo = useDemoMode()
@@ -92,6 +91,8 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   // Bulk actions only affect checked notifications in the current results.
   const checkedIds = filtered.filter((item) => checked.has(item.id)).map((item) => item.id)
   const groups = notificationGroups(filtered, sort === "club", sort === "priority")
+  const countGroup = groups.find(group => group.label === "Club updates")?.label ?? groups[0]?.label
+  const notificationCount = <p className="text-xs font-normal normal-case tracking-normal text-muted-foreground" role="status">{unread} unread · {items.length} {items.length === 1 ? "notification" : "notifications"}</p>
   const selected = items.find((item) => item.id === selectedId)
   const allChecked = filtered.length > 0 && checkedIds.length === filtered.length
 
@@ -118,25 +119,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     <div className="oc-inbox-workspace mx-auto max-w-6xl space-y-6 text-foreground">
       {tabs}
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
-      <header>
-        <p className="text-sm text-muted-foreground">
-          Your club updates and tasks, together in one place.
-        </p>
-      </header>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-neutral-500" role="status">
-          {unread} unread · {items.length} notifications
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!unread}
-          onClick={() => void markAllNotificationsRead()}
-        >
-          <MailOpen className="size-4" /> Mark all as read
-        </Button>
-      </div>
-      <div className="space-y-4 border-y border-border py-5">
+      <div className="space-y-4 border-b border-border pb-5">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-52 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-neutral-400" />
@@ -148,19 +131,18 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               className="pl-9"
             />
           </div>
-          <select
+          <NativeSelectField
             aria-label="Filter by read status"
-            className={selectStyle}
             value={readFilter}
             onChange={(event) => setReadFilter(event.target.value)}
           >
             <option value="all">All read statuses</option>
             <option value="unread">Unread</option>
             <option value="read">Read</option>
-          </select>
-          <select
+          </NativeSelectField>
+          <NativeSelectField
             aria-label="Filter by club"
-            className={cn(selectStyle, "max-w-full sm:max-w-60")}
+            className="max-w-full sm:max-w-60"
             value={club}
             onChange={(event) => setClub(event.target.value)}
           >
@@ -169,10 +151,9 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
               <option key={name}>{name}</option>
             ))}
             {club !== "all" && !clubs.includes(club) && <option>{club}</option>}
-          </select>
-          <select
+          </NativeSelectField>
+          <NativeSelectField
             aria-label="Sort notifications"
-            className={selectStyle}
             value={sort}
             onChange={(event) => setSort(event.target.value)}
           >
@@ -182,7 +163,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
             <option value="unread">Unread first</option>
             <option value="urgent">Urgent first</option>
             <option value="club">Club A–Z</option>
-          </select>
+          </NativeSelectField>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((value) => (
@@ -263,13 +244,21 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 </Button>
               </div>
             )}
+            <Button variant="outline" size="sm" className="ml-auto" disabled={!unread} onClick={() => void markAllNotificationsRead()}>
+              <MailOpen className="size-4" />Mark all as read
+            </Button>
           </div>
+          {!groups.length && <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+            <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">Club updates</h3>
+            {notificationCount}
+          </div>}
           <div className="oc-inbox-workspace space-y-6">
             {groups.map((group) => (
               <section key={group.label} aria-label={group.label}>
-                <h3 className="oc-card-heading border-b border-border py-3 uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </h3>
+                <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+                  <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">{group.label}</h3>
+                  {group.label === countGroup && notificationCount}
+                </div>
                 <div className="divide-y divide-border">
                   {group.items.map((item) => (
                     <div
