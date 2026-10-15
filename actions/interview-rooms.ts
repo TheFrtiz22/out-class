@@ -28,7 +28,7 @@ function presentRoom(room: StoredRoom, applicant = false): InterviewRoom {
 }
 async function atomic<T>(fn: (tx: AppTransactionClient) => Promise<T>, freshReads=false): Promise<T> {
   for (let attempt = 0; ; attempt++) {
-    try { return await prisma.$transaction(fn, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable }) }
+    try { return await prisma.$transaction(fn, { isolationLevel: freshReads?Prisma.TransactionIsolationLevel.ReadCommitted:Prisma.TransactionIsolationLevel.Serializable, timeout: 60000, maxWait: 15000 }) }
     catch (error) {
       const code = error && typeof error === "object" && "code" in error ? error.code : ""
       if (code === "P2034" && attempt < 2) continue
