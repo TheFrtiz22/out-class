@@ -36,7 +36,10 @@ function editDocument(row: InterviewPanelProposal, assignments: PanelAssignment[
   }
   if(requirements && (new Set(requirements.map(r=>r.slotId)).size!==requirements.length || requirements.some(r=>!slots.has(r.slotId)))) throw new Error("Choose unique staffing requirements from this draft.")
   const targets=new Map(requirements?.map(r=>[r.slotId,r.required])??[])
-  const edited = { ...document, sessions: document.sessions.map(s=>({...s,required:targets.get(s.id)??s.required,originalRequired:s.originalRequired??s.required})), assignments: assignments.map(a => ({ ...a, source: previous.get(assignmentKey(a))?.source ?? "MANUAL" as const })) }
+  const edited = { ...document, sessions: document.sessions.map(s=>({...s,required:targets.get(s.id)??s.required,originalRequired:s.originalRequired??s.required})), assignments: assignments.map(({ availabilityOverrideId: _untrusted, ...a }) => {
+    const prior = previous.get(assignmentKey(a))
+    return { ...a, source: prior?.source ?? "MANUAL" as const, ...(prior?.availabilityOverrideId ? { availabilityOverrideId: prior.availabilityOverrideId } : {}) }
+  }) }
   const validation = validatePanelDocument(edited, panelDraftScene(edited,scene)), additions = assignments.filter(a => !previous.has(assignmentKey(a)))
   const unsafe = validation.issues.filter(i => additions.some(a => a.slotId === i.slotId && (!i.memberId || a.memberId === i.memberId)))
   if (unsafe.length) throw new Error(unsafe[0].message)
@@ -50,7 +53,7 @@ export async function getPanelProposalWorkspace(raw: unknown): Promise<PanelWork
     const live = await loadPanelPlanningScene(tx, scope, document?.window ?? scope.window)
     const history=await panelPublicationViews(tx,{clubId:scope.clubId,roundId:scope.roundId}),club=await tx.club.findUniqueOrThrow({where:{id:scope.clubId},select:{name:true}})
     const member=await tx.clubMember.findUnique({where:{userId_clubId:{userId:actorId,clubId:scope.clubId}}})
-    return { clubName:club.name,canPublish:interviewCapabilities(member).manageGrants,published:history.find(v=>v.status==="PUBLISHED")??null,history, roundId: scope.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: saved ? proposalView(saved, live.scene, live.fingerprint) : null, suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint }
+    return { clubName:club.name,canPublish:interviewCapabilities(member).manageGrants,canOverrideAvailability:interviewCapabilities(member).overrideAvailability,published:history.find(v=>v.status==="PUBLISHED")??null,history, roundId: scope.roundId, roundName: live.roundName, timezone: live.timezone, scene: publicPanelScene(live.scene), proposal: saved ? proposalView(saved, live.scene, live.fingerprint) : null, suggestedWindow: live.suggestedWindow, fingerprint: live.fingerprint }
   })
 }
 export async function generatePanelProposal(raw: unknown): Promise<PanelWorkspace> {

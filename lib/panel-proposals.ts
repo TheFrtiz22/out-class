@@ -13,6 +13,7 @@ export const panelOptionsSchema = z.object({
 }).strict()
 export const panelAssignmentSchema = z.object({
   slotId: id, memberId: id, locked: z.boolean(), source: z.enum(["AUTO", "MANUAL", "EXISTING"]),
+  availabilityOverrideId: id.optional(),
 }).strict()
 export const panelAssignmentsSchema = z.array(panelAssignmentSchema).max(MAX_PANEL_ASSIGNMENTS)
   .refine(rows => new Set(rows.map(a => `${a.slotId}:${a.memberId}`)).size === rows.length, "An interviewer can appear only once in each session.")
@@ -38,6 +39,7 @@ export type PanelBusyInterval = { startTime: string; endTime: string; buffer: nu
 export type PanelMember = {
   id: string; name: string; role: string; eligible: boolean; confirmed: boolean; evidenceAccess: boolean
   allowedSlotIds: string[]; blocks: Record<string, string[]>; maxConsecutiveMinutes?: number | null
+  availabilityOverrides?: { id: string; slotId: string; conditions: string[] }[]
   // Server-only inputs. Never return other clubs' commitment intervals to clients.
   commitments?: PanelBusyInterval[]; baselineWorkloadMinutes?: number
 }
@@ -73,7 +75,13 @@ export type PanelProposalView = { id: string; revision: number; status: "UNPUBLI
 export type PanelWorkspace = {
   roundId: string; roundName: string; timezone: string; scene: PanelScene; proposal: PanelProposalView | null
   suggestedWindow: { start: string; end: string } | null; fingerprint: string
-  clubName?: string; canPublish?: boolean; published?: PanelPublishedView | null; history?: PanelPublishedView[]
+  clubName?: string; canPublish?: boolean; canOverrideAvailability?: boolean; published?: PanelPublishedView | null; history?: PanelPublishedView[]
+}
+export const availabilityOverrideConditions = ["UNCONFIRMED", "UNKNOWN_AVAILABILITY", "UNAVAILABLE"] as const
+export function assignmentBlockReasons(member: PanelMember | undefined, session: PanelSession, assignment?: PanelAssignment) {
+  const reasons = memberBlockReasons(member, session)
+  const approved = assignment?.availabilityOverrideId ? member?.availabilityOverrides?.find(o => o.id === assignment.availabilityOverrideId && o.slotId === session.id) : undefined
+  return approved ? reasons.filter(code => !approved.conditions.includes(code)) : reasons
 }
 export const assignmentKey = (a: Pick<PanelAssignment, "slotId" | "memberId">) => `${a.slotId}:${a.memberId}`
 export const sameSessionTime = (a: PanelSession, b: PanelSession) => a.startTime === b.startTime && a.endTime === b.endTime && a.buffer === b.buffer && a.roomId === b.roomId
@@ -130,7 +138,7 @@ export function validatePanelDocument(document: PanelDocument, scene: PanelScene
     if (seen.has(key)) add(a.slotId, a.memberId, "DUPLICATE"); seen.add(key)
     if (!session || !session.active || !baseline) add(a.slotId, a.memberId, "SESSION_UNAVAILABLE")
     if (session && baseline && !sameSessionTime(session, baseline)) add(a.slotId, a.memberId, "SESSION_CHANGED")
-    if (session) memberBlockReasons(members.get(a.memberId), session).forEach(code => add(a.slotId, a.memberId, code))
+    if (session) assignmentBlockReasons(members.get(a.memberId), session, a).forEach(code => add(a.slotId, a.memberId, code))
   }
   for (const memberId of new Set(document.assignments.map(a => a.memberId))) {
     const own = document.assignments.filter(a => a.memberId === memberId)
@@ -282,7 +290,7 @@ export function generatePanelAssignments(scene: PanelScene, document: PanelDocum
   return { document: result, validation }
 }
 
-export type PanelScheduleChange = { kind: "ADDED" | "REMOVED" | "REASSIGNED" | "ROOM_CHANGED" | "TIME_CHANGED" | "REQUIREMENT_CHANGED"; memberId?: string; before?: PanelSession; after?: PanelSession }
+export type PanelScheduleChange = { kind: "ADDED" | "REMOVED" | "REASSIGNED" | "ROOM_CHANGED" | "TIME_CHANGED" | "REQUIREMENT_CHANGED" | "AVAILABILITY_OVERRIDDEN"; memberId?: string; before?: PanelSession; after?: PanelSession }
 export type PanelPublishedView = { id: string; version: number; previousVersion: number; status: "PUBLISHED" | "SUPERSEDED"; document: PanelDocument; changes: PanelScheduleChange[]; publishedAt: string; author: string; understaffedOverride: boolean; overrideReason: string | null; notifications: Record<string, number> }
 export type PanelApprovalReview = { proposalId: string; revision: number; approvalToken: string; clubName: string; roundName: string; rooms: number; sessions: number; required: number; filled: number; unfilled: number; conflicts: number; canOverride: boolean; overrideWarning: string | null; changes: PanelScheduleChange[]; previousVersion: number }
 export const publishedPanelDocumentSchema = panelDocumentSchema.innerType().extend({ sessions: z.array(panelSessionSchema).max(5000), assignments: z.array(panelAssignmentSchema).max(40000) }).superRefine((d, ctx) => {
@@ -309,6 +317,10 @@ export function panelScheduleChanges(before: PanelDocument | null, after: PanelD
     added.forEach(to => changes.push({kind:"ADDED",memberId,after:to}))
   }
   for (const s of after.sessions) { const old = oldSessions.get(s.id); if (old && old.required !== s.required) changes.push({kind:"REQUIREMENT_CHANGED",before:old,after:s}) }
+  for (const a of after.assignments) {
+    const old = before?.assignments.find(prior => assignmentKey(prior) === assignmentKey(a))
+    if (old && old.availabilityOverrideId !== a.availabilityOverrideId) changes.push({ kind: "AVAILABILITY_OVERRIDDEN", memberId: a.memberId, before: oldSessions.get(a.slotId), after: newSessions.get(a.slotId) })
+  }
   return changes
 }
 export function mergePanelPublication(previous: PanelDocument | null, proposal: PanelDocument): PanelDocument {

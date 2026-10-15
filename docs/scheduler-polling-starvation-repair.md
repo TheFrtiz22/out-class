@@ -160,11 +160,11 @@ release this repair with the same explicit disablement and controlled hosted
 polling/cron verification. No recovery artifact was built/promoted in this pass;
 these are gated options, not claimed verified deployments.
 
-Production's read-only ledger has 51 completed migrations, latest
-`20261013141510_scheduled_availability_requests`; current main has 52. This
-repair adds no migration, but deployment from current main requires separately
-reviewing/applying existing main prerequisite `20261015010000_editor_drafts`
-before its code. Do not bypass the release guard. Vercel also showed a failed
+At the initial repair inspection (superseded by the integration check below),
+Production's read-only ledger had 51 completed migrations, latest
+`20261013141510_scheduled_availability_requests`; then-main had 52. That initial EditorDraft prerequisite has since been applied;
+the integration ledger check below supersedes this historical baseline. The
+repair adds no migration. Do not bypass the release guard. Vercel also showed a failed
 newer branding deployment; its diagnosis is outside this scheduler repair.
 
 Remaining limitations: repaired hosted cron/latency verification awaits an
@@ -172,12 +172,13 @@ approved deployment; provider-owner email verification remains unverified;
 gated tests and existing lint warnings remain. No known local P0/P1/P2 defect
 remains in this repair. Real write locks can still defer a club intentionally.
 
-## Exact repair manifest (9 files; no migrations)
+## Exact repair manifest versus integrated main (10 files; no new migrations)
 
 - actions/voting.ts
 - app/api/internal/scheduled-communications/route.ts
 - docs/scheduler-polling-starvation-repair.md
 - scripts/test-scheduler-polling-local.cjs
+- tests/autosave-browser.test.cjs
 - tests/decision-publication-native.test.cjs
 - tests/helpers/voting-harness.cjs
 - tests/scheduler-diagnostics.test.cjs
@@ -187,3 +188,96 @@ remains in this repair. Real write locks can still defer a club intentionally.
 The five untracked `scripts/credential-recovery/` files remain excluded and
 unchanged. No production migrations, email enablement, deployment, credential
 change, preference change, queue replay or real-applicant mutation occurred.
+
+
+## PR #34 current-main integration — 2026-10-15
+
+Integrated origin/main `c774cf0df2a39f96ca8c93923dcf08ca390b401d` into repair
+source `c33b599900729295a9f338d8f1244201cfb7c01b` using a normal merge, without
+rebasing or force-pushing. Git's actual merge was textually clean: no manual
+conflict markers or unresolved entries. Main's 42-file interview self-booking
+batch is retained. The PR diff against that main contains the 10 files above;
+main's migration is inherited, not a new repair migration.
+
+Semantic overlap review retained booking publication/revision/eligibility and
+availability attestation behavior, Demo booking adapters, current-state booking
+notification projection and email suppression, and workspace API dispatch.
+Voting snapshots, final authorization/participant rechecks, scheduler SQL,
+fairness, leases, mutation locks and sanitized diagnostics remain unchanged.
+The new booking paths do not replace the scheduler's atomic decision publisher.
+No main changes to email enablement were introduced by this integration.
+
+### Actual CI failure and fix
+
+Failed run `38679365581`, job `116240142113`, failed `pnpm validate` in
+`tests/autosave-browser.test.cjs:30`: expected zero writes, observed one. All
+scheduler diagnostics checks passed. The browser test used 500 ms wall-clock
+sleep plus sequential typing; CI contention could create a legitimate idle gap
+longer than the hook's actual 850 ms debounce. That makes an early HTTP write
+valid product behavior, not evidence of a scheduler or autosave defect.
+
+The test now controls browser time only for that boundary, retaining real DOM
+input, the actual React hook and HTTP persistence. It asserts zero writes at
+849 ms after the final keystroke, then exactly one write at 850 ms containing
+the complete text. Real time resumes for slow writes, caret, recovery, retries,
+navigation, mobile and tab-conflict coverage. No assertion was removed, skipped
+or relaxed. The corrected browser case passed initially, three additional
+standalone runs, and the integrated full suite.
+
+### Integrated checks rerun
+
+- Sustained polling: all three due jobs published while polling stayed active;
+  zero sampled Club shared-lock occupancy, zero SQL/claim errors, pool p95 2 ms;
+  polled-club lateness 1,445–1,460 ms (includes 1 s initial overdue offset).
+- Mixed workloads: 32/32/60/68 voting reads continued during the four waves.
+  Unlocked small-send p95 lateness 5,845 / 5,417 / 11,084 / 20,691 ms at
+  10 / 10 / 20 / 50 ms injected ORM latency. All 47 unlocked small sends
+  progressed per wave; the 16 deliberately locked sends published after unlock.
+  Bulk 50-applicant decisions published atomically in the first three waves;
+  the slowest rolled back within its existing transaction bound. Capacity,
+  cancellation, revocation and expired-claim recovery checks passed.
+- PostgreSQL polling/security: 5 passed; scheduler/decision/invitation/
+  availability native checks: 49 passed. Fresh history now has 53 migrations;
+  migrate deploy/status and inherited populated upgrade checks passed.
+- Separate transaction/offer/security regressions: 31 + 26 passed.
+- Complete `npm run validate` with the existing external Playwright dependency:
+  **1,154 passed, 25 gated skips, zero failures**; migration security checks,
+  TypeScript and production build passed. Lint: zero errors, 28 existing warnings.
+  Prisma validation and diff checks passed separately.
+- Local Supabase Auth + integrated Next HTTP rerun: voting read concurrent with
+  cron publication, one canonical notification/outbox row, private server upload
+  and authenticated browser Storage-write denial passed (255 ms fixture flow).
+- Authenticated rendered Chrome verification on the integrated build: saved
+  voting draft/history, polling, keyboard open/dismissal and workspace navigation.
+  The original synthetic history is retained. No hosted repair deployment tested.
+
+Integration evidence: `/tmp/outclass-pr34-validation.log`,
+`/tmp/outclass-pr34-postgres.log`, `/tmp/outclass-pr34-transactions.log`,
+`/tmp/outclass-pr34-autosave-fixed.log`, three
+`/tmp/outclass-pr34-autosave-repeat-*.log`, `/tmp/outclass-pr34-http-qa.log`,
+`/tmp/outclass-pr34-local-server.log`, `/tmp/outclass-pr34-ledger-check.json`.
+These files and local fixture scripts remain outside Git.
+
+### Current production migration prerequisites (read-only)
+
+Project `htlgjluegmdwfjkzzwic` now has **53 completed migrations**, all represented
+in the integrated source, with **no pending migration prerequisites**. In
+particular:
+
+- `20261014230000_interview_self_booking`: committed/live SHA256
+  `3c9fe28410e0894370e71710244f10b0520eec7a9a15ebebf0e4fe98014d991a`.
+- `20261015010000_editor_drafts`: committed/live SHA256
+  `99e1b6e54418c112d3ede31989390806dc47bb4f1679468fae9aa251a89b6a3b`.
+
+Every ledger entry matches committed SQL with the repository's existing LF/CRLF
+compatibility convention. Four historical entries have CRLF hashes rather than
+this Mac checkout's LF hashes; converting only line endings reproduces each
+exact hash. There is no content mismatch, unknown migration, or reason to replay
+SQL or rewrite history. Reconfirm this read-only baseline before any future
+release; this check does not authorize migration execution or deployment.
+
+Remaining gates: final-source CI and Vercel results must be checked after push;
+repaired hosted polling/cron behavior and provider-owner email verification
+remain unverified. Production queues/preferences, credentials, privileges and
+email settings were not changed. The five recovery-file hashes remain identical
+and the files remain untracked/excluded.

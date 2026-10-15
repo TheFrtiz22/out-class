@@ -7,6 +7,7 @@ import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
 import { ensureInterviewImprovements } from "./interview-improvements"
+import { emptyDemoBookingFlow } from "./interview-booking"
 export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
 let enabled = false
@@ -23,6 +24,9 @@ function ensureSemesterWork(value: DemoState) {
   }),value.anchor)
 }
 function ensureCurrentWorkflows(value: DemoState) {
+  value.bookingFlow ??= emptyDemoBookingFlow()
+  value.bookingFlow.publishedSlots ??= {}
+  value.bookingFlow.publicationReceipts ??= {}
   for (const task of value.tasks ?? []) for (const assignment of task.assignments) { assignment.groupLabel ??= null; assignment.revisionRequestedAt ??= null }
   value.tutorials ??= { student: { status: "SKIPPED", step: 0, version: 1 }, leader: { status: "SKIPPED", step: 0, version: 1 } }
   value.interviewRooms ??= []
@@ -42,7 +46,24 @@ function ensureCurrentWorkflows(value: DemoState) {
   if (!value.decisionLetters) { value.decisionLetters=[]; for(const app of value.applications) demoPublishLetter(value,app.id) }
 }
 function ensurePresentation(value: DemoState) {
+  const legacyBooking = !value.bookingFlow
   ensureCurrentWorkflows(value)
+  if (legacyBooking) {
+    // Restore only the existing canonical self-booking example; keep explicit
+    // panel denials, pauses, saved reservations and arbitrary room IDs intact.
+    const canonical = createDemoSeed(value.anchor)
+    for (const [roundId, settings] of Object.entries(canonical.bookingFlow.settings)) {
+      const original = canonical.interviewRooms.find(r => r.roundId === roundId)
+      if (!original) continue
+      const current = value.interviewRooms.find(r => r.id === original.id && r.clubId === original.clubId && r.roundId === roundId)
+      if (!current) continue
+      current.interviewersNeeded ??= original.interviewersNeeded
+      current.approvedPanelMemberIds ??= original.approvedPanelMemberIds
+      if (current.panelApprovedBy === undefined) current.panelApprovedBy = original.panelApprovedBy
+      value.bookingFlow.settings[roundId] = { ...settings }
+      value.bookingFlow.publishedSlots[roundId] = current.slots.map(slot => ({ id: slot.id, roomId: current.id, startTime: new Date(slot.startTime).toISOString(), endTime: new Date(slot.endTime).toISOString(), capacity: slot.capacity, duration: current.duration, buffer: current.buffer }))
+    }
+  }
   if (value.clubs.some(c => c.rounds.some(r => !r.type))) {
     // Only upgrade known fictional fixture identities. Preserve explicit edits,
     // archives, IDs and saved kits; never infer an arbitrary stage from its name.

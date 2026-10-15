@@ -20,7 +20,7 @@ export async function syncBookingPanel(tx: AppTransactionClient, applicationId: 
   const allowed = owner && room?.isOpen && room.clubId === app.clubId && room.roundId === roundId && booking?.roundId === roundId && app.roundId === roundId && app.status === "INTERVIEWING" && !app.round.anonymousReview ? (booking?.slot.panelScheduleVersionId ? booking.slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id))) : [];
   const members = context?.members ?? (allowed.length ? await tx.clubMember.findMany({ where: { id: { in: allowed }, clubId: app.clubId, status: "ACTIVE", user: { disabledAt: null } } }) : []);
   const pool = !context && booking?.slot.panelScheduleVersionId ? await loadInterviewerPool(tx,app.clubId,roundId) : null;
-  const eligible = members.filter(m => allowed.includes(m.id) && m.userId !== app.studentId && interviewCapabilities(m).participate && (!pool || pool.members.some(p=>p.id===m.id&&p.eligible&&p.confirmed&&intervalAvailability(p.availability,+booking!.slot.startTime,+booking!.slot.endTime+room!.buffer*60000)==="available")));
+  const eligible = members.filter(m => allowed.includes(m.id) && m.userId !== app.studentId && interviewCapabilities(m).participate && (!pool || pool.members.some(p=>p.id===m.id&&p.eligible)));
   for (const old of existing.filter(a => a.bookingManaged && !a.revokedAt && !eligible.some(m => m.id === a.memberId))) {
     if(options.notify!==false) await notifyInterviewAssignment(tx, old, "cancelled");
     await tx.interviewPanelAssignment.updateMany({ where: { id: old.id, revokedAt: null }, data: { revokedAt: new Date() } });
