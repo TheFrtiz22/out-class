@@ -96,7 +96,19 @@ export async function publishPanelSchedule(input: { clubId: string; roundId: str
   for (const memberId of new Set(draft.document.assignments.map(a => a.memberId))) { const member = s.memberships.find(m => m.id === memberId)!; demoBookingNotice(member.userId, input.clubId, `panel-schedule:${version.id}:${memberId}`, "Interview panel schedule updated", "Your approved interview assignments are available.", `/settings/interviews?clubId=${input.clubId}&roundId=${input.roundId}`) }
   return { ok: true as const, value: { publicationId: version.id, version: version.version, idempotent: false } }
 }
-export async function beginPanelScheduleRevision(input: { clubId: string; roundId: string; publishedVersion: number }) { manager(input.clubId); const state = panelState(input.roundId); if (state.published?.version !== input.publishedVersion || state.draft) return { ok: false as const, error: "Reload the published schedule." }; const saved = await saveDocument({ ...input, revision: 0 }, state.published.document); return { ok: true as const, value: { proposalId: saved.id } } }
+export async function beginPanelScheduleRevision(input: { clubId: string; roundId: string; publishedVersion: number }) {
+  manager(input.clubId)
+  const state = panelState(input.roundId)
+  if (state.published?.version !== input.publishedVersion || state.draft) return { ok: false as const, error: "Reload the published schedule." }
+  // Match live revision creation: include current times, retaining existing
+  // assignments/override IDs. Never rewrite rooms, reservations or history.
+  const workspace = await getPanelProposalWorkspace(input)
+  const sessions = workspace.scene.sessions.filter(s => s.active), ids = new Set(sessions.map(s => s.id))
+  if (!sessions.length || !workspace.suggestedWindow) return { ok: false as const, error: "There are no upcoming open times to edit." }
+  const document = { ...state.published.document, window: workspace.suggestedWindow, sessions: sessions.map(s => ({ ...s, originalRequired: s.required })), assignments: state.published.document.assignments.filter(a => ids.has(a.slotId)) }
+  const saved = await saveDocument({ ...input, revision: 0 }, document)
+  return { ok: true as const, value: { proposalId: saved.id } }
+}
 export function demoBookingCoverage(clubId: string, roundId: string, studentId?: string) {
   const scene = demoPanelScene(clubId, roundId), s = demoStore.get(), official = panelState(roundId).published, assignments = official?.document.assignments ?? scene.sessions.flatMap(slot => slot.existingMemberIds.map(memberId => ({ slotId: slot.id, memberId, locked: false, source: "EXISTING" as const })))
   const app = studentId ? s.applications.find(a => a.clubId === clubId && a.roundId === roundId && a.studentId === studentId) : null
