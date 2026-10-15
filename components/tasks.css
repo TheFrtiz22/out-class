@@ -26,7 +26,7 @@
 .oc-task-row { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; width: 100%; align-items: center; gap: .875rem; padding: .875rem 1rem; text-align: left; color: var(--foreground); transition: background-color var(--oc-duration-micro); }
 .oc-task-row:hover { background: var(--muted); }
 .oc-task-icon { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--oc-radius-sm); background: var(--muted); color: var(--muted-foreground); }
-.oc-task-icon svg { width: 1.125rem; height: 1.125rem; stroke-width: 1.65; }
+.oc-task-icon svg { width: 1.125rem; height: 1.125rem; }
 .oc-task-row-copy { min-width: 0; display: grid; gap: .2rem; }
 .oc-task-row-copy strong { font-size: var(--oc-text-body); color: var(--foreground); font-weight: 600; overflow-wrap: anywhere; }
 .oc-task-row-copy > span { color: var(--muted-foreground); font-size: var(--oc-text-caption); overflow-wrap: anywhere; }

@@ -15,7 +15,7 @@ was used. This change builds on the existing landing refinement.
   counts reflect the current search and other filters. Deadline sorting bypasses
   the default featured introduction so the first results follow the chosen order.
   Filter values survive refresh in the URL, and clearing filters removes those values
-  while retaining workspace context. Categories use relevant existing Lucide icons.
+  while retaining workspace context. Categories use relevant existing Phosphor icons.
 - Shared recruitment presentation shows actual published deadlines in Eastern Time,
   distinguishes expired/unavailable/unclaimed/unknown states, and prevents a cached
   open flag from advertising a passed deadline. Unknown dates do not imply urgency.

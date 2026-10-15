@@ -7,7 +7,7 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function load(file) {
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022 } }).outputText
-  new Function('require', 'module', 'exports', code)(name => name.startsWith('@/') ? load(name.slice(2) + (name.startsWith('@/lib/') ? '.ts' : '.tsx')) : require(name), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(name => name === '@/components/icons' ? require('./helpers/icons.cjs') : name.startsWith('@/') ? load(name.slice(2) + (name.startsWith('@/lib/') ? '.ts' : '.tsx')) : require(name), mod, mod.exports)
   return mod.exports
 }
 test('native select retains form data, options, labels, disabled state and change handler', () => {

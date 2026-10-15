@@ -49,7 +49,7 @@ Public marketing and authentication use Caslon throughout. Authenticated product
 | Tabs | Existing Radix exports; `TabsList variant="underline"` avoids another rounded container. Default remains compatible. |
 | Tooltip | Existing exports, 350ms delay; never use a tooltip as the only accessible name. |
 | Toast | Existing Sonner `toast` API; semantic tones centralized in the root `Toaster`. Inline feedback remains necessary for field errors. |
-| Loading | `LoadingState` reserves rows/cards or gives inline Lucide feedback; one accessible status. `Skeleton` remains decorative. |
+| Loading | `LoadingState` reserves rows/cards or gives inline Phosphor feedback; one accessible status. `Skeleton` remains decorative. |
 | Empty state | `EmptyState`: title, description, optional icon/action; compact/roomy density, start/center alignment, plain/subtle/outlined tone; no default card. |
 | Progress | `Progress`: numeric value/max or indeterminate null; supply aria-label/aria-labelledby. Values are bounded and passed to Radix for accessible reporting. |
 | Heading | `SectionHeading`: explicit h1/h2/h3, optional eyebrow, description, action, and editorial style. |

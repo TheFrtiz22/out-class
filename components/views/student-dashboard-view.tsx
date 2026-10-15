@@ -304,7 +304,7 @@ export function StudentDashboardView({
             </ul>
           ) : (
             <div className="oc-home-empty">
-              <FileText size={23} strokeWidth={1.5} aria-hidden="true" />
+              <FileText size={23} aria-hidden="true" />
               <h3>{unavailable ? "Applications are unavailable" : "No applications yet"}</h3>
               <p>
                 {unavailable
@@ -333,7 +333,7 @@ export function StudentDashboardView({
             </ul>
           ) : (
             <div className="oc-home-agenda-empty">
-              <CalendarDays size={22} strokeWidth={1.5} aria-hidden="true" />
+              <CalendarDays size={22} aria-hidden="true" />
               <h3>{agendaUnavailable ? "Your agenda is unavailable" : "Nothing scheduled yet"}</h3>
               <p>
                 {agendaUnavailable
@@ -356,7 +356,7 @@ export function StudentDashboardView({
               action="Open inbox"
               onClick={() => onNavigate("inbox")}
             />
-            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} strokeWidth={1.5} aria-hidden="true" /><h3>You’re all caught up</h3><p>Application updates and club announcements will appear here.</p></div>}
+            {updates.length === 0 && <div className="oc-home-empty"><Bell size={23} aria-hidden="true" /><h3>You’re all caught up</h3><p>Application updates and club announcements will appear here.</p></div>}
             <ul className="oc-home-list">
               {updates.map((update) => (
                 <li key={update.id}>

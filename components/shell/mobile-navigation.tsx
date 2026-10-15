@@ -14,7 +14,7 @@ export function MobileNavigation({ items, active, manager, onSelect, onLink, onM
     {primary.map(item => {
       const Icon = icons[item.id] || Home
       const props = { className: "oc-mobile-destination", "aria-current": (active === item.id || !!item.navGroup && item.navGroup === activeItem?.navGroup) ? "page" as const : undefined }
-      const content = <><Icon size={20} aria-hidden="true" /><span>{item.id === "student-dashboard" ? "Home" : item.label}</span></>
+      const content = <><Icon size={20} weight={props["aria-current"] ? "fill" : "regular"} aria-hidden="true" /><span>{item.id === "student-dashboard" ? "Home" : item.label}</span></>
       return item.href ? <Link key={item.id} href={item.href} prefetch={false} {...props} onClick={event => { onLink(event); handleClubLink(event, item.href!) }}>{content}</Link> : <button type="button" key={item.id} {...props} onClick={() => onSelect(item.id)}>{content}</button>
     })}
     <button type="button" data-navigation-toggle className="oc-mobile-destination" aria-label="More navigation and workspaces" onClick={onMore}><Menu size={20} aria-hidden="true" /><span>More</span></button>

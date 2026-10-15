@@ -20,7 +20,7 @@ export function StudentWorkspacePreview() {
       <aside className="oc-preview-sidebar" aria-label="Example workspace navigation">
         <OutClassLogo className="h-8 w-auto" />
         <p className="oc-preview-campus">University of Virginia</p>
-        <div className="oc-preview-nav" aria-hidden="true">{studentNav.map(({ id, title, icon: Icon }) => <div key={id} data-active={id === "student-dashboard"}><Icon size={16} strokeWidth={1.65} /><span>{title}</span></div>)}</div>
+        <div className="oc-preview-nav" aria-hidden="true">{studentNav.map(({ id, title, icon: Icon }) => <div key={id} data-active={id === "student-dashboard"}><Icon size={16} weight={id === "student-dashboard" ? "fill" : "regular"} /><span>{title}</span></div>)}</div>
         <div className="oc-preview-identity"><Avatar><AvatarImage src={example.headshot} alt="" loading="lazy" /><AvatarFallback>{example.initials}</AvatarFallback></Avatar><div><strong>{example.person}</strong><span>Student workspace</span></div></div>
       </aside>
       <div className="oc-preview-main">

@@ -39,7 +39,7 @@ export function ProcessTimeline() {
         {steps.map(({ icon: Icon, title, copy, href }, index) => (
           <a key={title} href={href}>
             <span className="oc-process-icon">
-              <Icon size={21} strokeWidth={1.6} aria-hidden="true" />
+              <Icon size={21} aria-hidden="true" />
             </span>
             <span className="oc-process-number">0{index + 1}</span>
             <h3>{title}</h3>

@@ -151,7 +151,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             aria-pressed={filters.category === "all"}
             onClick={() => change("category", "all")}
           >
-            <Users size={18} aria-hidden="true" />All interests <span>{clubs.length}</span>
+            <Users size={18} weight={filters.category === "all" ? "fill" : "regular"} aria-hidden="true" />All interests <span>{clubs.length}</span>
           </button>
           {categories.map((category) => {
             const CategoryIcon = categoryIcon(category)
@@ -162,7 +162,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
               aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
               onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
             >
-              <CategoryIcon size={18} aria-hidden="true" />{category}
+              <CategoryIcon size={18} weight={filters.category.toLowerCase() === category.toLowerCase() ? "fill" : "regular"} aria-hidden="true" />{category}
               <span>{clubs.filter((club) => club.category === category).length}</span>
             </button>
           )})}
