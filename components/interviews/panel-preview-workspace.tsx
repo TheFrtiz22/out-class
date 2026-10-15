@@ -63,7 +63,7 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
     else if (workspace) onSummary?.({ hasDraft: false, required: workspace.scene.sessions.reduce((n, s) => n + s.required, 0), filled: workspace.scene.sessions.reduce((n, s) => n + s.existingMemberIds.length, 0), state: workspace.published ? "Published" : "No panel draft" })
   }, [draft, workspace, onSummary])
   useEffect(() => {
-    const changed = () => { void getPanelProposalWorkspace({ clubId, roundId }).then(value => { setWorkspace(value); setDraft(previous => previous ? { ...previous, stale: true } : previous) }).catch(() => setError("Staffing changed. Reload or revalidate before publishing.")) }
+    const changed = () => { void getPanelProposalWorkspace({ clubId, roundId }).then(value => { setWorkspace(value); setDraft(previous => previous ? { ...previous, stale: true } : previous); if (value.suggestedWindow) { const window = value.suggestedWindow; setStart(previous => previous || dayKey(window.start, SCHEDULING_TIMEZONE)); setEnd(previous => previous || dayKey(new Date(+new Date(window.end) - 1), SCHEDULING_TIMEZONE)) } }).catch(() => setError("Staffing changed. Reload or revalidate before publishing.")) }
     window.addEventListener("outclass:staffing-changed", changed)
     return () => window.removeEventListener("outclass:staffing-changed", changed)
   }, [clubId, roundId])

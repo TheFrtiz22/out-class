@@ -3,6 +3,23 @@ const {chromium}=require('playwright'),{fixture}=require('./helpers/scheduling-u
 async function launch(){return chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})})}
 async function shot(page,name){if(!process.env.OUTCLASS_SCHEDULING_SCREENSHOTS)return;fs.mkdirSync(process.env.OUTCLASS_SCHEDULING_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.OUTCLASS_SCHEDULING_SCREENSHOTS,name+'.png'),fullPage:true,animations:'disabled'})}
 
+test('browser: adding the first times after visiting an empty panel initializes assignment dates without reload',async()=>{
+ const f=await fixture({fresh:true});let browser
+ try{
+  browser=await launch();const page=await browser.newPage();page.setDefaultTimeout(15000)
+  await page.goto(`${f.url}/?roundId=${f.scope.roundId}&schedule=review`)
+  await page.getByRole('heading',{name:'No upcoming interview sessions',exact:true}).waitFor()
+  await page.getByRole('button',{name:'Go to Rooms',exact:true}).click()
+  await page.getByRole('button',{name:'Add interview times',exact:true}).click()
+  const dialog=page.getByRole('dialog');await dialog.getByLabel('Room name',{exact:true}).fill('Synthetic first times')
+  await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click()
+  const assign=page.getByRole('region',{name:'Review Panel Assignments'}).getByRole('button',{name:'Assign available interviewers',exact:true})
+  await assign.click();await page.locator('.ir-schedule-row').first().waitFor()
+  assert.equal(f.state().bookingFlow.panels[f.scope.roundId].draft.document.sessions.length,6)
+  assert.equal(f.liveCalls(),0)
+ }finally{await browser?.close();await f.close()}
+})
+
 test('browser: times → confirmed interviewers → booking, issue editor/override, pause and edits preserve reservations in isolated Demo',async()=>{
  const f=await fixture({fresh:true});let browser
  try{
