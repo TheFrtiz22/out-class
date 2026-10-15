@@ -136,7 +136,7 @@ export async function reserveInterview(raw: { applicationId: string; slotId: str
     if (existing && +existing.slot.startTime <= Date.now()) throw new Error("This interview has already started. Contact the club to change it.")
     if (!slot.room.isOpen || +slot.startTime <= Date.now()) throw new Error("This slot is no longer available.")
     const round = await tx.pipelineRound.findUniqueOrThrow({ where: { id: application.roundId }, include: { bookingCycle: true } })
-    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Booking is not currently published for your invited round and recruitment cycle.")
+    if (!isPublishedBookingSlot(round.bookingSlots, slot, slot.room) || !round.bookingPublishedAt || round.bookingPaused || round.archivedAt || round.anonymousReview || !["INTERVIEW", "GROUP_INTERVIEW"].includes(round.type) || round.bookingCycleId !== application.recruitmentCycleId || round.bookingCycle?.archivedAt) throw new Error("Booking is not currently published for your invited round and recruitment cycle.")
     if (existing && !round.bookingAllowRescheduling) throw new Error("This club does not allow self-service rescheduling. Your original reservation is retained; contact the club.")
     await tx.$queryRaw`SELECT id FROM "InterviewSlot" WHERE id=${slot.id} FOR UPDATE`
     const coverage = await interviewBookingCoverage(tx, application.clubId, round.id, application)

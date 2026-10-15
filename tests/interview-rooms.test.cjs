@@ -50,7 +50,7 @@ function apiHarness() {
   $queryRaw:async()=>[],
   application:{findFirst:async({where})=>state.app && where.id===state.app.id && (!where.studentId||where.studentId===state.app.studentId)?state.app:null},
   interviewSlot:{findUnique:async()=>state.slot,findMany:async()=>state.others},
-  pipelineRound:{findUnique:async()=>({bookingAllowCancellation:true}),findUniqueOrThrow:async()=>({id:id(2),bookingPublishedAt:new Date(),bookingSlots:[core.bookingSlotSnapshot(state.slot,state.room)],bookingCycleId:null,bookingAllowRescheduling:true}),findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
+  pipelineRound:{findUnique:async()=>({bookingAllowCancellation:true}),findUniqueOrThrow:async()=>({id:id(2),type:"INTERVIEW",bookingPublishedAt:new Date(),bookingSlots:[core.bookingSlotSnapshot(state.slot,state.room)],bookingCycleId:null,bookingAllowRescheduling:true}),findFirst:async({where})=>where.id===id(2)&&where.clubId===id(1)?{id:id(2)}:null},
   clubMember:{count:async()=>0,findMany:async()=>[]},
   interviewRoom:{create:async({data})=>{state.created.push(data);return {id:id(3)}},update:async()=>{}},
   interviewPanelAssignment:{findMany:async()=>[]},
