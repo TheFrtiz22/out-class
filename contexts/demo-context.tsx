@@ -107,14 +107,21 @@ export function DemoDataProvider({
   function viewAs(role: "student" | "leader", clubId = state?.clubs[0].id) {
     if (!clubId) return
     try {
+      const current = demoStore.get()
+      const url = new URL(window.location.href)
+      url.searchParams.delete("demoClub")
+      // Selecting an already active club must not reset its URL or mounted drafts.
+      if (clubId === current.clubs[0].id && current.perspective.role === role && current.perspective.clubId === clubId) {
+        if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url)
+        return
+      }
       demoStore.mutate((s) => {
         if (clubId !== s.clubs[0].id) throw new Error("Demo management is limited to MII.")
         s.perspective = { role, clubId }
       })
-      const url = new URL(window.location.href)
-      url.searchParams.delete("demoClub")
       const requestedStudentView = role === "student" && url.searchParams.get("workspace") === "student" && resolveStudentView(url.searchParams.get("view"))
-      if (!requestedStudentView) {
+      const requestedClubView = role === "leader" && url.pathname === `/club/${encodeURIComponent(clubId)}/workspace`
+      if (!requestedStudentView && !requestedClubView) {
         url.searchParams.delete("workspace")
         url.searchParams.delete("view")
         url.searchParams.delete("section")

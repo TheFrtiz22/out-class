@@ -4,7 +4,7 @@ import { authorizeClubTransaction } from "@/lib/club-transaction-authorization";
 import { publishVotingCandidates } from "@/utils/voting-publication";
 import { academicYear } from "@/lib/recruitment-profile";
 
-import { assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
+import { CLUB_SUSPENDED_MESSAGE, assertClubOperational, lockOperationalClub } from "@/lib/club-suspension";
 import { z } from "zod"
 import { Prisma } from "@prisma/client"
 import { prisma, type AppTransactionClient } from "@/utils/prisma"
@@ -30,8 +30,16 @@ async function session(tx: AppTransactionClient, clubId: string, id: string) {
 export async function getVotingWorkspace(clubId: string, sessionId?: string) {
   z.string().uuid().parse(clubId); if (sessionId) z.string().uuid().parse(sessionId)
   const { membership } = await requireClubPermission(clubId, ["applications.review"])
-  return prisma.$transaction(async tx => {
-    const m = await member(tx,clubId,membership.id,["applications.review"])
+  // Polling is a consistent, read-only snapshot, not a club mutation. Holding
+  // Club FOR SHARE throughout its queries prevents SKIP LOCKED workers claiming
+  // any work for this club. Mutations still use member() and its locking gates.
+  const result = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SET TRANSACTION READ ONLY`;
+    const club = await tx.club.findUnique({ where: { id: clubId }, select: { suspendedAt: true } });
+    if (!club || club.suspendedAt) throw Error(CLUB_SUSPENDED_MESSAGE);
+    const m = await tx.clubMember.findFirst({ where: { id: membership.id, clubId } });
+    if (!m || !hasPermission(m,"applications.review")) throw Error("Voting permission required.");
+    if (JSON.stringify(m) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
     const leadershipView = hasPermission(m,"decisions.view") || hasPermission(m,"decisions.manage")
     if (!hasPermission(m,"decisions.vote") && !leadershipView) throw Error("Voting access required.")
     const s = await tx.votingSession.findFirst({ where: { clubId, ...(sessionId ? {id:sessionId} : !leadershipView ? {participants:{some:{memberId:m.id}}} : {}) }, orderBy: {createdAt:"desc"}, include })
@@ -42,6 +50,15 @@ export async function getVotingWorkspace(clubId: string, sessionId?: string) {
     const rounds = await tx.pipelineRound.findMany({where:{clubId,archivedAt:null},orderBy:{order:"asc"}})
     return { sessions, joinedParticipants:joinedParticipants.map(v=>({id:v.id,label:v.user.studentProfile ? `${v.user.studentProfile.firstName} ${v.user.studentProfile.lastName}` : "Club member", joinedAt:s!.participants.find(p=>p.memberId===v.id)?.joinedAt??null})), session:s, summary:s ? summarizeVoting(s):null, memberId:m.id, canManage:hasPermission(m,"decisions.manage"), canStart:hasPermission(m,"decisions.start"), canReopen:hasPermission(m,"decisions.reopen"), canFinish:hasPermission(m,"decisions.finish"), canPublish:hasPermission(m,"decisions.publish")&&hasPermission(m,"applicants.identify"), canVote:hasPermission(m,"decisions.vote") && !!s?.participants.some(p=>p.memberId===m.id), eligible:eligible.map(v=>({id:v.id,label:v.user.email})), rounds:rounds.map(r=>({id:r.id,name:r.name})), academicYears: s ? (await tx.application.findMany({where:{id:{in:s.candidates.map(c=>c.applicationId)},clubId},select:{id:true,student:{select:{studentProfile:{select:{gradYear:true,transferStudent:true}}}}}})).map(a => ({ id:a.id, academicYear:a.student.studentProfile ? academicYear(a.student.studentProfile) : "Year unavailable" })):[] }
   },{isolationLevel:"RepeatableRead"})
+  // Revalidate after releasing the snapshot: suspension, account disablement,
+  // support-session expiry, and membership/role revocation must deny its payload.
+  const current = await requireClubPermission(clubId, ["applications.review"]);
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw Error("Voting access changed. Refresh and try again.");
+  if (result.session && !hasPermission(current.membership,"decisions.view") && !hasPermission(current.membership,"decisions.manage")) {
+    const participant = await prisma.votingParticipant.findUnique({ where: { sessionId_memberId: { sessionId: result.session.id, memberId: current.membership.id } } });
+    if (!participant) throw Error("Voting access changed. Refresh and try again.");
+  }
+  return result;
 }
 export async function createVotingSession(input: unknown) {
   const d=createVotingSchema.parse(input)

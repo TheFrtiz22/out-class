@@ -2,7 +2,7 @@ const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const ts = require('typescript')
-function provider({ storageFails = false } = {}) {
+function provider({ storageFails = false, role = 'student' } = {}) {
   const states = [], effects = [], pending = []
   let cursor = 0
   const requests = []
@@ -22,8 +22,8 @@ function provider({ storageFails = false } = {}) {
     },
   }
   let active = false
-  const listeners = new Set(), demoState = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }
-  const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { const state = { clubs: [{id:'mii'}], perspective: {role:'student',clubId:'mii'} }; fn(state); changes.push(state) }, reset() { changes.push('reset') } }
+  const listeners = new Set(), demoState = { clubs: [{id:'mii'}], perspective: {role,clubId:'mii'} }
+  const changes = [], store = { subscribe: fn => { listeners.add(fn); return () => listeners.delete(fn) }, stop() { active = false }, active: () => active, get: () => demoState, start() { if (storageFails) throw Error('Storage unavailable'); active = true; listeners.forEach(fn => fn()) }, mutate(fn) { fn(demoState); changes.push(structuredClone(demoState)); listeners.forEach(fn => fn()) }, reset() { changes.push('reset') } }
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('contexts/demo-context.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
   const mocks = { react, '@/components/outclass-loading-screen': { OutClassLoadingScreen: 'OutClassLoadingScreen' }, '@/lib/demo/store': { demoStore: store }, '@/lib/student-navigation': { resolveStudentView: value => ['corkboard','tracker','explore'].includes(value) ? value : null } }
@@ -124,4 +124,43 @@ test('reset from a club route returns to canonical student Home instead of re-en
  assert.equal(url.searchParams.get('view'), 'student-dashboard')
  assert.equal(url.searchParams.get('workspace'), 'student')
  assert.equal(url.searchParams.has('tool'), false)
+})
+
+test('reselecting the active demo leader preserves the interview route and mounted drafts', () => {
+  const h = provider({ role: 'leader' }), props = { clearStaleSession: false, enabled: true, allowed: true }
+  h.render(props); h.effects()
+  const tree = h.render(props), key = tree.props.children[1].key
+  const href = 'http://localhost/club/mii/workspace?section=recruitment&tool=interviews&interview=1&roundId=round&applicantId=app'
+  h.window.location.href = href
+  tree.props.value.viewAs('leader', 'mii')
+  tree.props.value.viewAs('leader', 'mii')
+  assert.equal(h.window.location.href, href)
+  assert.equal(h.render(props).props.children[1].key, key, 'Repeated selection must not remount draft editors')
+  assert.deepEqual(h.changes, [], 'Repeated selection must not rewrite saved Demo data')
+  assert.equal(h.requests.length, 0)
+})
+
+test('opening a direct demo interview link from a saved student perspective retains its full destination', () => {
+  const h = provider(), props = { clearStaleSession: false, enabled: true, allowed: true }
+  h.render(props); h.effects()
+  const href = 'http://localhost/club/mii/workspace?section=recruitment&tool=interviews&interview=1&roundId=round&applicantId=app'
+  h.window.location.href = href + '&demoClub=mii'
+  h.render(props).props.value.viewAs('leader', 'mii')
+  assert.equal(h.window.location.href, href)
+  assert.equal(h.changes[0].perspective.role, 'leader')
+  h.render(props).props.value.viewAs('leader', 'mii')
+  assert.equal(h.window.location.href, href)
+  assert.equal(h.changes.length, 1)
+  assert.equal(h.requests.length, 0)
+})
+
+test('preserving club deep links never permits management of another demo club', () => {
+  const h = provider()
+  const href = 'http://localhost/club/other/workspace?section=recruitment&tool=interviews&interview=1'
+  h.window.location.href = href
+  h.render({ clearStaleSession: false }).props.value.viewAs('leader', 'other')
+  assert.equal(h.window.location.href, href)
+  assert.deepEqual(h.changes, [])
+  assert.equal(h.requests.length, 0)
+  assert.equal(h.render({ clearStaleSession: false }).props.children[0].props.role, 'alert')
 })

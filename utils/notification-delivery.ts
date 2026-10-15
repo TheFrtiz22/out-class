@@ -5,6 +5,7 @@ import { buildNotificationEmail, communicationEmailConfig, NotificationDeliveryE
 import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from "@/utils/official-panel-schedule";
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
+import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 
 // Retry the exact persisted payload inside Resend's 24-hour deduplication window.
 // A crash outside that window requires receipt reconciliation, never a blind resend.
@@ -30,6 +31,9 @@ export async function processNotificationEmails(limit = 10) {
       const rows = await tx.notificationEmailOutbox.findMany({ where: { status: "PENDING", notification: { userId } }, include: { notification: { include: { club: { select: { name: true, suspendedAt: true } } } } }, orderBy: { createdAt: "asc" }, take: 100 });
       const eligible = [];
       for (const row of rows) {
+        if (row.notification.eventKey.startsWith(applicantBookingNotificationPrefix) && !await currentApplicantBookingNotification(tx, row.notification, userId)) {
+          await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
+        }
         if (user.disabledAt || row.notification.archivedAt || !optionalEmailAllowed(user.notificationPreferences, row.notification.type)) {
           await tx.notificationEmailOutbox.update({ where: { notificationId: row.notificationId }, data: { status: "SUPPRESSED" } }); suppressed++; continue;
         }
@@ -75,6 +79,9 @@ export async function processNotificationEmails(limit = 10) {
       if (!(row.status === "QUEUED" && row.nextAttemptAt <= new Date() || row.status === "SENDING" && row.leaseUntil && row.leaseUntil < new Date())) return null;
       const payload = notificationEmailPayload.parse(row.payload);
       let inaccessibleMessage = false;
+      for (const item of row.items.filter(item => item.notification.eventKey.startsWith(applicantBookingNotificationPrefix))) {
+        if (!await currentApplicantBookingNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
+      }
       for (const item of row.items.filter(item => item.notification.eventKey?.startsWith(assignmentNotificationPrefix) && item.notification.eventKey.includes(":assigned:"))) {
         if (!await currentAssignmentNotification(tx, item.notification, row.userId)) inaccessibleMessage = true;
       }

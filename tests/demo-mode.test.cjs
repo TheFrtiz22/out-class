@@ -405,10 +405,15 @@ test("demo interview room creation, booking, reschedule and cancel persist throu
  const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts')
  demoStore.start()
  let clubId,roundId,applicationId
- demoStore.mutate(s=>{const c=s.clubs[0];clubId=c.id;roundId=c.rounds[0].id;s.perspective={role:'leader',clubId};const app=s.applications.find(a=>a.clubId===clubId&&a.studentId===s.students[0].id);applicationId=app.id;app.status='INTERVIEWING';app.roundId=roundId;s.slots=s.slots.filter(slot=>slot.applicationId!==applicationId);s.interviewRooms=[];s.roomBookings=[]})
- await api.createInterviewRoom({clubId,roundId,name:'Test room',location:'Test Hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-09-07'],start:'10:00',end:'12:00',duration:20,buffer:0,capacity:1,panelMemberIds:[]})
+ demoStore.mutate(s=>{const c=s.clubs[0];clubId=c.id;roundId=c.rounds[0].id;c.rounds[0].type='INTERVIEW';s.perspective={role:'leader',clubId};const app=s.applications.find(a=>a.clubId===clubId&&a.studentId===s.students[0].id);applicationId=app.id;app.status='INTERVIEWING';app.roundId=roundId;s.slots=s.slots.filter(slot=>slot.applicationId!==applicationId);s.interviewRooms=[];s.roomBookings=[]})
+ await api.createInterviewRoom({clubId,roundId,name:'Test room',location:'Test Hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-09-07'],start:'10:00',end:'12:00',duration:20,buffer:0,capacity:1,interviewersNeeded:1,panelMemberIds:[]})
  let workspace=await api.getRoomWorkspace(clubId);assert.equal(workspace.rooms.length,1);assert.equal(workspace.rooms[0].slots.length,6)
  const slots=workspace.rooms[0].slots
+ await assert.rejects(api.reserveInterview({applicationId,slotId:slots[0].id}),/published/)
+ const scope={clubId,roundId},initial=await api.getPanelProposalWorkspace(scope),plan=await api.generatePanelProposal({...scope,revision:0,window:initial.suggestedWindow,options:{maxConsecutiveMinutes:null,breakMinutes:15},mode:'REGENERATE'})
+ const review=await api.reviewPanelPublication({...scope,revision:plan.proposal.revision});assert.equal(review.ok,true,review.error)
+ const published=await api.publishPanelSchedule({...scope,...review.value});assert.equal(published.ok,true,published.error)
+ await api.setInterviewBookingPublication({...scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true})
  await api.reserveInterview({applicationId,slotId:slots[0].id})
  demoStore.start()
  let student=await api.getApplicantSchedule(applicationId);assert.equal(student.booking.slotId,slots[0].id);assert.equal(student.rooms[0].slots[0].booked,1);assert.deepEqual(student.rooms[0].panelMemberIds,[])

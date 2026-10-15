@@ -90,7 +90,7 @@ function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => v
                   ? `${app.responsesSaved} ${app.responsesSaved === 1 ? "response" : "responses"} saved`
                   : "Pick up where you left off"
               : app.status === "Interviewing"
-                ? "Review your interview details"
+                ? "Book your interview / view appointment"
                 : app.status === "Accepted"
                   ? "Your decision is ready"
                   : app.status === "Rejected"

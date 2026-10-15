@@ -13,6 +13,7 @@ export function interviewCapabilities(member: InterviewAccess | null | undefined
     editKit: leadership,
     readClosing: leadership,
     moderateResume: offices.includes("PRESIDENT") || offices.includes("VICE_PRESIDENT"),
+    overrideAvailability: offices.includes("PRESIDENT"),
     participate: hasPermission(member, "applications.review") && hasPermission(member, "applicants.identify"),
     manageGrants: isActiveMembership(member) && member?.isOwner === true,
   };

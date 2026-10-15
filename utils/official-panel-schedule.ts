@@ -4,7 +4,7 @@ import type { AppTransactionClient } from "@/utils/prisma"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { publishedPanelDocumentSchema, type PanelScheduleChange } from "@/lib/panel-proposals"
 export const panelScheduleNotificationPrefix="panel-schedule:"
-export type OwnPanelAssignment={id:string;clubId:string;clubName:string;roundId:string;roundName:string;roomName:string;location:string;timezone:string;startTime:string;endTime:string;buffer:number;version:number}
+export type OwnPanelAssignment={id:string;clubId:string;clubName:string;roundId:string;roundName:string;roomName:string;location:string;timezone:string;startTime:string;endTime:string;buffer:number;version:number;availabilityOverridden?:boolean}
 /** Current official slot projection only. No drafts, applicant identities or other clubs' private panels. */
 export async function ownPanelAssignments(tx:AppTransactionClient,userId:string):Promise<OwnPanelAssignment[]>{
  const members=await tx.clubMember.findMany({where:{userId,status:"ACTIVE",club:{suspendedAt:null},user:{disabledAt:null}},include:{club:{select:{name:true}}}})
@@ -16,7 +16,7 @@ export async function ownPanelAssignments(tx:AppTransactionClient,userId:string)
  return slots.flatMap(s=>{
   const room=s.room!,publisher=s.panelScheduleVersion?.publishedBy??room.panelApprovedBy,assigned=s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds.filter(id=>room.panelMemberIds.includes(id))
   if(!publisher||!ownerKeys.has(`${room.clubId}:${publisher}`)||!allowed.some(m=>m.clubId===room.clubId&&assigned.includes(m.id)))return[]
-  return[{id:s.id,clubId:room.clubId,clubName:allowed.find(m=>m.clubId===room.clubId)!.club.name,roundId:room.roundId,roundName:room.round.name,roomName:room.name,location:room.location,timezone:room.timezone,startTime:s.startTime.toISOString(),endTime:s.endTime.toISOString(),buffer:room.buffer,version:s.panelScheduleVersion?.version??0}]
+  return[{id:s.id,clubId:room.clubId,clubName:allowed.find(m=>m.clubId===room.clubId)!.club.name,roundId:room.roundId,roundName:room.round.name,roomName:room.name,location:room.location,timezone:room.timezone,startTime:s.startTime.toISOString(),endTime:s.endTime.toISOString(),buffer:room.buffer,version:s.panelScheduleVersion?.version??0,availabilityOverridden:!!(s.panelScheduleVersion?.document as {assignments?:{slotId:string;memberId:string;availabilityOverrideId?:string}[]})?.assignments?.some(a=>a.slotId===s.id&&allowed.some(m=>m.id===a.memberId)&&a.availabilityOverrideId)}]
  })
 }
 export function panelScheduleLine(s:{roomName:string;timezone:string;startTime:string;endTime:string}){

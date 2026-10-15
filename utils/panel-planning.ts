@@ -4,6 +4,7 @@ import type { AppTransactionClient } from "@/utils/prisma"
 import { intervalAvailability, localParts } from "@/lib/availability"
 import { sessionsOverlap, MAX_PANEL_SESSIONS, type PanelBusyInterval, type PanelMember, type PanelScene, type PanelSession } from "@/lib/panel-proposals"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
+import { validAvailabilityOverrides } from "@/utils/interview-availability-overrides"
 
 type Scope = { clubId: string; roundId: string }
 export async function planningRound(tx: AppTransactionClient, scope: Scope) {
@@ -15,9 +16,10 @@ export async function planningRound(tx: AppTransactionClient, scope: Scope) {
 /** Batch all sources once, then resolve every interval in memory. */
 export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Scope, window?: { start: string; end: string }) {
   const round = await planningRound(tx, scope)
-  const [rooms, pool] = await Promise.all([
+  const [rooms, pool, overrides] = await Promise.all([
     tx.interviewRoom.findMany({ where: { clubId: scope.clubId, roundId: scope.roundId }, include: { slots: { orderBy: { startTime: "asc" } } }, orderBy: { createdAt: "asc" } }),
     loadInterviewerPool(tx, scope.clubId, scope.roundId),
+    validAvailabilityOverrides(tx, scope.clubId, scope.roundId),
   ])
   const now = Date.now()
   const future = rooms.filter(r => r.isOpen).flatMap(r => r.slots.filter(s => +s.startTime > now))
@@ -81,19 +83,20 @@ export async function loadPanelPlanningScene(tx: AppTransactionClient, scope: Sc
   const parts = (time: number | Date, zone: string) => { const key = `${zone}:${+time}`; let value = partsCache.get(key); if (!value) { value = localParts(time, zone); partsCache.set(key, value) } return value }
   const members: PanelMember[] = pool.members.map(m => {
     const commitments = [...(committed.get(m.userId)?.values() ?? [])], allowedSlotIds: string[] = [], blocks: Record<string, string[]> = {}
-    if (m.eligible && m.confirmed && m.evidenceAccess) for (const s of sessions) {
+    if (m.eligible && m.evidenceAccess) for (const s of sessions) {
       const reasons: string[] = [], availability = intervalAvailability(m.availability, +new Date(s.startTime), +new Date(s.endTime) + s.buffer * 60000, parts)
       if (availability !== "available") reasons.push(availability === "unknown" ? "UNKNOWN_AVAILABILITY" : "UNAVAILABLE")
       if (commitments.some(c => sessionsOverlap(c, s))) reasons.push("OFFICIAL_COMMITMENT")
       if (reasons.length) blocks[s.id] = reasons; else allowedSlotIds.push(s.id)
     }
     return { id: m.id, name: m.name, role: m.role, eligible: m.eligible, confirmed: m.confirmed, evidenceAccess: m.evidenceAccess, commitments,
+      availabilityOverrides: overrides.filter(o => o.memberId === m.id).map(o => ({ id: o.id, slotId: o.slotId, conditions: o.conditions })),
       baselineWorkloadMinutes: commitments.reduce((n, c) => n + (+new Date(c.endTime) - +new Date(c.startTime)) / 60000 + c.buffer, 0), allowedSlotIds, blocks }
   })
   const scene: PanelScene = { sessions, members }
   const source = { round: { id: round.id, archivedAt: round.archivedAt, type: round.type, anonymousReview: round.anonymousReview, configuration: round.configuration, panelScheduleRevision: round.panelScheduleRevision }, roles: pool.club,
     rooms: rooms.map(r => ({ id:r.id,name:r.name,location:r.location,kind:r.kind,timezone:r.timezone,duration:r.duration,buffer:r.buffer,isOpen:r.isOpen,panelApprovalRevision:r.panelApprovalRevision,panelApprovedBy:r.panelApprovedBy,panelMemberIds:r.panelMemberIds,approvedPanelMemberIds:r.approvedPanelMemberIds,slots:r.slots.map(s=>({id:s.id,capacity:s.capacity,panelScheduleVersionId:s.panelScheduleVersionId,publishedPanelMemberIds:s.publishedPanelMemberIds})) })),
-    sessions, candidates: pool.members, commitments: [...committed].map(([userId, rows]) => ({ userId, rows: [...rows.values()].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)) })) }
+    sessions, overrides, candidates: pool.members, commitments: [...committed].map(([userId, rows]) => ({ userId, rows: [...rows.values()].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.endTime.localeCompare(b.endTime)) })) }
   const fingerprint = createHash("sha256").update(JSON.stringify(source)).digest("hex")
   return { scene, fingerprint, publishedRevision: round.panelScheduleRevision, roundName: round.name, suggestedWindow, timezone: SCHEDULING_TIMEZONE, window: selected }
 }
