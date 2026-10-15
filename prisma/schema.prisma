@@ -12,6 +12,7 @@ datasource db {
 // ==========================================
 
 model User {
+  interviewAvailabilityOverrides InterviewAvailabilityOverride[]
   scheduledCommunications ScheduledCommunication[]
   recipientGroupEntries RecipientGroupEntry[]
   publishedPanelSchedules InterviewPanelScheduleVersion[] @relation("PanelSchedulePublisher")
@@ -162,6 +163,7 @@ model Club {
 }
 
 model ClubMember {
+  availabilityOverrides InterviewAvailabilityOverride[]
   interviewerEligible Boolean?
   interviewParticipation InterviewRoundParticipation[]
   interviewOffices String[] @default([])
@@ -205,6 +207,15 @@ enum ClubRole {
 // ==========================================
 
 model PipelineRound {
+  bookingPublishedAt DateTime?
+  bookingPaused Boolean @default(false)
+  bookingRevision Int @default(0)
+  bookingSlots Json @default("[]")
+  bookingCycleId String?
+  bookingCycle RecruitmentCycle? @relation("InterviewBookingCycle", fields: [bookingCycleId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
+  bookingAllowCancellation Boolean @default(true)
+  bookingAllowRescheduling Boolean @default(true)
+  availabilityOverrides InterviewAvailabilityOverride[]
   panelScheduleRevision Int @default(0)
   panelScheduleVersions InterviewPanelScheduleVersion[]
   panelProposal InterviewPanelProposal?
@@ -497,6 +508,7 @@ model InterviewRoom {
 }
 
 model InterviewSlot {
+  availabilityOverrides InterviewAvailabilityOverride[]
   publishedPanelMemberIds String[] @default([])
   panelScheduleVersionId String?
   panelScheduleVersion InterviewPanelScheduleVersion? @relation(fields: [panelScheduleVersionId], references: [id], onDelete: Restrict)
@@ -520,6 +532,7 @@ model InterviewSlot {
   @@index([publishedPanelMemberIds], type: Gin)
   @@index([panelScheduleVersionId])
   @@index([roomId, startTime])
+  @@unique([id, clubId])
   @@index([clubId, startTime])
 }
 
@@ -536,6 +549,29 @@ model InterviewBooking {
 
   @@unique([slotId, applicationId])
   @@unique([applicationId, roundId])
+}
+
+// A president's attestation for one existing session/member, never a change to personal availability.
+model InterviewAvailabilityOverride {
+  id String @id @default(uuid())
+  clubId String
+  roundId String
+  round PipelineRound @relation(fields: [roundId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
+  slotId String
+  slot InterviewSlot @relation(fields: [slotId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
+  memberId String
+  member ClubMember @relation(fields: [memberId, clubId], references: [id, clubId], onDelete: Restrict, onUpdate: NoAction)
+  createdBy String
+  creator User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  startTime DateTime
+  endTime DateTime
+  duration Int
+  buffer Int
+  conditions String[]
+  reason String?
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  @@index([clubId, roundId, slotId, revokedAt])
 }
 
 model InterviewRecord {
@@ -1521,6 +1557,7 @@ model ScheduledCommunication {
 }
 
 model RecruitmentCycle {
+  interviewBookingRounds PipelineRound[] @relation("InterviewBookingCycle")
  id String @id @default(uuid())
  clubId String
  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade, onUpdate: NoAction)

@@ -12,6 +12,7 @@ import { identifiableApplication, notificationDefaults } from "@/lib/communicati
 import { panelScheduleNotificationPrefix,currentPanelScheduleNotification } from "@/utils/official-panel-schedule";
 import { availabilityRequestPrefix, currentAvailabilityRequest } from "@/utils/availability-request-notifications";
 import { assignmentNotificationPrefix, currentAssignmentNotification } from "@/utils/interview-assignment-notifications";
+import { applicantBookingNotificationPrefix, currentApplicantBookingNotification } from "@/utils/applicant-booking-notifications";
 
 const uuid = z.string().uuid();
 const publishInput = z.object({
@@ -60,6 +61,10 @@ export async function getDurableNotifications(cursor?: string) {
   const items = await prisma.$transaction(async tx => {
     const contexts = new Map<string, ReturnType<typeof currentAssignmentNotification>>();
     return Promise.all(rows.slice(0, 50).map(async row => {
+    if (row.eventKey.startsWith(applicantBookingNotificationPrefix)) {
+      const context = await currentApplicantBookingNotification(tx, row, user.id);
+      return { ...row, ...(context ?? { title: "Interview booking update", body: "Open your current application to review its interview details.", href: "/?workspace=student&view=tracker" }) };
+    }
     if (row.eventKey.startsWith(availabilityRequestPrefix)) { const context = await currentAvailabilityRequest(tx, row, user.id); return { ...row, ...(context ?? { title: "Availability response recorded or request closed", body: "View your current round responses in My Availability.", href: "/settings/availability" }) } }
     if(row.eventKey?.startsWith(panelScheduleNotificationPrefix)){const context=await currentPanelScheduleNotification(tx,row,user.id);return {...row,...(context?{title:context.title,body:context.body,href:context.href}:{title:"Interview panel schedule changed",body:"Your assignment is no longer available. Check your current official interview schedule.",href:"/settings/interviews"})}}
     if (!row.eventKey?.startsWith(assignmentNotificationPrefix)) return row;

@@ -1,7 +1,8 @@
 import { syncDemoBookingPanel } from "./interview-access-setup";
+import { demoBookingSettings, demoBookingCoverage, demoBookingNotice } from "./interview-booking";
 import { hasPermission } from "@/lib/permissions";
 import { demoStore, demoMember } from "./store"
-import { roomInputSchema, roomSlots, overlaps, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
+import { roomInputSchema, roomSlots, overlaps, isPublishedBookingSlot, type RoomInput, type RoomWorkspace, type ApplicantSchedule } from "@/lib/interview-rooms"
 // Snapshot hydration revives dates; match the production DTO's ISO strings at this boundary.
 function presentBooking(booking: import("@/lib/interview-rooms").RoomBooking) {
   return { ...booking, startTime: new Date(booking.startTime).toISOString(), endTime: new Date(booking.endTime).toISOString() }
@@ -17,7 +18,7 @@ function manager(clubId: string) {
 export async function getRoomWorkspace(clubId: string): Promise<RoomWorkspace> {
   const s = manager(clubId), club = s.clubs.find(c => c.id === clubId)!
   const bookings = (s.roomBookings ?? []).filter(b => (s.interviewRooms ?? []).some(r => r.id === b.roomId && r.clubId === clubId))
-  return { clubName: club.name, rounds: club.rounds.map(r => ({ id: r.id, name: r.name })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
+  return { clubName: club.name, cycles: [], rounds: club.rounds.map(r => ({ id: r.id, name: r.name, type: r.type, booking: demoBookingSettings(r.id) })), members: s.memberships.filter(m => m.clubId === clubId).map(m => { const u = s.students.find(u => u.id === m.userId)!; return { id: m.id, name: `${u.profile.firstName} ${u.profile.lastName}` } }), rooms: (s.interviewRooms ?? []).filter(r => r.clubId === clubId).map(r => ({ ...r, slots: r.slots.map(slot => ({ ...presentSlot(slot), booked: bookings.filter(b => b.slotId === slot.id).length })) })), bookings: bookings.map(b => {
     const app = s.applications.find(a => a.id === b.applicationId && a.clubId === clubId);
     const historical = club.rounds.find(r => r.id === b.roundId), current = club.rounds.find(r => r.id === app?.roundId);
     const identified = hasPermission(demoMember(), "applicants.identify") && historical?.anonymousReview === false && current?.anonymousReview === false;
@@ -48,9 +49,12 @@ function ownApplication(id: string) {
   return app
 }
 export async function getApplicantSchedule(applicationId: string): Promise<ApplicantSchedule> {
-  const app = ownApplication(applicationId), s = demoStore.get(), club = s.clubs.find(c => c.id === app.clubId)!
-  const booking = s.roomBookings?.find(b => b.applicationId === app.id && b.roundId === app.roundId)
-  return { applicationId, clubName: club.name, roundName: club.rounds.find(r => r.id === app.roundId)!.name, booking: booking ? presentBooking(booking) : null, rooms: (s.interviewRooms ?? []).filter(r => r.clubId === app.clubId && r.roundId === app.roundId && r.isOpen).map(r => ({ ...r, panelMemberIds: [], slots: r.slots.filter(slot => +new Date(slot.startTime) > Date.now()).map(slot => ({ ...presentSlot(slot), booked: (s.roomBookings ?? []).filter(b => b.slotId === slot.id).length })) })).filter(r => r.slots.length) }
+  const app = ownApplication(applicationId), s = demoStore.get(), club = s.clubs.find(c => c.id === app.clubId)!, settings = demoBookingSettings(app.roundId)
+  const booking = s.roomBookings.find(b => b.applicationId === app.id && b.roundId === app.roundId)
+  const publicationState = !settings.bookingPublishedAt ? "NOT_PUBLISHED" as const : settings.bookingPaused ? "PAUSED" as const : "PUBLISHED" as const
+  const available = new Set(publicationState === "PUBLISHED" ? demoBookingCoverage(app.clubId, app.roundId, app.studentId).filter(row=>row.bookable).map(row=>row.slotId) : [])
+  const rooms = s.interviewRooms.filter(r=>r.clubId===app.clubId&&r.roundId===app.roundId&&r.isOpen).map(r=>({ id:r.id,clubId:r.clubId,roundId:r.roundId,name:r.name,location:r.location,kind:r.kind,timezone:r.timezone,duration:r.duration,buffer:r.buffer,isOpen:r.isOpen,panelMemberIds:[],slots:r.slots.filter(slot=>available.has(slot.id)&&isPublishedBookingSlot(s.bookingFlow.publishedSlots[app.roundId],slot,r)).map(slot=>({id:slot.id,startTime:new Date(slot.startTime).toISOString(),endTime:new Date(slot.endTime).toISOString(),capacity:slot.capacity,booked:s.roomBookings.filter(b=>b.slotId===slot.id).length})) })).filter(r=>r.slots.length)
+  return { applicationId, clubName:club.name,roundName:club.rounds.find(r=>r.id===app.roundId)!.name,publicationState,allowCancellation:settings.bookingAllowCancellation,allowRescheduling:settings.bookingAllowRescheduling,booking:booking?presentBooking(booking):null,rooms }
 }
 export async function reserveInterview({ applicationId, slotId }: { applicationId: string; slotId: string }) {
   const app = ownApplication(applicationId), s = demoStore.get(), room = s.interviewRooms?.find(r => r.slots.some(slot => slot.id === slotId)), slot = room?.slots.find(slot => slot.id === slotId)
@@ -58,6 +62,10 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
   const existing = s.roomBookings?.find(b => b.applicationId === app.id && b.roundId === app.roundId)
   if (existing?.slotId === slotId) { syncDemoBookingPanel(app.id, app.roundId); return { id: existing.id } }
   if (existing && +new Date(existing.startTime) <= Date.now()) throw new Error("This interview has already started.")
+  const settings=demoBookingSettings(app.roundId)
+  if(!isPublishedBookingSlot(s.bookingFlow.publishedSlots[app.roundId],slot,room)||!settings.bookingPublishedAt||settings.bookingPaused)throw Error("Booking has not been published or is paused.")
+  if(existing&&!settings.bookingAllowRescheduling)throw Error("The club does not allow self-service rescheduling. Your original reservation is retained.")
+  if(!demoBookingCoverage(app.clubId,app.roundId,app.studentId).some(row=>row.slotId===slot.id&&row.bookable))throw Error("This session is no longer fully staffed with approved interviewers.")
   if (!room.isOpen || +new Date(slot.startTime) <= Date.now() || (s.roomBookings ?? []).filter(b => b.slotId === slotId).length >= slot.capacity) throw new Error("This slot is no longer available.")
   const owned = s.applications.filter(a => a.studentId === app.studentId).map(a => a.id)
   if (s.slots.some(b => b.id !== existing?.id && b.applicationId && owned.includes(b.applicationId) && overlaps(b, slot))) throw new Error("You already have an interview at that time.")
@@ -75,10 +83,12 @@ export async function reserveInterview({ applicationId, slotId }: { applicationI
 export async function cancelRoomBooking(id: string) {
   const booking = demoStore.get().roomBookings?.find(b => b.id === id)
   if (!booking) throw new Error("Booking not found.")
-  ownApplication(booking.applicationId)
+  const app=ownApplication(booking.applicationId)
+  if(!demoBookingSettings(booking.roundId).bookingAllowCancellation)throw Error("The club does not allow self-service cancellation.")
   if (+new Date(booking.startTime) <= Date.now()) throw new Error("This interview has already started.")
   demoStore.mutate(s => { s.roomBookings = s.roomBookings.filter(b => b.id !== id); s.slots = s.slots.filter(slot => slot.id !== id) });
   syncDemoBookingPanel(booking.applicationId, booking.roundId)
+  demoBookingNotice(app.studentId,app.clubId,`booking-cancelled:${booking.id}`,"Interview booking changed","Your reservation was released.",`/interviews/book?clubId=${app.clubId}&roundId=${app.roundId}`)
 }
 export async function getBookingApplication(clubId: string, roundId: string) {
   const s = demoStore.get(), app = s.applications.find(a => a.clubId === clubId && a.roundId === roundId && a.studentId === s.students[0].id && a.status === "INTERVIEWING")
