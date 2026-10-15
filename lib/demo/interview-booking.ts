@@ -39,9 +39,10 @@ export function demoPanelScene(clubId: string, roundId: string, window?: { start
 }
 export async function getPanelProposalWorkspace(input: { clubId: string; roundId: string; window?: { start: string; end: string } }): Promise<PanelWorkspace> {
   const { s, m } = manager(input.clubId), state = panelState(input.roundId), scene = demoPanelScene(input.clubId, input.roundId, state.draft?.document.window ?? input.window)
+  const club = s.clubs.find(c => c.id === input.clubId)!
   const suggestedWindow = scene.sessions.length ? { start: scene.sessions[0].startTime, end: scene.sessions.at(-1)!.endTime } : null
   const draft = state.draft ? { ...state.draft, validation: validatePanelDocument(state.draft.document, panelDraftScene(state.draft.document, scene)) } : null
-  return { clubName: s.clubs[0].name, roundName: s.clubs[0].rounds.find(r => r.id === input.roundId)!.name, roundId: input.roundId, timezone: SCHEDULING_TIMEZONE, scene, proposal: draft, published: state.published, history: state.history, canPublish: interviewCapabilities(m).manageGrants, canOverrideAvailability: interviewCapabilities(m).overrideAvailability, suggestedWindow, fingerprint: "demo-local" }
+  return { clubName: club.name, roundName: club.rounds.find(r => r.id === input.roundId)!.name, roundId: input.roundId, timezone: SCHEDULING_TIMEZONE, scene, proposal: draft, published: state.published, history: state.history, canPublish: interviewCapabilities(m).manageGrants, canOverrideAvailability: interviewCapabilities(m).overrideAvailability, suggestedWindow, fingerprint: "demo-local" }
 }
 async function saveDocument(input: { clubId: string; roundId: string; revision: number }, document: PanelDocument) {
   const { m } = manager(input.clubId), state = panelState(input.roundId)
