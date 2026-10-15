@@ -12,6 +12,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
   '@/lib/permissions':{hasWorkspace:()=>true,hasPermission:(m,p)=>m.permissions.includes(p)},
   '@/lib/club-workspace':{clubWorkspaceHref:id=>`/club/${id}/workspace`,recruitmentTools:()=>[{id:'interviews'}]},
+  '@/lib/club-workspace-preference':{clubWorkspacePreferenceKey:()=> 'test-preference'},
   '@/lib/product-navigation':{managerNavigation:()=>[{id:'interviews',label:'Interviews'}],personalModes:[]},
   '@/lib/club-settings':{resolveSettingsTab:()=>({})},
   '@/lib/campus-illustrations':{clubCampusIllustration:()=>undefined},

@@ -35,9 +35,10 @@ import { handleClubLink } from "@/lib/workspace-navigation"
 
 const navigationIcons: Record<string, typeof Home> = { "student-dashboard": Home, explore: Compass, categories: Compass, status: CheckCircle2, inbox: Bell, "student-profile": UserRound, corkboard: Bookmark, calendar: CalendarDays, applications: FileText, interviews: Video, decisions: CheckCircle2, clubs: Users2, overview: Home, meetings: CalendarDays, tasks: ListChecks, applicants: Users2, members: Users2, announcements: Megaphone, settings: Settings, rounds: Shield, rules: SlidersHorizontal }
 
-export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, workspaceKind, onSelect, onNavigate, onReviewTool }: {
+export function ProductShell({ children, mode, modes, items, active, title, clubId = "", clubName, manager = false, workspaceKind, onSelect, onNavigate, onReviewTool, onModeSelect }: {
   workspaceKind?: "admin";
   onReviewTool?: (id: string) => void;
+  onModeSelect?: (id: string) => void;
   children: ReactNode; mode: string; modes: ProductNavItem[]; items: ProductNavItem[]; active: string; title: string;
   clubId?: string; clubName?: string; manager?: boolean; onSelect: (id: string) => void; onNavigate: (view: ViewId) => void;
 }) {
@@ -131,7 +132,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     const NavIcon = navigationIcons[item.id]
     const content = <>{!top && item.id === "student-profile" ? <AccountAvatar user={user} className="size-6" /> : !top && NavIcon && <NavIcon aria-hidden="true" className="size-[18px] shrink-0" />}{item.label}{item.preview && <span className="ml-auto text-[length:var(--oc-size-10)] font-normal text-muted-foreground">Preview</span>}</>
     if (item.quiet && onReviewTool) return <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-haspopup="dialog" className={className} onClick={() => { if (!canLeaveWorkspace()) return; setMobile(false); onReviewTool(item.id) }}>{content}</button>
-    return item.href ? <Link key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
+    return item.href ? <Link key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} href={item.href} prefetch={clubId && item.href.split("?")[0] === `/club/${clubId}/workspace` ? false : undefined} aria-current={selected ? "page" : undefined} className={className} onClick={e => { if (!canLeaveWorkspace()) e.preventDefault(); else { if (top && !e.defaultPrevented && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) onModeSelect?.(item.id); moved.current = true; setMobile(false); handleClubLink(e, item.href!) } }}>{content}</Link> : <button key={item.id} data-tour={`${top ? "mode" : "nav"}-${item.id}`} type="button" aria-current={selected ? "page" : undefined} className={className} onClick={() => select(item.id)}>{content}</button>
   }
   function sidebar() { return <div className="oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6">
     <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /></button>
