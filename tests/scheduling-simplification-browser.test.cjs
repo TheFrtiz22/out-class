@@ -6,11 +6,11 @@ async function shot(page,name){if(!process.env.OUTCLASS_SCHEDULING_SCREENSHOTS)r
 test('browser: times → confirmed interviewers → booking, issue editor/override, pause and edits preserve reservations in isolated Demo',async()=>{
  const f=await fixture({fresh:true});let browser
  try{
-  browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept())
+  browser=await launch();const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.setDefaultTimeout(15000);page.on('pageerror',e=>{errors.push(e.message);console.error('Fixture browser error:',e.message)});page.on('dialog',d=>d.accept())
   await page.route('**/*',route=>route.request().url().startsWith(f.url)?route.continue():route.abort())
   await page.goto(`${f.url}/?roundId=${f.scope.roundId}`)
   const nav=page.getByRole('navigation',{name:'Scheduling workflow'}),panel=page.getByRole('region',{name:'Review Panel Assignments'}),publication=page.getByRole('region',{name:'Publish interview booking'}),dialog=page.getByRole('dialog')
-  assert.equal(await nav.getByRole('button').count(),3)
+  await nav.waitFor();assert.equal(await nav.getByRole('button').count(),3)
   const steps=[];async function step(label,locator){await locator.click();steps.push(label)}
   await step('Open times form',page.getByRole('button',{name:'Add interview times',exact:true}))
   await dialog.getByRole('textbox',{name:'Room name',exact:true}).fill('Synthetic Hall A')
@@ -62,7 +62,7 @@ test('browser: an existing published round opens bookings directly; request fail
  const f=await fixture({fresh:true});let browser
  f.asLeader();await f.api.createInterviewRoom({...f.scope,name:'Existing synthetic hall',location:'Existing synthetic hall',kind:'IN_PERSON',timezone:'America/New_York',dates:['2099-12-01'],start:'10:00',end:'10:20',duration:20,buffer:0,capacity:1,interviewersNeeded:2,panelMemberIds:[]})
  let w=await f.api.getPanelProposalWorkspace(f.scope);w=await f.api.generatePanelProposal({...f.scope,revision:0,window:w.suggestedWindow,options:{maxConsecutiveMinutes:null,breakMinutes:15},mode:'REGENERATE'});const d=w.proposal,review=await f.api.reviewPanelPublication({...f.scope,proposalId:d.id,revision:d.revision});assert.equal(review.ok,true,review.error);assert.equal((await f.api.publishPanelSchedule({...f.scope,...review.value})).ok,true);await f.api.setInterviewBookingPublication({...f.scope,revision:0,action:'PUBLISH',cycleId:null,allowCancellation:true,allowRescheduling:true})
- try{browser=await launch();const page=await browser.newPage();await page.goto(`${f.url}/?roundId=${f.scope.roundId}`);await page.getByRole('heading',{name:'Bookings',exact:true}).waitFor();assert.equal(await page.getByRole('navigation',{name:'Scheduling workflow'}).count(),0);await page.route('**/action',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"Synthetic outage"}'}));await page.reload();await page.getByText('Could not load interview scheduling.',{exact:false}).waitFor();assert.equal(await page.getByText(/Create an interview round/).count(),0);assert.equal(f.liveCalls(),0)}finally{await browser?.close();await f.close()}
+ try{browser=await launch();const page=await browser.newPage();page.on('pageerror',e=>console.error('Fixture browser error:',e.message));await page.goto(`${f.url}/?roundId=${f.scope.roundId}`);await page.getByRole('heading',{name:'Bookings',exact:true}).waitFor();assert.equal(await page.getByRole('navigation',{name:'Scheduling workflow'}).count(),0);await page.route('**/action',route=>route.fulfill({status:503,contentType:'application/json',body:'{"error":"Synthetic outage"}'}));await page.reload();await page.getByText('Could not load interview scheduling.',{exact:false}).waitFor();assert.equal(await page.getByText(/Create an interview round/).count(),0);assert.equal(f.liveCalls(),0)}finally{await browser?.close();await f.close()}
 })
 
 if(process.env.OUTCLASS_SCHEDULING_BASELINE)test('comparison: previous scheduling path requires seven button actions',async()=>{

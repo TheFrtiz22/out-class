@@ -46,7 +46,7 @@ privacy and authorization remain in their existing services.
   must remain zero. Physical touchscreen is not claimed.
 - Focused SQL-backed tests: 11 passed using disposable PGlite fixtures, covering
   capacity, retries, office/owner checks, access revocation, approval/history and
-  reservation preservation. Six focused round/context/Demo checks passed.
+  reservation preservation. Seven focused round/context/Demo checks passed.
 - Repository lint: zero errors, 28 existing warnings. Final integrated type,
   build, CI, preview and live results are recorded in the release PR.
 
