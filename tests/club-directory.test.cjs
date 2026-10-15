@@ -68,7 +68,6 @@ test("filters combine and unknown facts do not satisfy a numerical filter", () =
     filterDirectory(clubs, {
       ...emptyDirectoryFilters,
       category: "Finance",
-      aum: "medium",
       time: "3-5",
     }).map((c) => c.id),
     ["b"],
@@ -190,4 +189,17 @@ test('cached public directory deadlines survive JSON serialization and retain av
     assert.equal(result.clubs[0].applicationAvailable, true)
   }
   assert.equal(reads, 1)
+})
+
+
+test("legacy fund-size parameters are ignored and removed without losing other filters or public AUM", () => {
+  const { directoryFiltersFromParams, directoryFilterParams } = load("lib/club-directory.ts")
+  const params = new URLSearchParams("aum=large&category=Finance&q=fund&time=3-5&eventId=event")
+  const filters = directoryFiltersFromParams(params)
+  assert.equal("aum" in filters, false)
+  assert.deepEqual(filterDirectory(clubs, filters).map(c => c.id), ["b"])
+  const cleaned = directoryFilterParams(params, filters)
+  assert.equal(cleaned.has("aum"), false)
+  for (const key of ["q", "category", "time", "eventId"]) assert.equal(cleaned.get(key), params.get(key))
+  assert.equal(clubs[1].aumValue, 100000)
 })

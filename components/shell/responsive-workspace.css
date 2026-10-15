@@ -36,3 +36,12 @@
 }
 
 [data-workspace-detail] { min-width: 0; overflow-wrap: anywhere; }
+
+.oc-context-sidebar nav [data-navigation-toggle][data-active="true"] { color: var(--oc-rail-text); font-weight: 600; }
+.oc-workspace-nav-children { overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .oc-workspace-nav-children[data-state="open"] { animation: oc-nav-expand 150ms ease-out; }
+  .oc-workspace-nav-children[data-state="closed"] { animation: oc-nav-collapse 120ms ease-in; }
+  @keyframes oc-nav-expand { from { height: 0; opacity: 0; } to { height: var(--radix-collapsible-content-height); opacity: 1; } }
+  @keyframes oc-nav-collapse { from { height: var(--radix-collapsible-content-height); opacity: 1; } to { height: 0; opacity: 0; } }
+}

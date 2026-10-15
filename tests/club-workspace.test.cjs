@@ -189,8 +189,8 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   for (const item of owner) {
     const url = new URL(item.href, "https://outclass.test");
     assert.equal(url.pathname, `/club/${clubId}/workspace`);
-    assert.equal(url.searchParams.get("section"), "recruitment");
-    assert.equal(url.searchParams.get("tool"), item.id);
+    assert.equal(url.searchParams.get("section"), item.id === "announcements" ? "announcements" : "recruitment");
+    assert.equal(url.searchParams.get("tool"), item.id === "announcements" ? null : item.id);
   }
   assert.equal(personalMode("status"), "apply");
   assert.equal(personalMode("tasks"), "clubs");

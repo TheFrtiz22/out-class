@@ -25,7 +25,6 @@ export type DirectoryFilters = {
   query: string
   category: string
   time: string
-  aum: string
   acceptance: string
   sort: string
   recruitment: string
@@ -34,7 +33,6 @@ export const emptyDirectoryFilters: DirectoryFilters = {
   query: "",
   category: "all",
   time: "all",
-  aum: "all",
   acceptance: "all",
   sort: "name",
   recruitment: "all",
@@ -61,13 +59,6 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
         (club.acceptanceRate == null || club.acceptanceRate > Number(filters.acceptance))
       )
         return false
-      if (filters.aum !== "all") {
-        if (club.aumValue == null) return false
-        if (filters.aum === "small" && club.aumValue > 50000) return false
-        if (filters.aum === "medium" && (club.aumValue <= 50000 || club.aumValue > 250000))
-          return false
-        if (filters.aum === "large" && club.aumValue <= 250000) return false
-      }
       return true
     })
     .sort(
@@ -90,19 +81,19 @@ export function recruitmentStage(status: string) {
   return -1
 }
 
-const filterParams: Record<keyof DirectoryFilters, string> = { query: "q", category: "category", time: "time", aum: "aum", acceptance: "acceptance", sort: "sort", recruitment: "recruitment" }
+const filterParams: Record<keyof DirectoryFilters, string> = { query: "q", category: "category", time: "time", acceptance: "acceptance", sort: "sort", recruitment: "recruitment" }
 export function directoryFiltersFromParams(params: { get: (key: string) => string | null }): DirectoryFilters {
   const values = { ...emptyDirectoryFilters }
   for (const key of Object.keys(filterParams) as (keyof DirectoryFilters)[]) values[key] = params.get(filterParams[key]) || values[key]
   if (!["name", "acceptance", "deadline"].includes(values.sort)) values.sort = "name"
   if (!["all", "open", "closing"].includes(values.recruitment)) values.recruitment = "all"
   if (!["all", "1-3", "3-5", "5+"].includes(values.time)) values.time = "all"
-  if (!["all", "small", "medium", "large"].includes(values.aum)) values.aum = "all"
   if (!["all", "5", "10", "25", "50", "100"].includes(values.acceptance)) values.acceptance = "all"
   return values
 }
 export function directoryFilterParams(params: URLSearchParams, filters: DirectoryFilters) {
   const next = new URLSearchParams(params)
+  next.delete("aum") // Retire legacy Fund Size links without changing public profile data.
   for (const key of Object.keys(filterParams) as (keyof DirectoryFilters)[]) {
     if (filters[key] === emptyDirectoryFilters[key]) next.delete(filterParams[key])
     else next.set(filterParams[key], filters[key])

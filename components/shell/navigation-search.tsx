@@ -1,5 +1,6 @@
 "use client"
 
+import { AccountAvatar } from "@/components/account-avatar"
 import { useEffect, useRef, useState } from "react"
 import { ArrowUpRight, Building2, FileText, Layers, UserRound } from "lucide-react"
 import {
@@ -186,7 +187,7 @@ export function NavigationSearch({
                     onSelect={() => navigate(id)}
                     className="min-h-11"
                   >
-                    <Icon className="size-4" />
+                    {id === "student-profile" ? <AccountAvatar user={user} className="size-5" /> : <Icon className="size-4" />}
                     <span className="flex-1">{title}</span>
                     <ArrowUpRight className="size-3.5 text-muted-foreground" />
                   </CommandItem>

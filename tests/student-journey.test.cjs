@@ -30,7 +30,7 @@ test('recruitment filters combine with search and sort only open published deadl
 })
 test('directory query round trips preserve workspace context and clear every selected filter', () => {
   const original = new URLSearchParams('workspace=student&view=explore&category=Finance')
-  const filters = { ...emptyDirectoryFilters, query: 'global markets', category: 'Finance', recruitment: 'closing', acceptance: '25', aum: 'medium', time: '3-5', sort: 'deadline' }
+  const filters = { ...emptyDirectoryFilters, query: 'global markets', category: 'Finance', recruitment: 'closing', acceptance: '25', time: '3-5', sort: 'deadline' }
   const next = directoryFilterParams(original, filters)
   assert.deepEqual(directoryFiltersFromParams(next), filters)
   assert.equal(next.get('view'), 'explore')

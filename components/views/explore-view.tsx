@@ -1,7 +1,7 @@
 "use client"
 import { NativeSelect } from "@/components/ui/native-select"
 import { useSearchParams } from "next/navigation"
-import Link from "next/link"
+import { SavedClubsPopover } from "@/components/clubs/saved-clubs-popover"
 import { PageHeader } from "@/components/product/page-header"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ArrowRight, Search, SlidersHorizontal, X, Compass, BookOpen, BriefcaseBusiness, Globe2, Heart, Mountain, Lightbulb, ChartNoAxesCombined, MessageSquare, Users } from "lucide-react"
@@ -45,6 +45,10 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   const filterQuery = searchParams.toString()
   const [filters, setFilters] = useState(() => directoryFiltersFromParams(searchParams))
   useEffect(() => { setFilters(directoryFiltersFromParams(new URLSearchParams(filterQuery))) }, [filterQuery])
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.has("aum")) { url.searchParams.delete("aum"); window.history.replaceState(null, "", url.pathname + url.search + url.hash) }
+  }, [filterQuery])
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
@@ -120,7 +124,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="University of Virginia" title="Discover clubs" description="Compare interests, recruitment dates, and what each club asks of you." illustration={{ variant: "rotunda", presentation: "compact" }} action={<Link href="/saved-clubs" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Saved clubs <ArrowRight size={15} className="ml-2" aria-hidden="true" /></Link>} />
+        <PageHeader eyebrow="University of Virginia" title="Discover clubs" description="Compare interests, recruitment dates, and what each club asks of you." illustration={{ variant: "rotunda", presentation: "compact" }} action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />
@@ -199,15 +203,6 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                     Up to {value}%
                   </option>
                 ))}
-              </NativeSelect>
-            </label>
-            <label>
-              Club-reported fund size
-              <NativeSelect value={filters.aum} onChange={(event) => change("aum", event.target.value)}>
-                <option value="all">Any / not reported</option>
-                <option value="small">Up to $50,000</option>
-                <option value="medium">$50,001–$250,000</option>
-                <option value="large">Over $250,000</option>
               </NativeSelect>
             </label>
           </div>

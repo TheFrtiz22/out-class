@@ -61,7 +61,7 @@ export function ClubSettingsWorkspace({
   const visible = (id: string) =>
     sections.some((s) => s.id === id) &&
     (active === id || visited.includes(id));
-  if (!member) return <p role="alert">Appearance access unavailable.</p>;
+  if (!member) return <p role="alert">Settings access unavailable.</p>;
   async function preference(fields: {
     isDiscoverable?: boolean;
     invitationEmailEnabled?: boolean;
@@ -83,7 +83,7 @@ export function ClubSettingsWorkspace({
     <div className="oc-settings-workspace">
       <nav
         className="oc-settings-navigation"
-        aria-label="Appearance sections"
+        aria-label="Settings sections"
       >
         {sections.map((s) => (
           <Link

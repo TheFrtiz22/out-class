@@ -57,11 +57,11 @@ test('headers without explicit artwork have no illustration slot or ribbon',()=>
  assert.doesNotMatch(html,/oc-campus|data-illustrated/)
  assert.match(html,/<h1>Applications<\/h1>/)
 })
-test('Appearance keeps settings navigation identity and URLs',()=>{
+test('Settings keeps settings navigation identity and URLs',()=>{
  const {managerNavigation}=load('lib/product-navigation.ts')
  const item=managerNavigation({isOwner:true},'test-club','club').find(n=>n.id==='settings')
- assert.equal(item.label,'Appearance');assert.equal(item.href,'/club/test-club/workspace?section=settings')
- const views=load('lib/views.ts');assert.equal(views.viewTitles['club-manager'].title,'Appearance')
+ assert.equal(item.label,'Settings');assert.equal(item.href,'/club/test-club/workspace?section=settings')
+ const views=load('lib/views.ts');assert.equal(views.viewTitles['club-manager'].title,'Settings')
 })
 test('responsive presentation preserves composition and approved colors without hiding mobile art',()=>{
  const css=fs.readFileSync('styles/campus-illustrations.css','utf8')
