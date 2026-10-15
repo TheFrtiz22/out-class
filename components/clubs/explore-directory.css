@@ -43,7 +43,8 @@
 .oc-explore-pitch { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: 9px 0 18px; font-size: var(--oc-text-small); line-height: var(--oc-leading-body); color: var(--muted-foreground); }
 .oc-explore-card-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; font-size: var(--oc-size-11); color: var(--muted-foreground); }
 .oc-explore-card-footer [data-available="true"] { color: #17634d; background: #edf8f3; padding: 5px 9px; border-radius: 14px; }
-.oc-explore-card-footer svg { flex-shrink: 0; width: 36px; height: 36px; padding: 8px; border: 1px solid #ffe1ca; border-radius: 50%; color: #b44917; }
+.oc-explore-open { position: relative; z-index: 1; display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid #ffe1ca; border-radius: 50%; color: #b44917; }
+.oc-explore-open svg { flex-shrink: 0; width: 18px; height: 18px; }
 .oc-explore-available { padding: 16px 0; border-block: 1px solid var(--border); margin-bottom: 20px; }
 .oc-explore-available p { font-size: var(--oc-text-small); line-height: var(--oc-leading-body); color: var(--muted-foreground); margin-top: 8px; }
 .oc-explore-available ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; margin-top: 20px; }
@@ -107,8 +108,8 @@
 [data-product-shell] .oc-explore-card-body { padding: 1.125rem; }
 [data-product-shell] .oc-explore-card h3 { font-size: 1.125rem; }
 [data-product-shell] .oc-explore-card h3 button { font-size: inherit; line-height: 1.4; font-weight: 600; }
-[data-product-shell] .oc-explore-card-footer svg { background: var(--muted); border: 0; color: var(--foreground); }
-[data-product-shell] .oc-explore-card:hover .oc-explore-card-footer svg { background: var(--brand-subtle); color: var(--brand-ink); }
+[data-product-shell] .oc-explore-card .oc-explore-open { border-radius: 50%; background: var(--muted); border: 0; color: var(--foreground); }
+[data-product-shell] .oc-explore-card:hover .oc-explore-open { background: var(--brand-subtle); color: var(--brand-ink); }
 [data-product-shell] .oc-explore-available button { border: 0; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); }
 [data-product-shell] :is(.oc-discovery, .oc-corkboard) .oc-directory-empty { border: 0; background: var(--oc-surface-blue); }
 @container (max-width: 520px) {

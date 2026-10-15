@@ -177,22 +177,24 @@ export function ClubProfileView({
             {recruitment.expired && " The deadline has passed. Existing drafts remain available."}
           </p>
           {application && <RecruitmentTimeline status={application.status} rounds={real ? club.rounds : undefined} roundId={actualApplication?.roundId} />}
-          <Button
-            style={customized ? { backgroundColor: accent, color: contrast } : undefined}
-            className="oc-club-apply"
-            disabled={applyDisabled}
-            onClick={() => void apply()}
-          >
-            {applyLabel}
-            <ArrowRight size={15} />
-          </Button>
-          {error && (
-            <p role="alert" className="text-destructive">
-              {error}
-            </p>
-          )}
-          {!preview && <CorkboardButton club={club} onNavigate={onNavigate} />}
-          <SubscribeButton clubId={club.id} disabled={preview} />
+          <div className="oc-club-actions" role="group" aria-label="Club actions">
+            <Button
+              style={customized ? { backgroundColor: accent, color: contrast } : undefined}
+              className="oc-club-apply"
+              disabled={applyDisabled}
+              onClick={() => void apply()}
+            >
+              {applyLabel}
+              <ArrowRight size={15} />
+            </Button>
+            {error && (
+              <p role="alert" className="text-destructive">
+                {error}
+              </p>
+            )}
+            {!preview && <CorkboardButton club={club} onNavigate={onNavigate} />}
+            <SubscribeButton clubId={club.id} disabled={preview} />
+          </div>
           <div className="oc-club-requirements">
             <h3>Before you apply</h3>
             <p>Your OutClass profile is the starting point for your application.</p>

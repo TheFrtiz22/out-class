@@ -414,8 +414,15 @@
 }
 .oc-club-apply {
   width: 100%;
-  margin-top: 24px;
   min-height: 44px;
+}
+.oc-club-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.oc-club-actions .oc-club-subscribe {
+  margin-top: 0;
 }
 .oc-club-subscribe {
   margin-top: 12px;
