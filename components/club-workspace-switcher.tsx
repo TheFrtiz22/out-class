@@ -29,7 +29,6 @@ export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, admin
     if (canLeaveWorkspace()) router.push(id ? clubWorkspaceHref(id) : "/?workspace=student")
   }
   return <div className="oc-workspace-switcher">
-    <p className="oc-workspace-switcher-label">Workspace</p>
     <DropdownMenu>
       <DropdownMenuTrigger asChild><button type="button" aria-label="Switch workspace" className="oc-workspace-switcher-trigger">
         {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}

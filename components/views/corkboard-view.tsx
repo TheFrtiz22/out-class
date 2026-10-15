@@ -7,16 +7,11 @@ export function CorkboardView({ onNavigate }: { onNavigate?: (view: ViewId) => v
   return (
     <div className="oc-corkboard-events">
       <PageHeader
-        eyebrow="Your campus, connected"
         title="Corkboard"
-        description="What’s happening around Grounds. Events, meetings, and socials posted by UVA clubs."
-        illustration="lawn-archways"
+        description="Events, meetings, and socials posted by clubs."
+        action={<SavedClubsPopover onNavigate={onNavigate} />}
       />
       <PublicEventBoard />
-      <p className="mt-5 text-sm text-muted-foreground">
-        Looking for clubs you saved?{" "}
-        <SavedClubsPopover onNavigate={onNavigate} />
-      </p>
     </div>
   );
 }

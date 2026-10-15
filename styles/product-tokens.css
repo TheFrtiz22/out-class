@@ -25,7 +25,7 @@
   --oc-weight-bold: 650;
   --oc-weight-title: 500;
   --oc-weight-display: 500;
-  --oc-text-title: clamp(1.75rem, 2.5vw, 2.25rem);
+  --oc-text-title: clamp(1.625rem, 2.2vw, 1.875rem);
   --oc-text-section: clamp(1.25rem, 1.6vw, 1.5rem);
   --oc-text-card: 1.0625rem;
   --oc-text-metric: 1.75rem;

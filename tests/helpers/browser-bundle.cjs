@@ -5,7 +5,7 @@ function bundle(entry,mocks={}){
   let code=source??fs.readFileSync(file,'utf8')
   if(file.endsWith('.css'))code='';
   if(/\.tsx?$/.test(file))code=ts.transpileModule(code,{fileName:file,compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText
-  code=code.replace(/require\(["']([^"']+)["']\)/g,(_,name)=>{let resolved;if(name in mocks){resolved=path.resolve('tests/virtual/'+name.replaceAll('/','_')+'.js');return `require(${add(resolved,mocks[name])})`}if(name.startsWith('@/'))resolved=['','.ts','.tsx','.js'].map(ext=>path.resolve(name.slice(2)+ext)).find(candidate=>fs.existsSync(candidate)&&fs.statSync(candidate).isFile());else resolved=require.resolve(name,{paths:[path.dirname(file)]});return `require(${add(resolved)})`})
+  code=code.replace(/require\(["']([^"']+)["']\)/g,(_,name)=>{let resolved;if(name in mocks){resolved=path.resolve('tests/virtual/'+name.replaceAll('/','_')+'.js');return `require(${add(resolved,mocks[name])})`}if(name.startsWith('@/'))resolved=['','.ts','.tsx','.js'].map(ext=>path.resolve(name.slice(2)+ext)).find(candidate=>fs.existsSync(candidate)&&fs.statSync(candidate).isFile());else if(name.startsWith('.'))resolved=['','.ts','.tsx','.js'].map(ext=>path.resolve(path.dirname(file),name+ext)).find(candidate=>fs.existsSync(candidate)&&fs.statSync(candidate).isFile());else resolved=require.resolve(name,{paths:[path.dirname(file)]});return `require(${add(resolved)})`})
   modules[id]=`function(require,module,exports){${code}\n}`;return id
  }
  const id=add(path.resolve('tests/autosave-fixture.tsx'),entry)

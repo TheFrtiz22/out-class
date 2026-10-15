@@ -142,9 +142,6 @@ export function UnifiedStudentProfileView() {
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="mb-2 text-xs font-medium uppercase tracking-[.16em] text-muted-foreground">
-            University of Virginia
-          </p>
           <h2 className="oc-section-heading break-words">
             {profile.firstName} {profile.lastName}
           </h2>

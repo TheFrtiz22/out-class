@@ -32,9 +32,7 @@ export function SavedClubsView({
   return (
     <div className="oc-corkboard space-y-6">
       <PageHeader
-        eyebrow="Clubs you saved"
         title="Saved clubs"
-        description="Return to clubs you want to learn more about."
       />
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <p>Saving a club does not apply, subscribe, or join you.</p>

@@ -1,3 +1,4 @@
+import "@/styles/campus-illustrations.css"
 import type { CSSProperties } from "react"
 import { campusIllustrations, type CampusIllustrationOptions } from "@/lib/campus-illustrations"
 

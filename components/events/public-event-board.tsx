@@ -258,7 +258,7 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div className="oc-physical-board" aria-busy={loading}>
+          <div className="oc-physical-board" data-empty={!events.length || undefined} aria-busy={loading}>
             {!loading && !events.length ? (
               <div className="oc-events-empty">
                 <h2>No events here yet.</h2>

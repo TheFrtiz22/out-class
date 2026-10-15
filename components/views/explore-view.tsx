@@ -124,7 +124,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   return (
     <div className="oc-discovery" data-explore-section={section} ref={resultsRef}>
       <div className="oc-explore-heading">
-        <PageHeader eyebrow="University of Virginia" title="Discover clubs" description="Compare interests, recruitment dates, and what each club asks of you." illustration={{ variant: "rotunda", presentation: "compact" }} action={<SavedClubsPopover onNavigate={onNavigate} />} />
+        <PageHeader title="Discover clubs" action={<SavedClubsPopover onNavigate={onNavigate} />} />
       </div>
       <div className="oc-directory-search">
         <Search size={20} aria-hidden="true" />

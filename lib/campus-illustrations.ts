@@ -16,20 +16,3 @@ export type CampusIllustrationOptions = {
   presentation?: "standard" | "compact" | "prominent"
   motion?: "none" | "entrance"
 }
-
-/** Explicit surface mapping. A workspace or parent section never supplies a fallback. */
-// Campus art belongs at key navigation moments, not on every utility screen.
-export const studentCampusIllustrations = {
-  "student-dashboard": "lamp-posts-grounds",
-  explore: "rotunda",
-} as const satisfies Record<string, CampusIllustrationVariant>
-export const clubCampusIllustrations = {
-  overview: "rotunda",
-} as const satisfies Record<string, CampusIllustrationVariant>
-export function studentCampusIllustration(view: string): CampusIllustrationVariant | undefined {
-  return Object.hasOwn(studentCampusIllustrations, view) ? studentCampusIllustrations[view as keyof typeof studentCampusIllustrations] : undefined
-}
-export function clubCampusIllustration(section: string, mode = "club", setting = "general"): CampusIllustrationVariant | undefined {
-  if (mode !== "club" || section === "settings" && setting !== "general") return undefined
-  return Object.hasOwn(clubCampusIllustrations, section) ? clubCampusIllustrations[section as keyof typeof clubCampusIllustrations] : undefined
-}

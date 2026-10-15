@@ -28,6 +28,8 @@
   padding-left: 10px;
   margin-left: auto;
   max-width: 250px;
+  min-width: min(100%, 13rem);
+  flex: 1;
 }
 .oc-event-search input {
   border: 0;
@@ -263,20 +265,30 @@
   object-fit: contain;
   background: #f6eedb;
 }
+.oc-physical-board[data-empty="true"] {
+  min-height: 0;
+  padding: 0;
+  border-color: var(--border);
+  background: var(--card);
+  box-shadow: none;
+}
 .oc-events-empty {
-  padding: 65px 20px;
-  text-align: center;
-  background: #faf7eeeb;
-  border-radius: 6px;
-  color: var(--primary);
+  padding: 1.5rem;
+  text-align: left;
+  background: var(--card);
+  border-radius: var(--oc-radius-md);
+  color: var(--foreground);
 }
 .oc-events-empty h2 {
-  font-family: Georgia, serif;
-  font-size: 26px;
-  margin-bottom: 12px;
+  font-family: var(--oc-font-display);
+  font-size: var(--oc-text-section);
+  margin-bottom: .5rem;
 }
 .oc-events-empty p {
-  margin-bottom: 18px;
+  max-width: 36rem;
+  margin-bottom: 1rem;
+  color: var(--muted-foreground);
+  font-size: var(--oc-text-small);
 }
 .oc-event-detail {
   max-width: 860px !important;

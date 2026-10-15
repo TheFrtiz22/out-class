@@ -245,7 +245,6 @@ export function StudentDashboardView({
     <div className="oc-student-home">
       <PageHeader
         className="oc-home-header"
-        eyebrow="University of Virginia"
         title="Home"
         description={user?.profile?.firstName
           ? `Good to see you, ${user.profile.firstName}. Here’s what needs your attention.`

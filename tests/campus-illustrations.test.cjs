@@ -7,28 +7,10 @@ const { renderToStaticMarkup } = require('react-dom/server')
 function load(file) {
  const mod = { exports: {} }
  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText
- new Function('require','exports',code)(name => name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
+ new Function('require','exports',code)(name => name.endsWith('.css') ? {} : name === '@/lib/utils' ? {cn:(...s)=>s.filter(Boolean).join(' ')} : name.startsWith('@/') ? load(name.replace('@/','')+'.ts') : name === './campus-illustration' ? load('components/product/campus-illustration.tsx') : require(name), mod.exports)
  return mod.exports
 }
-const { campusIllustrations, studentCampusIllustration, clubCampusIllustration } = load('lib/campus-illustrations.ts')
-const student = {'student-dashboard':'lamp-posts-grounds',explore:'rotunda'}
-const club = {overview:'rotunda'}
-for (const [page,art] of Object.entries(student)) test(`Student ${page} resolves ${art}`,()=>assert.equal(studentCampusIllustration(page),art))
-for (const [page,art] of Object.entries(club)) test(`Club ${page} resolves ${art}`,()=>assert.equal(clubCampusIllustration(page),art))
-test('unmapped sections and recruiting never inherit generic or parent art',()=>{
- for(const page of ['','unknown','toString','constructor','my-clubs','saved-clubs','applications','tracker','interview-workspace','interviewer-dashboard','leader-dashboard','recruitment','recruitment-overview','decisions','rounds','rules','events','access','reports','support','activity','audit-log']) {
- assert.equal(studentCampusIllustration(page),undefined,page)
- assert.equal(clubCampusIllustration(page),undefined,page)
- }
- for(const page of Object.keys(club)) assert.equal(clubCampusIllustration(page,'recruiting'),undefined)
- // Utility screens use real data and task structure, without decorative campus art.
- for (const page of ['corkboard','inbox','student-profile']) assert.equal(studentCampusIllustration(page),undefined,page)
- for (const page of ['meetings','tasks','members','announcements','settings']) assert.equal(clubCampusIllustration(page),undefined,page)
- assert.equal(studentCampusIllustration('meetings'),undefined)
- assert.equal(studentCampusIllustration('tasks'),undefined)
- for(const setting of ['application','pipeline','interviews','members','notifications','advanced','unknown']) assert.equal(clubCampusIllustration('settings','club',setting),undefined)
- assert.equal(clubCampusIllustration('settings','club','general'),undefined)
-})
+const { campusIllustrations } = load('lib/campus-illustrations.ts')
 test('approved assets preserve full viewBoxes and filled external vector groups',()=>{
  for(const asset of new Set(Object.values(campusIllustrations).map(a=>a.asset))) {
  const svg=fs.readFileSync(`public/images/campus/illustrations/${asset}.svg`,'utf8')
@@ -51,11 +33,11 @@ test('decorative rendering is silent, unfocusable and references both exact asse
  assert.match(html,/preserveAspectRatio="xMidYMid meet"/)
  }
 })
-test('headers without explicit artwork have no illustration slot or ribbon',()=>{
+test('page headers preserve titles and actions without decorative artwork',()=>{
  const {PageHeader}=load('components/product/page-header.tsx')
- const html=renderToStaticMarkup(React.createElement(PageHeader,{title:'Applications',ribbon:true}))
+ const html=renderToStaticMarkup(React.createElement(PageHeader,{title:'Applications',eyebrow:'Research Club',description:'Deadline: Friday',action:React.createElement('button',null,'New application'),ribbon:true,illustration:'rotunda'}))
  assert.doesNotMatch(html,/oc-campus|data-illustrated/)
- assert.match(html,/<h1>Applications<\/h1>/)
+ assert.match(html,/<h1>Applications<\/h1>/);assert.match(html,/Research Club/);assert.match(html,/Deadline: Friday/);assert.match(html,/<button>New application<\/button>/)
 })
 test('Settings keeps settings navigation identity and URLs',()=>{
  const {managerNavigation}=load('lib/product-navigation.ts')
@@ -63,11 +45,10 @@ test('Settings keeps settings navigation identity and URLs',()=>{
  assert.equal(item.label,'Settings');assert.equal(item.href,'/club/test-club/workspace?section=settings')
  const views=load('lib/views.ts');assert.equal(views.viewTitles['club-manager'].title,'Settings')
 })
-test('responsive presentation preserves composition and approved colors without hiding mobile art',()=>{
+test('standalone brand artwork keeps original colors and reduced-motion support without header layout rules',()=>{
  const css=fs.readFileSync('styles/campus-illustrations.css','utf8')
- assert.match(css,/@media \(max-width: 639px\)/);assert.match(css,/@container/)
  assert.match(css,/color: #507b9e/);assert.match(css,/color: #f07835/)
- assert.doesNotMatch(css,/display:\s*none|mask-image|overflow:\s*hidden/)
+ assert.doesNotMatch(css,/oc-page-header|mask-image|overflow:\s*hidden/)
  assert.match(css,/prefers-reduced-motion: reduce/)
  assert.match(css,/aspect-ratio: var\(--oc-campus-aspect-ratio\)/)
 })
@@ -95,7 +76,6 @@ const settingsCases = [
 for(const [name, member, requested, effective, illustration] of settingsCases) test(`effective settings/art: ${name}`,()=>{
  const resolved=resolveSettingsTab(member, requested)
  assert.equal(resolved.active,effective)
- assert.equal(clubCampusIllustration('settings','club',resolved.active ?? ''),illustration)
  assert.ok(!resolved.active || resolved.sections.some(s=>s.id===resolved.active))
 })
 
@@ -124,7 +104,7 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
    if(name==='@/components/club-settings-workspace') return component('components/club-settings-workspace.tsx')
    if(name==='@/components/product/page-header') return component('components/product/page-header.tsx')
    if(name==='./campus-illustration') return component('components/product/campus-illustration.tsx')
-   if(['@/lib/campus-illustrations','@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
+   if(['@/lib/club-settings','@/lib/product-navigation','@/lib/permissions','@/lib/interview-access','@/lib/club-workspace','@/lib/workspace-navigation'].includes(name)) return load(name.replace('@/','')+'.ts')
    return new Proxy({}, {get:()=>()=>null})
   },exports)
   return exports
@@ -142,9 +122,9 @@ for(const [name,member,requested,effective,illustration] of settingsCases) test(
  else assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated/)
 })
 
-test('club Overview keeps its name, heading and public profile link without an artwork slot',()=>{
+test('club Overview keeps its name and heading without repetitive public profile shortcuts or artwork',()=>{
  const html=renderSettingsWorkspace({isOwner:true},null,'overview');
  assert.match(html,/<h1>Overview<\/h1>/);assert.match(html,/Fixture Club/);
- assert.match(html,/Public club profile/);assert.match(html,/href="\/club\/visual-fixture-club"/);
+ assert.doesNotMatch(html,/Public club profile|href="\/club\/visual-fixture-club"/);
  assert.doesNotMatch(html,/oc-campus-illustration|data-illustrated|oc-campus-ribbon/);
 })
