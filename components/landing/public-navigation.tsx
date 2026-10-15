@@ -79,7 +79,7 @@ export function PublicNavigation({ hero = false, journey, navigationRef }: {
       <div className="oc-public-nav-surface">
         <div className="oc-public-nav-row">
           <Link prefetch={false} className="oc-public-logo" href="/" aria-label="OutClass home" onClick={close}>
-            <span className="oc-public-logo-light"><OutClassLogo variant="wordmark" /></span>
+            <span className="oc-public-logo-light"><OutClassLogo variant="light" /></span>
             <span className="oc-public-logo-dark" aria-hidden="true"><OutClassLogo variant="dark" /></span>
           </Link>
           {journey && <div className="oc-public-journey oc-public-journey-desktop" inert={!journey.merged} aria-hidden={!journey.merged}>
