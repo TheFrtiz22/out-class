@@ -14,6 +14,8 @@ Flyer replacement/removal deletes the old database reference and queues its Stor
 
 ## Deployment
 
+The `balls` production build (`cf3a675`) was blocked by the schema gate: `Event.allDay` and both `EventFlyerDeletion` columns are absent in production. That commit is already on `main`. Apply the scheduling migration and the follow-up `20261016030000_event_flyer_deletion_runtime_access` together through the approved release process before retrying the build. The follow-up assigns the queue to the existing bounded app role, revokes browser grants, and preserves restrictive RLS; without it the app cannot enqueue/drain cleanup work or see the queue columns in the release check. It changes no role attributes or existing event records. Neither migration is executed by editing this document.
+
 1. Review `prisma/migrations/20261016020000_event_scheduling_flyer_limits/migration.sql` and follow the existing database deployment procedure. Prisma remains the sole migration history; do not enable a second Supabase migration chain.
 2. Apply the migration to the intended staging database before releasing the app. It preserves existing timed events, updates the existing bucket idempotently, adds the all-day check, expands the flyer size constraint, and adds the private deletion queue/triggers. Historical unselected flyer rows are queued for cleanup.
 3. If Supabase Storage is installed after the application migrations, apply the existing server-only Storage policy setup and replay the bucket upsert block from this migration. Confirm bucket privacy, limits, MIME types and both restrictive policies before enabling uploads.
