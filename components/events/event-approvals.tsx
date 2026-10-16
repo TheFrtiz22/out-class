@@ -5,6 +5,7 @@ import {
   type ManagedCampusEvent,
   eventDateLabel,
   eventTimeLabel,
+  eventScheduleLabel,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,7 @@ export function EventApprovals() {
                   <h2 className="font-semibold">{e.title}</h2>
                   <p className="text-sm">Hosted by {e.clubName}</p>
                   <p className="text-sm text-muted-foreground">
-                    {eventDateLabel(e.date)} · {eventTimeLabel(e.date)} ·{" "}
+                    {eventScheduleLabel(e)} ·{" "}
                     {e.location}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -178,18 +179,7 @@ export function EventApprovals() {
               </DialogDescription>
               <dl className="oc-event-facts">
                 <div>
-                  <dt>Starts</dt>
-                  <dd>
-                    {eventDateLabel(selected.date)} ·{" "}
-                    {eventTimeLabel(selected.date)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Ends</dt>
-                  <dd>
-                    {eventDateLabel(selected.endDate)} ·{" "}
-                    {eventTimeLabel(selected.endDate)}
-                  </dd>
+                  <dt>Date & time</dt><dd>{eventScheduleLabel(selected)}</dd>
                 </div>
                 <div>
                   <dt>Location</dt>

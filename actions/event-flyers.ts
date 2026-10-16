@@ -23,10 +23,10 @@ export async function uploadEventFlyer(input: FormData) {
     revision = z.coerce.number().int().min(0).parse(input.get("revision"));
   const { user } = await requireClubPermission(clubId, ["meetings.manage"]);
   const file = input.get("file");
-  if (!file || typeof file === "string" || file.size > 5242880)
-    throw Error("Choose a JPEG, PNG or WebP up to 5 MB.");
+  if (!file || typeof file === "string" || !file.size || file.size > 10485760)
+    throw Error("Choose a JPEG, PNG or WebP up to 10 MB.");
   const bytes = new Uint8Array(await file.arrayBuffer()),
-    mime = validateProfileFile(bytes, file.type, "headshot");
+    mime = validateProfileFile(bytes, file.type, "flyer");
   const ext =
     mime === "image/jpeg" ? "jpg" : mime === "image/png" ? "png" : "webp";
   const path = `${clubId}/${eventId}/${randomUUID()}.${ext}`;
@@ -108,12 +108,17 @@ export async function uploadEventFlyer(input: FormData) {
     );
   } catch (error) {
     // A failed transaction cannot leave a referenced flyer. Remove its new private object.
-    if (uploadedStorage)
-      await (uploadedStorage as Awaited<ReturnType<typeof privateFlyerStorage>>)
-        .remove([path])
-        .catch(() => {});
+    if (uploadedStorage) {
+      try {
+        const removed = await (uploadedStorage as Awaited<ReturnType<typeof privateFlyerStorage>>).remove([path]);
+        if (removed.error) throw removed.error;
+      } catch {
+        await prisma.$executeRaw`INSERT INTO "EventFlyerDeletion"(path) VALUES(${path}) ON CONFLICT DO NOTHING`;
+      }
+    }
     throw error;
   }
+  await import("@/utils/event-flyer-cleanup").then(m => m.cleanupEventFlyers()).catch(() => {});
   revalidatePath("/corkboard");
   revalidatePath("/");
   revalidateTag("club-directory");

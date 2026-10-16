@@ -4,7 +4,8 @@ import { AutosaveStatus } from "@/components/ui/autosave-status";
 
 import { useEffect, useRef, useState } from "react";
 import { listClubCampusEvents, saveCampusEvent, commandCampusEvent, uploadEventFlyer, getCampusEventRsvpDashboard } from "@/lib/workspace-api";
-import { eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, eventTimeLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
+import { eventDay, nyDate, eventSchedule, eventDurations, eventScheduleLabel, eventCategories, flyerTemplates, newYorkInput, newYorkInstant, eventDateLabel, managedEventStatus, eventRsvpSummary, type CampusEvent, type ManagedCampusEvent } from "@/lib/campus-events";
+import { EventScheduleFields } from "./event-schedule-fields";
 import { EventFlyer } from "./event-flyer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
     <Button variant="outline" size="sm" disabled={loading || busy} onClick={() => setRetry(n => n + 1)}>Refresh events</Button>
     {event ? <div className="oc-event-management-detail">
       <div><Button variant="ghost" onClick={() => setSelected(null)}>← All Corkboard events</Button><EventFlyer event={event} /></div>
-      <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventDateLabel(event.date)} · {eventTimeLabel(event.date)} – {eventTimeLabel(event.endDate)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
+      <div className="min-w-0 space-y-4"><h2 ref={detailHeading} tabIndex={-1} className="oc-section-heading break-words">{event.title}</h2><span className="oc-event-status">{managedEventStatus(event)}</span><p>{eventScheduleLabel(event)}</p><p className="break-words">{event.location}</p><p className="whitespace-pre-wrap break-words text-sm leading-7">{event.description}</p>
         {event.status === "PENDING" && <p role="status">Waiting for OutClass approval.</p>}
         {event.rejectionReason && <p className="rounded-lg border p-3 text-sm">Review feedback: {event.rejectionReason}</p>}
         <dl className="text-sm text-muted-foreground">{event.submittedAt && <><dt>Last submitted</dt><dd>{eventDateLabel(event.submittedAt)}</dd></>}{event.reviewedAt && <><dt>Last reviewed</dt><dd>{eventDateLabel(event.reviewedAt)}</dd></>}</dl>
@@ -66,7 +67,7 @@ export function ClubEvents({ clubId, clubName, canSeeAttendees }: { clubId: stri
     </div> : <>
       <div className="oc-event-management-tabs" role="group" aria-label="Event filter">{tabs.map(t => <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}>{t}{t === "Pending Approval" ? ` (${rows.filter(e => e.status === "PENDING").length})` : ""}</button>)}</div>
       {loading ? <p role="status">Loading events…</p> : !rows.length ? <div className="rounded-lg border p-8"><h3>No Corkboard events yet.</h3><p className="mt-2 text-sm text-muted-foreground">Create a draft, preview it, then submit it for OutClass approval.</p><Button className="mt-4" onClick={() => setEditing(null)}>Create Corkboard Event</Button></div> : !visible.length ? <p className="rounded-lg border p-8 text-sm">No events in {tab.toLowerCase()}.</p> : <ul className="oc-managed-events">{visible.map(e => <li className="oc-managed-event" key={e.id}>
-        <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventDateLabel(e.date)} · {eventTimeLabel(e.date)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
+        <div aria-hidden="true"><EventFlyer event={e} /></div><div className="min-w-0"><h3 className="break-words font-semibold">{e.title}</h3><p className="mt-2 text-sm">{eventScheduleLabel(e)}</p><p className="break-words text-sm text-muted-foreground">{e.location}</p><span className="oc-event-status">{managedEventStatus(e)} · {+new Date(e.endDate) <= Date.now() ? "Past" : "Upcoming"}</span><p className="mt-2 text-sm">{eventRsvpSummary(e.rsvpCount, e.capacity)}</p>{e.status === "PENDING" && <p className="mt-2 text-xs">Waiting for OutClass approval.</p>}{e.rejectionReason && <p className="mt-2 break-words text-sm">Review feedback: {e.rejectionReason}</p>}</div>{actions(e)}
       </li>)}</ul>}
     </>}
     <Dialog open={!!confirm} onOpenChange={open => { if (!open && !busy) setConfirm(null) }}><DialogContent onCloseAutoFocus={e => { e.preventDefault(); const target = removed.current ? detailHeading.current || overviewHeading.current : removeOrigin.current; if (target?.isConnected) target.focus(); }}><DialogTitle>Remove from Corkboard?</DialogTitle><DialogDescription>{confirm?.title} will leave the public Corkboard. Its event history and RSVP records will remain. Publishing again requires approval.</DialogDescription>{error && <p role="alert">{error}</p>}<div className="flex flex-wrap gap-2"><Button variant="outline" disabled={busy} onClick={() => setConfirm(null)}>Keep event</Button><Button disabled={busy} onClick={() => confirm && void command(confirm, "WITHDRAW")}>Remove from Corkboard</Button></div></DialogContent></Dialog>
@@ -96,6 +97,10 @@ function EventEditor({
     [description, setDescription] = useState(event?.description || ""),
     [start, setStart] = useState(event ? newYorkInput(event.date) : ""),
     [end, setEnd] = useState(event ? newYorkInput(event.endDate) : ""),
+    [allDay, setAllDay] = useState(event?.allDay ?? false),
+    [lastDay, setLastDay] = useState(event?.allDay ? eventDay(nyDate(new Date(event.endDate)), -1) : ""),
+    [duration, setDuration] = useState(event ? (eventDurations.some(m => m === (+new Date(event.endDate) - +new Date(event.date)) / 60000) ? String((+new Date(event.endDate) - +new Date(event.date)) / 60000) : "custom") : "60"),
+    [uploading, setUploading] = useState(false),
     [location, setLocation] = useState(event?.location || ""),
     [category, setCategory] = useState(event?.category || "Social"),
     [contact, setContact] = useState(event?.contact || ""),
@@ -112,16 +117,16 @@ function EventEditor({
     [notice, setNotice] = useState("");
   const draftSave = useEditorDraft({
     scope: { kind: "event", clubId, resourceId: event?.id ?? "new" },
-    value: { title, description, start, end, location, category, contact, enabled, required, capacity, deadline, template, useTemplate },
-    restore: d => { setTitle(d.title); setDescription(d.description); setStart(d.start); setEnd(d.end); setLocation(d.location); setCategory(d.category); setContact(d.contact); setEnabled(d.enabled); setRequired(d.required); setCapacity(d.capacity); setDeadline(d.deadline); setTemplate(d.template); setUseTemplate(d.useTemplate) },
+    value: { title, description, start, end, allDay, lastDay, duration, location, category, contact, enabled, required, capacity, deadline, template, useTemplate },
+    restore: d => { setTitle(d.title); setDescription(d.description); setStart(d.start); setEnd(d.end); setAllDay(d.allDay ?? false); setLastDay(d.lastDay ?? ""); setDuration(d.duration ?? "custom"); setLocation(d.location); setCategory(d.category); setContact(d.contact); setEnabled(d.enabled); setRequired(d.required); setCapacity(d.capacity); setDeadline(d.deadline); setTemplate(d.template); setUseTemplate(d.useTemplate) },
     base: event ? String(event.revision) : "new",
   });
   const operation = useRef(false);
-  let date = "2026-10-16T23:00:00Z",
-    endDate = "2026-10-17T01:00:00Z";
+  let date = new Date().toISOString(),
+    endDate = new Date(Date.now() + 3600000).toISOString();
   try {
-    if (start) date = newYorkInstant(start).toISOString();
-    if (end) endDate = newYorkInstant(end).toISOString();
+    const schedule = eventSchedule(start, end, duration, allDay, lastDay, event ?? undefined);
+    date = schedule.date.toISOString(); endDate = schedule.endDate.toISOString();
   } catch {}
   const preview: CampusEvent = {
     id: saved?.id || "",
@@ -131,6 +136,7 @@ function EventEditor({
     description: description || "Tell students what to expect.",
     date,
     endDate,
+    allDay,
     location: location || "Event location",
     category,
     contact,
@@ -157,8 +163,8 @@ function EventEditor({
         revision: saved?.revision || 0,
         title,
         description,
-        date: newYorkInstant(start),
-        endDate: newYorkInstant(end),
+        ...eventSchedule(start, end, duration, allDay, lastDay, event ?? undefined),
+        allDay,
         location,
         category,
         contact,
@@ -191,9 +197,10 @@ function EventEditor({
   }
   async function upload(file: File) {
     if (operation.current) return;
+    if (!file.size || file.size > 10 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP up to 10 MB."); return; }
     const current = await save(false, true);
     if (!current) { operation.current = false; setBusy(false); return; }
-    setBusy(true);
+    setBusy(true); setUploading(true); setNotice("");
     try {
       const data = new FormData();
       data.set("eventId", current.id);
@@ -211,7 +218,7 @@ function EventEditor({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Flyer upload failed.");
     } finally {
-      operation.current = false; setBusy(false);
+      operation.current = false; setBusy(false); setUploading(false);
     }
   }
   return (
@@ -225,9 +232,7 @@ function EventEditor({
         </Button>
       </div>
       <p className="mb-5 text-sm text-muted-foreground">
-        Your private draft saves automatically. Preview your flyer, then submit for approval. Applying changes to an
-        approved event withdraws it until an administrator approves the new
-        revision.
+        Your private draft saves automatically. Submit when ready for approval.
       </p>
       {event?.status === "PUBLISHED" && <p role="note" className="mb-5 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-slate-900">Changing these event details or the flyer will remove the event from the public Corkboard until the changes are approved.</p>}
       <AutosaveStatus save={draftSave} />
@@ -248,39 +253,7 @@ function EventEditor({
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>
-          <label>
-            Description
-            <textarea
-              required
-              maxLength={10000}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <div className="oc-event-editor-pair">
-            <label>
-              Starts (Eastern Time)
-              <Input
-                required
-                type="datetime-local"
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-              />
-            </label>
-            <label>
-              Ends (Eastern Time)
-              <Input
-                required
-                type="datetime-local"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-              />
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            During the fall clock change, ambiguous times use the earlier
-            occurrence. Spring clock-change gaps are rejected.
-          </p>
+          <EventScheduleFields start={start} end={end} duration={duration} allDay={allDay} lastDay={lastDay} existing={event ?? undefined} setStart={setStart} setEnd={setEnd} setDuration={setDuration} setAllDay={setAllDay} setLastDay={setLastDay} />
           <label>
             Location
             <Input
@@ -288,6 +261,15 @@ function EventEditor({
               maxLength={500}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+            />
+          </label>
+          <label>
+            Description
+            <textarea
+              required
+              maxLength={10000}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </label>
           <div className="oc-event-editor-pair">
@@ -343,7 +325,7 @@ function EventEditor({
               />
             </label>
             <label>
-              RSVP deadline (Eastern Time)
+              RSVP deadline
               <Input
                 type="datetime-local"
                 value={deadline}
@@ -371,8 +353,9 @@ function EventEditor({
             </select>
           </label>
           {!useTemplate && saved?.flyerUrl && <Button type="button" variant="outline" disabled={busy} onClick={() => { setUseTemplate(true); setNotice("Flyer removed from this preview. Save the draft to apply."); }}>Remove uploaded flyer</Button>}
-          <label>
-            Upload a flyer (PNG, JPEG or WebP · up to 5 MB)
+          <label className="rounded-xl border-2 border-dashed p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const file = e.dataTransfer.files[0]; if (file && !busy && draftSave.ready && !draftSave.recovery) void upload(file); }}>
+            Event Flyer — Optional
+            <span className="block text-sm text-muted-foreground">Drop a PNG, JPEG or WebP here, or choose a file. Up to 10 MB.</span>
             <Input
               type="file"
               accept="image/png,image/jpeg,image/webp"
@@ -384,6 +367,7 @@ function EventEditor({
               }}
             />
           </label>
+          {uploading && <div role="status" aria-live="polite"><progress aria-label="Uploading flyer" /> Uploading flyer…</div>}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

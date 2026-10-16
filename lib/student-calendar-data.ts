@@ -5,7 +5,7 @@ import { SCHEDULING_TIMEZONE, minuteLabel } from "@/lib/scheduling-config"
 type Timestamp = Date | string
 export type CalendarSource = {
   panelAssignments?: {id:string;clubId:string;clubName:string;roundName:string;roomName:string;startTime:Timestamp;endTime:Timestamp;location:string}[]
-  meetings?: { id: string; clubId: string; date: Timestamp; title: string; location: string; description?: string | null; audience: string; club: { name: string } }[]
+  meetings?: { id: string; clubId: string; date: Timestamp; endDate?: Timestamp | null; allDay?: boolean; title: string; location: string; description?: string | null; audience: string; club: { name: string } }[]
   applications?: {
     clubId: string
     club: { name: string; color?: string | null }
@@ -20,6 +20,8 @@ export type CalendarSource = {
       id?: string
       clubId: string
       date: Timestamp
+      endDate?: Timestamp | null
+      allDay?: boolean
       title: string
       location: string
       description?: string | null
@@ -46,6 +48,8 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
       readOnly: true,
       clubId: att.event.clubId,
       ...at(att.event.date),
+      allDay: att.event.allDay,
+      endTime: att.event.endDate ? new Date(att.event.endDate).toISOString() : undefined,
       title: att.event.title,
       club: att.event.club?.name || att.event.clubId,
       color: "#142d4e",
@@ -74,7 +78,7 @@ export function studentCalendarEvents(source?: CalendarSource | null): ClubEvent
         response: "confirmed" as const,
       })),
   )
-  const meetings: ClubEvent[] = (source?.meetings || []).map(m => ({ id: `meeting-${m.id}`, readOnly: true, clubId: m.clubId, ...at(m.date), title: m.title, club: m.club.name, color: "#142d4e", type: m.audience === "RECRUITMENT" ? "Interest Meeting" : "Other", location: m.location, description: m.description || undefined }))
+  const meetings: ClubEvent[] = (source?.meetings || []).map(m => ({ id: `meeting-${m.id}`, readOnly: true, clubId: m.clubId, ...at(m.date), allDay: m.allDay, endTime: m.endDate ? new Date(m.endDate).toISOString() : undefined, title: m.title, club: m.club.name, color: "#142d4e", type: m.audience === "RECRUITMENT" ? "Interest Meeting" : "Other", location: m.location, description: m.description || undefined }))
   const panels: ClubEvent[]=(source?.panelAssignments??[]).map(s=>({id:`panel-${s.id}`,readOnly:true,clubId:s.clubId,...at(s.startTime),title:`${s.clubName} interview panel`,club:s.clubName,color:"#142d4e",type:"Interview",location:s.location,description:`${s.roundName} · ${s.roomName}`,durationMinutes:Math.max(1,(+new Date(s.endTime)-+new Date(s.startTime))/60000),response:"confirmed"}))
   return [...meetings, ...attendances, ...interviews, ...panels]
 }

@@ -21,8 +21,8 @@ export function eventStart(event: ClubEvent) {
 }
 export function calendarFile(event: ClubEvent) {
   const start = eventStart(event)
-  const end = new Date(start.getTime() + (event.durationMinutes ?? (event.type === "Deadline" ? 1 : 60)) * 60000)
-  return calendarEventFile({ id: event.id, title: event.title, description: event.description ?? event.club, location: event.location ?? "", start, end })
+  const end = event.endTime ? new Date(event.endTime) : new Date(start.getTime() + (event.durationMinutes ?? (event.type === "Deadline" ? 1 : 60)) * 60000)
+  return calendarEventFile({ id: event.id, title: event.title, description: event.description ?? event.club, location: event.location ?? "", start, end, allDay: event.allDay })
 }
 export function managedOccurrences(events: ManagedEvent[], from: Date, to: Date, memberClubIds: Set<string>): ClubEvent[] {
   return events.flatMap((event) => {
@@ -35,4 +35,12 @@ export function managedOccurrences(events: ManagedEvent[], from: Date, to: Date,
     } else if (/^\d{4}-\d{2}-\d{2}$/.test(event.date)) dates.push(event.date)
     return dates.map((date) => ({ id: `managed-${event.id}-${date}`, managedEventId: event.id, clubId: event.clubId, date, day: Number(date.slice(-2)), title: event.title, club: event.clubId, color: "#051B3D", type: "Interest Meeting" as const, time: minuteLabel(timeMinutes(event.time)), location: event.location, meetingUrl: event.zoomLink, description: `${event.scope} club event${event.recurring ? " · Weekly recurring meeting" : ""}.` }))
   })
+}
+
+export function eventOccursOn(event: ClubEvent, day: string) {
+  if (event.allDay && event.endTime) {
+    const last = new Intl.DateTimeFormat("en-CA", { timeZone: SCHEDULING_TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(event.endTime));
+    return event.date <= day && day < last;
+  }
+  return event.date === day;
 }

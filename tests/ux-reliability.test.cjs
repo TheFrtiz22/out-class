@@ -34,7 +34,7 @@ test('club search selection honors unsaved and in-flight guards before leaving t
 })
 function boardHarness(api, id = '00000000-0000-4000-8000-000000000001') {
   const h = hooks(); let currentId = id
-  const C = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/campus-events': { eventCategories: [], eventDateLabel: value => value, eventTimeLabel: value => value }, 'next/navigation': { useSearchParams: () => new URLSearchParams(currentId ? { event: currentId } : {}) }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/lib/workspace-api': { getPublicCorkboard: async () => ({ events: [], clubs: [], total: 0, hasMore: false }), ...api } }, { window: { location: { search: '?event=' + id } }, setTimeout: fn => { fn(); return 1 }, clearTimeout() {} }).PublicEventBoard
+  const C = load('components/events/public-event-board.tsx', { react: h.react, '@/lib/campus-events': { eventCategories: [], eventDateLabel: value => value, eventTimeLabel: value => value, eventScheduleLabel: event => event.date }, 'next/navigation': { useSearchParams: () => new URLSearchParams(currentId ? { event: currentId } : {}) }, '@/contexts/auth-context': { useAuth: () => ({ user: null }) }, '@/lib/workspace-api': { getPublicCorkboard: async () => ({ events: [], clubs: [], total: 0, hasMore: false }), ...api } }, { window: { location: { search: '?event=' + id } }, setTimeout: fn => { fn(); return 1 }, clearTimeout() {} }).PublicEventBoard
   return { render: () => h.render(() => C()), flush: h.flush, setId: id => currentId = id }
 }
 test('failed event deep links provide retry and distinguish unavailable events from request errors', async () => {

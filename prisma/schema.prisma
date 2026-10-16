@@ -359,6 +359,7 @@ model Evaluation {
 
 model Meeting {
   audience      String                @default("RECRUITMENT")
+  allDay        Boolean @default(false)
   endDate       DateTime?
   agenda        String                @default("")
   recap         String                @default("")
@@ -1265,6 +1266,11 @@ model EventPublication {
 
   @@index([status, submittedAt])
   @@index([category, status])
+}
+
+model EventFlyerDeletion {
+  path String @id
+  createdAt DateTime @default(now())
 }
 
 model EventFlyer {
