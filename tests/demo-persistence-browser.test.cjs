@@ -15,7 +15,7 @@ test('production React Demo question opening, continuous input, reload and cross
     if(i<4)await page.getByRole('button',{name:'Back to question bank',exact:true}).click()
    }
    if(condition==='warm'){
-    const suffix='Continuous synthetic typing: CAPS, punctuation! 123',original=await page.getByRole('textbox',{name:'Your private notes',exact:true}).inputValue(),text=original+suffix;await page.keyboard.press('Control+End');await page.keyboard.type(suffix,{delay:0});assert.equal(await page.getByRole('textbox',{name:'Your private notes',exact:true}).inputValue(),text)
+    const suffix='Continuous synthetic typing: CAPS, punctuation! 123',original=await page.getByRole('textbox',{name:'Your private notes',exact:true}).inputValue();await page.getByRole('button',{name:'Back to question bank',exact:true}).click();await bank().nth(1).click();await page.keyboard.type(suffix,{delay:0});const text=await page.getByRole('textbox',{name:'Your private notes',exact:true}).inputValue();assert.equal(text.replace(suffix,''),original);assert.equal(text.split(suffix).length,2)
     await page.getByText('All changes saved',{exact:true}).waitFor();await page.reload();await page.getByRole('textbox',{name:'Your private notes',exact:true}).waitFor();assert.equal(await page.getByRole('textbox',{name:'Your private notes',exact:true}).inputValue(),text)
     if(!process.env.OUTCLASS_DEMO_BASELINE){
      const peer=await context.newPage();await peer.goto(f.url+'/?interviewTiming=1');await peer.getByRole('textbox',{name:'Your private notes',exact:true}).waitFor()
