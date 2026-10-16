@@ -35,7 +35,6 @@ const CorkboardView = dynamic(() => import("@/components/views/corkboard-view").
 const ApplicationTrackerView = dynamic(() => import("@/components/views/application-tracker-view").then(module => module.ApplicationTrackerView), { loading: renderWorkspaceLoading })
 const CalendarView = dynamic(() => import("@/components/views/calendar-view").then(module => module.CalendarView), { loading: renderWorkspaceLoading })
 const LeaderDashboardView = dynamic(() => import("@/components/views/leader-dashboard-view").then(module => module.LeaderDashboardView), { loading: renderWorkspaceLoading })
-const ClubManagerView = dynamic(() => import("@/components/views/club-manager-view").then(module => module.ClubManagerView), { loading: renderWorkspaceLoading })
 const ClubManagementPortalView = dynamic(() => import("@/components/views/club-management-portal-view").then(module => module.ClubManagementPortalView), { loading: renderWorkspaceLoading })
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(module => module.ScreeningDashboardView), { loading: renderWorkspaceLoading })
 const InterviewSchedulerView = dynamic(() => import("@/components/views/interview-scheduler-view").then(module => module.InterviewSchedulerView), { loading: renderWorkspaceLoading })

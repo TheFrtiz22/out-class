@@ -5,7 +5,7 @@ type SyncContext={app:Prisma.ApplicationGetPayload<{include:{round:true}}>;exist
 import type { AppTransactionClient } from "@/utils/prisma";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { loadInterviewerPool } from "@/utils/interviewer-pool";
-import { intervalAvailability } from "@/lib/availability";
+
 import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifications";
 /** Called inside the booking/owner transaction, serialized on Club and Application. */
 export async function syncBookingPanel(tx: AppTransactionClient, applicationId: string, roundId: string, actorId: string, options: {notify?:boolean;context?:SyncContext;batch?:BookingPanelBatch} = {}) {

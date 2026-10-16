@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { scholarPrograms, scholarLabels, scholarStatusSchema, toggleScholar } from "@/lib/scholar-status"
+import { scholarPrograms, scholarLabels, toggleScholar } from "@/lib/scholar-status";
 
 const titles = {
   identity: "Name & photo",

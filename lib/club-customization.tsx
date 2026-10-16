@@ -9,7 +9,6 @@ export { crmColumns, emptyFilters, removeStage, matchesCRMFilters } from "@/lib/
 export type { ColumnId, CRMFilters, PublicProfile } from "@/lib/club-customization-model"
 
 const Context = createContext<{ clubs: Record<string, ClubCustomization>; setClubs: Dispatch<SetStateAction<Record<string, ClubCustomization>>>; ready: boolean; storageError: boolean } | null>(null)
-const storageKey = "outclass.customization.v1"
 export function ClubCustomizationProvider({ children }: { children: ReactNode }) {
   const { isDemoEnabled } = useDemoMode()
   const storageKey = isDemoEnabled ? "outclass.demo.customization.v1" : "outclass.customization.v1"

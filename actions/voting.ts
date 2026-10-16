@@ -106,7 +106,7 @@ export async function commandVotingSession(input: unknown) {
   const capability: ClubPermission = d.action === "PUBLISH" ? "decisions.publish" : d.action === "REOPEN" ? "decisions.reopen" : d.action === "FINISH" ? "decisions.finish" : ["OPEN_JOIN", "SET_CANDIDATE", "START_PASS", "COMPLETE_PASS", "PAUSE", "RESUME"].includes(d.action) ? "decisions.start" : "decisions.manage"
   const caps:ClubPermission[]=["applications.review",capability]
   if(d.action==="PUBLISH") caps.push("applicants.identify")
-  const {user,membership}=await requireClubPermission(d.clubId,caps)
+  const {user}=await requireClubPermission(d.clubId,caps)
   return clubWriteTransaction(async tx=>{
     await lockOperationalClub(tx, d.clubId)
     await authorizeClubTransaction(tx,d.clubId,user.id,caps)

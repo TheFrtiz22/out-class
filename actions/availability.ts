@@ -11,7 +11,7 @@ import { organizationRoles } from "@/lib/organization-authorization"
 import { sessionsOverlap, panelWindowSchema } from "@/lib/panel-proposals"
 import { loadPanelPlanningScene } from "@/utils/panel-planning"
 import { loadInterviewerPool } from "@/utils/interviewer-pool"
-import { availabilityResponse, availabilityHref, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability"
+import { availabilityResponse, addDays, availabilitySaveSchema, emptySchedule, interviewerEligible, intervalAvailability, localDateSchema, localParts, monday, parseSchedule, timezoneSchema, validateAvailabilityEdit, weekCells, type AvailabilityDocument, type AvailabilityOverview, type AvailabilityRound, type AvailabilitySchedule } from "@/lib/availability";
 
 const id = z.string().uuid()
 const scopeSchema = z.object({ clubId: id, roundId: id }).strict()

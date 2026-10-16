@@ -20,7 +20,7 @@ export type Club = {
 }
 
 export const clubs: Club[] = []
-export let featuredClub: Club | undefined = undefined;
+
 export type Application = {
   id: string
   clubId: string
@@ -195,43 +195,6 @@ export type NextInQueue = {
   time: string
 }
 
-export const nextCandidateInQueue: NextInQueue = {
-  name: "Liam Walsh",
-  time: "10:20 AM",
-}
-
-export const interviewCandidate: InterviewCandidate = {
-  id: "ic-1",
-  name: "Alex Chen",
-  initials: "AC",
-  targetRole: "Junior Analyst",
-  round: "Round 1",
-  activeRoundId: "round-1",
-  location: "Shannon 318C",
-  major: "Finance & CS",
-  year: "Sophomore",
-  satScore: 1520,
-  gpa: "3.88",
-  linkedin: "linkedin.com/in/alexchen",
-  bio: "Sophomore double-majoring in Finance and Computer Science. Builds small trading backtests for fun and is looking for a rigorous team to pressure-test investment ideas with.",
-  experience: ["Investment Banking Summer Analyst — Piper Sandler (2025)", "Treasurer, UVA Quant Club (2024—Present)"],
-  skills: ["Financial Modeling", "Python", "Market Sizing", "SQL"],
-  essays: [
-    {
-      question: "Why VCG?",
-      answer:
-        "I want to work alongside people who will argue with my thesis in good faith. VCG's real-capital mandate means every recommendation has to survive scrutiny, and I want to build that discipline early.",
-    },
-    {
-      question: "Describe a difficult team challenge.",
-      answer:
-        "On a case team, a member consistently missed deadlines. Instead of escalating immediately, I had a direct 1:1 to understand the bottleneck — they were overloaded elsewhere — and we restructured the workload split. The team hit the deadline and the member became one of our strongest contributors.",
-    },
-  ],
-  pastRoundNotes: [
-    { round: "Screening Round", interviewer: "Grace Liu", note: "Strong SAT/GPA, clean essays. Sharp on the market-sizing sample question during phone screen. Recommend advancing." },
-  ],
-}
 
 export const interviewQuestions: InterviewQuestion[]  = []
 
@@ -386,11 +349,6 @@ export type DiscoverClub = {
 
 export const discoverClubs: DiscoverClub[]  = []
 
-export const rubricCriteria = [
-  { id: "culture", label: "Culture Fit", hint: "Collaboration, curiosity, coachability" },
-  { id: "experience", label: "Experience", hint: "Relevant background & technical skill" },
-  { id: "case", label: "Case Study", hint: "Reasoning quality on the prompt" },
-] as const
 
 export type TrackerStatus = "Drafting" | "Submitted" | "In Review" | "Interviewing" | "Accepted" | "Rejected" | "Waitlisted" | "1st Round Interview" | "Decision Pending"
 
@@ -487,9 +445,6 @@ export type ClubBrandingProfile = {
 
 export type ScoringMetric = "1-5 Scale" | "1-10 Scale" | "Pass/Fail"
 
-export const SCORING_METRICS: ScoringMetric[] = ["1-5 Scale", "1-10 Scale", "Pass/Fail"]
-
-export const ROUND_DURATIONS = ["15 minutes", "20 minutes", "30 minutes", "45 minutes", "60 minutes"]
 
 export type PipelineQuestion = {
   id: string
@@ -504,58 +459,6 @@ export type PipelineRound = {
   questions: PipelineQuestion[]
 }
 
-export const initialPipelineRounds: PipelineRound[] = [
-  {
-    id: "pr-1",
-    name: "Round 1: Behavioral",
-    duration: "20 minutes",
-    scoringMetric: "1-5 Scale",
-    questions: [
-      { id: "prq-1", text: "Walk me through why you want to join this club." },
-      { id: "prq-2", text: "Tell me about a time you worked through conflict on a team." },
-      { id: "prq-3", text: "What's a mistake you made and what did you learn from it?" },
-    ],
-  },
-  {
-    id: "pr-2",
-    name: "Round 2: Technical",
-    duration: "30 minutes",
-    scoringMetric: "1-10 Scale",
-    questions: [
-      { id: "prq-4", text: "Walk through a valuation or model you've built." },
-      { id: "prq-5", text: "Pitch a long or short idea and defend it under pushback." },
-    ],
-  },
-  {
-    id: "pr-3",
-    name: "Round 3: Partner Chat",
-    duration: "15 minutes",
-    scoringMetric: "Pass/Fail",
-    questions: [{ id: "prq-6", text: "Any final questions for us? General fit conversation." }],
-  },
-]
-
-export const initialClubBrandingProfile: ClubBrandingProfile = {
-  name: "Portico Impact Fund",
-  tagline: "UVA's premier student-run ESG investment fund",
-  category: "Finance & Investing",
-  logoUrl: null,
-  bannerUrl: null,
-  accentColor: "#232D4B",
-  acceptanceRate: "8%",
-  aum: "150,000",
-  displayAum: true,
-  memberCount: "45",
-  placements: ["Goldman Sachs", "Citadel", "McKinsey", "Morgan Stanley"],
-  accolades: [
-    { id: "acc-1", text: "2025 National Stock Pitch Champions" },
-    { id: "acc-2", text: "Best CIO 2024" },
-  ],
-  website: "porticoimpactfund.com",
-  linkedin: "linkedin.com/company/portico-impact-fund",
-  instagram: "@porticoimpact",
-  contactEmail: "exec@porticoimpact.virginia.edu",
-}
 
 export type BroadcastAudience = "Subscribed Followers" | "Active Applicants" | "Accepted Members"
 

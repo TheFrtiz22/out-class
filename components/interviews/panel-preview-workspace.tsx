@@ -2,7 +2,7 @@
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 
 import { useEffect, useRef, useState } from "react"
-import { beginPanelScheduleRevision, revalidatePanelDraft, reviewPanelPublication, publishPanelSchedule, assignPanelAvailabilityOverride, revokePanelAvailabilityOverride, generatePanelProposal, previewPanelProposalEdits, savePanelProposalDraft, discardPanelProposal, getPanelProposalWorkspace } from "@/lib/workspace-api"
+import { beginPanelScheduleRevision, revalidatePanelDraft, reviewPanelPublication, publishPanelSchedule, assignPanelAvailabilityOverride, revokePanelAvailabilityOverride, generatePanelProposal, savePanelProposalDraft, discardPanelProposal, getPanelProposalWorkspace } from "@/lib/workspace-api";
 import { Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { PanelPublicationHistory,PanelChangeList } from "./panel-publication-history"

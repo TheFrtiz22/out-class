@@ -3,7 +3,7 @@ import { academicYear } from "@/lib/recruitment-profile";
 import type * as Live from "@/actions/voting"
 import { demoStore, demoMember } from "./store"
 import { summarizeVoting, createVotingSchema, votingCommandSchema, votingScope, decisionSchema } from "@/lib/voting-engine"
-import { readVotingDisplay } from "@/lib/voting-presentation"
+
 import { z } from "zod"
 type Workspace=Awaited<ReturnType<typeof Live.getVotingWorkspace>>
 type Session=NonNullable<Workspace["session"]>
