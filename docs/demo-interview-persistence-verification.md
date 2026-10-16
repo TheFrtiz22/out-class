@@ -26,7 +26,7 @@ Existing sessions and rooms now return authorized copies without mutation. Uncha
 
 ## Browser evidence and limits
 
-Actual Dell Pro 14 Essential PV14250, Core 7 150U, 15.7 GiB RAM; installed Chrome 155.0.8059.40, headless isolated browser contexts, no throttling. Both conditions use the same loopback production-mode React bundle, actual Demo provider/store/adapters, question component, collaboration hook, synthetic seed dated 2026-10-16, and existing `interviewTiming=1` diagnostic. Before substitutes only the three Demo modules from baseline Git source. No artificial action latency. These are component-browser measurements, **not full hosted Next.js measurements**. Fresh context means first editor in new browser storage, not an OS/network cold start.
+Actual Dell Pro 14 Essential PV14250, Core 7 150U, 15.7 GiB RAM; installed Chrome 155.0.8059.80 (both recorded comparison runs), headless isolated browser contexts, no throttling. Both conditions use the same loopback production-mode React bundle, actual Demo provider/store/adapters, question component, collaboration hook, synthetic seed dated 2026-10-16, and existing `interviewTiming=1` diagnostic. Before substitutes only the three Demo modules from baseline Git source. No artificial action latency. These are component-browser measurements, **not full hosted Next.js measurements**. Fresh context means first editor in new browser storage, not an OS/network cold start.
 
 | Handler to committed, focused editor | Before, n=5 | After, n=5 |
 |---|---|---|
