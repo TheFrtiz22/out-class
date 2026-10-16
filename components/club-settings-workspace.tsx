@@ -12,7 +12,7 @@ import { canLeaveWorkspace } from "@/lib/product-navigation";
 import { hasPermission } from "@/lib/permissions";
 import { saveClubPreferences } from "@/actions/club-settings";
 import { ClubProfileSettings } from "@/components/club-profile-settings";
-import { Button } from "@/components/ui/button";
+
 import "@/components/clubs/club-settings.css";
 const ApplicationBuilder = dynamic(() =>
   import("@/components/views/club-manager/application-builder-view").then(

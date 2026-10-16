@@ -1,22 +1,4 @@
-import {
-  LogIn,
-  Home,
-  CalendarDays,
-  CalendarClock,
-  Table2,
-  Bell,
-  Compass,
-  Bookmark,
-  ClipboardList,
-  ShieldAlert,
-  MessageSquareText,
-  Users2,
-  Settings2,
-  UserRound,
-  Megaphone,
-  Globe,
-  type IconComponent,
-} from "@/components/icons"
+import { LogIn, Home, CalendarDays, CalendarClock, Table2, Bell, Compass, Bookmark, ClipboardList, ShieldAlert, MessageSquareText, Settings2, UserRound, Megaphone, Globe, type IconComponent } from "@/components/icons";
 
 export type ViewId =
   | "my-clubs"

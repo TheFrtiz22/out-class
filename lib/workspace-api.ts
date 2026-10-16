@@ -46,7 +46,7 @@ import * as demoInterviews from "@/lib/demo/interview-foundation"
 import * as interviewKits from "@/actions/interview-kits"
 import * as collaboration from "@/actions/interview-collaboration"
 import * as demoCollaboration from "@/lib/demo/interview-collaboration"
-import { kitSchema, interviewDraftSchema, emptyInterviewDraft, validateQuestionNotes } from "@/lib/interview-kits"
+
 import * as meetingsApi from "@/actions/meetings"
 import { meetingInputSchema, canReadMeeting, TOKEN_LIFETIME_MS } from "@/lib/meetings"
 import * as apps from "@/actions/applications"

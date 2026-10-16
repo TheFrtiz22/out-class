@@ -1,5 +1,5 @@
 import type {AppTransactionClient} from "@/utils/prisma";
-import {decisionSnapshotSchema,MAX_SCHEDULED_DECISIONS,type FrozenLetterSettings} from "@/lib/decision-schedule";
+import { decisionSnapshotSchema, MAX_SCHEDULED_DECISIONS } from "@/lib/decision-schedule";
 import {audienceKey} from "@/lib/recipient-audience";
 import {authorizeClubTransaction} from "@/lib/club-transaction-authorization";
 import {publishRecruitmentDecision} from "@/utils/recruitment-offers";

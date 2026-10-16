@@ -15,8 +15,8 @@ import {
 } from "@/lib/data"
 
 import { studentCalendarEvents, type CalendarSource } from "@/lib/student-calendar-data"
-import { dateKey, dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar"
-import { buildMapUrl, type ScheduleBlock } from "@/lib/scheduler"
+import { dateFromKey, timeMinutes, managedOccurrences } from "@/lib/calendar";
+import { type ScheduleBlock } from "@/lib/scheduler";
 import { getDurableNotifications, setDurableNotificationsRead, setDurableNotificationsArchived } from "@/actions/communications"
 import { communicationsChanged, inboxNotification } from "@/lib/communications-client"
 import { toast } from "sonner"
