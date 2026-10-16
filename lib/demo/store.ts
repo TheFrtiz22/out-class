@@ -12,6 +12,8 @@ export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
 let enabled = false
 let template: DemoState | undefined
+let storedRaw: string | null = null
+let batchDepth = 0, batchDirty = false
 const listeners = new Set<() => void>()
 function ensureSemesterWork(value: DemoState) {
   for (const [index, member] of value.memberships.entries()) {
@@ -175,22 +177,42 @@ export const demoStore = {
   stop: () => {
     enabled = false
     state = null
+    storedRaw = null
     listeners.forEach((fn) => fn())
   },
   refresh: () => {
     if (!enabled) return
     const raw = localStorage.getItem(DEMO_KEY)
-    if (!raw) return
+    if (!raw || raw === storedRaw) return
     const saved = JSON.parse(raw, (_, v) => typeof v === "string" && /^\d{4}-\d\d-\d\dT.*Z$/.test(v) ? new Date(v) : v)
     if (!demoSnapshotSchema.safeParse(saved).success) throw new Error("Demo snapshot unavailable.")
     state = saved
     ensurePresentation(state!)
+    storedRaw = raw
     listeners.forEach(fn => fn())
   },
   save: () => {
     if (!state) return
-    localStorage.setItem(DEMO_KEY, JSON.stringify(state))
+    if (batchDepth) { batchDirty = true; return }
+    const raw = JSON.stringify(state)
+    localStorage.setItem(DEMO_KEY, raw)
+    storedRaw = raw
     listeners.forEach((fn) => fn())
+  },
+  /** Synchronous initialization/selection is one durable change, or no change on failure. */
+  batch: <T>(work: () => T): T => {
+    const before = state, wasDirty = batchDirty
+    let result: T
+    batchDepth++
+    try { result = work() }
+    catch (error) { state = before; batchDirty = wasDirty; throw error }
+    finally { batchDepth-- }
+    if (!batchDepth && batchDirty) {
+      batchDirty = false
+      try { demoStore.save() }
+      catch (error) { state = before; batchDirty = wasDirty; throw error }
+    }
+    return result
   },
   mutate: <T>(fn: (value: DemoState) => T): T => {
     const before = demoStore.get()

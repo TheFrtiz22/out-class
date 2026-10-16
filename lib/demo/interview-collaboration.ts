@@ -10,28 +10,35 @@ export type DemoCollaboration = {
   invites: { id: string; source: InterviewScope; destination: InterviewScope; expires: number; dismissed: boolean }[];
 };
 type Input = InterviewScope & { clientId: string };
-function room(scope: InterviewScope) {
+function withRoom<T>(scope: InterviewScope, work: (room: DemoCollaboration["rooms"][number], own: ReturnType<typeof openInterviewSession>) => T): T {
   demoStore.refresh();
-  const own = openInterviewSession(scope); // Existing Demo authorization, no live action.
-  return demoStore.mutate(s => {
-    const c = s.interviewFoundation.collaboration ??= { rooms: [], moves: [], invites: [] };
-    let r = c.rooms.find(r => r.scope.applicationId === scope.applicationId && r.scope.roundId === scope.roundId && r.scope.clubId === scope.clubId);
-    if (!r) { r = { id: crypto.randomUUID(), scope, questions: structuredClone(own.questions), revision: 0, selection: null }; c.rooms.push(r); }
-    return structuredClone(r);
+  return demoStore.batch(() => {
+    const own = openInterviewSession(scope); // Always recheck current Demo authorization.
+    const existing = demoStore.get().interviewFoundation.collaboration?.rooms.find(r => r.scope.applicationId === scope.applicationId && r.scope.roundId === scope.roundId && r.scope.clubId === scope.clubId);
+    const r = existing || demoStore.mutate(s => {
+      const c = s.interviewFoundation.collaboration ??= { rooms: [], moves: [], invites: [] };
+      const created = { id: crypto.randomUUID(), scope, questions: structuredClone(own.questions), revision: 0, selection: null };
+      c.rooms.push(created); return created;
+    });
+    return work(structuredClone(r), own);
   });
 }
+function room(scope: InterviewScope) { return withRoom(scope, value => value); }
 export function getInterviewCollaboration(input: Input): CollaborationView {
-  const r = room(input), s = demoStore.get(), member = demoMember();
+  return withRoom(input, r => {
+  const s = demoStore.get(), member = demoMember();
   const invite = s.interviewFoundation.collaboration!.invites.find(i => i.source.applicationId === input.applicationId && i.source.roundId === input.roundId && !i.dismissed && i.expires > Date.now());
   const candidate = invite && getInterviewWorkspace(input.clubId).applications.find(a => a.id === invite.destination.applicationId && a.roundId === input.roundId && !a.completedRoundIds.includes(input.roundId));
   return { sessionId: r.id, revision: r.revision, selection: r.selection, participants: [{ id: member.id, name: "You" }, { id: "simulated-alex", name: "Alex · simulated" }], invitation: invite && candidate ? { id: invite.id, sender: "Alex · simulated", candidate: candidate.name } : null, simulated: true, timing: demoInterviewTiming(input) };
+  });
 }
 export function selectSharedInterviewQuestion(input: Input & { questionId: string }) {
-  const r = room(input), own = openInterviewSession(input);
+  return withRoom(input, (r, own) => {
   if (own.completedAt || own.draft.postInterview) throw Error("Only active interviews can select shared questions.");
   const question = r.questions.find(q => q.id === input.questionId) || getInterviewWorkspace(input.clubId) && demoStore.get().clubs.find(c => c.id === input.clubId)!.rounds.find(r => r.id === input.roundId)!.interviewKit.find(q => q.id === input.questionId);
   if (!question) throw Error("Select a bank question.");
   return demoStore.mutate(s => { const target = s.interviewFoundation.collaboration!.rooms.find(x => x.id === r.id)!; if (!target.questions.some(q => q.id === question.id)) target.questions.push(question); target.revision++; target.selection = { question, by: "You", memberId: demoMember().id }; return { revision: target.revision, question }; });
+  });
 }
 export function simulateDemoInterviewSelection(input: InterviewScope) {
   const r = room(input);
