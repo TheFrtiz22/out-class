@@ -251,7 +251,7 @@ function RecruitmentWorkspace({
       </div>
       {active === "applicants" && <LiveLeaderWorkspace scoped />}
       {active === "rounds" && <RoundSettings clubId={clubId} />}
-      {active === "kits" && <InterviewManagementTabs key={`${clubId}:${params.get("roundId") || ""}`} clubId={clubId} initialTab="kits" initialRoundId={params.get("roundId") || undefined} />}
+      {active === "kits" && <InterviewManagementTabs key={`${clubId}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`} clubId={clubId} initialTab={params.get("interviewTab") || "kits"} initialRoundId={params.get("roundId") || undefined} />}
     </div>
   );
 }
