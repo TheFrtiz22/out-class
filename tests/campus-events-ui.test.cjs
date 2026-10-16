@@ -92,6 +92,7 @@ test("board uses original flyer in accessible modal, keyboard button activation 
       "next/navigation": { useSearchParams: () => new URLSearchParams() },
       "@/contexts/auth-context": { useAuth: () => ({ user: null }) },
       "@/lib/workspace-api": {},
+      "./use-saved-campus-events": { useSavedCampusEvents: () => ({ ids: new Set(), pending: new Set(), ready: false, error: "" }) },
     },
   );
   const render = () => {

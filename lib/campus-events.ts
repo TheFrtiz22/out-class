@@ -93,6 +93,7 @@ export const eventFiltersSchema = z
       .default(""),
     location: z.string().trim().max(200).default(""),
     required: z.boolean().default(false),
+    savedOnly: z.boolean().default(false),
     sort: z.enum(["soonest", "latest", "name"]).default("soonest"),
     page: z.number().int().min(0).max(10000).default(0),
   })

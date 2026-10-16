@@ -21,6 +21,10 @@ import {
   type EventFilters,
 } from "@/lib/campus-events";
 import { EventFlyer } from "./event-flyer";
+import { SegmentedControl } from "@/components/product/segmented-control";
+import { SmartEventCard } from "./smart-event-card";
+import { EventCalendarButton, EventSaveButton } from "./event-discovery-actions";
+import { useSavedCampusEvents } from "./use-saved-campus-events";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,6 +43,7 @@ const initialFilters: EventFilters = {
   date: "",
   location: "",
   required: false,
+  savedOnly: false,
   sort: "soonest",
   page: 0,
 };
@@ -55,18 +60,39 @@ export function PublicEventBoard() {
     [retry, setRetry] = useState(0),
     [selected, setSelected] = useState<CampusEvent | null>(null),
     [open, setOpen] = useState(false);
-  const origin = useRef<HTMLButtonElement | null>(null);
+  const origin = useRef<HTMLButtonElement | HTMLAnchorElement | null>(null);
   const eventId = useSearchParams().get("event");
   const [linkedLoading, setLinkedLoading] = useState(false),
     [linkedError, setLinkedError] = useState(""),
     [linkedMissing, setLinkedMissing] = useState(false),
     [linkedRetry, setLinkedRetry] = useState(0);
+  const [view, setView] = useState<"corkboard" | "list">("corkboard");
+  const saves = useSavedCampusEvents(identity);
+  useEffect(() => {
+    try {
+      const preference = localStorage.getItem("outclass:events:view:v1");
+      if (preference === "list" || preference === "corkboard") setView(preference);
+    } catch { /* Storage may be unavailable in private browsing. */ }
+  }, []);
+  useEffect(() => {
+    // A personal filter must never carry into a different account's session.
+    setFilters(f => f.savedOnly ? { ...f, savedOnly: false, page: 0 } : f);
+  }, [identity]);
+  function changeView(next: "corkboard" | "list") {
+    setView(next);
+    try { localStorage.setItem("outclass:events:view:v1", next); } catch { /* Switching still works. */ }
+  }
+  async function saveEvent(id: string) {
+    if (await saves.toggle(id)) {
+      if (filters.savedOnly) setFilters(f => ({ ...f, page: 0 }));
+    }
+  }
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError("");
     const timer = setTimeout(() => {
-      getPublicCorkboard(filters)
+      getPublicCorkboard({ ...filters, savedOnly: !!identity && filters.savedOnly })
         .then((r) => {
           if (active) {
             setEvents(r.events);
@@ -89,7 +115,7 @@ export function PublicEventBoard() {
       active = false;
       clearTimeout(timer);
     };
-  }, [filters, retry]);
+  }, [filters, retry, identity]);
   useEffect(() => {
     let active = true;
     setLinkedError("");
@@ -131,6 +157,10 @@ export function PublicEventBoard() {
       className="oc-event-board-section"
       aria-label="Public campus events"
     >
+      <div className="oc-event-discovery-heading">
+        <div><h2>Events on Grounds</h2><p>Find your next reason to get out there.</p></div>
+        <SegmentedControl label="Event view" value={view} onChange={changeView} animated className="oc-event-view-switch" options={[{ value: "corkboard", label: "Corkboard" }, { value: "list", label: "List View" }]} />
+      </div>
       {linkedLoading && <LoadingState label="Opening linked event…" layout="inline" />}
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
@@ -149,6 +179,7 @@ export function PublicEventBoard() {
             </button>
           ))}
         </div>
+        {identity && <button type="button" className="oc-event-pill oc-event-saved-filter" aria-pressed={!!filters.savedOnly} onClick={() => filter({ savedOnly: !filters.savedOnly })}>Saved events</button>}
         <label className="oc-event-search">
           <Search size={16} aria-hidden="true" />
           <Input
@@ -240,6 +271,7 @@ export function PublicEventBoard() {
           </div>
         </details>
       </div>
+      {saves.error && <div role="alert" className="oc-event-save-error"><p>{saves.error}</p>{!saves.ready && <Button variant="outline" onClick={saves.retry}>Retry saved events</Button>}</div>}
       <p className="oc-event-result" role="status" aria-live="polite">
         {loading
           ? "Loading campus events…"
@@ -258,10 +290,10 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div className="oc-physical-board" data-empty={!events.length || undefined} aria-busy={loading}>
+          <div key={view} className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
             {!loading && !events.length ? (
               <div className="oc-events-empty">
-                <h2>No events here yet.</h2>
+                <h2>{filters.savedOnly ? "No saved events here yet." : filters.query ? "No search results." : filters.category || filters.clubId || filters.date || filters.location || filters.required || filters.period !== "All" ? "No events match your filters." : "No upcoming events yet."}</h2>
                 <p>
                   {filters.query ||
                   filters.category ||
@@ -271,7 +303,7 @@ export function PublicEventBoard() {
                   filters.required ||
                   filters.period !== "All"
                     ? "Try another date or clear your filters."
-                    : "Approved campus events will appear here. Come back soon."}
+                    : filters.savedOnly ? "Save an event to find it here. Your saved events follow you between views." : "Approved campus events will appear here. Come back soon."}
                 </p>
                 <Button
                   variant="outline"
@@ -280,6 +312,10 @@ export function PublicEventBoard() {
                   Show all events
                 </Button>
               </div>
+            ) : view === "list" ? (
+              <ul className="oc-smart-event-list">
+                {events.map(event => <li key={event.id}><SmartEventCard event={event} save={{ identity, saved: saves.ids.has(event.id), ready: saves.ready, pending: saves.pending.has(event.id), onSave: () => void saveEvent(event.id) }} onOpen={(event, trigger) => { origin.current = trigger; setSelected(event); setOpen(true); }} /></li>)}
+              </ul>
             ) : (
               <ul className="oc-flyer-grid">
                 {events.map((event, index) => {
@@ -400,6 +436,11 @@ export function PublicEventBoard() {
                   identity={identity}
                   onChanged={(count) => updateEvent(selected.id, count)}
                 />
+                <div className="oc-event-detail-actions">
+                  <EventSaveButton event={selected} identity={identity} saved={saves.ids.has(selected.id)} ready={saves.ready} pending={saves.pending.has(selected.id)} onSave={() => void saveEvent(selected.id)} />
+                  <EventCalendarButton event={selected} />
+                </div>
+                {saves.error && <p role="alert" className="mt-3 text-sm text-destructive">{saves.error}</p>}
                 <Link
                   className="oc-event-permalink"
                   href={`/corkboard?event=${selected.id}`}
@@ -429,7 +470,7 @@ export function PublicEventBoard() {
         <div className="oc-event-pagination">
           <Button
             variant="outline"
-            disabled={!filters.page}
+            disabled={loading || !filters.page}
             onClick={() =>
               setFilters((f) => ({
                 ...f,
@@ -442,7 +483,7 @@ export function PublicEventBoard() {
           <span>Page {(filters.page || 0) + 1}</span>
           <Button
             variant="outline"
-            disabled={!hasMore}
+            disabled={loading || !hasMore}
             onClick={() =>
               setFilters((f) => ({ ...f, page: (f.page || 0) + 1 }))
             }

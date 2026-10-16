@@ -97,7 +97,9 @@ async function locked(
 export async function getPublicCorkboard(input: EventFilters = {}) {
   const f = eventFiltersSchema.parse(input),
     range = eventDateWindow(f.period, f.date);
+  const savedUser = f.savedOnly ? (await requireAuth()).user : null;
   const where: Prisma.MeetingWhereInput = {
+    ...(savedUser ? { saves: { some: { userId: savedUser.id } } } : {}),
     club: { is: { suspendedAt: null } },
     audience: "RECRUITMENT",
     isPublic: true,
@@ -182,6 +184,34 @@ export async function getPublicCampusEvent(eventId: string) {
     select: eventSelect,
   });
   return e && eventIsPublished(e) ? present(e) : null;
+}
+
+export async function getSavedCampusEventIds() {
+  const { user } = await requireAuth();
+  const rows = await prisma.savedCampusEvent.findMany({
+    where: { userId: user.id }, select: { eventId: true },
+  });
+  return rows.map(row => row.eventId);
+}
+
+/** Explicit, idempotent saves. Never accept a user ID from the browser. */
+export async function setSavedCampusEvent(input: unknown) {
+  const { eventId, saved } = z.object({ eventId: z.string().uuid(), saved: z.boolean() }).strict().parse(input);
+  const { user } = await requireAuth();
+  if (!saved) {
+    // Allow removal even after cancellation or withdrawal.
+    await prisma.savedCampusEvent.deleteMany({ where: { userId: user.id, eventId } });
+    return { saved: false };
+  }
+  return prisma.$transaction(async tx => {
+    const event = await locked(tx, eventId);
+    if (!eventIsPublished(event)) throw Error("This event is no longer available.");
+    await tx.savedCampusEvent.upsert({
+      where: { userId_eventId: { userId: user.id, eventId } },
+      create: { userId: user.id, eventId }, update: {},
+    });
+    return { saved: true };
+  });
 }
 export async function listClubCampusEvents(clubId: string) {
   z.string().uuid().parse(clubId);

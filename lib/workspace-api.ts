@@ -574,7 +574,9 @@ export const changeInterviewRoomPanel = adapt(accessSetup.changeInterviewRoomPan
 // Campus publication is never simulated as a live write in Demo Mode.
 export const getPublicCorkboard = adapt(campusEvents.getPublicCorkboard, () => ({events: [], total: 0, hasMore: false, clubs: []}))
 export const getPublicCampusEvent = adapt(campusEvents.getPublicCampusEvent, () => null)
+export const getSavedCampusEventIds = adapt(campusEvents.getSavedCampusEventIds, () => [])
 const noDemoEventWrite = () => { throw new Error("Exit Demo Mode to manage campus events.") }
+export const setSavedCampusEvent = adapt(campusEvents.setSavedCampusEvent, noDemoEventWrite)
 export const listClubCampusEvents = adapt(campusEvents.listClubCampusEvents, () => [])
 export const saveCampusEvent = adapt(campusEvents.saveCampusEvent, noDemoEventWrite)
 export const commandCampusEvent = adapt(campusEvents.commandCampusEvent, noDemoEventWrite)

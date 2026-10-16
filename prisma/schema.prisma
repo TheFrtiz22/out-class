@@ -46,6 +46,7 @@ model User {
   applications    Application[]
   attendances     EventAttendance[]
   eventRsvps      EventRsvp[]
+  savedEvents     SavedCampusEvent[]
   platformAdmin   PlatformAdmin?
   clubInvitations ClubInvitation[]
   clubClaims      ClubClaim[]
@@ -365,6 +366,7 @@ model Meeting {
   revision      Int                   @default(0)
   publication   EventPublication?
   rsvps         EventRsvp[]
+  saves         SavedCampusEvent[]
   flyers        EventFlyer[]
   checkInTokens MeetingCheckInToken[]
   id            String                @id @default(uuid())
@@ -393,6 +395,17 @@ model EventAttendance {
 
   @@unique([eventId, studentId])
   @@index([studentId], map: "EventAttendance_studentId_idx")
+}
+
+// Personal event bookmarks; accessed only through authenticated server actions.
+model SavedCampusEvent {
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId String
+  event Meeting @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  savedAt DateTime @default(now())
+  @@id([userId, eventId])
+  @@index([eventId])
 }
 
 // ==========================================

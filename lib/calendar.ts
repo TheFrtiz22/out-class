@@ -1,6 +1,7 @@
 import type { ClubEvent, ManagedEvent } from "./data"
 import { zonedInstant } from "@/lib/interview-rooms"
 import { SCHEDULING_TIMEZONE, minuteLabel } from "@/lib/scheduling-config"
+import { calendarEventFile } from "@/lib/ical"
 
 export const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 export const dateFromKey = (value: string) => new Date(`${value}T12:00:00`)
@@ -19,11 +20,9 @@ export function eventStart(event: ClubEvent) {
   } catch { return new Date(NaN) }
 }
 export function calendarFile(event: ClubEvent) {
-  const escape = (text: string) => text.replace(/\\/g, "\\\\").replace(/\r?\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;")
-  const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")
   const start = eventStart(event)
   const end = new Date(start.getTime() + (event.durationMinutes ?? (event.type === "Deadline" ? 1 : 60)) * 60000)
-  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//OutClass//Calendar//EN", "BEGIN:VEVENT", `UID:${event.id}@outclass`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`, `SUMMARY:${escape(event.title)}`, `DESCRIPTION:${escape(event.description ?? event.club)}`, `LOCATION:${escape(event.location ?? "")}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n")
+  return calendarEventFile({ id: event.id, title: event.title, description: event.description ?? event.club, location: event.location ?? "", start, end })
 }
 export function managedOccurrences(events: ManagedEvent[], from: Date, to: Date, memberClubIds: Set<string>): ClubEvent[] {
   return events.flatMap((event) => {
