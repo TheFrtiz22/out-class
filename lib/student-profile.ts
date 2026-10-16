@@ -35,9 +35,9 @@ export const webUrlSchema = z.string().transform((value, ctx) => {
 })
 export const headshotUrlSchema = z.string().trim().refine(value => !!value && storagePathSchema.safeParse(value).success, "Use an uploaded OutClass profile photo")
 export const linkedinUrlSchema = webUrlSchema.refine(value => { try { return /(^|\.)linkedin\.com$/i.test(new URL(value).hostname) } catch { return false } }, "Use a LinkedIn URL")
-export function validateProfileFile(bytes: Uint8Array, type: string, kind: 'resume' | 'headshot') {
+export function validateProfileFile(bytes: Uint8Array, type: string, kind: 'resume' | 'headshot' | 'flyer') {
   if (!bytes.length) throw new Error("Choose a file")
-  if (bytes.length > (kind === 'resume' ? 10 : 5) * 1024 * 1024) throw new Error(kind === 'resume' ? "Choose a PDF up to 10 MB" : "Choose an image up to 5 MB")
+  if (bytes.length > (kind === 'headshot' ? 5 : 10) * 1024 * 1024) throw new Error(kind === 'resume' ? "Choose a PDF up to 10 MB" : kind === 'flyer' ? "Choose an image up to 10 MB" : "Choose an image up to 5 MB")
   const starts = (signature: number[]) => signature.every((v, i) => bytes[i] === v)
   if (kind === 'resume') {
     if (!['application/pdf', 'application/octet-stream', ''].includes(type) || !starts([37,80,68,70,45])) throw new Error("Choose a valid PDF")

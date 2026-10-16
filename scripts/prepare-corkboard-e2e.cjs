@@ -36,7 +36,7 @@ function run(binary, args, env = process.env) {
   if (!/^project_id = "outclass-corkboard-e2e"$/m.test(config))
     throw Error("Non-test project rejected");
   fs.writeFileSync(path.join(root, "supabase/config.toml"), config);
-  for (const name of ["confirmation.html", "magic-link.html"])
+  for (const name of fs.readdirSync("supabase/templates").filter(name => name.endsWith(".html")))
     fs.copyFileSync(
       path.join("supabase/templates", name),
       path.join(root, "supabase/templates", name),

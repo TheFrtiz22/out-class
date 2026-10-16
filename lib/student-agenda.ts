@@ -13,13 +13,13 @@ export function agendaGroups(events: ClubEvent[], now: Date, includePast = false
     .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
   for (const event of sorted) {
     const start = eventStart(event)
-    const end =
+    const end = event.endTime ? +new Date(event.endTime) :
       start.getTime() + (event.durationMinutes ?? (event.type === "Deadline" ? 0 : 60)) * 60000
     const past = end < now.getTime()
     if (past && !includePast) continue
     const label = past
       ? "Earlier"
-      : event.date === today
+      : event.date === today || (event.allDay && event.date < today && !past)
         ? "Today"
         : event.date === tomorrow
           ? "Tomorrow"

@@ -84,6 +84,8 @@ export type ClubEvent = {
   date: string
   /** Exact instant for persisted events, including repeated daylight-saving hours. */
   startTime?: string
+  endTime?: string
+  allDay?: boolean
   clubId?: string
   location?: string
   description?: string

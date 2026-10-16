@@ -17,7 +17,7 @@ export function EventCalendarButton({ event }: { event: CampusEvent }) {
   function download() {
     const contents = calendarEventFile({ id: event.id, title: event.title,
       description: `${event.description}\nHosted by ${event.clubName}`, location: event.location,
-      start: new Date(event.date), end: new Date(event.endDate), url: `${window.location.origin}/corkboard?event=${event.id}` });
+      allDay: event.allDay, start: new Date(event.date), end: new Date(event.endDate), url: `${window.location.origin}/corkboard?event=${event.id}` });
     const url = URL.createObjectURL(new Blob([contents], { type: "text/calendar;charset=utf-8" }));
     const anchor = document.createElement("a");
     anchor.href = url;

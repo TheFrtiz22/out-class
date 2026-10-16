@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import { eventScheduleLabel, eventDateLabel, eventTimeLabel } from "@/lib/campus-events"
 import { UnclaimedProfileNotice } from "@/components/clubs/unclaimed-profile-notice"
 import { useEffect, useRef, useState } from "react"
 import { ArrowLeft, ArrowRight, CalendarDays, MapPin, Check, ArrowUpRight } from "@/components/icons"
@@ -88,7 +89,7 @@ export function ClubProfileView({
         .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())[0]
     : undefined
   const publicEvents = (club.publicEvents || []).filter(
-    (event) => new Date(event.date) >= new Date(),
+    (event) => new Date(event.endDate || event.date) >= new Date(),
   )
   const roster =
     !real && (!customized || profile.showDirectory)
@@ -238,13 +239,7 @@ export function ClubProfileView({
                       <div>
                         <h3><a className="underline underline-offset-4" href={`/corkboard?event=${event.id}`}>{event.title}</a></h3>
                         <time dateTime={event.date}>
-                          {new Date(event.date).toLocaleString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          {event.endDate ? eventScheduleLabel({ ...event, endDate: event.endDate }) : `${eventDateLabel(event.date)} · ${eventTimeLabel(event.date)}`}
                         </time>
                         <p>
                           <MapPin size={12} aria-hidden="true" />

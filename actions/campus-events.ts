@@ -25,6 +25,7 @@ const eventSelect = {
   description: true,
   date: true,
   endDate: true,
+  allDay: true,
   location: true,
   isPublic: true,
   audience: true,
@@ -44,6 +45,7 @@ function present(e: EventRecord, preview = false): CampusEvent {
     clubName: e.club.name,
     title: e.title,
     description: e.description || "",
+    allDay: e.allDay,
     date: e.date.toISOString(),
     endDate: (e.endDate || e.date).toISOString(),
     location: e.location,
@@ -237,6 +239,7 @@ export async function saveCampusEvent(input: unknown) {
       description: d.description,
       date: d.date,
       endDate: d.endDate,
+      allDay: d.allDay,
       location: d.location,
       audience: "RECRUITMENT",
       isPublic: true,
@@ -292,6 +295,7 @@ export async function saveCampusEvent(input: unknown) {
     );
   });
   refresh();
+  await import("@/utils/event-flyer-cleanup").then(m => m.cleanupEventFlyers()).catch(() => {});
   return result;
 }
 export async function commandCampusEvent(input: unknown) {

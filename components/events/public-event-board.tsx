@@ -17,6 +17,7 @@ import {
   eventCategories,
   eventDateLabel,
   eventTimeLabel,
+  eventScheduleLabel,
   type CampusEvent,
   type EventFilters,
 } from "@/lib/campus-events";
@@ -381,14 +382,7 @@ export function PublicEventBoard() {
                   <div>
                     <dt>Date & time</dt>
                     <dd>
-                      {eventDateLabel(selected.date)}
-                      <br />
-                      {eventTimeLabel(selected.date)} –{" "}
-                      {eventDateLabel(selected.date) ===
-                      eventDateLabel(selected.endDate)
-                        ? ""
-                        : `${eventDateLabel(selected.endDate)} · `}
-                      {eventTimeLabel(selected.endDate)}
+                      {eventScheduleLabel(selected)}
                     </dd>
                   </div>
                   <div>
