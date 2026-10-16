@@ -158,7 +158,7 @@ prisma.eventAttendance.findMany({
     },
   }),
 
-prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
+prisma.meeting.findMany({ where: { OR: [publicMeetingVisibility, { club: { members: { some: { userId: user.id, status: "ACTIVE" } } } }] }, select: { id: true, clubId: true, title: true, date: true, endDate: true, allDay: true, location: true, description: true, audience: true, club: { select: { name: true } } }, orderBy: { date: "asc" } }),
 prisma.$transaction(tx=>ownPanelAssignments(tx,user.id))
   ])
   return { applications, attendances, meetings, panelAssignments }

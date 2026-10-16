@@ -161,7 +161,7 @@ export async function getPublicClub(
     if (!club) return { club: null };
     const { getPublicCorkboard } = await import("@/actions/campus-events");
     const { events } = await getPublicCorkboard({ clubId: club.id });
-    return { club: { ...present({ ...club, events: [] }), publicEvents: events.map(({ id, title, date, location, description }) => ({ id, title, date, location, description })) } };
+    return { club: { ...present({ ...club, events: [] }), publicEvents: events.map(({ id, title, date, endDate, allDay, location, description }) => ({ id, title, date, endDate, allDay, location, description })) } };
   } catch {
     return {
       club: null,

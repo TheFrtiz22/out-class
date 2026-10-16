@@ -2,7 +2,7 @@
 import { useState, type MouseEvent } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Clock, MapPin } from "@/components/icons";
-import { EVENT_TIMEZONE, eventDateLabel, eventTimeLabel, type CampusEvent } from "@/lib/campus-events";
+import { EVENT_TIMEZONE, eventDateLabel, eventScheduleLabel, type CampusEvent } from "@/lib/campus-events";
 import { EventCalendarButton, EventSaveButton, type EventSaveState } from "./event-discovery-actions";
 
 const month = new Intl.DateTimeFormat("en-US", { timeZone: EVENT_TIMEZONE, month: "short" });
@@ -27,7 +27,7 @@ export function SmartEventCard({ event, save, onOpen }: { event: CampusEvent; sa
       <div className="oc-smart-event-meta"><span className="oc-smart-event-host">{event.clubName}</span>{event.category && <span className="oc-smart-event-category">{event.category}</span>}</div>
       <h2><a href={`/corkboard?event=${event.id}`} onClick={open} className="oc-smart-event-link">{event.title}</a></h2>
       <dl className="oc-smart-event-facts">
-        <div><dt><Clock size={17} aria-hidden="true" /><span className="sr-only">Date and time</span></dt><dd>{eventDateLabel(event.date)}<br /><time dateTime={event.date}>{eventTimeLabel(event.date).replace(" · Eastern Time", "")}</time>{" – "}{eventDateLabel(event.date) !== eventDateLabel(event.endDate) && `${eventDateLabel(event.endDate)} · `}<time dateTime={event.endDate}>{eventTimeLabel(event.endDate)}</time></dd></div>
+        <div><dt><Clock size={17} aria-hidden="true" /><span className="sr-only">Date and time</span></dt><dd>{eventScheduleLabel(event)}</dd></div>
         <div><dt><MapPin size={17} aria-hidden="true" /><span className="sr-only">Location</span></dt><dd>{event.location}</dd></div>
       </dl>
       <p className="oc-smart-event-description">{event.description}</p>

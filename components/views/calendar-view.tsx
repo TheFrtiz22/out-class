@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useApplicationState } from "@/lib/application-state"
-import { dateKey, dateFromKey, eventStart, calendarFile, timeMinutes } from "@/lib/calendar"
+import { dateKey, dateFromKey, eventStart, calendarFile, timeMinutes, eventOccursOn } from "@/lib/calendar"
 import { StudentBookingPreview } from "@/components/views/scheduler/student-booking-preview"
 import { agendaGroups } from "@/lib/student-agenda"
 import { cn } from "@/lib/utils"
@@ -121,7 +121,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
     (notification) => notification.eventId === selectedId,
   )
   const upcoming = visible
-    .filter((event) => eventStart(event) >= now && event.response !== "declined")
+    .filter((event) => (event.endTime ? new Date(event.endTime) : eventStart(event)) >= now && event.response !== "declined")
     .slice(0, 6)
   const agenda = agendaGroups(
     visible.filter((event) => includeDeclined || event.response !== "declined"),
@@ -271,7 +271,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         >
                           <div className="w-16 shrink-0 text-sm">
                             <p className="font-medium tabular-nums">
-                              {eventStart(event).toLocaleTimeString("en-US", {
+                              {event.allDay ? "All day" : eventStart(event).toLocaleTimeString("en-US", {
                                 timeZone: SCHEDULING_TIMEZONE, hour12: true,
                                 hour: "numeric",
                                 minute: "2-digit",
@@ -348,7 +348,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   <div className="grid grid-cols-7">
                     {days.map((day) => {
                       const key = dateKey(day),
-                        dayEvents = visible.filter((event) => event.date === key)
+                        dayEvents = visible.filter((event) => eventOccursOn(event, key))
                       return (
                         <div
                           key={key}
@@ -377,14 +377,14 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                               key={event.id}
                               type="button"
                               onClick={() => open(event)}
-                              title={`${minuteLabel(timeMinutes(event.time))} · ${event.title}`}
+                              title={`${(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))} · ${event.title}`}
                               className={cn(
                                 "block w-full rounded p-1.5 text-left text-[length:var(--oc-size-11)] leading-snug hover:ring-1 hover:ring-neutral-300",
                                 eventStyle[event.type],
                                 event.response === "declined" && "opacity-50",
                               )}
                             >
-                              <span className="block font-semibold">{minuteLabel(timeMinutes(event.time))}</span>
+                              <span className="block font-semibold">{(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))}</span>
                               <span className="line-clamp-2">{event.title}</span>
                             </button>
                           ))}
@@ -409,7 +409,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                 <div className="divide-y">
                   {days.map((day) => {
                     const key = dateKey(day),
-                      dayEvents = visible.filter((event) => event.date === key)
+                      dayEvents = visible.filter((event) => eventOccursOn(event, key))
                     return (
                       <section key={key} className="p-5">
                         <h3 className="oc-card-heading mb-3">
@@ -432,7 +432,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                                   eventStyle[event.type],
                                 )}
                               >
-                                <span className="w-24 font-medium">{minuteLabel(timeMinutes(event.time))}</span>
+                                <span className="w-24 font-medium">{(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))}</span>
                                 <span className="flex-1">
                                   <strong className="block">{event.title}</strong>
                                   <span className="text-xs">
@@ -499,7 +499,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                         month: "short",
                         day: "numeric",
                       })}{" "}
-                      · {minuteLabel(timeMinutes(event.time))}
+                      · {(event.allDay ? "All day" : minuteLabel(timeMinutes(event.time)))}
                     </p>
                     <p className="mt-1 text-sm font-medium">{event.title}</p>
                   </button>
@@ -531,7 +531,7 @@ export function CalendarView({ onNavigate }: { onNavigate?: (view: ViewId) => vo
                   day: "numeric",
                   year: "numeric",
                 })}{" "}
-                · {minuteLabel(timeMinutes(selected.time))}
+                · {(selected.allDay ? "All day" : minuteLabel(timeMinutes(selected.time)))}
               </p>
               <p className="flex items-center gap-2 text-sm">
                 <MapPin className="size-4" />

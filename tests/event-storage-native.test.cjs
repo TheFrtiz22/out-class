@@ -1,0 +1,40 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),ts=require('typescript');
+const {PrismaClient}=require('@prisma/client'),{createClient}=require('@supabase/supabase-js'),{randomUUID}=require('node:crypto');
+test('isolated native database + Supabase: authorized flyers, replacement/removal/cascade cleanup, public serving and all-day edits', {skip:!process.env.OUTCLASS_EVENT_STORAGE_TEST_CONFIG},async t=>{
+ const config=JSON.parse(fs.readFileSync(process.env.OUTCLASS_EVENT_STORAGE_TEST_CONFIG));
+ for(const [value,port]of[[config.DB_URL,'57322'],[config.API_URL,'57321']]){const url=new URL(value);assert.ok(['127.0.0.1','localhost'].includes(url.hostname));assert.equal(url.port,port)}
+ process.env.NEXT_PUBLIC_SUPABASE_URL=config.API_URL;process.env.SUPABASE_SECRET_KEY=config.SECRET_KEY;process.env.SUPABASE_SERVICE_ROLE_KEY=config.SERVICE_ROLE_KEY;
+ const prisma=new PrismaClient({datasourceUrl:config.DB_URL}), ids=[randomUUID(),randomUUID()];let actor=ids[0];
+ const service=createClient(config.API_URL,config.SERVICE_ROLE_KEY,{auth:{persistSession:false}}),anon=createClient(config.API_URL,config.ANON_KEY,{auth:{persistSession:false}});
+ const bucket=(await service.storage.getBucket('event-flyers')).data;assert.equal(bucket.public,false);assert.equal(Number(bucket.file_size_limit),10485760);assert.deepEqual([...bucket.allowed_mime_types].sort(),['image/jpeg','image/png','image/webp']);
+ await prisma.user.createMany({data:ids.map(id=>({id,email:`${id}@virginia.edu`}))});
+ const club=await prisma.club.create({data:{name:'Event storage verification',slug:randomUUID(),tagline:'',description:'',color:'#123456',category:'Arts'}});
+ await prisma.clubMember.create({data:{userId:ids[0],clubId:club.id,permissions:["meetings.manage"]}});
+ const mocks={'server-only':{},'@/utils/prisma':{prisma},'@/utils/auth':{requireClubPermission:async()=>({user:{id:actor}}),requireAuth:async()=>{if(!actor)throw Error('Unauthorized');return{user:{id:actor}}}},'@/utils/platform-admin':{requirePlatformAdmin:async()=>{throw Error('Denied')}},'@/utils/support-audit':{auditSupportAction:async()=>{}},'next/cache':{revalidatePath(){},revalidateTag(){}}};
+ const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const m={exports:{}};cache[file]=m;new Function('require','module','exports',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),m,m.exports);return m.exports;}
+ const api=load('actions/campus-events.ts'),upload=load('actions/event-flyers.ts').uploadEventFlyer,route=load('app/api/event-flyers/route.ts').GET,cleanup=load('utils/event-flyer-cleanup.ts').cleanupEventFlyers;
+ const base={clubId:club.id,title:'No flyer necessary',description:'Event details',date:'2099-10-16T22:00:00Z',endDate:'2099-10-16T23:00:00Z',location:'Hall',category:'Arts',rsvpEnabled:true,rsvpRequired:false,capacity:null,rsvpDeadline:null,template:'academic',useTemplate:false};
+ const png=await require('sharp')({create:{width:8,height:8,channels:3,background:'#123456'}}).png().toBuffer();
+ let event;
+ const form=(bytes=png,type='image/png',clubId=club.id)=>{const f=new FormData();f.set('clubId',clubId);f.set('eventId',event.id);f.set('revision',String(event.revision));f.set('file',new File([bytes],'flyer.png',{type}));return f;};
+ const request=(preview=false)=>new Request(`${config.API_URL}/api/event-flyers?eventId=${event.id}&revision=${event.revision}${preview?'&preview=1':''}`);
+ t.after(async()=>{actor=ids[0];await prisma.club.delete({where:{id:club.id}});await cleanup();await prisma.user.deleteMany({where:{id:{in:ids}}});await prisma.$disconnect()});
+ event=await api.saveCampusEvent(base);assert.equal(event.flyerUrl,null);
+ await api.commandCampusEvent({clubId:club.id,eventId:event.id,revision:event.revision,command:'SUBMIT'});await prisma.eventPublication.update({where:{eventId:event.id},data:{status:'PUBLISHED',approvedRevision:event.revision,reviewedBy:ids[1],reviewedAt:new Date(),publishedAt:new Date()}});
+ assert.equal((await api.getPublicCampusEvent(event.id)).flyerUrl,null);
+ actor=ids[1];await assert.rejects(()=>upload(form()),/denied/i);actor=ids[0];await assert.rejects(()=>upload(form(png,'image/png',randomUUID())),/denied/i);
+ await assert.rejects(()=>upload(form(Buffer.from('<svg/>'))),/JPEG/);
+ await assert.rejects(()=>upload(form(new Uint8Array(10485761))),/10 MB/);
+ assert.ok((await anon.storage.from('event-flyers').upload(`${club.id}/${event.id}/denied.png`,png,{contentType:'image/png'})).error);
+ assert.ok((await service.storage.from('event-flyers').upload('invalid.gif',png,{contentType:'image/gif'})).error);
+ const result=await upload(form());event.revision=result.revision;
+ const first=await prisma.eventFlyer.findFirst({where:{eventId:event.id}});assert.match(first.path,new RegExp(`^${club.id}/${event.id}/[a-f0-9-]+\\.png$`));
+ assert.equal((await route(request())).status,404);assert.equal((await route(request(true))).status,200);
+ const {useTemplate: omitted,...preserving}=base;event=await api.saveCampusEvent({...preserving,id:event.id,revision:event.revision,title:'Edit preserves flyer'});assert.ok(event.flyerUrl);
+ await api.commandCampusEvent({clubId:club.id,eventId:event.id,revision:event.revision,command:'SUBMIT'});await prisma.eventPublication.update({where:{eventId:event.id},data:{status:'PUBLISHED',approvedRevision:event.revision,reviewedBy:ids[1],reviewedAt:new Date(),publishedAt:new Date()}});
+ actor=null;assert.equal((await route(request())).status,200);assert.ok((await anon.storage.from('event-flyers').download(first.path)).error);actor=ids[0];
+ event.revision=(await upload(form(Buffer.concat([png,Buffer.alloc(6*1024*1024)])))).revision;assert.equal(await prisma.eventFlyer.count({where:{eventId:event.id}}),1);assert.ok((await service.storage.from('event-flyers').download(first.path)).error);
+ event=await api.saveCampusEvent({...base,id:event.id,revision:event.revision,useTemplate:true,allDay:true,date:'2099-03-08T05:00:00Z',endDate:'2099-03-10T04:00:00Z'});assert.equal(event.allDay,true);assert.equal(event.flyerUrl,null);assert.equal(await prisma.eventFlyer.count({where:{eventId:event.id}}),0);
+ event.revision=(await upload(form())).revision;const last=await prisma.eventFlyer.findFirst({where:{eventId:event.id}});await prisma.meeting.delete({where:{id:event.id}});await cleanup();assert.ok((await service.storage.from('event-flyers').download(last.path)).error);
+ assert.equal((await prisma.$queryRaw`SELECT * FROM "EventFlyerDeletion"`).length,0);
+});

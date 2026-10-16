@@ -1,6 +1,6 @@
 # Source and dependency cleanup
 
-16 October 2026. Baseline main: `908f77c08baeb5b39d8902d66fe7aeff2c68b89f`. Branch: `chore/source-cleanup`.
+16 October 2026. Initial baseline main: `908f77c08baeb5b39d8902d66fe7aeff2c68b89f`. Integrated main: `cf3a675554f3b3b1fb0327313dba10ac6e178dac`. Branch: `chore/source-cleanup`.
 
 ## Result and scope
 
@@ -14,7 +14,7 @@ Runtime query/polling changes from the scouting report are deferred. No schema o
 
 ## Preservation and deliberate exclusions
 
-All **85 protected source files** matched baseline hashes: Prisma/schema/migrations, Supabase files, internal workers, scheduler/delivery implementation, core Auth/support audit, compatibility action modules, deployment configuration/workflow and fail-closed Auth installer tombstones. All **257 emitted server-action (source file, exported name) pairs** remain present; none added or removed. No page/HTTP route was deleted.
+All **86 protected source files** matched integrated main byte-for-byte (85 matched the initial baseline before integration): Prisma/schema/migrations, Supabase files, internal workers, scheduler/delivery implementation, core Auth/support audit, compatibility action modules, deployment configuration/workflow and fail-closed Auth installer tombstones. All **257 emitted server-action (source file, exported name) pairs** remain present; none added or removed. No page/HTTP route was deleted.
 
 Retained `actions/events.ts` and `actions/scheduling.ts` legacy adapters, all deny-only messaging exports, `db_test9.js` / `db_test10.js`, email-template generation tooling, tested artwork infrastructure and all public branding/artwork/licenses. The original five credential-recovery files were outside this separate checkout and were not accessed or changed.
 
@@ -37,7 +37,7 @@ Some references are mocks or path-prefix matches rather than active UI use. Thei
 
 ## Measured build differences
 
-Both builds used the same pinned baseline/final source comparison, Node/pnpm toolchain and localhost-only placeholder database/Supabase configuration. Production-column attestation deliberately skipped because this was not a Vercel production build. No hosted credentials were supplied.
+These measurements compare initial main `908f77c` with cleanup commit `22b3007`, before integrating the later event/flyer work. They isolate the cleanup and are not a comparison of that later feature work. Both builds used the same Node/pnpm toolchain and localhost-only placeholder database/Supabase configuration. Production-column attestation deliberately skipped because this was not a Vercel production build. No hosted credentials were supplied.
 
 | Aggregate artifact metric | Before | After | Reduction |
 | --- | ---: | ---: | ---: |
@@ -50,15 +50,17 @@ Client JS chunk count changed from 166 to 163; CSS file count remained 28. These
 
 ## Validation
 
-- Final full suite: **1,183 passed, 27 gated skips, zero failures** (1,210 tests). Command: `node --test --test-concurrency=2 tests/*.test.cjs`.
-- Local fresh/legacy migration checks: **all 54 migrations and all 77 application tables** passed RLS/browser-CRUD-denial checks. No live migrations were applied.
+Main advanced with event scheduling/flyer changes after the initial cleanup was published. A normal merge preserves that work, including its additional migration and `ClubEvent` fields. The cleanup diff against integrated main remains exactly the same 100-file manifest. No migration is introduced by the cleanup itself.
+
+- Final full suite: **1,189 passed, 28 gated skips, zero failures** (1,217 tests) on the integrated revision. Command: `node --test --test-concurrency=2 tests/*.test.cjs`.
+- Local fresh/legacy migration checks: **all 55 migrations and all 78 application tables** passed RLS/browser-CRUD-denial checks. No live migrations were applied.
 - Normal TypeScript, Prisma validation, production build and diff checks passed.
 - Lint: **0 errors, 26 warnings** (baseline build had 28 warnings). No lint rule or assertion was weakened.
 - Frozen dependency installation/postinstall passed; retained-version and protected-file hash comparisons passed.
 - Browser tests in the full suite executed rather than failing at browser launch. Official Playwright Chromium downloads failed in this container, so browser runs used **Chromium 153.0.8010.0**, provisioned outside the repository, through Playwright 1.64.0. Launch used software-rendering restrictions for the container. No runtime/browser package or launch override was committed.
 - Twelve additional localhost desktop/mobile smoke cases passed: `/`, `/about`, `/login`, `/corkboard`, `/platform/login` and the signed-out profile-entry redirect, at 1440×1000 and 390×844. All returned 200 after navigation, had usable body content, no page exceptions and no horizontal document overflow. Desktop/mobile landing screenshots were visually inspected. This does **not** claim fresh authenticated hosted Admin, profile or appearance mutations; those source paths are covered by existing local fixtures and the full suite.
 
-The first full local run inherited an explicit email-disable override from the build/server wrapper, invalidating five mocked invitation-worker expectations. Removing only that override for unit fixtures yielded 22/22 focused passes and the final all-green suite. Provider credentials stayed empty, DB/Supabase targets stayed localhost, and local build/server email remained explicitly disabled. No external email was sent. A transient early smoke assertion ran before hydration; the final smoke waits for usable content and retains the same assertions.
+The first full local run inherited an explicit email-disable override from the build/server wrapper, invalidating five mocked invitation-worker expectations. Removing only that override for unit fixtures yielded 22/22 focused passes and the final all-green suite. Provider credentials stayed empty, DB/Supabase targets stayed localhost, and local build/server email remained explicitly disabled. No external email was sent. The first integrated build compiled and typechecked, then encountered ENOTEMPTY removing generated export output. A cross-session server start also observed an empty generated pages manifest. A fresh build and all 12 server/browser smoke checks then passed together in one isolated execution session, with no application-code change for these local artifact issues. A transient early smoke assertion ran before hydration; the final smoke waits for usable content and retains the same assertions.
 
 ## Dependencies removed
 
@@ -86,6 +88,8 @@ The first full local run inherited an explicit email-disable override from the b
 - `@radix-ui/react-radio-group`
 
 ## Review and release boundaries
+
+GitHub validation run [38938460356](https://github.com/TheFrtiz22/out-class/actions/runs/38938460356) passed on PR test-merge tree `41d1a57d5f6899f8bf08ad4fcb29e6105c2961a2`, identical to the integrated application tree before this final report update. The first cleanup source also passed Vercel Preview. Final-head checks should be inspected separately rather than inferred from those earlier results.
 
 The exact changed-path manifest is `docs/source-cleanup-manifest.txt`. Deletions were rechecked against imports, literal dynamic imports, scripts/tests and source symbols. No tests were deleted or weakened. The original scouting ceiling was not treated as blanket authorization to delete compatibility/tooling files.
 

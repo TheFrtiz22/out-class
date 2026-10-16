@@ -17,6 +17,8 @@ export type DirectoryClub = DiscoverClub & {
     id: string
     title: string
     date: string
+    endDate?: string
+    allDay?: boolean
     location: string
     description: string | null
   }[]
