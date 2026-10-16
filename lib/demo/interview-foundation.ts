@@ -71,6 +71,11 @@ export function demoInterviewTiming(input: InterviewScope) {
 }
 export function openInterviewSession(input: InterviewScope) {
   const { app, round, member } = access(input);
+  const existing = demoStore.get().interviews.find(r => r.applicationId === app.id && r.roundId === round.id && r.interviewerId === member.id);
+  if (existing) {
+    if (existing.anonymousReview || (!existing.completedAt && app.roundId !== round.id)) throw new Error("Interview unavailable.");
+    return { ...structuredClone(existing), timing: demoInterviewTiming(input) };
+  }
   return demoStore.mutate(s => {
     let record = s.interviews.find(r => r.applicationId === app.id && r.roundId === round.id && r.interviewerId === member.id);
     if (!record) { if (app.roundId !== round.id) throw new Error("Applicant round changed."); record = { id: crypto.randomUUID(), ...input, interviewerId: member.id, anonymousReview: false, revision: 0, questions: structuredClone(round.interviewKit), draft: structuredClone(emptyInterviewDraft), completedAt: null }; s.interviews.push(record); }
