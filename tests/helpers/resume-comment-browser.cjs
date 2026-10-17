@@ -45,7 +45,7 @@ const { chromium } = require('playwright');
           assert.deepEqual(caret, [sentence.length, sentence.length]);
           assert.equal(await page.locator('[data-resume-comment-draft]').count(), 1);
           assert.ok((await page.locator('[data-resume-comment-draft] blockquote').innerText()).includes(quote));
-          await page.keyboard.press('Backspace'); await page.keyboard.press('Enter'); await page.keyboard.type('Second line.');
+          await page.keyboard.press('Backspace'); await page.keyboard.press('Shift+Enter'); await page.keyboard.type('Second line.');
           const expected = sentence.slice(0, -1) + '\nSecond line.';
           assert.equal(await field.inputValue(), expected);
           // An actual authorization poll rerender must preserve this field/caret.
