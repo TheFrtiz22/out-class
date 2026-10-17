@@ -13,11 +13,13 @@ fs.writeFileSync(path.join(tmp,'css-loader.cjs'),"module.exports=function(){retu
 fs.writeFileSync(path.join(tmp,'mock.jsx'),require('./interview-browser-runtime.cjs').mock);
 fs.writeFileSync(path.join(tmp,'entry.jsx'),require('./interview-browser-runtime.cjs').entry);
 const w=require('next/dist/compiled/webpack/webpack');w.init();
-const globalCss=fs.readdirSync(path.join(root,'.next/static/css')).filter(p=>{const s=fs.readFileSync(path.join(root,'.next/static/css',p),'utf8');return s.includes('--background')||s.includes('--font-dm-sans:')||s.includes('--font-libre-caslon-text:')});
 // Keep the fixture stable while a separate production build replaces .next.
-const staticRoot=path.join(tmp,'static');fs.cpSync(path.join(root,'.next/static'),staticRoot,{recursive:true});
+const staticRoot=path.join(tmp,'static');
+if(fs.existsSync(path.join(root,'.next/static/css'))&&!process.env.OUTCLASS_BROWSER_SOURCE_CSS)fs.cpSync(path.join(root,'.next/static'),staticRoot,{recursive:true});
+else cp.execFileSync(process.execPath,[path.join(__dirname,'interview-browser-css.cjs'),path.join(staticRoot,'css/fixture.css')],{cwd:root,windowsHide:true});
+const globalCss=fs.readdirSync(path.join(staticRoot,'css')).filter(p=>{const s=fs.readFileSync(path.join(staticRoot,'css',p),'utf8');return s.includes('--background')||s.includes('--font-dm-sans:')||s.includes('--font-libre-caslon-text:')});
 const cssLinks=globalCss.map(p=>'<link rel="stylesheet" href="/_next/static/css/'+p+'">').join('');
-const fontClasses=globalCss.flatMap(p=>[...fs.readFileSync(path.join(root,'.next/static/css',p),'utf8').matchAll(/\.([\w_]+)\{--font-(?:dm-sans|libre-caslon-text):/g)].map(m=>m[1])).join(' ');
+const fontClasses=globalCss.flatMap(p=>[...fs.readFileSync(path.join(staticRoot,'css',p),'utf8').matchAll(/\.([\w_]+)\{--font-(?:dm-sans|libre-caslon-text):/g)].map(m=>m[1])).join(' ');
 w.webpack({mode:'production',optimization:{minimize:false},context:root,entry:path.join(tmp,'entry.jsx'),output:{path:path.join(tmp,'build'),filename:'fixture.js',publicPath:'/'},resolve:{extensions:['.tsx','.ts','.jsx','.js','.cjs'],modules:[path.join(root,'node_modules'),'node_modules'],alias:{'@/lib/workspace-api':path.join(tmp,'mock.jsx'),'@/contexts/auth-context':path.join(tmp,'mock.jsx'),'@/contexts/demo-context':path.join(tmp,'mock.jsx'),'@/lib/demo/interview-collaboration':path.join(tmp,'mock.jsx'),'fixture-before-hook':path.join(tmp,'before-hook.ts'),'fixture-before-timer':path.join(tmp,'before-timer.tsx'),'fixture-before-kit':path.join(tmp,'before-kit.tsx'),'@':root}},module:{rules:[{test:/\.[jt]sx?$/,exclude:/node_modules/,use:path.join(tmp,'loader.cjs')},{test:/\.css$/,use:path.join(tmp,'css-loader.cjs')}]},plugins:[new w.webpack.DefinePlugin({'process.env':JSON.stringify({NODE_ENV:'production'})})]},(error,stats)=>{
  if(error||stats.hasErrors()){console.error(error||stats.toString({all:false,errors:true}));process.exitCode=1;return;}
  const server=http.createServer((req,res)=>{

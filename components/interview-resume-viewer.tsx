@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { resumeCommentInput } from "@/lib/resume-comment-input";
+import { composerEnter } from "@/lib/composer-enter";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { InterviewScope } from "@/lib/interview-access";
 import { annotationContentSchema } from "@/lib/interview-access";
@@ -101,7 +102,7 @@ function PdfPage({ pdf, resource, pageNumber, zoom, annotations, active, onAncho
     <p className="text-xs text-muted-foreground" role="status">{ready ? text.trim() ? "Select résumé text and type a comment, or choose Comment on selection." : "Text highlighting is unavailable on this image-only page. General résumé notes and download are still available. No OCR is used." : "Rendering page…"}</p>
     {!!text.trim() && <div className="flex flex-wrap gap-2">
       <Button type="button" variant="outline" size="sm" onPointerDown={e => e.preventDefault()} onClick={() => capture()}>Comment on selection</Button>
-      <Input aria-label="Exact text to highlight on this page" value={find} onChange={e => setFind(e.target.value)} className="min-w-36 flex-1" onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); findText(); } }} />
+      <Input aria-label="Exact text to highlight on this page" value={find} onChange={e => setFind(e.target.value)} className="min-w-36 flex-1" onKeyDown={e => composerEnter(e, findText)} />
       <Button type="button" variant="outline" size="sm" onClick={findText}>Highlight this text</Button>
     </div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
@@ -135,6 +136,7 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   const [mobileTab, setMobileTab] = useState<"document" | "comments">("document"), [desktop, setDesktop] = useState(false);
   const comment = useRef<HTMLTextAreaElement>(null), serial = useRef(0), mounted = useRef(true), writing = useRef(false), accessLost = useRef(onAccessLost);
   const refreshFlight = useRef<Promise<void> | null>(null);
+  const savedFocus = useRef<string | null>(null), annotationNodes = useRef(new Map<string, HTMLLIElement>());
   accessLost.current = onAccessLost;
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
@@ -183,6 +185,11 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
   }, [currentAccess, resource, retry]);
   const draftId = draft?.id;
   useLayoutEffect(() => {
+    if (draft || !savedFocus.current) return;
+    const node = annotationNodes.current.get(savedFocus.current);
+    if (node) { node.focus({ preventScroll: false }); savedFocus.current = null; }
+  }, [annotations, draft]);
+  useLayoutEffect(() => {
     if (!draftId || !comment.current) return;
     const field = comment.current;
     field.focus({ preventScroll: false });
@@ -198,13 +205,13 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
     return true;
   }
   async function save() {
-    if (!draft || writing.current) return;
+    if (!draft || writing.current || !currentAccess || conflict) return;
     const content = annotationContentSchema.safeParse({ kind: draft.kind, comment: draft.comment, anchor: draft.anchor });
     if (!content.success) { setError("Enter a comment of 1–10,000 characters."); return; }
     writing.current = true; ++serial.current; setBusy(true); setError(""); setStatus("Saving comment…");
     try {
       await saveInterviewResumeAnnotation({ ...request, id: draft.id, ...(draft.revision !== undefined ? { revision: draft.revision } : {}), content: content.data });
-      if (mounted.current) { setDraft(null); setStatus("Comment saved"); await refresh(true); }
+      if (mounted.current) { savedFocus.current = draft.id; setActive(draft.id); setDraft(null); setStatus("Comment saved"); await refresh(true); }
     } catch {
       if (mounted.current) { setError("Comment was not saved. Your text is retained. Retry, or review the latest version if someone changed it."); await refresh(true); }
     } finally { writing.current = false; if (mounted.current) setBusy(false); }
@@ -260,12 +267,13 @@ function AuthorizedResumeViewer({ scope, documentId, isDemo, onAccessLost, resou
         {draft && <div data-resume-comment-draft className="space-y-2 rounded border bg-muted/30 p-3">
           {draft.anchor && <blockquote className="break-words text-xs">Page {draft.anchor.page}: “{draft.anchor.quote}”</blockquote>}
           <label htmlFor="resume-comment" className="text-sm font-medium">{draft.anchor ? "Highlight comment" : "General résumé note"}</label>
-          <Textarea ref={comment} id="resume-comment" value={draft.comment} maxLength={10000} disabled={busy} onChange={e => setDraft(d => d && ({ ...d, comment: e.target.value }))} />
+          <Textarea ref={comment} id="resume-comment" value={draft.comment} maxLength={10000} disabled={busy} aria-describedby="resume-comment-keyboard" onKeyDown={e => composerEnter(e, save)} onChange={e => setDraft(d => d && ({ ...d, comment: e.target.value }))} />
+          <p id="resume-comment-keyboard" className="text-xs text-muted-foreground">Enter to save comment · Shift+Enter for a new line</p>
           {conflict && <div role="alert" className="space-y-2 text-sm"><p>This comment changed or your editing access changed. Your draft has been retained.</p>{latest?.canEdit && <><p className="whitespace-pre-wrap break-words">Latest: {latest.comment}</p><Button type="button" variant="outline" size="sm" onClick={() => setDraft(d => d && ({ ...d, revision: latest.revision }))}>Use latest revision with my draft</Button></>}</div>}
           <div className="flex gap-2"><Button type="button" size="sm" disabled={busy || conflict} onClick={save}>{busy ? "Saving…" : "Save comment"}</Button><Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => setDraft(null)}>Cancel comment</Button></div>
         </div>}
         {!annotations.length && <p className="text-sm text-muted-foreground">No shared comments yet.</p>}
-        <ul className="space-y-3">{annotations.map(a => <li key={a.id} className={`space-y-2 rounded border p-3 ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
+        <ul className="space-y-3">{annotations.map(a => <li key={a.id} ref={node => { if (node) annotationNodes.current.set(a.id, node); else annotationNodes.current.delete(a.id); }} tabIndex={-1} className={`space-y-2 rounded border p-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${active === a.id ? "border-primary bg-accent/30" : ""}`}>
           <p className="text-sm font-medium">{a.authorName}</p>
           {a.anchor ? <Button type="button" variant="ghost" className="h-auto max-w-full justify-start whitespace-normal break-words px-0 text-left text-xs" onClick={() => { setPage(a.anchor!.page); setActive(a.id); setMobileTab("document"); }}>Page {a.anchor.page}: “{a.anchor.quote}”</Button> : <p className="text-xs text-muted-foreground">General résumé note</p>}
           <p className="whitespace-pre-wrap break-words text-sm">{a.comment}</p>

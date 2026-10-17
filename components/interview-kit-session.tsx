@@ -16,6 +16,7 @@ import {
 } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { composerEnter } from "@/lib/composer-enter";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2 } from "@/components/icons";
 import { useInterviewWorkspace } from "@/hooks/use-interview-workspace";
@@ -94,6 +95,14 @@ export function InterviewKitSession({
   const bankControl = useRef<HTMLButtonElement>(null);
   const [closingQuestion, setClosingQuestion] = useState(false);
   const closingQuestionRef = useRef(false);
+  const addingOffScript = useRef(false);
+  const questionFocusAfterSave = useRef<"bank" | "notes" | null>(null);
+  useLayoutEffect(() => {
+    if (closingQuestion || !questionFocusAfterSave.current) return;
+    const target = questionFocusAfterSave.current === "bank" ? bankControl.current : activeNotes.current;
+    questionFocusAfterSave.current = null;
+    target?.focus({ preventScroll: true });
+  }, [closingQuestion, activeQuestion]);
   const completionSource = useRef<HTMLDivElement>(null);
   const [completionMotion, setCompletionMotion] = useState<{ id: string; origin: QuestionCompletionOrigin } | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -453,15 +462,22 @@ export function InterviewKitSession({
     const origin = !completedIds.includes(active.id) ? captureQuestionCompletion(completionSource.current) : null;
     const ok = await persist(false, false, { completedQuestionIds: [...new Set([...(draft.completedQuestionIds || []), active.id])] });
     if (mounted.current) {
+      questionFocusAfterSave.current = ok ? "bank" : "notes";
       if (ok) {
         setActiveQuestion(""); setLibraryOpen(false); setAnnouncement("Question saved and moved to your completed questions.");
         setClosingQuestion(false); closingQuestionRef.current = false;
         if (origin) setCompletionMotion({ id: active.id, origin });
-        bankControl.current?.focus({ preventScroll: true });
       }
       setClosingQuestion(false);
     }
     closingQuestionRef.current = false;
+  }
+  function submitOffScript() {
+    if (addingOffScript.current || disabled || ending) return;
+    if (!newQuestion.trim()) { setError("Enter an off-script question before adding it."); return; }
+    if (draft.additionalQuestions.length >= 30) { setError("Your session has reached its question limit."); return; }
+    addingOffScript.current = true;
+    addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); setError("");
   }
   async function refreshRevision() {
     if (savingRef.current) return;
@@ -531,11 +547,12 @@ export function InterviewKitSession({
           {completedIds.includes(active.id) && <p className="text-xs text-primary">Completed by you{session.completedAt ? " · Read only" : " · Notes can still be revised"}</p>}
           {key(active.guidance)}
           <label htmlFor={`active-notes-${active.id}`}>Your private notes</label>
-          <Textarea ref={activeNotes} id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
+          <Textarea ref={activeNotes} id={`active-notes-${active.id}`} disabled={disabled || ending} rows={8} maxLength={10000} aria-describedby={!session.completedAt ? "question-notes-keyboard" : undefined} onKeyDown={e => composerEnter(e, () => { if (!disabled && !ending) return closeQuestion(); })} value={active.extra ? draft.additionalQuestions.find(q => q.id === active.id)?.notes || "" : draft.questionNotes.find(q => q.questionId === active.id)?.notes || ""} onChange={e => active.extra ? setDraft(d => ({ ...d, additionalQuestions: d.additionalQuestions.map(q => q.id === active.id ? { ...q, notes: e.target.value } : q) })) : note(active.id, e.target.value)} />
+          {!session.completedAt && <p id="question-notes-keyboard" className="text-xs text-muted-foreground">Enter to save &amp; close · Shift+Enter for a new line</p>}
           {!session.completedAt && <Button type="button" disabled={ending || closingQuestion || completing} onClick={() => void closeQuestion()}>{closingQuestion ? "Saving question…" : "Save & close"}</Button>}
         </section> : null}
         </div>
-        {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => setOffScriptOpen(v => !v)}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Input id="new-interview-question" autoFocus maxLength={3000} value={newQuestion} onChange={e => setNewQuestion(e.target.value)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={() => { addQuestion(newQuestion); setNewQuestion(""); setOffScriptOpen(false); setLibraryOpen(false); }}>Add question</Button><p className="text-xs text-muted-foreground">Add it to your session before leaving. Its private notes autosave.</p></fieldset>}</div>}
+        {!session.completedAt && <div className="oc-off-script"><Button type="button" variant="ghost" aria-expanded={offScriptOpen} aria-controls="interview-off-script" onClick={() => { addingOffScript.current = false; setOffScriptOpen(v => !v); }}>+ Off-script question</Button>{offScriptOpen && <fieldset id="interview-off-script" disabled={completing || closingQuestion || ending} className="space-y-3"><label htmlFor="new-interview-question">Off-script question</label><Textarea id="new-interview-question" autoFocus rows={2} maxLength={3000} aria-describedby="off-script-keyboard" value={newQuestion} onChange={e => setNewQuestion(e.target.value)} onKeyDown={e => composerEnter(e, submitOffScript)} /><Button type="button" variant="outline" disabled={!newQuestion.trim() || draft.additionalQuestions.length >= 30} onClick={submitOffScript}>Add question</Button><p id="off-script-keyboard" className="text-xs text-muted-foreground">Enter to add question · Shift+Enter for a new line</p></fieldset>}</div>}
         </> : <section aria-label={session.completedAt ? "Submitted review" : "Post-interview"} className="oc-post-interview space-y-5" style={flights.length ? { opacity: 0 } : undefined}>
           <h2 ref={closingHeading} tabIndex={-1} data-candidate-focus>{session.completedAt ? "Interview complete" : "Post-interview"}</h2><p className="text-sm text-muted-foreground">{session.completedAt ? "Your review was submitted and is read only. Other interviewers finish independently." : "Take time to discuss before choosing your own score."}</p>
           {session.completedAt && <RoundScore scope={{ clubId, applicationId, roundId }} />}
