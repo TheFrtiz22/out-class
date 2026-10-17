@@ -207,3 +207,18 @@
   [data-product-shell] .oc-explore-card .oc-explore-card-cover[data-has-banner="false"],
   .oc-explore-card .oc-explore-card-cover[data-has-banner="false"] { height: 76px; }
 }
+
+/* Photo-led club directory approved October 2026. */
+:is(.oc-discovery, .oc-corkboard) .oc-explore-card .oc-explore-card-cover,
+[data-product-shell] .oc-discovery .oc-explore-card .oc-explore-card-cover { height:190px; border-radius:16px 16px 0 0; }
+:is(.oc-discovery, .oc-corkboard) .oc-explore-card article { border-radius:16px; }
+.oc-explore-card .oc-explore-card-cover[data-has-banner="false"] { background:linear-gradient(120deg, var(--oc-club-accent), #708097); }
+.oc-explore-card .oc-explore-card-cover .oc-explore-card-logo { inset:auto auto -24px 20px; display:grid; z-index:1; }
+.oc-explore-card .oc-explore-card-logo > :first-child { width:64px; height:64px; border:4px solid var(--card); border-radius:14px; background:var(--card); box-shadow:0 4px 16px #14284015; }
+.oc-explore-card .oc-explore-card-cover .oc-explore-category { left:auto; right:16px; top:auto; bottom:12px; transform:none; max-width:calc(100% - 110px); padding:5px 9px; background:var(--card); color:var(--foreground); border:1px solid var(--border); border-radius:7px; text-align:left; }
+:is(.oc-discovery, .oc-corkboard) .oc-explore-card .oc-explore-card-body,
+[data-product-shell] .oc-discovery .oc-explore-card .oc-explore-card-body { padding:40px 20px 20px; }
+.oc-explore-card h3 { font-size:20px; line-height:1.25; }
+.oc-explore-card .oc-explore-pitch { min-height:3em; margin:10px 0 18px; }
+.oc-discovery .oc-explore-heading h1 { font-family:Georgia,serif; font-size:clamp(32px,4vw,48px); letter-spacing:-.045em; font-weight:500; }
+.oc-explore-card h3 > button { font:inherit; }

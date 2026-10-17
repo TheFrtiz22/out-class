@@ -70,7 +70,7 @@ test('shared public renderer displays marketing content and respects empty and h
   const { renderToStaticMarkup } = require('react-dom/server')
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n === '@/components/icons' ? require('./helpers/icons.cjs') : n === '@/lib/club-marketing' ? { readMarketing } : n === '@/lib/club-assets' ? load('lib/club-assets.ts') : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(n => n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
   const profile = draft()
   const header = renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile }))
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))
@@ -99,4 +99,52 @@ test('published profile compare tokens reject concurrent authors and recover ide
   await actions.updateClubSettings({ clubId, ...next, expectedProfile })
   await assert.rejects(actions.updateClubSettings({ clubId, ...next, description: 'Stale competing draft', expectedProfile }), /changed while you were editing/)
   assert.equal(current.description, next.description); assert.equal(writes, 2)
+})
+
+test('selectivity context round trips and does not present unknown or hidden rates as facts', () => {
+  const { profileStatistics } = load('lib/club-marketing.ts')
+  const p = profileDraft({ name: 'Research fund', acceptanceRate: 3, marketing: { acceptanceApproximate: true, acceptanceNote: 'Approximate · cohort not specified', acceptanceSource: 'https://example.com/' } })
+  assert.deepEqual(profileDraft(clubProfileSchema.parse(p)), p)
+  assert.equal(profileStatistics(p)[0].value, '~3%')
+  assert.equal(profileStatistics({ marketing: {} })[0].value, 'Not disclosed')
+  assert.equal(profileStatistics({ ...p, marketing: { ...p.marketing, showAcceptance: false } }).length, 0)
+  for (const bannerPosition of [{ x: -1, y: 50 }, { x: 50, y: 101 }]) assert.equal(clubProfileSchema.safeParse({ ...p, marketing: { ...p.marketing, bannerPosition } }).success, false)
+  assert.equal(clubProfileSchema.safeParse({ ...p, marketing: { ...p.marketing, acceptanceSource: 'javascript:alert(1)' } }).success, false)
+})
+test('researched package keeps cohort/approximation explicit and does not confuse McIntire admission with club admission', () => {
+  const { clubProfileImportSchema } = load('lib/club-profile-import.ts')
+  const data = clubProfileImportSchema.parse(JSON.parse(fs.readFileSync('docs/club-profile-design/profiles.json', 'utf8')))
+  assert.equal(data.profiles.length, 13)
+  const vcg = data.profiles.find(p => p.key === 'vcg').profile
+  assert.equal(vcg.acceptanceRate, 3); assert.match(vcg.marketing.acceptanceNote, /Spring 2026/)
+  const fbif = data.profiles.find(p => p.key === 'fbif').profile
+  assert.equal(fbif.marketing.acceptanceApproximate, true); assert.match(fbif.marketing.acceptanceNote, /cohort not specified/)
+  assert.equal(data.profiles.find(p => p.key === 'vvf').profile.acceptanceRate, null)
+  assert.equal(data.profiles.filter(p => p.profile.acceptanceRate == null).length, 11)
+})
+test('import rejects duplicate clubs, path escapes and preassigned remote images', () => {
+  const { clubProfileImportSchema } = load('lib/club-profile-import.ts')
+  const row = { key: 'club', slug: 'club', profile: profileDraft({ name: 'Club' }) }
+  assert.equal(clubProfileImportSchema.safeParse({ profiles: [row, row] }).success, false)
+  assert.equal(clubProfileImportSchema.safeParse({ profiles: [{ ...row, imageAssignments: { logoUrl: ['images/../secret.png'] } }] }).success, false)
+  assert.equal(clubProfileImportSchema.safeParse({ profiles: [{ ...row, profile: { ...row.profile, logoUrl: 'https://example.com/logo.png' } }] }).success, false)
+})
+test('import preflights the entire package before writes, publishes only after uploads, preserves version checks and stops on conflict', async () => {
+  const { runClubProfileImport } = load('lib/club-profile-import.ts')
+  const row = { key: 'club', slug: 'club', existingId: null, profile: profileDraft({ name: 'Club' }), imageAssignments: { logoUrl: ['images/club-logo.png'] } }
+  const calls = [], file = new File(['png-fixture'], 'club-logo.png', { type: 'image/png' })
+  const ops = { save: async d => { calls.push(['save', d]); return { id: clubId } }, load: async id => { calls.push(['load', id]); return { id, version: 'expected-version' } }, upload: async (id, f) => { calls.push(['upload', id, f.name]); return `club-assets/${id}/00000000-0000-4000-8000-000000000002.webp` }, progress: () => {} }
+  await assert.rejects(runClubProfileImport([{ row, current: null }], [], 'school-uva', 'Approved researched import', ops), /Missing image/)
+  assert.equal(calls.length, 0)
+  await runClubProfileImport([{ row, current: null }], [file], 'school-uva', 'Approved researched import', ops)
+  assert.deepEqual(calls.map(c => c[0]), ['save', 'load', 'upload', 'save'])
+  assert.equal(calls[0][1].isDiscoverable, false)
+  assert.equal(calls[3][1].isDiscoverable, true)
+  assert.equal(calls[3][1].applicationOpen, false)
+  assert.equal(calls[3][1].version, 'expected-version')
+  assert.match(calls[3][1].profile.logoUrl, /^club-assets\//)
+  assert.equal(row.profile.logoUrl, null)
+  calls.length = 0
+  await assert.rejects(runClubProfileImport([{ row, current: { id: clubId, version: 'stale' } }, { row: { ...row, slug: 'second' }, current: null }], [file], 'school-uva', 'Approved researched import', { ...ops, save: async () => { calls.push(['conflict']); return { error: 'Club changed. Reload before saving.' } } }), /Club changed/)
+  assert.deepEqual(calls.map(c => c[0]), ['upload', 'conflict'])
 })

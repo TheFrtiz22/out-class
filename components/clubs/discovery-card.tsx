@@ -1,6 +1,8 @@
 "use client"
 import { clubAssetSource } from "@/lib/club-assets"
 
+import { readMarketing } from "@/lib/club-marketing"
+import { MemberOutcomes, ProfileStatistics } from "@/components/clubs/marketing-profile"
 import { useState, type ReactNode, type CSSProperties } from "react"
 import Image from "next/image"
 import { ArrowRight } from "@/components/icons"
@@ -19,11 +21,12 @@ export function DiscoveryCard({ club, entry, onOpen, action, now = Date.now() }:
 }) {
   const [failedBanner, setFailedBanner] = useState<string | null>(null)
   const hasBanner = !!club.bannerUrl && failedBanner !== club.bannerUrl
+  const m = readMarketing(club.marketing)
   const recruitment = clubRecruitment(club, now)
   return <li className="oc-explore-card" style={{ "--oc-club-accent": club.color || "var(--primary)" } as CSSProperties}>
     <article>
       <div className="oc-explore-card-cover" data-has-banner={hasBanner}>
-        {hasBanner && <Image src={clubAssetSource(club.bannerUrl!)} alt="" fill unoptimized={!club.bannerUrl!.startsWith("/") || club.bannerUrl!.startsWith("//")} sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw" onError={() => setFailedBanner(club.bannerUrl!)} />}
+        {hasBanner && <Image src={clubAssetSource(club.bannerUrl!)} alt="" style={{ objectPosition: `${m.bannerPosition.x}% ${m.bannerPosition.y}%` }} fill unoptimized={!club.bannerUrl!.startsWith("/") || club.bannerUrl!.startsWith("//")} sizes="(max-width: 640px) 100vw, (max-width: 1200px) 50vw, 33vw" onError={() => setFailedBanner(club.bannerUrl!)} />}
         <div className="oc-explore-card-logo"><DirectoryLogo club={club} size="lg" /></div>
         <span className="oc-explore-category">{club.category || "Student organization"}</span>
       </div>
@@ -31,6 +34,8 @@ export function DiscoveryCard({ club, entry, onOpen, action, now = Date.now() }:
         <h3><button data-club-id={club.id} data-directory-entry={entry} onClick={onOpen}>{club.name}</button></h3>
         <p className="oc-explore-pitch">{club.pitch || club.description || "Get to know this club and explore its profile."}</p>
         {club.source === "preview" ? <p className="oc-explore-directory-note">Demo profile · not a participating organization</p> : club.claimed === false ? <p className="oc-explore-directory-note">Directory listing · not yet managed by this club</p> : null}
+        <ProfileStatistics profile={club} compact />
+        <MemberOutcomes profile={club} compact />
         <div className="oc-explore-card-footer">
           <div className="oc-explore-recruitment"><span data-available={recruitment.available}>{recruitment.label}</span>{recruitment.deadline ? <time dateTime={recruitment.deadline.toISOString()}>{recruitment.expired ? "Closed" : "Deadline"} · {recruitmentDate(recruitment.deadline)}</time> : <small>Deadline not published</small>}{club.timeCommitment && <small>{club.timeCommitment} hours / week</small>}</div>
           <IconButton size="icon-lg" className="oc-explore-open" aria-label={`View ${club.name} club page`} onClick={onOpen}><ArrowRight size={18} className="size-[18px]" aria-hidden="true" /></IconButton>

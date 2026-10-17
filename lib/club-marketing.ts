@@ -10,6 +10,10 @@ export const marketingSchema = z.object({
     visible: z.boolean().default(true), body: text(5000).default(""),
     cards: z.array(z.object({ title: text(150), description: text(2000), url: publicUrl.default(""), image: profileImage.default("") })).max(12).default([]),
   })).max(12).default([]),
+  bannerPosition: z.object({ x: z.number().min(0).max(100).default(50), y: z.number().min(0).max(100).default(50) }).default({ x: 50, y: 50 }),
+  acceptanceNote: text(180).default(""), acceptanceSource: publicUrl.default(""),
+  acceptanceApproximate: z.boolean().default(false),
+  outcomesNote: text(300).default(""),
   memberCount: z.number().int().min(0).max(1000000).nullable().default(null),
   showAcceptance: z.boolean().default(true), showAum: z.boolean().default(true), showMembers: z.boolean().default(true),
   placements: z.array(text(100)).max(20).default([]), accolades: z.array(text(200)).max(20).default([]),
@@ -39,4 +43,15 @@ export const clubProfileSchema = z.object({
 export type ClubProfileDraft = z.infer<typeof clubProfileSchema>
 export function profileDraft(club: { name: string; description?: string; tagline?: string; category?: string; color?: string; logoUrl?: string | null; bannerUrl?: string | null; acceptanceRate?: number | null; aumValue?: number | null; marketing?: unknown }): ClubProfileDraft {
   return { name: club.name, description: club.description ?? "", tagline: club.tagline ?? "", category: club.category || "Other", color: club.color || "#232D4B", logoUrl: club.logoUrl ?? null, bannerUrl: club.bannerUrl ?? null, acceptanceRate: club.acceptanceRate ?? null, aumValue: club.aumValue ?? null, marketing: readMarketing(club.marketing) }
+}
+
+/** Visibility and context are shared by cards, public profiles and editor previews. */
+export function profileStatistics(profile: { acceptanceRate?: number | null; aumValue?: number | null; marketing?: unknown }) {
+  const m = readMarketing(profile.marketing)
+  return [
+    ...(m.showAcceptance ? [{ label: "Club acceptance", value: profile.acceptanceRate == null ? "Not disclosed" : `${m.acceptanceApproximate ? "~" : ""}${profile.acceptanceRate}%`, detail: m.acceptanceNote || (profile.acceptanceRate == null ? "No published rate" : "Club-reported"), source: profile.acceptanceRate == null ? "" : m.acceptanceSource }] : []),
+    ...(m.showAum && profile.aumValue != null ? [{ label: "AUM", value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0, notation: "compact" }).format(profile.aumValue), detail: "Club-reported", source: "" }] : []),
+    ...(m.showMembers && m.memberCount != null ? [{ label: "Members", value: String(m.memberCount), detail: "Club-reported", source: "" }] : []),
+    ...m.metrics.filter(s => s.label && s.value).map(s => ({ ...s, detail: "Club-reported", source: "" })),
+  ]
 }

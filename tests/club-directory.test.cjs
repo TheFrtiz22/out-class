@@ -203,3 +203,10 @@ test("legacy fund-size parameters are ignored and removed without losing other f
   for (const key of ["q", "category", "time", "eventId"]) assert.equal(cleaned.get(key), params.get(key))
   assert.equal(clubs[1].aumValue, 100000)
 })
+
+test('employer search matches only explicitly recorded destinations and combines with category filters', () => {
+  const listed = clubs.map(c => ({ ...c, marketing: { placements: c.id === 'b' ? ['Morgan Stanley'] : [] } }))
+  assert.deepEqual(filterDirectory(listed, { ...emptyDirectoryFilters, query: 'Morgan Stanley' }).map(c => c.id), ['b'])
+  assert.equal(filterDirectory(listed, { ...emptyDirectoryFilters, query: 'Morgan Stanley', category: 'Consulting' }).length, 0)
+  assert.equal(filterDirectory(listed, { ...emptyDirectoryFilters, query: 'Invented Employer' }).length, 0)
+})
