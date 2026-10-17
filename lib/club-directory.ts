@@ -55,6 +55,7 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
       if (filters.category !== "all" && club.category.toLowerCase() !== filters.category.toLowerCase()) return false
       const recruitment = clubRecruitment(club, now)
       if (filters.recruitment === "open" && !recruitment.available) return false
+      if (filters.recruitment === "closed" && recruitment.available) return false
       if (filters.recruitment === "closing" && !recruitment.closingSoon) return false
       if (filters.time !== "all" && club.timeCommitment !== filters.time) return false
       if (
@@ -89,7 +90,7 @@ export function directoryFiltersFromParams(params: { get: (key: string) => strin
   const values = { ...emptyDirectoryFilters }
   for (const key of Object.keys(filterParams) as (keyof DirectoryFilters)[]) values[key] = params.get(filterParams[key]) || values[key]
   if (!["name", "acceptance", "deadline"].includes(values.sort)) values.sort = "name"
-  if (!["all", "open", "closing"].includes(values.recruitment)) values.recruitment = "all"
+  if (!["all", "open", "closed", "closing"].includes(values.recruitment)) values.recruitment = "all"
   if (!["all", "1-3", "3-5", "5+"].includes(values.time)) values.time = "all"
   if (!["all", "5", "10", "25", "50", "100"].includes(values.acceptance)) values.acceptance = "all"
   return values

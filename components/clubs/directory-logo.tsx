@@ -1,3 +1,4 @@
+import { readMarketing } from "@/lib/club-marketing"
 import { ClubLogo } from "@/components/club-logo"
 import type { DirectoryClub } from "@/lib/club-directory"
 
@@ -21,6 +22,7 @@ export function DirectoryLogo({
       logoUrl={club.logoUrl}
       text={club.logoText}
       color={club.color}
+      imageBackground={readMarketing(club.marketing).logoOnBrand ? club.color : undefined}
       size={size}
     />
   )

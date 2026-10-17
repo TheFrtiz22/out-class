@@ -76,6 +76,9 @@ test('shared public renderer displays marketing content and respects empty and h
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))
   assert.match(header, /Impact Club/)
   assert.match(header, /Members/)
+  profile.logoUrl = 'https://example.com/white-logo.png'
+  profile.marketing.logoOnBrand = true
+  assert.match(renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile })), /background-color:#123456/)
   assert.match(sections, /Mentorship/)
   assert.match(sections, /Who can join\?/)
   assert.match(sections, /https:\/\/example.com\/join/)
@@ -147,4 +150,43 @@ test('import preflights the entire package before writes, publishes only after u
   calls.length = 0
   await assert.rejects(runClubProfileImport([{ row, current: { id: clubId, version: 'stale' } }, { row: { ...row, slug: 'second' }, current: null }], [file], 'school-uva', 'Approved researched import', { ...ops, save: async () => { calls.push(['conflict']); return { error: 'Club changed. Reload before saving.' } } }), /Club changed/)
   assert.deepEqual(calls.map(c => c[0]), ['upload', 'conflict'])
+})
+
+test('commerce packages cover every verified directory club without fabricated admissions or replacement identities', () => {
+  const { clubProfileImportSchema } = load('lib/club-profile-import.ts')
+  const first = JSON.parse(fs.readFileSync('docs/club-profile-design/profiles.json', 'utf8'))
+  const extra = JSON.parse(fs.readFileSync('docs/club-profile-design/commerce-expansion.json', 'utf8'))
+  const inventory = JSON.parse(fs.readFileSync('docs/club-profile-design/commerce-inventory.json', 'utf8'))
+  const packages = [first, extra].map(p => clubProfileImportSchema.parse(p))
+  const rows = packages.flatMap(p => p.profiles), keys = new Set(rows.map(p => p.key))
+  assert.equal(rows.length, 38); assert.equal(keys.size, 38)
+  assert.equal(new Set(rows.map(p => p.slug)).size, 38)
+  assert.equal(inventory.organizations.length, 34)
+  for (const org of [...inventory.organizations, ...inventory.additionalOrganizations]) assert.ok(keys.has(org.profileKey), org.name)
+  assert.equal(keys.has('mdsa'), false); assert.match(extra.unresolved[0].reason, /identity/)
+  for (const row of extra.profiles) {
+    assert.equal(row.profile.acceptanceRate, null); assert.equal(row.applicationOpen, false)
+    assert.ok(row.sources.length); assert.ok(row.profile.marketing.links.length)
+    for (const source of row.sources) assert.ok(new URL(source.url).protocol === 'https:')
+  }
+  for (const [key,id] of [['aif','b90c1444-45ea-45bc-9b05-1f5a73c63303'],['mii','b90c1444-45ea-45bc-9b05-1f5a73c63301']]) {
+    const row = rows.find(p => p.key === key)
+    assert.equal(row.existingId, id); assert.equal(row.slug, key)
+  }
+})
+test('white logos can retain their original artwork on a brand-color background with backward-compatible defaults', () => {
+  assert.equal(profileDraft({ name: 'Legacy club' }).marketing.logoOnBrand, false)
+  const profile = profileDraft({ name: 'White logo club', marketing: { logoOnBrand: true } })
+  assert.equal(clubProfileSchema.parse(profile).marketing.logoOnBrand, true)
+  assert.equal(clubProfileSchema.safeParse({ ...profile, marketing: { logoOnBrand: 'yes' } }).success, false)
+})
+
+test('profile enrichment preserves an existing live intake and deadline rather than closing recruitment', async () => {
+  const { runClubProfileImport } = load('lib/club-profile-import.ts')
+  const row = { key: 'mii', slug: 'mii', profile: profileDraft({ name: 'McIntire Investment Institute' }), imageAssignments: {} }
+  const calls = [], deadline = '2027-02-01T23:59:00.000Z'
+  const current = { id: clubId, version: 'reviewed-version', applicationOpen: true, applicationDeadline: deadline }
+  await runClubProfileImport([{ row, current }], [], 'school-uva', 'Enrich researched club profile', { save: async d => { calls.push(d); return { id: clubId } }, load: async () => current, upload: async () => { throw Error('Unexpected upload') }, progress() {} })
+  assert.equal(calls.length, 1); assert.equal(calls[0].id, clubId); assert.equal(calls[0].version, current.version)
+  assert.equal(calls[0].applicationOpen, true); assert.equal(calls[0].applicationDeadline, deadline)
 })

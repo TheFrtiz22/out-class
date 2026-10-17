@@ -1,0 +1,3472 @@
+{
+  "asOf": "2026-10-17",
+  "status": "prepared; not applied",
+  "school": "University of Virginia",
+  "scope": "25 additional profiles; combined with the original 13, covers the 34 official Commerce CIOs plus Common Cents, Profit with Purpose, VMAG and CRX.",
+  "unresolved": [
+    {
+      "name": "McIntire Data Science & Analytics (MDSA)",
+      "reason": "No current official organization identity verified. Not published or substituted with a graduate program."
+    }
+  ],
+  "profiles": [
+    {
+      "key": "180dc",
+      "operation": "create",
+      "existingId": null,
+      "slug": "180dc-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "180 Degrees Consulting at UVA",
+        "tagline": "Consulting for organizations with a social mission.",
+        "description": "UVA’s 180 Degrees Consulting chapter works with socially conscious organizations in the Charlottesville area on practical strategy and operations projects.",
+        "category": "Consulting",
+        "color": "#73A942",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Student teams research client needs and develop recommendations across strategy, marketing and data analysis. The chapter describes semester-long projects with teams of four to five.",
+              "cards": []
+            },
+            {
+              "title": "Documented clients",
+              "kind": "impact",
+              "visible": true,
+              "body": "The club lists Literacy Volunteers of Charlottesville/Albemarle, Habitat for Humanity and H.E.R. Sports among its engagements. These are clients, not member employers.",
+              "cards": []
+            },
+            {
+              "title": "Club-reported scale",
+              "kind": "impact",
+              "visible": true,
+              "body": "The undated homepage reports 46 members, 64 clients, 75 alumni and two international awards. These are website figures, not independently audited current totals.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Client consulting projects",
+            "Team-based research",
+            "Social impact work"
+          ],
+          "metrics": [
+            {
+              "label": "UVA chapter founded",
+              "value": "2019"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.180dcuva.org/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.180dcuva.org/our-work"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.180dcuva.org/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/180dc-logo.png"
+        ],
+        "bannerUrl": [
+          "images/180dc-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.180dcuva.org/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.180dcuva.org/our-work",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "180dc",
+          "kind": "logo",
+          "file": "images/180dc-logo.png",
+          "sourcePage": "https://www.180dcuva.org/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/5e46efc1e0fd9f3fe6a96ce3/1585926988637-Y2QNDNK06BYMVHENDUMJ/180DCUVA.png?format=1500w",
+          "sha256": "77eae92bceb0be30b0bb8331fa261fcb101fda6ba739e133c8070839cbf38c1c",
+          "width": 543,
+          "height": 122,
+          "bytes": 21377,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "180dc",
+          "kind": "banner",
+          "file": "images/180dc-banner.jpg",
+          "sourcePage": "https://www.180dcuva.org/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/5e46efc1e0fd9f3fe6a96ce3/86fbe22c-dd81-4e78-a29b-216b6df9e4f7/DSCF1866.jpg",
+          "sha256": "cc16f94f813bc5100512217137e71997d8fb31512561a4146883a84ab8003b3c",
+          "width": 2247,
+          "height": 1498,
+          "bytes": 461613,
+          "caption": "Official club website photography."
+        }
+      ]
+    },
+    {
+      "key": "vcc",
+      "operation": "create",
+      "existingId": null,
+      "slug": "vcc-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Virginia Case Club",
+        "tagline": "Build confidence in cases, competitions and consulting.",
+        "description": "Virginia Case Club develops consulting and case competition skills through structured practice, peer learning and mentorship.",
+        "category": "Consulting",
+        "color": "#274E64",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Members work through case frameworks and preparation with peers. The club publishes member destinations across consulting, finance and technology.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment evidence",
+              "kind": "impact",
+              "visible": true,
+              "body": "The site lists a Fall 2026 deadline of September 5. That deadline has passed; the old “open” heading is not treated as a current opening.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "Selected destinations listed on the official club website; dates and a club-wide placement rate are not supplied. Membership does not guarantee employment.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [
+            "McKinsey & Company",
+            "Boston Consulting Group",
+            "Bain & Company",
+            "Oliver Wyman",
+            "Deloitte",
+            "Strategy&",
+            "EY-Parthenon",
+            "KPMG",
+            "L.E.K. Consulting",
+            "Accenture",
+            "Evercore",
+            "Houlihan Lokey",
+            "PJT Partners",
+            "Bank of America",
+            "Wells Fargo",
+            "UBS",
+            "Amazon",
+            "Salesforce",
+            "Uber",
+            "Mastercard"
+          ],
+          "accolades": [],
+          "benefits": [
+            "Case practice",
+            "Mentorship",
+            "Career preparation"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.vccatuva.org/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.vccatuva.org/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/vcc-logo.png"
+        ],
+        "bannerUrl": [
+          "images/vcc-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.vccatuva.org/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "vcc",
+          "kind": "logo",
+          "file": "images/vcc-logo.png",
+          "sourcePage": "https://www.vccatuva.org/",
+          "sourceImage": "https://static.wixstatic.com/media/b44dc5_0a6bc7f0760f40b58be9a1affcdcf5a0~mv2.png",
+          "sha256": "775fbd037ae5b9c2d24ce323cdc2510b0cd7a3c9afe4f69950ca0b360a1f51b3",
+          "width": 479,
+          "height": 252,
+          "bytes": 29396,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "vcc",
+          "kind": "banner",
+          "file": "images/vcc-banner.jpg",
+          "sourcePage": "https://www.vccatuva.org/",
+          "sourceImage": "https://static.wixstatic.com/media/b44dc5_dd0981e17efe4bba9234024684d6775a~mv2.jpg",
+          "sha256": "d0d9795e93d0c70202af6a9ed3f5b1881f61eeb3a4a39d562136c31ff608dbdc",
+          "width": 2000,
+          "height": 1000,
+          "bytes": 1782181,
+          "caption": "Campus photograph from the club website; not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "portico",
+      "operation": "create",
+      "existingId": null,
+      "slug": "portico-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Portico Impact Fund",
+        "tagline": "Investing with a philanthropic purpose.",
+        "description": "Portico Impact Fund combines equity research and investment education with support for charitable causes. The group was founded in 2012 as Colonnade Capital Partners.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Analysts study valuation and socially responsible investing in coverage groups. Career preparation includes résumé workshops and networking.",
+              "cards": []
+            },
+            {
+              "title": "Investment model",
+              "kind": "impact",
+              "visible": true,
+              "body": "The club describes a transition to an endowment-based structure in 2022 and a practice of donating a portion of annual returns. No current independently verified AUM is asserted.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "Selected firms visually verified on Portico’s official placement collage. No cohort, individual roles or club-wide placement rate is supplied.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [
+            "Goldman Sachs",
+            "JPMorgan Chase",
+            "Blackstone",
+            "Evercore",
+            "Guggenheim",
+            "Houlihan Lokey",
+            "Rothschild & Co",
+            "Bank of America",
+            "Citi",
+            "Bain & Company",
+            "Morgan Stanley",
+            "Lazard",
+            "McKinsey & Company",
+            "Jefferies",
+            "Barclays",
+            "UBS",
+            "Moelis",
+            "Deloitte",
+            "EY",
+            "Wells Fargo"
+          ],
+          "accolades": [],
+          "benefits": [
+            "Equity research",
+            "Investment education",
+            "Philanthropy"
+          ],
+          "metrics": [
+            {
+              "label": "Founded",
+              "value": "2012"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.porticoimpactfund.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.porticoimpactfund.com/career-preparation"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.porticoimpactfund.com/coverage-groups"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.porticoimpactfund.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": true
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/portico-logo.png"
+        ],
+        "bannerUrl": [
+          "images/portico-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.porticoimpactfund.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.porticoimpactfund.com/career-preparation",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.porticoimpactfund.com/coverage-groups",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "portico",
+          "kind": "logo",
+          "file": "images/portico-logo.png",
+          "sourcePage": "https://www.porticoimpactfund.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/660ef0c4007324761177564b/964393c0-9437-420e-8401-0049a03048b5/PORTICO+IMPACT+FUND.png?format=1500w",
+          "sha256": "29e2cbad7916a0f29f1e1b05e1b6a647f383e8983ec7f6cf8c007846448e9fe2",
+          "width": 1500,
+          "height": 1032,
+          "bytes": 28823,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "portico",
+          "kind": "banner",
+          "file": "images/portico-banner.jpg",
+          "sourcePage": "https://www.porticoimpactfund.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/660ef0c4007324761177564b/8953ee0c-4b2e-4972-beae-931f1f0aa98d/IMG_3974.JPG",
+          "sha256": "8f2c5ffb048a4b408d69d3701026de4b5a2bc0c3979b7843a3f013d223d44fa1",
+          "width": 2500,
+          "height": 1667,
+          "bytes": 472480,
+          "caption": "Official club website photography."
+        }
+      ]
+    },
+    {
+      "key": "blackfin",
+      "operation": "create",
+      "existingId": null,
+      "slug": "blackfin-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "BlackFin Investment Group",
+        "tagline": "Investment education and access to financial careers.",
+        "description": "BlackFin is a student-run long/short equity organization serving students underrepresented in financial services. It combines investment learning with mentorship and professional development.",
+        "category": "Finance",
+        "color": "#153C33",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Members study public markets, build investing skills and connect through education and mentorship. The website highlights individual internship and fellowship experiences.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "Individual internship/fellowship spotlights on the club website, not a club-wide placement rate or guaranteed outcome.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [
+            "Goldman Sachs",
+            "JPMorgan Chase",
+            "Citi",
+            "RBC Capital Markets",
+            "Barclays",
+            "UVIMCO",
+            "Booz Allen Hamilton",
+            "Oliver Wyman",
+            "Neuberger Berman"
+          ],
+          "accolades": [],
+          "benefits": [
+            "Investment education",
+            "Mentorship",
+            "Professional community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.blackfinatmcintire.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.blackfinatmcintire.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": true
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/blackfin-logo.png"
+        ],
+        "bannerUrl": [
+          "images/blackfin-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.blackfinatmcintire.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "blackfin",
+          "kind": "logo",
+          "file": "images/blackfin-logo.png",
+          "sourcePage": "https://www.blackfinatmcintire.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/66ae7c95bb2814272a6701f3/d86d6589-ac66-40f4-82c1-ff625c83468f/Canva+Upload.png?format=1500w",
+          "sha256": "c3e8a000383345d551c332909bc5392b3932f8a0a31725d2b65d308a11707f96",
+          "width": 971,
+          "height": 404,
+          "bytes": 111432,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "blackfin",
+          "kind": "banner",
+          "file": "images/blackfin-banner.jpg",
+          "sourcePage": "https://www.blackfinatmcintire.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/66ae7c95bb2814272a6701f3/1722711835668-YRDPCP2FZWVMG8RTFT7H/unsplash-image-ZQWctwXBYiM.jpg",
+          "sha256": "155db493640594740e8de6fe71d41cfaa55d7ab8cf3a2ee8a7cf845182fa3f86",
+          "width": 2500,
+          "height": 1668,
+          "bytes": 1017372,
+          "caption": "UVA Rotunda campus photograph used on BlackFin’s official website; its filename credits an Unsplash source. Not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "enactus",
+      "operation": "create",
+      "existingId": null,
+      "slug": "enactus-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Enactus at UVA",
+        "tagline": "Entrepreneurial action for local and social impact.",
+        "description": "Enactus at UVA works on social entrepreneurship and consulting projects for organizations and businesses. It is a chapter of the global Enactus network.",
+        "category": "Consulting",
+        "color": "#B88A14",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Project work connects business skills to community needs. Published services cover consulting for local and socially minded organizations.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment evidence",
+              "kind": "impact",
+              "visible": true,
+              "body": "The published Fall 2026–27 application deadline was September 8. It is historical and does not establish a currently open cycle.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Social entrepreneurship",
+            "Client projects",
+            "Community impact"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.enactusatuva.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.enactusatuva.com/why-join-enactus"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.enactusatuva.com/client-services"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.enactusatuva.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/enactus-logo.png"
+        ],
+        "bannerUrl": [
+          "images/enactus-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.enactusatuva.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.enactusatuva.com/why-join-enactus",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.enactusatuva.com/client-services",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "enactus",
+          "kind": "logo",
+          "file": "images/enactus-logo.png",
+          "sourcePage": "https://www.enactusatuva.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/592897ae2994ca4e7970b820/1610515940248-DCEJSCF7NNFZHMICZ7VP/enactus+logo.png?format=1500w",
+          "sha256": "e6e2ec043b1c51f75a2f9e917f62d802b447ad3793e7ecc129014cf28f93639b",
+          "width": 945,
+          "height": 945,
+          "bytes": 78628,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "enactus",
+          "kind": "banner",
+          "file": "images/enactus-banner.jpg",
+          "sourcePage": "https://www.enactusatuva.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/592897ae2994ca4e7970b820/1659888285163-3UXBJH13EFOSD7AC500D/Rouss_Hall_at_the_University_of_Virginia.jpg",
+          "sha256": "2ad9e793c89c29e3d891c56133d45be803d48e8199f1abe50d42f176a16b2518",
+          "width": 2334,
+          "height": 1312,
+          "bytes": 401127,
+          "caption": "Campus photograph from the club website; not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "aif",
+      "operation": "update",
+      "existingId": "b90c1444-45ea-45bc-9b05-1f5a73c63303",
+      "slug": "aif",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Alternative Investment Fund",
+        "tagline": "Student investment research and financial markets training.",
+        "description": "Founded in 2007, the Alternative Investment Fund trains UVA students in investment management and financial markets through research, pitches and professional development.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Members develop investment ideas and learn the analytical skills used in financial markets. The official site publishes a separate placement page; sponsors are not counted as placements.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "Selected firms displayed on AIF’s official placement page. No dates, placement rate or employment guarantee are asserted.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [
+            "Citadel",
+            "Point72",
+            "D. E. Shaw",
+            "Blackstone",
+            "KKR",
+            "Apollo",
+            "Ares",
+            "Oaktree",
+            "Goldman Sachs",
+            "Morgan Stanley",
+            "PJT Partners",
+            "JPMorgan Chase"
+          ],
+          "accolades": [],
+          "benefits": [
+            "Investment research",
+            "Stock pitches",
+            "Technical training"
+          ],
+          "metrics": [
+            {
+              "label": "Founded",
+              "value": "2007"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.aifatuva.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.aifatuva.com/placement"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.aifatuva.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": true
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/aif-logo.png"
+        ],
+        "bannerUrl": [
+          "images/aif-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.aifatuva.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.aifatuva.com/placement",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "aif",
+          "kind": "logo",
+          "file": "images/aif-logo.png",
+          "sourcePage": "https://www.aifatuva.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/5b675b0a4611a0958c39ee2c/b01050e5-04e6-4212-ae0a-92a8ad91e82f/AIF-Logo.png",
+          "sha256": "d94423557399bde78a3ba91f4a8cb2a520ad9a394baab63d24857d0fe889cc87",
+          "width": 1400,
+          "height": 600,
+          "bytes": 17712,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "aif",
+          "kind": "banner",
+          "file": "images/aif-banner.jpg",
+          "sourcePage": "https://www.aifatuva.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/5b675b0a4611a0958c39ee2c/1533500248989-XKTMYNSVS82X02I46MM7/RoussHall_27.jpg",
+          "sha256": "c7d74121fa81d41afa15adfd36f7956a45f6047369e8afcf979fbba0d089047f",
+          "width": 1500,
+          "height": 950,
+          "bytes": 301569,
+          "caption": "Campus photograph from the club website; not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "mii",
+      "operation": "update",
+      "existingId": "b90c1444-45ea-45bc-9b05-1f5a73c63301",
+      "slug": "mii",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "McIntire Investment Institute",
+        "tagline": "Fundamental equity investing, run by students.",
+        "description": "The McIntire Investment Institute is a student-run long/short equity fund founded in 1994. Students conduct fundamental research and make investment decisions.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Members research securities and discuss investment theses while managing real capital. The institute welcomes students from different academic backgrounds.",
+              "cards": []
+            },
+            {
+              "title": "Reported fund scale",
+              "kind": "impact",
+              "visible": true,
+              "body": "The visible homepage describes over $1 million under management, while older page metadata states over $800,000. Neither is presented as a dated, audited current balance; no precise AUM is asserted here.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "Selected member/alumni firms visually verified on MII’s official placement collage. Cohort, individual roles and placement rate are not specified; no employment guarantee.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [
+            "Citadel",
+            "Point72",
+            "Millennium",
+            "Viking Global",
+            "Jain Global",
+            "D1 Capital Partners",
+            "Goldman Sachs",
+            "Morgan Stanley",
+            "JPMorgan Chase",
+            "Evercore",
+            "Centerview Partners",
+            "PJT Partners",
+            "KKR",
+            "Blackstone",
+            "Bain Capital",
+            "Ares",
+            "Oaktree",
+            "McKinsey & Company",
+            "Boston Consulting Group",
+            "Bain & Company"
+          ],
+          "accolades": [],
+          "benefits": [
+            "Fundamental research",
+            "Long/short equity investing",
+            "Student investment decisions"
+          ],
+          "metrics": [
+            {
+              "label": "Founded",
+              "value": "1994"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://mcintireinvestmentinstitute.org/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://mcintireinvestmentinstitute.org/placement"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://mcintireinvestmentinstitute.org/apply"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://mcintireinvestmentinstitute.org/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": true
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/mii-logo.png"
+        ],
+        "bannerUrl": [
+          "images/mii-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://mcintireinvestmentinstitute.org/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://mcintireinvestmentinstitute.org/placement",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://mcintireinvestmentinstitute.org/apply",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "mii",
+          "kind": "logo",
+          "file": "images/mii-logo.png",
+          "sourcePage": "https://mcintireinvestmentinstitute.org/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/579d6e0fbebafbe1a74706c6/1503439248679-36UA0GD3S4BVZAUCP01P/logo.png?format=1500w",
+          "sha256": "405d16a0d3a990cf3efdf191f25c0b1d7d5758fbf32a5623e9028644c3fe91f4",
+          "width": 624,
+          "height": 341,
+          "bytes": 20219,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "mii",
+          "kind": "banner",
+          "file": "images/mii-banner.jpg",
+          "sourcePage": "https://mcintireinvestmentinstitute.org/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/579d6e0fbebafbe1a74706c6/1574350470205-G9OUCOJTQO5AHAZNFHJH/85326686ad532722625b0f876bc6096f-edcd4c79039fda2e8354aaf99c66c27c.jpg",
+          "sha256": "0c88a44d111145d53fad79980ac2e39a89dc0648ef46093dc5eeb5a22b732894",
+          "width": 2500,
+          "height": 1666,
+          "bytes": 895428,
+          "caption": "Official club website photography."
+        }
+      ]
+    },
+    {
+      "key": "accounting",
+      "operation": "create",
+      "existingId": null,
+      "slug": "accounting-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Accounting Society",
+        "tagline": "Explore accounting, finance and professional development.",
+        "description": "Accounting Society supports students interested in accounting and finance through professional, social and service activities.",
+        "category": "Accounting",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The society connects accounting interests with student community and professional development. Current event schedules and membership instructions should be confirmed directly.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Accounting community",
+            "Professional development",
+            "Service activities"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.linkedin.com/company/accounting-society-at-mcintire"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.linkedin.com/company/accounting-society-at-mcintire",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.linkedin.com/company/accounting-society-at-mcintire",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "ama",
+      "operation": "create",
+      "existingId": null,
+      "slug": "ama-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Advertising and Marketing Association",
+        "tagline": "Explore advertising, marketing and creative careers.",
+        "description": "The Advertising and Marketing Association introduces UVA students to advertising and marketing careers through industry events and collaborative learning.",
+        "category": "Marketing",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Speakers, panels and industry events help students explore marketing roles. The UVA Economics directory also describes participation in the American Advertising Federation campaign competition.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Industry speakers",
+            "Marketing career exploration",
+            "Campaign experience"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.linkedin.com/company/ama-at-uva"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://economics.virginia.edu/business-consulting-and-finance-clubs"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.linkedin.com/company/ama-at-uva",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.linkedin.com/company/ama-at-uva",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://economics.virginia.edu/business-consulting-and-finance-clubs",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "bes",
+      "operation": "create",
+      "existingId": null,
+      "slug": "bes-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Business Ethics Society",
+        "tagline": "A forum for the ethical questions behind business.",
+        "description": "Business Ethics Society is an undergraduate forum for examining corporate responsibility and ethical choices in business.",
+        "category": "Business",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Students discuss issues such as AI safety, sustainability and media ethics. Published descriptions include speaker events and ethics case competition activities.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Ethics discussion",
+            "Speaker events",
+            "Case competitions"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.linkedin.com/company/business-ethics-society-at-the-university-of-virginia"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://news.virginia.edu/content/how-do-you-choose-more-800-uva-student-clubs"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.darden.virginia.edu/olsson"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.linkedin.com/company/business-ethics-society-at-the-university-of-virginia",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.linkedin.com/company/business-ethics-society-at-the-university-of-virginia",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://news.virginia.edu/content/how-do-you-choose-more-800-uva-student-clubs",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.darden.virginia.edu/olsson",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "common-cents",
+      "operation": "create",
+      "existingId": null,
+      "slug": "common-cents-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Common Cents",
+        "tagline": "Make financial knowledge more accessible.",
+        "description": "Common Cents is a UVA student financial literacy organization. A recent McIntire feature describes its work bringing financial education into local schools.",
+        "category": "Financial Literacy",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Student-led financial literacy workshops have involved Charlottesville High School and St. Anne’s-Belfield. These are community education relationships, not consulting clients or employers.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Financial education",
+            "Community workshops",
+            "Student service"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://experience.mcintire.virginia.edu/news/mcintire-students-look-ahead-goals-opportunities-milestones-coming-year/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://experience.mcintire.virginia.edu/news/mcintire-students-look-ahead-goals-opportunities-milestones-coming-year/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "Confirm current volunteer and membership requirements through the club’s channels.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/mcintire-students-look-ahead-goals-opportunities-milestones-coming-year/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "asn",
+      "operation": "create",
+      "existingId": null,
+      "slug": "asn-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Asian Student Network at McIntire",
+        "tagline": "Community and career support for APIDA students.",
+        "description": "Asian Student Network supports Asian, Pacific Islander and Desi-American students interested in business through community and peer guidance.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "McIntire’s feature describes application guidance, peer support and collaboration with other affinity groups. Both Commerce and non-Commerce students have participated.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Peer community",
+            "Application guidance",
+            "Affinity group collaboration"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://experience.mcintire.virginia.edu/news/reaching-out-with-mcintires-asian-student-network/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://experience.mcintire.virginia.edu/news/reaching-out-with-mcintires-asian-student-network/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/asn-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/reaching-out-with-mcintires-asian-student-network/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "asn",
+          "kind": "banner",
+          "file": "images/asn-banner.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/news/reaching-out-with-mcintires-asian-student-network/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2023/02/Snap-and-Chat.jpg",
+          "sha256": "7ae3c51e2c7c44068007ef1cbb8f971e39cb5c8cf2d309b60a660f1a8692835a",
+          "width": 800,
+          "height": 298,
+          "bytes": 272138,
+          "caption": "Historical January 2023 ASN, BCSN and LSN Snap and Chat event, published by McIntire."
+        }
+      ]
+    },
+    {
+      "key": "bcsn",
+      "operation": "create",
+      "existingId": null,
+      "slug": "bcsn-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Black Commerce Student Network at McIntire",
+        "tagline": "Build community and connections in business.",
+        "description": "Black Commerce Student Network brings Black Commerce students together through a supportive community and relationships with alumni.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The documented Black Commerce Connect initiative links current students and alumni. The network collaborates with other McIntire affinity organizations.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Alumni connections",
+            "Peer support",
+            "Professional community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://experience.mcintire.virginia.edu/news/black-commerce-connect-brings-students-alumni-together/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://experience.mcintire.virginia.edu/news/black-commerce-connect-brings-students-alumni-together/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/bcsn-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/black-commerce-connect-brings-students-alumni-together/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "bcsn",
+          "kind": "banner",
+          "file": "images/bcsn-banner.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/news/black-commerce-connect-brings-students-alumni-together/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2023/02/BCSNexecboard.jpg",
+          "sha256": "1e318920d8d092ab904443f72f8417e0eacb6131e44f54c7c007165fb4a6cadb",
+          "width": 800,
+          "height": 443,
+          "bytes": 135821,
+          "caption": "BCSN executive board, published by McIntire in February 2023; historical photograph."
+        }
+      ]
+    },
+    {
+      "key": "blockchain",
+      "operation": "create",
+      "existingId": null,
+      "slug": "blockchain-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Blockchain at UVA",
+        "tagline": "Learn about digital assets and blockchain technology.",
+        "description": "Blockchain at UVA introduces students to blockchain, digital assets and related industry developments.",
+        "category": "Technology",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The club describes professional speakers, member research and a digital asset investment fund. No independently verified current fund size is published here.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Blockchain education",
+            "Research",
+            "Industry engagement"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://blockchainatuva.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.linkedin.com/company/blockchainatuva"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://blockchainatuva.com/digitalassets.html"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://blockchainatuva.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/blockchain-logo.png"
+        ],
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://blockchainatuva.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.linkedin.com/company/blockchainatuva",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://blockchainatuva.com/digitalassets.html",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "blockchain",
+          "kind": "logo",
+          "file": "images/blockchain-logo.png",
+          "sourcePage": "https://blockchainatuva.com/",
+          "sourceImage": "https://blockchainatuva.com/assets/img/BlockchainLogo.png",
+          "sha256": "d4321dbff46c9e5e08331da82280f6111bc6ad405a4ca31ae225bb761ba8e2b2",
+          "width": 380,
+          "height": 374,
+          "bytes": 83216,
+          "caption": "Official Blockchain at UVA logo."
+        },
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "gfsif",
+      "operation": "create",
+      "existingId": null,
+      "slug": "gfsif-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Gayner Family Sustainable Investment Fund",
+        "tagline": "Long-term investing that supports future scholarships.",
+        "description": "GFSIF combines value investing education with a long-horizon scholarship fund. The club describes 25-year investment vintages and was founded in 2023.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Members research investments while building a model intended to benefit future students through scholarships.",
+              "cards": []
+            },
+            {
+              "title": "AUM disclosure",
+              "kind": "impact",
+              "visible": true,
+              "body": "The homepage contains conflicting $250,000+ and $600,000 figures. A current dated figure has not been verified, so no numeric AUM is displayed.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Value investing",
+            "Long-term research",
+            "Scholarship impact"
+          ],
+          "metrics": [
+            {
+              "label": "Founded",
+              "value": "2023"
+            },
+            {
+              "label": "Investment vintage",
+              "value": "25 years"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.gfsif.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.gfsif.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/gfsif-logo.jpg"
+        ],
+        "bannerUrl": [
+          "images/gfsif-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.gfsif.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "gfsif",
+          "kind": "logo",
+          "file": "images/gfsif-logo.jpg",
+          "sourcePage": "https://www.gfsif.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/653c3f03dc9e247d2878c59a/2f9c7d13-2371-431d-be35-99c56e45e514/GFSIF+%282%29.jpg?format=1500w",
+          "sha256": "2a6197422c3a7faab03cc7489d7e5840db18253cee840e88a20a490ad1dd66c4",
+          "width": 493,
+          "height": 174,
+          "bytes": 12039,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "gfsif",
+          "kind": "banner",
+          "file": "images/gfsif-banner.jpg",
+          "sourcePage": "https://www.gfsif.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/653c3f03dc9e247d2878c59a/626f61c9-026e-4fe2-af7e-f3e2b6c9085c/Lawn_Aerial_Spring_2020_SS_05+%281%29.jpg",
+          "sha256": "df597164fdfe037a1f2b4d4ba3fca892bdb409b76002acaab9d60346585b38ec",
+          "width": 2500,
+          "height": 1667,
+          "bytes": 964883,
+          "caption": "Campus photograph from the club website; not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "lsn",
+      "operation": "create",
+      "existingId": null,
+      "slug": "lsn-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Latinx Student Network",
+        "tagline": "Support and opportunity for Latinx students in business.",
+        "description": "Latinx Student Network supports current and prospective Latinx/Hispanic Commerce students through community and career development.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "McIntire documents career fairs, employer panels and collaboration with other student affinity groups. Employer participation is not treated as a member placement claim.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Professional development",
+            "Peer community",
+            "Employer events"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://experience.mcintire.virginia.edu/news/latinx-student-network-supports-professional-development/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://experience.mcintire.virginia.edu/news/latinx-student-network-supports-professional-development/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/lsn-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/latinx-student-network-supports-professional-development/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "lsn",
+          "kind": "banner",
+          "file": "images/lsn-banner.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/news/latinx-student-network-supports-professional-development/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2023/02/LSNteam.jpg",
+          "sha256": "862606b1fd91b07f91029f5babe82438b9e0f74cd45343ba3cdd0b5135ef8d16",
+          "width": 800,
+          "height": 388,
+          "bytes": 115121,
+          "caption": "LSN team photograph published by McIntire in 2023; historical photograph."
+        }
+      ]
+    },
+    {
+      "key": "net-impact",
+      "operation": "create",
+      "existingId": null,
+      "slug": "net-impact-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Net Impact at UVA",
+        "tagline": "Connect business skills with positive social change.",
+        "description": "Net Impact at UVA focuses on the relationship between business, social impact and environmental sustainability.",
+        "category": "Social Impact",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The undergraduate organization encourages students to consider how business skills and career choices can address social and environmental challenges. This is distinct from Darden’s graduate Net Impact club.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Business and social impact",
+            "Sustainability",
+            "Student community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://economics.virginia.edu/business-consulting-and-finance-clubs"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://economics.virginia.edu/business-consulting-and-finance-clubs",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://economics.virginia.edu/business-consulting-and-finance-clubs",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "onegen",
+      "operation": "create",
+      "existingId": null,
+      "slug": "onegen-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "One Generation Network",
+        "tagline": "A business community for first-generation students.",
+        "description": "One Generation Network supports first-generation and limited-income students interested in Commerce and business careers.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Students build peer support and mentoring connections. McIntire reporting describes collaboration with other affinity groups and support for navigating business opportunities.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "First-generation community",
+            "Peer support",
+            "Mentoring connections"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://experience.mcintire.virginia.edu/news/how-one-call-forged-unique-uva-bond-and-sparked-opportunity-first-generation-students/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://experience.mcintire.virginia.edu/news/class-25-romeo-sarmientos-veteran-experience-takes-him-new-horizons/"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://experience.mcintire.virginia.edu/news/how-one-call-forged-unique-uva-bond-and-sparked-opportunity-first-generation-students/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/how-one-call-forged-unique-uva-bond-and-sparked-opportunity-first-generation-students/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/class-25-romeo-sarmientos-veteran-experience-takes-him-new-horizons/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "pct",
+      "operation": "create",
+      "existingId": null,
+      "slug": "pct-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Phi Chi Theta",
+        "tagline": "Professional development, community and service.",
+        "description": "Phi Chi Theta’s Eta Alpha chapter at UVA is a professional business fraternity established in Fall 2022.",
+        "category": "Business Fraternity",
+        "color": "#643A73",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Chapter activities emphasize professional workshops, mentorship, philanthropy and brotherhood. Confirm current rush requirements and dates on the chapter website.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Professional workshops",
+            "Mentorship",
+            "Philanthropy"
+          ],
+          "metrics": [
+            {
+              "label": "UVA chapter founded",
+              "value": "2022"
+            }
+          ],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.uvaphichitheta.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.uvaphichitheta.com/history"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.uvaphichitheta.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/pct-logo.png"
+        ],
+        "bannerUrl": [
+          "images/pct-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.uvaphichitheta.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.uvaphichitheta.com/history",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "pct",
+          "kind": "logo",
+          "file": "images/pct-logo.png",
+          "sourcePage": "https://www.uvaphichitheta.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/67eacc88983e9e536b7a0869/71cb5f06-55f9-4058-8245-14a359827eed/PhiChiTheta-coa-2.png?format=1500w",
+          "sha256": "d740d8570f483babdfb520edaf8e59c250f75c600fddb6921f7a7663985134bf",
+          "width": 180,
+          "height": 204,
+          "bytes": 54841,
+          "caption": "Official club website logo."
+        },
+        {
+          "key": "pct",
+          "kind": "banner",
+          "file": "images/pct-banner.jpg",
+          "sourcePage": "https://www.uvaphichitheta.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/67eacc88983e9e536b7a0869/72eac973-83b7-436e-b736-7f83ab433dd2/Lawn_Aerial_Spring_2020_SS_05_mast.jpg",
+          "sha256": "6e514657484ef2fc8e7740425e0c800d01909e635ff32fdd1a8fa9ceeb392bdb",
+          "width": 2000,
+          "height": 800,
+          "bytes": 356691,
+          "caption": "Campus photograph from the club website; not a member photograph."
+        }
+      ]
+    },
+    {
+      "key": "pride",
+      "operation": "create",
+      "existingId": null,
+      "slug": "pride-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Pride at McIntire",
+        "tagline": "A business community for LGBTQ+ students and allies.",
+        "description": "Pride at McIntire connects LGBTQ+ and allied pre-Commerce and Commerce students through community and professional programming.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Employer events and workshops create opportunities to connect and discuss inclusion in business. Specific employer participation does not establish member placement.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "LGBTQ+ community",
+            "Professional workshops",
+            "Peer connections"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "McIntire club directory",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.commerce.virginia.edu/student-orgs",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "sof",
+      "operation": "create",
+      "existingId": null,
+      "slug": "sof-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Scholars of Finance at UVA",
+        "tagline": "Character and integrity in financial leadership.",
+        "description": "Scholars of Finance at UVA is a chapter of the national organization focused on principled leadership in finance.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The chapter connects finance interests with character development and a peer community. Check the UVA chapter’s current channels for program details.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Leadership development",
+            "Ethics in finance",
+            "Peer community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "McIntire club directory",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://lists.virginia.edu/sympa/info/sofuva2022"
+            }
+          ],
+          "email": "",
+          "website": "https://www.commerce.virginia.edu/student-orgs",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://lists.virginia.edu/sympa/info/sofuva2022",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "veo",
+      "operation": "create",
+      "existingId": null,
+      "slug": "veo-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Virginia Entrepreneurship Organization",
+        "tagline": "A community for student builders and founders.",
+        "description": "Virginia Entrepreneurship Organization connects UVA students interested in creating businesses and building projects.",
+        "category": "Entrepreneurship",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The organization’s published newsletters describe a community of builders, project work and entrepreneurship events. Historical newsletters are not treated as current event dates.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Builder community",
+            "Startup exploration",
+            "Peer learning"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://veovirginia.substack.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.linkedin.com/company/virginia-entrepreneurship-organization"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://veovirginia.substack.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://veovirginia.substack.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.linkedin.com/company/virginia-entrepreneurship-organization",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "vurec",
+      "operation": "create",
+      "existingId": null,
+      "slug": "vurec-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Virginia Undergraduate Real Estate Club",
+        "tagline": "Explore real estate investing, development and careers.",
+        "description": "VUREC brings together students from Commerce, Architecture and other UVA schools to study real estate and connect with the industry.",
+        "category": "Real Estate",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The club describes a semester-long training program, guest speakers and professional networking. Its corporate relations page distinguishes guest speakers from member employers.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment evidence",
+              "kind": "impact",
+              "visible": true,
+              "body": "The published Fall 2026 deadline was September 6. That date has passed; no current OutClass application is enabled.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Real estate training",
+            "Industry speakers",
+            "Cross-school community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.vurec.org/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.vurec.org/join"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.vurec.org/employers"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.vurec.org/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.vurec.org/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.vurec.org/join",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.vurec.org/employers",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
+    },
+    {
+      "key": "wbfm",
+      "operation": "create",
+      "existingId": null,
+      "slug": "wbfm-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "Women's Business Forum at McIntire",
+        "tagline": "Community and conversations about women in business.",
+        "description": "Women’s Business Forum at McIntire provides a space to explore gender, careers and the experiences of women in business.",
+        "category": "Professional Community",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "The forum hosts professional conversations and networking. McIntire documents its co-sponsorship of Women in Finance panels with Smart Woman Securities.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Professional conversations",
+            "Networking",
+            "Peer community"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.uvawbfm.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://experience.mcintire.virginia.edu/news/women-in-finance-event-returns-to-mcintire/"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.uvawbfm.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/wbfm-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.uvawbfm.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/women-in-finance-event-returns-to-mcintire/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "wbfm",
+          "kind": "banner",
+          "file": "images/wbfm-banner.jpg",
+          "sourcePage": "https://www.uvawbfm.com/",
+          "sourceImage": "https://images.squarespace-cdn.com/content/v1/59372723414fb5b7a344c192/1693245960416-7AJJER5Y00FIEB8RT0DR/C094EF3A-AF20-421B-86AF-D587C50CF5B9.jpg",
+          "sha256": "0dbd50041c627036944b8f13f5c57657ae229c4b4fcff057273ab916a4e94681",
+          "width": 2500,
+          "height": 1647,
+          "bytes": 478087,
+          "caption": "Official Women’s Business Forum website photograph."
+        }
+      ]
+    },
+    {
+      "key": "crx",
+      "operation": "create",
+      "existingId": null,
+      "slug": "crx-uva",
+      "isDiscoverable": true,
+      "applicationOpen": false,
+      "applicationDeadline": null,
+      "profile": {
+        "name": "UVA Credit and Restructuring Club",
+        "tagline": "Explore corporate restructuring and credit investing.",
+        "description": "CRX is a UVA student organization focused on restructuring and credit. McIntire’s Center for Investors and Financial Markets lists it among supported investment organizations.",
+        "category": "Finance",
+        "color": "#232D4B",
+        "logoUrl": null,
+        "bannerUrl": null,
+        "acceptanceRate": null,
+        "aumValue": null,
+        "marketing": {
+          "sections": [
+            {
+              "title": "What members do",
+              "kind": "programs",
+              "visible": true,
+              "body": "Published activities include credit analysis and a memo-based credit pitch competition. A UVA team connected with CRX won the 2025 ABI Corporate Restructuring Competition.",
+              "cards": []
+            },
+            {
+              "title": "Competition evidence",
+              "kind": "impact",
+              "visible": true,
+              "body": "McIntire reports the UVA team’s first-place result at the November 14, 2025 ABI competition. Competition judges and visiting firms are not represented as member employers.",
+              "cards": []
+            },
+            {
+              "title": "Recruitment",
+              "kind": "recruitment",
+              "visible": true,
+              "body": "Inclusion is independent of recruiting season. Current application dates and intake policy require confirmation on the club’s own channels. Historical fall or spring evidence is not a current opening.",
+              "cards": []
+            }
+          ],
+          "bannerPosition": {
+            "x": 50,
+            "y": 50
+          },
+          "acceptanceNote": "No verified published club acceptance rate.",
+          "acceptanceSource": "",
+          "acceptanceApproximate": false,
+          "outcomesNote": "No verified club-wide placement list was found in the reviewed sources.",
+          "memberCount": null,
+          "showAcceptance": true,
+          "showAum": false,
+          "showMembers": false,
+          "placements": [],
+          "accolades": [],
+          "benefits": [
+            "Credit research",
+            "Restructuring analysis",
+            "Pitch competitions"
+          ],
+          "metrics": [],
+          "links": [
+            {
+              "label": "Club website",
+              "url": "https://www.uvacreditrx.com/"
+            },
+            {
+              "label": "Research source 1",
+              "url": "https://www.commerce.virginia.edu/centers/cifm/student-support"
+            },
+            {
+              "label": "Research source 2",
+              "url": "https://experience.mcintire.virginia.edu/news/mcintire-students-help-power-uva-team-win-abi-corporate-restructuring-competition/"
+            },
+            {
+              "label": "Research source 3",
+              "url": "https://www.commerce.virginia.edu/student-orgs"
+            }
+          ],
+          "email": "",
+          "website": "https://www.uvacreditrx.com/",
+          "linkedin": "",
+          "instagram": "",
+          "commitment": "Not published; ask the club.",
+          "eligibility": "UVA students; confirm current membership requirements with the club.",
+          "dues": "Not published; ask the club.",
+          "videoUrl": "",
+          "faqs": [
+            {
+              "question": "Are applications open?",
+              "answer": "No native application is currently enabled on OutClass. Check the linked club page for current recruitment and membership instructions."
+            },
+            {
+              "question": "What is the acceptance rate?",
+              "answer": "A reliable published club acceptance rate was not found in the reviewed sources. No estimate is substituted."
+            }
+          ],
+          "features": [],
+          "gallery": [],
+          "logoOnBrand": false
+        }
+      },
+      "imageAssignments": {
+        "logoUrl": [
+          "images/crx-logo.png"
+        ],
+        "bannerUrl": [
+          "images/crx-banner.jpg"
+        ]
+      },
+      "sources": [
+        {
+          "url": "https://www.uvacreditrx.com/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/centers/cifm/student-support",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://experience.mcintire.virginia.edu/news/mcintire-students-help-power-uva-team-win-abi-corporate-restructuring-competition/",
+          "checkedAt": "2026-10-17"
+        },
+        {
+          "url": "https://www.commerce.virginia.edu/student-orgs",
+          "checkedAt": "2026-10-17"
+        }
+      ],
+      "imageEvidence": [
+        {
+          "key": "crx",
+          "kind": "logo",
+          "file": "images/crx-logo.png",
+          "sourcePage": "https://www.uvacreditrx.com/",
+          "sourceImage": "https://static.wixstatic.com/media/e31276_a688aca937d840db92c8832033411797~mv2.png",
+          "sha256": "d932f42552ff61fc1b3b29e7708cd37919d075eb7a797a448b6ff39b5fe6a35f",
+          "width": 1024,
+          "height": 488,
+          "bytes": 289670,
+          "caption": "Official CRX logo."
+        },
+        {
+          "key": "crx",
+          "kind": "banner",
+          "file": "images/crx-banner.jpg",
+          "sourcePage": "https://www.uvacreditrx.com/",
+          "sourceImage": "https://static.wixstatic.com/media/e31276_ded1fa74dd014003b83ea7a82ae03b36~mv2.jpg",
+          "sha256": "26f1fcae7c1c13afb4708e948af8b5e06fafbe8c12fe02c0438e0a5ac500ac7b",
+          "width": 800,
+          "height": 533,
+          "bytes": 84059,
+          "caption": "UVA Rotunda photograph on the CRX website; campus context."
+        }
+      ]
+    }
+  ]
+}
