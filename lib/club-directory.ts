@@ -1,3 +1,4 @@
+import { readMarketing } from "@/lib/club-marketing"
 import { clubRecruitment } from "@/lib/recruitment-presentation"
 import type { DiscoverClub } from "@/lib/data"
 export type DirectoryClub = DiscoverClub & {
@@ -47,7 +48,7 @@ export function filterDirectory(clubs: DirectoryClub[], filters: DirectoryFilter
   }
   return clubs
     .filter((club) => {
-      const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags]
+      const text = [club.name, club.category, club.pitch, club.description || "", ...club.tags, ...readMarketing(club.marketing).placements]
         .join(" ")
         .toLocaleLowerCase()
       if (!words.every((word) => text.includes(word))) return false

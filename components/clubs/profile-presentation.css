@@ -1,0 +1,37 @@
+/* Shared profile/editor/card presentation. Colors follow the active product theme. */
+.oc-profile-statistics { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:16px; margin:24px 0; padding:20px 0; border-block:1px solid var(--border); }
+.oc-profile-statistics > div { min-width:0; }
+.oc-profile-statistics dt { font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted-foreground); }
+.oc-profile-statistics dd { margin-top:7px; font-size:26px; line-height:1.2; font-weight:600; letter-spacing:-.035em; overflow-wrap:anywhere; }
+.oc-profile-statistics dd strong { font-weight:inherit; }
+.oc-profile-statistics p { margin-top:7px; font-size:11px; line-height:1.5; color:var(--muted-foreground); overflow-wrap:anywhere; }
+.oc-profile-statistics a { text-decoration:underline; text-underline-offset:3px; position:relative; z-index:1; }
+.oc-profile-statistics-compact { grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:0 0 20px; padding:16px 0; }
+.oc-profile-statistics-compact dd { font-size:22px; }
+.oc-member-outcomes { margin:20px 0; }
+.oc-member-outcomes h3 { margin-bottom:12px; font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted-foreground); font-weight:600; }
+.oc-member-outcomes ul { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; list-style:none; padding:0; }
+.oc-member-outcomes li { min-width:0; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:8px; padding:12px 8px; min-height:66px; border:1px solid var(--border); border-radius:9px; text-align:center; background:var(--card); }
+.oc-member-outcomes img { width:90px; max-width:100%; height:28px; object-fit:contain; background:#fff; border-radius:3px; }
+.oc-member-outcomes span { font-size:10px; line-height:1.4; overflow-wrap:anywhere; }
+.oc-member-outcomes > p { margin-top:12px; font-size:11px; line-height:1.6; color:var(--muted-foreground); }
+.oc-explore-card .oc-member-outcomes { margin:0 0 20px; }
+.oc-explore-card .oc-member-outcomes h3 { font-size:10px; font-family:inherit; color:var(--muted-foreground); }
+@media (max-width:380px) { .oc-member-outcomes ul { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Progressive enhancement: remove source whitespace visually, retaining original artwork. */
+@supports (object-view-box: inset(1%)) {
+.oc-member-outcomes img[src*="employer-blackstone.png"] { object-view-box:inset(0.0% 0.0% 0.0% 0.0%); }
+.oc-member-outcomes img[src*="employer-morgan-stanley.png"] { object-view-box:inset(37.6% 0.0% 37.6% 0.0%); }
+.oc-member-outcomes img[src*="employer-evercore.png"] { object-view-box:inset(0.0% 0.0% 0.0% 0.0%); }
+.oc-member-outcomes img[src*="employer-guggenheim-partners.png"] { object-view-box:inset(42.92% 0.0% 42.01% 0.25%); }
+.oc-member-outcomes img[src*="employer-boston-consulting-group.png"] { object-view-box:inset(31.8% 2.11% 32.0% 2.0%); }
+.oc-member-outcomes img[src*="employer-google.png"] { object-view-box:inset(0.0% 0.61% 3.57% 0.0%); }
+.oc-member-outcomes img[src*="employer-mckinsey-and-company.png"] { object-view-box:inset(7.16% 1.4% 7.16% 2.5%); }
+.oc-member-outcomes img[src*="seed-extra-21.png"] { object-view-box:inset(36.25% 5.0% 36.25% 5.0%); }
+.oc-member-outcomes img[src*="seed-extra-22.png"] { object-view-box:inset(0.0% 0.0% 0.25% 0.0%); }
+.oc-member-outcomes img[src*="seed-extra-23.png"] { object-view-box:inset(4.29% 0.06% 4.29% 0.0%); }
+.oc-member-outcomes img[src*="seed-extra-24.png"] { object-view-box:inset(4.15% 4.19% 4.15% 4.19%); }
+.oc-member-outcomes img[src*="seed-extra-25.png"] { object-view-box:inset(39.83% 12.5% 39.67% 12.5%); }
+.oc-member-outcomes img[src*="seed-extra-26.png"] { object-view-box:inset(16.68% 27.75% 16.68% 27.75%); }
+}
