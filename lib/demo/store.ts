@@ -313,10 +313,12 @@ export function presentDemoMeeting(meeting: DemoState["meetings"][number]) {
 }
 export function demoDashboard() {
   const s = demoStore.get()
+  const userId = s.students[0]?.id
+  if (!userId) throw new Error("Demo identity is unavailable.")
   return {
-    meetings: s.meetings.filter(m => m.audience === "RECRUITMENT" || s.memberships.some(member => member.clubId === m.clubId && member.userId === demoUser().id)).map(presentDemoMeeting),
-    applications: studentApplications(),
-    attendances: s.meetingAttendances.filter(a=>a.studentId===s.students[0].id).flatMap(a=>{const event=s.meetings.find(m=>m.id===a.eventId);return event&&(event.audience==="RECRUITMENT"||s.memberships.some(m=>m.clubId===event.clubId&&m.userId===s.students[0].id))?[{...a,event}]:[]}),
+    meetings: s.meetings.filter(m => m.audience === "RECRUITMENT" || s.memberships.some(member => member.clubId === m.clubId && member.userId === userId)).map(presentDemoMeeting),
+    applications: studentApplications(userId),
+    attendances: s.meetingAttendances.filter(a=>a.studentId===userId).flatMap(a=>{const event=s.meetings.find(m=>m.id===a.eventId);return event&&(event.audience==="RECRUITMENT"||s.memberships.some(m=>m.clubId===event.clubId&&m.userId===userId))?[{...a,event}]:[]}),
   }
 }
 export function demoNotifications() {
