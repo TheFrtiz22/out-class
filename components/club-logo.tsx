@@ -17,6 +17,7 @@ type ClubLogoProps = {
   color: string
   clubId?: string
   logoUrl?: string | null
+  imageBackground?: string
   alt?: string
   size?: keyof typeof sizeMap
   className?: string
@@ -29,7 +30,7 @@ export function ClubLogo(props: ClubLogoProps) {
   return <ClubLogoImage key={src} {...props} src={src} />
 }
 
-function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fallback }: ClubLogoProps & { src: string }) {
+function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fallback, imageBackground }: ClubLogoProps & { src: string }) {
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const dimensions = cn("shrink-0 shadow-none", sizeMap[size], className)
@@ -56,6 +57,7 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
         ref={(image) => { if (image?.complete) { if (image.naturalWidth === 0) setFailed(true); else setLoaded(true) } }}
         alt={alt}
         className={cn("absolute inset-0 size-full rounded-[inherit] border border-border bg-card object-contain", loaded ? "opacity-100" : "opacity-0")}
+        style={imageBackground ? { backgroundColor: imageBackground } : undefined}
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />

@@ -1,0 +1,234 @@
+{
+  "asOf": "2026-10-17",
+  "organizations": [
+    {
+      "name": "180 Degrees Consulting at UVA",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/180-degrees-consulting-at-uva-2",
+      "profileKey": "180dc"
+    },
+    {
+      "name": "Accounting Society",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/accounting-society-at-mcintire-2",
+      "profileKey": "accounting"
+    },
+    {
+      "name": "Advertising and Marketing Association",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/advertising-and-marketing-association-at-the-university-of-virginia-2",
+      "profileKey": "ama"
+    },
+    {
+      "name": "Alpha Kappa Psi",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/alpha-kappa-psi-2",
+      "profileKey": "akpsi"
+    },
+    {
+      "name": "Alternative Investment Fund at McIntire",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/alternative-investment-fund-2",
+      "profileKey": "aif"
+    },
+    {
+      "name": "Asian Student Network at McIntire",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/asian-student-network-at-mcintire",
+      "profileKey": "asn"
+    },
+    {
+      "name": "Black Commerce Student Network at McIntire",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io",
+      "profileKey": "bcsn"
+    },
+    {
+      "name": "BlackFin Investment Group",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/blackfin-investment-group",
+      "profileKey": "blackfin"
+    },
+    {
+      "name": "Blockchain at UVA",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/blockchain-at-uva",
+      "profileKey": "blockchain"
+    },
+    {
+      "name": "Business Ethics Society",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/business-ethics-society-2",
+      "profileKey": "bes"
+    },
+    {
+      "name": "Delta Sigma Pi",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/delta-sigma-pi-2",
+      "profileKey": "dsp"
+    },
+    {
+      "name": "Enactus",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/enactus-at-the-university-of-virginia",
+      "profileKey": "enactus"
+    },
+    {
+      "name": "Frank Batten Investment Fund",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/frank-batten-investment-fund-3",
+      "profileKey": "fbif"
+    },
+    {
+      "name": "Gayner Family Sustainable Investment Fund",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/gayner-family-sustainable-investment-fund",
+      "profileKey": "gfsif"
+    },
+    {
+      "name": "Global Markets Group",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/global-markets-group",
+      "profileKey": "gmg"
+    },
+    {
+      "name": "Global Research and Consulting Group at UVA",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/the-global-research-and-consulting-group",
+      "profileKey": "grc"
+    },
+    {
+      "name": "Latinx Student Network",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/latinx-student-network-at-mcintire-2",
+      "profileKey": "lsn"
+    },
+    {
+      "name": "McIntire Investment Institute",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/mcintire-investment-institute-2",
+      "profileKey": "mii"
+    },
+    {
+      "name": "Net Impact",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/net-impact-at-the-university-of-virginia-2",
+      "profileKey": "net-impact"
+    },
+    {
+      "name": "One Generation Network",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/one-generation-network",
+      "profileKey": "onegen"
+    },
+    {
+      "name": "Phi Chi Theta",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/phi-chi-theta",
+      "profileKey": "pct"
+    },
+    {
+      "name": "Portico Impact Fund",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/portico-impact-fund",
+      "profileKey": "portico"
+    },
+    {
+      "name": "Pride at McIntire",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/",
+      "profileKey": "pride"
+    },
+    {
+      "name": "Sales and Trading Group",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/sales-and-trading-group-at-mcintire-2",
+      "profileKey": "stgm"
+    },
+    {
+      "name": "Scholars of Finance",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/scholars-of-finance-at-uva",
+      "profileKey": "sof"
+    },
+    {
+      "name": "Smart Woman Securities at UVA",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/smart-woman-securities-at-the-university-of-virginia-2",
+      "profileKey": "sws"
+    },
+    {
+      "name": "SEED Consulting",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/seed-consulting",
+      "profileKey": "seed"
+    },
+    {
+      "name": "TAMID Group at UVA",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/tamid-group-2",
+      "profileKey": "tamid"
+    },
+    {
+      "name": "Virginia Case Club",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/virginia-case-club-2",
+      "profileKey": "vcc"
+    },
+    {
+      "name": "Virginia Consulting Group",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/virginia-consulting-group-2",
+      "profileKey": "vcg"
+    },
+    {
+      "name": "Virginia Entrepreneurship Organization",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/virginia-entrepreneurship-organization",
+      "profileKey": "veo"
+    },
+    {
+      "name": "Virginia Undergraduate Real Estate Club",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/virginia-undergraduate-real-estate-club-2",
+      "profileKey": "vurec"
+    },
+    {
+      "name": "Virginia Venture Fund",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/virginia-venture-fund-2",
+      "profileKey": "vvf"
+    },
+    {
+      "name": "Women's Business Forum at McIntire",
+      "source": "https://www.commerce.virginia.edu/student-orgs",
+      "link": "https://virginia.presence.io/organization/womens-business-forum-at-mcintire-2",
+      "profileKey": "wbfm"
+    }
+  ],
+  "additionalOrganizations": [
+    {
+      "name": "Profit with Purpose",
+      "profileKey": "pwp"
+    },
+    {
+      "name": "Virginia Mergers & Acquisitions Group",
+      "profileKey": "vmag"
+    },
+    {
+      "name": "Common Cents",
+      "profileKey": "common-cents"
+    },
+    {
+      "name": "UVA Credit and Restructuring Club",
+      "profileKey": "crx"
+    }
+  ],
+  "unverified": [
+    {
+      "name": "McIntire Data Science & Analytics (MDSA)",
+      "status": "No current official identity verified; excluded pending evidence."
+    }
+  ],
+  "scope": "All 34 Commerce-related CIOs listed by McIntire, plus four independently identified business organizations. Governance representatives and the invitation-only honor society are not counted as recruiting clubs."
+}

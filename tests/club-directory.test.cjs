@@ -210,3 +210,17 @@ test('employer search matches only explicitly recorded destinations and combines
   assert.equal(filterDirectory(listed, { ...emptyDirectoryFilters, query: 'Morgan Stanley', category: 'Consulting' }).length, 0)
   assert.equal(filterDirectory(listed, { ...emptyDirectoryFilters, query: 'Invented Employer' }).length, 0)
 })
+
+test('open and not-open filters partition the full directory without hiding clubs with unpublished recruitment', () => {
+  const now = Date.parse('2026-10-17T00:00:00Z')
+  const fixtures = clubs.map((c, i) => ({ ...c, applicationAvailable: i !== 2, applicationDeadline: i === 1 ? '2026-10-16T00:00:00Z' : null }))
+  const open = filterDirectory(fixtures, { ...emptyDirectoryFilters, recruitment: 'open' }, now)
+  const closed = filterDirectory(fixtures, { ...emptyDirectoryFilters, recruitment: 'closed' }, now)
+  assert.deepEqual(open.map(c => c.id), ['a'])
+  assert.deepEqual(closed.map(c => c.id), ['b', 'c'])
+  assert.equal(open.length + closed.length, fixtures.length)
+  const { directoryFiltersFromParams, directoryFilterParams } = load('lib/club-directory.ts')
+  const saved = directoryFilterParams(new URLSearchParams(), { ...emptyDirectoryFilters, recruitment: 'closed' })
+  assert.equal(directoryFiltersFromParams(saved).recruitment, 'closed')
+  assert.equal(directoryFiltersFromParams(new URLSearchParams('recruitment=invalid')).recruitment, 'all')
+})

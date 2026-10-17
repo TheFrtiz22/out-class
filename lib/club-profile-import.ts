@@ -21,7 +21,7 @@ export function importImageNames(row: ClubProfileImport['profiles'][number]) {
   return [...new Set(Object.values(row.imageAssignments).flatMap(files => files ?? []))].map(path => path.slice('images/'.length))
 }
 
-type ImportPlan = { row: ClubProfileImport['profiles'][number]; current: { id: string; version: string } | null }[]
+type ImportPlan = { row: ClubProfileImport['profiles'][number]; current: { id: string; version: string; applicationOpen: boolean; applicationDeadline: string | null } | null }[]
 type ImportOperations = {
   save: (input: unknown) => Promise<{ id?: string; error?: string }>
   load: (id: string) => Promise<{ id: string; version: string } | null>
@@ -42,7 +42,7 @@ export async function runClubProfileImport(plan: ImportPlan, images: File[], sch
   }
   for (const { row, current } of plan) {
     operations.progress(row.profile.name)
-    let saved = current
+    let saved: { id: string; version: string } | null = current
     if (!saved) {
       const created = await operations.save({ slug: row.slug, schoolId, isDiscoverable: false, applicationOpen: false, applicationDeadline: null, profile: { ...row.profile, marketing: { ...row.profile.marketing, gallery: [] } }, reason })
       if (!created.id) throw Error(created.error || 'Creation failed. Review again before retrying.')
@@ -54,7 +54,7 @@ export async function runClubProfileImport(plan: ImportPlan, images: File[], sch
     profile.logoUrl = uploaded.get(row.imageAssignments.logoUrl?.[0] || '') || null
     profile.bannerUrl = uploaded.get(row.imageAssignments.bannerUrl?.[0] || '') || null
     profile.marketing.gallery = (row.imageAssignments['marketing.gallery'] || []).map((path, index) => ({ url: uploaded.get(path)!, caption: row.profile.marketing.gallery[index]?.caption || `${row.profile.name} · official club photography` }))
-    const result = await operations.save({ id: saved.id, version: saved.version, slug: row.slug, schoolId, isDiscoverable: true, applicationOpen: false, applicationDeadline: null, profile, reason })
+    const result = await operations.save({ id: saved.id, version: saved.version, slug: row.slug, schoolId, isDiscoverable: true, applicationOpen: current?.applicationOpen ?? false, applicationDeadline: current?.applicationDeadline ?? null, profile, reason })
     if (!result.id) throw Error(result.error || 'Publication failed. Review again before retrying.')
   }
 }

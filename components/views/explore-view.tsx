@@ -96,7 +96,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
   )
   const recruitmentCounts = useMemo(() => {
     const matches = filterDirectory(clubs, { ...filters, recruitment: "all" }, now)
-    return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
+    return { all: matches.length, open: matches.filter(club => clubRecruitment(club, now).available).length, closed: matches.filter(club => !clubRecruitment(club, now).available).length, closing: matches.filter(club => clubRecruitment(club, now).closingSoon).length }
   }, [clubs, filters, now])
   function updateFilters(next: typeof filters) {
     setFilters(next)
@@ -168,7 +168,8 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
           )})}
         </section>
       )}
-      <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
+      <div className="oc-directory-recruitment" role="group" aria-label="Recruitment availability">{[{ value: "all", label: "All clubs" }, { value: "open", label: "Applications open" }, { value: "closed", label: "Not currently open" }, { value: "closing", label: "Closing soon" }].map(option => <button type="button" key={option.value} aria-pressed={filters.recruitment === option.value} onClick={() => change("recruitment", option.value)}>{option.label}<span>{recruitmentCounts[option.value as keyof typeof recruitmentCounts]}</span></button>)}</div>
+      <p className="my-3 text-xs leading-5 text-muted-foreground">Availability reflects applications on OutClass. Check each club’s website for external recruitment.</p>
       <div className="oc-directory-tools">
         <details>
 
@@ -177,7 +178,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             Refine search{active.length > 0 && <span>({active.length})</span>}
           </summary>
           <div className="oc-directory-filters">
-            <label>Recruitment<NativeSelect value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closing">Closing in 7 days</option></NativeSelect></label>
+            <label>Recruitment<NativeSelect value={filters.recruitment} onChange={event => change("recruitment", event.target.value)}><option value="all">All recruitment</option><option value="open">Applications open</option><option value="closed">Not currently open</option><option value="closing">Closing in 7 days</option></NativeSelect></label>
             <label>
               Time commitment
               <NativeSelect value={filters.time} onChange={(event) => change("time", event.target.value)}>
@@ -230,7 +231,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
                 )
               }
             >
-              {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : "Closing in 7 days" : `${key}: ${value}`}
+              {key === "query" ? `“${value}”` : key === "recruitment" ? value === "open" ? "Applications open" : value === "closed" ? "Not currently open" : "Closing in 7 days" : `${key}: ${value}`}
               <X size={12} />
             </button>
           ))}

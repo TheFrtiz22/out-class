@@ -102,7 +102,11 @@
           }
         }
       },
-      "imageAssignments": {},
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
       "sources": [
         {
           "url": "https://vcguva.com/",
@@ -534,7 +538,21 @@
         "bannerPosition": "50% 50%",
         "bannerCaption": "No verified banner available",
         "note": "Preview focal points are CSS presentation settings. The current OutClass renderer uses a centered cover crop; check that rendered crop on upload and choose a compatible image before publishing."
-      }
+      },
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
     },
     {
       "key": "seed",
@@ -5162,7 +5180,11 @@
           }
         }
       },
-      "imageAssignments": {},
+      "imageAssignments": {
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
+        ]
+      },
       "sources": [
         {
           "url": "https://www.linkedin.com/company/virginiamag",
@@ -5460,7 +5482,21 @@
         "bannerPosition": "50% 50%",
         "bannerCaption": "No verified banner available",
         "note": "Preview focal points are CSS presentation settings. The current OutClass renderer uses a centered cover crop; check that rendered crop on upload and choose a compatible image before publishing."
-      }
+      },
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
     },
     {
       "key": "pwp",
@@ -5606,6 +5642,9 @@
       "imageAssignments": {
         "logoUrl": [
           "images/pwp-logo.png"
+        ],
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
         ]
       },
       "sources": [
@@ -6422,7 +6461,21 @@
         "bannerPosition": "50% 50%",
         "bannerCaption": "No verified banner available",
         "note": "Preview focal points are CSS presentation settings. The current OutClass renderer uses a centered cover crop; check that rendered crop on upload and choose a compatible image before publishing."
-      }
+      },
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
     },
     {
       "key": "gmg",
@@ -8179,6 +8232,9 @@
       "imageAssignments": {
         "logoUrl": [
           "images/stgm-logo.png"
+        ],
+        "bannerUrl": [
+          "images/commerce-campus.jpg"
         ]
       },
       "sources": [
@@ -8468,7 +8524,21 @@
         "bannerPosition": "50% 50%",
         "bannerCaption": "No verified banner available",
         "note": "Preview focal points are CSS presentation settings. The current OutClass renderer uses a centered cover crop; check that rendered crop on upload and choose a compatible image before publishing."
-      }
+      },
+      "imageEvidence": [
+        {
+          "key": "campus-context",
+          "kind": "banner",
+          "file": "images/commerce-campus.jpg",
+          "sourcePage": "https://experience.mcintire.virginia.edu/",
+          "sourceImage": "https://experience.mcintire.virginia.edu/wp-content/uploads/2022/09/Rouss-.jpg",
+          "sha256": "48b78c7b40a9da4423023ade80d321c6c038de4f6b8a2e80b5636dc72e50e381",
+          "width": 1200,
+          "height": 720,
+          "bytes": 271255,
+          "caption": "McIntire campus context from the school’s website. Not club-specific or member photography."
+        }
+      ]
     }
   ],
   "visualRevision": "Placements and selectivity first; 2026-10-16"

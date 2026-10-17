@@ -11,6 +11,7 @@ export const marketingSchema = z.object({
     cards: z.array(z.object({ title: text(150), description: text(2000), url: publicUrl.default(""), image: profileImage.default("") })).max(12).default([]),
   })).max(12).default([]),
   bannerPosition: z.object({ x: z.number().min(0).max(100).default(50), y: z.number().min(0).max(100).default(50) }).default({ x: 50, y: 50 }),
+  logoOnBrand: z.boolean().default(false),
   acceptanceNote: text(180).default(""), acceptanceSource: publicUrl.default(""),
   acceptanceApproximate: z.boolean().default(false),
   outcomesNote: text(300).default(""),

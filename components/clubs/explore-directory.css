@@ -141,7 +141,7 @@
 @container (max-width: 520px) {
   .oc-discovery .oc-directory-categories { flex-wrap: nowrap; overflow-x: auto; padding-block: 4px; }
   .oc-discovery .oc-directory-categories button { flex: 0 0 auto; white-space: nowrap; }
-  .oc-directory-recruitment { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .oc-directory-recruitment { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
   .oc-directory-recruitment button { padding: 8px 6px; flex-direction: column; gap: 4px; text-align: center; }
   .oc-discovery .oc-directory-tools { flex-wrap: wrap; }
 }
