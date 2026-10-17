@@ -118,6 +118,23 @@ test('personal shell keeps page headings in content once, with universal and con
  assert.equal(nodes(manager).some(node=>node.props?.className==='oc-header-context'),false);assert.equal(nodes(manager).some(node=>node.props?.['aria-label']==='Universal navigation'),false);
 });
 
+test('signed-in account menu mounts the existing Demo entry; anonymous and support sessions cannot use it',()=>{
+ const auth={user:{id:'presenter',email:'presenter@virginia.edu',memberships:[]},isImpersonating:false},h=hooks();
+ const {ProductShell}=load('components/shell/product-shell.tsx',{'@/lib/workspace-api':{},react:h.react,'next/navigation':{useRouter:()=>({})},'@/contexts/auth-context':{useAuth:()=>auth},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})}});
+ const entry=()=>nodes(h.render(()=>ProductShell({mode:'explore',active:'explore',title:'Explore',modes:[],items:[],onSelect(){},onNavigate(){}}))).filter(n=>n.type==='DemoMenuItems');
+ assert.equal(entry().length,1);auth.isImpersonating=true;assert.equal(entry().length,0);auth.isImpersonating=false;auth.user=null;assert.equal(entry().length,0);
+});
+
+test('Demo menu respects allowed access and existing saving/unsaved guards when enabling or exiting',()=>{
+ let calls=0,saving=false,unsaved=false,confirm=false;const demo={allowed:false,isDemoEnabled:false,toggleDemo:async()=>{calls++}},h=hooks();
+ const mod={exports:{}},code=ts.transpileModule(fs.readFileSync('components/demo-controls.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
+ new Function('require','module','exports','document','window',code)(name=>name==='react'?h.react:name==='@/contexts/demo-context'?{useDemoMode:()=>demo}:name==='@/components/ui/dropdown-menu'?{DropdownMenuItem:'Item',DropdownMenuSeparator:'Separator'}:require(name),mod,mod.exports,{querySelector:selector=>selector.includes('data-saving')?saving:unsaved},{confirm:()=>confirm});
+ const render=()=>h.render(()=>mod.exports.DemoMenuItems());assert.equal(render(),null);demo.allowed=true;
+ let item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/Off/);item.props.onSelect();assert.equal(calls,1);
+ saving=true;item.props.onSelect();assert.equal(calls,1);saving=false;unsaved=true;item.props.onSelect();assert.equal(calls,1);confirm=true;item.props.onSelect();assert.equal(calls,2);
+ demo.isDemoEnabled=true;item=nodes(render()).find(n=>n.type==='Item');assert.match(text(item),/exit demo/);item.props.onSelect();assert.equal(calls,3);
+});
+
 test('authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events',()=>{
  const h=hooks(),mocks={'@/lib/workspace-api':{getTaskNotifications:async()=>[]},react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{}};
  const {ApplicationStateProvider}=load('lib/application-state.tsx',mocks);
