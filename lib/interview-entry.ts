@@ -32,9 +32,10 @@ export function interviewEntryStatus(row: InterviewRoomEntry, now = Date.now()) 
   if (row.completed) return "Completed";
   if (!row.bookingId) return "Awaiting booking";
   if (row.started || +new Date(row.startTime) <= now && +new Date(row.endTime) >= now) return "In progress";
+  if (+new Date(row.endTime) < now) return "Not started";
   return "Upcoming";
 }
 export function sortInterviewEntries(rows: InterviewRoomEntry[], now = Date.now()) {
-  const past = (r: InterviewRoomEntry) => r.completed || r.cancelled || +new Date(r.endTime) < now;
+  const past = (r: InterviewRoomEntry) => r.completed || r.cancelled || !r.started && +new Date(r.endTime) < now;
   return [...rows].sort((a, b) => Number(past(a)) - Number(past(b)) || +new Date(a.startTime) - +new Date(b.startTime) || a.id.localeCompare(b.id));
 }

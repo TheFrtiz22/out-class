@@ -1,6 +1,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {harness,id}=require('./helpers/interview-harness.cjs');
 const {harness:demoHarness}=require('./helpers/demo-harness.cjs');
+test('status does not invent completion or call a missed session upcoming; ongoing work precedes history',()=>{
+ const api=harness().load('lib/interview-entry.ts'),now=Date.parse('2026-10-20T17:00:00Z'),base={id:'future',startTime:'2026-10-21T17:00:00Z',endTime:'2026-10-21T17:20:00Z',bookingId:'booking',started:false,completed:false,cancelled:false};
+ assert.equal(api.interviewEntryStatus(base,now),'Upcoming');assert.equal(api.interviewEntryStatus({...base,bookingId:null},now),'Awaiting booking');assert.equal(api.interviewEntryStatus({...base,completed:true},now),'Completed');assert.equal(api.interviewEntryStatus({...base,cancelled:true},now),'Cancelled');
+ const missed={...base,id:'missed',startTime:'2026-10-19T17:00:00Z',endTime:'2026-10-19T17:20:00Z'};assert.equal(api.interviewEntryStatus(missed,now),'Not started');assert.equal(api.interviewEntryStatus({...missed,started:true},now),'In progress');assert.deepEqual(api.sortInterviewEntries([missed,base,{...missed,id:'ongoing',started:true}],now).map(r=>r.id),['ongoing','future','missed']);
+ const q=new URL(api.interviewEntryHref({...base,clubId:id(1),applicationId:id(2),roundId:id(3),slotId:id(5),roomId:id(6),reviewId:id(7)}),'https://out-class.net').searchParams;assert.equal(q.get('interviewTab'),'reviews');assert.equal(q.get('reviewId'),id(7));assert.equal(q.has('interview'),false);
+});
 test('exact destinations retain slot, booking, club and round; Back preserves originating filters and never accepts an external return',()=>{
  const api=harness().load('lib/interview-entry.ts'),entry={clubId:id(1),applicationId:id(2),roundId:id(3),bookingId:id(4),slotId:id(5),roomId:id(6)};
  const href=api.interviewEntryHref(entry,`/club/${id(1)}/workspace?section=recruitment&tool=interviews&interviewTab=schedule&date=2026-10-20&sessionId=${id(5)}`),q=new URL(href,'https://out-class.net').searchParams;
