@@ -6,7 +6,7 @@ import { OutClassLogo } from "@/components/outclass-logo"
 import { useFeatureOrbit } from "@/hooks/use-feature-orbit"
 import { DemoCursor, DemoPlaybackProvider, ProductMotion, ProductMotionControl, ProductDemoProgress } from "./product-motion"
 import { JourneyScenePreview } from "./journey-scenes"
-import { journeyChapters, journeyChapterHref, journeyExample, type LandingPerspective } from "./journey-content"
+import { journeyChapters, journeyChapterHref, type LandingPerspective } from "./journey-content"
 import "./feature-orbit.css"
 
 export function FeatureOrbit({ perspective, onComplete }: { perspective: LandingPerspective; onComplete: () => void }) {
@@ -29,7 +29,6 @@ export function FeatureOrbit({ perspective, onComplete }: { perspective: Landing
             <ProductMotion scene={chapter.scene} resetKey={`${perspective}-${chapter.scene}`}>
               <figure className="oc-story-frame">
                 <div className="oc-story-toolbar"><OutClassLogo className="oc-demo-wordmark" /><strong>{perspective === "student" ? "Student workspace" : "Club workspace"}</strong><span><ProductMotionControl /></span></div>
-                <div className="oc-demo-workspace-context"><span>{journeyExample.clubMark} <span aria-hidden="true">/</span> {chapter.label}</span><span>{perspective === "student" ? journeyExample.initials : "AJ"}</span></div>
                 <div className="oc-story-interface"><div className="oc-demo-observation" inert aria-hidden="true"><div className="oc-perspective-scene" data-scene={chapter.scene}><JourneyScenePreview scene={chapter.scene} /></div></div><DemoCursor /></div>
                 <figcaption><span>{chapter.label} with OutClass</span><ProductDemoProgress /></figcaption>
               </figure>

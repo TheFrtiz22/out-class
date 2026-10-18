@@ -1,24 +1,17 @@
 import { demoPacing, type DemoTimeline } from "./demo-timelines"
 
-export type DemoSample = { elapsed: number; progress: number; state: number; beat: number; movement: number; pressing: number; response: number; viewOpacity: number; label: string; complete: boolean }
+export type DemoSample = { elapsed: number; progress: number; state: number; movement: number; pressing: number; response: number; label: string; complete: boolean }
 
 export function sampleDemo(timeline: DemoTimeline, elapsed: number): DemoSample {
   const time = Math.max(0, Math.min(timeline.duration, elapsed))
-  let state = 0
-  let beat = 0
-  for (let i = 0; i < timeline.beats.length; i++) {
-    if (time >= timeline.beats[i].start) beat = i
-    if (time >= timeline.beats[i].respond) state = timeline.beats[i].state
-  }
-  const current = timeline.beats[beat]
+  const current = timeline.beats[0]
+  const state = time >= current.respond ? current.state : 0
   const response = time < current.respond ? 1 : Math.max(0, Math.min(1, (time - current.respond) / demoPacing.response))
-  const previousState = beat > 0 ? timeline.beats[beat - 1].state : 0
-  return { elapsed: time, progress: time / timeline.duration, state, beat,
+  return { elapsed: time, progress: time / timeline.duration, state,
     movement: Math.max(0, Math.min(1, (time - current.start) / (current.arrive - current.start))),
     pressing: time >= current.press && time < current.clickEnd ? (time - current.press) / (current.clickEnd - current.press) : -1,
     response,
-    viewOpacity: timeline.views[state] === timeline.views[previousState] ? 1 : response,
-    label: time >= timeline.duration ? "Walkthrough complete" : time < current.start ? "Ready when you are" : current.label,
+    label: state === timeline.finalState ? timeline.result : time < current.start ? "Ready to begin" : current.label,
     complete: time >= timeline.duration }
 }
 
@@ -31,7 +24,7 @@ export function createDemoClock(timeline: DemoTimeline, render: (sample: DemoSam
   const tick = (now: number) => {
     frame = undefined
     if (disposed || !eligible || paused || reduced || elapsed >= timeline.duration) return
-    // A main-thread hitch must not jump past several actions in one paint.
+    // A main-thread hitch must not skip past the cursor gesture in one paint.
     if (previous !== undefined) elapsed = Math.min(timeline.duration, elapsed + Math.max(0, Math.min(100, now - previous)))
     previous = now
     paint()
