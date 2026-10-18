@@ -170,6 +170,7 @@ function InterviewSession({
           const recovery = recoveredApplicant()
           const linked = result.applications.find(a => a.id === query.get("applicationId") && a.assignedRoundIds.includes(query.get("roundId") || "") && (a.roundId === query.get("roundId") || a.completedRoundIds.includes(query.get("roundId") || "")));
           if (query.has("applicationId") && !linked) throw Error("Requested interview unavailable.");
+          if (linked) setActiveId(linked.id);
           if (linked) try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId: query.get("roundId"), applicationId: linked.id })); } catch { /* Authorized queue still opens if browser storage is unavailable. */ }
           const focused = linked || result.applications.find(a => a.id === leaderFocus?.applicantId)
           const first = result.rounds.find(r => linked ? r.id === query.get("roundId") : r.id === focused?.roundId) ||
