@@ -28,9 +28,9 @@ export default async function Page({
     orderBy: { createdAt: "desc" },
   });
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-5 py-12">
-      <Link className="underline" href="/">
-        Back to OutClass
+    <div className="max-w-2xl space-y-6">
+      <Link className="underline" href="/settings/organizations">
+        Organizations
       </Link>
       <h1 className="oc-page-title ">Claim {club.name}</h1>
       <p>
@@ -50,6 +50,6 @@ export default async function Page({
       ) : (
         <ClaimForm clubId={clubId} />
       )}
-    </main>
+    </div>
   );
 }

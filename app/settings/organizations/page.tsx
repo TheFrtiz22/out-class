@@ -1,19 +1,16 @@
-import { PageHeader } from "@/components/product/page-header";
-import { onboardingFocus } from "@/lib/onboarding-presentation";
-import { OrganizationMemberships } from "@/components/organization-memberships";
 import Link from "next/link";
+import { OrganizationMemberships } from "@/components/organization-memberships";
 import { requireAuth } from "@/utils/auth";
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests";
-import { OutClassLogo } from "@/components/outclass-logo";
 import { requireCompletedStudentProfile } from "@/utils/profile-onboarding";
 
 export default async function OrganizationSettings() {
   const { user } = await requireAuth({ verifyEmail: true });
   await requireCompletedStudentProfile(user.id, "/settings/organizations");
-  return <main data-workspace-detail className="mx-auto min-h-svh max-w-5xl px-4 py-8 sm:px-8">
-    <header className="mb-10 flex flex-wrap items-center justify-between gap-4"><Link href="/?workspace=student" aria-label="OutClass dashboard"><OutClassLogo className="h-7 w-auto" /></Link><Link href="/?workspace=student" className={`min-h-11 inline-flex items-center text-sm underline underline-offset-4 ${onboardingFocus}`}>Back to dashboard</Link></header>
-    <PageHeader eyebrow="Settings → Organizations" title="Organizations" description="Setting a request aside doesn’t decline it. Accept an invitation here, claim an organization, or show a hidden request on your dashboard again." />
+  return <div className="space-y-8">
+    <p className="text-sm leading-6 text-muted-foreground">Setting a request aside doesn’t decline it. Accept an invitation, claim an organization, or show a hidden request on your dashboard again.</p>
     <OrganizationMemberships />
     <OrganizationOwnershipRequests enabled includeDismissed />
-  </main>;
+    <section className="space-y-3 border-t pt-5" aria-label="Request organization access"><h2 className="oc-section-heading">Find or claim an organization</h2><p className="text-sm leading-6 text-muted-foreground">Find your organization in Discover. Unclaimed profiles include a request form for organization leaders; managed organizations can invite you to join.</p><Link href="/?workspace=student&view=explore" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">Explore organizations</Link></section>
+  </div>;
 }

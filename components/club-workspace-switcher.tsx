@@ -1,18 +1,19 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Check, ChevronsUpDown, Shield } from "@/components/icons"
 import { AccountAvatar } from "@/components/account-avatar"
 import { useAuth } from "@/contexts/auth-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { hasWorkspace } from "@/lib/permissions"
+import { availableSettings } from "@/lib/club-settings"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubLogo } from "@/components/club-logo"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, adminActive = false }: { clubId?: string; managersOnly?: boolean; adminActive?: boolean }) {
   const { user } = useAuth()
-  const router = useRouter()
+  const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const [eligible, setEligible] = useState(false)
   const { isImpersonating } = useAuth()
   const identityId = user?.id, impersonating = user?.impersonating
@@ -26,7 +27,15 @@ export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, admin
   const memberships = user.memberships.filter(member => !managersOnly || hasWorkspace(member))
   const current = memberships.find(member => member.clubId === clubId)
   function switchTo(id: string) {
-    if (canLeaveWorkspace()) router.push(id ? clubWorkspaceHref(id) : "/?workspace=student")
+    if (!canLeaveWorkspace()) return
+    const inSettings = params.get("section") === "settings" || pathname.startsWith("/settings") && pathname !== "/settings/interviews"
+    if (inSettings && id) {
+      const next = memberships.find(member => member.clubId === id)
+      const sections = next ? availableSettings(next) : []
+      const section = sections.find(section => section.id === params.get("setting")) ?? sections[0]
+      if (section) { router.push(`/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}`); return }
+    }
+    router.push(id ? clubWorkspaceHref(id) : inSettings ? "/settings" : "/?workspace=student")
   }
   return <div className="oc-workspace-switcher">
     <DropdownMenu>

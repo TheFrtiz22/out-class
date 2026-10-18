@@ -106,15 +106,16 @@ export function applicationAvailability(
 }
 export const settingsSections = [
   { id: "general", label: "General", permission: "club.settings" },
-  { id: "application", label: "Application", permission: "application.manage" },
+  { id: "application", label: "Recruitment & Applications", permission: "application.manage" },
+  { id: "cycles", label: "Application Cycles", permission: "recruitment.manage" },
   {
     id: "pipeline",
-    label: "Recruiting Pipeline",
+    label: "Recruitment Rounds",
     permission: "recruitment.manage",
   },
   {
     id: "interviews",
-    label: "Interview Setup",
+    label: "Interviews",
     permission: "interviews.manage",
   },
   {
@@ -122,14 +123,15 @@ export const settingsSections = [
     label: "Members & Permissions",
     permission: "members.manage",
   },
-  { id: "notifications", label: "Notifications", permission: "members.manage" },
-  { id: "advanced", label: "Advanced", permission: "club.settings" },
+  { id: "notifications", label: "Communications", permission: "club.settings" },
+  { id: "advanced", label: "Ownership & Administration", permission: "club.settings" },
 ] as const;
 export function availableSettings(member: ClubAccess) {
   return settingsSections.filter(
     (s) =>
       hasPermission(member, s.permission) ||
       (s.id === "interviews" && (hasPermission(member, "recruitment.manage") || interviewCapabilities(member).editKit || interviewCapabilities(member).participate)) ||
+      (s.id === "notifications" && (hasPermission(member, "members.manage") || hasPermission(member, "recruitment.manage"))) ||
       ((s.id === "members" || s.id === "notifications") &&
         hasPermission(member, "leaders.manage")),
   );

@@ -4,7 +4,7 @@ const {managerNavigation,mobileDestinations}=load('lib/product-navigation.ts')
 test('recruiting navigation groups preserve original routes and individually gated children',()=>{
  const owner=managerNavigation({isOwner:true},'club','recruiting')
  assert.deepEqual(owner.filter(i=>i.navGroup==='applicants').map(i=>[i.id,i.label]),[['applicants','All Applicants'],['rejected','Rejected Applicants']])
- assert.deepEqual(owner.filter(i=>i.navGroup==='decisions').map(i=>[i.id,i.label]),[['decisions','All Decisions'],['scheduled-decisions','Scheduled Decisions'],['letters','Decision Letters']])
+ assert.deepEqual(owner.filter(i=>i.navGroup==='decisions').map(i=>[i.id,i.label]),[['decisions','All Decisions'],['scheduled-decisions','Scheduled Decisions']])
  for(const item of owner.filter(i=>i.navGroup))assert.equal(item.href,`/club/club/workspace?section=recruitment&tool=${item.id}`)
  const reviewer=managerNavigation({permissions:['applications.review']},'club','recruiting')
  assert.ok(reviewer.some(i=>i.id==='decisions'));for(const id of ['scheduled-decisions','letters','announcements'])assert.ok(!reviewer.some(i=>i.id===id))

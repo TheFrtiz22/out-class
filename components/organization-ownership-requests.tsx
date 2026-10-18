@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context";
 import { invitationProfileDefaults, type InvitationProfileDefaults } from "@/lib/organization-claiming";
@@ -72,6 +71,6 @@ export function OrganizationOwnershipRequests({ enabled, onProfileDefaults, incl
     {loading && !invitations.length ? <div role="status" className="rounded-xl border bg-muted/20 p-5 text-sm leading-6 text-muted-foreground">Checking organization invitations…</div>
       : failed ? <div className="rounded-xl border p-4 space-y-3"><p role="alert">{notice || "Could not check organization invitations."}</p><Button variant="outline" onClick={refresh}>Retry invitations</Button></div>
       : <ul className="space-y-3">{invitations.map(invitation => <OrganizationInvitationCard key={invitation.id} invitation={invitation} onChanged={changed} allowDecline />)}</ul>}
-    <p className="text-xs leading-5 text-muted-foreground">“Not now” hides a request without declining it. <Link href="/?workspace=student" className="underline underline-offset-4">Return to your dashboard</Link>.</p>
+    <p className="text-xs leading-5 text-muted-foreground">“Not now” leaves a request pending. Accept, decline, or show it on your dashboard here.</p>
   </section>;
 }

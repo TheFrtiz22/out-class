@@ -92,3 +92,45 @@
 .oc-member-directory input[type="checkbox"] {
   accent-color: var(--primary);
 }
+
+.oc-settings-menu {
+  min-width: 0;
+  position: sticky;
+  top: 7rem;
+}
+.oc-settings-menu .oc-settings-navigation {
+  position: static;
+}
+.oc-settings-mobile-selector {
+  display: none;
+}
+.oc-settings-profile {
+  max-width: 100%;
+}
+.oc-settings-profile > div {
+  grid-template-columns: minmax(0, 1fr);
+}
+.oc-settings-profile aside {
+  padding-top: 1.25rem;
+}
+@media (max-width: 1100px) {
+  .oc-settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .oc-settings-menu {
+    position: static;
+  }
+  .oc-settings-mobile-selector {
+    display: block;
+  }
+  .oc-settings-desktop-navigation {
+    display: none;
+  }
+}
+
+/* The surrounding label is the touch target; keep the checkbox itself square. */
+[data-settings-hub] [data-slot="checkbox"] {
+  height: 1rem;
+  min-height: 1rem;
+}

@@ -10,6 +10,7 @@ test('legacy bookmarks and submitted-review destinations move to Applicants with
   assert.equal(target.searchParams.get(tool==='reviews'?'reviewId':'documentId'),tool==='reviews'?id(5):id(6));
  }
  assert.equal(nav.legacyApplicantInterviewHref(id(1),'section=recruitment&tool=interviews&interviewTab=schedule'),null);
+ const settings=new URL(nav.legacyApplicantInterviewHref(id(1),'section=settings&setting=interviews&interviewTab=reviews&applicantId='+id(2)),'https://out-class.net');assert.equal(settings.searchParams.get('tool'),'reviews');assert.equal(settings.searchParams.has('setting'),false);assert.equal(settings.searchParams.get('applicantId'),id(2));
  const base=new URL(nav.applicantInterviewHref(id(1),'applicants','roundId='+id(3)+'&applicantId='+id(2)+'&reviewId='+id(5)),'https://out-class.net');assert.equal(base.searchParams.get('tool'),'applicants');assert.equal(base.searchParams.get('applicantId'),id(2));assert.equal(base.searchParams.has('reviewId'),false);
 });
 test('Applicants submenu and mobile grouping retain explicit office permissions, never infer moderation from applicant access',()=>{

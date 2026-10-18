@@ -25,10 +25,10 @@ export function InvitationResponse({ id, owner = false }: { id: string; owner?: 
           setBusy(false);
           return;
         }
-        window.location.assign(owner ? clubWorkspaceHref(result.clubId) : "/");
+        window.location.assign(owner ? clubWorkspaceHref(result.clubId) : "/settings/organizations");
       } else {
         await declineClubInvitation(id);
-        window.location.assign("/");
+        window.location.assign("/settings/organizations");
       }
     } catch (error) {
       setMessage(

@@ -16,10 +16,12 @@ export function PublicClubPage({
   club,
   initialData,
   authenticated = false,
+  embedded = false,
 }: {
   club: DirectoryClub
   initialData?: Awaited<ReturnType<typeof getStudentDashboardData>> | null
   authenticated?: boolean
+  embedded?: boolean
 }) {
   const [view, setView] = useState<ViewId | "profile">("profile")
   const { user } = useAuth()
@@ -39,18 +41,19 @@ export function PublicClubPage({
       window.location.href = `${next === "auth" ? "/login" : "/signup"}?next=${encodeURIComponent(returnTo)}`
       return
     }
-    if (["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
+    if (embedded || ["explore", "corkboard", "student-profile"].includes(next)) { window.location.href = `/?workspace=student&view=${next}`; return }
     setView(next)
   }
+  const Content = embedded ? "div" : "main"
   return (
     <ApplicationStateProvider
       key={`${identity}:${dashboard ? "ready" : "initial"}`}
       initialData={dashboard ?? (authenticated ? emptyPrivateDashboard : null)}
       persistLocalState={!authenticated && dashboard == null}
     >
-      <div className="oc-landing oc-information">
-      <PublicNavigation />
-      <main className="min-h-svh bg-background px-5 py-8 font-sans sm:px-8 sm:py-12">
+      <div className={embedded ? undefined : "oc-landing oc-information"}>
+      {!embedded && <PublicNavigation />}
+      <Content className={embedded ? "min-w-0" : "min-h-svh bg-background px-5 py-8 font-sans sm:px-8 sm:py-12"}>
         {view !== "profile" && (
           <Button variant="ghost" className="mb-6" onClick={() => setView("profile")}>
             Back to club profile
@@ -63,14 +66,14 @@ export function PublicClubPage({
         ) : (
           <ClubProfileView
             club={club}
-            backLabel="Back to OutClass"
+            backLabel={embedded ? "Discover clubs" : "Back to OutClass"}
             onBack={() => {
-              window.location.href = "/"
+              window.location.href = embedded ? "/?workspace=student&view=explore" : "/"
             }}
             onNavigate={navigate}
           />
         )}
-      </main>
+      </Content>
       </div>
     </ApplicationStateProvider>
   )
