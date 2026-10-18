@@ -3,7 +3,7 @@ const student=loader({})('lib/student-applications.ts'),profile=loader({})('lib/
 test('application autosave compares persisted answers, permits idempotent retries, and never submits',async()=>{
  let answers=[],status='DRAFTING';const transitions=[]
  const tx={$queryRaw:async()=>[],club:{findUnique:async()=>({testRequirement:'OPTIONAL'})},applicationQuestion:{findMany:async()=>[{id:questionId,type:'ESSAY',required:true,wordLimit:3}]},pipelineRound:{findFirst:async()=>({id:'round'})},application:{findUnique:async()=>({id:'application',status}),updateMany:async({where,data})=>{transitions.push(data);if(status!==where.status)return{count:0};status=data.status;return{count:1}}},applicationAnswer:{findMany:async()=>answers,deleteMany:async()=>{answers=[]},createMany:async({data})=>{answers=data}}}
- const api=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:userId}})},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath(){}}})('actions/applications.ts')
+ const api=loader({'@/utils/auth':{requireAuth:async()=>({user:{id:userId}})},'@/utils/club-write-transaction':{clubWriteTransaction:fn=>fn(tx)},'@/utils/prisma':{prisma:{$transaction:fn=>fn(tx)}},'next/cache':{revalidatePath(){}}})('actions/applications.ts')
  const input={clubId,expectedAnswers:student.applicationAnswersKey([]),answers:[{questionId,response:'draft incomplete over the word limit'}]}
  await api.saveApplicationDraft(input);await api.saveApplicationDraft(input);assert.equal(status,'DRAFTING');assert.ok(transitions.every(t=>t.submittedAt===undefined))
  await assert.rejects(api.saveApplicationDraft({...input,answers:[{questionId,response:'stale competing tab'}]}),/another tab/)

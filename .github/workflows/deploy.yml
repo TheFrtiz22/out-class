@@ -23,3 +23,20 @@ jobs:
       - run: pnpm validate
       # Vercel's Git integration deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.
+  native-application-transactions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The negative controls load the original deployed transaction paths.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      # This runner pins localhost, creates/removes its own disposable PostgreSQL
+      # container and supplies no production credentials or outbound email keys.
+      - run: node scripts/test-decision-transactions-local.cjs

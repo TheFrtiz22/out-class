@@ -32,6 +32,7 @@ function setup({ status = 'DRAFTING', profile = true, questions = [question], te
   const actions = load('actions/applications.ts', {
     '@/lib/student-applications': helpers,
     '@/utils/auth': { requireAuth: async () => ({ user: { id: userId } }) },
+    '@/utils/club-write-transaction': { clubWriteTransaction: async fn => fn(tx) },
     '@/utils/prisma': { prisma: { $transaction: async fn => fn(tx) } },
     'next/cache': { revalidatePath: () => {} },
   })
