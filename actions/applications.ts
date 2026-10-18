@@ -15,7 +15,8 @@ import type { z } from "zod"
 async function persistApplication(input: z.infer<typeof applicationInputSchema>, submit: boolean) {
   const { user } = await requireAuth()
   const parsed = applicationInputSchema.parse(input)
-  const applicationId = await prisma.$transaction(async (tx) => {
+  const { clubWriteTransaction } = await import("@/utils/club-write-transaction")
+  const applicationId = await clubWriteTransaction(async (tx) => {
     await lockOperationalClub(tx, parsed.clubId)
     const configuration = await tx.club.findUnique({ where: { id: parsed.clubId }, select: { applicationOpen: true, applicationDeadline: true, testRequirement: true } })
     if (!configuration || submit && !applicationAvailability(configuration)) throw new Error("Applications are closed for this club. Your saved draft is retained.")

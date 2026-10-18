@@ -42,7 +42,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   await operator.platformAdmin.create({ data: { userId: admin.id } });
   const previousAllowlist = process.env.OUTCLASS_PLATFORM_ADMIN_IDS; process.env.OUTCLASS_PLATFORM_ADMIN_IDS = admin.id;
   t.after(() => { if (previousAllowlist === undefined) delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS; else process.env.OUTCLASS_PLATFORM_ADMIN_IDS = previousAllowlist; });
-  const state = { afterAuth: null, afterPolicy: null, failAction: null, failAudit: false };
+  const state = { afterAuth: null, afterPolicy: null, afterAudit: null, failAction: null, failAudit: false };
   await operator.$executeRawUnsafe('CREATE SCHEMA IF NOT EXISTS storage');
   await operator.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS storage.objects(bucket_id text NOT NULL,name text NOT NULL,PRIMARY KEY(bucket_id,name))');
   await operator.$executeRawUnsafe('GRANT USAGE ON SCHEMA storage TO outclass_production_app');
@@ -50,6 +50,7 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
   // Inject domain/audit failures through an actual extension; no in-memory ORM.
   const instrumented = base.$extends({ query: { auditLog: { async create({ args, query }) {
     if (state.failAudit || args.data.action === state.failAction) throw Error('Injected audit failure');
+    if (state.afterAudit) await state.afterAudit(args.data);
     return query(args);
   } } } });
   class Client { constructor() { return instrumented; } }
@@ -422,6 +423,60 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
       assert.equal((await base.clubInvitation.findUniqueOrThrow({where:{id:invited.id}})).status,'PENDING');
       assert.equal(await base.auditLog.count({where:{action:'club.invite.accept',targetId:invited.id}}),0);
     }
+  });
+  async function submissionFixture(support = true) {
+    const f = await fixture(support);
+    await operator.club.update({ where: { id: f.club.id }, data: { applicationOpen: true } });
+    await operator.studentProfile.create({ data: { userId: f.user.id, firstName: 'Synthetic', lastName: 'Applicant', computingId: randomUUID(), major: 'Economics', gradYear: 2027 } });
+    const question = await operator.applicationQuestion.create({ data: { clubId: f.club.id, prompt: 'Why this club?', type: 'ESSAY', required: true, order: 0 } });
+    const app = await operator.application.create({ data: { studentId: f.user.id, clubId: f.club.id, roundId: f.round.id, status: 'DRAFTING', answers: { create: { questionId: question.id, response: 'Retained draft response' } } } });
+    return { ...f, ownApp: app, question, input: { clubId: f.club.id, answers: [{ questionId: question.id, response: 'Submitted response' }] } };
+  }
+  async function assertRetainedDraft(f) {
+    const app = await base.application.findUniqueOrThrow({ where: { id: f.ownApp.id }, include: { answers: true } });
+    assert.equal(app.status, 'DRAFTING'); assert.equal(app.submittedAt, null); assert.equal(app.decisionVersion, 0);
+    assert.deepEqual(app.answers.map(a => a.response), ['Retained draft response']);
+    assert.equal(await base.decisionLetter.count({ where: { applicationId: app.id } }), 0);
+  }
+  await t.test('application submission: serving five-second transaction fails under repeated Auth latency; bounded path preserves atomic answers and attribution', async () => {
+    const legacy = load({ 'actions/applications.ts': execFileSync('git', ['show', '59df658:actions/applications.ts'], { encoding: 'utf8' }) });
+    const f = await submissionFixture();
+    providerDelay = 1800;
+    try {
+      await assert.rejects(f.run(() => legacy('actions/applications.ts').submitApplication(f.input)), e => e.code === 'P2028');
+      await assertRetainedDraft(f);
+      const before = providerCalls, start = Date.now();
+      await f.run(() => api('actions/applications.ts').submitApplication(f.input));
+      assert.equal(providerCalls - before, 1, 'provider validation happens once, before acquisition');
+      const app = await base.application.findUniqueOrThrow({ where: { id: f.ownApp.id }, include: { answers: true } });
+      assert.equal(app.status, 'SUBMITTED'); assert.ok(app.submittedAt); assert.equal(app.roundId, f.round.id);
+      assert.deepEqual(app.answers.map(a => a.response), ['Submitted response']);
+      const audits = await base.auditLog.findMany({ where: { supportSessionId: f.context.session.id } });
+      assert.ok(audits.some(a => a.action === 'platform.impersonation.statement-returned' && a.details.model === 'ApplicationAnswer'));
+      for (const audit of audits) { assert.equal(audit.actorId, admin.id); assert.equal(audit.effectiveUserId, f.user.id); }
+      t.diagnostic(`application simulated Auth=1800ms: elapsed=${Date.now()-start}ms, transaction=${transactionMs}ms; one pretransaction provider resolution`);
+    } finally { providerDelay = 0; }
+  });
+  for (const support of [false, true]) {
+    await t.test(`application drafts, submission retry and cross-user isolation (support=${support})`, async () => {
+      const f = await submissionFixture(support), actions = api('actions/applications.ts');
+      await f.run(() => actions.saveApplicationDraft(f.input));
+      assert.equal((await base.application.findUniqueOrThrow({ where: { id: f.ownApp.id } })).status, 'DRAFTING');
+      await f.run(() => actions.submitApplication(f.input));
+      await assert.rejects(f.run(() => actions.submitApplication({ ...f.input, answers: [{ questionId: f.question.id, response: 'Must not overwrite' }] })), /already been submitted/);
+      assert.deepEqual((await base.applicationAnswer.findMany({ where: { applicationId: f.ownApp.id } })).map(a => a.response), ['Submitted response']);
+      assert.equal((await base.application.findUniqueOrThrow({ where: { id: f.app.id } })).status, 'IN_REVIEW', 'the other student application is unchanged');
+    });
+  }
+  await t.test('support revocation after the final answer write rolls submission and answers back', async () => {
+    const f = await submissionFixture();
+    state.afterAudit = async data => {
+      if (data.action === 'platform.impersonation.statement-returned' && data.details.model === 'ApplicationAnswer' && data.details.operation === 'createMany')
+        await operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { endedAt: new Date() } });
+    };
+    try { await assert.rejects(f.run(() => api('actions/applications.ts').submitApplication(f.input)), /Impersonation expired/); }
+    finally { state.afterAudit = null; }
+    await assertRetainedDraft(f);
   });
   await t.test('profile authority revoked while waiting on club lock is rechecked inside the transaction', async () => {
     const f=await fixture(false);
