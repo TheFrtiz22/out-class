@@ -1,3 +1,4 @@
+import { interviewEntryHref } from "@/lib/interview-entry";
 import { schedulingDateTime, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import type { AppTransactionClient } from "@/utils/prisma";
 import type { InterviewPanelAssignment } from "@prisma/client";
@@ -25,7 +26,7 @@ export async function currentAssignmentNotification(tx: AppTransactionClient, no
     if (actor.app.roundId !== scope.roundId) return null;
     const booking = await tx.interviewBooking.findUnique({ where: { applicationId_roundId: { applicationId: scope.applicationId, roundId: scope.roundId } }, include: { slot: { include: { room: true } } } });
     const p = await tx.studentProfile.findUnique({ where: { userId: actor.app.studentId }, select: { firstName: true, lastName: true } });
-    return { title: `Interview assignment · ${actor.round.name}`, body: `${p ? `${p.firstName} ${p.lastName}` : "Applicant"}${booking?.slot.room ? ` · ${booking.slot.room.name} · ${schedulingDateTime(booking.slot.startTime)} · ${SCHEDULING_TIMEZONE_LABEL}` : ""}`, href: notification.href };
+    return { title: `Interview assignment · ${actor.round.name}`, body: `${p ? `${p.firstName} ${p.lastName}` : "Applicant"}${booking?.slot.room ? ` · ${booking.slot.room.name} · ${schedulingDateTime(booking.slot.startTime)} · ${SCHEDULING_TIMEZONE_LABEL}` : ""}`, href: booking?.slot.room ? interviewEntryHref({ ...scope, slotId: booking.slotId, roomId: booking.slot.room.id, bookingId: booking.id }) : notification.href };
   } catch { return null; }
 }
 

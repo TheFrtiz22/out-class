@@ -13,20 +13,22 @@ import { interviewCapabilities } from "@/lib/interview-access"
 import { InterviewResumeModeration } from "@/components/interview-resume-moderation"
 import { InterviewSubmittedReviews } from "@/components/interview-submitted-reviews"
 import { InterviewAccessSetup } from "@/components/interview-access-setup"
+import { InterviewRoomsList } from "@/components/interviews/interview-rooms-list"
 import "@/components/clubs/interview-kit-editor.css"
 
 export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, settingsOnly = false }: { clubId: string; initialTab?: string; initialRoundId?: string; settingsOnly?: boolean; onInterview?: () => void }) {
   const { user } = useAuth()
   const member = user?.memberships.find(m => m.clubId === clubId)
   const capabilities = interviewCapabilities(member)
+  const canEnter = capabilities.participate
   const canSchedule = hasPermission(member, "interviews.manage")
   const canModerate = capabilities.moderateResume
   const canReadClosing = capabilities.readClosing
   const canManageGrants = capabilities.manageGrants
   const canOpenOperations = canSchedule || hasPermission(member, "applications.review") || capabilities.editKit
-  const allowedTabs = ["kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canModerate && !settingsOnly ? ["resumes"] : []), ...(canReadClosing && !settingsOnly ? ["reviews"] : []), ...(canManageGrants ? ["access"] : [])]
+  const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canModerate && !settingsOnly ? ["resumes"] : []), ...(canReadClosing && !settingsOnly ? ["reviews"] : []), ...(canManageGrants ? ["access"] : [])]
   const requested = initialTab === "availability" ? "schedule" : initialTab
-  const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canSchedule && !settingsOnly ? "schedule" : "kits")
+  const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits")
   return <div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=interviews&interviewTab=schedule`} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
     if (value !== tab && canLeaveWorkspace()) {
       setTab(value)
@@ -36,7 +38,8 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
       }
     }
   }} activationMode="manual">
-    <TabsList aria-label="Interview management"><TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canModerate && !settingsOnly && <TabsTrigger value="resumes">Résumé moderation</TabsTrigger>}{canReadClosing && !settingsOnly && <TabsTrigger value="reviews">Submitted reviews</TabsTrigger>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canModerate && !settingsOnly && <TabsTrigger value="resumes">Résumé moderation</TabsTrigger>}{canReadClosing && !settingsOnly && <TabsTrigger value="reviews">Submitted reviews</TabsTrigger>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+    {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
     <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
     {canSchedule && !settingsOnly && <TabsContent value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} /></TabsContent>}
     {canModerate && !settingsOnly && <TabsContent value="resumes"><InterviewResumeModeration clubId={clubId} /></TabsContent>}

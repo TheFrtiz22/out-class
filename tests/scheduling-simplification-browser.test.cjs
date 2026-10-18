@@ -51,7 +51,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   console.log('Ordinary setup/publish button actions:',JSON.stringify(steps))
   const applicant=await browser.newPage();await applicant.goto(f.url+'/?applicant=1')
   await applicant.locator('.ir-times button').first().click();await applicant.getByRole('button',{name:'Confirm interview',exact:true}).click();await applicant.getByText('Interview confirmed',{exact:true}).waitFor()
-  const reservation=structuredClone(f.state().roomBookings);assert.equal(reservation.length,1)
+  const reservation=structuredClone(f.state().roomBookings);assert.equal(reservation.filter(b=>b.roundId===f.scope.roundId).length,1)
   await applicant.reload();await applicant.getByText('Interview confirmed',{exact:true}).waitFor()
   await page.reload();await page.getByRole('heading',{name:'Bookings',exact:true}).waitFor();await page.getByText('Full',{exact:true}).filter({visible:true}).waitFor()
   await page.getByRole('button',{name:'Edit schedule',exact:true}).click();await panel.getByRole('button',{name:'Edit interviewers',exact:true}).click();await panel.locator('.ir-schedule-row').first().click()

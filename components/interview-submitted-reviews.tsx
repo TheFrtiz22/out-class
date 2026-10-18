@@ -11,7 +11,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
     let current = true, pending = false;
     const refresh = async () => {
       if (pending) return; pending = true;
-      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : null); } }
+      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : result.find(r => r.id === new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId")) || null); } }
       catch { if (current) { setRows([]); setSelected(null); setReview(null); setError("Submitted reviews unavailable. Check your current leadership access."); } }
       finally { pending = false; if (current) setLoading(false); }
     };

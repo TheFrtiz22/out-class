@@ -9,7 +9,7 @@ import { useApplicationState } from "@/lib/application-state"
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight } from "@/components/icons"
-import { getInterviewWorkspace, openInterviewSession, getInterviewApplicantPanel, prepareInterviewAdvance, confirmInterviewAdvance } from "@/lib/workspace-api"
+import { getInterviewWorkspace, resolveInterviewRoomEntry, openInterviewSession, getInterviewApplicantPanel, prepareInterviewAdvance, confirmInterviewAdvance } from "@/lib/workspace-api"
 import { captureInterviewCandidate, animateInterviewCandidate } from "@/lib/interview-candidate-motion"
 import { interviewQueue } from "@/lib/interview-queue"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
@@ -162,19 +162,18 @@ function InterviewSession({
     
     // In demo mode, intercept the real API with the mock demo-store logic
     getInterviewWorkspace(membership.clubId)
-      .then((result) => {
+      .then(async (result) => {
+        const query = new URLSearchParams(window.location?.search || "");
+        if (query.has("applicationId") || query.has("bookingId")) await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: query.get("applicationId") || "", roundId: query.get("roundId") || "", ...(query.get("bookingId") ? { bookingId: query.get("bookingId")! } : {}), ...(query.get("slotId") ? { slotId: query.get("slotId")! } : {}), ...(query.get("roomId") ? { roomId: query.get("roomId")! } : {}) });
         if (current) {
           setData(result)
           const recovery = recoveredApplicant()
-          const query = new URLSearchParams(window.location?.search || "");
-          const linked = result.applications.find(a => a.id === query.get("applicationId") && a.assignedRoundIds.includes(query.get("roundId") || "") && a.roundId === query.get("roundId"));
-          if (linked) try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId: linked.roundId, applicationId: linked.id })); } catch { /* Authorized queue still opens if browser storage is unavailable. */ }
-          if (linked && window.history && window.location?.href) {
-            const destination = new URL(window.location.href); destination.searchParams.delete("applicationId"); destination.searchParams.delete("roundId");
-            window.history.replaceState(window.history.state, "", destination);
-          }
+          const linked = result.applications.find(a => a.id === query.get("applicationId") && a.assignedRoundIds.includes(query.get("roundId") || "") && (a.roundId === query.get("roundId") || a.completedRoundIds.includes(query.get("roundId") || "")));
+          if (query.has("applicationId") && !linked) throw Error("Requested interview unavailable.");
+          if (linked) setActiveId(linked.id);
+          if (linked) try { sessionStorage.setItem(recoveryKey, JSON.stringify({ roundId: query.get("roundId"), applicationId: linked.id })); } catch { /* Authorized queue still opens if browser storage is unavailable. */ }
           const focused = linked || result.applications.find(a => a.id === leaderFocus?.applicantId)
-          const first = result.rounds.find(r => r.id === focused?.roundId) ||
+          const first = result.rounds.find(r => linked ? r.id === query.get("roundId") : r.id === focused?.roundId) ||
             result.rounds.find(r => r.id === recovery?.roundId && interviewQueue(result.applications, r.id).some(a => a.id === recovery.applicationId)) ||
             result.rounds.find((item) =>
               result.applications.some(
@@ -204,6 +203,19 @@ function InterviewSession({
     setMessage("")
   }, [roundId, data, recoveredApplicant])
   useEffect(() => {
+    let current = true, pending = false;
+    const validate = async () => {
+      const q = new URLSearchParams(window.location.search);
+      if (!q.get("applicationId") || document.hidden || pending) return;
+      pending = true;
+      try { await resolveInterviewRoomEntry({ clubId: membership.clubId, applicationId: q.get("applicationId")!, roundId: q.get("roundId") || "", ...(q.get("bookingId") ? { bookingId: q.get("bookingId")! } : {}), ...(q.get("slotId") ? { slotId: q.get("slotId")! } : {}), ...(q.get("roomId") ? { roomId: q.get("roomId")! } : {}) }); }
+      catch { if (current) { setData(null); setActiveId(""); setLoadError(true); } }
+      finally { pending = false; }
+    };
+    const timer = setInterval(validate, 15000); window.addEventListener("focus", validate);
+    return () => { current = false; clearInterval(timer); window.removeEventListener("focus", validate); };
+  }, [membership.clubId]);
+  useEffect(() => {
     if (!dirty && !busy) return
     const warn = (event: BeforeUnloadEvent) => {
       event.preventDefault()
@@ -223,7 +235,7 @@ function InterviewSession({
     return () => window.removeEventListener("keydown", shortcut)
   }, [active?.id, busy])
   useEffect(() => {
-    if (leaderFocus?.clubId === membership.clubId && leaderFocus.applicantId && queue.some(a => a.id === leaderFocus.applicantId)) {
+    if (!new URLSearchParams(window.location.search).has("applicationId") && leaderFocus?.clubId === membership.clubId && leaderFocus.applicantId && queue.some(a => a.id === leaderFocus.applicantId)) {
       choose(leaderFocus.applicantId, true)
       clearLeaderFocus()
     }
@@ -231,6 +243,9 @@ function InterviewSession({
   function choose(id: string, discard = false) {
     if (busy || (!discard && dirty && !window.confirm("Discard your unsaved evaluation changes?")))
       return
+    const url = new URL(window.location.href); url.searchParams.set("applicationId", id); url.searchParams.set("roundId", roundId);
+    for (const key of ["bookingId", "slotId", "roomId"]) url.searchParams.delete(key);
+    window.history.replaceState(window.history.state, "", url.pathname + url.search);
     setActiveId(id)
     setArrival(null)
     navigation.current++
@@ -243,11 +258,7 @@ function InterviewSession({
   function returnToList() {
     if (busy || (dirty && !window.confirm("Return to interviews? Unsaved changes will be lost."))) return
     try { sessionStorage.removeItem(recoveryKey) } catch { /* Selection stays local if storage is unavailable. */ }
-    setActiveId("")
-    setArrival(null)
-    navigation.current++
-    setPrepared(null)
-    setMessage("")
+    onExit()
   }
   async function nextApplicant(clientId: string, invitationId?: string) {
     // Recheck membership, assignments, round and own completion at navigation time.
@@ -275,6 +286,10 @@ function InterviewSession({
       setPrepared({ applicationId: next.id, session, panel })
       setArrival({ moveId: destination.moveId, clientId, applicationId: next.id })
       setData(fresh)
+      const destinationUrl = new URL(window.location.href);
+      destinationUrl.searchParams.set("applicationId", next.id); destinationUrl.searchParams.set("roundId", roundId);
+      for (const key of ["bookingId", "slotId", "roomId"]) destinationUrl.searchParams.delete(key);
+      window.history.replaceState(window.history.state, "", destinationUrl.pathname + destinationUrl.search);
       setActiveId(next.id) // The keyed subtree resets panel, document, questions and history together.
       rememberApplicant(next.id, { moveId: destination.moveId, clientId })
       setMessage("")
@@ -289,7 +304,7 @@ function InterviewSession({
   if (loadError || !data)
     return (
       <div role="alert" className="space-y-4 py-12">
-        <p>We couldn’t load this club’s interview workspace.</p>
+        <p>We couldn’t open this interview. The booking or your access may have changed.</p><Button variant="ghost" onClick={onExit}>Back to interviews</Button>
         <Button variant="outline" onClick={() => setRetry((value) => value + 1)}>
           Try again
         </Button>

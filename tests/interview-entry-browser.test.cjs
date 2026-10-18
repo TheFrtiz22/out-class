@@ -1,0 +1,28 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {chromium}=require('playwright'),{fixture}=require('./helpers/interview-entry-browser.cjs');
+test('browser: first-tab scheduled entry opens exact candidate, keeps IDs across reload and returns to filtered list; mobile tabs never wrap',async()=>{
+ const f=await fixture();let browser;
+ try{
+  browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const context=await browser.newContext();const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>new URL(r.request().url()).origin===f.base?r.continue():r.abort());
+  const route=f.base+'/club/'+f.clubId+'/workspace?section=recruitment&tool=interviews';await page.goto(route);await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();
+  assert.equal(await page.getByRole('tab').first().textContent(),'Interview rooms');await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).first().waitFor();
+  assert.equal(await page.getByRole('button',{name:'Enter interview mode',exact:true}).count(),0);
+  const links=await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')));assert.ok(links.length>=2);const first=new URL(links[0],f.base),second=new URL(links[1],f.base);assert.notEqual(first.searchParams.get('roundId'),second.searchParams.get('roundId'));assert.notEqual(first.searchParams.get('bookingId'),second.searchParams.get('bookingId'));
+  await page.getByLabel('Filter assigned interview date',{exact:true}).fill('2026-10-20');
+  await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).first().click();await page.getByRole('heading',{name:'Interview '+first.searchParams.get('applicationId'),exact:true}).waitFor();await page.getByTestId('phase').filter({hasText:/Active interview|Read only/}).waitFor();
+  for(const key of ['applicationId','roundId','slotId','bookingId','roomId'])assert.equal(new URL(page.url()).searchParams.get(key),first.searchParams.get(key));
+  await page.reload();await page.getByRole('heading',{name:'Interview '+first.searchParams.get('applicationId'),exact:true}).waitFor();await page.getByRole('button',{name:'Interviews',exact:true}).click();await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(await page.getByLabel('Filter assigned interview date',{exact:true}).inputValue(),'2026-10-20');await page.getByLabel('Filter assigned interview date',{exact:true}).fill('');
+  await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).nth(1).click();await page.getByRole('heading',{name:'Interview '+second.searchParams.get('applicationId'),exact:true}).waitFor();
+  // A stale URL fails closed without opening any recovered candidate.
+  const stale=new URL(first);stale.searchParams.set('bookingId','00000000-0000-4000-8000-000000999999');await page.goto(stale.href);await page.getByRole('alert').filter({hasText:/couldn’t open/}).waitFor();assert.equal(await page.getByRole('region',{name:'Exact room fixture'}).count(),0);await page.getByRole('button',{name:'Back to interviews',exact:true}).click();
+  for(const [name,size]of [['desktop',{width:1440,height:950}],['mobile',{width:390,height:844}]]){await page.setViewportSize(size);await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));const tabs=await page.getByRole('tab').evaluateAll(ns=>ns.map(n=>Math.round(n.getBoundingClientRect().top)));assert.equal(new Set(tabs).size,1);if(process.env.OUTCLASS_ENTRY_SCREENSHOTS){fs.mkdirSync(process.env.OUTCLASS_ENTRY_SCREENSHOTS,{recursive:true});await page.screenshot({path:path.join(process.env.OUTCLASS_ENTRY_SCREENSHOTS,'interview-rooms-'+name+'.png'),fullPage:true});}await page.getByRole('tab',{name:'Interview access setup',exact:true}).click();await page.getByRole('tab',{name:'Interview rooms',exact:true}).click();}
+  await page.evaluate(()=>window.fixtureFail=true);await page.getByRole('tab',{name:'Interview access setup',exact:true}).click();await page.getByRole('tab',{name:'Interview rooms',exact:true}).click();await page.getByRole('alert').filter({hasText:/Couldn’t load assigned/}).waitFor();assert.equal(await page.getByText('No assigned interviews.',{exact:true}).count(),0);await page.evaluate(()=>window.fixtureFail=false);await page.getByRole('button',{name:'Retry',exact:true}).click();await page.getByRole('link',{name:/Open interview|Resume interview|Open review/}).first().waitFor();
+  // Settings keeps configuration tabs while Recruiting retains the assigned-room entry.
+  await page.goto(f.base+'/club/'+f.clubId+'/workspace?section=settings&setting=interviews');
+  await page.getByRole('tab',{name:'Interview master kit',exact:true}).waitFor();
+  assert.equal(await page.getByRole('tab',{name:'Interview master kit',exact:true}).getAttribute('aria-selected'),'true');
+  for(const name of ['Interview rooms','Scheduling','Résumé moderation','Submitted reviews'])assert.equal(await page.getByRole('tab',{name,exact:true}).count(),0);
+  assert.equal(await page.getByRole('link',{name:'Open Interview Scheduling',exact:true}).count(),1);
+  assert.deepEqual(errors,[]);await context.close();
+ }finally{await browser?.close();await new Promise(r=>f.server.close(r));}
+});
