@@ -1,45 +1,32 @@
 import type { JourneyScene } from "./journey-content"
-import { journeySample } from "./journey-example-state"
 
-export type DemoAction = {
-  target: string
-  label: string
-  state: number
-  move?: number
-  hold?: number
-  typing?: { text: string; initial?: string; duration: number }
-}
-export type DemoBeat = DemoAction & { start: number; arrive: number; press: number; clickEnd: number; respond: number; end: number }
-export type DemoTimeline = { title: string; summary: string; beats: DemoBeat[]; duration: number; finalState: number; views: readonly number[] }
+export type DemoBeat = { target: string; label: string; state: number; start: number; arrive: number; press: number; clickEnd: number; respond: number; end: number }
+export type DemoTimeline = { title: string; summary: string; result: string; beats: [DemoBeat]; duration: number; finalState: number }
 
-// Keep travel deliberate; recover time from idle hovers and repetitive holds.
-export const demoPacing = { intro: 400, move: 650, hover: 100, click: 120, response: 260, hold: 850, finalHold: 1600 } as const
+// Time to read, one deliberate gesture, then a result that stays on screen.
+export const demoPacing = { intro: 2300, move: 900, hover: 600, click: 140, response: 260, finalHold: 2400 } as const
 
-/** Every response and cursor phase uses this same absolute timeline. */
-export function defineDemo(title: string, summary: string, actions: DemoAction[], views: readonly number[]): DemoTimeline {
-  let time = demoPacing.intro as number
-  const beats = actions.map((action, index) => {
-    const start = time, arrive = start + (action.move ?? demoPacing.move), press = arrive + demoPacing.hover, clickEnd = press + demoPacing.click, respond = clickEnd + (action.typing?.duration ?? 0)
-    const end = respond + demoPacing.response + (action.hold ?? (index === actions.length - 1 ? demoPacing.finalHold : demoPacing.hold))
-    time = end
-    return { ...action, start, arrive, press, clickEnd, respond, end }
-  })
-  return { title, summary, beats, duration: time, finalState: actions.at(-1)?.state ?? 0, views }
+function defineDemo(title: string, summary: string, target: string, label: string, result: string): DemoTimeline {
+  const start = demoPacing.intro
+  const arrive = start + demoPacing.move
+  const press = arrive + demoPacing.hover
+  const clickEnd = press + demoPacing.click
+  const respond = clickEnd
+  const end = respond + demoPacing.response + demoPacing.finalHold
+  return { title, summary, result, beats: [{ target, label, state: 1, start, arrive, press, clickEnd, respond, end }], duration: end, finalState: 1 }
 }
 
-const action = (target: string, label: string, state: number, hold?: number, move?: number): DemoAction => ({ target, label, state, hold, move })
-const type = (target: string, label: string, state: number, text: string, duration: number, initial = ""): DemoAction => ({ target, label, state, typing: { text, duration, initial } })
-
+/** Every vignette begins at a prepared product state. No compressed workflows. */
 export const demoTimelines: Record<Exclude<JourneyScene, "profile" | "schedule">, DemoTimeline> = {
-  discover: defineDemo("Discover", "Jordan searches for investing, selects Jefferson Investment Society and opens its club profile before applying.", [type("search", "Finding an interest", 1, "investment", 900), action("club-row", "Selecting a club", 2), action("view-club", "Opening the club profile", 3)], [0, 0, 0, 1]),
-  apply: defineDemo("Apply", "Jordan’s shared profile and resume are attached. A club-specific response is saved as a draft, reviewed and submitted.", [type("answer", "Answering the club’s question", 1, journeySample.answer, 2600), action("save-draft", "Saving the application draft", 2), action("review-application", "Reviewing profile and response", 3), action("submit-application", "Submitting the application", 4)], [0, 0, 0, 1, 2]),
-  "student-interview": defineDemo("Interview", "Jordan opens an invitation, selects Thursday at 6:30 PM in Room 204 and confirms the interview booking.", [action("open-invitation", "Opening the interview invitation", 1), action("time-choice", "Selecting an available time", 2), action("confirm-booking", "Confirming the interview", 3)], [0, 1, 1, 2]),
-  status: defineDemo("Track", "Jordan selects the JIS application in Status, reviews the current recruitment round and opens the confirmed interview details.", [action("status-application", "Reviewing application progress", 1, 1800), action("interview-details", "Checking the confirmed interview", 2)], [0, 1, 2]),
-  join: defineDemo("Belong", "After a club acceptance, Jordan accepts the offer, finds JIS in My Clubs and opens the member workspace. Membership begins after offer acceptance.", [action("accept-offer", "Accepting the membership offer", 1), action("my-clubs", "Finding the joined organization", 2), action("member-workspace", "Opening the member workspace", 3)], [0, 1, 2, 3]),
-  build: defineDemo("Set Up", "An approved club owner edits the club’s description and saves the profile. A pending claim does not grant workspace access.", [action("edit-profile", "Opening the approved club profile", 1), type("club-description", "Preparing the club description", 2, journeySample.description, 1800, "An investment community built around research, discussion, and learning by doing. "), action("save-profile", "Saving the club profile", 3)], [0, 1, 1, 0]),
-  recruit: defineDemo("Recruit", "The owner prepares and saves a required short-response question, opens the applicant pipeline and selects Jordan for review.", [type("application-question", "Preparing a club-specific question", 1, journeySample.question, 1100), action("save-application", "Saving recruitment settings", 2), action("applicants-tab", "Opening incoming applications", 3), action("recruit-applicant", "Selecting Jordan’s application", 4)], [0, 0, 0, 1, 1]),
-  review: defineDemo("Review", "A reviewer selects Jordan, reads the shared profile and club-specific response, opens the evaluation, selects a rubric score and saves it.", [action("review-applicant", "Opening Jordan’s application", 1), action("evaluation-tab", "Opening the shared rubric", 2), action("rubric-score", "Choosing a rubric score", 3), action("score-four", "Recording motivation and fit", 4), action("save-evaluation", "Saving the evaluation", 5)], [0, 1, 2, 2, 2, 2]),
-  "leader-interview": defineDemo("Interview Scheduling", "The owner reviews confirmed availability and rooms, creates an Auto-Fill draft, replaces an interviewer in one proposed session, reviews the exact plan and confirms publication. Auto-Fill does not publish assignments.", [action("review-rooms", "Reviewing interviewer availability", 1), action("auto-fill", "Creating an unpublished proposal", 2), action("edit-session", "Reviewing a proposed session", 3), action("replace-interviewer", "Adjusting the proposed panel", 4, 420, 420), action("replacement-naomi", "Selecting an available replacement", 5, 420, 420), action("review-publish", "Reviewing the exact schedule", 6, 1400), action("confirm-publish", "Owner approving and publishing", 7)], [0, 1, 2, 2, 2, 2, 3, 4]),
-  decide: defineDemo("Decide", "A leader reviews recorded evaluations, selects acceptance and records the decision. Jordan receives an offer; membership awaits the student’s response.", [action("evaluation-detail", "Reviewing recorded evaluations", 1), action("accept-decision", "Selecting the recruitment outcome", 2), action("record-decision", "Recording the acceptance", 3)], [0, 0, 0, 1]),
-  manage: defineDemo("Manage", "Jordan is on the member roster after accepting the offer. The owner prepares an announcement, confirms publication, opens member tasks and reviews Jordan’s submitted welcome brief.", [action("announcements-tab", "Preparing the member welcome", 1), action("publish-announcement", "Reviewing the announcement", 2), action("confirm-announcement", "Confirming publication to members", 3), action("tasks-tab", "Opening tasks and submissions", 4), action("open-submission", "Reviewing Jordan’s submission", 5)], [0, 1, 2, 3, 4, 5]),
+  discover: defineDemo("Discover", "In the club directory, Jordan opens Jefferson Investment Society. Its profile reveals the club’s focus and open recruitment.", "view-club", "Opening the club profile", "Club profile opened"),
+  apply: defineDemo("Apply", "Jordan has reviewed the attached shared profile and completed club response. Submitting sends this application to JIS for review.", "submit-application", "Submitting the reviewed application", "Application submitted"),
+  "student-interview": defineDemo("Interview", "With Thursday at 6:30 PM already selected, Jordan confirms the interview. The booking shows the time, room and duration together.", "confirm-booking", "Confirming the selected time", "Interview confirmed"),
+  status: defineDemo("Track", "Jordan opens the JIS application in Status. The current interview stage and confirmed next step appear together in the application details.", "status-application", "Checking application status", "Current stage: Interview"),
+  join: defineDemo("Belong", "Jordan accepts the JIS membership offer. The accepted offer creates an active membership with access to the club workspace.", "accept-offer", "Accepting the membership offer", "Membership active"),
+  build: defineDemo("Set Up", "In an approved club workspace, the owner has prepared a club description. Saving updates the public club profile with the revised description.", "save-profile", "Saving the prepared club profile", "Club profile saved"),
+  recruit: defineDemo("Recruit", "The owner has prepared a required club-specific application question. Saving makes the question part of this club’s application settings.", "save-application", "Saving the application question", "Application question saved"),
+  review: defineDemo("Review", "A reviewer has read Jordan’s application and prepared rubric scores and a note. Saving records the evaluation for the recruitment team.", "save-evaluation", "Saving Jordan’s evaluation", "Evaluation saved"),
+  "leader-interview": defineDemo("Interview Scheduling", "Using confirmed availability and a prepared room, Auto-Fill creates a staffed panel proposal. This remains an unpublished draft for owner review.", "auto-fill", "Creating a panel proposal", "Panel proposal ready · Unpublished"),
+  decide: defineDemo("Decide", "After reviewing team feedback, a leader has selected acceptance. Recording the decision creates an offer awaiting Jordan’s response, not membership.", "record-decision", "Recording the selected acceptance", "Acceptance recorded · Offer pending"),
+  manage: defineDemo("Manage", "The task and exact recipients have already been reviewed. The owner assigns the welcome brief to three members, including Jordan.", "assign-task", "Assigning the reviewed task", "Welcome brief assigned to 3 members"),
 }

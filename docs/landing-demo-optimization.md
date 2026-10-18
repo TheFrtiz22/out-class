@@ -1,5 +1,7 @@
 # Landing demonstration optimization
 
+Historical optimization notes. The current single-action demonstrations, larger panels, and validation are documented in [Focused landing product demonstrations](landing-demo-refinement.md).
+
 Both landing audiences retain their original sections, fictional product data,
 SEO-visible headings, automatic playback, progress, Pause/Resume and Replay.
 No dependency, account workflow, database or deployment changes are required.

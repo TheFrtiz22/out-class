@@ -63,7 +63,7 @@ export function DemoPlaybackProvider({ children, activeScene }: { children: Reac
 }
 
 type Snapshot = { state: number; label: string; complete: boolean; reduced: boolean; paused: boolean; playing: boolean }
-const completed = (timeline: DemoTimeline): Snapshot => ({ state: timeline.finalState, label: "Walkthrough complete", complete: true, reduced: true, paused: false, playing: false })
+const completed = (timeline: DemoTimeline): Snapshot => ({ state: timeline.finalState, label: timeline.result, complete: true, reduced: true, paused: false, playing: false })
 const clamp = (value: number, max: number) => Math.max(8, Math.min(max, value))
 
 /** A single clock controls UI beats, cursor transforms and progress without frame-by-frame renders. */
@@ -87,20 +87,11 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     const fill = element.querySelector<HTMLElement>(".oc-demo-progress-fill")!
     const progress = element.querySelector<HTMLElement>(".oc-demo-progress")!
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)")
-    let active = false, paused = false, dirty = true, measuredBeat = -1, lastPercent = -1
-    let from = { x: 0, y: 0 }, to = { x: 0, y: 0 }, position = { x: 0, y: 0 }
-    let previousSize = { width: 0, height: 0 }
-    let scrollFrom = 0, scrollTo = 0, scrollMovement = 0
-    let visibleView: Element | null = null
-    refreshLayout.current = () => {
-      const next = observation.querySelector('[data-demo-view="true"]')
-      if (next !== visibleView) {
-        observation.scrollTop = Number(element.dataset.demoState) === timeline.finalState ? observation.scrollHeight : 0
-        visibleView = next
-      }
-      dirty = true
-    }
-    let published = "", hoveredTarget: HTMLElement | undefined
+    let active = false, paused = false, dirty = true, lastPercent = -1
+    let from = { x: 0, y: 0 }, to = { x: 0, y: 0 }
+    let width = 0, height = 0
+    let published = "", target: HTMLElement | null = null
+    refreshLayout.current = () => { dirty = true }
     const publish = (sample: DemoSample) => {
       const value: Snapshot = { state: sample.state, label: sample.label, complete: sample.complete, reduced: preference.matches, paused, playing: active && !paused && !preference.matches && !sample.complete }
       const signature = `${value.state}:${value.label}:${value.complete}:${value.reduced}:${value.paused}:${value.playing}`
@@ -111,91 +102,52 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     }
     const render = (sample: DemoSample) => {
       fill.style.transform = `scaleX(${sample.progress})`
-      const response = sample.response.toFixed(4), viewOpacity = sample.viewOpacity.toFixed(4)
+      const response = sample.response.toFixed(4)
       if (surface.style.getPropertyValue("--oc-demo-response") !== response) surface.style.setProperty("--oc-demo-response", response)
-      if (surface.style.getPropertyValue("--oc-demo-view-opacity") !== viewOpacity) surface.style.setProperty("--oc-demo-view-opacity", viewOpacity)
       const percent = Math.round(sample.progress * 100)
       if (percent !== lastPercent) { progress.setAttribute("aria-valuenow", String(percent)); lastPercent = percent }
       publish(sample)
+      const beat = timeline.beats[0]
       if (sample.elapsed === 0) {
-        measuredBeat = -1; dirty = true
+        dirty = true
         observation.scrollTop = 0
-        hoveredTarget?.removeAttribute("data-demo-hover")
-        hoveredTarget?.removeAttribute("data-demo-press")
-        hoveredTarget = undefined
-        cursor.style.transform = ""
-        pointer.style.transform = ""
-        click.style.opacity = "0"
+        target?.removeAttribute("data-demo-hover")
+        target?.removeAttribute("data-demo-press")
         delete element.dataset.demoTarget
-        element.dataset.demoPressing = "false"
-        for (const typed of timeline.beats.filter(beat => beat.typing)) {
-          const input = surface.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-demo-target="${typed.target}"]`)
-          if (input) input.value = typed.typing!.initial ?? ""
-        }
       }
-      const beat = timeline.beats[sample.beat]
       if (preference.matches || sample.elapsed < beat.start || sample.complete) {
         cursor.style.opacity = "0"
-        if (preference.matches || sample.complete) { hoveredTarget?.removeAttribute("data-demo-hover"); hoveredTarget?.removeAttribute("data-demo-press"); element.dataset.demoPressing = "false" }
+        target?.removeAttribute("data-demo-hover")
+        target?.removeAttribute("data-demo-press")
+        element.dataset.demoPressing = "false"
         return
       }
-      if (measuredBeat !== sample.beat || dirty) {
+      if (dirty) {
         const bounds = surface.getBoundingClientRect()
-        const target = Array.from(surface.querySelectorAll<HTMLElement>(`[data-demo-target="${beat.target}"]`)).find(candidate => !candidate.closest('[data-demo-view="false"]'))
-        // A delayed render may not have committed the preceding UI response yet.
-        // Retry on the next frame instead of aiming at an old or hidden control.
-        if (!target) { cursor.style.opacity = "0"; return }
-        if (target) {
-          if (hoveredTarget !== target) { hoveredTarget?.removeAttribute("data-demo-hover"); hoveredTarget?.removeAttribute("data-demo-press"); hoveredTarget = target }
-          const box = target.getBoundingClientRect()
-          const viewport = observation.getBoundingClientRect()
-          const footer = observation.querySelector<HTMLElement>(".oc-perspective-scene > .oc-demo-actions")
-          const inset = footer && !footer.contains(target) ? footer.getBoundingClientRect().height : 0
-          scrollFrom = observation.scrollTop
-          const adjustment = box.bottom > viewport.bottom - inset - 12 ? box.bottom - viewport.bottom + inset + 12 : box.top < viewport.top + 12 ? box.top - viewport.top - 12 : 0
-          scrollTo = Math.max(0, Math.min(observation.scrollHeight - observation.clientHeight, scrollFrom + adjustment))
-          scrollMovement = measuredBeat === sample.beat ? sample.movement : 0
-          const next = { x: clamp(box.left + box.width * .5 - bounds.left - 2, bounds.width - 26), y: clamp(box.top + box.height * .5 - bounds.top - 2 - (scrollTo - scrollFrom), bounds.height - 32) }
-          if (measuredBeat === -1) position = { x: clamp(next.x - 52, bounds.width - 26), y: clamp(next.y + 38, bounds.height - 32) }
-          else if (dirty && previousSize.width && measuredBeat === sample.beat) {
-            position = { x: position.x * bounds.width / previousSize.width, y: position.y * bounds.height / previousSize.height }
-          }
-          if (measuredBeat !== sample.beat) from = { ...position }
-          else if (dirty && previousSize.width) from = { x: from.x * bounds.width / previousSize.width, y: from.y * bounds.height / previousSize.height }
-          to = next
-          previousSize = { width: bounds.width, height: bounds.height }
-        }
-        measuredBeat = sample.beat
+        target = surface.querySelector<HTMLElement>(`[data-demo-target="${beat.target}"]`)
+        if (!target) return
+        const box = target.getBoundingClientRect()
+        width = bounds.width; height = bounds.height
+        to = { x: clamp(box.left + box.width * .62 - bounds.left - 2, width - 26), y: clamp(box.top + box.height * .5 - bounds.top - 2, height - 32) }
+        from = { x: clamp(to.x - 64, width - 26), y: clamp(to.y + 30, height - 32) }
         dirty = false
       }
-      // Smoothstep starts and finishes at rest, with a quiet curved path.
+      // One short curved path, accelerating and arriving at rest before the hover.
       const eased = sample.movement ** 2 * (3 - 2 * sample.movement)
-      const scrolling = sample.movement === 1 ? 1 : Math.min(1, (sample.movement - scrollMovement) / Math.max(.001, 1 - scrollMovement))
-      const scroll = scrollFrom + (scrollTo - scrollFrom) * scrolling ** 2 * (3 - 2 * scrolling)
-      if (Math.abs(observation.scrollTop - scroll) > .5) observation.scrollTop = scroll
-      const arc = Math.min(previousSize.width < 480 ? 6 : 12, Math.hypot(to.x - from.x, to.y - from.y) * .06) * (sample.beat % 2 ? -1 : 1)
-      position = { x: clamp(from.x + (to.x - from.x) * eased, previousSize.width - 26), y: clamp(from.y + (to.y - from.y) * eased + Math.sin(Math.PI * eased) * arc, previousSize.height - 32) }
-      cursor.style.transform = `translate3d(${position.x.toFixed(2)}px,${position.y.toFixed(2)}px,0)`
-      const finalResult = sample.beat === timeline.beats.length - 1 && sample.elapsed > beat.respond + 900
-      cursor.style.opacity = String(finalResult ? Math.max(0, 1 - (sample.elapsed - beat.respond - 900) / 300) : Math.min(1, (sample.elapsed - beat.start) / 160))
+      const x = clamp(from.x + (to.x - from.x) * eased, width - 26)
+      const y = clamp(from.y + (to.y - from.y) * eased + Math.sin(Math.PI * eased) * 5, height - 32)
+      cursor.style.transform = `translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`
+      cursor.style.opacity = String(sample.elapsed > beat.respond + 450 ? Math.max(0, 1 - (sample.elapsed - beat.respond - 450) / 300) : Math.min(1, (sample.elapsed - beat.start) / 180))
       const press = sample.pressing < 0 ? 0 : Math.sin(Math.PI * sample.pressing)
       pointer.style.transform = `scale(${1 - press * .065})`
-      click.style.opacity = String(press * .55)
+      click.style.opacity = String(press * .4)
       click.style.transform = `scale(${.8 + press * .2})`
-      if (hoveredTarget) {
-        const hovering = String(sample.movement === 1 && sample.elapsed < beat.respond)
-        const pressing = String(sample.pressing >= 0)
-        if (hoveredTarget.dataset.demoHover !== hovering) hoveredTarget.dataset.demoHover = hovering
-        if (hoveredTarget.dataset.demoPress !== pressing) hoveredTarget.dataset.demoPress = pressing
-        if (beat.typing && sample.elapsed >= beat.clickEnd && sample.elapsed <= beat.respond && "value" in hoveredTarget) {
-          const input = hoveredTarget as HTMLInputElement | HTMLTextAreaElement
-          const initialLength = beat.typing.initial?.length ?? 0
-          const text = beat.typing.text.slice(0, initialLength + Math.round((beat.typing.text.length - initialLength) * Math.min(1, (sample.elapsed - beat.clickEnd) / beat.typing.duration)))
-          if (input.value !== text) input.value = text
-        }
+      if (target) {
+        target.dataset.demoHover = String(sample.movement === 1 && sample.elapsed < beat.respond)
+        target.dataset.demoPress = String(sample.pressing >= 0)
       }
-      if (element.dataset.demoTarget !== beat.target) element.dataset.demoTarget = beat.target
-      if (element.dataset.demoPressing !== String(sample.pressing >= 0)) element.dataset.demoPressing = String(sample.pressing >= 0)
+      element.dataset.demoTarget = beat.target
+      element.dataset.demoPressing = String(sample.pressing >= 0)
     }
     const clock = createDemoClock(timeline, render, requestAnimationFrame, cancelAnimationFrame)
     const sync = () => { clock.setEligible(active && !document.hidden); publish(clock.sample()) }
@@ -205,7 +157,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     const unregister = coordinator?.register(resetKey, { node: element, activate: value => { active = value; sync() } })
     commands.current = {
       toggle: () => { if (preference.matches || clock.sample().complete) return; paused = !paused; clock.setPaused(paused); publish(clock.sample()) },
-      replay: () => { paused = false; published = ""; measuredBeat = -1; dirty = true; clock.replay(); publish(clock.sample()) },
+      replay: () => { paused = false; published = ""; dirty = true; clock.replay(); publish(clock.sample()) },
     }
     const resize = window.ResizeObserver ? new ResizeObserver(() => { dirty = true; if (paused || !active) render(clock.sample()) }) : null
     resize?.observe(surface)
@@ -220,7 +172,7 @@ export function ProductMotion({ children, scene, resetKey }: { children: ReactNo
     }
   }, [coordinator, resetKey, timeline])
 
-  // Read targets after React has committed a new view; never aim at hidden DOM.
+  // Remeasure after the result commits, keeping the cursor aligned across reflow.
   useLayoutEffect(() => { refreshLayout.current() }, [state.state])
 
   return <div ref={root} className="oc-product-motion" role="group" aria-label={`${timeline.title} product demonstration`} aria-describedby={`${resetKey}-summary`} data-demo-scene={scene} data-demo-complete={state.complete} data-demo-paused={state.paused} data-demo-playing={state.playing}>
@@ -235,16 +187,16 @@ export function ProductMotionControl() {
   const { title, complete, reduced, paused, toggle, replay } = useContext(PlaybackContext)
   return <div className="oc-preview-playback" role="group" aria-label={`${title} playback controls`}>
     <button type="button" className="oc-demo-toggle" data-complete={complete || reduced} disabled={complete || reduced} aria-label={`${paused ? "Resume" : "Pause"} ${title} demonstration`} onClick={toggle}>
-      {paused ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}<span>{paused ? "Resume" : "Pause"}</span>
+      {paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}<span>{paused ? "Resume" : "Pause"}</span>
     </button>
-    <button type="button" className="oc-demo-replay" aria-label={`Replay ${title} demonstration`} onClick={replay}><RotateCcw size={13} aria-hidden="true" /><span>Replay</span></button>
+    <button type="button" className="oc-demo-replay" aria-label={`Replay ${title} demonstration`} onClick={replay}><RotateCcw size={16} aria-hidden="true" /><span>Replay</span></button>
   </div>
 }
 
 export function ProductDemoProgress() {
   const { title, complete, reduced, label } = useContext(PlaybackContext)
   return <>
-    <div className="oc-demo-playback-caption"><span>{reduced ? "Completed preview · reduced motion" : label}</span><span>Illustrative interface · sample information</span></div>
+    <div className="oc-demo-playback-caption"><span>{reduced ? `${title} · completed preview` : label}</span><span>Illustrative interface · sample information</span></div>
     <div className="oc-demo-progress" role="progressbar" aria-label={`${title} playback progress`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={complete ? 100 : 0}><span className="oc-demo-progress-fill" /></div>
   </>
 }

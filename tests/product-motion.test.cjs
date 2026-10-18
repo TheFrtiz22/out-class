@@ -17,27 +17,27 @@ function harness(timeline = demoTimelines.apply) {
   const clock = createDemoClock(timeline, sample => renders.push(sample), callback => { frames.set(++serial, callback); return serial }, id => frames.delete(id))
   return { clock, renders, get frames() { return frames.size }, advance(ms) { const end = now + ms; while (now < end) { now = Math.min(end,now+20); const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback(now)) } } }
 }
-test('every scene is 35–50% shorter while retaining a readable completed state and natural travel', () => {
-  const baseline = { discover:13760, apply:20080, 'student-interview':12860, status:9840, join:12860, build:15060, recruit:17880, review:20100, 'leader-interview':27940, decide:12860, manage:20100 }
+test('every scene has one principal action, a 6–9 second timeline and a held result', () => {
   assert.equal(Object.keys(demoTimelines).length, 11)
   for (const [scene,timeline] of Object.entries(demoTimelines)) {
-    assert.ok(timeline.duration >= baseline[scene] * .5 && timeline.duration <= baseline[scene] * .65, scene)
-    assert.ok(timeline.duration >= 6000 && timeline.duration <= 15000)
+    assert.equal(timeline.beats.length, 1, scene)
+    assert.ok(timeline.duration >= 6000 && timeline.duration <= 9000)
+    assert.ok(timeline.result.length > 10)
     assert.ok(timeline.summary.length > 80)
     assert.equal(sampleDemo(timeline,0).progress,0)
     assert.equal(sampleDemo(timeline,timeline.duration).progress,1)
     assert.equal(sampleDemo(timeline,timeline.duration).state,timeline.finalState)
     assert.equal(sampleDemo(timeline,timeline.duration).complete,true)
     for (const beat of timeline.beats) {
-      assert.ok(beat.arrive - beat.start >= 400 && beat.arrive - beat.start <= 760)
-      assert.ok(beat.press - beat.arrive >= 80 && beat.press - beat.arrive <= 150)
+      assert.ok(beat.arrive - beat.start >= 650 && beat.arrive - beat.start <= 1200)
+      assert.ok(beat.press - beat.arrive >= 400 && beat.press - beat.arrive <= 800)
       assert.ok(beat.clickEnd - beat.press >= 100 && beat.clickEnd - beat.press <= 160)
       assert.ok(beat.end - beat.respond >= 650, 'each outcome has time to settle')
     }
-    assert.ok(timeline.duration - timeline.beats.at(-1).respond >= 1500)
+    assert.ok(timeline.duration - timeline.beats.at(-1).respond >= 2200)
   }
 })
-test('interface responses occur after the click and any text entry, from the same progress clock', () => {
+test('interface responses occur after the deliberate click, from the same progress clock', () => {
   for (const timeline of Object.values(demoTimelines)) {
     let previous = 0
     for (const beat of timeline.beats) {
@@ -123,11 +123,13 @@ test('prominence selects one scene, resists minor scrolling and adapts to landsc
   assert.equal(prominentDemo([{id:'a',top:110,height:700}],390),'a')
   assert.equal(prominentDemo([{id:'a',top:900,height:700}],390),undefined)
 })
-test('Auto-Fill and manual adjustment remain drafts until the owner confirmation beat', () => {
+test('Auto-Fill only creates an unpublished proposal; publication is outside this vignette', () => {
   const timeline = demoTimelines['leader-interview']
-  assert.deepEqual(timeline.beats.map(beat=>beat.target),['review-rooms','auto-fill','edit-session','replace-interviewer','replacement-naomi','review-publish','confirm-publish'])
-  const approval = timeline.beats.at(-1)
-  assert.equal(sampleDemo(timeline,approval.respond - 1).state,6)
-  assert.equal(sampleDemo(timeline,approval.respond).state,7)
-  assert.equal(sampleDemo(timeline,approval.respond).complete,false)
+  assert.deepEqual(timeline.beats.map(beat => beat.target), ['auto-fill'])
+  assert.match(timeline.summary, /unpublished draft/)
+  assert.match(timeline.result, /Unpublished/)
+  const proposal = timeline.beats[0]
+  assert.equal(sampleDemo(timeline, proposal.respond - 1).state, 0)
+  assert.equal(sampleDemo(timeline, proposal.respond).state, 1)
+  assert.equal(sampleDemo(timeline, timeline.duration).label, timeline.result)
 })

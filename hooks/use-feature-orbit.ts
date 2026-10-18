@@ -16,7 +16,7 @@ export function useFeatureOrbit(count: number) {
     const titles = cards.map(card => card.querySelector<HTMLElement>(".oc-orbit-title")!)
     const descriptions = cards.map(card => card.querySelector<HTMLElement>(".oc-orbit-description")!)
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const roomy = window.matchMedia("(min-width: 768px) and (min-height: 700px), (max-width: 767px) and (min-height: 800px)")
+    const roomy = window.matchMedia("(min-width: 900px) and (min-height: 760px), (min-width: 768px) and (max-width: 899px) and (min-height: 900px), (min-width: 380px) and (max-width: 767px) and (min-height: 840px)")
     let frame = 0, step = 1, width = 1, enhanced = false, last = ""
     const publish = (active: number, settled: number | null) => {
       const key = `${active}:${settled}:${enhanced}`
