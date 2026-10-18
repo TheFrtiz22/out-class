@@ -1,6 +1,7 @@
 import { interviewCapabilities } from "@/lib/interview-access"
 import { availableSettings } from "@/lib/club-settings"
 import { hasPermission, type ClubAccess } from "@/lib/permissions"
+import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
 export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
 export type PersonalMode = "explore" | "apply" | "clubs"
 export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions" }
@@ -30,13 +31,15 @@ export function personalDestination(id: string): { view: import("@/lib/views").V
   if (id === "corkboard") return { view: id, section: id }
   return { view: "explore", section: "explore" }
 }
-export function managerNavigation(member: ClubAccess, clubId: string, mode: string): ProductNavItem[] {
+export function managerNavigation(member: ClubAccess, clubId: string, mode: string, search = ""): ProductNavItem[] {
   const href = (section: string, tool?: string) => `/club/${encodeURIComponent(clubId)}/workspace?section=${section}${tool ? `&tool=${tool}` : ""}`
   const item = (id: string, label: string, section = id, extra = {}) => ({ id, label, href: href(section, section === "recruitment" ? id : undefined), ...extra })
   if (mode === "recruiting") {
     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
     return [item("overview", "Overview", "recruitment"),
       ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const }), item("rejected", "Rejected Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
+      ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
+      ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(read ? [item("decisions", "All Decisions", "recruitment", { navGroup: "decisions" as const })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),

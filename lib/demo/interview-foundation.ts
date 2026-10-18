@@ -122,12 +122,13 @@ export function submitEvaluation(input: { clubId: string; applicationId: string;
   if (record.completedAt) throw new Error("Submitted evaluation is immutable.");
   return { success: true, evaluation: saveInterviewSession({ ...scope, revision: record.revision, draft: { ...record.draft, score: input.score, additionalNotes: input.notes ?? record.draft.overallReview }, complete: true }).evaluation! };
 }
-export function getSubmittedInterviewReviews(clubId: string) {
+export function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
   demoStore.refresh();
   const { s, caps } = actor(clubId);
   if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
   return s.interviews.filter(r => {
     if (!r.completedAt || r.clubId !== clubId) return false;
+    if (filters.applicationId && r.applicationId !== filters.applicationId || filters.roundId && r.roundId !== filters.roundId || filters.cycleId && s.applications.find(a => a.id === r.applicationId)?.recruitmentCycleId !== filters.cycleId) return false;
     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
@@ -207,7 +208,7 @@ export function getInterviewApplicantPanel(input: InterviewScope) {
   const { s, app } = access(input); const p = s.students.find(p => p.id === app.studentId)!.profile;
   return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null };
 }
-export function getInterviewResumeModerationQueue(clubId: string) {
+export function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
   demoStore.refresh(); const { s, member, caps } = actor(clubId);
   if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
   return s.interviewFoundation.documents.flatMap(document => {
@@ -215,6 +216,7 @@ export function getInterviewResumeModerationQueue(clubId: string) {
     const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === document.roundId);
     const current = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === app?.roundId);
     if (!app || !round || !current || round.anonymousReview || current.anonymousReview) return [];
+    if (filters.applicationId && app.id !== filters.applicationId || filters.roundId && document.roundId !== filters.roundId || filters.cycleId && app.recruitmentCycleId !== filters.cycleId) return [];
     const profile = s.students.find(p => p.id === app.studentId)?.profile;
     return [{ documentId: document.id, clubId, applicationId: app.id, roundId: round.id, roundName: round.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" }];
   }).reverse().slice(0, 100);
