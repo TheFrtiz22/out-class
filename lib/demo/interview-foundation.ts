@@ -126,9 +126,10 @@ export function getSubmittedInterviewReviews(clubId: string, filters: import("@/
   demoStore.refresh();
   const { s, caps } = actor(clubId);
   if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
+  // Demo has no recorded recruitment cycles; never infer a cycle for legacy fixtures.
   return s.interviews.filter(r => {
     if (!r.completedAt || r.clubId !== clubId) return false;
-    if (filters.applicationId && r.applicationId !== filters.applicationId || filters.roundId && r.roundId !== filters.roundId || filters.cycleId && s.applications.find(a => a.id === r.applicationId)?.recruitmentCycleId !== filters.cycleId) return false;
+    if (filters.applicationId && r.applicationId !== filters.applicationId || filters.roundId && r.roundId !== filters.roundId || filters.cycleId) return false;
     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
@@ -216,7 +217,7 @@ export function getInterviewResumeModerationQueue(clubId: string, filters: impor
     const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === document.roundId);
     const current = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === app?.roundId);
     if (!app || !round || !current || round.anonymousReview || current.anonymousReview) return [];
-    if (filters.applicationId && app.id !== filters.applicationId || filters.roundId && document.roundId !== filters.roundId || filters.cycleId && app.recruitmentCycleId !== filters.cycleId) return [];
+    if (filters.applicationId && app.id !== filters.applicationId || filters.roundId && document.roundId !== filters.roundId || filters.cycleId) return [];
     const profile = s.students.find(p => p.id === app.studentId)?.profile;
     return [{ documentId: document.id, clubId, applicationId: app.id, roundId: round.id, roundName: round.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" }];
   }).reverse().slice(0, 100);
