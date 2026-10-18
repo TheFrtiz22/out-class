@@ -1,3 +1,4 @@
+import { interviewEntryHref } from "@/lib/interview-entry"
 import { demoCommunicationRows, demoPublishLetter } from "./communications"
 import { inboxNotification } from "@/lib/communications-client"
 import { taskNotifications } from "@/lib/task-notifications"
@@ -6,7 +7,7 @@ import { sampleInterviewKit } from "@/lib/interview-kits"
 import { clubPermissions, hasWorkspace } from "@/lib/permissions"
 import { demoSnapshotSchema } from "./validate"
 import { createDemoSeed, type DemoState } from "./seed"
-import { ensureInterviewImprovements } from "./interview-improvements"
+import { ensureInterviewRoomEntries, ensureInterviewImprovements } from "./interview-improvements"
 import { emptyDemoBookingFlow } from "./interview-booking"
 export const DEMO_KEY = "outclass.presentation.v1"
 let state: DemoState | null = null
@@ -144,6 +145,7 @@ function ensurePresentation(value: DemoState) {
   if (value.perspective.clubId !== mii.id) value.perspective = { role: "student", clubId: mii.id }
   ensureSemesterWork(value)
   ensureInterviewImprovements(value)
+  ensureInterviewRoomEntries(value)
 }
 export const demoStore = {
   active: () => enabled,
@@ -352,7 +354,8 @@ export function demoNotifications() {
   const assignments = (s.interviewFoundation.assignmentNotices || []).filter(n => n.memberId === member?.id && !s.deletedNotifications.includes(n.id)).map(n => {
     const app = s.applications.find(a => a.id === n.applicationId), club = s.clubs.find(c => c.id === app?.clubId), round = club?.rounds.find(r => r.id === n.roundId), p = s.students.find(p => p.id === app?.studentId)?.profile;
     const allowed = !!app && app.roundId === n.roundId && !round?.anonymousReview && s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === n.roundId && a.memberId === member?.id && !a.revokedAt);
-    return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: n.createdAt, createdAt: n.createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: `/club/${club?.id}/workspace?section=recruitment&tool=interviews${allowed ? `&interview=1&applicationId=${n.applicationId}&roundId=${n.roundId}` : ""}` };
+    const booking = s.roomBookings.find(b => b.applicationId === n.applicationId && b.roundId === n.roundId);
+    return { id: n.id, clubId: club?.id, club: club?.name || "MII", color: club?.color || "#142d45", logoText: club?.logoText || "MII", senderName: "Sample recruitment team", senderTitle: "Interview assignment", urgent: false, type: "Interview Invite" as const, title: n.title, preview: allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list.", body: [allowed ? `${p?.firstName} ${p?.lastName} · ${round?.name}` : "This assignment changed. Check the interview list."], timestamp: "Demo", fullDate: n.createdAt, createdAt: n.createdAt, read: s.readNotifications.includes(n.id), cta: "Open interview room", href: allowed && booking ? interviewEntryHref({ clubId: club!.id, applicationId: n.applicationId, roundId: n.roundId, bookingId: booking.id, slotId: booking.slotId, roomId: booking.roomId }) : `/club/${club?.id}/workspace?section=recruitment&tool=interviews${allowed ? `&interview=1&applicationId=${n.applicationId}&roundId=${n.roundId}` : ""}` };
   });
   return [...demoCommunicationRows(s).map(inboxNotification),...recruiting,...work,...assignments]
 }

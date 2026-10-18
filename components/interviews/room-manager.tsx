@@ -22,10 +22,15 @@ import { staffingShortageSessionIds } from "@/lib/interview-staffing-capacity"
 import { interviewRoundWeek } from "@/lib/interview-scheduling-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import "./scheduling.css"
+import Link from "next/link"
+import { getAssignedInterviewRooms } from "@/lib/workspace-api"
+import { interviewEntryHref, type InterviewRoomEntry } from "@/lib/interview-entry"
 
 
 export function RoomManager({ clubId }: { clubId: string }) {
   const demo = useDemoMode()
+  const [ownEntries, setOwnEntries] = useState<InterviewRoomEntry[]>([])
+
   const [data, setData] = useState<RoomWorkspace | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [refresh, setRefresh] = useState(0)
   const [tab, setTab] = useState("rooms"), [round, setRound] = useState(""), [date, setDate] = useState(""), [week, setWeek] = useState(() => monday(today(SCHEDULING_TIMEZONE)))
   const [create, setCreate] = useState(false), [source, setSource] = useState<InterviewRoom>(), [busy, setBusy] = useState(""), [notice, setNotice] = useState("")
@@ -73,6 +78,12 @@ export function RoomManager({ clubId }: { clubId: string }) {
     window.addEventListener("popstate", back); window.addEventListener("outclass:panels-changed", changed); window.addEventListener("outclass:availability-changed", changed)
     return () => { window.removeEventListener("popstate", back); window.removeEventListener("outclass:panels-changed", changed); window.removeEventListener("outclass:availability-changed", changed) }
   })
+  useEffect(() => {
+    if (!demo.ready) return
+    let current = true
+    getAssignedInterviewRooms(clubId).then(rows => { if (current) setOwnEntries(rows) }).catch(() => { if (current) setOwnEntries([]) })
+    return () => { current = false }
+  }, [clubId, demo.ready, refresh])
   const roundTimezone = SCHEDULING_TIMEZONE
   useEffect(() => {
     if (!round || !demo.ready || demo.isDemoEnabled) return
@@ -95,7 +106,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
         <div hidden={tab !== "availability"}><AdminAvailabilityOverview key={round} clubId={clubId} roundId={round} week={week} onWeekChange={value => { setWeek(value); window.history.pushState(null, "", url(tab, round, date, value)) }} onOpenSession={(_roomId, slotId) => navigateSection("review", true, slotId)} /><div className="mt-4 flex gap-2"><Button onClick={() => navigateSection("rooms")}>Continue to Rooms</Button></div></div>
         <div hidden={!["rooms", "bookings", "preview"].includes(tab)} className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-base font-medium">{tab === "bookings" ? "Bookings" : tab === "preview" ? "Applicant preview" : "Interview times"}</h3>{tab === "rooms" ? <Button variant={rooms.length ? "outline" : "default"} onClick={() => { setSource(undefined); setCreate(true) }}><Plus size={16}/>Add interview times</Button> : tab === "bookings" && <div className="flex items-center gap-3"><span className="text-sm text-muted-foreground">{data.rounds.find(r=>r.id===round)?.booking ? bookingState(data.rounds.find(r=>r.id===round)!.booking!,rooms) : "Draft"}</span><Button variant="outline" onClick={() => navigateSection("review")}>Edit schedule</Button></div>}</div>
           <div hidden={tab !== "rooms"}><div className="grid gap-4 lg:grid-cols-2">{rooms.map(room => <RoomCard key={room.id} room={room} workspace={data} date={date} selectedSession={selectedSession} coverage={coverage?.slots ?? []} shortageIds={shortageIds} busy={busy === room.id || loading} onAutoFill={() => navigateSection("review", !!room.slots.some(s => s.panelScheduleVersionId), room.slots.find(s => +new Date(s.startTime) > Date.now())?.id ?? "")} onStaffing={async (needed, slotId) => { setBusy(room.id); setError(""); try { const saved = await setInterviewStaffingRequirement({ clubId, roomId: room.id, slotId, needed, revision: slotId ? room.slots.find(s => s.id === slotId)?.staffingRevision ?? 0 : room.staffingRevision ?? 0 }); setData(previous => previous ? { ...previous, rooms: previous.rooms.map(current => current.id !== room.id ? current : slotId ? { ...current, slots: current.slots.map(slot => slot.id === slotId ? { ...slot, interviewersNeeded: needed, staffingRevision: saved.revision } : slot) } : { ...current, interviewersNeeded: needed!, staffingRevision: saved.revision }) } : previous); setNotice("Staffing requirement saved. Availability coverage updated; any existing proposal must be revalidated."); setRefresh(v => v + 1); window.dispatchEvent(new Event("outclass:staffing-changed")) } catch (error) { setError(error instanceof Error ? error.message : "Could not save staffing requirement.") } finally { setBusy("") } }} onCopy={() => { setSource(room); setCreate(true) }} onToggle={async () => { if (room.isOpen && !window.confirm("Stop new bookings for this room? Confirmed reservations keep their time and location.")) return; setBusy(room.id); try { await setInterviewRoomOpen({ roomId: room.id, open: !room.isOpen }); setRefresh(v => v + 1); window.dispatchEvent(new Event("outclass:staffing-changed")) } catch { setError("Could not update room.") } finally { setBusy("") } }} />)}</div>{!rooms.length && <div className="rounded-xl border border-dashed p-5"><h3 className="oc-card-heading">No rooms for {roundName}{date ? " on this date" : ""}</h3><p className="my-2 text-sm text-muted-foreground">Create a room with interview times, location and required interviewers.</p></div>}</div>
-          {tab === "bookings" && <ul className="divide-y rounded-xl border">{bookings.map(b => <li key={b.id} className="flex flex-wrap justify-between gap-2 p-4"><span>{b.candidate} · {rooms.find(r => r.id === b.roomId)?.name}</span><span className="text-sm">{new Date(b.startTime).toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short", day: "numeric" })} · {slotTime(b.startTime, SCHEDULING_TIMEZONE)} · {SCHEDULING_TIMEZONE_LABEL}</span></li>)}{!bookings.length && <li className="p-4 text-sm text-muted-foreground">No bookings match these filters.</li>}</ul>}
+          {tab === "bookings" && <ul className="divide-y rounded-xl border">{bookings.map(b => <li key={b.id} className="flex flex-wrap justify-between gap-2 p-4"><span>{b.candidate} · {rooms.find(r => r.id === b.roomId)?.name}</span>{ownEntries.filter(row => row.bookingId === b.id && row.canOpen).map(row => <Link key={row.id} className="inline-flex min-h-10 items-center text-sm underline" href={interviewEntryHref(row, typeof window === "undefined" ? undefined : window.location.href)}>{row.completed ? "Open review" : row.started ? "Resume interview" : "Open interview"}</Link>)}<span className="text-sm">{new Date(b.startTime).toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short", day: "numeric" })} · {slotTime(b.startTime, SCHEDULING_TIMEZONE)} · {SCHEDULING_TIMEZONE_LABEL}</span></li>)}{!bookings.length && <li className="p-4 text-sm text-muted-foreground">No bookings match these filters.</li>}</ul>}
           {tab === "preview" && <BookingPicker key={round} rooms={data.rooms.filter(r => r.roundId === round)} clubName={data.clubName} roundName={roundName ?? "Interview"} preview />}
           {tab === "rooms" && rooms.length > 0 && <Button onClick={() => navigateSection("review")}>Continue to interviewers</Button>}
         </div>

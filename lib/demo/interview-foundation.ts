@@ -13,6 +13,7 @@ import { canDiscoverInterviewSetup, type InterviewSetupRounds } from "@/lib/inte
 type Content = z.infer<typeof annotationContentSchema>;
 export type DemoInterviewFoundation = {
   improvementsSeeded?: boolean;
+  roomEntrySeeded?: boolean;
   assignmentNotices?: { id: string; memberId: string; applicationId: string; roundId: string; key: string; title: string; createdAt: string }[];
   collaboration?: import("./interview-collaboration").DemoCollaboration;
   assignments: { applicationId: string; roundId: string; memberId: string; revokedAt: string | null; bookingManaged?: boolean; bookingId?: string | null; notificationVersion?: number }[];

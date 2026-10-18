@@ -40,3 +40,28 @@ export function demoAssignmentNotice(s: DemoState, a: DemoState["interviewFounda
   if (f.assignmentNotices.some(n => n.key === key)) return;
   f.assignmentNotices.push({ id: crypto.randomUUID(), memberId: a.memberId, applicationId: a.applicationId, roundId: a.roundId, key, title: cancelled ? "Interview assignment changed" : "Interview assignment", createdAt: new Date().toISOString() });
 }
+
+/** One additive fixture migration. Never reset a saved interview or personal draft. */
+export function ensureInterviewRoomEntries(s: DemoState) {
+  if (s.interviewFoundation.roomEntrySeeded) return;
+  const club = s.clubs[0], owner = s.memberships.find(m => m.clubId === club.id && m.isOwner && m.status === "ACTIVE");
+  if (!owner) return;
+  const template = club.rounds.find(r => r.name === "Interview"), base = s.applications.find(a => a.clubId === club.id);
+  if (!template || !base) return;
+  const free = s.students.filter(u => u.id !== owner.userId && !s.applications.some(a => a.clubId === club.id && a.studentId === u.id)).slice(0, 2);
+  for (const [index, student] of free.entries()) {
+    let round = club.rounds.find(r => r.id === id(90 + index));
+    if (!round) { round = { ...structuredClone(template), id: id(90 + index), name: index ? "Sample discussion interviews" : "Sample research interviews", order: Math.max(...club.rounds.map(r => r.order)) + 1 }; club.rounds.push(round); }
+    let app = s.applications.find(a => a.id === id(80 + index));
+    if (!app) { app = { ...structuredClone(base), id: id(80 + index), studentId: student.id, roundId: round.id, status: "INTERVIEWING", answers: [], evaluations: [], submittedAt: new Date(`${s.anchor}T12:00:00Z`) }; s.applications.push(app); }
+    const start = new Date(`${s.anchor}T17:00:00Z`); start.setUTCDate(start.getUTCDate() + 2 + index);
+    const roomId = id(100 + index), slotId = id(110 + index), emptySlot = id(120 + index);
+    const room = { id: roomId, clubId: club.id, roundId: round.id, name: index ? "Sample discussion room" : "Sample research room", location: index ? "Demo · Clemons 202" : "Demo · Shannon 220", kind: "IN_PERSON", timezone: "America/New_York", duration: 20, buffer: 5, isOpen: true, panelMemberIds: [owner.id], approvedPanelMemberIds: [owner.id], panelApprovedBy: owner.userId, slots: [{ id: slotId, startTime: start.toISOString(), endTime: new Date(+start + 1200000).toISOString(), capacity: 1, booked: 1 }, { id: emptySlot, startTime: new Date(+start + 1800000).toISOString(), endTime: new Date(+start + 3000000).toISOString(), capacity: 1, booked: 0 }] };
+    if (!s.interviewRooms.some(r => r.id === roomId)) s.interviewRooms.push(room);
+    const p = s.students.find(u => u.id === app.studentId)?.profile;
+    if (!s.roomBookings.some(b => b.id === id(130 + index))) s.roomBookings.push({ id: id(130 + index), applicationId: app.id, slotId, roomId, roundId: round.id, candidate: p ? `${p.firstName} ${p.lastName}` : "Sample applicant", startTime: room.slots[0].startTime, endTime: room.slots[0].endTime, location: room.location });
+    if (!s.slots.some(slot => slot.id === id(130 + index))) s.slots.push({ id: id(130 + index), clubId: club.id, applicationId: app.id, interviewerId: owner.id, startTime: start, endTime: new Date(+start + 1200000), location: room.location });
+    if (!s.interviewFoundation.assignments.some(a => a.applicationId === app.id && a.roundId === round.id && a.memberId === owner.id)) s.interviewFoundation.assignments.push({ applicationId: app.id, roundId: round.id, memberId: owner.id, revokedAt: null });
+  }
+  s.interviewFoundation.roomEntrySeeded = true;
+}

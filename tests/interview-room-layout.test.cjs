@@ -3,7 +3,7 @@ const flush=()=>new Promise(r=>setImmediate(r));
 const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)];
 const text=n=>typeof n==='string'?n:Array.isArray(n)?n.map(text).join(''):n?.props?text(n.props.children):'';
 function harness(){
- const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[];let index=0,calls=0,denied=false,confirmationDenied=false;
+ const slots=[],effects=[],cleanups=[],storage=new Map(),confirmations=[];let index=0,calls=0,denied=false,confirmationDenied=false,exits=0;
  const rows=['a','b','c'].map(id=>({id,name:id.toUpperCase(),roundId:'r',assignedRoundIds:['r'],completedRoundIds:[]}));
  let pipeline={rounds:[{id:'r',name:'Round 1',archived:false}],applications:rows}, deferred=null, sessionDenied=false;
  const depsChanged=(a,b)=>!a||b.some((v,i)=>v!==a[i]);
@@ -13,12 +13,13 @@ function harness(){
  const mod={exports:{}};
  const code=ts.transpileModule(fs.readFileSync('components/views/interview-workspace-view.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
  const clear=()=>{};
- const api={getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
+ const location=new URL("https://out-class.net/club/club/workspace?section=recruitment&tool=interviews&interview=1"),history={state:null,replaceState(_s,_t,href){location.href=new URL(href,location).href}};
+ const api={resolveInterviewRoomEntry:async input=>input,getInterviewWorkspace:async()=>{calls++;if(denied)throw Error('revoked');return structuredClone(pipeline)},openInterviewSession:async scope=>{if(deferred)await deferred;if(sessionDenied)throw Error('panel revoked');return{id:scope.applicationId,completedAt:null,draft:{score:null},questions:[]}},getInterviewApplicantPanel:async scope=>({name:scope.applicationId,document:null})};
  api.prepareInterviewAdvance=async scope=>{if(denied)throw Error('revoked');const next=queue.nextInterviewApplicant(pipeline.applications,scope.roundId,scope.applicationId);return next?{moveId:'move',scope:{clubId:scope.clubId,roundId:scope.roundId,applicationId:next.id}}:null};
  api.confirmInterviewAdvance=async receipt=>{confirmations.push(receipt);if(confirmationDenied)throw Error('disconnected');return{confirmed:true}};
- new Function('require','module','exports','window','sessionStorage','requestAnimationFrame',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn());
- const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){}};
- return{storage,confirmations,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
+ new Function('require','module','exports','window','sessionStorage','requestAnimationFrame','setInterval','clearInterval',code+';exports.TestSession=InterviewSession;')(n=>n==='react'?react:n.endsWith('.css')?{}:n==='@/lib/workspace-api'?api:n==='@/lib/interview-queue'?queue:n==='@/lib/application-state'?{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus:clear})}:n.startsWith('@/')?new Proxy({},{get:(_,k)=>k}):require(n),mod,mod.exports,{location,history,addEventListener(){},removeEventListener(){},confirm:()=>true},{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},fn=>fn(),()=>0,()=>{});
+ const props={membership:{id:'member',clubId:'club',club:{name:'MII'}},onLock(){},onExit(){exits++}};
+ return{storage,confirmations,exits:()=>exits,denyConfirmation:v=>confirmationDenied=v,calls:()=>calls,deny:()=>denied=true,denySession:v=>sessionDenied=v,defer:p=>deferred=p,fresh:p=>pipeline=p,rows,unmount(){cleanups.forEach(fn=>fn?.())},render(){index=0;const t=mod.exports.TestSession(props);while(effects.length)effects.shift()();return t}};
 }
 const kit=t=>nodes(t).find(n=>n.type==='InterviewKitSession');
 test('selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation',async()=>{
@@ -29,7 +30,7 @@ test('selection controls exist only on the interview list; active and post-inter
  assert.doesNotMatch(text(t),/evaluated by you|Previous candidate|Next candidate/);
  const toolbar=kit(t).props.toolbar(false);assert.match(text(toolbar),/InterviewsMII/);assert.doesNotMatch(text(toolbar),/timer/i);
  assert.equal(text(kit(t).props.toolbar(true)),text(toolbar));
- nodes(toolbar).find(n=>n.type==='Button').props.onClick();t=h.render();assert.ok(nodes(t).find(n=>n.props?.id==='interview-round'));assert.equal(h.storage.size,0);
+ nodes(toolbar).find(n=>n.type==='Button').props.onClick();t=h.render();assert.equal(h.exits(),1);assert.equal(h.storage.size,0);
 });
 test('a destination response after leaving the room cannot change selection or recovery state',async()=>{
  const h=harness();h.render();await flush();let t=h.render();t=h.render();nodes(t).find(n=>n.props?.id==='interview-candidate').props.onChange({target:{value:'a'}});t=h.render();

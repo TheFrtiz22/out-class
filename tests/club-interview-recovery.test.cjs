@@ -18,6 +18,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/campus-illustrations':{clubCampusIllustration:()=>undefined},
   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
   '@/lib/workspace-navigation':nav.exports,
+  '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
  };
  const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree.props.children[1];
@@ -28,14 +29,14 @@ test('club interview URL restores the room on a fresh mount without assigning ph
  const resumed=render('section=recruitment&tool=interviews&interview=1');
  assert.equal(resumed.screen.type,'Dynamic');assert.equal(resumed.screen.props.scoped,true);
  assert.equal(resumed.screen.props.postInterview,undefined);assert.equal(resumed.screen.props.score,undefined);
- resumed.screen.props.onExit();assert.deepEqual(resumed.changes,['https://example.test/club/club/workspace?section=recruitment&tool=interviews']);
+ resumed.screen.props.onExit();assert.deepEqual(resumed.changes,['https://example.test/club/club/workspace?section=recruitment&tool=interviews&interviewTab=rooms']);
  assert.deepEqual(resumed.redirects,[]);
 });
-test('entry records only the scoped room URL and unrelated screens do not restore it',()=>{
+test('scheduled list replaces generic entry and unrelated screens do not restore a room',()=>{
  const initial=render('section=recruitment&tool=interviews');
  assert.equal(initial.screen.type,'ProductShell');
- initial.nodes.find(node=>node.props?.children==='Enter interview mode').props.onClick();
- assert.deepEqual(initial.changes,['https://example.test/club/club/workspace?section=recruitment&tool=interviews&interview=1']);
+ assert.equal(initial.nodes.some(node=>node.props?.children==='Enter interview mode'),false);
+ assert.deepEqual(initial.changes,[]);
  assert.equal(render('section=overview&interview=1').screen.type,'ProductShell');
  assert.equal(render('section=recruitment&tool=applicants&interview=1').screen.type,'ProductShell');
 });

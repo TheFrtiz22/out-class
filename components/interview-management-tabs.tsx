@@ -13,17 +13,19 @@ import { interviewCapabilities } from "@/lib/interview-access"
 import { InterviewResumeModeration } from "@/components/interview-resume-moderation"
 import { InterviewSubmittedReviews } from "@/components/interview-submitted-reviews"
 import { InterviewAccessSetup } from "@/components/interview-access-setup"
+import { InterviewRoomsList } from "@/components/interviews/interview-rooms-list"
 import "@/components/clubs/interview-kit-editor.css"
 
 export function InterviewManagementTabs({ clubId, initialTab, initialRoundId }: { clubId: string; initialTab?: string; initialRoundId?: string; onInterview?: () => void }) {
   const { user } = useAuth()
+  const canEnter = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).participate
   const canSchedule = hasPermission(user?.memberships.find(m => m.clubId === clubId), "interviews.manage")
   const canModerate = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).moderateResume
   const canReadClosing = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).readClosing
   const canManageGrants = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).manageGrants
-  const allowedTabs = ["kits", ...(canSchedule ? ["schedule"] : []), ...(canModerate ? ["resumes"] : []), ...(canReadClosing ? ["reviews"] : []), ...(canManageGrants ? ["access"] : [])]
+  const allowedTabs = [...(canEnter ? ["rooms"] : []), "kits", ...(canSchedule ? ["schedule"] : []), ...(canModerate ? ["resumes"] : []), ...(canReadClosing ? ["reviews"] : []), ...(canManageGrants ? ["access"] : [])]
   const requested = initialTab === "availability" ? "schedule" : initialTab
-  const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canSchedule ? "schedule" : "kits")
+  const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canEnter ? "rooms" : canSchedule ? "schedule" : "kits")
   return <div className="space-y-3">{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
     if (value !== tab && canLeaveWorkspace()) {
       setTab(value)
@@ -33,7 +35,8 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId }: 
       }
     }
   }} activationMode="manual">
-    <TabsList aria-label="Interview management"><TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canModerate && <TabsTrigger value="resumes">Résumé moderation</TabsTrigger>}{canReadClosing && <TabsTrigger value="reviews">Submitted reviews</TabsTrigger>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+    <TabsList aria-label="Interview management">{canEnter && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canModerate && <TabsTrigger value="resumes">Résumé moderation</TabsTrigger>}{canReadClosing && <TabsTrigger value="reviews">Submitted reviews</TabsTrigger>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+    {canEnter && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
     <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
     {canSchedule && <TabsContent value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} /></TabsContent>}
     {canModerate && <TabsContent value="resumes"><InterviewResumeModeration clubId={clubId} /></TabsContent>}

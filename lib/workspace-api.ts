@@ -1,4 +1,6 @@
 "use client"
+import * as interviewEntry from "@/actions/interview-entry";
+import * as demoInterviewEntry from "@/lib/demo/interview-entry";
 import * as availabilitySchedules from "@/actions/availability-schedules";
 import * as panelApi from "@/actions/panel-proposals";
 import * as publicationApi from "@/actions/panel-publication";
@@ -304,6 +306,8 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent, 
 
 export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
 export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
+export const getAssignedInterviewRooms = adapt(interviewEntry.getAssignedInterviewRooms, demoInterviewEntry.getAssignedInterviewRooms)
+export const resolveInterviewRoomEntry = adapt(interviewEntry.resolveInterviewRoomEntry, demoInterviewEntry.resolveInterviewRoomEntry)
 export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
 export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
 export const getInterviewCollaboration = adapt(collaboration.getInterviewCollaboration, demoCollaboration.getInterviewCollaboration)
