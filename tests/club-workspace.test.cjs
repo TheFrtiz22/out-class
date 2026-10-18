@@ -180,8 +180,8 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   const ids = (permissions, mode) => managerNavigation({ permissions }, clubId, mode).map(item => item.id);
   assert.deepEqual(ids(["members.manage"], "club"), ["overview", "meetings", "tasks", "members", "settings"]);
   assert.deepEqual(ids(["applications.review"], "recruiting"), ["overview", "applicants", "rejected", "interviews", "decisions"]);
-  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews"]);
-  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "cycles", "letters", "rounds", "rules"]);
+  assert.deepEqual(ids(["interviews.manage"], "recruiting"), ["overview", "interviews", "settings"]);
+  assert.deepEqual(ids(["recruitment.manage"], "recruiting"), ["overview", "rounds", "rules", "settings"]);
   const owner = managerNavigation({ isOwner: true }, clubId, "recruiting");
   assert.equal(owner.find(item => item.id === "rules").preview, undefined)
   assert.equal(owner.find(item => item.id === "rules").quiet, true);
@@ -189,8 +189,8 @@ test("product modes preserve scoped URLs and limit manager destinations by capab
   for (const item of owner) {
     const url = new URL(item.href, "https://outclass.test");
     assert.equal(url.pathname, `/club/${clubId}/workspace`);
-    assert.equal(url.searchParams.get("section"), item.id === "announcements" ? "announcements" : "recruitment");
-    assert.equal(url.searchParams.get("tool"), item.id === "announcements" ? null : item.id);
+    assert.equal(url.searchParams.get("section"), ["announcements", "settings"].includes(item.id) ? item.id : "recruitment");
+    assert.equal(url.searchParams.get("tool"), ["announcements", "settings"].includes(item.id) ? null : item.id);
   }
   assert.equal(personalMode("status"), "apply");
   assert.equal(personalMode("tasks"), "clubs");

@@ -51,7 +51,7 @@ test('direct application start rejects suspension under the existing transaction
 
 function workspaceHarness({ demo = true, allowed = true, providerError = false, impersonating = false, suspended = false, liveDenied = false } = {}) {
   let liveReads = 0, providerReads = 0;
-  function Workspace() {} function Boundary() {}
+  function Workspace() {} function Boundary() {} function SharedLayout() {}
   const mocks = {
     'next/headers': { cookies: async () => ({ has: key => key === 'outclass-platform-view' && impersonating, get: key => key === 'outclass-demo-session' && demo ? { value: '1' } : undefined }) },
     '@/utils/auth': { getSessionUser: async () => { providerReads++; return { data: { user: { email: 'presenter@virginia.edu' } }, error: providerError ? Error('expired') : null }; } },
@@ -59,10 +59,11 @@ function workspaceHarness({ demo = true, allowed = true, providerError = false, 
     '@/utils/current-user': { getCurrentUser: async () => { liveReads++; if (liveDenied) throw Error('Live authorization denied'); return { memberships: [{ clubId, club: { name: 'Club', suspendedAt: suspended ? new Date() : null } }] }; } },
     '@/components/club-workspace': { ClubWorkspace: Workspace },
     '@/components/auth-session-boundary': { AuthSessionBoundary: Boundary },
+    '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: SharedLayout },
     'next/link': { default: () => null },
   };
   const page = loader(mocks)('app/club/[clubId]/workspace/page.tsx').default;
-  return { render: () => page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }), Workspace, Boundary, liveReads: () => liveReads, providerReads: () => providerReads };
+  return { render: () => page({ params: Promise.resolve({ clubId }), searchParams: Promise.resolve({ section: 'members' }) }), Workspace, Boundary, SharedLayout, liveReads: () => liveReads, providerReads: () => providerReads };
 }
 test('authorized Demo workspace renders its existing client boundary without live identity reads', async () => {
   const h = workspaceHarness({ liveDenied: true }); const result = await h.render();
@@ -71,7 +72,7 @@ test('authorized Demo workspace renders its existing client boundary without liv
 });
 test('live workspace retains live authorization and suspension view', async () => {
   const h = workspaceHarness({ demo: false }); assert.equal((await h.render()).type, h.Boundary); assert.equal(h.liveReads(), 1);
-  const paused = workspaceHarness({ demo: false, suspended: true }); assert.equal((await paused.render()).type, 'main');
+  const paused = workspaceHarness({ demo: false, suspended: true }); assert.equal((await paused.render()).type, paused.SharedLayout);
   await assert.rejects(workspaceHarness({ demo: false, liveDenied: true }).render(), /Live authorization denied/);
 });
 test('stale or unauthorized Demo cookies and impersonation cannot skip live authorization', async () => {

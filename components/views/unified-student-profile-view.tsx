@@ -23,7 +23,7 @@ import { EditStudentProfileDialog } from "@/components/edit-student-profile-dial
 
 export type ProfileMembership = StudentMembership
 
-export function UnifiedStudentProfileView() {
+export function UnifiedStudentProfileView({ settings = false }: { settings?: boolean } = {}) {
   const { user, loading } = useAuth()
   const [profile, setProfile] = useState<FullStudentProfile | null>(null)
   const [pending, setPending] = useState(true)
@@ -129,12 +129,12 @@ export function UnifiedStudentProfileView() {
     )
   }
   return (
-    <article className="oc-student-profile mx-auto max-w-5xl text-foreground">
+    <article className={`oc-student-profile mx-auto max-w-5xl text-foreground${settings ? " oc-settings-profile" : ""}`}>
       <p role="status" className="sr-only">
         {saved ? "Profile changes saved." : ""}
       </p>
-      <header className="flex items-start gap-5 pb-9 sm:gap-7 sm:pb-12">
-        <Avatar className="size-24 shrink-0 sm:size-32">
+      <header className={`flex items-start gap-5 ${settings ? "pb-5 sm:gap-5" : "pb-9 sm:gap-7 sm:pb-12"}`}>
+        <Avatar className={settings ? "size-20 shrink-0" : "size-24 shrink-0 sm:size-32"}>
           <AvatarImage src={profilePhotoSource(profile.headshotUrl)} alt="" />
           <AvatarFallback className="bg-secondary text-xl font-medium text-primary sm:text-3xl">
             {profile.firstName[0]}

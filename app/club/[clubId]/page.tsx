@@ -1,3 +1,4 @@
+import { AuthenticatedPageLayout } from "@/components/shell/authenticated-page-layout"
 import { canAccessDemo, DEMO_COOKIE } from "@/lib/demo/access"
 import { redirect, notFound } from "next/navigation"
 import { publicClubs } from "@/lib/public-clubs"
@@ -35,18 +36,18 @@ export default async function ClubPage({ params }: { params: Promise<{ clubId: s
   if (!club) {
     if (result.error)
       return (
-        <main className="mx-auto max-w-xl p-8">
+        <AuthenticatedPageLayout optional><div className="mx-auto max-w-xl p-8">
           <h1 className="oc-page-title ">Club profile unavailable</h1>
           <p className="my-4">{result.error}</p>
           <a className="underline" href={`/club/${encodeURIComponent(clubId)}`}>
             Try again
           </a>
-        </main>
+        </div></AuthenticatedPageLayout>
       )
     notFound()
   }
   const {
     data: { user },
   } = await getSessionUser()
-  return <PublicClubPage club={club} authenticated={!!user} />
+  return <AuthenticatedPageLayout optional><PublicClubPage club={club} authenticated={!!user} embedded={!!user} /></AuthenticatedPageLayout>
 }

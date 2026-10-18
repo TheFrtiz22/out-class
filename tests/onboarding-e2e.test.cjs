@@ -193,7 +193,11 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   }
  });
  await scenario('H — replayed claim/accept/upload/email batch do not duplicate identities, memberships or sends',async()=>{
-  await assert.rejects(call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation));await assert.rejects(call(existing,'club-onboarding','acceptIdentityClubInvitation',memberInvitation));
+  const memberCount=await db.clubMember.count({where:{clubId}}),acceptedAudits=await db.auditLog.count({where:{clubId,action:'club.invite.accept'}});
+  assert.equal((await call(president,'club-onboarding','acceptIdentityClubInvitation',ownerInvitation)).clubId,clubId);
+  assert.equal((await call(existing,'club-onboarding','acceptIdentityClubInvitation',memberInvitation)).clubId,clubId);
+  assert.equal(await db.clubMember.count({where:{clubId}}),memberCount);
+  assert.equal(await db.auditLog.count({where:{clubId,action:'club.invite.accept'}}),acceptedAudits);
   const replay=await call(president,'roster-import','confirmRosterImport',preview.id);assert.equal(replay.reused,true);assert.equal(replay.created,3);
   const before=await db.clubInvitation.count({where:{clubId}});
   const repeated=await call(president,'roster-import','previewRosterImport',{clubId,requestId:randomUUID(),filename:'repeat.csv',csv:`name,year,computing_id\nLater Student,2029,${ids.incremental}`});
@@ -242,7 +246,8 @@ test('complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and
   const pending=await call(legacy,'club-onboarding','getOrganizationInvitations',true);assert.ok(pending.some(item=>item.id===invitation.id));
   await call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id);
   assert.equal(await db.clubMember.count({where:{clubId,userId:created.data.user.id,status:'ACTIVE'}}),1);
-  await assert.rejects(call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id));
+  assert.equal((await call(legacy,'club-onboarding','acceptIdentityClubInvitation',invitation.id)).clubId,clubId);
+  assert.equal(await db.clubMember.count({where:{clubId,userId:created.data.user.id,status:'ACTIVE'}}),1);
  });
 
  await scenario('J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions',async()=>{

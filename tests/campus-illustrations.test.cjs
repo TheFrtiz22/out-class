@@ -114,7 +114,12 @@ function renderSettingsWorkspace(member, requested, section = 'settings') {
 for(const [name,member,requested,effective,illustration] of settingsCases) test(`actual settings content and header agree: ${name}`,()=>{
  const html=renderSettingsWorkspace(member,requested)
  const activeLinks=html.match(/<a\b[^>]*aria-current="page"[^>]*>/g)||[]
- if(effective) {
+ const resolved=resolveSettingsTab(member,requested)
+ const denied=requested && load('lib/club-settings.ts').settingsSections.some(section=>section.id===requested) && !resolved.sections.some(section=>section.id===requested)
+ if(denied && resolved.sections.length) {
+  assert.equal(activeLinks.length,0)
+  assert.match(html,/This settings section isn’t available with your current access/)
+ } else if(effective) {
   assert.equal(activeLinks.length,1)
   assert.ok(activeLinks[0].includes(`setting=${effective}`),activeLinks[0])
  } else assert.equal(activeLinks.length,0)

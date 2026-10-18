@@ -12,6 +12,7 @@ export const personalUniversalItems: ProductNavItem[] = [
   { id: "calendar", label: "Calendar" },
   { id: "inbox", label: "Notifications" },
   { id: "student-profile", label: "Profile" },
+  { id: "settings", label: "Settings", href: "/settings" },
 ]
 const personalNavigation: Record<PersonalMode, ProductNavItem[]> = {
   explore: [{ id: "explore", label: "Discover" }, { id: "corkboard", label: "Corkboard" }],
@@ -40,8 +41,9 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
       ...(read ? [item("decisions", "All Decisions", "recruitment", { navGroup: "decisions" as const })] : []),
       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
-      ...(hasPermission(member, "recruitment.manage") ? [item("cycles", "Recruitment Cycles", "recruitment"), item("letters", "Decision Letters", "recruitment", { navGroup: "decisions" as const }), item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
-      ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : [])]
+      ...(hasPermission(member, "recruitment.manage") ? [item("rounds", "Anonymous Review", "recruitment", { quiet: true }), item("rules", "Auto-Reject Rules", "recruitment", { quiet: true })] : []),
+      ...(hasPermission(member, "meetings.manage") ? [{ ...item("announcements", "Announcements"), href: `${href("announcements")}&mode=recruiting` }] : []),
+      ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
   }
   return [item("overview", "Overview"), item("meetings", "Meetings"), item("tasks", "Tasks"),
     ...(hasPermission(member, "members.manage") || hasPermission(member, "leaders.manage") ? [item("members", "Members")] : []),
