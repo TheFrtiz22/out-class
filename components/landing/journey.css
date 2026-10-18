@@ -131,7 +131,7 @@
 .oc-demo-table .oc-demo-table-head { background: var(--background); color: var(--muted-foreground); font-size: 10px; }
 .oc-demo-table > div[data-selected="true"] { background: #f4ede1; }
 .oc-demo-table small { display: block; margin-top: 5px; font-size: 10px; color: var(--muted-foreground); line-height: 1.6; }
-.oc-demo-rubric { margin-top: -12px; }
+.oc-demo-rubric { margin-top: 0; }
 .oc-demo-rubric > label { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
 .oc-demo-rubric select { border: 1px solid var(--input); border-radius: 6px; min-height: 44px; padding: 8px; font-size: 11px; background: var(--card); }
 .oc-demo-avatar { display: grid; place-items: center; border: 1px solid var(--border); background: #e9efe8; color: var(--primary); font-size: 11px; width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
