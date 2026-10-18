@@ -55,7 +55,7 @@ test('Recruiting Interviews retains the scheduling tab when round navigation rem
   assert.equal(entry().props.initialTab, 'schedule');
   assert.equal(entry().props.initialRoundId, 'round-two');
   query = 'section=recruitment&tool=interviews';
-  assert.equal(entry().props.initialTab, 'kits', 'Unspecified tab preserves the existing master-kit entry');
+  assert.equal(entry().props.initialTab, 'rooms', 'Unspecified tab opens assigned interview rooms');
 });
 
 test('read API preserves dates and user JSON, validates scope, and never caches private responses', async () => {

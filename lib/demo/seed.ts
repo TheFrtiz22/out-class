@@ -11,7 +11,7 @@ import { sampleInterviewKit, type InterviewSessionData } from "@/lib/interview-k
 import { demoMonogram } from "./assets"
 import type { AppStatus as ApplicationStatus } from "@prisma/client"
 import type { RoundDraft } from "@/lib/club-settings"
-import { ensureInterviewImprovements } from "./interview-improvements"
+import { ensureInterviewRoomEntries, ensureInterviewImprovements } from "./interview-improvements"
 
 // Only the organization names below are real labels supplied for the presentation.
 // Everything else is fictional sample information, not verified club claims.
@@ -446,6 +446,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
     responses: {} as Record<string, "going" | "confirmed" | "declined">,
   }
   ensureInterviewImprovements(result)
+  ensureInterviewRoomEntries(result)
   const sampleRoom = result.interviewRooms.find(r => r.clubId === invitedClub.id)!
   sampleRoom.interviewersNeeded = 1
   sampleRoom.approvedPanelMemberIds = [...sampleRoom.panelMemberIds]

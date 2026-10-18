@@ -6,13 +6,13 @@ import { publishedPanelDocumentSchema, type PanelScheduleChange } from "@/lib/pa
 export const panelScheduleNotificationPrefix="panel-schedule:"
 export type OwnPanelAssignment={id:string;clubId:string;clubName:string;roundId:string;roundName:string;roomName:string;location:string;timezone:string;startTime:string;endTime:string;buffer:number;version:number;availabilityOverridden?:boolean}
 /** Current official slot projection only. No drafts, applicant identities or other clubs' private panels. */
-export async function ownPanelAssignments(tx:AppTransactionClient,userId:string):Promise<OwnPanelAssignment[]>{
+export async function ownPanelAssignments(tx:AppTransactionClient,userId:string,includeAnonymous=false):Promise<OwnPanelAssignment[]>{
  const members=await tx.clubMember.findMany({where:{userId,status:"ACTIVE",club:{suspendedAt:null},user:{disabledAt:null}},include:{club:{select:{name:true}}}})
  const allowed=members.filter(m=>interviewCapabilities(m).participate),ids=allowed.map(m=>m.id)
  if(!ids.length)return[]
  const owners=await tx.clubMember.findMany({where:{clubId:{in:allowed.map(m=>m.clubId)},isOwner:true,status:"ACTIVE",user:{disabledAt:null}},select:{userId:true,clubId:true}})
  const ownerKeys=new Set(owners.map(o=>`${o.clubId}:${o.userId}`))
- const slots=await tx.interviewSlot.findMany({where:{room:{isOpen:true,round:{archivedAt:null,anonymousReview:false}},OR:[{panelScheduleVersionId:{not:null},publishedPanelMemberIds:{hasSome:ids}},{panelScheduleVersionId:null,room:{panelApprovedBy:{not:null},approvedPanelMemberIds:{hasSome:ids}}}]},include:{panelScheduleVersion:true,room:{include:{round:{select:{id:true,name:true}}}}},orderBy:{startTime:"asc"}})
+ const slots=await tx.interviewSlot.findMany({where:{room:{isOpen:true,round:{archivedAt:null,...(includeAnonymous?{}:{anonymousReview:false})}},OR:[{panelScheduleVersionId:{not:null},publishedPanelMemberIds:{hasSome:ids}},{panelScheduleVersionId:null,room:{panelApprovedBy:{not:null},approvedPanelMemberIds:{hasSome:ids}}}]},include:{panelScheduleVersion:true,room:{include:{round:{select:{id:true,name:true}}}}},orderBy:{startTime:"asc"}})
  return slots.flatMap(s=>{
   const room=s.room!,publisher=s.panelScheduleVersion?.publishedBy??room.panelApprovedBy,assigned=s.panelScheduleVersionId?s.publishedPanelMemberIds:room.approvedPanelMemberIds.filter(id=>room.panelMemberIds.includes(id))
   if(!publisher||!ownerKeys.has(`${room.clubId}:${publisher}`)||!allowed.some(m=>m.clubId===room.clubId&&assigned.includes(m.id)))return[]
