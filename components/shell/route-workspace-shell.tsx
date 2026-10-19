@@ -4,7 +4,6 @@ import type { ReactNode } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { ApplicationStateProvider } from "@/lib/application-state"
 import { AuthSessionBoundary } from "@/components/auth-session-boundary"
-import { WorkspaceBreadcrumb } from "@/components/shell/workspace-breadcrumb"
 import { ProductShell } from "@/components/shell/product-shell"
 import { useAuth } from "@/contexts/auth-context"
 import { recruitmentTools } from "@/lib/club-workspace"
@@ -42,18 +41,10 @@ function RouteWorkspaceContent({ children }: { children: ReactNode }) {
     return `/?${query}`
   }
   const clubRoot = member ? `/club/${encodeURIComponent(member.clubId)}/workspace` : ""
-  const contextHref = member ? `${clubRoot}?section=settings&setting=members` : organizations ? "/settings/organizations" : settings ? "/settings" : meetings ? "/meetings" : schedule ? "/?workspace=student&view=calendar" : "/?workspace=student&view=explore"
   return <ProductShell manager={!!member} clubId={member?.clubId} clubName={member?.club.name} mode={member ? "club" : mode}
     modes={member ? [...(recruitmentTools(member).length ? [{ id: "recruiting", label: "Recruiting", href: `${clubRoot}?section=recruitment&tool=overview` }] : []), { id: "club", label: "Club", href: `${clubRoot}?section=overview` }] : personalModes.map(item => ({ ...item, href: personalHref(item.id) }))}
     items={member ? managerNavigation(member, member.clubId, "club") : personalItems(mode).map(item => ({ ...item, href: personalHref(item.id) }))}
     active={active} title={title} onNavigate={navigate} onSelect={id => router.push(personalHref(id))}>
-    <WorkspaceBreadcrumb items={[
-      { label: member?.club.name || "Personal workspace", href: member ? `${clubRoot}?section=overview` : "/?workspace=student" },
-      { label: member || settings ? "Settings" : organizations ? "Organizations" : schedule ? "Calendar" : title, href: contextHref },
-      ...(settings && settingSection ? [{ label: settingSection.label }] : []),
-      ...(schedule ? [{ label: "My Interview Schedule" }] : []),
-      ...(accessClubId || pathname.startsWith("/meetings/") || organizations ? [{ label: accessClubId ? "Workspace access" : pathname.startsWith("/invitations") ? "Invitation" : pathname.startsWith("/club-claims") ? "Claim organization" : "Meeting details" }] : []),
-    ]} />
     {children}
   </ProductShell>
 }

@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [runtime-role batch](runtime-role/README.md) adds 25 passing real HTTP/Auth/Prisma/Storage tests with restricted application credentials, including the existing onboarding/account flows, session-lock concurrency, denied session writes, private image assignment and rollback/reapply. This supersedes the previous operator-connected HTTP evidence for those paths; it does not cover every worker/scheduling path under the new provider policies. No production role or policy was changed.
+
 Later real browser checks reproduced a scheduling parent remount that reset round/week state, plus overcounted interview coverage: retained availability from declined/unconfirmed participants was included in capacity lists. Both coverage projections now require confirmation, with a draft/confirm/decline regression and exact-count browser checks. Assignment validation already rejected unconfirmed participants. The scheduling parent now remains mounted for same-club round changes, with desktop/mobile parent-state, history and club-reset checks.
 
 The common account projection is now allowlisted in both HTTP and RSC. Real local Auth/Prisma/PostgreSQL fixtures verify student-owned applications, two campus records, overlapping memberships, ordinary-member denials and recruiter/owner template reads scoped to the permitted club. This does not establish a second email-domain sign-in policy. The batched communications snapshot passes migrated SQL fixtures and native Prisma checks for exact pre-change hash/count parity. Current validation details are in [the remediation report](remediation/REPORT.md); original baseline results follow.

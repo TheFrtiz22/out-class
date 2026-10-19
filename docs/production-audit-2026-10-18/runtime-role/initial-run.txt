@@ -1,0 +1,99 @@
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Application will use the restricted local runtime role; operator credentials remain fixture/migration-only.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships
+  ✔ students see only their own applications; ordinary overlapping memberships expose no internal drafts in HTTP or RSC (253.401541ms)
+  ✔ recruiter can use the dedicated template reader only in the authorized club; common payloads stay redacted (216.354666ms)
+  ✔ owner retains the editor and navigation fields without widening account serialization (137.658792ms)
+  ✔ unauthenticated account responses are private and non-cacheable (3.819875ms)
+  ✔ native Prisma notification snapshots use two statements, preserve counts and reject disabled accounts (41.934125ms)
+✔ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (995.138834ms)
+▶ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP
+  ✔ Public authentication — shared CTAs, signup, normal login and isolated administration (65.192667ms)
+  ✔ Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved (105.563875ms)
+  ✔ OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login (61821.834292ms)
+  ✔ A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard (606.114792ms)
+  ✖ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (208.971958ms)
+✖ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (63200.547125ms)
+▶ restricted runtime through real Auth, SQL locks, private Storage and Next actions
+  ✔ actual connection is bounded; operator history, DDL, Auth secrets and unrelated columns deny (17.253166ms)
+  ✔ three session columns and FOR SHARE work while all session mutations deny and rows stay identical (160.7905ms)
+  ✖ private upload, assignment and read work; foreign, anonymous and direct browser writes deny (173.711125ms)
+  ✖ reviewed inverse restores the original guard and grants; reapply and inverse both succeed (164.775167ms)
+✖ restricted runtime through real Auth, SQL locks, private Storage and Next actions (816.818583ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 12
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 65275.619458
+
+✖ failing tests:
+
+test at tests/onboarding-e2e.test.cjs:22:69
+✖ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (208.971958ms)
+  Error: Server action confirmRosterImport rejected (HTTP 500)
+      at Actor.action (/Users/jesseklinger/Documents/out-class/tests/helpers/onboarding-e2e.cjs:97:32)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async /Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:138:16
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:22:90)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async scenario (/Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:22:61)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:131:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at tests/onboarding-e2e.test.cjs:10:1
+✖ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (63200.547125ms)
+  AssertionError [ERR_ASSERTION]: Stop dependent scenarios after B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email failed
+      at scenario (/Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:22:131)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/onboarding-e2e.test.cjs:131:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/runtime-role-e2e.test.cjs:62:10
+✖ private upload, assignment and read work; foreign, anonymous and direct browser writes deny (173.711125ms)
+  Error: Server action uploadClubAsset rejected (HTTP 500)
+      at Actor.action (/Users/jesseklinger/Documents/out-class/tests/helpers/onboarding-e2e.cjs:97:32)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/runtime-role-e2e.test.cjs:65:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/runtime-role-e2e.test.cjs:62:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at tests/runtime-role-e2e.test.cjs:87:10
+✖ reviewed inverse restores the original guard and grants; reapply and inverse both succeed (164.775167ms)
+  AssertionError [ERR_ASSERTION]: Reviewed local SQL must succeed without printing user data or credentials
+  
+  3 !== 0
+  
+      at run (/Users/jesseklinger/Documents/out-class/tests/runtime-role-e2e.test.cjs:91:11)
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/runtime-role-e2e.test.cjs:94:4)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at TestContext.test (node:internal/test_runner/test:400:20)
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/runtime-role-e2e.test.cjs:87:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Complete onboarding E2E failed

@@ -1,0 +1,10 @@
+✔ browser: debounce, slow writes, caret, retry, refresh recovery, navigation, mobile and tab conflicts (11074.055042ms)
+✔ browser: private draft hydration, lost acknowledgement followed by new edits, and successful publication despite cleanup failure (4607.700833ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15899.91475

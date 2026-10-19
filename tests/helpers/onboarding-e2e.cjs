@@ -16,6 +16,7 @@ function readConfig(filename){
  for(const [value,port] of [[config.appUrl,'3107'],[config.status.API_URL,'55321'],[config.status.DB_URL,'55322'],[config.status.MAILPIT_URL,'55324']]){
   const url=new URL(value);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.equal(url.port,port,'E2E requires dedicated local ports; never use an application/production URL');
  }
+ if(config.runtimeDatabaseUrl){const url=new URL(config.runtimeDatabaseUrl);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.equal(url.port,'55322');assert.equal(url.username,'outclass_production_app');}
  return config;
 }
 // Hosted import needs no SMTP/MFA fixture. This explicit mode never changes

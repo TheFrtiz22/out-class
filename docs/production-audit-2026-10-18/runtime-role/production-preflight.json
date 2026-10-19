@@ -1,0 +1,27 @@
+{
+  "observed_date": "2026-10-19",
+  "read_only": true,
+  "production_changes_applied": false,
+  "result": [
+    {
+      "preflight": {
+        "operator": {
+          "name": "postgres",
+          "bypassrls": true,
+          "superuser": false,
+          "inherited_auth_owner": false,
+          "inherited_storage_owner": false
+        },
+        "sessions": {
+          "rls": true,
+          "owner": "supabase_auth_admin",
+          "forced": false,
+          "policy_count": 0
+        },
+        "anon_can_assume_runtime": false,
+        "application_baseline_differences": 0,
+        "authenticated_can_assume_runtime": false
+      }
+    }
+  ]
+}

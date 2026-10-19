@@ -6,7 +6,9 @@ export async function privateClubAssetStorage() {
   const [policy] = await prisma.$queryRaw<{ secured: boolean }[]>`
     SELECT count(*)=2 AND (SELECT count(*)=2 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='storage' AND c.relname IN ('objects','buckets') AND c.relrowsecurity) AS secured
     FROM pg_policies WHERE schemaname='storage' AND permissive='RESTRICTIVE' AND cmd='ALL' AND roles=ARRAY['public']::name[] AND with_check=qual AND (
-      (tablename='objects' AND policyname='outclass_club_assets_server_only' AND qual='(bucket_id <> ''club-assets''::text)') OR
+      (tablename='objects' AND policyname='outclass_club_assets_server_only' AND qual IN (
+        '(bucket_id <> ''club-assets''::text)',
+        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_production_app''::name))')) OR
       (tablename='buckets' AND policyname='outclass_club_assets_bucket_server_only' AND qual='(id <> ''club-assets''::text)'))`;
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!policy?.secured || !secret) throw Error("Club image storage is unavailable.");

@@ -1,0 +1,1 @@
+PASS: occupied port 3107 rejects before fixture mutation; temporary credential configuration remains absent.

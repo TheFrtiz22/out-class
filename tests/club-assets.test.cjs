@@ -15,3 +15,22 @@ for(const legacy of [false,true])test(`club assets ${legacy?'legacy':'fresh'} st
 test('asset references reject traversal, foreign layouts and privileged URL substitutions',()=>{const {clubAssetReference,clubAssetSource}=load('lib/club-assets.ts');const good='club-assets/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000002.png';assert.ok(clubAssetReference.safeParse(good).success);assert.match(clubAssetSource(good),/^\/api\/club-assets\?reference=/);for(const bad of [good+'/extra',good.replace('.png','.svg'),good.replace('club-assets/','../'), 'https://storage.example/'+good])assert.equal(clubAssetReference.safeParse(bad).success,false);});
 
 test("hidden section images are excluded from public delivery but retained for assignment validation",()=>{const {clubProfileImages}=load("lib/club-assets.ts");const profile={logoUrl:"logo",marketing:{sections:[{visible:false,cards:[{image:"hidden"}]},{visible:true,cards:[{image:"shown"}]}]}};assert.deepEqual(clubProfileImages(profile),["logo","hidden","shown"]);assert.deepEqual(clubProfileImages(profile,true),["logo","shown"]);});
+
+test('Storage readiness accepts only the exact original or bounded-runtime guard and fails closed on broader policies',async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ await db.exec(`CREATE ROLE anon;CREATE SCHEMA storage;CREATE TABLE storage.objects(bucket_id text,name text);CREATE TABLE storage.buckets(id text);ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;CREATE POLICY outclass_club_assets_server_only ON storage.objects AS RESTRICTIVE FOR ALL TO PUBLIC USING(bucket_id<>'club-assets') WITH CHECK(bucket_id<>'club-assets');CREATE POLICY outclass_club_assets_bucket_server_only ON storage.buckets AS RESTRICTIVE FOR ALL TO PUBLIC USING(id<>'club-assets') WITH CHECK(id<>'club-assets');`);
+ const previous=process.env.SUPABASE_SECRET_KEY;process.env.SUPABASE_SECRET_KEY='disposable-fixture-only';t.after(()=>{if(previous===undefined)delete process.env.SUPABASE_SECRET_KEY;else process.env.SUPABASE_SECRET_KEY=previous;});
+ const sentinel={},api=load('utils/club-asset-storage.ts',{'server-only':{},'@/utils/prisma':{prisma:{$queryRaw:async strings=>(await db.query(strings.join(''))).rows}},'@supabase/supabase-js':{createClient:()=>({storage:{getBucket:async()=>({data:{public:false},error:null}),from:()=>sentinel}})}});
+ assert.equal(await api.privateClubAssetStorage(),sentinel);
+ const reviewed="bucket_id<>'club-assets' OR CURRENT_USER='outclass_production_app'::name";
+ await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects USING(${reviewed}) WITH CHECK(${reviewed})`);
+ assert.equal(await api.privateClubAssetStorage(),sentinel);
+ await db.exec('ALTER POLICY outclass_club_assets_server_only ON storage.objects WITH CHECK(true)');
+ await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
+ await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects TO anon WITH CHECK(${reviewed})`);
+ await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
+ await db.exec('ALTER POLICY outclass_club_assets_server_only ON storage.objects TO PUBLIC USING(true) WITH CHECK(true)');
+ await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
+ await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects USING(${reviewed}) WITH CHECK(${reviewed});ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;`);
+ await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
+});

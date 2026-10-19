@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The next batch stages [restricted runtime credentials and permissions](runtime-role/README.md): **25 real HTTP/Auth/SQL/Storage tests passed** with the built application connected as `outclass_production_app`, including actual write denials, session locking and forward/inverse SQL. The exact SQL is review-only; controlled live identity, hosted staging/operator compatibility, secure credential provisioning and explicit production approval remain gates. Production is unchanged.
+
 The first implementation batch is documented in [the remediation report](remediation/REPORT.md). The account template disclosure is fixed in local HTTP and RSC with real role/tenant tests; account responses consistently use private/no-store. Next, Sharp and source-map-js are patched locally; the registry scan now has one remaining build/lint braces advisory. Communications snapshots use two database operations instead of four, with native Prisma hash/count parity. Staffing coverage now excludes declined/unconfirmed snapshots, and scheduling retains its round/week state during URL changes. The complete desktop/mobile scheduling journey passed; the default suite passes 1,235 tests with 31 fixture-gated skips, alongside 20 real onboarding/account and 65 native checks. Production has not been deployed or modified; the Stage A sections below describe the original baseline.
 
 

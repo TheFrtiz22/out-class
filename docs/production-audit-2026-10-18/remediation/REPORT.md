@@ -1,5 +1,7 @@
 # Local remediation — October 18–19, 2026
 
+Follow-up from committed baseline `4dae299`: [restricted runtime role staging](../runtime-role/README.md), including 25 passing real restricted-credential tests, review-only SQL/inverse and remaining hosted/production gates. Results below describe the preceding implementation batch and are retained as its evidence.
+
 Implementation baseline: `9e39b6a82db610ac2c911fda56b3805d61ff5745`. These changes are local and have not been deployed. Historical Stage A evidence remains in `../evidence/`; results here supersede the affected local verification statuses, not the production baseline.
 
 ## Changes and evidence

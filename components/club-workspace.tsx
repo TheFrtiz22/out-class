@@ -9,8 +9,6 @@ import { RecruitingOverview } from "@/components/recruiting-overview";
 import { ManagerOverview } from "@/components/manager-overview";
 import { MemberOverview } from "@/components/member-overview";
 import { RouteWorkspaceShell } from "@/components/shell/route-workspace-shell";
-import { WorkspaceBreadcrumb } from "@/components/shell/workspace-breadcrumb";
-import { resolveSettingsTab, settingsSections } from "@/lib/club-settings";
 import { ProductShell } from "@/components/shell/product-shell";
 import { managerNavigation, personalModes, personalDestination } from "@/lib/product-navigation";
 const ScreeningDashboardView = dynamic(() => import("@/components/views/screening-dashboard-view").then(m => m.ScreeningDashboardView));
@@ -177,10 +175,6 @@ export function ClubWorkspace({
     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
   ];
-  const settingsState = section === "settings" ? resolveSettingsTab(membership, params.get("setting")) : null;
-  const requestedSetting = params.get("setting");
-  const unavailableSetting = settingsState && settingsSections.some(item => item.id === requestedSetting) && !settingsState.sections.some(item => item.id === requestedSetting);
-  const settingsLabel = unavailableSetting ? "Unavailable section" : settingsState?.sections.find(item => item.id === settingsState.active)?.label;
   const allowed = mode === "recruiting" ? manager && (active === "announcements" || recruitmentTools(membership!).length > 0) && nav.some(n => n.id === active) : nav.some(n => n.id === active);
   function navigate(view: ViewId) {
     if (view === "interview-workspace") { setInterviewMode(true); return }
@@ -199,7 +193,6 @@ export function ClubWorkspace({
         onReviewTool={id => { reviewTrigger.current = document.activeElement as HTMLElement; setReviewTool(id) }} items={nav} active={active} title={nav.find(n => n.id === active)?.label || "Club workspace"} onSelect={() => {}} onNavigate={navigate}>
         {loading || needsSelection ? <p role="status">Opening club workspace…</p> : !membership ? <div className="space-y-4"><h1 className="oc-page-title ">Club workspace unavailable</h1><p>Sign in with a current club membership to access this workspace.</p><Link href="/" className="underline">Return to OutClass</Link></div> : <>
           {!manager && <Link className="mb-5 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" href="/?workspace=student&view=my-clubs">← All my clubs</Link>}
-          <WorkspaceBreadcrumb items={[{ label: membership.club.name, href: `/club/${encodeURIComponent(clubId)}/workspace?section=overview` }, { label: nav.find(n => n.id === active)?.label || "Workspace", ...(section === "settings" ? { href: `/club/${encodeURIComponent(clubId)}/workspace?section=settings` } : {}) }, ...(section === "settings" && settingsLabel ? [{ label: settingsLabel }] : [])]} />
           <PageHeader eyebrow={membership.club.name} title={manager && mode === "recruiting" && active === "overview" ? "Recruitment" : nav.find(n => n.id === active)?.label || "Workspace"} />
           {needsOverview && error ? <div role="alert"><p>{error}</p><Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry</Button></div> : needsOverview && !current ? <p role="status">Loading club activity…</p> : !allowed ? <p role="alert">This section isn’t available with your current access.</p> : <section key={`${section === "settings" ? authorizationScope : scope}:${section}:${active}`} className="shell-content-enter" aria-label={nav.find(n => n.id === active)?.label}>
             {section === "overview" && current && (manager ? <><ManagerOverview data={current} />{!demo.isDemoEnabled && organizationCapabilities(current.membership).canTransferOwnership && <OrganizationSetupChecklist key={`${clubId}:${retry}`} clubId={clubId} compact />}</> : <MemberOverview data={current} />)}

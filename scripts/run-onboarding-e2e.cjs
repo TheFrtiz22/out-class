@@ -6,7 +6,7 @@ const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e');
-const keep=process.argv.includes('--keep');let app,stackTouched=false;
+const keep=process.argv.includes('--keep'),runtimeRole=process.argv.includes('--runtime-role');let app,stackTouched=false;
 fs.mkdirSync(path.join(root,'supabase/templates'),{recursive:true});
 // Invoke package CLIs through Node: Windows .cmd shims cannot be launched by
 // spawnSync without a shell. Keep arguments separate and never enable shell mode.
@@ -32,6 +32,10 @@ function command(binary,args,env=process.env){
 function logged(binary,args,log,env=process.env){
  const [executable,argv]=invocation(binary,args);
  const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(executable,argv,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
+ if(binary==='supabase'){
+  const filename=path.join(root,log),output=fs.readFileSync(filename,'utf8');
+  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgresql:\/\//.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
+ }
  if(result.status!==0)throw Error(`${binary} failed; inspect ${path.join(root,log)}`);
 }
 async function ready(url,headers={}){
@@ -43,6 +47,8 @@ async function ready(url,headers={}){
  command('supabase',['--version']);command('npm',['--version']);command('openssl',['version']);
  if(command('docker',['info','--format','{{.OSType}}']).trim()!=='linux')throw Error('The isolated Supabase test requires a Linux-container Docker engine.');
  if(process.argv.includes('--check-prerequisites')){console.log('Node package CLIs, OpenSSL and Docker engine are available.');return;}
+ // Reject an occupied app port before touching the reserved fixture.
+ await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',()=>reject(Error('Reserved onboarding app port 3107 is occupied; no fixture was changed.')));server.listen(3107,'127.0.0.1',()=>server.close(resolve));});
  console.log('Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.');
  let config=fs.readFileSync(path.join(repo,'supabase/config.toml'),'utf8').replace('project_id = "out-class"','project_id = "outclass-onboarding-e2e"');
  for(const [from,to] of [['54321','55321'],['54322','55322'],['54323','55323'],['54324','55324'],['54325','55325'],['54327','55327'],['54320','55320'],['54329','55329'],['http://127.0.0.1:3000','http://127.0.0.1:3107'],['https://127.0.0.1:3000','http://127.0.0.1:3107']])config=config.replaceAll(from,to);
@@ -66,6 +72,12 @@ async function ready(url,headers={}){
  Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});
  logged('npm',['run','db:deploy'],'migrate.log',env);
  console.log('All Prisma migrations applied through the authoritative deployment command.');
+ if(runtimeRole){
+  const url=require('../tests/helpers/runtime-role-fixture.cjs').prepareRuntimeRole(configFile);
+  settings.runtimeDatabaseUrl=url;
+  for(const key of ['DATABASE_URL','POSTGRES_PRISMA_URL','POSTGRES_URL','POSTGRES_URL_NON_POOLING'])env[key]=url;
+  console.log('Application will use the restricted local runtime role; operator credentials remain fixture/migration-only.');
+ }
  // Test-only trusted TLS for the same Mailpit provider used by local Supabase Auth.
  fs.writeFileSync(path.join(root,'certificate.conf'),'[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,DNS:supabase_inbucket_outclass-onboarding-e2e,IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n');
  logged('openssl',['req','-x509','-nodes','-days','2','-newkey','rsa:2048','-keyout',path.join(root,'mailpit-key.pem'),'-out',path.join(root,'mailpit-cert.pem'),'-config',path.join(root,'certificate.conf')],'certificate.log');
@@ -92,10 +104,12 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  const testFile=process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
- const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+ const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs',...(runtimeRole?['tests/runtime-role-e2e.test.cjs']:[])],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile,...(runtimeRole?{OUTCLASS_RUNTIME_ROLE_E2E_CONFIG:configFile}:{})},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
- if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root]);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));}
+ if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root,...(runtimeRole?['--no-backup']:[])]);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));
+  if(runtimeRole&&result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});
+ }
 });
 function assertImage(image){if(!/^public\.ecr\.aws\/supabase\/mailpit:/.test(image))throw Error('Unexpected local SMTP image');}

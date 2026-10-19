@@ -1,0 +1,13 @@
+✔ club assets fresh storage is private and denies browser CRUD without changing other buckets (447.695ms)
+✔ club assets legacy storage is private and denies browser CRUD without changing other buckets (253.441333ms)
+✔ asset references reject traversal, foreign layouts and privileged URL substitutions (25.654541ms)
+✔ hidden section images are excluded from public delivery but retained for assignment validation (2.956375ms)
+✔ Storage readiness accepts only the exact original or bounded-runtime guard and fails closed on broader policies (241.784541ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1139.379042

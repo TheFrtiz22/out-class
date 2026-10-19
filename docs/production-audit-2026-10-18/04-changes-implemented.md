@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The next [runtime-role batch](runtime-role/README.md) adds review-only access/inverse SQL, a guard compatible with the old and narrowly scoped candidate Storage policy, a reserved restricted-role HTTP fixture, permission/lock/Storage/rollback regressions and a deterministic browser clock setup. It passed 25 real tests; production changes remain unapplied. Only the fixture mirrors existing public table ownership/function grants; the proposal does not transfer provider table ownership or add BYPASSRLS.
+
 A later real browser check also reproduced overcounted interview coverage: retained availability from declined/unconfirmed participants was included in capacity lists. Both coverage projections now require confirmation, with a draft/confirm/decline regression and exact-count browser checks. Assignment validation already rejected unconfirmed participants.
 
 Application/dependency changes have now been implemented after the read-only audit. [The remediation report](remediation/REPORT.md) lists each changed file group, rationale, regression evidence, operation-count comparison, release gates and rollback constraints. It supersedes the “unchanged application” scope for the current working tree. Production, credentials, schema, RLS, Storage and firewall remain unchanged. The sections below preserve the historical Stage A change record.
