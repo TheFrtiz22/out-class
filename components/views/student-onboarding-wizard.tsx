@@ -541,10 +541,10 @@ export function StudentOnboardingWizard({
                   Verify your email
                 </h2>
                 <p className="mt-1.5 text-sm text-neutral-500">
-                  We sent a 6-digit code to{" "}
+                  If this address can be registered, we’ll send a 6-digit code to{" "}
                   <strong className="break-all font-medium text-neutral-900">
                     {wizardData.current.accountBasics?.email}
-                  </strong>
+                  </strong>. Already registered? Sign in below.
                 </p>
               </div>
 

@@ -97,7 +97,7 @@ function invitationHarness(patch = {}) {
     update: async ({ data }) => Object.assign(deliveries[0], data),
   };
   const prisma = {
-    $queryRaw: async strings => strings.join('').includes('auth.sessions') ? state.liveSession ? [{ id: 'session' }] : [] : [],
+    $queryRaw: async strings => strings.join('').includes('SELECT EXISTS') ? [{ live: state.liveSession }] : strings.join('').includes('auth.sessions') ? state.liveSession ? [{ id: 'session' }] : [] : [],
     user: { findUnique: async () => ({ id: actorId, email: 'admin@virginia.edu', disabledAt: state.disabled ? new Date() : null }) },
     clubMember: { findUnique: async () => state.member ? owner : null },
     platformAdmin: { findUnique: async () => ({ active: state.grant }) },
@@ -111,6 +111,7 @@ function invitationHarness(patch = {}) {
   };
   prisma.$transaction = async fn => fn(prisma);
   const provider = { auth: {
+    getSession: async () => require('./helpers/auth-session.cjs').sessionFor(actorId),
     getUser: async () => ({ data: { user: { id: actorId, email: 'admin@virginia.edu', email_confirmed_at: state.verified ? '2026-01-01' : null } } }),
     getClaims: async () => ({ data: { claims: { session_id: 'session' } } }),
     mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: state.aal } }) },

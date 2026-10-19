@@ -28,9 +28,20 @@ export async function registerStudent(input: unknown) {
     const { data, error } = await supabase.auth.signUp({
       email, password, options: { data: { first_name: firstName, last_name: lastName } },
     })
-    if (error) return { error: authEmailError(error, "send") }
-    if (data.user?.identities?.length === 0) return { error: "An account may already exist for this email. Please sign in instead." }
-    if (data.session || data.user?.email_confirmed_at) {
+    // Never retain an unexpected auto-authenticated signup, including malformed
+    // responses that also claim an existing account.
+    if (data.session) {
+      await supabase.auth.signOut()
+      return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
+    }
+    if (error) {
+      // Provider versions/settings can use either this documented error or an
+      // obfuscated user. Neither is an account-existence signal for the caller.
+      if (error.code === "user_already_exists" && (error.status === 400 || error.status === 422)) return { authenticated: false }
+      return { error: authEmailError(error, "send") }
+    }
+    if (data.user?.identities?.length === 0) return { authenticated: false }
+    if (data.user?.email_confirmed_at) {
       await supabase.auth.signOut()
       return { error: "Account registration is temporarily unavailable. Contact OutClass support." }
     }
