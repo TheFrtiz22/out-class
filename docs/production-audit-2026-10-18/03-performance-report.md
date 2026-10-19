@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [signup privacy change](signup-privacy/README.md) adds no application existence query or artificial delay. The existing configuration check and provider signup remain. This is a privacy/compatibility change, with no measured latency improvement or constant-time-response claim.
+
 The later [runtime-role staging batch](runtime-role/README.md) establishes compatibility and permission boundaries, with no page-speed, cost or production latency claim. It preserves the existing session check/lock queries and introduces no private-data cache or production index.
 
 Communications snapshot base operations are reduced from **four to two per tick**, preserving notification counts, revision hashes, legacy conversation authorization and disabled-account rejection. Both migrated SQL fixtures and actual native Prisma checks verify the new helper. This is a 50% operation-count reduction for that helper, with no page-load, cost or production latency improvement claimed. The complete synthetic performance harness also runs after repairing stale mocks. [Before/after scope and current checks](remediation/REPORT.md) distinguish these local results from the unchanged production field baseline below.

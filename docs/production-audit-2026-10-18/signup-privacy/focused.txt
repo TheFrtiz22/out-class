@@ -1,0 +1,35 @@
+✔ public header exposes separate signup and login links without identity-dependent administration routing (43.065708ms)
+✔ new visitors get normal signup and login; only confirmed UVA sessions reach existing accounts (105.036ms)
+✔ completed students, club leaders, ordinary members and platform operators get permission-based public destinations (97.056625ms)
+✔ incomplete profiles resume existing onboarding and retain invitation/claim context (29.168875ms)
+✔ disabled accounts cannot enter either flow and signup excludes platform destinations (40.966541ms)
+✔ switching login/signup retains the exact return query; signup completion returns to invitations (5.548542ms)
+✔ enabled signup Microsoft authentication uses guarded route and preserves claim context (2.871125ms)
+✔ default signup exposes onboarding without any Microsoft option or provider loading state (4.358375ms)
+✔ signup blocks identity changes in support/demo modes (7.382583ms)
+✔ OAuth callback preserves signup, invitations and claims on both success and failure (111.648792ms)
+✔ email stays collapsed, callback errors remain visible, and reveal retains entered credentials (112.688125ms)
+✔ invalid UVA addresses never call Supabase for password or code login (23.186458ms)
+✔ password login preserves normalized credentials, pending state, provider errors and safe return routing (31.339417ms)
+✔ enabled Microsoft login uses the guarded server route and retains return routing (34.717333ms)
+✔ disabled Microsoft login cannot initiate OAuth even when its handler is called (12.179208ms)
+✔ email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect (11.262042ms)
+✔ expired OTP and identity mismatch cannot redirect, and mismatched sessions sign out (12.815917ms)
+✔ auth presentation keeps collapsed controls inert and callback errors announced (47.198125ms)
+✔ public login cannot enter a demo and account creation retains its existing callback (15.419625ms)
+✔ default login renders email immediately and omits Microsoft controls, branding and the email toggle (11.966ms)
+✔ profile completion accepts HTTP and Next streamed redirects with the exact return path (12.414875ms)
+✔ profile completion rejects ordinary pages, protected content and incorrect redirects (3.380666ms)
+✔ validates and normalizes account and academic fields (2.24725ms)
+✔ signup never bypasses confirmation, even with obsolete skip arguments and environment flag (19.956375ms)
+✔ OTP format, confirmed identity/session and safe errors are enforced (14.7965ms)
+✔ signup conceals existing-account outcomes while rejecting sessions and retaining operational errors (18.405208ms)
+✔ profile saving derives identity from session and persists experience (46.788167ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 685.350542

@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+**M3 is partially mitigated locally:** [signup response/UI disclosure](signup-privacy/README.md) is normalized for obfuscated existing users and the documented existing-user error; confirmation/session safeguards and operational errors remain. Twenty-nine real integration cases pass. This does not eliminate enumeration through public provider endpoints, existing-account-only OTP login, policy errors, rate limits or timing. No production fix or provider policy change is claimed.
+
 **H2 now has a locally tested candidate, not a production fix:** [exact access/rollback SQL and evidence](runtime-role/README.md). A live catalog read confirmed the existing bounded role lacks Auth/Storage access, so a credential-only switch is incompatible. Twenty-five real restricted-role tests pass with narrow column grants, preserved session locks, denied actual writes and browser/foreign file denials. Active deployment identity and hosted operator/provider compatibility still require verification; no credentials were exported or changed in production.
 
 **M1 is fixed and verified locally** in common HTTP and RSC payloads; recruiting's authorized template reader still works. **H1 is patched locally** to Sharp 0.35.5 in both application and Next resolution. Next 15.5.27 and source-map-js 1.2.2 remove the corresponding M2 advisory findings; unpatched build/lint braces remains. **L3 is addressed for all account API branches** with private/no-store and Cookie variation; other endpoints retain their existing findings. H2 and other operational/database findings remain open. No production fix is claimed until approved release and verification. See [remediation evidence](remediation/REPORT.md). The assessment below records the Stage A baseline.

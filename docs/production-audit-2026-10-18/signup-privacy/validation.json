@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-19",
+  "baseline": "c1a29f9",
+  "production_changes_applied": false,
+  "checks": {
+    "default_suite": {
+      "total": 1270,
+      "passed": 1237,
+      "skipped": 33,
+      "failed": 0
+    },
+    "real_restricted_role_integration": {
+      "passed": 29,
+      "skipped": 0,
+      "failed": 0
+    },
+    "focused_auth_navigation": {
+      "passed": 27,
+      "failed": 0
+    },
+    "new_existing_browser_combinations": 4,
+    "browser_runtime_errors": 0,
+    "typecheck": "passed",
+    "next_production_build": "passed",
+    "lint": {
+      "errors": 0,
+      "warnings": 26
+    },
+    "screenshots_visually_reviewed": 2,
+    "fixture_credentials_removed": true,
+    "bounded_changed_artifact_pattern_scan": {
+      "files": 13,
+      "findings": 0,
+      "scope": "batch source and retained text evidence only"
+    }
+  },
+  "limits": [
+    "not deployed",
+    "public provider enumeration and timing not eliminated",
+    "no production auth/WAF/credential change"
+  ],
+  "sha256": {
+    "actions/onboarding.ts": "db516cb7c7af2213c5638c2c453e237d49c39dcd2a82278c5b48e7820a4c9595",
+    "components/views/student-onboarding-wizard.tsx": "e76717986ee36b703e3d09299fb532db6fa9758a112aea18e5e653100567a541",
+    "scripts/run-onboarding-e2e.cjs": "bc1076f8f29012ce8c63e139f365a4c10b951cf3cad41ddd7531ceca7cf9725f",
+    "tests/onboarding.test.cjs": "ce6f5e97972cac0a395a73fb5355473fb01d94b997f4e4771a7866984e1e3034",
+    "tests/signup-privacy-e2e.test.cjs": "2ceed89b3f852a2d62b180633b674a5f7d99d99185bcd9ed56bc05d7882debfd"
+  }
+}

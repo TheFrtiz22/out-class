@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The explicit application signup account-existence response is [normalized and tested locally](signup-privacy/README.md). M3 remains partially mitigated: direct provider/passwordless endpoints, policy-dependent errors, rate limits and timing still need review. The patch awaits an approved application release; no production authentication or abuse-control setting was changed.
+
 The [restricted-role candidate](runtime-role/README.md) passed 25 real Auth/HTTP/SQL/Storage tests and exact rollback/reapply. H2 remains open in production. The next gates are controlled deployment identity, hosted preview/provider/operator compatibility, remaining support/worker/scheduling smoke coverage, approved secret provisioning/binding and explicit production approval. Local `supabase_admin` success does not establish live postgres DDL authority over provider-owned Auth/Storage tables.
 
 The account disclosure and patched dependency findings have local fixes and regression evidence; they await an approved application release. Account API cache/error handling is hardened. Communications polling is batched without removing legacy behavior. The full scheduling browser journey now passes, including fixes for confirmed-only coverage and round/week state. See [current remediation results](remediation/REPORT.md). Broad production database privileges, the unpatched build/lint braces advisory, second-domain policy, ordinary-session replay, optional/native coverage, field performance and operational controls remain unresolved. The table below retains the original Stage A priorities; use the remediation report for current local status.

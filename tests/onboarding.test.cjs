@@ -52,7 +52,7 @@ test('signup never bypasses confirmation, even with obsolete skip arguments and 
     }
     settings = { mailer_autoconfirm: false, external: { email: true } }
     result = { data: { user: { identities: [] }, session: null }, error: null }
-    assert.match((await registerStudent(account)).error, /sign in/i)
+    assert.deepEqual(await registerStudent(account), { authenticated: false })
     result = { data: { user: { identities: [{}], email_confirmed_at: '2026-01-01' }, session: {} }, error: null }
     assert.ok((await registerStudent(account)).error); assert.equal(calls.at(-1), 'signout')
     global.fetch = async () => { throw Error('offline') }
@@ -70,6 +70,35 @@ test('OTP format, confirmed identity/session and safe errors are enforced', () =
   assert.match(api.authEmailError({ status: 429 }, 'send'), /Too many/)
   assert.match(api.authEmailError({ code: 'otp_expired' }, 'verify'), /expired/)
   assert.ok(!api.authEmailError({ message: 'internal secret' }, 'verify').includes('internal secret'))
+})
+
+test('signup conceals existing-account outcomes while rejecting sessions and retaining operational errors', async t => {
+  const originalFetch=global.fetch; t.after(()=>{global.fetch=originalFetch})
+  global.fetch=async()=>({ok:true,json:async()=>({mailer_autoconfirm:false,external:{email:true}})})
+  let result,signouts=0
+  const {registerStudent}=load('actions/onboarding.ts',{
+    'next/headers':{cookies:async()=>({has:()=>false})},
+    '@/lib/onboarding-schemas':schemas,
+    '@/utils/supabase/server':{createClient:async()=>({auth:{signUp:async()=>result,signOut:async()=>{signouts++}}})},
+  })
+  for(const response of [
+    {data:{user:{id:'new',identities:[{}]},session:null},error:null},
+    {data:{user:{id:'obfuscated',identities:[]},session:null},error:null},
+    {data:{user:{id:'obfuscated',identities:[],email_confirmed_at:'2026-01-01'},session:null},error:null},
+    {data:{user:null,session:null},error:{code:'user_already_exists',status:422}},
+    {data:{user:null,session:null},error:{code:'user_already_exists',status:400}},
+  ]){result=response;assert.deepEqual(await registerStudent(account),{authenticated:false})}
+  assert.equal(signouts,0)
+  for(const response of [
+    {data:{user:{identities:[]},session:{}},error:null},
+    {data:{user:null,session:{}},error:{code:'user_already_exists',status:422}},
+    {data:{user:{identities:[{}],email_confirmed_at:'2026-01-01'},session:null},error:null},
+  ]){result=response;assert.match((await registerStudent(account)).error,/temporarily unavailable/)}
+  assert.equal(signouts,3)
+  for(const error of [{code:'user_already_exists',status:429},{code:'user_already_exists',status:500},{code:'email_exists',status:422},{code:'unexpected_failure',status:500,message:'sensitive provider detail'}]){
+    result={data:{user:null,session:null},error};const response=await registerStudent(account);assert.ok(response.error);assert.ok(!JSON.stringify(response).includes('sensitive provider detail'))
+  }
+  result={data:{user:null,session:null},error:null};assert.match((await registerStudent(account)).error,/Unable to create/)
 })
 
 test('profile saving derives identity from session and persists experience', async () => {

@@ -1,0 +1,32 @@
+✖ signup conceals existing-account outcomes while rejecting sessions and retaining operational errors (11.678458ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 219.333875
+
+✖ failing tests:
+
+test at tests/onboarding.test.cjs:75:1
+✖ signup conceals existing-account outcomes while rejecting sessions and retaining operational errors (11.678458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   error: 'An account may already exist for this email. Please sign in instead.'
+  -   authenticated: false
+    }
+  
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/onboarding.test.cjs:90:29)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { error: 'An account may already exist for this email. Please sign in instead.' },
+    expected: { authenticated: false },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

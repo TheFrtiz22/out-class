@@ -1,0 +1,58 @@
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Application will use the restricted local runtime role; operator credentials remain fixture/migration-only.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships
+  ✔ students see only their own applications; ordinary overlapping memberships expose no internal drafts in HTTP or RSC (323.529375ms)
+  ✔ recruiter can use the dedicated template reader only in the authorized club; common payloads stay redacted (308.9195ms)
+  ✔ owner retains the editor and navigation fields without widening account serialization (123.17525ms)
+  ✔ unauthenticated account responses are private and non-cacheable (2.017917ms)
+  ✔ native Prisma notification snapshots use two statements, preserve counts and reject disabled accounts (37.083ms)
+✔ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (1264.142791ms)
+▶ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP
+  ✔ Public authentication — shared CTAs, signup, normal login and isolated administration (61.711958ms)
+  ✔ Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved (112.856208ms)
+  ✔ OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login (61920.364209ms)
+  ✔ A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard (614.439125ms)
+  ✔ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (205.775834ms)
+  ✔ C — existing account invitation → dashboard request source → accepted membership (82.847959ms)
+  ✔ D — invitation-only student → normal signup/verification → profile suggestions → join (182.9085ms)
+  ✔ E — Not now hides dashboard only; Settings recovery uses the same acceptance (344.174666ms)
+  ✔ F — incremental upload preserves all prior members and creates only additive invitations (62.854458ms)
+  ✔ G — direct HTTP actions enforce member/admin/recruiter/owner boundaries and Supabase browser isolation (435.943125ms)
+  ✔ H — replayed claim/accept/upload/email batch do not duplicate identities, memberships or sends (378.657ms)
+  ✔ I — legacy account re-verifies university mailbox through real password recovery before invitation acceptance (703.177042ms)
+  ✔ J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions (1951.314542ms)
+✔ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (67532.070917ms)
+▶ restricted runtime through real Auth, SQL locks, private Storage and Next actions
+  ✔ actual connection is bounded; operator history, DDL, Auth secrets and unrelated columns deny (17.351375ms)
+  ✔ three session columns and FOR SHARE work while all session mutations deny and rows stay identical (170.088958ms)
+  ✔ private upload, assignment and read work; foreign, anonymous and direct browser writes deny (453.27325ms)
+  ✔ reviewed inverse restores the original guard and grants; reapply and inverse both succeed (355.643041ms)
+✔ restricted runtime through real Auth, SQL locks, private Storage and Next actions (1285.504917ms)
+▶ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers
+  ✔ new and confirmed-existing addresses return exactly the same unauthenticated action result (167.211833ms)
+  ✔ repeat signup creates no duplicate, replaces no verified identity/profile and does not change its password (158.535625ms)
+  ✖ desktop and mobile keep identical verification UI, no session, email correction and sign-in return path (1507.783041ms)
+✖ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers (1941.543292ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 27
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72452.536125
+
+✖ failing tests:
+
+test at tests/signup-privacy-e2e.test.cjs:43:10
+✖ desktop and mobile keep identical verification UI, no session, email correction and sign-in return path (1507.783041ms)
+  response.text: Protocol error (Network.getResponseBody): No data found for resource with given identifier
+  Response body is not available for a response that was navigated away from. Read response.body() before triggering any navigation.
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/signup-privacy-e2e.test.cjs:58:94)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/signup-privacy-e2e.test.cjs:43:2) {
+    name: 'Error',
+    log: []
+  }
+Complete onboarding E2E failed

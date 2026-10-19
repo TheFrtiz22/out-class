@@ -1,0 +1,45 @@
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Application will use the restricted local runtime role; operator credentials remain fixture/migration-only.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships
+  ✔ students see only their own applications; ordinary overlapping memberships expose no internal drafts in HTTP or RSC (234.473375ms)
+  ✔ recruiter can use the dedicated template reader only in the authorized club; common payloads stay redacted (181.279ms)
+  ✔ owner retains the editor and navigation fields without widening account serialization (91.102875ms)
+  ✔ unauthenticated account responses are private and non-cacheable (2.035375ms)
+  ✔ native Prisma notification snapshots use two statements, preserve counts and reject disabled accounts (33.009ms)
+✔ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (877.748375ms)
+▶ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP
+  ✔ Public authentication — shared CTAs, signup, normal login and isolated administration (64.384667ms)
+  ✔ Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved (93.449375ms)
+  ✔ OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login (61861.089083ms)
+  ✔ A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard (595.173791ms)
+  ✔ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (209.893459ms)
+  ✔ C — existing account invitation → dashboard request source → accepted membership (87.155ms)
+  ✔ D — invitation-only student → normal signup/verification → profile suggestions → join (194.768125ms)
+  ✔ E — Not now hides dashboard only; Settings recovery uses the same acceptance (328.858209ms)
+  ✔ F — incremental upload preserves all prior members and creates only additive invitations (96.725792ms)
+  ✔ G — direct HTTP actions enforce member/admin/recruiter/owner boundaries and Supabase browser isolation (371.96525ms)
+  ✔ H — replayed claim/accept/upload/email batch do not duplicate identities, memberships or sends (382.762417ms)
+  ✔ I — legacy account re-verifies university mailbox through real password recovery before invitation acceptance (686.301542ms)
+  ✔ J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions (1961.87075ms)
+✔ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (67295.919ms)
+▶ restricted runtime through real Auth, SQL locks, private Storage and Next actions
+  ✔ actual connection is bounded; operator history, DDL, Auth secrets and unrelated columns deny (14.405125ms)
+  ✔ three session columns and FOR SHARE work while all session mutations deny and rows stay identical (169.334375ms)
+  ✔ private upload, assignment and read work; foreign, anonymous and direct browser writes deny (468.052167ms)
+  ✔ reviewed inverse restores the original guard and grants; reapply and inverse both succeed (286.92825ms)
+✔ restricted runtime through real Auth, SQL locks, private Storage and Next actions (1231.905125ms)
+▶ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers
+  ✔ new and confirmed-existing addresses return exactly the same unauthenticated action result (172.355541ms)
+  ✔ repeat signup creates no duplicate, replaces no verified identity/profile and does not change its password (166.550209ms)
+  ✔ desktop and mobile keep identical verification UI, no session, email correction and sign-in return path (2634.402166ms)
+✔ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers (3079.345834ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72926.93225

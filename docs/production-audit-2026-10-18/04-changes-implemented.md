@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [signup privacy batch](signup-privacy/README.md) changes `actions/onboarding.ts` and verification copy, expands the provider-response regression matrix, and includes real signup/browser checks in the reserved runner. Twenty-nine integration tests and 1,237 default tests pass. No migration, dependency, RLS, credential or production setting change is included.
+
 The next [runtime-role batch](runtime-role/README.md) adds review-only access/inverse SQL, a guard compatible with the old and narrowly scoped candidate Storage policy, a reserved restricted-role HTTP fixture, permission/lock/Storage/rollback regressions and a deterministic browser clock setup. It passed 25 real tests; production changes remain unapplied. Only the fixture mirrors existing public table ownership/function grants; the proposal does not transfer provider table ownership or add BYPASSRLS.
 
 A later real browser check also reproduced overcounted interview coverage: retained availability from declined/unconfirmed participants was included in capacity lists. Both coverage projections now require confirmation, with a draft/confirm/decline regression and exact-count browser checks. Assignment validation already rejected unconfirmed participants.
