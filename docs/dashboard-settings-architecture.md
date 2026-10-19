@@ -10,7 +10,7 @@ All `app/**/page.tsx` and layout files, the query-driven student views, club wor
 | `/settings/availability` | Independent logo and “Back to Home” | Shared shell + Availability settings; preserve club/round query parameters |
 | `/settings/interviews` | Standalone panel schedule and calendar backlink | Shared shell, Calendar context; keep URL as an operational schedule, outside Settings secondary navigation |
 | `/invitations/[id]` | Independent logo, standalone join/claim response | Shared personal shell; preserve verification, unavailable/error states, accept/decline actions |
-| `/club-claims/[clubId]` | Standalone claim form and homepage backlink | Shared personal shell, Organizations breadcrumb; preserve evidence and approval flow |
+| `/club-claims/[clubId]` | Standalone claim form and homepage backlink | Shared personal shell, Organizations settings context; preserve evidence and approval flow |
 | `/club-access/[clubId]` | Standalone role/access editor and raw backlink | Shared organization shell, Settings context; retain server access checks |
 | `/meetings`, `/meetings/[id]` | Standalone meeting list/detail and backlinks | Shared personal shell, Meetings context; preserve filters and detail links |
 | `/club/[clubId]/tasks` | Standalone team tasks | Compatibility redirect into existing club workspace Tasks, preserving query parameters |
@@ -44,7 +44,7 @@ Implementation details, final navigation, and verification results follow.
 
 `AuthenticatedPageLayout` verifies the existing authenticated identity and renders `RouteWorkspaceShell`, which reuses `ProductShell`, `AuthSessionBoundary`, the organization switcher, account controls, notification center, desktop rail, and mobile navigation. Route layouts cover settings, invitations, ownership claims, workspace access, meetings, saved clubs, and the public corkboard when authenticated. Public club profiles use the same optional authenticated boundary. Content pages no longer render an independent brand header or a second `main` landmark.
 
-`app/settings/layout.tsx` retains the shell and secondary navigation across personal sections. The established student DashboardLayout and club workspace keep their existing client navigation and now use the same breadcrumb presentation. The platform AdminShell and its elevated authorization remain intact. Suspended club notices retain the personal shell without rendering operational tools.
+`app/settings/layout.tsx` retains the shell and secondary navigation across personal sections. The established student DashboardLayout and club workspace keep their existing client navigation. Redundant breadcrumb rows are omitted across dashboard tabs and Settings; page headings and active navigation provide context. The platform AdminShell and its elevated authorization remain intact. Suspended club notices retain the personal shell without rendering operational tools.
 
 ### Settings navigation
 
@@ -88,7 +88,7 @@ Desktop uses a secondary menu and a comfortable-width panel. Tablet/mobile use l
 - Complete onboarding E2E: all 14 checks passed, including actual email confirmation/resend, ownership, roster import, invitation recovery, replay safety, SMTP capture, legacy mailbox verification, and MFA password recovery.
 - Settings browser E2E: all 11 checks passed against real Supabase Auth, PostgreSQL, server actions, and the production Next server, with no uncaught browser errors.
 
-Browser coverage uses desktop 1440 × 1000, tablet 820 × 900, and mobile 390 × 900 viewports. It verifies one shell and one main landmark, persistent shell identity across personal settings, breadcrumbs/current navigation, denied direct URLs and actions, limited interviewer access, scheduling-only access, organization switching, application publication, profile and notification saves, refresh, browser back/forward, dismissed invitation recovery, acceptance/decline, ownership claim submission, task/cycle/letter URL compatibility, meeting list/detail, availability, interview schedule, saved clubs, public club profiles, mobile selectors/drawers, horizontal overflow, and the elevated superadmin shell. Desktop/tablet/mobile screenshots were visually reviewed.
+Browser coverage uses desktop 1440 × 1000, tablet 820 × 900, and mobile 390 × 900 viewports. It verifies one shell and one main landmark, persistent shell identity across personal settings, current navigation, denied direct URLs and actions, limited interviewer access, scheduling-only access, organization switching, application publication, profile and notification saves, refresh, browser back/forward, dismissed invitation recovery, acceptance/decline, ownership claim submission, task/cycle/letter URL compatibility, meeting list/detail, availability, interview schedule, saved clubs, public club profiles, mobile selectors/drawers, horizontal overflow, and the elevated superadmin shell. Desktop/tablet/mobile screenshots were visually reviewed.
 
 The new `npm run test:settings:e2e` command reuses the isolated onboarding runner (`--settings`). Its database, Auth service, and SMTP capture use reserved localhost ports 55321–55327 and app port 3107. The runner enables local mail delivery so email assertions can observe the captured messages. Replayed invitation acceptance is checked for its existing idempotent response and unchanged membership/audit counts.
 

@@ -167,7 +167,7 @@ export async function getAvailabilityOverview(raw: unknown): Promise<Availabilit
       return { id: m.id, name: m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : m.user.email, role: m.accessRole, submitted, confirmed, response: availabilityResponse(participation), canRemind: !!participation?.requestedAt && !participation.confirmedAt && !participation.declinedAt && Date.now() - +(participation.lastReminderAt ?? participation.requestedAt) >= 86400000, available }
     })
     // Without a round, slot staffing is deliberately omitted: global declarations aren't round confirmations.
-    const coverage = planning ? planning.scene.sessions.filter(s => { const date = parts(+new Date(s.startTime), input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, required: s.required, assigned: s.existingMemberIds.length, active: s.active, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id) && eligible.some(e => e.id === m.id)).map(m => m.id) })) : []
+    const coverage = planning ? planning.scene.sessions.filter(s => { const date = parts(+new Date(s.startTime), input.timezone).date; return date >= week && date < addDays(week, 7) }).map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, required: s.required, assigned: s.existingMemberIds.length, active: s.active, availableMemberIds: planning.scene.members.filter(m => m.confirmed && m.allowedSlotIds.includes(s.id) && eligible.some(e => e.id === m.id)).map(m => m.id) })) : []
     return { week, timezone: input.timezone, members: projected, cells, slots: coverage }
   }, { timeout: 20000 })
 }
@@ -220,7 +220,7 @@ export async function getRoundStaffingCoverage(raw: unknown) {
       eligible: planning.scene.members.filter(m => m.eligible).length,
       confirmed: planning.scene.members.filter(m => m.eligible && m.confirmed).length,
       state: planning.publishedRevision > 0 || planning.scene.sessions.some(s => s.existingMemberIds.length) ? proposal ? "Published · saved draft" : "Published" : proposal ? "Saved unpublished draft" : "No panel draft",
-      slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
+      slots: planning.scene.sessions.map(s => ({ id: s.id, roomId: s.roomId, roomName: s.roomName, startTime: s.startTime, endTime: s.endTime, buffer: s.buffer, active: s.active, required: s.required, assigned: s.existingMemberIds.length, availableMemberIds: planning.scene.members.filter(m => m.confirmed && m.allowedSlotIds.includes(s.id)).map(m => m.id) })),
     }
   }, { timeout: 20000 })
 }

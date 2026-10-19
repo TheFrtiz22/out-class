@@ -16,16 +16,17 @@ test('browser: workspace entry, explicit choices, club changes and history stay 
   }
   delete mocks['@/components/shell/product-shell'];
   Object.assign(mocks, {
-    'next/dynamic': 'module.exports=()=>()=>null;',
+    'next/dynamic': `const React=require('react');module.exports=load=>{const Lazy=React.lazy(()=>load().then(component=>({default:component})));return props=>React.createElement(React.Suspense,{fallback:null},React.createElement(Lazy,props));};`,
     'next/link': `const React=require('react');module.exports=({href,onClick,children,prefetch,...props})=>React.createElement('a',{...props,href,onClick:e=>{onClick?.(e);if(!e.defaultPrevented&&!e.ctrlKey&&!e.metaKey){e.preventDefault();history.pushState(null,'',href)}}},children);`,
     'next/navigation': `const React=require('react');const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};const router={push:href=>history.pushState(null,'',href),replace:href=>history.replaceState(null,'',href)};exports.useRouter=()=>router;exports.useSearchParams=()=>new URLSearchParams(React.useSyncExternalStore(subscribe,()=>location.search));`,
-    '@/contexts/auth-context': `const React=require('react');const member=id=>({id:'member-'+id,clubId:id,status:'ACTIVE',isOwner:false,permissions:id==='limited'?['tasks.manage']:['applications.review'],club:{id,name:id,color:'#142d45'}});const user={id:'fixture-user',email:'fixture@example.test',memberships:['one','two','limited'].map(member)};let selected='one';const listeners=new Set(),subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn)},selectClub=id=>{selected=id;listeners.forEach(fn=>fn())};exports.useAuth=()=>({user,loading:false,activeClubId:React.useSyncExternalStore(subscribe,()=>selected),selectClub});`,
+    '@/contexts/auth-context': `const React=require('react');const member=id=>({id:'member-'+id,clubId:id,status:'ACTIVE',isOwner:false,permissions:id==='limited'?['tasks.manage']:['applications.review','interviews.manage'],club:{id,name:id,color:'#142d45'}});const user={id:'fixture-user',email:'fixture@example.test',memberships:['one','two','limited'].map(member)};let selected='one';const listeners=new Set(),subscribe=fn=>{listeners.add(fn);return()=>listeners.delete(fn)},selectClub=id=>{selected=id;listeners.forEach(fn=>fn())};exports.useAuth=()=>({user,loading:false,activeClubId:React.useSyncExternalStore(subscribe,()=>selected),selectClub});`,
     '@/contexts/demo-context': 'exports.useDemoMode=()=>({ready:true,isDemoEnabled:false});',
     '@/contexts/organization-invitations-context': 'exports.useOrganizationInvitations=()=>({invitations:[]});',
     '@/lib/application-state': `exports.ApplicationStateProvider=({children})=>children;const state={notifications:[],durableUnread:0,syncTaskNotifications(){},syncDurableNotifications(){},focusLeader(){}};exports.useApplicationState=()=>state;`,
     '@/lib/workspace-api': `exports.getClubWorkspaceOverview=async id=>({club:{id,name:id},membership:{permissions:['applications.review']}});exports.getWorkspaceRounds=async()=>[];exports.getTaskNotifications=async()=>[];`,
     '@/actions/communications': 'exports.getDurableNotifications=async()=>({});',
     '@/utils/supabase/client': 'exports.createClient=()=>({});',
+    '@/components/interview-management-tabs': `const React=require('react');exports.InterviewManagementTabs=({clubId,initialRoundId})=>{const [draft,setDraft]=React.useState('');return React.createElement('input',{'aria-label':'Scheduling state probe','data-club':clubId,'data-round':initialRoundId,value:draft,onChange:e=>setDraft(e.target.value)})};`,
     '@/components/workspace-loading': `const React=require('react');exports.WorkspaceLoading=({label})=>React.createElement('p',{role:'status'},label);`,
     '@/components/product/page-header': `const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);`,
     '@/components/shell/floating-header-controls': `const React=require('react');exports.FloatingModeNavigation=({children})=>React.createElement('nav',{'aria-label':'Product modes'},children);exports.FloatingSearchTrigger=()=>null;`,
@@ -67,6 +68,16 @@ window.EventSource=class{addEventListener(){}close(){}};for(const method of ['pu
       assert.equal(new URL(page.url()).searchParams.get('section'), 'tasks');
       await go('one'); await active('recruiting');
       await page.reload(); await active('recruiting');
+      // The real ClubWorkspace parent must retain scheduling state when the
+      // child changes round/history, while a different club resets that state.
+      await page.goto(base + '/club/one/workspace?section=recruitment&tool=interviews&interviewTab=schedule&roundId=round-one');
+      const probe = page.getByLabel('Scheduling state probe'); await probe.fill('Saved session context');
+      await page.evaluate(() => { const url = new URL(location.href); url.searchParams.set('roundId', 'round-two'); history.pushState(null, '', url) });
+      await page.locator('[aria-label="Scheduling state probe"][data-round="round-two"]').waitFor();
+      assert.equal(await probe.inputValue(), 'Saved session context');
+      await page.goBack(); await page.locator('[aria-label="Scheduling state probe"][data-round="round-one"]').waitFor(); assert.equal(await probe.inputValue(), 'Saved session context');
+      await page.evaluate(() => history.pushState(null, '', '/club/two/workspace?section=recruitment&tool=interviews&interviewTab=schedule&roundId=round-one'));
+      await page.locator('[aria-label="Scheduling state probe"][data-club="two"]').waitFor(); assert.equal(await probe.inputValue(), '');
       assert.deepEqual(errors, []);
       await context.close();
     }

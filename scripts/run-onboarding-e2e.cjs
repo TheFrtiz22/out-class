@@ -32,6 +32,10 @@ function command(binary,args,env=process.env){
 function logged(binary,args,log,env=process.env){
  const [executable,argv]=invocation(binary,args);
  const fd=fs.openSync(path.join(root,log),'w');const result=spawnSync(executable,argv,{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
+ if(binary==='supabase'){
+  const filename=path.join(root,log),output=fs.readFileSync(filename,'utf8');
+  fs.writeFileSync(filename,output.split('\n').map(line=>/DB_URL|SERVICE_ROLE_KEY|SECRET_KEY|JWT_SECRET|ANON_KEY|PUBLISHABLE_KEY|S3_PROTOCOL_ACCESS|sb_(secret|publishable)_|postgresql:\/\//.test(line)?'[Local service connection/key line redacted]':line).join('\n'));
+ }
  if(result.status!==0)throw Error(`${binary} failed; inspect ${path.join(root,log)}`);
 }
 async function ready(url,headers={}){
@@ -43,6 +47,8 @@ async function ready(url,headers={}){
  command('supabase',['--version']);command('npm',['--version']);command('openssl',['version']);
  if(command('docker',['info','--format','{{.OSType}}']).trim()!=='linux')throw Error('The isolated Supabase test requires a Linux-container Docker engine.');
  if(process.argv.includes('--check-prerequisites')){console.log('Node package CLIs, OpenSSL and Docker engine are available.');return;}
+ // Reject an occupied app port before touching the reserved fixture.
+ await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',()=>reject(Error('Reserved onboarding app port 3107 is occupied; no fixture was changed.')));server.listen(3107,'127.0.0.1',()=>server.close(resolve));});
  console.log('Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.');
  let config=fs.readFileSync(path.join(repo,'supabase/config.toml'),'utf8').replace('project_id = "out-class"','project_id = "outclass-onboarding-e2e"');
  for(const [from,to] of [['54321','55321'],['54322','55322'],['54323','55323'],['54324','55324'],['54325','55325'],['54327','55327'],['54320','55320'],['54329','55329'],['http://127.0.0.1:3000','http://127.0.0.1:3107'],['https://127.0.0.1:3000','http://127.0.0.1:3107']])config=config.replaceAll(from,to);
@@ -62,7 +68,7 @@ async function ready(url,headers={}){
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
  const settings={projectId:'outclass-onboarding-e2e',appUrl:'http://127.0.0.1:3107',status,buildDir:path.join(repo,'.next-publish')};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
- const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'localhost',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
+ const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
  Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});
  logged('npm',['run','db:deploy'],'migrate.log',env);
  console.log('All Prisma migrations applied through the authoritative deployment command.');
@@ -92,10 +98,12 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  const testFile=process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
- const result=spawnSync(process.execPath,['--test',testFile],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+ const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{
- if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root]);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));}
+ if(!keep&&stackTouched){if(app)app.kill('SIGTERM');const [binary,args]=invocation('supabase',['stop','--workdir',root,'--no-backup']);const result=spawnSync(binary,args,{cwd:repo,encoding:'utf8'});fs.writeFileSync(path.join(root,'cleanup.log'),(result.stdout||'')+(result.stderr||''));
+  if(result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});
+ }
 });
 function assertImage(image){if(!/^public\.ecr\.aws\/supabase\/mailpit:/.test(image))throw Error('Unexpected local SMTP image');}
