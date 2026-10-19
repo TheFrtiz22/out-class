@@ -74,3 +74,31 @@ test('responses across clubs are independent and coverage reuses actual requirem
   overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.deepEqual(overview.slots[0].availableMemberIds, []); assert.equal(JSON.stringify(overview).includes('Secret'), false); assert.equal(overview.members.find(m => m.id === ids.panelMember).available[0][38], false, 'busy members are excluded from quarter-hour heatmap counts too')
   await h.prisma.interviewSlot.update({ where: { id: slot.id }, data: { interviewersNeeded: 1 } }); overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07', timezone: 'UTC' }); assert.equal(overview.slots[0].required, 1)
 })
+
+test('coverage counts only confirmed round snapshots after draft save, confirmation and decline', async t => {
+  const h = await fixture(t), { api, ids, scope } = h;
+  const room = await h.prisma.interviewRoom.create({ data: { ...scope, name: 'Coverage confirmation', location: 'Hall', kind: 'IN_PERSON', timezone: 'America/New_York', duration: 30, interviewersNeeded: 1 } });
+  await h.prisma.interviewSlot.create({ data: { clubId: ids.club, roomId: room.id, startTime: new Date('2030-01-07T14:00:00Z'), endTime: new Date('2030-01-07T14:30:00Z'), location: 'Hall' } });
+  const schedule = h.core.emptySchedule('America/New_York'); schedule.weeklySubmitted = true; schedule.weekly[0] = [[540, 600]];
+  h.as(ids.panel);
+  const initial = await api.getMyRoundAvailability(scope);
+  await api.saveMyRoundAvailability({ ...scope, ...initial.document, schedule, confirm: false });
+  async function assertCoverage(expected, response) {
+    h.as(ids.owner);
+    const overview = await api.getAvailabilityOverview({ ...scope, week: '2030-01-07' });
+    const compact = await api.getRoundStaffingCoverage(scope);
+    assert.equal(overview.members.find(m => m.id === ids.panelMember).response, response);
+    assert.equal(overview.members.find(m => m.id === ids.panelMember).available[0][36], !!expected.length);
+    assert.deepEqual(overview.slots[0].availableMemberIds, expected);
+    assert.deepEqual(compact.slots[0].availableMemberIds, expected);
+  }
+  await assertCoverage([], 'NOT_REQUESTED');
+  h.as(ids.panel); const draft = await api.getMyRoundAvailability(scope);
+  await api.saveMyRoundAvailability({ ...scope, ...draft.document, confirm: true });
+  await assertCoverage([ids.panelMember], 'SUBMITTED');
+  h.as(ids.panel); const confirmed = await api.getMyRoundAvailability(scope);
+  await api.declineRoundParticipation({ ...scope, revision: confirmed.document.revision, accountId: ids.panel });
+  assert.deepEqual((await h.prisma.interviewRoundParticipation.findUnique({ where: { memberId_roundId: { memberId: ids.panelMember, roundId: ids.round } } })).availability, schedule, 'Declining preserves the saved document for future edits');
+  await assertCoverage([], 'DECLINED');
+  assert.equal(await h.prisma.interviewPanelProposal.count({ where: {} }), 0);
+});

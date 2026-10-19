@@ -1,0 +1,9 @@
+{
+  "next": "15.5.27",
+  "eslintConfigNext": "15.5.27",
+  "directSharp": "0.35.5",
+  "nextSharp": "0.35.5",
+  "sourceMapJs": "1.2.2",
+  "platform": "darwin",
+  "arch": "arm64"
+}

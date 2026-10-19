@@ -1,5 +1,12 @@
 # Data correctness report
 
+## Local remediation update
+
+Later real browser checks reproduced a scheduling parent remount that reset round/week state, plus overcounted interview coverage: retained availability from declined/unconfirmed participants was included in capacity lists. Both coverage projections now require confirmation, with a draft/confirm/decline regression and exact-count browser checks. Assignment validation already rejected unconfirmed participants. The scheduling parent now remains mounted for same-club round changes, with desktop/mobile parent-state, history and club-reset checks.
+
+The common account projection is now allowlisted in both HTTP and RSC. Real local Auth/Prisma/PostgreSQL fixtures verify student-owned applications, two campus records, overlapping memberships, ordinary-member denials and recruiter/owner template reads scoped to the permitted club. This does not establish a second email-domain sign-in policy. The batched communications snapshot passes migrated SQL fixtures and native Prisma checks for exact pre-change hash/count parity. Current validation details are in [the remediation report](remediation/REPORT.md); original baseline results follow.
+
+
 Stage A: existing behavior was inspected and tested; application behavior was not changed. Sources and authorization boundaries are mapped in [data-flow-map.md](data-flow-map.md). These results establish specific properties, not universal correctness across all future records and deployments.
 
 ## Executed evidence

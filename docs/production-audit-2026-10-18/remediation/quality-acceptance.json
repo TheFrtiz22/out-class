@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "scenarios": [
+    "No-op confirmation UI/server agreement",
+    "Realistic fixture: 8 eligible, 2 ineligible, 3 rooms, multiple rounds, existing approved booking panels",
+    "Authenticated read API boundaries: ordinary members denied identifiable overview/panels; no mutation dispatch; private uncached responses",
+    "Discoverability, drag/remove, weekly/exception persistence, real logout/login, offline retry, lost-save acknowledgement, fixed Eastern Time",
+    "Admin response tracking, exact heatmap/list/capacity counts, excluded ineligible/missing/declined participants and official commitments",
+    "Existing room creation and headcount persistence; proposal-only Auto-Fill, overlap/buffer/conflict exclusion, workload and lock preservation",
+    "Manual edit/autosave/reopen, saved navigation, two-owner stale edit rejection, explicit publication and lost-response idempotent retry",
+    "Post-publication private revision, unchanged official schedule before approval, one intended cancellation and affected-only notice",
+    "Injected partial-publication failure rolls back version, slots, grants and notifications; eligibility loss and closed-room stale approvals rejected",
+    "Mobile discovery, editing and published schedule; no-room next-step recovery without overflow"
+  ],
+  "fixture": {
+    "eligible": 8,
+    "ineligible": 2,
+    "existingRooms": 3,
+    "multipleRounds": true,
+    "existingPublication": true
+  },
+  "database": "Dedicated local PostgreSQL",
+  "outboundEmail": "Disabled"
+}

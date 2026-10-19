@@ -1,0 +1,15 @@
+supabase-start: PASS
+migrate-local: PASS
+build: PASS
+No-op confirmation UI/server agreement: PASS
+Realistic fixture: 8 eligible, 2 ineligible, 3 rooms, multiple rounds, existing approved booking panels: PASS
+Authenticated read API boundaries: ordinary members denied identifiable overview/panels; no mutation dispatch; private uncached responses: PASS
+Discoverability, drag/remove, weekly/exception persistence, real logout/login, offline retry, lost-save acknowledgement, fixed Eastern Time: PASS
+Admin response tracking, exact heatmap/list/capacity counts, excluded ineligible/missing/declined participants and official commitments: PASS
+Existing room creation and headcount persistence; proposal-only Auto-Fill, overlap/buffer/conflict exclusion, workload and lock preservation: PASS
+Manual edit/autosave/reopen, saved navigation, two-owner stale edit rejection, explicit publication and lost-response idempotent retry: PASS
+Post-publication private revision, unchanged official schedule before approval, one intended cancellation and affected-only notice: PASS
+Injected partial-publication failure rolls back version, slots, grants and notifications; eligibility loss and closed-room stale approvals rejected: PASS
+Mobile discovery, editing and published schedule; no-room next-step recovery without overflow: PASS
+Browser → actual server actions → local Prisma/Postgres: PASS
+Local fixture retained at http://127.0.0.1:3126

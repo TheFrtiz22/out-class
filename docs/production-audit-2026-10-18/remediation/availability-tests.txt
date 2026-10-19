@@ -1,0 +1,12 @@
+✔ round requests are eligible/club scoped, idempotent and atomically queue the existing optional email; draft edits are not responses (830.5025ms)
+✔ reminders skip responses, enforce a 24h cooldown and invalidate stale request delivery after confirmation, decline or eligibility loss (510.130458ms)
+✔ responses across clubs are independent and coverage reuses actual requirements, buffers and official conflicts without foreign details (556.252042ms)
+✔ coverage counts only confirmed round snapshots after draft save, confirmation and decline (524.349166ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2553.690958

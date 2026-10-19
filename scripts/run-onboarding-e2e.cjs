@@ -92,7 +92,7 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  const testFile=process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
- const result=spawnSync(process.execPath,['--test',testFile],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+ const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{

@@ -1,0 +1,38 @@
+{
+  "implementation_base": "9e39b6a82db610ac2c911fda56b3805d61ff5745",
+  "tested_client_dates": [
+    "2026-10-18",
+    "2026-10-19"
+  ],
+  "default_suite": {
+    "tests": 1266,
+    "pass": 1235,
+    "fail": 0,
+    "skipped": 31
+  },
+  "onboarding_account_http": {
+    "pass": 20,
+    "fail": 0,
+    "skipped": 0
+  },
+  "native_publication_suites": {
+    "pass": 65,
+    "fail": 0
+  },
+  "snapshot_database_operations": {
+    "before": 4,
+    "after": 2
+  },
+  "production_changes_applied": false,
+  "scheduling_e2e": {
+    "scenario_groups": 10,
+    "fail": 0,
+    "fresh_fixture": true
+  },
+  "hydration_followup": {
+    "page_hydrations": 27,
+    "runtime_errors": 0,
+    "prior_intermittent_incident_open": true
+  },
+  "startup_guard": "occupied port rejected before fixture mutation"
+}

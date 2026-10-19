@@ -1,0 +1,15 @@
+{
+  "observation": "One prior fresh scheduling run completed its functional assertions but failed the final browser-error gate with a minified React 418 HTML hydration mismatch.",
+  "route": "Not captured by the prior listener; no root cause established.",
+  "latest_standard_scheduling_run": "All ten groups passed, with no browser runtime errors.",
+  "focused_followup": {
+    "authenticated_page_hydrations": 27,
+    "browser_timezones": [
+      "America/Los_Angeles",
+      "Asia/Tokyo"
+    ],
+    "runtime_errors": 0
+  },
+  "status": "Unresolved intermittent observation; do not claim fixed.",
+  "diagnostics": "The scheduling harness now records page URL and error stack. Runtime errors continue to fail the audit."
+}

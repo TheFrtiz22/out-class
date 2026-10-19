@@ -1,0 +1,33 @@
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships
+  ✔ students see only their own applications; ordinary overlapping memberships expose no internal drafts in HTTP or RSC (5197.328834ms)
+  ✔ recruiter can use the dedicated template reader only in the authorized club; common payloads stay redacted (4142.529625ms)
+  ✔ owner retains the editor and navigation fields without widening account serialization (4031.199583ms)
+  ✔ unauthenticated account responses are private and non-cacheable (54.089625ms)
+  ✔ native Prisma notification snapshots use two statements, preserve counts and reject disabled accounts (693.048042ms)
+✔ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (18514.693042ms)
+▶ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP
+  ✔ Public authentication — shared CTAs, signup, normal login and isolated administration (964.892167ms)
+  ✔ Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved (1924.019583ms)
+  ✔ OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login (65374.444042ms)
+  ✔ A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard (1653.384875ms)
+  ✔ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (325.202959ms)
+  ✔ C — existing account invitation → dashboard request source → accepted membership (246.494917ms)
+  ✔ D — invitation-only student → normal signup/verification → profile suggestions → join (428.789291ms)
+  ✔ E — Not now hides dashboard only; Settings recovery uses the same acceptance (1420.6525ms)
+  ✔ F — incremental upload preserves all prior members and creates only additive invitations (373.237958ms)
+  ✔ G — direct HTTP actions enforce member/admin/recruiter/owner boundaries and Supabase browser isolation (909.187458ms)
+  ✔ H — replayed claim/accept/upload/email batch do not duplicate identities, memberships or sends (525.485458ms)
+  ✔ I — legacy account re-verifies university mailbox through real password recovery before invitation acceptance (1527.917875ms)
+  ✔ J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions (6752.739458ms)
+✔ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (88290.68875ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107857.525667

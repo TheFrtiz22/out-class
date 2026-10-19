@@ -1,5 +1,10 @@
 # Outstanding risks and operating plan
 
+## Local remediation update
+
+The account disclosure and patched dependency findings have local fixes and regression evidence; they await an approved application release. Account API cache/error handling is hardened. Communications polling is batched without removing legacy behavior. The full scheduling browser journey now passes, including fixes for confirmed-only coverage and round/week state. See [current remediation results](remediation/REPORT.md). Broad production database privileges, the unpatched build/lint braces advisory, second-domain policy, ordinary-session replay, optional/native coverage, field performance and operational controls remain unresolved. The table below retains the original Stage A priorities; use the remediation report for current local status.
+
+
 The audit establishes concrete findings and a baseline; OutClass cannot yet be certified correct, fast or secure across every role/university. No remediation was deployed. See the [ranked assessment](02-security-assessment.md), [correctness coverage](01-data-correctness.md) and [measured performance](03-performance-report.md).
 
 | Priority | Outstanding item | Closure evidence / gate |
@@ -17,6 +22,10 @@ The audit establishes concrete findings and a baseline; OutClass cannot yet be c
 | P2 sessions/caches | Ordinary captured-JWT replay; uniform no-store errors; complete cache invalidation matrix | Local logout/recovery/disable/role-revocation replay tests; response-header assertions for all branches; private cache multi-user tests |
 | P2 operations | Backups/PITR, restore, rollback credential compatibility not established | Confirm plan/retention/encryption/ownership; restore into isolated environment; test data consistency and document measured recovery time; approved rollback rehearsal |
 | P2 visibility | Mixed production HTTP 500s and missing request-level query/client attribution | Privacy-safe trace correlations by deployment/operation/status; classify auth denials vs outages; actionable alerts and response owner |
+
+## Additional local observation
+
+One fresh scheduling run emitted minified React 418 (HTML hydration mismatch) after its functional assertions. The next full fresh run and 27 focused desktop/mobile/time-zone hydrations were clean. The source remains unisolated, and the harness now logs page URL and stack while retaining its runtime-error assertion. See [the incident record](remediation/hydration-incident.json). Investigate in preview before treating rendering stability as fully established.
 
 ## Observability and alerts
 

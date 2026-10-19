@@ -1,5 +1,12 @@
 # Changes implemented and validation
 
+## Local remediation update
+
+A later real browser check also reproduced overcounted interview coverage: retained availability from declined/unconfirmed participants was included in capacity lists. Both coverage projections now require confirmation, with a draft/confirm/decline regression and exact-count browser checks. Assignment validation already rejected unconfirmed participants.
+
+Application/dependency changes have now been implemented after the read-only audit. [The remediation report](remediation/REPORT.md) lists each changed file group, rationale, regression evidence, operation-count comparison, release gates and rollback constraints. It supersedes the “unchanged application” scope for the current working tree. Production, credentials, schema, RLS, Storage and firewall remain unchanged. The sections below preserve the historical Stage A change record.
+
+
 This stage added audit reports, reproducible local probes and redacted evidence only. **Application code, UI, dependencies, lockfile, migrations, production data, credentials, grants, RLS, Storage settings, firewall and deployments are unchanged.** No vulnerability is claimed fixed and no performance gain is claimed. This preserves the requested read-only diagnosis before remediation.
 
 ## Added files

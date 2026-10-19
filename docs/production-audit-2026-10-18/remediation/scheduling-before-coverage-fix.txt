@@ -1,0 +1,899 @@
+supabase-start: PASS
+migrate-local: PASS
+build: PASS
+No-op confirmation UI/server agreement: PASS
+Realistic fixture: 8 eligible, 2 ineligible, 3 rooms, multiple rounds, existing approved booking panels: PASS
+Authenticated read API boundaries: ordinary members denied identifiable overview/panels; no mutation dispatch; private uncached responses: PASS
+Discoverability, drag/remove, weekly/exception persistence, real logout/login, offline retry, lost-save acknowledgement, fixed Eastern Time: PASS
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByText('4 eligible interviewers available; 5 needed') to be visible[22m
+
+    at Object.verify (/Users/jesseklinger/Documents/out-class/tests/scheduling-quality-browser.cjs:135:232)
+    at async main (/Users/jesseklinger/Documents/out-class/scripts/run-availability-e2e.cjs:76:3) [] [
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: the server responded with a status of 404 (Not Found)',
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: net::ERR_INTERNET_DISCONNECTED',
+  'Failed to load resource: net::ERR_INTERNET_DISCONNECTED',
+  'Failed to load resource: net::ERR_FAILED',
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)'
+] Recent action traffic: [
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'saveMyAvailability' },
+  { event: 'response', action: 'saveMyAvailability', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'saveMyRoundAvailability' },
+  { event: 'response', action: 'saveMyRoundAvailability', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getAvailabilitySchedules' },
+  {
+    event: 'response',
+    action: 'getAvailabilitySchedules',
+    status: 200
+  },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 }
+]
+Browser 0: http://127.0.0.1:3126/settings/availability?clubId=c2dfeb29-9086-484d-9310-08b5ca4ff0bf&roundId=f7bca4f9-5fcb-480e-b16d-f03850210d5e ilable
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+12:00 PM
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+1:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+2:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+3:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+4:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+5:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+6:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+7:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+8:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Clear Mon
+Clear Tue
+Clear Wed
+Clear Thu
+Clear Fri
+Clear Sat
+Clear Sun
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+to
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+Copy day
+Clear entire week
+
+Already using your current global schedule. Your response is unchanged.
+Browser 1: http://127.0.0.1:3126/club/c2dfeb29-9086-484d-9310-08b5ca4ff0bf/workspace?section=recruitment&tool=interviews&interviewTab=schedule&roundId=f7bca4f9-5fcb-480e-b16d-f03850210d5e&schedule=availability&week=2026-11-02 Scheduling Quality Audit
+/
+Interviews
+
+Scheduling Quality Audit
+
+Interviews
+Interview rooms
+Interview master kit
+Scheduling
+Interview access setup
+Interview Scheduling
+Schedule options
+Interview round
+Main interviews
+Practice interviews
+Unconfigured interviews
+Filter by date
+1
+Set interview times
+2
+Confirm interviewers
+3
+Publish booking
+Member role
+All roles
+Owner
+Admin
+Recruiting Lead
+Interviewer
+Member
+Week of
+
+Eastern Time · 8:00 AM–9:00 PM
+
+Refresh overview
+
+2 requests sent. Email follows each member’s interview notification preferences.
+
+8 eligible
+6 confirmed participants
+7 responses received
+1 awaiting response
+0 not requested
+Collect availability
+Request availability from all
+Remind nonresponders
+
+Reminders become available 24 hours after the last request. Submitted and declined members are skipped.
+
+	Interviewer	Role	Response
+	Test Interviewer	Interviewer	Submitted
+	Audit eligible2	Interviewer	Submitted
+	Audit eligible3	Interviewer	Submitted
+	Audit eligible4	Interviewer	Submitted
+	Audit eligible5	Member	Submitted
+	Audit eligible6	Interviewer	Submitted
+	Audit eligible7	Interviewer	Awaiting response
+	Audit eligible8	Interviewer	Declined participation
+Schedule availability requests
+Schedule availability reminders
+Scheduled availability communications
+
+All queued intents and latest 50 completed intents. Published counts in-app notices; optional email delivery is separate.
+
+No scheduled availability communications.
+
+Time
+Mon
+11-02
+Tue
+11-03
+Wed
+11-04
+Thu
+11-05
+Fri
+11-06
+Sat
+11-07
+Sun
+11-08
+8:00 AM
+9:00 AM
+4
+4
+5
+5
+5
+5
+5
+4
+4
+5
+5
+5
+5
+5
+5
+4
+5
+5
+5
+5
+5
+5
+4
+5
+5
+5
+5
+5
+10:00 AM
+5
+4
+5
+5
+5
+5
+5
+5
+4
+5
+5
+5
+5
+5
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+11:00 AM
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+12:00 PM
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+4
+3
+4
+4
+4
+4
+4
+1:00 PM
+2:00 PM
+3:00 PM
+4:00 PM
+5:00 PM
+6:00 PM
+7:00 PM
+8:00 PM
+
+Heatmap: confirmed participants who can interview at each time, including access and official commitment checks. Session capacity below also requires the full interview and buffer.
+
+Monday · 9:00 AM
+
+2026-11-02 · Eastern Time
+
+5 eligible interviewers available; 5 needed.
+
+Test Interviewer
+Audit eligible2
+Audit eligible3
+Audit eligible4
+Audit eligible8
+Open Alpha · 5/2 availableOpen Beta · 5/3 available
+Session coverage
+
+Shared staffing shortages account for candidates needed in overlapping rooms. Auto-Fill also checks transfer buffers, locks and duty limits across the full schedule.
+
+Room	Time	Available / needed	Officially assigned	Action
+Alpha	Nov 2, 9:00 AM	5/2 · Candidates available	0/2	Configure session
+Alpha	Nov 2, 11:00 AM	5/2 · Candidates available	2/2	Configure session
+Beta	Nov 2, 9:00 AM	5/3 · Candidates available	0/3	Configure session
+Beta	Nov 2, 10:30 AM	5/3 · Candidates available	0/3	Configure session
+Gamma	Nov 2, 10:00 AM	6/1 · Candidates available	0/1	Configure session
+Gamma	Nov 2, 12:00 PM	5/1 · Candidates available	0/1	Configure session
+Continue to Rooms
+Browser 3: http://127.0.0.1:3126/settings/availability?clubId=c2dfeb29-9086-484d-9310-08b5ca4ff0bf&roundId=f7bca4f9-5fcb-480e-b16d-f03850210d5e lable
+Not marked
+Available
+Available
+Available
+Available
+Available
+Available
+Not marked
+Available
+Available
+Available
+Available
+Available
+12:00 PM
+Available
+Not marked
+Available
+Available
+Available
+Available
+Available
+Available
+Not marked
+Available
+Available
+Available
+Available
+Available
+Available
+Not marked
+Available
+Available
+Available
+Available
+Available
+Available
+Not marked
+Available
+Available
+Available
+Available
+Available
+1:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+2:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+3:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+4:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+5:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+6:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+7:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+8:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Clear Mon
+Clear Tue
+Use recurring
+Clear Wed
+Clear Thu
+Use recurring
+Clear Fri
+Clear Sat
+Clear Sun
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+to
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+Copy day
+Clear entire week
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByText('4 eligible interviewers available; 5 needed') to be visible[22m
+

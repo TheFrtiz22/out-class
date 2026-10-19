@@ -1,4 +1,9 @@
-# OutClass production audit — Stage A
+# OutClass production audit — diagnosis and local remediation
+
+## Local remediation update
+
+The first implementation batch is documented in [the remediation report](remediation/REPORT.md). The account template disclosure is fixed in local HTTP and RSC with real role/tenant tests; account responses consistently use private/no-store. Next, Sharp and source-map-js are patched locally; the registry scan now has one remaining build/lint braces advisory. Communications snapshots use two database operations instead of four, with native Prisma hash/count parity. Staffing coverage now excludes declined/unconfirmed snapshots, and scheduling retains its round/week state during URL changes. The complete desktop/mobile scheduling journey passed; the default suite passes 1,235 tests with 31 fixture-gated skips, alongside 20 real onboarding/account and 65 native checks. Production has not been deployed or modified; the Stage A sections below describe the original baseline.
+
 
 Read-only diagnosis and prioritized remediation plan, October 18, 2026. Source baseline: `03571d5d2275f2899373193a7cd2fbb404a3eb73`; inspected production deployment `dpl_ACP3hPuvfDeEPYQ2RBgXHDhNd73c` matched that commit. No application, dependency, database, credential, firewall or deployment change was made. Local synthetic fixtures were used for invasive tests.
 

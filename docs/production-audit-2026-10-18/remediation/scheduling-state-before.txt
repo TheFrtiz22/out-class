@@ -1,0 +1,30 @@
+✖ browser: workspace entry, explicit choices, club changes and history stay synchronized on desktop and mobile (2129.375208ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2338.781292
+
+✖ failing tests:
+
+test at tests/club-workspace-entry-browser.test.cjs:8:1
+✖ browser: workspace entry, explicit choices, club changes and history stay synchronized on desktop and mobile (2129.375208ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'Saved session context'
+  
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/club-workspace-entry-browser.test.cjs:77:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'Saved session context',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

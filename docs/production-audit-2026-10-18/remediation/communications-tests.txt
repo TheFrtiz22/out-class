@@ -1,0 +1,17 @@
+✔ batched communications snapshot preserves inbox/legacy conversation revisions, ownership and disable checks with two queries (685.764625ms)
+✔ durable inbox categories preserve announcement filtering and persisted read state (12.883917ms)
+✔ retired direct-message actions reject old clients without accessing live services (158.055959ms)
+✔ every optional notification category honors its switch, global OFF, and opt-in platform default (0.112625ms)
+✔ private conversations require eligibility in the exact club and applicant identification grants (0.246292ms)
+✔ owned cursor and runtime read flags fail closed before inbox writes (129.344959ms)
+✔ Resend transport keeps one recipient and a stable key and distinguishes retryable failures (2.082334ms)
+✔ worker and real-time endpoints reject unauthenticated requests before accessing the database (4.876917ms)
+✔ announcement branding and automated wording coexist with neutral decision digest CTAs (0.666375ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 812.829917

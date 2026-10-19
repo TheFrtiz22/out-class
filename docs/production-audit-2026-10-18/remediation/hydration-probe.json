@@ -1,0 +1,167 @@
+{
+  "observations": [
+    {
+      "route": "/",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 0
+    },
+    {
+      "route": "/club/dcd4e64f-2d90-4ef1-984a-a1c8573064d0/workspace",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 0
+    },
+    {
+      "route": "/",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 1
+    },
+    {
+      "route": "/club/dcd4e64f-2d90-4ef1-984a-a1c8573064d0/workspace",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 1
+    },
+    {
+      "route": "/",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 2
+    },
+    {
+      "route": "/club/dcd4e64f-2d90-4ef1-984a-a1c8573064d0/workspace",
+      "mobile": false,
+      "timezone": "America/Los_Angeles",
+      "repetition": 2
+    },
+    {
+      "route": "/",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 0
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 0
+    },
+    {
+      "route": "/",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 1
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 1
+    },
+    {
+      "route": "/",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/interviews",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 2
+    },
+    {
+      "route": "/settings/availability",
+      "mobile": true,
+      "timezone": "Asia/Tokyo",
+      "repetition": 2
+    }
+  ],
+  "errors": []
+}

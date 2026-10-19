@@ -1,5 +1,10 @@
 # Performance report
 
+## Local remediation update
+
+Communications snapshot base operations are reduced from **four to two per tick**, preserving notification counts, revision hashes, legacy conversation authorization and disabled-account rejection. Both migrated SQL fixtures and actual native Prisma checks verify the new helper. This is a 50% operation-count reduction for that helper, with no page-load, cost or production latency improvement claimed. The complete synthetic performance harness also runs after repairing stale mocks. [Before/after scope and current checks](remediation/REPORT.md) distinguish these local results from the unchanged production field baseline below.
+
+
 Stage A baseline, 2026-10-18. **No performance improvement is claimed.** There is no deployed or local application optimization in this stage, so “after” is not measured. Historical production metrics span multiple deployments and may include staff/QA traffic. They establish a problem worth profiling, not its sole cause.
 
 ## Production baseline

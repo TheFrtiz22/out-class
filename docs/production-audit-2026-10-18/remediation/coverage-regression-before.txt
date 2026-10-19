@@ -1,0 +1,33 @@
+✖ coverage counts only confirmed round snapshots after draft save, confirmation and decline (2420.492958ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2705.248458
+
+✖ failing tests:
+
+test at tests/availability-collection.test.cjs:78:1
+✖ coverage counts only confirmed round snapshots after draft save, confirmation and decline (2420.492958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + [
+  +   '2afe446c-cec2-4886-90ee-b663fb04f274'
+  + ]
+  - []
+  
+      at assertCoverage (/Users/jesseklinger/Documents/out-class/tests/availability-collection.test.cjs:92:12)
+      at async TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/availability-collection.test.cjs:95:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '2afe446c-cec2-4886-90ee-b663fb04f274' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

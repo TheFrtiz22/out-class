@@ -1,5 +1,10 @@
 # Security assessment
 
+## Local remediation update
+
+**M1 is fixed and verified locally** in common HTTP and RSC payloads; recruiting's authorized template reader still works. **H1 is patched locally** to Sharp 0.35.5 in both application and Next resolution. Next 15.5.27 and source-map-js 1.2.2 remove the corresponding M2 advisory findings; unpatched build/lint braces remains. **L3 is addressed for all account API branches** with private/no-store and Cookie variation; other endpoints retain their existing findings. H2 and other operational/database findings remain open. No production fix is claimed until approved release and verification. See [remediation evidence](remediation/REPORT.md). The assessment below records the Stage A baseline.
+
+
 Stage A, 2026-10-18. No production fixes, credential rotations, migrations or firewall changes were applied. Severity reflects this application's impact and available evidence; a dependency advisory's published severity is shown separately from demonstrated exploitability. No Critical finding or cross-user application read was demonstrated. This is an initial defensible assessment, not an ASVS certification.
 
 Review framework: [OWASP ASVS 5.0.0](https://owasp.org/projects/asvs), [API Security Top 10 2023](https://api-security.owasp.org/editions/2023/en/0x11-t10/). The reviewed surfaces include identity, object/function/property authorization, private files, validation, public abuse controls, database grants, stored code and operational configuration.
