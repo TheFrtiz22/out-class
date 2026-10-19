@@ -6,6 +6,7 @@ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
 import { hasPermission, isActiveMembership, type ClubPermission } from "@/lib/permissions";
 import { DEMO_COOKIE } from "@/lib/demo/access";
 import { isUvaEmail } from "@/lib/auth";
+import { sessionIdFromVerifiedToken } from "@/lib/auth-session";
 import { createClient } from "./supabase/server";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
@@ -16,7 +17,22 @@ import { cache } from "react";
 // a verified identity between requests, users, clubs, or support sessions.
 export const getSessionUser = cache(async () => {
   const supabase = await createClient(await cookies());
-  return supabase.auth.getUser();
+  // getSession only supplies a candidate token; verify that exact token remotely
+  // before trusting its session claim. This retains one getUser verification.
+  const session = await supabase.auth.getSession();
+  if (session.error || !session.data.session) return { data: { user: null }, error: session.error };
+  const token = session.data.session.access_token;
+  const identity = await supabase.auth.getUser(token);
+  if (identity.error || !identity.data.user) return identity;
+  const sessionId = sessionIdFromVerifiedToken(token, identity.data.user.id);
+  if (!sessionId) return { data: { user: null }, error: null };
+  // Auth can accept an unexpired JWT beyond the session's not_after boundary.
+  // Request caching coalesces this indexed check, never across requests/users.
+  const [row] = await prisma.$queryRaw<{ live: boolean }[]>`
+    SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${sessionId}::uuid
+      AND user_id=${identity.data.user.id}::uuid
+      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
+  return row?.live ? identity : { data: { user: null }, error: null };
 });
 
 /**

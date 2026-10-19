@@ -29,7 +29,9 @@ test('browser: debounce, slow writes, caret, retry, refresh recovery, navigation
   browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const context=await browser.newContext(),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept())
   // CI scheduling pauses are not user idle time. Drive only this debounce
   // boundary with browser time; keep the actual hook, typing and HTTP save.
-  const epoch=new Date('2026-10-15T12:00:00Z');await page.clock.install({time:epoch});await page.clock.pauseAt(epoch)
+  // Pause in the future before mounting the editor: elapsed automation time
+  // between install/pause must not turn this into a request to rewind the clock.
+  const epoch=new Date('2026-10-15T12:00:00Z');await page.clock.install({time:new Date(epoch.getTime()-60000)});await page.clock.pauseAt(epoch)
   await page.goto(url);const field=page.getByRole('textbox',{name:'Draft'});await field.fill('rapid');await page.clock.runFor(500);await field.press('End')
   for(const char of ' typing'){await field.pressSequentially(char);await page.clock.runFor(30)}
   assert.equal(writes.length,0)
