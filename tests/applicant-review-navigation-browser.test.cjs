@@ -1,0 +1,16 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {chromium}=require('playwright'),{fixture}=require('./helpers/applicant-review-browser.cjs');
+test('browser: Applicants destinations select correct records, retain bookmarks/refresh/Back and activate mobile Applicants',async()=>{
+ const f=await fixture();let browser;
+ try{
+  browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>new URL(r.request().url()).origin===f.base?r.continue():r.abort());
+  const list=f.base+'/club/club/workspace?section=recruitment&tool=applicants&cycleId=cycle';await page.goto(list);await page.getByRole('heading',{name:'All Applicants',exact:true}).waitFor();
+  await page.getByRole('link',{name:'Sample Alpha submitted reviews',exact:true}).click();await page.getByRole('button',{name:'Sample Alpha · Round A · Open review',exact:true}).waitFor();assert.equal(await page.getByText(/Sample Beta/).count(),0);
+  await page.getByRole('button',{name:'Sample Alpha · Round A · Open review',exact:true}).click();await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();assert.equal(new URL(page.url()).searchParams.get('reviewId'),'review-a');await page.reload();await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();assert.ok(await page.getByText('8.5 / 10',{exact:true}).isVisible());
+  await page.goBack();await page.getByRole('heading',{name:'All Applicants',exact:true}).waitFor();await page.getByRole('link',{name:'Sample Alpha résumé moderation',exact:true}).click();await page.getByRole('button',{name:'Sample Alpha · Round A · Review résumé',exact:true}).click();await page.getByText('Preserved synthetic document app-a doc-app-a',{exact:true}).waitFor();await page.getByRole('button',{name:'Close résumé',exact:true}).click();
+  await page.goto(f.base+'/club/club/workspace?section=recruitment&tool=interviews&interviewTab=reviews&applicationId=app-a&roundId=round-a&reviewId=review-a&cycleId=cycle');await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();let q=new URL(page.url()).searchParams;assert.equal(q.get('tool'),'reviews');assert.equal(q.get('applicantId'),'app-a');assert.equal(q.get('cycleId'),'cycle');assert.equal(q.has('interviewTab'),false);
+  await page.setViewportSize({width:390,height:844});const mobile=page.getByRole('navigation',{name:'Primary mobile navigation',exact:true});assert.equal(await mobile.getByRole('link',{name:'Applicants',exact:true}).getAttribute('aria-current'),'page');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.evaluate(()=>{window.fixture.member.interviewOffices=[];history.pushState(null,'','?section=recruitment&tool=reviews')});await page.getByRole('alert').filter({hasText:/current interview access/}).waitFor();assert.equal(await page.getByText('Submitted text',{exact:true}).count(),0);
+  assert.deepEqual(errors,[]);
+ }finally{await browser?.close();await new Promise(r=>f.server.close(r));}
+});

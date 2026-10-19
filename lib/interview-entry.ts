@@ -1,3 +1,4 @@
+import { applicantInterviewHref } from "@/lib/applicant-interview-navigation";
 export type InterviewRoomEntry = {
   id: string; slotId: string; roomId: string; bookingId: string | null;
   clubId: string; roundId: string; roundName: string; roomName: string; location: string;
@@ -15,7 +16,7 @@ export function interviewEntryHref(entry: Pick<InterviewRoomEntry, "clubId" | "a
   for (const [key, value] of Object.entries({ applicationId: entry.applicationId, roundId: entry.roundId, slotId: entry.slotId, bookingId: entry.bookingId, roomId: entry.roomId })) {
     if (value) query.set(key, value); else query.delete(key);
   }
-  if (entry.reviewId) { query.delete("interview"); query.set("interviewTab", "reviews"); query.set("reviewId", entry.reviewId); }
+  if (entry.reviewId) { query.set("reviewId", entry.reviewId); return applicantInterviewHref(entry.clubId, "reviews", query.toString(), entry.applicationId || undefined); }
   return `${base}?${query}`;
 }
 export function interviewListHref(clubId: string, search: string) {

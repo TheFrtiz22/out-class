@@ -7,16 +7,23 @@ import { getCurrentUser } from "@/utils/current-user";
 import Link from "next/link";
 import { ClubWorkspace } from "@/components/club-workspace";
 import { AuthSessionBoundary } from "@/components/auth-session-boundary";
+import { redirect } from "next/navigation";
+import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
 export const maxDuration = 60;
 export default async function Page({
   params,
   searchParams,
 }: {
   params: Promise<{ clubId: string }>;
-  searchParams: Promise<{ section?: string; taskView?: string; tool?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { clubId } = await params,
-    { section, taskView, tool } = await searchParams;
+  const { clubId } = await params, query = await searchParams;
+  const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
+  const section = first(query.section), taskView = first(query.taskView), tool = first(query.tool);
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, item);
+  const moved = legacyApplicantInterviewHref(clubId, search.toString());
+  if (moved) redirect(moved);
   const jar = await cookies();
   let demoEnabled = false;
   if (!jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value === "1") {

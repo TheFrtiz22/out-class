@@ -18,6 +18,10 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
+import { interviewCapabilities } from "@/lib/interview-access"
+import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+import Link from "next/link"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -627,6 +631,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
               </SheetHeader>
+              {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {([...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !active.studentId.startsWith("anonymous-") ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]).map(item => <Link key={item.tool} className="inline-flex min-h-10 items-center underline" href={applicantInterviewHref(membership.clubId, item.tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault(); }}>{item.label}</Link>)}
+              </nav>}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                 <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
                 <div className="flex items-center gap-2">

@@ -19,6 +19,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
   '@/lib/workspace-navigation':nav.exports,
   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
+  '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
  };
  const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
  const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree.props.children[1];
