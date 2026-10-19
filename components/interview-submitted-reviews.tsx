@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { getSubmittedInterviewReview, getSubmittedInterviewReviews } from "@/lib/workspace-api";
 import { RoundScore } from "@/components/interview-review-references";
 import { Button } from "@/components/ui/button";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
 type Row = Awaited<ReturnType<typeof getSubmittedInterviewReviews>>[number];
 type Review = Awaited<ReturnType<typeof getSubmittedInterviewReview>>;
-export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
+export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewId }: { clubId: string; filters?: ApplicantInterviewFilters; initialReviewId?: string }) {
+  const { applicationId, roundId, cycleId } = filters;
   const [rows, setRows] = useState<Row[]>([]), [selected, setSelected] = useState<Row | null>(null), [review, setReview] = useState<Review | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
   useEffect(() => {
     let current = true, pending = false;
     const refresh = async () => {
       if (pending) return; pending = true;
-      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : result.find(r => r.id === new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId")) || null); } }
+      try { const result = await getSubmittedInterviewReviews(clubId, { applicationId, roundId, cycleId }); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : result.find(r => r.id === (initialReviewId || new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId"))) || null); } }
       catch { if (current) { setRows([]); setSelected(null); setReview(null); setError("Submitted reviews unavailable. Check your current leadership access."); } }
       finally { pending = false; if (current) setLoading(false); }
     };
@@ -19,7 +21,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
     setRows([]); setSelected(null); setReview(null); setLoading(true); void refresh();
     const timer = setInterval(visible, 10000); window.addEventListener("focus", visible);
     return () => { current = false; clearInterval(timer); window.removeEventListener("focus", visible); };
-  }, [clubId, retry]);
+  }, [clubId, retry, applicationId, roundId, cycleId, initialReviewId]);
   useEffect(() => {
     setReview(null);
     if (!selected) return;
@@ -40,7 +42,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
     <Button type="button" variant="outline" onClick={() => setRetry(v => v + 1)}>Refresh reviews</Button>
     {loading && <p role="status">Loading reviews…</p>}{error && <p role="alert">{error}</p>}
     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
-    <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
+    <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
     {selected && <section aria-label="Read-only closing review" className="space-y-4 rounded-lg border bg-card p-4">
       {review && <RoundScore key={selected.id} scope={{ clubId, applicationId: selected.applicationId, roundId: selected.roundId }} />}
       <h3 className="font-medium">{selected.applicantName} · {selected.roundName}</h3>

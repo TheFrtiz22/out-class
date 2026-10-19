@@ -1,0 +1,16 @@
+{
+  "observed_date": "2026-10-19",
+  "read_only": true,
+  "view_migrated": true,
+  "runtime_auth_usage": false,
+  "auth_owner_settable": false,
+  "pending_app_invites": 0,
+  "auth_owner_inherited": false,
+  "runtime_session_read": false,
+  "storage_owner_settable": false,
+  "pending_without_binding": 0,
+  "storage_owner_inherited": false,
+  "operator_lock_grant_delegable": false,
+  "auth_policy_management_delegated": true,
+  "storage_policy_management_delegated": true
+}

@@ -1,0 +1,19 @@
+{
+  "observed_date": "2026-10-19",
+  "migration_checksum": "fa70d980652625b9a2407af3bc58babf6c630cd2dfef12507660b5d99ea22186",
+  "view_columns": [
+    "id",
+    "user_id",
+    "not_after"
+  ],
+  "view_invoker": true,
+  "anon_view_select": false,
+  "auth_policy_count": 0,
+  "auth_owner_preserved": true,
+  "app_group_view_select": false,
+  "dedicated_role_exists": false,
+  "storage_guard_original": true,
+  "authenticated_view_select": false,
+  "migration_checksum_matches": true,
+  "operator_lock_grant_delegable": false
+}

@@ -8,7 +8,8 @@ export async function privateClubAssetStorage() {
     FROM pg_policies WHERE schemaname='storage' AND permissive='RESTRICTIVE' AND cmd='ALL' AND roles=ARRAY['public']::name[] AND with_check=qual AND (
       (tablename='objects' AND policyname='outclass_club_assets_server_only' AND qual IN (
         '(bucket_id <> ''club-assets''::text)',
-        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_production_app''::name))')) OR
+        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_production_app''::name))',
+        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_web_runtime''::name))')) OR
       (tablename='buckets' AND policyname='outclass_club_assets_bucket_server_only' AND qual='(id <> ''club-assets''::text)'))`;
   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!policy?.secured || !secret) throw Error("Club image storage is unavailable.");

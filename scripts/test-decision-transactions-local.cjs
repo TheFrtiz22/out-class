@@ -9,7 +9,7 @@ function run(command, args, options = {}) {
 if (spawnSync('docker', ['inspect', name], { stdio: 'ignore' }).status === 0)
   throw Error('Dedicated fixture container already exists; refusing to replace it.');
 const databaseUrl = 'postgresql://fixture_superuser@127.0.0.1:58452/outclass_recruitment_test?sslmode=disable&connection_limit=8';
-const env = { ...process.env, DATABASE_URL: databaseUrl, POSTGRES_PRISMA_URL: databaseUrl,
+const env = { ...process.env, DATABASE_URL: databaseUrl, OUTCLASS_RUNTIME_DATABASE_URL: databaseUrl,POSTGRES_PRISMA_URL: databaseUrl,
   OUTCLASS_TRANSACTION_TEST_DATABASE_URL: databaseUrl, COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', SMTP_HOST: '' };
 try {
   run('docker', ['run', '-d', '--name', name, '--label', 'outclass.transaction-test=disposable', '-p', '127.0.0.1:58452:5432',
@@ -27,7 +27,7 @@ try {
   });
   run(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env });
   run('docker', ['exec', '-i', name, 'psql', '-U', 'fixture_superuser', '-d', 'outclass_recruitment_test', '-v', 'ON_ERROR_STOP=1'], {
-    input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`,
+    input: `DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT SELECT ON public.outclass_auth_sessions TO outclass_production_app;`,
   });
   run(process.execPath, ['--test', 'tests/decision-transactions-native.test.cjs'], { env });
   // Also rerun the existing native offer and canonical communications producers.

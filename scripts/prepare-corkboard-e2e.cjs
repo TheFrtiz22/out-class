@@ -62,7 +62,7 @@ function run(binary, args, env = process.env) {
   const env = {
     ...process.env,
     DATABASE_URL: status.DB_URL,
-    POSTGRES_PRISMA_URL: status.DB_URL,
+    OUTCLASS_RUNTIME_DATABASE_URL: status.DB_URL,POSTGRES_PRISMA_URL: status.DB_URL,
     POSTGRES_URL_NON_POOLING: status.DB_URL,
   };
   fs.writeFileSync(

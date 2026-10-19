@@ -9,7 +9,7 @@ function assertLocalConfig(config) {
 function readConfig(file) { return assertLocalConfig(JSON.parse(fs.readFileSync(file, 'utf8'))); }
 function localEnv(config) {
   assertLocalConfig(config); const s = config.status;
-  return { ...process.env, DATABASE_URL: s.DB_URL, POSTGRES_PRISMA_URL: s.DB_URL, POSTGRES_URL: s.DB_URL, POSTGRES_URL_NON_POOLING: s.DB_URL,
+  return { ...process.env, DATABASE_URL: s.DB_URL, OUTCLASS_RUNTIME_DATABASE_URL: s.DB_URL, POSTGRES_PRISMA_URL: s.DB_URL, POSTGRES_URL: s.DB_URL, POSTGRES_URL_NON_POOLING: s.DB_URL,
     NEXT_PUBLIC_SUPABASE_URL: s.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: s.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: s.ANON_KEY,
     SUPABASE_SECRET_KEY: s.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: s.SERVICE_ROLE_KEY, OUTCLASS_SITE_URL: config.appUrl,
     OUTCLASS_PUBLISH_BUILD: '1', NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'false', SMTP_HOST: '', SMTP_PASSWORD: '',

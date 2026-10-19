@@ -1,5 +1,10 @@
 # OutClass production audit — diagnosis and local remediation
 
+## Current release update
+
+The [rollout-blocker batch](rollout-blockers/README.md) has released the compatibility application fixes and applied the additive security-invoker session-view migration in production (57 migrations). The legacy claim flow now uses an audit fingerprint and provider APIs. **1,255 default tests passed / 35 skipped; 44 real integration and 126 native checks passed.** The canonical restricted-login cutover is tested but unapplied: the hosted operator cannot delegate the session-lock UPDATE ACL. [Exact provider-owner prerequisite](rollout-blockers/provider-lock-grant.sql). Existing passwords and production connection bindings remain unchanged. Earlier local-stage notes below are historical release snapshots.
+
+
 ## Local remediation update
 
 The [ordinary-session replay batch](session-revocation/README.md) reproduced an expired `not_after` session reading and updating account data with an unexpired JWT. The shared auth boundary now verifies the exact token and checks its live session/user/deadline. **37 real integration tests passed**, including captured-cookie denials and the existing restricted-role/onboarding/signup flows. This adds one SQL query per authenticated request and retains one Auth verification. Production remains unchanged; runtime session grants and a newly documented legacy student-claim incompatibility remain release/cutover gates.

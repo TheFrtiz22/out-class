@@ -1,0 +1,1 @@
+Runtime identity is outclass_web_runtime; schema, session access and secret-denial checks passed. This read-only check is not a substitute for hosted authenticated smoke tests or migration verification.

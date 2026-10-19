@@ -1,0 +1,12 @@
+{
+  "deployment_id": "dpl_6vMuXwFiQYTHJT9NRQMpeX629t9B",
+  "query": "level:error OR level:fatal",
+  "since": "15m",
+  "cli_exit_code": 0,
+  "error_log_records": 0,
+  "output_record_types": [
+    "summary"
+  ],
+  "limit": 100,
+  "limitation": "Short low-volume observation, no authenticated production replay or full health certification."
+}

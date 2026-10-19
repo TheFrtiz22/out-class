@@ -1,5 +1,8 @@
 # OutClass data-flow map
 
+**Current auth boundary:** the compatibility release keeps verified-token → direct session/user/deadline check → fresh account/membership checks. Canonical cutover source substitutes `public.outclass_auth_sessions` (security-invoker view over the same three Auth columns) for direct session references, preserving locks. Student claim now follows email/link → same-origin API → application account + immutable fingerprint → provider invited/unconfirmed identity → single-use provider verification → password/audit/session attachment. No Auth-user/token SQL lookup remains in that route. [Deployment/source split and grant gate](rollout-blockers/README.md).
+
+
 Stage A snapshot: commit `03571d5d2275f2899373193a7cd2fbb404a3eb73`, 2026-10-18. The [AST inventory](evidence/source-inventory.json) enumerates 626 source files, 44 page modules, 25 route handlers and 266 exports across 56 action files. This map covers the business boundaries; the inventory preserves each module's imports, calls, ORM operations and source hash. An inventory entry is not a claim that every dynamic path was executed.
 
 ```mermaid

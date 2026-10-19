@@ -1,0 +1,28 @@
+{
+  "deployment": "https://out-class-ltfljkeuy-outclassuva.vercel.app",
+  "checks": [
+    {
+      "path": "/api/users/me",
+      "status": 401,
+      "expected_status": 401,
+      "cli_exit": 0,
+      "cache_control": "private, no-store"
+    },
+    {
+      "path": "/auth/student-claim",
+      "status": 200,
+      "expected_status": 200,
+      "cli_exit": 0,
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "form_present": true
+    },
+    {
+      "path": "/api/auth/student-claim",
+      "status": 403,
+      "expected_status": 403,
+      "cli_exit": 0,
+      "cache_control": "public, max-age=0, must-revalidate",
+      "application_origin_denial": true
+    }
+  ]
+}

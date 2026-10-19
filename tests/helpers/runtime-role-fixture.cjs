@@ -9,7 +9,6 @@ exports.prepareRuntimeRole = filename => {
  const sql = `DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='outclass_production_app') THEN
  CREATE ROLE outclass_production_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
  END IF; END $$;
- ALTER ROLE outclass_production_app PASSWORD '${password}';
  GRANT USAGE, CREATE ON SCHEMA public TO outclass_production_app;
  DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables
  WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP
@@ -27,11 +26,13 @@ exports.prepareRuntimeRole = filename => {
  public.outclass_panel_publication_guard(), public.outclass_official_slot_panel_guard(),
  public.outclass_round_panel_revision_guard(), public.outclass_valid_availability_override(text,text,text,text,text),
  public.outclass_availability_override_guard() TO outclass_production_app;
- ` + fs.readFileSync(path.resolve(__dirname,'../../docs/production-audit-2026-10-18/runtime-role/access-proposal.sql'),'utf8');
+ ` + ['role-setup.sql','role-rollback.sql','role-setup.sql'].map(name=>fs.readFileSync(path.resolve(__dirname,'../../docs/production-audit-2026-10-18/rollout-blockers',name),'utf8')).join('\n')
+ + `ALTER ROLE outclass_web_runtime LOGIN PASSWORD '${password}';\n`
+ + fs.readFileSync(path.resolve(__dirname,'../../docs/production-audit-2026-10-18/runtime-role/access-proposal.sql'),'utf8');
  // Secret stays in stdin; SQL and provider credentials never enter argv/stdout.
  const result = spawnSync('docker',['exec','-i','supabase_db_outclass-onboarding-e2e','psql','-U','supabase_admin','-d','postgres','-v','ON_ERROR_STOP=1'],{input:sql,encoding:'utf8'});
  if(result.status!==0) throw Error('Reserved runtime-role setup failed; no SQL/credentials were printed. Inspect the local catalog with a redacted query.');
- const url = new URL(config.status.DB_URL); url.username='outclass_production_app';url.password=password;
+ const url = new URL(config.status.DB_URL); url.username='outclass_web_runtime';url.password=password;
  config.runtimeDatabaseUrl=url.href;
  fs.writeFileSync(filename,JSON.stringify(config),{mode:0o600});
  return url.href;

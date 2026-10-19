@@ -1,5 +1,10 @@
 # Performance report
 
+## Current release update
+
+The [rollout batch](rollout-blockers/README.md) preserves one session SQL statement and one Auth verification per authenticated request through an invoker view in the canonical cutover tree; the deployed compatibility artifact retains the direct session predicate. Claim adds a provider identity-status read and audit-binding lookup; issuance adds one audit write. These security costs are explicit. No production latency, cost or field-performance gain is claimed. The cloud build and safe production checks establish compatibility, not improved Core Web Vitals.
+
+
 ## Local remediation update
 
 The [session-deadline fix](session-revocation/README.md) deliberately adds **one SQL statement per authenticated request**, retaining one Auth user verification. Repeated getter calls coalesce within a request. Real SDK/restricted-Prisma measurement confirms those counts; the existing session-user index is used (one small-fixture EXPLAIN execution: 0.014 ms, excluding network/connection/pool cost). No production latency, cost or speed gain is claimed; this security tradeoff requires canary observation.

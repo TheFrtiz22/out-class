@@ -20,7 +20,7 @@ export async function requireAdminElevation(actorId: string) {
   const sessionId = await authSessionId();
   if (!validAdminElevation(row, actorId, sessionId)) throw new AdminAccessError("ADMIN_ELEVATION_REQUIRED", "Admin elevation expired or revoked. Authenticate again.");
   // Access JWTs can outlive provider logout. A closed Auth session cannot retain Admin.
-  const live = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid AND user_id=${actorId}::uuid AND (not_after IS NULL OR not_after>clock_timestamp())`;
+  const live = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM public.outclass_auth_sessions WHERE id=${sessionId}::uuid AND user_id=${actorId}::uuid AND (not_after IS NULL OR not_after>clock_timestamp())`;
   if (!live.length) throw new AdminAccessError("ADMIN_SESSION_EXPIRED", "Authentication session ended. Authenticate again.");
   return row!;
 }

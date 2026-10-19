@@ -181,14 +181,15 @@ export async function getInterviewRounds(clubId: string): Promise<InterviewSetup
 }
 /** Closing projection deliberately never includes questions or private draft notes. */
 /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
-export async function getSubmittedInterviewReviews(clubId: string) {
+export async function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
   z.string().uuid().parse(clubId);
+  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
   const { user } = await requireAuth();
   return prisma.$transaction(async tx => {
     const { caps } = await interviewActor(tx, clubId, user.id);
     if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
     const records = await tx.interviewRecord.findMany({
-      where: { completedAt: { not: null }, round: { clubId }, application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
+      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), completedAt: { not: null }, round: { clubId }, application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
       orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 100,
       select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });

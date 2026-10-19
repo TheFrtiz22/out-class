@@ -1,5 +1,10 @@
 # Data correctness report
 
+## Current release update
+
+The [compatibility release](rollout-blockers/README.md) preserves single-use invite claiming, wrong-address protection, current session deadlines, profile ownership and existing onboarding paths. The invoker projection migrated in production has no browser/application-group grants. Forty-four real integration cases and 126 native checks pass, including row-lock/revocation behavior and populated upgrades. Production smoke checks cover public rendering and unauthenticated denials; no production student replay or mutation test was performed. Earlier local-stage notes below retain their historical scope.
+
+
 ## Local remediation update
 
 The [session replay batch](session-revocation/README.md) compares real account responses and complete profile/experience records around captured-cookie reads and writes. Logout, recovery, disablement and malformed-cookie denials held; expired `not_after` previously allowed both operations and now returns 401 without changing the profile. Other-device local logout and fresh recovery login remain functional. All 37 real integration tests passed on the restricted runtime fixture; production remains unchanged.

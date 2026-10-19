@@ -1,5 +1,10 @@
 # Outstanding risks and operating plan
 
+## Current release update
+
+Application compatibility fixes are released and the additive invoker view is migrated. The [remaining restricted-login blocker](rollout-blockers/README.md) is precise: hosted postgres lacks UPDATE WITH GRANT OPTION on every Auth-session column, while the existing shared lock needs a column UPDATE ACL. It can already manage the required policies through Supabase delegation. The [provider-owner prerequisite and inverse](rollout-blockers/provider-lock-grant.sql) are prepared; the full candidate aborts before partial grants when delegation is missing. No new login/Secret, grant cutover, Storage policy change or credential rotation occurred. After that capability is supplied, complete the documented staged role/credential/strict-build cutover and hosted smoke gates. Historical approval notes below do not mean another user confirmation is needed for the already-authorized blocker work.
+
+
 ## Local remediation update
 
 Ordinary replay is now [tested locally](session-revocation/README.md): logout/recovery already denied replay; expired `not_after` allowed a read/write and is now blocked. All 37 real integration cases passed. Production is unchanged. Every authenticated request now requires the proposed three-column session SELECT; confirm effective runtime grants/hosted compatibility before release and observe the additional query. Role cutover also remains blocked by the legacy `app/api/auth/student-claim/route.ts` Auth-user/token query, which the candidate correctly denies. Refactor/test that path through a supported capability without broadening Auth access. Provider policy/inactivity, in-flight operations and signed-URL lifetimes remain distinct limits.

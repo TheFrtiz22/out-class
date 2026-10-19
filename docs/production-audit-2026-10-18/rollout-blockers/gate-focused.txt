@@ -1,0 +1,12 @@
+✔ migrated invoker session view preserves base ACLs, RLS and locking without Auth schema usage (870.749333ms)
+✔ production build gate uses the same runtime connection as the app and fails closed on missing configuration (164.057708ms)
+✔ release gate requires the reviewed bounded identity, session access and secret denial together (2.092875ms)
+✔ release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data (959.241625ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1221.633666

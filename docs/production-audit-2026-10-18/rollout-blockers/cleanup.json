@@ -1,0 +1,8 @@
+{
+  "reserved_containers_remaining": [],
+  "reserved_volumes_remaining": [],
+  "fixture_secret_files_remaining": [],
+  "unrelated_stacks_untouched": true,
+  "temporary_compatibility_worktree_removed": true,
+  "temporary_compatibility_patch_and_hashes_retained": true
+}

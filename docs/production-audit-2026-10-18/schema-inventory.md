@@ -1,5 +1,10 @@
 # Live schema inventory
 
+## Additive production update, October 19
+
+Migration `20261019175843_outclass_auth_session_view` is now applied (57 total). `public.outclass_auth_sessions` projects only Auth session id/user_id/not_after with `security_invoker=true`; PUBLIC/anon/authenticated/application-group grants are revoked. The 78 application base tables are unchanged. No provider ownership, Auth RLS policy, credential or Storage-guard change accompanied this migration. See [current rollout evidence](rollout-blockers/README.md); the catalog snapshots below preserve Stage A.
+
+
 Read from PostgreSQL catalogs on 2026-10-18. No student rows or object names were exported. Full definitions are in [database-schema.json](evidence/database-schema.json).
 
 PostgreSQL 17.6; 78 application tables plus `_prisma_migrations`; no public/storage views or materialized views observed. The public schema has 775 columns, 384 constraints and 235 indexes, including migration bookkeeping. There are 49 public functions, 58 non-internal triggers in public/auth, and 66 policies across public/storage.

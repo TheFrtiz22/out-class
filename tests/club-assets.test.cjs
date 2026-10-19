@@ -25,6 +25,9 @@ test('Storage readiness accepts only the exact original or bounded-runtime guard
  const reviewed="bucket_id<>'club-assets' OR CURRENT_USER='outclass_production_app'::name";
  await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects USING(${reviewed}) WITH CHECK(${reviewed})`);
  assert.equal(await api.privateClubAssetStorage(),sentinel);
+ const dedicated="bucket_id<>'club-assets' OR CURRENT_USER='outclass_web_runtime'::name";
+ await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects USING(${dedicated}) WITH CHECK(${dedicated})`);
+ assert.equal(await api.privateClubAssetStorage(),sentinel);
  await db.exec('ALTER POLICY outclass_club_assets_server_only ON storage.objects WITH CHECK(true)');
  await assert.rejects(api.privateClubAssetStorage(),/unavailable/);
  await db.exec(`ALTER POLICY outclass_club_assets_server_only ON storage.objects TO anon WITH CHECK(${reviewed})`);

@@ -37,7 +37,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
       storage: { from: name => { calls.push({ step: 'bucket', name }); return bucket; } },
     }) },
     '@/utils/prisma': { prisma: {
-      $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{ live: true }] : [],
+      $queryRaw: async strings => strings.join('').includes('FROM public.outclass_auth_sessions') ? [{ live: true }] : [],
       user: { findUnique: async () => null, upsert: async () => ({ id: owner, email: 'student@virginia.edu', disabledAt: account === 'disabled' ? new Date() : null }) },
       studentProfile: { update: async ({ where, data }) => { profiles.set(where.userId, data); return data; }, findUnique: async ({ where }) => profiles.get(where.userId) },
     } },

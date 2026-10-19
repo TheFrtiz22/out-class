@@ -1,5 +1,10 @@
 # Changes implemented and validation
 
+## Current release update
+
+The [rollout-blocker report](rollout-blockers/README.md) records the now-published compatibility artifact, its exact patch/source hashes and cloud connection check. Migration `20261019175843_outclass_auth_session_view` is applied in production; no credential or connection binding changed. Canonical source separately adds the fresh inherited web-login proposal, dedicated runtime URL precedence, invoker-view session queries, atomic grant checks and strict release preflight. Role creation/grants/Storage changes remain unapplied pending the owner-only prerequisite. Validation: 1,255 default passes/35 skips, 44 real integration passes, 126 native passes, 57-migration replay, build/typecheck/lint. Earlier audit-only/local-only sections below are historical.
+
+
 ## Local remediation update
 
 The [session replay batch](session-revocation/README.md) changes `utils/auth.ts`, adds `lib/auth-session.ts`, focused failure/cache tests and a real captured-cookie suite. Existing authorization/upload mocks are updated to model candidate sessions and the new query; permission assertions remain. The reserved runner includes replay checks and reapplies its candidate role after inverse testing for those checks. All 37 real integration cases, production build, typecheck and lint passed. No migration, provider policy, dependency, UI, credential or production change is included; before/after aggregates, default-suite counts and source hashes are retained with the batch.

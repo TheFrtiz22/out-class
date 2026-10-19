@@ -97,7 +97,7 @@ function invitationHarness(patch = {}) {
     update: async ({ data }) => Object.assign(deliveries[0], data),
   };
   const prisma = {
-    $queryRaw: async strings => strings.join('').includes('SELECT EXISTS') ? [{ live: state.liveSession }] : strings.join('').includes('auth.sessions') ? state.liveSession ? [{ id: 'session' }] : [] : [],
+    $queryRaw: async strings => strings.join('').includes('SELECT EXISTS') ? [{ live: state.liveSession }] : strings.join('').includes('outclass_auth_sessions') ? state.liveSession ? [{ id: 'session' }] : [] : [],
     user: { findUnique: async () => ({ id: actorId, email: 'admin@virginia.edu', disabledAt: state.disabled ? new Date() : null }) },
     clubMember: { findUnique: async () => state.member ? owner : null },
     platformAdmin: { findUnique: async () => ({ active: state.grant }) },

@@ -31,7 +31,7 @@ function identityHarness() {
   const accounts = { [actor]: { id: actor, email: 'admin@virginia.edu' }, [target]: { id: target, email: 'target@virginia.edu', role: 'STUDENT' } };
   const session = { id: 'support-session', actorId: actor, targetUserId: target, mode: 'IMPERSONATION', expiresAt: new Date(Date.now() + 60000), endedAt: null };
   let tokenHash;
-  const prisma = { $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{live:true}] : [],
+  const prisma = { $queryRaw: async strings => strings.join('').includes('FROM public.outclass_auth_sessions') ? [{live:true}] : [],
     user: { upsert: async () => accounts[login], findUnique: async ({ where }) => ({ ...accounts[where.id], disabledAt: where.id === target && disabled ? new Date() : null }) },
     platformAdmin: { findUnique: async ({ where }) => where.userId === actor ? { active: grant } : targetGrant ? { active: true } : null },
     platformViewSession: { findUnique: async ({ where }) => where.tokenHash === tokenHash ? session : null },

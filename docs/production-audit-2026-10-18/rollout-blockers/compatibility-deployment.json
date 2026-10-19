@@ -1,0 +1,50 @@
+{
+  "baseline": "16c4be28f5e61674ef6a09882bf14eee2c9bc134",
+  "application_files": {
+    "actions/admin-workspace.ts": "e238fcb179439cdef8c79d6887e53cbbb5220eadc1551ace2e03d40c4e875f0b",
+    "actions/interview-kits.ts": "6bd5fd9ce8c2e4ddafe23e753a428413fdd976d5cc9b42a8160e2b83335d8689",
+    "actions/interview-resumes.ts": "483646cc798fea4f98074c85d1d01c42c2ec8918a09c849a75993f529f13fc2f",
+    "app/api/auth/student-claim/route.ts": "685bf51c10d937235e6b4ad40fd125aa4768f802cf690923a4c83d72e0a9ad45",
+    "app/club/[clubId]/workspace/page.tsx": "a06f5a167ca6daafcc9bb442cf9dc53bf28e412888415e704df2745566e12b1c",
+    "components/applicant-interview-reviews.tsx": "382a952c90616868747592fdc35050cdbb766a579ec94b7a96ef81d424e9f5b3",
+    "components/club-workspace.tsx": "4b25e283f988d2b0c7172aaba7dd068df15f52ede3c71b3522dd37800ef85372",
+    "components/interview-management-tabs.tsx": "f81b92354d2a55933b4dff88cad94be46384c81ae83fca02307d7246e6ba377c",
+    "components/interview-resume-moderation.tsx": "85f021edae12404bfff697eb0ec522923fdf821f2043dca760e6984185c48d18",
+    "components/interview-submitted-reviews.tsx": "d6a26723b045c76fd1704b31b4eb4b3d891035806141f3656da7976bd98524ad",
+    "components/views/leader-dashboard/live-leader-workspace.tsx": "12a6fc8f622d2828c679457badeb0a9ad5783aba173458d9456c84a9bf3f8405",
+    "docs/applicant-interview-navigation-verification.md": "7fc4166b77857262b31e2f6ddcbe7e3f1d8355d2e23b1c28ea24f333bb980ae3",
+    "lib/applicant-interview-navigation.ts": "f6f0d7e8d1134ad3fa4714c0f087ef5776842b10c4e131c3c51e228bcf4d38da",
+    "lib/demo/interview-foundation.ts": "1d83f29f65024b09ba5f8c52398eaca78ba1644276ca15a96ffc91e9017813ae",
+    "lib/interview-entry.ts": "e943ed5bb8ad7606edb8fa712ddcdc1aac2c164b7d5aa2d7ea123f3e6aa9ca41",
+    "lib/product-navigation.ts": "14b776034a3ae606fd7b85df43ed63d5fadc254b0a9bd7c7de6aee2257853da4",
+    "lib/student-invitation.ts": "38f1c0931e1c9a10cbcec0daa3ce268243d946c78a05fb9c37ffa828f082b5b1",
+    "scripts/check-release-database.cjs": "38cc6e85ef8edb964bbbeeb6aecb6919b5b65f911306017dc4d07f9f8e59a56c",
+    "tests/applicant-interview-navigation.test.cjs": "d37e9c4f419ebe41eb717963b7499410eb625a11e3c8b9ed68e806cf462dd2b2",
+    "tests/applicant-review-navigation-browser.test.cjs": "c70430e066b2614e4274fed1cf1d3d62031a072e7caa8ce74cc957f85736a0a8",
+    "tests/club-interview-recovery.test.cjs": "b19c545aea89fe1672bb059dd2537016bebf78e2b29dbb3b08f24e35568877b4",
+    "tests/helpers/applicant-review-browser.cjs": "ba2c11903cc74fcab8133265847fbdfcf5ffede629a2eef92defc9da96110f46",
+    "tests/interview-entry.test.cjs": "fc6c9a635e33d589528915cbe3a325abf178aae42120dc46201a7bc86a34ee3f",
+    "tests/resume-viewer-ui.test.cjs": "878710c69de19e3bf1cf7fdef845ed037a5860ee9142e55d63d824305b49a6a2",
+    "utils/club-asset-storage.ts": "90e9713daa7276a14e8962e51533d87d6f0683e0a7bd6995e2647c0b6b166fee"
+  },
+  "deployment": {
+    "id": "dpl_6vMuXwFiQYTHJT9NRQMpeX629t9B",
+    "url": "https://out-class-ltfljkeuy-outclassuva.vercel.app",
+    "target": "production",
+    "readyState": "READY"
+  },
+  "primary_domain": "https://www.out-class.net",
+  "primary_promotion_verified": true,
+  "database_binding": "existing production connection retained; cloud build verified postgres and session-column access",
+  "source_scope": "Audit baseline plus recorded compatibility patch, including reconciled existing production Applicants navigation. Canonical invoker-view/dedicated-login/strict-gate code remains a separate cutover artifact.",
+  "runtime_error_entries_in_initial_15m_window": 0,
+  "runtime_log_query_exit_code": 0,
+  "previous_primary": {
+    "id": "dpl_DyuHKmbA2qcorvR82WPHXJh91Ex5",
+    "url": "https://out-class-ic8fx3nzv-outclassuva.vercel.app"
+  },
+  "cutover_rollback_target": "dpl_6vMuXwFiQYTHJT9NRQMpeX629t9B",
+  "monitoring_limit": "Short low-volume error scan and safe unauthenticated checks; no authenticated production replay, latency/cost claim or full observability certification.",
+  "preserved_production_navigation_commit": "2c54a8cb1e9402b04708514291b316ec9aeecb80",
+  "superseded_interim_artifact": "dpl_7VJPm8N3ciFT8wCLgifiYWQWSgkQ"
+}

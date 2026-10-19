@@ -1,5 +1,10 @@
 # Security assessment
 
+## Current release update
+
+The [compatibility application release](rollout-blockers/README.md) now includes the preceding account redaction, dependency patches, signup response normalization and ordinary-session expiry checks, plus the provider-based claim flow. The invoker-view migration is applied with browser/PUBLIC/application-group grants revoked. **H2 remains open:** a fresh least-privilege login and exact grant/inverse are tested locally but not provisioned in production. The remaining capability is the [provider-owner lock ACL prerequisite](rollout-blockers/provider-lock-grant.sql); the operator can manage policies through Supabase delegation but cannot delegate UPDATE. No locks, RLS or owner boundaries were weakened. Earlier 'local only' release notes below are historical snapshots; provider enumeration/other outstanding findings remain open.
+
+
 ## Local remediation update
 
 **M6 is narrowed by real replay evidence and fixed locally at the shared application boundary:** logout/recovery already denied this fixture's captured tokens, but an expired `not_after` session with an unexpired JWT still read and wrote account data. Exact-token verification plus live session/user/deadline checking now denies it. All 37 real integration cases passed. [Before/after evidence and release limits](session-revocation/README.md) include one added SQL statement per authenticated request. Production remains unchanged; no universal logout/provider-endpoint guarantee is claimed.

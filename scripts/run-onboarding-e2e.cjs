@@ -68,14 +68,14 @@ async function ready(url,headers={}){
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
  const settings={projectId:'outclass-onboarding-e2e',appUrl:'http://127.0.0.1:3107',status,buildDir:path.join(repo,'.next-publish')};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
- const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'localhost',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
+ const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,OUTCLASS_RUNTIME_DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
  Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});
  logged('npm',['run','db:deploy'],'migrate.log',env);
  console.log('All Prisma migrations applied through the authoritative deployment command.');
  if(runtimeRole){
   const url=require('../tests/helpers/runtime-role-fixture.cjs').prepareRuntimeRole(configFile);
   settings.runtimeDatabaseUrl=url;
-  for(const key of ['DATABASE_URL','POSTGRES_PRISMA_URL','POSTGRES_URL','POSTGRES_URL_NON_POOLING'])env[key]=url;
+  for(const key of ['OUTCLASS_RUNTIME_DATABASE_URL','DATABASE_URL','POSTGRES_PRISMA_URL','POSTGRES_URL','POSTGRES_URL_NON_POOLING'])env[key]=url;
   console.log('Application will use the restricted local runtime role; operator credentials remain fixture/migration-only.');
  }
  // Test-only trusted TLS for the same Mailpit provider used by local Supabase Auth.
@@ -99,12 +99,13 @@ async function ready(url,headers={}){
  settings.admin={id:signup.data.user.id,email,password,factor:factor.data.id,totpSecret:factor.data.totp.secret};
  env.OUTCLASS_PLATFORM_ADMIN_IDS=settings.admin.id;fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});
  console.log('Administrator bootstrapped through normal verified signup and actual TOTP MFA.');
+ if(runtimeRole)logged(process.execPath,['scripts/check-release-database.cjs','--runtime-env'],'runtime-preflight.log',env);
  logged('npm',['run','build'],'build.log',env);
  const appLog=fs.openSync(path.join(root,'server.log'),'w');app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,stdio:['ignore',appLog,appLog]});
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  const testFile=process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
- const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs',...(runtimeRole?['tests/runtime-role-e2e.test.cjs']:[])],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile,...(runtimeRole?{OUTCLASS_RUNTIME_ROLE_E2E_CONFIG:configFile}:{})},stdio:'inherit'});
+ const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs',...(runtimeRole?['tests/runtime-role-e2e.test.cjs']:[])],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile,...(runtimeRole?{OUTCLASS_RUNTIME_ROLE_E2E_CONFIG:configFile}:{})},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{

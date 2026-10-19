@@ -38,7 +38,7 @@ async function main() {
   const status = spawnSync(process.execPath, [supabase, 'status', '--workdir', root, '-o', 'json'], { cwd: repo, encoding: 'utf8' })
   if (status.status) throw Error('Local Supabase status unavailable')
   const settings = resume ? JSON.parse(fs.readFileSync(path.join(root, 'config.json'))) : { projectId: project, appUrl: 'http://127.0.0.1:3126', status: JSON.parse(status.stdout), buildDir: path.join(root, 'app/.next-publish') }; guards(settings)
-  const env = { ...process.env, DATABASE_URL: settings.status.DB_URL, POSTGRES_PRISMA_URL: settings.status.DB_URL, POSTGRES_URL: settings.status.DB_URL, POSTGRES_URL_NON_POOLING: settings.status.DB_URL,
+  const env = { ...process.env, DATABASE_URL: settings.status.DB_URL, OUTCLASS_RUNTIME_DATABASE_URL: settings.status.DB_URL,POSTGRES_PRISMA_URL: settings.status.DB_URL, POSTGRES_URL: settings.status.DB_URL, POSTGRES_URL_NON_POOLING: settings.status.DB_URL,
     NEXT_PUBLIC_SUPABASE_URL: settings.status.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: settings.status.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: settings.status.ANON_KEY,
     SUPABASE_SECRET_KEY: settings.status.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: settings.status.SERVICE_ROLE_KEY, OUTCLASS_SITE_URL: settings.appUrl, OUTCLASS_PUBLISH_BUILD: '1',
     SMTP_HOST: '', SMTP_PASSWORD: '', RESEND_API_KEY: '', RESEND_FROM_EMAIL: '', COMMUNICATIONS_EMAIL_ENABLED: 'false', OUTCLASS_PLATFORM_ADMIN_IDS: '', VERCEL: '', VERCEL_ENV: '', NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'false' }

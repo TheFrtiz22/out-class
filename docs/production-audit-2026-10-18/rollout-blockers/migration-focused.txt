@@ -1,0 +1,14 @@
+✔ migrated invoker session view preserves base ACLs, RLS and locking without Auth schema usage (620.747958ms)
+✔ generated User has no local credential field and retains nullable suspension (1.569292ms)
+✔ nine existing indexes are represented exactly once in schema and fresh baseline (1.251083ms)
+✔ capabilities guards suspension type without rewriting existing values (2.024333ms)
+✔ required arrays have non-null empty defaults and each migration is transactional or a single atomic statement (7.008916ms)
+✔ canonical Auth SQL rejects cross-ID email collisions and stale installers cannot run (0.566125ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 703.630958

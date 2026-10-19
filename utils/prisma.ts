@@ -10,10 +10,10 @@ function createPrisma() {
   const client =
     globalForPrisma.outclassPrismaBase ??
     new PrismaClient({
-      // Prefer the configured Prisma pooler URL on Vercel.
+      // Prefer the dedicated web credential; migration/operator bindings stay separate.
       // Keep DATABASE_URL as the fallback for local and standalone deployments.
-      ...(process.env.POSTGRES_PRISMA_URL
-        ? { datasourceUrl: process.env.POSTGRES_PRISMA_URL }
+      ...((process.env.OUTCLASS_RUNTIME_DATABASE_URL || process.env.POSTGRES_PRISMA_URL)
+        ? { datasourceUrl: process.env.OUTCLASS_RUNTIME_DATABASE_URL || process.env.POSTGRES_PRISMA_URL }
         : {}),
       log:
         process.env.NODE_ENV === 'development'

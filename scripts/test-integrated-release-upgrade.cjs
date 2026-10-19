@@ -6,6 +6,7 @@ const database='outclass_release_upgrade',root=fs.mkdtempSync(path.join(os.tmpdi
 function run(cmd,args,opts={}){const r=spawnSync(cmd,args,{stdio:opts.input?['pipe','inherit','inherit']:'inherit',...opts});if(r.status!==0)throw Error('Isolated upgrade check failed.');}
 const sql=input=>run('docker',['exec','-i',container,'psql','-U','fixture_superuser','-d',database,'-v','ON_ERROR_STOP=1'],{input});
 const env={...process.env,DATABASE_URL:process.env.OUTCLASS_AUDIENCE_TEST_DATABASE_URL.replace('/outclass_audiences_test','/'+database)};
+env.OUTCLASS_RUNTIME_DATABASE_URL=env.DATABASE_URL;env.POSTGRES_PRISMA_URL=env.DATABASE_URL;
 try{
  run('docker',['exec',container,'createdb','-U','fixture_superuser',database]);
  fs.writeFileSync(path.join(root,'schema.prisma'),execFileSync('git',['show',`${main}:prisma/schema.prisma`]));fs.mkdirSync(path.join(root,'migrations'));

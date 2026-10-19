@@ -1,0 +1,63 @@
+[
+  {
+    "case": "global_logout",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "local_logout",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "password_recovery",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "disabled_account",
+    "provider_user_accepted": true,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "session_not_after",
+    "provider_user_accepted": true,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "malformed_cookie",
+    "provider_user_accepted": true,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "native_session_query",
+    "sql_statements_per_valid_request": 1,
+    "provider_requests_per_valid_request": 1,
+    "local_execution_ms": 0.015,
+    "plan": [
+      {
+        "type": "Result",
+        "rows": 1,
+        "loops": 1
+      },
+      {
+        "type": "Index Scan",
+        "index": "sessions_user_id_idx",
+        "rows": 1,
+        "loops": 1
+      }
+    ]
+  }
+]

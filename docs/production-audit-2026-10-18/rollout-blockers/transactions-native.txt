@@ -1,0 +1,290 @@
+ad28f4fa2ea5140ad31fe7548882ae78923d7de9b98bff383ae59442ab848876
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE SCHEMA
+CREATE TABLE
+GRANT
+GRANT
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_recruitment_test", schema "public" at "127.0.0.1:58452"
+
+57 migrations found in prisma/migrations
+
+Applying migration `20260923000000_baseline`
+Applying migration `20260923010000_capabilities`
+Applying migration `20260924000000_club_claims`
+Applying migration `20260924010000_anonymous_review_tests`
+Applying migration `20260924020000_interview_kits`
+Applying migration `20260924030000_meetings`
+Applying migration `20260924040000_member_tasks`
+Applying migration `20260925000000_platform_view_sessions`
+Applying migration `20260925010000_marketing_participants`
+Applying migration `20260927000000_recruiting_rules`
+Applying migration `20260928000000_private_resume_storage`
+Applying migration `20260929000000_club_marketing`
+Applying migration `20260930000000_interview_rooms`
+Applying migration `20261001000000_support_impersonation_tutorials`
+Applying migration `20261001010000_club_onboarding`
+Applying migration `20261002000000_organization_invitation_emails`
+Applying migration `20261002010000_onboarding_security`
+Applying migration `20261003000000_applicant_intelligence`
+Applying migration `20261003010000_durable_voting`
+Applying migration `20261003020000_corkboard`
+Applying migration `20261003030000_task_workflows`
+Applying migration `20261004000000_interview_foundation`
+Applying migration `20261004000000_voting_presentation_join`
+Applying migration `20261005000000_club_settings`
+Applying migration `20261005000000_interview_scheduling_access`
+Applying migration `20261005010000_public_corkboard`
+Applying migration `20261006010000_admin_workspace`
+Applying migration `20261006020000_profile_recruitment_visibility`
+Applying migration `20261007010000_profile_gpa_private_photos`
+Applying migration `20261008000000_school_requests`
+Applying migration `20261009000000_recruitment_offers`
+Applying migration `20261009010000_interview_collaboration`
+Applying migration `20261009234601_private_club_assets`
+Applying migration `20261010180000_communications_foundation`
+Applying migration `20261010190000_communications_center`
+Applying migration `20261010190001_reconciled_decision_letters`
+Applying migration `20261011002000_production_communications_runtime_access`
+Applying migration `20261011180000_submitted_interview_questions`
+Applying migration `20261011194930_decision_letter_runtime_access`
+Applying migration `20261012120000_global_availability`
+Applying migration `20261012160000_unpublished_panel_proposals`
+Applying migration `20261012171752_admin_session_bound_elevation`
+Applying migration `20261012190000_panel_schedule_publication`
+Applying migration `20261012200000_availability_collection`
+Applying migration `20261013002253_recipient_audiences`
+Applying migration `20261013005624_scheduled_communications`
+Applying migration `20261013014837_decision_letter_controls`
+Applying migration `20261013014950_recruitment_cycles`
+Applying migration `20261013015200_scheduled_decisions`
+Applying migration `20261013140024_scheduled_invitation_emails`
+Applying migration `20261013141510_scheduled_availability_requests`
+Applying migration `20261014230000_interview_self_booking`
+Applying migration `20261015010000_editor_drafts`
+Applying migration `20261016010000_saved_campus_events`
+Applying migration `20261016020000_event_scheduling_flyer_limits`
+Applying migration `20261016030000_event_flyer_deletion_runtime_access`
+Applying migration `20261019175843_outclass_auth_session_view`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260923000000_baseline/
+    └─ migration.sql
+  └─ 20260923010000_capabilities/
+    └─ migration.sql
+  └─ 20260924000000_club_claims/
+    └─ migration.sql
+  └─ 20260924010000_anonymous_review_tests/
+    └─ migration.sql
+  └─ 20260924020000_interview_kits/
+    └─ migration.sql
+  └─ 20260924030000_meetings/
+    └─ migration.sql
+  └─ 20260924040000_member_tasks/
+    └─ migration.sql
+  └─ 20260925000000_platform_view_sessions/
+    └─ migration.sql
+  └─ 20260925010000_marketing_participants/
+    └─ migration.sql
+  └─ 20260927000000_recruiting_rules/
+    └─ migration.sql
+  └─ 20260928000000_private_resume_storage/
+    └─ migration.sql
+  └─ 20260929000000_club_marketing/
+    └─ migration.sql
+  └─ 20260930000000_interview_rooms/
+    └─ migration.sql
+  └─ 20261001000000_support_impersonation_tutorials/
+    └─ migration.sql
+  └─ 20261001010000_club_onboarding/
+    └─ migration.sql
+  └─ 20261002000000_organization_invitation_emails/
+    └─ migration.sql
+  └─ 20261002010000_onboarding_security/
+    └─ migration.sql
+  └─ 20261003000000_applicant_intelligence/
+    └─ migration.sql
+  └─ 20261003010000_durable_voting/
+    └─ migration.sql
+  └─ 20261003020000_corkboard/
+    └─ migration.sql
+  └─ 20261003030000_task_workflows/
+    └─ migration.sql
+  └─ 20261004000000_interview_foundation/
+    └─ migration.sql
+  └─ 20261004000000_voting_presentation_join/
+    └─ migration.sql
+  └─ 20261005000000_club_settings/
+    └─ migration.sql
+  └─ 20261005000000_interview_scheduling_access/
+    └─ migration.sql
+  └─ 20261005010000_public_corkboard/
+    └─ migration.sql
+  └─ 20261006010000_admin_workspace/
+    └─ migration.sql
+  └─ 20261006020000_profile_recruitment_visibility/
+    └─ migration.sql
+  └─ 20261007010000_profile_gpa_private_photos/
+    └─ migration.sql
+  └─ 20261008000000_school_requests/
+    └─ migration.sql
+  └─ 20261009000000_recruitment_offers/
+    └─ migration.sql
+  └─ 20261009010000_interview_collaboration/
+    └─ migration.sql
+  └─ 20261009234601_private_club_assets/
+    └─ migration.sql
+  └─ 20261010180000_communications_foundation/
+    └─ migration.sql
+  └─ 20261010190000_communications_center/
+    └─ migration.sql
+  └─ 20261010190001_reconciled_decision_letters/
+    └─ migration.sql
+  └─ 20261011002000_production_communications_runtime_access/
+    └─ migration.sql
+  └─ 20261011180000_submitted_interview_questions/
+    └─ migration.sql
+  └─ 20261011194930_decision_letter_runtime_access/
+    └─ migration.sql
+  └─ 20261012120000_global_availability/
+    └─ migration.sql
+  └─ 20261012160000_unpublished_panel_proposals/
+    └─ migration.sql
+  └─ 20261012171752_admin_session_bound_elevation/
+    └─ migration.sql
+  └─ 20261012190000_panel_schedule_publication/
+    └─ migration.sql
+  └─ 20261012200000_availability_collection/
+    └─ migration.sql
+  └─ 20261013002253_recipient_audiences/
+    └─ migration.sql
+  └─ 20261013005624_scheduled_communications/
+    └─ migration.sql
+  └─ 20261013014837_decision_letter_controls/
+    └─ migration.sql
+  └─ 20261013014950_recruitment_cycles/
+    └─ migration.sql
+  └─ 20261013015200_scheduled_decisions/
+    └─ migration.sql
+  └─ 20261013140024_scheduled_invitation_emails/
+    └─ migration.sql
+  └─ 20261013141510_scheduled_availability_requests/
+    └─ migration.sql
+  └─ 20261014230000_interview_self_booking/
+    └─ migration.sql
+  └─ 20261015010000_editor_drafts/
+    └─ migration.sql
+  └─ 20261016010000_saved_campus_events/
+    └─ migration.sql
+  └─ 20261016020000_event_scheduling_flyer_limits/
+    └─ migration.sql
+  └─ 20261016030000_event_flyer_deletion_runtime_access/
+    └─ migration.sql
+  └─ 20261019175843_outclass_auth_session_view/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+DO
+REVOKE
+GRANT
+▶ decision/invitation transaction repair on isolated native PostgreSQL
+  ✔ serving-source reproduction: repeated provider waits exceed default 5s and roll back both paths (11357.733417ms)
+  ✔ serving bulk domain audit is incompatible with support; individual events retain attribution (261.572459ms)
+  ✔ direct all outcomes, retries/concurrency and attribution (support=false) (195.707833ms)
+  ✔ voting publication, concurrent retry and attribution (support=false) (76.676875ms)
+  ✔ no-email invitation creation and concurrent retry (support=false) (85.196208ms)
+  ✔ direct all outcomes, retries/concurrency and attribution (support=true) (209.114458ms)
+  ✔ voting publication, concurrent retry and attribution (support=true) (69.89325ms)
+  ✔ no-email invitation creation and concurrent retry (support=true) (68.838208ms)
+  ✔ slow provider resolution occurs before transaction; same latency no longer causes P2028 (3698.9295ms)
+  ✔ direct/voting/invitation audit failure rolls back all domain data; durable support attempts remain (361.850083ms)
+  ✔ permission revoked after request authorization and while waiting on Club lock denies direct/voting/invitation (707.753ms)
+  ✔ cross-club publication, voting and invitation denied without writes (49.561375ms)
+  ✔ aged session-bound elevation allows support writes but cannot extend support expiry (110.493833ms)
+  ✔ session/elevation/grant/logout/target revocation between audited statements rolls back (178.102958ms)
+  ✔ simultaneous support scopes and normal requests cannot share identity or outlive their transaction (145.391666ms)
+  ✔ 10s statement budget cancels slow SQL and rolls back business writes (10048.858417ms)
+  ✔ contended Club lock is observed and cancelled by 3s lock budget, not an expired Prisma transaction (3043.402834ms)
+  ✔ main-source profile publication reproduces P2028; bounded repair moves identical provider latency before acquisition (8390.95475ms)
+  ✔ profile publication retry, audit rollback and cross-club private image denial (support=false) (176.836459ms)
+  ✔ persisted voting draft reload, joining, ballots, retries and publication (support=false) (731.410041ms)
+  ✔ profile publication retry, audit rollback and cross-club private image denial (support=true) (173.274166ms)
+  ✔ persisted voting draft reload, joining, ballots, retries and publication (support=true) (370.040916ms)
+  ✔ main invitation discovery holds a 5s transaction across provider policy fetch and expires (5795.114459ms)
+  ✔ verified invitation discovery/claim is atomic and concurrent retries reuse membership (support=false) (6046.227375ms)
+  ✔ verified invitation discovery/claim is atomic and concurrent retries reuse membership (support=true) (5795.872833ms)
+  ✔ platform-designated owner claim preserves identity and grants exactly one owner (support=false) (101.32375ms)
+  ✔ platform-designated owner claim preserves identity and grants exactly one owner (support=true) (283.908458ms)
+  ✔ platform owner claim rechecks revoked Admin grant after provider preflight and grants nothing (251.980166ms)
+  ✔ invitation missing proof, foreign recipient, revoked inviter, suspended club and audit failure deny without partial grants (487.133917ms)
+  ✔ application submission: serving five-second transaction fails under repeated Auth latency; bounded path preserves atomic answers and attribution (7460.617375ms)
+  ✔ application drafts, submission retry and cross-user isolation (support=false) (58.994334ms)
+  ✔ application drafts, submission retry and cross-user isolation (support=true) (94.638792ms)
+  ✔ support revocation after the final answer write rolls submission and answers back (125.627875ms)
+  ✔ profile authority revoked while waiting on club lock is rechecked inside the transaction (160.763875ms)
+✔ decision/invitation transaction repair on isolated native PostgreSQL (67258.547708ms)
+ℹ decision: elapsed=5624ms provider resolutions=3; simulated Auth latency=1800ms/resolution, native default transaction=5000ms
+ℹ invitation: elapsed=5651ms provider resolutions=3; simulated Auth latency=1800ms/resolution, native default transaction=5000ms
+ℹ ACCEPTED support=false: three commands=86ms queries=79 PostgreSQL duration=67ms provider resolutions=0
+ℹ WAITLISTED support=false: three commands=43ms queries=75 PostgreSQL duration=14ms provider resolutions=0
+ℹ REJECTED support=false: three commands=45ms queries=75 PostgreSQL duration=29ms provider resolutions=0
+ℹ ACCEPTED support=true: three commands=65ms queries=112 PostgreSQL duration=34ms provider resolutions=3
+ℹ WAITLISTED support=true: three commands=60ms queries=104 PostgreSQL duration=24ms provider resolutions=3
+ℹ REJECTED support=true: three commands=54ms queries=104 PostgreSQL duration=26ms provider resolutions=3
+ℹ repaired decision: elapsed=1843ms transaction=34ms; one pretransaction provider resolution
+ℹ repaired invitation: elapsed=1837ms transaction=30ms; one pretransaction provider resolution
+ℹ slow SQL cancelled after 10027ms; transaction-local settings reset
+ℹ observed PostgreSQL Lock wait, cancelled after 3028ms
+ℹ profile simulated Auth=2700ms: elapsed=2746ms, transaction=24ms; one pretransaction provider resolution
+ℹ invitation discovery policy latency=5500ms: elapsed=5595ms, transaction=64ms
+ℹ invitation discovery policy latency=5500ms: elapsed=5540ms, transaction=29ms
+ℹ application simulated Auth=1800ms: elapsed=1853ms, transaction=26ms; one pretransaction provider resolution
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67430.83975
+▶ native decision communications: atomic snapshots, ownership, history, retries and outbox
+  ✔ simultaneous publication/retry produces one immutable snapshot, notification and queue entry (139.255625ms)
+  ✔ canonical recipient inbox, concurrent read, unread, archive and restore (73.775416ms)
+  ✔ templates do not expose anonymous identity; published copy stays stable after edits and correction (116.04775ms)
+  ✔ unauthorized/cross-club/disabled and revoked template writers fail closed (11.250292ms)
+  ✔ notification failure rolls back decision, offer, snapshot and audit atomically (178.367459ms)
+  ✔ publication vs template edit serializes one coherent immutable template snapshot (54.276958ms)
+  ✔ template mutation reauthorizes a revoked capability after waiting on Club lock (43.771208ms)
+✔ native decision communications: atomic snapshots, ownership, history, retries and outbox (1840.1775ms)
+▶ native offers: publication, student authority, membership, retries and races
+  ✔ parallel direct retries create one member-only offer and one event (81.746083ms)
+  ✔ foreign student denied; simultaneous accept creates one safe membership (427.057709ms)
+  ✔ reversal preserves accepted membership, final progression/reopen denied (66.5155ms)
+  ✔ repeated decline keeps historical acceptance and creates no membership (408.168459ms)
+  ✔ decision reversal revokes pending offer and cannot resurrect it on retry (238.383125ms)
+  ✔ accept versus revoke serializes to a coherent winner (213.615167ms)
+  ✔ already-member preserves owner permissions and all fields (290.3485ms)
+  ✔ suspension, expired offers, inactive memberships and foreign clubs denied (501.987334ms)
+  ✔ interview status requires compatible round and leaving returns to review (109.244125ms)
+  ✔ newer offers never reactivate LEFT/SUSPENDED members or overwrite leadership fields (1319.360542ms)
+  ✔ database constraints reject duplicate offers and elevated recruiting grants (8.562ms)
+  ✔ concurrent voting publication retries share the canonical offer path (442.766208ms)
+  ✔ final accepted/rejected/waitlisted rounds archive with immutable evaluation history; active round remains protected (218.92725ms)
+  ✔ voting publication rechecks disabled account, revoked capability and membership after actual lock wait (1863.283333ms)
+  ✔ accept racing decision reversal has coherent database state in either ordering (566.00375ms)
+  ✔ actual member removal and suspension winning the lock cannot be undone by acceptance (726.492417ms)
+  ✔ all recruitment-capable legacy revocation entry points emit one correctly associated canonical audit (618.454709ms)
+✔ native offers: publication, student authority, membership, retries and races (8599.609083ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10732.08775

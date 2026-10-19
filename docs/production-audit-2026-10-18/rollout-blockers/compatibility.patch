@@ -1,0 +1,708 @@
+diff --git a/actions/admin-workspace.ts b/actions/admin-workspace.ts
+index 105e71b..be13fb5 100644
+--- a/actions/admin-workspace.ts
++++ b/actions/admin-workspace.ts
+@@ -11,6 +11,7 @@ import { createOrganizationAndInvitePresident } from "@/actions/platform-organiz
+ import { createClubIdentityInvitation } from "@/actions/club-onboarding";
+ import { sendStudentClaimEmail, invitationEmailConfig } from "@/utils/email";
+ import { randomUUID } from "node:crypto";
++import { studentInvitationFingerprint } from "@/lib/student-invitation";
+ import { enqueueInvitationEmail } from "@/utils/invitation-delivery";
+ import { scheduleInvitationDelivery } from "@/utils/invitation-background";
+ import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
+@@ -116,8 +117,8 @@ export async function createAdminStudent(input: unknown) {
+   const relationshipType = relationship?.school.identifierTypes.find(t => t.verification === "EMAIL_LOCAL_PART" && t.emailDomain === "virginia.edu");
+   if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active club configured for UVA invitations.");
+   const client = adminAuth();
+-  // Provider owns expiry, token hashing, intended email binding and single-use verification.
+-  // There is no password field and no second invitation/token model.
++  // Auth owns expiry and single use. The audit fingerprint binds the issued
++  // capability to this account before verification can consume it.
+   const invitation = await client.auth.admin.generateLink({ type: "invite", email: d.email, options: { data: { first_name: d.firstName, last_name: d.lastName, firstName: d.firstName, lastName: d.lastName, major: d.major, gradYear: d.gradYear } } });
+   if (invitation.error || !invitation.data.user) throw Error("Could not provision the student invitation.");
+   const userId = invitation.data.user.id;
+@@ -125,6 +126,7 @@ export async function createAdminStudent(input: unknown) {
+   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.create", targetId: userId, reason: d.reason, details: { result: "created", email: d.email } } });
+   if (d.major && d.gradYear && /^[a-z][a-z0-9]{1,31}$/.test(d.email.split("@")[0])) await prisma.studentProfile.create({ data: { userId, firstName: d.firstName, lastName: d.lastName, computingId: d.email.split("@")[0], major: d.major, gradYear: d.gradYear } });
+   if (relationship && relationshipType) await createClubIdentityInvitation({ clubId: relationship.id, identifierTypeId: relationshipType.id, identifier: d.email.split("@")[0], invitedName: `${d.firstName} ${d.lastName}`, requestedRole: "MEMBER", platformDesignation: true });
++  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.binding", targetId: userId, details: { fingerprint: studentInvitationFingerprint(invitation.data.properties.hashed_token) } } });
+   const receipt = await sendStudentClaimEmail({ recipient: d.email, name: d.firstName, tokenHash: invitation.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
+   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.sent", targetId: userId, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
+   return { id: userId, email: d.email, status: "INVITED" };
+@@ -143,6 +145,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
+   });
+   const link = await client.auth.admin.generateLink({ type: "invite", email: data.user.email });
+   if (link.error) throw Error("Could not renew the invitation.");
++  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.binding", targetId: userId, details: { fingerprint: studentInvitationFingerprint(link.data.properties.hashed_token) } } });
+   const receipt = await sendStudentClaimEmail({ recipient: data.user.email, name: String(data.user.user_metadata.firstName || "Student"), tokenHash: link.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
+   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend", targetId: userId, reason, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
+   return { success: true };
+diff --git a/actions/interview-kits.ts b/actions/interview-kits.ts
+index 14f7047..8641fab 100644
+--- a/actions/interview-kits.ts
++++ b/actions/interview-kits.ts
+@@ -181,14 +181,15 @@ export async function getInterviewRounds(clubId: string): Promise<InterviewSetup
+ }
+ /** Closing projection deliberately never includes questions or private draft notes. */
+ /** Leadership discovery returns metadata only; opening a review reauthorizes its scope. */
+-export async function getSubmittedInterviewReviews(clubId: string) {
++export async function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+   z.string().uuid().parse(clubId);
++  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
+   const { user } = await requireAuth();
+   return prisma.$transaction(async tx => {
+     const { caps } = await interviewActor(tx, clubId, user.id);
+     if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
+     const records = await tx.interviewRecord.findMany({
+-      where: { completedAt: { not: null }, round: { clubId }, application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
++      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), completedAt: { not: null }, round: { clubId }, application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" } } },
+       orderBy: [{ completedAt: "desc" }, { id: "desc" }], take: 100,
+       select: { id: true, applicationId: true, roundId: true, interviewerId: true, anonymousReview: true, round: { select: { name: true, anonymousReview: true } }, application: { select: { round: { select: { anonymousReview: true } }, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
+     });
+diff --git a/actions/interview-resumes.ts b/actions/interview-resumes.ts
+index 6c6b1af..a1b54b5 100644
+--- a/actions/interview-resumes.ts
++++ b/actions/interview-resumes.ts
+@@ -13,13 +13,14 @@ import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
+ 
+ const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
+ /** Explicit moderation entry point includes only preserved documents, never private question drafts. */
+-export async function getInterviewResumeModerationQueue(clubId: string) {
++export async function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+   z.string().uuid().parse(clubId); const { user } = await requireAuth();
++  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
+   return prisma.$transaction(async tx => {
+     const { caps } = await interviewActor(tx, clubId, user.id);
+     if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
+     const documents = await tx.interviewResumeDocument.findMany({
+-      where: { application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
++      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
+       orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100,
+       select: { id: true, applicationId: true, roundId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
+     });
+diff --git a/app/api/auth/student-claim/route.ts b/app/api/auth/student-claim/route.ts
+index 4d24d8d..3cfe568 100644
+--- a/app/api/auth/student-claim/route.ts
++++ b/app/api/auth/student-claim/route.ts
+@@ -7,6 +7,8 @@ import { freshAuthClient } from "@/utils/admin-elevation";
+ import { createClient } from "@/utils/supabase/server";
+ import { prisma } from "@/utils/prisma";
+ import { PLATFORM_VIEW_COOKIE } from "@/lib/platform-view-as";
++import { studentInvitationFingerprint } from "@/lib/student-invitation";
++import { createClient as providerClient } from "@supabase/supabase-js";
+ const schema = z.object({ email: z.string().trim().toLowerCase().email().refine(isUvaEmail), tokenHash: z.string().regex(/^[a-f0-9]{56,64}$/), password: z.string().min(12).max(72) }).strict();
+ export async function POST(request: NextRequest) {
+   if (!sameOriginRequest(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+@@ -16,12 +18,19 @@ export async function POST(request: NextRequest) {
+     const d = schema.parse(await request.json());
+     const normal = await createClient(jar), current = await normal.auth.getUser();
+     if (current.data.user && current.data.user.email?.toLowerCase() !== d.email) throw Error("Sign out of the other account before claiming this invitation.");
+-    // Check the provider-owned invite binding before verifyOtp consumes it. No copy of
+-    // the invitation secret or separate invitation model is stored by OutClass.
+-    const pending = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM auth.users WHERE lower(email)=${d.email} AND confirmation_token=${d.tokenHash} AND invited_at IS NOT NULL AND email_confirmed_at IS NULL`;
+-    if (pending.length !== 1) throw Error("Invitation expired, already claimed, or belongs to another address.");
+-    const account = await prisma.user.findUnique({ where: { id: pending[0].id } });
+-    if (!account || account.disabledAt || account.email.toLowerCase() !== d.email) throw Error("Account unavailable. Contact support.");
++    const invalid = "Invitation expired, already claimed, or belongs to another address.";
++    const account = await prisma.user.findFirst({ where: { email: { equals: d.email, mode: "insensitive" } } });
++    if (!account || account.disabledAt) throw Error(invalid);
++    // Reject a wrong address/token before consuming the provider's one-use link.
++    // Audit rows are append-only and browser roles cannot write them. The digest
++    // is not a provider token and never grants access without Auth verification.
++    const binding = await prisma.auditLog.findFirst({ where: { targetId: account.id, action: "platform.student.invitation.binding", details: { path: ["fingerprint"], equals: studentInvitationFingerprint(d.tokenHash) } }, select: { id: true } });
++    if (!binding) throw Error(invalid);
++    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
++    if (!secret) throw Error("Account invitations are not configured.");
++    const admin = providerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, secret, { auth: { persistSession: false, autoRefreshToken: false } });
++    const pending = await admin.auth.admin.getUserById(account.id);
++    if (pending.error || pending.data.user?.id !== account.id || pending.data.user.email?.toLowerCase() !== d.email || !pending.data.user.invited_at || pending.data.user.email_confirmed_at) throw Error(invalid);
+     const client = freshAuthClient();
+     const verified = await client.auth.verifyOtp({ token_hash: d.tokenHash, type: "invite" });
+     if (verified.error || !verified.data.session || verified.data.user?.email?.toLowerCase() !== d.email) throw Error("Invitation expired, already claimed, or belongs to another address.");
+diff --git a/app/club/[clubId]/workspace/page.tsx b/app/club/[clubId]/workspace/page.tsx
+index b3e195c..429b8cd 100644
+--- a/app/club/[clubId]/workspace/page.tsx
++++ b/app/club/[clubId]/workspace/page.tsx
+@@ -7,16 +7,23 @@ import { getCurrentUser } from "@/utils/current-user";
+ import Link from "next/link";
+ import { ClubWorkspace } from "@/components/club-workspace";
+ import { AuthSessionBoundary } from "@/components/auth-session-boundary";
++import { redirect } from "next/navigation";
++import { legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
+ export const maxDuration = 60;
+ export default async function Page({
+   params,
+   searchParams,
+ }: {
+   params: Promise<{ clubId: string }>;
+-  searchParams: Promise<{ section?: string; taskView?: string; tool?: string }>;
++  searchParams: Promise<Record<string, string | string[] | undefined>>;
+ }) {
+-  const { clubId } = await params,
+-    { section, taskView, tool } = await searchParams;
++  const { clubId } = await params, query = await searchParams;
++  const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
++  const section = first(query.section), taskView = first(query.taskView), tool = first(query.tool);
++  const search = new URLSearchParams();
++  for (const [key, value] of Object.entries(query)) for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, item);
++  const moved = legacyApplicantInterviewHref(clubId, search.toString());
++  if (moved) redirect(moved);
+   const jar = await cookies();
+   let demoEnabled = false;
+   if (!jar.has(PLATFORM_VIEW_COOKIE) && jar.get(DEMO_COOKIE)?.value === "1") {
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index c66d1b2..b0d0a13 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -19,6 +19,7 @@ import Link from "next/link";
+ import { useAuth } from "@/contexts/auth-context";
+ import { useDemoMode } from "@/contexts/demo-context";
+ import { interviewListHref } from "@/lib/interview-entry";
++import { applicantInterviewHref, legacyApplicantInterviewHref } from "@/lib/applicant-interview-navigation";
+ import { interviewCapabilities } from "@/lib/interview-access";
+ import { hasPermission, hasWorkspace } from "@/lib/permissions";
+ import {
+@@ -37,6 +38,7 @@ import { MeetingList } from "@/components/meeting-workspace";
+ const LiveLeaderWorkspace = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.LiveLeaderWorkspace));
+ const InterviewWorkspaceView = dynamic(() => import("@/components/views/interview-workspace-view").then(m => m.InterviewWorkspaceView));
+ const InterviewManagementTabs = dynamic(() => import("@/components/interview-management-tabs").then(m => m.InterviewManagementTabs));
++const ApplicantInterviewReviews = dynamic(() => import("@/components/applicant-interview-reviews").then(m => m.ApplicantInterviewReviews));
+ import { DecisionSchedules } from "@/components/decision-schedules";
+ import { RecruitmentReviewSettings } from "@/components/recruitment-review-settings";
+ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+@@ -66,7 +68,7 @@ export function ClubWorkspace({
+     const href = `/club/${encodeURIComponent(clubId)}/workspace?${next}`;
+     if (!navigateWithinClub(href, true)) router.replace(href);
+   }, [legacyConfiguration, clubId, params, router]);
+-  const legacyInterviewTool = params.get("section") === "settings" && params.get("setting") === "interviews" && ["rooms", "schedule", "availability", "resumes", "reviews"].includes(params.get("interviewTab") ?? "");
++  const legacyInterviewTool = params.get("section") === "settings" && params.get("setting") === "interviews" && ["rooms", "schedule", "availability"].includes(params.get("interviewTab") ?? "");
+   useEffect(() => {
+     if (!legacyInterviewTool) return;
+     const next = new URLSearchParams(params.toString());
+@@ -79,6 +81,8 @@ export function ClubWorkspace({
+   const section = legacyEvents ? "meetings" : params.get("section") ?? "overview";
+   const taskView = params.get("taskView") ?? undefined;
+   const tool = params.get("tool") ?? undefined;
++  const moved = legacyApplicantInterviewHref(clubId, params.toString());
++  useEffect(() => { if (moved && !navigateWithinClub(moved, true)) router.replace(moved); }, [moved, router]);
+   const interviewMode = section === "recruitment" && tool === "interviews" && params.get("interview") === "1";
+   function setInterviewMode(open: boolean) {
+     const next = new URLSearchParams(params.toString());
+@@ -167,10 +171,10 @@ export function ClubWorkspace({
+   ]);
+   const current = data?.scope === scope && data.value.club.id === clubId ? data.value : null;
+   if (suspended) return <RouteWorkspaceShell><div className="max-w-2xl space-y-4"><h1 className="text-2xl font-semibold">This club is suspended</h1><p className="mt-3">Club operations are unavailable until an administrator restores it. Your membership and existing records are preserved.</p><Link href="/" className="mt-6 inline-block underline">Return to Personal</Link></div></RouteWorkspaceShell>;
+-  if (resolvingEntry) return <WorkspaceLoading label="Opening club workspace…" />;
++  if (resolvingEntry || moved) return <WorkspaceLoading label="Opening club workspace…" />;
+   const mode = section === "recruitment" || section === "announcements" && params.get("mode") === "recruiting" ? "recruiting" : "club";
+   const active = section === "announcements" ? "announcements" : mode === "recruiting" ? (tool === "rounds" || tool === "rules" ? "overview" : tool || "applicants") : section;
+-  const nav = manager ? managerNavigation(membership, clubId, mode) : [
++  const nav = manager ? managerNavigation(membership, clubId, mode, params.toString()) : [
+     { id: "overview", label: "Overview", href: clubWorkspaceHref(clubId, "overview") },
+     { id: "meetings", label: "Meetings", href: clubWorkspaceHref(clubId, "meetings") },
+     { id: "tasks", label: "Tasks", href: clubWorkspaceHref(clubId, "tasks") },
+@@ -201,7 +205,7 @@ export function ClubWorkspace({
+             {section === "members" && <ClubMembers key={clubId} clubId={clubId} initialDirectory={saved?.members} onDirectory={publishMembers} />}
+             {section === "settings" && <ClubSettingsWorkspace key={clubId} clubId={clubId} onSaved={() => { setRetry(n => n + 1); setPrivacyRevision(n => n + 1) }} />}
+             {section === "announcements" && <ClubAnnouncements key={clubId} clubId={clubId} />}
+-            {section === "recruitment" && (active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} initialData={saved?.pipeline ? { clubId, pipeline: saved.pipeline } : undefined} onData={publishPipeline} /></>)}
++            {section === "recruitment" && (active === "resumes" || active === "reviews" ? <ApplicantInterviewReviews clubId={clubId} tool={active} /> : active === "scheduled-decisions" ? <DecisionSchedules clubId={clubId} /> : active === "overview" && current ? <RecruitingOverview data={current} /> : active === "interviews" ? <div className="space-y-3">{(hasPermission(membership, "interviews.manage") || interviewCapabilities(membership).editKit || interviewCapabilities(membership).participate || interviewCapabilities(membership).readClosing) && <RecruitmentWorkspace clubId={clubId} member={membership} onInterview={() => setInterviewMode(true)} initialTool="kits" />}</div> : <><p className="mb-5 text-sm text-muted-foreground">{active === "decisions" ? "Publish final decisions with a formal letter and inbox notification. Decision-availability email follows the student’s application-email preferences." : active === "rejected" ? "Review retained rejected applications and their history. Use explicit reconsideration to return an eligible application to review." : "Review submitted applications and move candidates through your club’s rounds."}</p><LiveLeaderWorkspace key={privacyRevision} scoped rejectedOnly={active === "rejected"} decisionsOnly={active === "decisions"} initialData={saved?.pipeline ? { clubId, pipeline: saved.pipeline } : undefined} onData={publishPipeline} /></>)}
+           </section>}
+         </>}
+         <Sheet open={!!reviewTool && !!membership && mode === "recruiting" && nav.some(n => n.id === reviewTool && n.quiet)} onOpenChange={open => { if (!open) { if (document.querySelector('[data-saving="true"]')) return; if (document.querySelector('[data-rule-dirty="true"]') && !window.confirm("Discard unsaved rule changes?")) return; setReviewTool(null); if (tool === "rounds" || tool === "rules") { const next = new URLSearchParams(params.toString()); next.set("tool", "overview"); router.replace(`/club/${encodeURIComponent(clubId)}/workspace?${next}`) } } }}>
+diff --git a/components/interview-management-tabs.tsx b/components/interview-management-tabs.tsx
+index 8d7255b..67132a9 100644
+--- a/components/interview-management-tabs.tsx
++++ b/components/interview-management-tabs.tsx
+@@ -10,8 +10,6 @@ import { ClubInterviewKitSettings } from "@/components/interview-kit-editor"
+ import { RoomManager } from "@/components/interviews/room-manager"
+ import { canLeaveWorkspace } from "@/lib/product-navigation"
+ import { interviewCapabilities } from "@/lib/interview-access"
+-import { InterviewResumeModeration } from "@/components/interview-resume-moderation"
+-import { InterviewSubmittedReviews } from "@/components/interview-submitted-reviews"
+ import { InterviewAccessSetup } from "@/components/interview-access-setup"
+ import { InterviewRoomsList } from "@/components/interviews/interview-rooms-list"
+ import "@/components/clubs/interview-kit-editor.css"
+@@ -22,11 +20,9 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
+   const capabilities = interviewCapabilities(member)
+   const canEnter = capabilities.participate
+   const canSchedule = hasPermission(member, "interviews.manage")
+-  const canModerate = capabilities.moderateResume
+-  const canReadClosing = capabilities.readClosing
+   const canManageGrants = capabilities.manageGrants
+   const canOpenOperations = canSchedule || hasPermission(member, "applications.review") || capabilities.editKit
+-  const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canModerate && !settingsOnly ? ["resumes"] : []), ...(canReadClosing && !settingsOnly ? ["reviews"] : []), ...(canManageGrants ? ["access"] : [])]
++  const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canManageGrants ? ["access"] : [])]
+   const requested = initialTab === "availability" ? "schedule" : initialTab
+   const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits")
+   return <div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=interviews&interviewTab=schedule`} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
+@@ -38,12 +34,10 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
+       }
+     }
+   }} activationMode="manual">
+-    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canModerate && !settingsOnly && <TabsTrigger value="resumes">Résumé moderation</TabsTrigger>}{canReadClosing && !settingsOnly && <TabsTrigger value="reviews">Submitted reviews</TabsTrigger>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
++    <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
+     <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
+     {canSchedule && !settingsOnly && <TabsContent value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} /></TabsContent>}
+-    {canModerate && !settingsOnly && <TabsContent value="resumes"><InterviewResumeModeration clubId={clubId} /></TabsContent>}
+-    {canReadClosing && !settingsOnly && <TabsContent value="reviews"><InterviewSubmittedReviews clubId={clubId} /></TabsContent>}
+     {canManageGrants && <TabsContent value="access"><InterviewAccessSetup clubId={clubId} /></TabsContent>}
+   </Tabs></div>
+ }
+diff --git a/components/interview-resume-moderation.tsx b/components/interview-resume-moderation.tsx
+index beeac25..83c3a70 100644
+--- a/components/interview-resume-moderation.tsx
++++ b/components/interview-resume-moderation.tsx
+@@ -5,8 +5,10 @@ import { useDemoMode } from "@/contexts/demo-context";
+ import { getInterviewResumeModerationQueue } from "@/lib/workspace-api";
+ import { Button } from "@/components/ui/button";
+ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
++import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+ type Row = Awaited<ReturnType<typeof getInterviewResumeModerationQueue>>[number];
+-export function InterviewResumeModeration({ clubId }: { clubId: string }) {
++export function InterviewResumeModeration({ clubId, filters = {}, initialDocumentId }: { clubId: string; filters?: ApplicantInterviewFilters; initialDocumentId?: string }) {
++  const { applicationId, roundId, cycleId } = filters;
+   const { isDemoEnabled } = useDemoMode();
+   const [rows, setRows] = useState<Row[]>([]), [selected, setSelected] = useState<Row | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
+   const trigger = useRef<HTMLButtonElement | null>(null), refreshButton = useRef<HTMLButtonElement>(null);
+@@ -15,7 +17,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
+     let current = true, pending = false;
+     const refresh = async () => {
+       if (pending) return; pending = true;
+-      try { const value = await getInterviewResumeModerationQueue(clubId); if (current) { setRows(value); setError(""); } }
++      try { const value = await getInterviewResumeModerationQueue(clubId, { applicationId, roundId, cycleId }); if (current) { setRows(value); setSelected(previous => value.find(row => row.documentId === (previous?.documentId || initialDocumentId)) || null); setError(""); } }
+       catch { if (current) { setRows([]); setSelected(null); setError("Résumé moderation unavailable. Check your current office assignment and access."); } }
+       finally { pending = false; if (current) setLoading(false); }
+     };
+@@ -23,7 +25,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
+     setRows([]); setSelected(null); setLoading(true); void refresh();
+     const timer = setInterval(visible, 10000); window.addEventListener("focus", visible);
+     return () => { current = false; clearInterval(timer); window.removeEventListener("focus", visible); };
+-  }, [clubId, retry]);
++  }, [clubId, retry, applicationId, roundId, cycleId, initialDocumentId]);
+   return <section className="space-y-4 p-4" aria-label="Résumé moderation">
+     <h2 className="oc-section-heading">Résumé moderation</h2>
+     <p className="text-sm text-muted-foreground">Preserved interview documents, including past rounds. Only explicit presidents and vice-presidents can moderate other authors’ comments. The latest 100 documents are shown.</p>
+@@ -34,7 +36,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
+     <Dialog open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); (trigger.current?.isConnected ? trigger.current : refreshButton.current)?.focus(); }}>
+       <DialogHeader className="pr-10"><DialogTitle>{selected?.applicantName} · Résumé</DialogTitle><DialogDescription>The document preserved for {selected?.roundName}. Moderated changes are audited.</DialogDescription></DialogHeader>
+       <Button type="button" size="sm" variant="outline" className="self-start" onClick={() => setSelected(null)}>Close résumé</Button>
+-      {selected && scope && <Viewer scope={scope} documentId={selected.documentId} isDemo={isDemoEnabled} onAccessLost={() => { setRows([]); }} />}
++      {selected && scope && <Viewer scope={scope} documentId={selected.documentId} isDemo={isDemoEnabled} onAccessLost={() => { setRows([]); setSelected(null); }} />}
+     </DialogContent></Dialog>
+   </section>;
+ }
+diff --git a/components/interview-submitted-reviews.tsx b/components/interview-submitted-reviews.tsx
+index 3384bb8..2faa398 100644
+--- a/components/interview-submitted-reviews.tsx
++++ b/components/interview-submitted-reviews.tsx
+@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
+ import { getSubmittedInterviewReview, getSubmittedInterviewReviews } from "@/lib/workspace-api";
+ import { RoundScore } from "@/components/interview-review-references";
+ import { Button } from "@/components/ui/button";
++import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
+ type Row = Awaited<ReturnType<typeof getSubmittedInterviewReviews>>[number];
+ type Review = Awaited<ReturnType<typeof getSubmittedInterviewReview>>;
+-export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
++export function InterviewSubmittedReviews({ clubId, filters = {}, initialReviewId }: { clubId: string; filters?: ApplicantInterviewFilters; initialReviewId?: string }) {
++  const { applicationId, roundId, cycleId } = filters;
+   const [rows, setRows] = useState<Row[]>([]), [selected, setSelected] = useState<Row | null>(null), [review, setReview] = useState<Review | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
+   useEffect(() => {
+     let current = true, pending = false;
+     const refresh = async () => {
+       if (pending) return; pending = true;
+-      try { const result = await getSubmittedInterviewReviews(clubId); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : result.find(r => r.id === new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId")) || null); } }
++      try { const result = await getSubmittedInterviewReviews(clubId, { applicationId, roundId, cycleId }); if (current) { setRows(result); setError(""); setSelected(value => value ? result.find(r => r.id === value.id) || null : result.find(r => r.id === (initialReviewId || new URLSearchParams(typeof window !== "undefined" ? window.location?.search || "" : "").get("reviewId"))) || null); } }
+       catch { if (current) { setRows([]); setSelected(null); setReview(null); setError("Submitted reviews unavailable. Check your current leadership access."); } }
+       finally { pending = false; if (current) setLoading(false); }
+     };
+@@ -19,7 +21,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
+     setRows([]); setSelected(null); setReview(null); setLoading(true); void refresh();
+     const timer = setInterval(visible, 10000); window.addEventListener("focus", visible);
+     return () => { current = false; clearInterval(timer); window.removeEventListener("focus", visible); };
+-  }, [clubId, retry]);
++  }, [clubId, retry, applicationId, roundId, cycleId, initialReviewId]);
+   useEffect(() => {
+     setReview(null);
+     if (!selected) return;
+@@ -40,7 +42,7 @@ export function InterviewSubmittedReviews({ clubId }: { clubId: string }) {
+     <Button type="button" variant="outline" onClick={() => setRetry(v => v + 1)}>Refresh reviews</Button>
+     {loading && <p role="status">Loading reviews…</p>}{error && <p role="alert">{error}</p>}
+     {!loading && !error && !rows.length && <p role="status">No submitted reviews available.</p>}
+-    <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
++    <ul className="flex flex-wrap gap-2">{rows.map(row => <li key={row.id}><Button type="button" variant={selected?.id === row.id ? "secondary" : "outline"} className="h-auto whitespace-normal text-left" aria-pressed={selected?.id === row.id} onClick={() => { setReview(null); setSelected(row); if (window.location?.href && window.history) { const url = new URL(window.location.href); url.searchParams.set("reviewId", row.id); window.history.replaceState(null, "", url.pathname + url.search); } }}>{row.applicantName} · {row.roundName} · Open review</Button></li>)}</ul>
+     {selected && <section aria-label="Read-only closing review" className="space-y-4 rounded-lg border bg-card p-4">
+       {review && <RoundScore key={selected.id} scope={{ clubId, applicationId: selected.applicationId, roundId: selected.roundId }} />}
+       <h3 className="font-medium">{selected.applicantName} · {selected.roundName}</h3>
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 1a92b0c..aba0933 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -18,6 +18,10 @@ import { useDemoMode } from "@/contexts/demo-context"
+ import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
+ import { RevealApplicant } from "@/components/reveal-applicant"
+ import { hasPermission } from "@/lib/permissions"
++import { interviewCapabilities } from "@/lib/interview-access"
++import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
++import Link from "next/link"
++import { canLeaveWorkspace } from "@/lib/product-navigation"
+ 
+ import { WorkspaceLoading } from "@/components/workspace-loading"
+ import { useEffect, useMemo, useRef, useState } from "react"
+@@ -627,6 +631,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
+                 </SheetDescription>
+               </SheetHeader>
++              {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
++                {([...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !active.studentId.startsWith("anonymous-") ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]).map(item => <Link key={item.tool} className="inline-flex min-h-10 items-center underline" href={applicantInterviewHref(membership.clubId, item.tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault(); }}>{item.label}</Link>)}
++              </nav>}
+               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+                 <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
+                 <div className="flex items-center gap-2">
+diff --git a/lib/demo/interview-foundation.ts b/lib/demo/interview-foundation.ts
+index 83ccc0a..3753a8c 100644
+--- a/lib/demo/interview-foundation.ts
++++ b/lib/demo/interview-foundation.ts
+@@ -122,12 +122,14 @@ export function submitEvaluation(input: { clubId: string; applicationId: string;
+   if (record.completedAt) throw new Error("Submitted evaluation is immutable.");
+   return { success: true, evaluation: saveInterviewSession({ ...scope, revision: record.revision, draft: { ...record.draft, score: input.score, additionalNotes: input.notes ?? record.draft.overallReview }, complete: true }).evaluation! };
+ }
+-export function getSubmittedInterviewReviews(clubId: string) {
++export function getSubmittedInterviewReviews(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+   demoStore.refresh();
+   const { s, caps } = actor(clubId);
+   if (!caps.readClosing) throw new Error("Explicit leadership review access required.");
++  // Demo has no recorded recruitment cycles; never infer a cycle for legacy fixtures.
+   return s.interviews.filter(r => {
+     if (!r.completedAt || r.clubId !== clubId) return false;
++    if (filters.applicationId && r.applicationId !== filters.applicationId || filters.roundId && r.roundId !== filters.roundId || filters.cycleId) return false;
+     try { access({ clubId, applicationId: r.applicationId, roundId: r.roundId }, "closingReview"); return true; } catch { return false; }
+   }).sort((a,b) => (+new Date(b.completedAt!) - +new Date(a.completedAt!)) || b.id.localeCompare(a.id)).slice(0,100).map(r => {
+     const app = s.applications.find(a => a.id === r.applicationId)!, profile = s.students.find(p => p.id === app.studentId)?.profile;
+@@ -207,7 +209,7 @@ export function getInterviewApplicantPanel(input: InterviewScope) {
+   const { s, app } = access(input); const p = s.students.find(p => p.id === app.studentId)!.profile;
+   return { profile: { firstName: p.firstName, lastName: p.lastName, headshotUrl: p.headshotUrl, scholarStatus: p.scholarStatus }, document: s.interviewFoundation.documents.find(d => d.applicationId === app.id && d.roundId === input.roundId) || null };
+ }
+-export function getInterviewResumeModerationQueue(clubId: string) {
++export function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
+   demoStore.refresh(); const { s, member, caps } = actor(clubId);
+   if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
+   return s.interviewFoundation.documents.flatMap(document => {
+@@ -215,6 +217,7 @@ export function getInterviewResumeModerationQueue(clubId: string) {
+     const round = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === document.roundId);
+     const current = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === app?.roundId);
+     if (!app || !round || !current || round.anonymousReview || current.anonymousReview) return [];
++    if (filters.applicationId && app.id !== filters.applicationId || filters.roundId && document.roundId !== filters.roundId || filters.cycleId) return [];
+     const profile = s.students.find(p => p.id === app.studentId)?.profile;
+     return [{ documentId: document.id, clubId, applicationId: app.id, roundId: round.id, roundName: round.name, applicantName: profile ? `${profile.firstName} ${profile.lastName}` : "Profile not provided" }];
+   }).reverse().slice(0, 100);
+diff --git a/lib/interview-entry.ts b/lib/interview-entry.ts
+index 7fd9dd0..5715c4d 100644
+--- a/lib/interview-entry.ts
++++ b/lib/interview-entry.ts
+@@ -1,3 +1,4 @@
++import { applicantInterviewHref } from "@/lib/applicant-interview-navigation";
+ export type InterviewRoomEntry = {
+   id: string; slotId: string; roomId: string; bookingId: string | null;
+   clubId: string; roundId: string; roundName: string; roomName: string; location: string;
+@@ -15,7 +16,7 @@ export function interviewEntryHref(entry: Pick<InterviewRoomEntry, "clubId" | "a
+   for (const [key, value] of Object.entries({ applicationId: entry.applicationId, roundId: entry.roundId, slotId: entry.slotId, bookingId: entry.bookingId, roomId: entry.roomId })) {
+     if (value) query.set(key, value); else query.delete(key);
+   }
+-  if (entry.reviewId) { query.delete("interview"); query.set("interviewTab", "reviews"); query.set("reviewId", entry.reviewId); }
++  if (entry.reviewId) { query.set("reviewId", entry.reviewId); return applicantInterviewHref(entry.clubId, "reviews", query.toString(), entry.applicationId || undefined); }
+   return `${base}?${query}`;
+ }
+ export function interviewListHref(clubId: string, search: string) {
+diff --git a/lib/product-navigation.ts b/lib/product-navigation.ts
+index 0f68915..dac4414 100644
+--- a/lib/product-navigation.ts
++++ b/lib/product-navigation.ts
+@@ -1,6 +1,7 @@
+ import { interviewCapabilities } from "@/lib/interview-access"
+ import { availableSettings } from "@/lib/club-settings"
+ import { hasPermission, type ClubAccess } from "@/lib/permissions"
++import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+ export type PersonalSection = "explore" | "categories" | "corkboard" | "calendar" | "applications" | "status" | "clubs" | "meetings" | "tasks"
+ export type PersonalMode = "explore" | "apply" | "clubs"
+ export type ProductNavItem = { id: string; label: string; href?: string; quiet?: boolean; preview?: boolean; navGroup?: "applicants" | "decisions" }
+@@ -31,13 +32,15 @@ export function personalDestination(id: string): { view: import("@/lib/views").V
+   if (id === "corkboard") return { view: id, section: id }
+   return { view: "explore", section: "explore" }
+ }
+-export function managerNavigation(member: ClubAccess, clubId: string, mode: string): ProductNavItem[] {
++export function managerNavigation(member: ClubAccess, clubId: string, mode: string, search = ""): ProductNavItem[] {
+   const href = (section: string, tool?: string) => `/club/${encodeURIComponent(clubId)}/workspace?section=${section}${tool ? `&tool=${tool}` : ""}`
+   const item = (id: string, label: string, section = id, extra = {}) => ({ id, label, href: href(section, section === "recruitment" ? id : undefined), ...extra })
+   if (mode === "recruiting") {
+     const read = hasPermission(member, "applications.review") || hasPermission(member, "applicants.identify")
+     return [item("overview", "Overview", "recruitment"),
+       ...(read ? [item("applicants", "All Applicants", "recruitment", { navGroup: "applicants" as const }), item("rejected", "Rejected Applicants", "recruitment", { navGroup: "applicants" as const })] : []),
++      ...(interviewCapabilities(member).moderateResume ? [item("resumes", "Résumé moderation", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "resumes", search) })] : []),
++      ...(interviewCapabilities(member).readClosing ? [item("reviews", "Submitted reviews", "recruitment", { navGroup: "applicants" as const, href: applicantInterviewHref(clubId, "reviews", search) })] : []),
+       ...(hasPermission(member, "applications.review") || hasPermission(member, "interviews.manage") || interviewCapabilities(member).editKit ? [item("interviews", "Interviews", "recruitment")] : []),
+       ...(read ? [item("decisions", "All Decisions", "recruitment", { navGroup: "decisions" as const })] : []),
+       ...((hasPermission(member,"decisions.manage")||hasPermission(member,"decisions.publish"))&&hasPermission(member,"applicants.identify") ? [item("scheduled-decisions","Scheduled Decisions","recruitment", { navGroup: "decisions" as const })] : []),
+diff --git a/scripts/check-release-database.cjs b/scripts/check-release-database.cjs
+index ca61d3a..e238266 100644
+--- a/scripts/check-release-database.cjs
++++ b/scripts/check-release-database.cjs
+@@ -37,6 +37,10 @@ async function main() {
+   try {
+     const columns = await prisma.$transaction(async tx => {
+       await tx.$executeRawUnsafe('SET TRANSACTION READ ONLY')
++      const [identity] = await tx.$queryRawUnsafe('SELECT current_user AS role')
++      if (identity?.role !== 'postgres') throw Object.assign(new Error('Unexpected compatibility binding'), { code: 'COMPATIBILITY_ROLE_UNVERIFIED' })
++      await tx.$queryRawUnsafe("SELECT id,user_id,not_after FROM auth.sessions WHERE false")
++      console.log('Compatibility build database role: postgres; required session query access verified. No credential changed.')
+       return tx.$queryRawUnsafe(catalogQuery)
+     })
+     const missing = missingColumns(columns)
+diff --git a/tests/club-interview-recovery.test.cjs b/tests/club-interview-recovery.test.cjs
+index 3322893..d6b5721 100644
+--- a/tests/club-interview-recovery.test.cjs
++++ b/tests/club-interview-recovery.test.cjs
+@@ -19,6 +19,7 @@ function render(search,{permission=true,selected=true,loading=false}={}) {
+   '@/lib/interview-access':{interviewCapabilities:()=>({participate:true})},
+   '@/lib/workspace-navigation':nav.exports,
+   '@/lib/interview-entry':require('./helpers/interview-harness.cjs').harness().load('lib/interview-entry.ts'),
++  '@/lib/applicant-interview-navigation':require('./helpers/interview-harness.cjs').harness().load('lib/applicant-interview-navigation.ts'),
+  };
+  const mod={exports:{}};new Function('require','module','exports',compile('components/club-workspace.tsx'))(name=>mocks[name]||(name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports);
+  const tree=mod.exports.ClubWorkspace({clubId:'club'}),screen=tree.props.children[1];
+diff --git a/tests/interview-entry.test.cjs b/tests/interview-entry.test.cjs
+index 9203f6f..873f91b 100644
+--- a/tests/interview-entry.test.cjs
++++ b/tests/interview-entry.test.cjs
+@@ -5,7 +5,7 @@ test('status does not invent completion or call a missed session upcoming; ongoi
+  const api=harness().load('lib/interview-entry.ts'),now=Date.parse('2026-10-20T17:00:00Z'),base={id:'future',startTime:'2026-10-21T17:00:00Z',endTime:'2026-10-21T17:20:00Z',bookingId:'booking',started:false,completed:false,cancelled:false};
+  assert.equal(api.interviewEntryStatus(base,now),'Upcoming');assert.equal(api.interviewEntryStatus({...base,bookingId:null},now),'Awaiting booking');assert.equal(api.interviewEntryStatus({...base,completed:true},now),'Completed');assert.equal(api.interviewEntryStatus({...base,cancelled:true},now),'Cancelled');
+  const missed={...base,id:'missed',startTime:'2026-10-19T17:00:00Z',endTime:'2026-10-19T17:20:00Z'};assert.equal(api.interviewEntryStatus(missed,now),'Not started');assert.equal(api.interviewEntryStatus({...missed,started:true},now),'In progress');assert.deepEqual(api.sortInterviewEntries([missed,base,{...missed,id:'ongoing',started:true}],now).map(r=>r.id),['ongoing','future','missed']);
+- const q=new URL(api.interviewEntryHref({...base,clubId:id(1),applicationId:id(2),roundId:id(3),slotId:id(5),roomId:id(6),reviewId:id(7)}),'https://out-class.net').searchParams;assert.equal(q.get('interviewTab'),'reviews');assert.equal(q.get('reviewId'),id(7));assert.equal(q.has('interview'),false);
++ const q=new URL(api.interviewEntryHref({...base,clubId:id(1),applicationId:id(2),roundId:id(3),slotId:id(5),roomId:id(6),reviewId:id(7)}),'https://out-class.net').searchParams;assert.equal(q.get('tool'),'reviews');assert.equal(q.has('interviewTab'),false);assert.equal(q.get('reviewId'),id(7));assert.equal(q.has('interview'),false);
+ });
+ test('exact destinations retain slot, booking, club and round; Back preserves originating filters and never accepts an external return',()=>{
+  const api=harness().load('lib/interview-entry.ts'),entry={clubId:id(1),applicationId:id(2),roundId:id(3),bookingId:id(4),slotId:id(5),roomId:id(6)};
+diff --git a/tests/resume-viewer-ui.test.cjs b/tests/resume-viewer-ui.test.cjs
+index 1a7b73a..29592ba 100644
+--- a/tests/resume-viewer-ui.test.cjs
++++ b/tests/resume-viewer-ui.test.cjs
+@@ -76,13 +76,15 @@ test('single-page toolbar has zoom/download but no pagination or routine access
+   assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Résumé zoom'));assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Download original PDF'));assert.equal(button(t,'Refresh access'),undefined);assert.equal(button(t,'Retry access'),undefined);assert.equal(calls,1);h.close();
+  }
+ });
+-test('management shows moderation only for active explicit presidents/VPs, independent of admin scheduling rights', () => {
++test('Applicants shows moderation only for active explicit presidents/VPs; Interviews never duplicates review destinations', () => {
+   const h=harness(), code=ts.transpileModule(fs.readFileSync('components/interview-management-tabs.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
+   let offices=[],status='ACTIVE'; const m={exports:{}};
+   const mocks={'@/components/interviews/interview-rooms-list':{InterviewRoomsList:'InterviewRoomsList'},'@/components/availability/admin-overview':{AdminAvailabilityOverview:'Availability'},'@/components/interview-access-setup':{InterviewAccessSetup:'AccessSetup'},'@/components/interview-submitted-reviews':{InterviewSubmittedReviews:'Reviews'},react:{useState:v=>[v,()=>{}]},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices}]}})},'@/lib/product-navigation':{canLeaveWorkspace:()=>true},'@/components/interview-kit-editor':{ClubInterviewKitSettings:'Kit'},'@/components/interview-resume-moderation':{InterviewResumeModeration:'Moderation'},'@/components/interviews/room-manager':{RoomManager:'Rooms'}};
+   new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n==='@/components/icons'?require('./helpers/icons.cjs'):n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
+   const render=()=>m.exports.InterviewManagementTabs({clubId:'c',onInterview(){}});
+-  assert.doesNotMatch(text(render()),/Résumé moderation/); offices=['BOARD'];assert.match(text(render()),/Submitted reviews/);assert.doesNotMatch(text(render()),/Résumé moderation/);
+-  offices=['VICE_PRESIDENT'];assert.match(text(render()),/Résumé moderation/); offices=['PRESIDENT'];assert.match(text(render()),/Résumé moderation/);
+-  status='INACTIVE';assert.doesNotMatch(text(render()),/Submitted reviews/);assert.doesNotMatch(text(render()),/Résumé moderation/);
++  const menu=()=>h.load('lib/product-navigation.ts').managerNavigation({clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices},'c','recruiting').map(i=>i.label).join(' ');
++  assert.doesNotMatch(menu(),/Résumé moderation|Submitted reviews/); offices=['BOARD'];assert.match(menu(),/Submitted reviews/);assert.doesNotMatch(menu(),/Résumé moderation/);
++  offices=['VICE_PRESIDENT'];assert.match(menu(),/Résumé moderation/); offices=['PRESIDENT'];assert.match(menu(),/Résumé moderation/);
++  for(const office of [[],['BOARD'],['VICE_PRESIDENT'],['PRESIDENT']]){offices=office;assert.doesNotMatch(text(render()),/Résumé moderation|Submitted reviews/);}
++  status='INACTIVE';assert.doesNotMatch(menu(),/Submitted reviews|Résumé moderation/);
+ });
+diff --git a/utils/club-asset-storage.ts b/utils/club-asset-storage.ts
+index b05c43b..15a3622 100644
+--- a/utils/club-asset-storage.ts
++++ b/utils/club-asset-storage.ts
+@@ -8,7 +8,8 @@ export async function privateClubAssetStorage() {
+     FROM pg_policies WHERE schemaname='storage' AND permissive='RESTRICTIVE' AND cmd='ALL' AND roles=ARRAY['public']::name[] AND with_check=qual AND (
+       (tablename='objects' AND policyname='outclass_club_assets_server_only' AND qual IN (
+         '(bucket_id <> ''club-assets''::text)',
+-        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_production_app''::name))')) OR
++        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_production_app''::name))',
++        '((bucket_id <> ''club-assets''::text) OR (CURRENT_USER = ''outclass_web_runtime''::name))')) OR
+       (tablename='buckets' AND policyname='outclass_club_assets_bucket_server_only' AND qual='(id <> ''club-assets''::text)'))`;
+   const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+   if (!policy?.secured || !secret) throw Error("Club image storage is unavailable.");
+diff --git a/components/applicant-interview-reviews.tsx b/components/applicant-interview-reviews.tsx
+new file mode 100644
+index 0000000..85345b9
+--- /dev/null
++++ b/components/applicant-interview-reviews.tsx
+@@ -0,0 +1,17 @@
++"use client";
++import { useSearchParams } from "next/navigation";
++import { useAuth } from "@/contexts/auth-context";
++import { interviewCapabilities } from "@/lib/interview-access";
++import type { ApplicantInterviewTool } from "@/lib/applicant-interview-navigation";
++import { InterviewResumeModeration } from "@/components/interview-resume-moderation";
++import { InterviewSubmittedReviews } from "@/components/interview-submitted-reviews";
++
++export function ApplicantInterviewReviews({ clubId, tool }: { clubId: string; tool: ApplicantInterviewTool }) {
++  const params = useSearchParams(), { user } = useAuth();
++  const caps = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId));
++  const allowed = tool === "resumes" ? caps.moderateResume : caps.readClosing;
++  const filters = { applicationId: params.get("applicantId") || params.get("applicationId") || undefined, roundId: params.get("roundId") || undefined, cycleId: params.get("cycleId") || params.get("recruitmentCycleId") || undefined };
++  return <div className="space-y-3 pb-20 md:pb-6">
++    {!allowed ? <p role="alert">This section isn’t available with your current interview access.</p> : tool === "resumes" ? <InterviewResumeModeration key={`${clubId}:${params}`} clubId={clubId} filters={filters} initialDocumentId={params.get("documentId") || undefined} /> : <InterviewSubmittedReviews key={`${clubId}:${params}`} clubId={clubId} filters={filters} initialReviewId={params.get("reviewId") || undefined} />}
++  </div>;
++}
+diff --git a/docs/applicant-interview-navigation-verification.md b/docs/applicant-interview-navigation-verification.md
+new file mode 100644
+index 0000000..0500793
+--- /dev/null
++++ b/docs/applicant-interview-navigation-verification.md
+@@ -0,0 +1,18 @@
++# Applicant interview records navigation
++
++Recruiting → Applicants now contains **Résumé moderation** (existing president/vice-president capability) and **Submitted reviews** (existing explicit leadership capability). All Applicants stays the default applicant destination. Desktop and mobile drawer use the existing Applicants group; the mobile bottom item recognizes both new destinations through that group. Interviews retains rooms, master kit, scheduling and access setup.
++
++The existing moderation/review components and protected services are reused. Optional applicant, historical round and recruitment-cycle filters are applied inside those authorized discovery queries before the existing 100-record limit. They do not grant access. Review detail reads still reauthorize, with the original anonymous projection and immutable submitted content. Moderation still uses the preserved document, author/moderator checks and existing audit path. No note, document, review or annotation mutation implementation changed.
++
++Applicant details offer capability-gated record links with the selected application. Resume moderation is withheld from anonymous applicant details. Links preserve applicable query filters. Submitted review selection persists its record ID in the URL. The Applicants breadcrumb returns to the applicant workflow with relevant scope retained.
++
++Old `tool=interviews&interviewTab=resumes|reviews` bookmarks redirect to `tool=resumes|reviews` under Applicants on direct requests and same-workspace navigation. Applicant/application IDs, round/cycle and selected review/document context are preserved; stale interview-entry keys are removed. Current submitted-review entry/notification projections use the new destination. The redirect grants no rights: the resulting workspace and original services enforce current access.
++
++## Verification
++
++- Unit/action regressions cover legacy URLs, retained context, office-specific menu visibility, Applicants mobile grouping, authorized query filters and denial for applicant-only access.
++- Demo discovery uses the same filters and no live calls; saved Demo data is not reset or migrated.
++- Real Chromium tests render the actual sidebar/mobile navigation and existing review/moderation components with isolated synthetic adapters. They verify applicant selection, read-only review, refresh, Back, old-link redirects, document scope, mobile active state/no overflow, and revoked-capability denial. The PDF content is a synthetic viewer stub; the annotation implementation is unchanged.
++- Existing exact interview-entry and closing-review privacy/revocation regressions are retained. Final checks and deployment observations are recorded in the PR and private `OutClass-staging-verification/applicant-review-navigation-20261018/` release evidence.
++
++No database migration, environment changes or production applicant mutations are required. Application rollback is compatible with the previous production deployment.
+diff --git a/lib/applicant-interview-navigation.ts b/lib/applicant-interview-navigation.ts
+new file mode 100644
+index 0000000..75cd567
+--- /dev/null
++++ b/lib/applicant-interview-navigation.ts
+@@ -0,0 +1,21 @@
++export type ApplicantInterviewFilters = { applicationId?: string; roundId?: string; cycleId?: string };
++export type ApplicantInterviewTool = "resumes" | "reviews";
++
++/** Preserve local filters; never accept a caller-controlled return location. */
++export function applicantInterviewHref(clubId: string, tool: ApplicantInterviewTool | "applicants", search = "", applicationId?: string) {
++  const query = new URLSearchParams(search);
++  if (applicationId) query.set("applicantId", applicationId);
++  else if (!query.has("applicantId") && query.has("applicationId")) query.set("applicantId", query.get("applicationId")!);
++  for (const key of ["interview", "interviewTab", "applicationId", "bookingId", "slotId", "roomId", "sessionId", "setting"]) query.delete(key);
++  if (tool !== "reviews") query.delete("reviewId");
++  if (tool !== "resumes") query.delete("documentId");
++  query.set("section", "recruitment"); query.set("tool", tool);
++  return `/club/${encodeURIComponent(clubId)}/workspace?${query}`;
++}
++
++export function legacyApplicantInterviewHref(clubId: string, search: string) {
++  const query = new URLSearchParams(search), tab = query.get("interviewTab");
++  const oldLocation = query.get("section") === "recruitment" && query.get("tool") === "interviews" || query.get("section") === "settings" && query.get("setting") === "interviews";
++  return oldLocation && (tab === "resumes" || tab === "reviews")
++    ? applicantInterviewHref(clubId, tab, search) : null;
++}
+diff --git a/lib/student-invitation.ts b/lib/student-invitation.ts
+new file mode 100644
+index 0000000..2c7960f
+--- /dev/null
++++ b/lib/student-invitation.ts
+@@ -0,0 +1,8 @@
++import { createHash } from "node:crypto";
++
++// This digest cannot be redeemed at Auth. It binds an administrator-issued link
++// to an application account without copying the provider's bearer capability.
++export function studentInvitationFingerprint(tokenHash: string): string {
++  if (!/^[a-f0-9]{56,64}$/.test(tokenHash)) throw Error("Invalid student invitation.");
++  return createHash("sha256").update("outclass-student-invite-v1\0").update(tokenHash).digest("hex");
++}
+diff --git a/tests/applicant-interview-navigation.test.cjs b/tests/applicant-interview-navigation.test.cjs
+new file mode 100644
+index 0000000..b25981d
+--- /dev/null
++++ b/tests/applicant-interview-navigation.test.cjs
+@@ -0,0 +1,41 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
++const {harness,id}=require('./helpers/interview-harness.cjs');
++const {harness:demoHarness}=require('./helpers/demo-harness.cjs');
++test('legacy bookmarks and submitted-review destinations move to Applicants without losing selected records or filters',()=>{
++ const h=harness(),nav=h.load('lib/applicant-interview-navigation.ts');
++ for(const tool of ['resumes','reviews']){
++  const old=`section=recruitment&tool=interviews&interviewTab=${tool}&applicationId=${id(2)}&roundId=${id(3)}&cycleId=${id(4)}&reviewId=${id(5)}&documentId=${id(6)}&query=sample`;
++  const target=new URL(nav.legacyApplicantInterviewHref(id(1),old),'https://out-class.net');
++  assert.equal(target.searchParams.get('tool'),tool);assert.equal(target.searchParams.get('applicantId'),id(2));assert.equal(target.searchParams.get('roundId'),id(3));assert.equal(target.searchParams.get('cycleId'),id(4));assert.equal(target.searchParams.get('query'),'sample');assert.equal(target.searchParams.has('interviewTab'),false);
++  assert.equal(target.searchParams.get(tool==='reviews'?'reviewId':'documentId'),tool==='reviews'?id(5):id(6));
++ }
++ assert.equal(nav.legacyApplicantInterviewHref(id(1),'section=recruitment&tool=interviews&interviewTab=schedule'),null);
++ const settings=new URL(nav.legacyApplicantInterviewHref(id(1),'section=settings&setting=interviews&interviewTab=reviews&applicantId='+id(2)),'https://out-class.net');assert.equal(settings.searchParams.get('tool'),'reviews');assert.equal(settings.searchParams.has('setting'),false);assert.equal(settings.searchParams.get('applicantId'),id(2));
++ const base=new URL(nav.applicantInterviewHref(id(1),'applicants','roundId='+id(3)+'&applicantId='+id(2)+'&reviewId='+id(5)),'https://out-class.net');assert.equal(base.searchParams.get('tool'),'applicants');assert.equal(base.searchParams.get('applicantId'),id(2));assert.equal(base.searchParams.has('reviewId'),false);
++});
++test('Applicants submenu and mobile grouping retain explicit office permissions, never infer moderation from applicant access',()=>{
++ const h=demoHarness(),{createDemoSeed}=h.load('lib/demo/seed.ts'),s=createDemoSeed('2026-10-18'),member=s.memberships.find(m=>m.isOwner),nav=h.load('lib/product-navigation.ts');
++ for(const offices of [[],['BOARD'],['PRESIDENT'],['VICE_PRESIDENT']]){
++  const m={...member,interviewOffices:offices},items=nav.managerNavigation(m,member.clubId,'recruiting','roundId='+id(3));
++  assert.equal(items.some(i=>i.id==='reviews'),offices.length>0);assert.equal(items.some(i=>i.id==='resumes'),offices.includes('PRESIDENT')||offices.includes('VICE_PRESIDENT'));
++  for(const entry of items.filter(i=>['resumes','reviews'].includes(i.id))){assert.equal(entry.navGroup,'applicants');assert.match(entry.href,/roundId=/);}
++  assert.equal(nav.mobileDestinations(items).find(i=>i.navGroup==='applicants').id,'applicants');
++ }
++ const tabs=fs.readFileSync('components/interview-management-tabs.tsx','utf8');assert.doesNotMatch(tabs,/Résumé moderation|Submitted reviews|InterviewResumeModeration|InterviewSubmittedReviews/);
++ assert.match(fs.readFileSync('components/club-workspace.tsx','utf8'),/legacyApplicantInterviewHref/);assert.match(fs.readFileSync('app/club/[clubId]/workspace/page.tsx','utf8'),/if \(moved\) redirect\(moved\)/);
++});
++test('Demo existing review/document discovery filters applicant and historical round before limits, retaining privacy and no live calls',()=>{
++ const h=demoHarness(),s=h.load('lib/demo/seed.ts').createDemoSeed('2026-10-18'),store=h.load('lib/demo/store.ts').demoStore;s.perspective={role:'leader',clubId:s.clubs[0].id};store.start(s);
++ const api=h.load('lib/demo/interview-foundation.ts'),clubId=s.clubs[0].id,all=api.getSubmittedInterviewReviews(clubId);assert.ok(all.length);
++ const row=all[0],scoped=api.getSubmittedInterviewReviews(clubId,{applicationId:row.applicationId,roundId:row.roundId});assert.ok(scoped.length);assert.ok(scoped.every(r=>r.applicationId===row.applicationId&&r.roundId===row.roundId));assert.deepEqual(api.getSubmittedInterviewReviews(clubId,{applicationId:id(9000)}),[]);assert.deepEqual(api.getSubmittedInterviewReviews(clubId,{cycleId:id(9000)}),[]);
++ assert.deepEqual(api.getInterviewResumeModerationQueue(clubId,{applicationId:id(9000)}),[]);assert.equal(h.calls(),0);
++});
++test('live discovery scopes filters inside existing authorized queries; applicant-only access cannot discover restricted records',async()=>{
++ const h=harness(),reviews=h.load('actions/interview-kits.ts'),resumes=h.load('actions/interview-resumes.ts'),queries=[];
++ h.tx.interviewRecord.findMany=async q=>{queries.push(q);return[]};h.tx.interviewResumeDocument.findMany=async q=>{queries.push(q);return[]};
++ for(const read of [reviews.getSubmittedInterviewReviews,resumes.getInterviewResumeModerationQueue]){
++  await read(h.scope.clubId,{applicationId:h.scope.applicationId,roundId:h.scope.roundId,cycleId:id(7)});
++  const q=queries.at(-1);assert.equal(q.where.applicationId,h.scope.applicationId);assert.equal(q.where.roundId,h.scope.roundId);assert.equal(q.where.application.clubId,h.scope.clubId);assert.equal(q.where.application.recruitmentCycleId,id(7));assert.equal(q.take,100);
++ }
++ h.as(11);for(const read of [reviews.getSubmittedInterviewReviews,resumes.getInterviewResumeModerationQueue])await assert.rejects(read(h.scope.clubId,{applicationId:h.scope.applicationId}),/leadership|moderation/i);
++});
+diff --git a/tests/applicant-review-navigation-browser.test.cjs b/tests/applicant-review-navigation-browser.test.cjs
+new file mode 100644
+index 0000000..a6ca4b1
+--- /dev/null
++++ b/tests/applicant-review-navigation-browser.test.cjs
+@@ -0,0 +1,16 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
++const {chromium}=require('playwright'),{fixture}=require('./helpers/applicant-review-browser.cjs');
++test('browser: Applicants destinations select correct records, retain bookmarks/refresh/Back and activate mobile Applicants',async()=>{
++ const f=await fixture();let browser;
++ try{
++  browser=await chromium.launch({headless:true,...(fs.existsSync(chromium.executablePath())?{}:{channel:'chrome'})});const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>new URL(r.request().url()).origin===f.base?r.continue():r.abort());
++  const list=f.base+'/club/club/workspace?section=recruitment&tool=applicants&cycleId=cycle';await page.goto(list);await page.getByRole('heading',{name:'All Applicants',exact:true}).waitFor();
++  await page.getByRole('link',{name:'Sample Alpha submitted reviews',exact:true}).click();await page.getByRole('button',{name:'Sample Alpha · Round A · Open review',exact:true}).waitFor();assert.equal(await page.getByText(/Sample Beta/).count(),0);
++  await page.getByRole('button',{name:'Sample Alpha · Round A · Open review',exact:true}).click();await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();assert.equal(new URL(page.url()).searchParams.get('reviewId'),'review-a');await page.reload();await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();assert.ok(await page.getByText('8.5 / 10',{exact:true}).isVisible());
++  await page.goBack();await page.getByRole('heading',{name:'All Applicants',exact:true}).waitFor();await page.getByRole('link',{name:'Sample Alpha résumé moderation',exact:true}).click();await page.getByRole('button',{name:'Sample Alpha · Round A · Review résumé',exact:true}).click();await page.getByText('Preserved synthetic document app-a doc-app-a',{exact:true}).waitFor();await page.getByRole('button',{name:'Close résumé',exact:true}).click();
++  await page.goto(f.base+'/club/club/workspace?section=recruitment&tool=interviews&interviewTab=reviews&applicationId=app-a&roundId=round-a&reviewId=review-a&cycleId=cycle');await page.getByRole('region',{name:'Read-only closing review',exact:true}).waitFor();let q=new URL(page.url()).searchParams;assert.equal(q.get('tool'),'reviews');assert.equal(q.get('applicantId'),'app-a');assert.equal(q.get('cycleId'),'cycle');assert.equal(q.has('interviewTab'),false);
++  await page.setViewportSize({width:390,height:844});const mobile=page.getByRole('navigation',{name:'Primary mobile navigation',exact:true});assert.equal(await mobile.getByRole('link',{name:'Applicants',exact:true}).getAttribute('aria-current'),'page');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
++  await page.evaluate(()=>{window.fixture.member.interviewOffices=[];history.pushState(null,'','?section=recruitment&tool=reviews')});await page.getByRole('alert').filter({hasText:/current interview access/}).waitFor();assert.equal(await page.getByText('Submitted text',{exact:true}).count(),0);
++  assert.deepEqual(errors,[]);
++ }finally{await browser?.close();await new Promise(r=>f.server.close(r));}
++});
+diff --git a/tests/helpers/applicant-review-browser.cjs b/tests/helpers/applicant-review-browser.cjs
+new file mode 100644
+index 0000000..7847be2
+--- /dev/null
++++ b/tests/helpers/applicant-review-browser.cjs
+@@ -0,0 +1,21 @@
++const fs=require('node:fs'),http=require('node:http'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process');
++const {bundle}=require('./browser-bundle.cjs');
++async function fixture(){
++ const mocks={
++ 'next/link':`const React=require('react');module.exports=({href,children,prefetch,onClick,...props})=>React.createElement('a',{...props,href,onClick:e=>{onClick?.(e);if(!e.defaultPrevented&&!e.ctrlKey&&!e.metaKey){e.preventDefault();history.pushState(null,'',href)}}},children);`,
++ 'next/navigation':`exports.useSearchParams=()=>new URLSearchParams(location.search);`,
++ '@/contexts/auth-context':`exports.useAuth=()=>({user:{memberships:[window.fixture.member]}});`,
++ '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:true,ready:true});`,
++ '@/components/interview-review-references':`exports.RoundScore=()=>null;`,
++ '@/components/interview-resume-loader':`const React=require('react');exports.InterviewResumeLoader=({scope,documentId})=>React.createElement('p',null,'Preserved synthetic document '+scope.applicationId+' '+documentId);`,
++ '@/lib/workspace-api':`const rows=[{id:'review-a',applicationId:'app-a',roundId:'round-a',interviewerId:'reviewer',applicantName:'Sample Alpha',roundName:'Round A'},{id:'review-b',applicationId:'app-b',roundId:'round-b',interviewerId:'reviewer',applicantName:'Sample Beta',roundName:'Round B'}];function read(clubId,filters={}){window.fixture.requests.push({clubId,...filters});if(window.fixture.fail)throw Error('Request failed');return rows.filter(r=>(!filters.applicationId||r.applicationId===filters.applicationId)&&(!filters.roundId||r.roundId===filters.roundId));}exports.getSubmittedInterviewReviews=async(...args)=>read(...args);exports.getInterviewResumeModerationQueue=async(...args)=>read(...args).map(r=>({...r,documentId:'doc-'+r.applicationId,clubId:'club'}));exports.getSubmittedInterviewReview=async()=>({readOnly:true,score:8.5,applicantQuestions:'Synthetic question',additionalNotes:'Submitted text',submittedAt:'2026-10-18T12:00:00Z'});`,
++ };
++ const entry=`import React,{useSyncExternalStore,useEffect}from'react';import{createRoot}from'react-dom/client';import{managerNavigation}from'@/lib/product-navigation';import{legacyApplicantInterviewHref,applicantInterviewHref}from'@/lib/applicant-interview-navigation';import{ApplicantInterviewReviews}from'@/components/applicant-interview-reviews';import{WorkspaceNavigation}from'@/components/shell/workspace-navigation';import{MobileNavigation}from'@/components/shell/mobile-navigation';import Link from'next/link';
++ window.fixture={member:{clubId:'club',status:'ACTIVE',isOwner:true,permissions:['applications.review','applicants.identify'],interviewOffices:['PRESIDENT']},requests:[],fail:false};for(const method of ['pushState','replaceState']){const original=history[method].bind(history);history[method]=(...args)=>{original(...args);dispatchEvent(new Event('popstate'))}}const subscribe=fn=>{addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)};
++ function App(){const href=useSyncExternalStore(subscribe,()=>location.href),q=new URL(href).searchParams,tool=q.get('tool')||'applicants',moved=legacyApplicantInterviewHref('club',q.toString());useEffect(()=>{if(moved)history.replaceState(null,'',moved)},[moved]);const items=managerNavigation(window.fixture.member,'club','recruiting',q.toString());return <div className="mx-auto max-w-6xl p-5 pb-24"><p>Isolated Demo navigation · synthetic records</p><aside><WorkspaceNavigation items={items} active={tool} renderItem={item=><Link href={item.href} aria-current={item.id===tool?'page':undefined} className="block min-h-10 py-2">{item.label}</Link>}/></aside><main>{moved?<p>Redirecting</p>:tool==='reviews'||tool==='resumes'?<ApplicantInterviewReviews key={href} clubId="club" tool={tool}/>:<><h1>All Applicants</h1><Link href={applicantInterviewHref('club','reviews',q.toString(),'app-a')}>Sample Alpha submitted reviews</Link><br/><Link href={applicantInterviewHref('club','resumes',q.toString(),'app-a')}>Sample Alpha résumé moderation</Link></>}</main><MobileNavigation items={items} active={tool} manager onSelect={()=>{}} onLink={()=>{}} onMore={()=>{}}/></div>};createRoot(document.getElementById('root')).render(<App/>);`;
++ const js=bundle(entry,mocks),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-applicant-review-'));
++ cp.execFileSync(process.execPath,[path.join(__dirname,'interview-browser-css.cjs'),path.join(tmp,'style.css')],{windowsHide:true});
++ const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8');
++ const server=http.createServer((req,res)=>{res.setHeader('content-type',req.url==='/fixture.js'?'text/javascript':req.url==='/style.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?js:req.url==='/style.css'?css:'<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/fixture.js"></script>')});await new Promise(r=>server.listen(0,'127.0.0.1',r));return{server,base:`http://127.0.0.1:${server.address().port}`};
++}
++module.exports={fixture};

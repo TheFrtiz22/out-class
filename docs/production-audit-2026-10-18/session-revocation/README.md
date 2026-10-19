@@ -1,5 +1,8 @@
 # Ordinary session replay and expiry — October 19, 2026
 
+**Release follow-up:** the session-expiry fix is included in the [deployed compatibility artifact](../rollout-blockers/README.md). The canonical restricted-login tree now queries the migrated security-invoker session view with the same predicates/locks; its cutover awaits the provider-owner lock ACL prerequisite. The original before/after measurements below remain the historical reproduction.
+
+
 Implementation baseline: `bbef8db`. **Local application changes only; production is unchanged.** No Auth setting, database migration, grant, credential or deployment was changed.
 
 ## Verified defect and change

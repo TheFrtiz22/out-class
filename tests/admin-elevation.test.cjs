@@ -28,7 +28,7 @@ function harness(faults = {}) {
     updateMany:async({where,data})=>{const found=rows.filter(r=>matches(r,where));for(const row of found)Object.assign(row,data);return{count:found.length};},
   }; }
   const prisma={
-    $queryRaw:async strings=>strings[0].includes('auth.sessions')?(liveSession?[{id:sessionId}]:[]):[], $transaction:async fn=>fn(prisma),
+    $queryRaw:async strings=>strings[0].includes('outclass_auth_sessions')?(liveSession?[{id:sessionId}]:[]):[], $transaction:async fn=>fn(prisma),
     platformAdmin:{findUnique:async()=>{if(internalSyntax)throw new SyntaxError('private internal parsing failure');return{active:grant};}},
     user:{findUnique:async()=>({id:identity,email:'admin@virginia.edu',disabledAt:disabled?new Date():null})},
     adminElevation:model(elevations),adminElevationChallenge:model(challenges),

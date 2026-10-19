@@ -7,7 +7,7 @@ if(spawnSync('docker',['inspect',name],{stdio:'ignore'}).status===0)throw Error(
 const operator='postgresql://fixture_superuser@127.0.0.1:58453/outclass_audiences_test?sslmode=disable&connection_limit=8';
 const baseline=require('node:os').tmpdir()+'/outclass-scheduler-baseline-voting.ts';
 const legacy=spawnSync('git',['show','0d9a21c84e5f991aa73a4420797fa94dc58aabf0:actions/voting.ts'],{encoding:'utf8'});if(legacy.status!==0)throw Error('Baseline source unavailable; fetch reviewed history.');fs.writeFileSync(baseline,legacy.stdout);
-const env={...process.env,OUTCLASS_POLL_BASELINE_SOURCE:baseline,DATABASE_URL:operator,POSTGRES_PRISMA_URL:operator,OUTCLASS_AUDIENCE_TEST_DATABASE_URL:operator,COMMUNICATIONS_EMAIL_ENABLED:'false',RESEND_API_KEY:'',SMTP_HOST:''};
+const env={...process.env,OUTCLASS_POLL_BASELINE_SOURCE:baseline,DATABASE_URL:operator,OUTCLASS_RUNTIME_DATABASE_URL:operator,POSTGRES_PRISMA_URL:operator,OUTCLASS_AUDIENCE_TEST_DATABASE_URL:operator,COMMUNICATIONS_EMAIL_ENABLED:'false',RESEND_API_KEY:'',SMTP_HOST:''};
 try{
  run('docker',['run','-d','--name',name,'--label','outclass.audience-test=disposable','-p','127.0.0.1:58453:5432','--entrypoint','bash','public.ecr.aws/supabase/postgres:17.11.0.002','-ec','mkdir /tmp/fixturedb; chown postgres:postgres /tmp/fixturedb; su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/initdb -D /tmp/fixturedb -U fixture_superuser --auth=trust >/dev/null"; printf "host all all 0.0.0.0/0 trust\\n" >> /tmp/fixturedb/pg_hba.conf; exec su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/postgres -D /tmp/fixturedb -c listen_addresses=\\\"*\\\""']);
  let ready=false;for(let i=0;i<40;i++){if(spawnSync('docker',['exec',name,'pg_isready','-U','fixture_superuser'],{stdio:'ignore'}).status===0){ready=true;break;}Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,250);}if(!ready)throw Error('Disposable PostgreSQL unavailable.');
@@ -15,7 +15,7 @@ try{
  const sql=(input,db='outclass_audiences_test')=>run('docker',['exec','-i',name,'psql','-U','fixture_superuser','-d',db,'-v','ON_ERROR_STOP=1'],{input});
  sql('CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE outclass_production_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE; CREATE SCHEMA auth;CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid NOT NULL,not_after timestamptz);GRANT USAGE ON SCHEMA auth TO outclass_production_app;GRANT SELECT ON auth.sessions TO outclass_production_app;');
  run(process.execPath,['node_modules/prisma/build/index.js','migrate','deploy'],{env});
- sql(`DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`);
+ sql(`DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT SELECT ON public.outclass_auth_sessions TO outclass_production_app;`);
  // Populate a second database at the immediate pre-feature schema, then upgrade.
  run('docker',['exec',name,'createdb','-U','fixture_superuser','outclass_audiences_upgrade']);
  const migrations=fs.readdirSync('prisma/migrations').filter(n=>fs.existsSync(`prisma/migrations/${n}/migration.sql`)).sort();

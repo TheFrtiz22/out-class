@@ -3,24 +3,33 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const path = require('node:path')
 const { PGlite } = require('@electric-sql/pglite')
-const { catalogQuery, missingColumns, releaseTarget } = require('../scripts/check-release-database.cjs')
+const { catalogQuery, runtimeIssues, missingColumns, releaseTarget } = require('../scripts/check-release-database.cjs')
 const { spawnSync } = require('node:child_process')
 
 test('production build gate uses the same runtime connection as the app and fails closed on missing configuration', () => {
   const args = ['--vercel-production-build']
   const env = { VERCEL: '1', VERCEL_ENV: 'production', POSTGRES_PRISMA_URL: 'runtime', DATABASE_URL: 'operator', OUTCLASS_DATABASE_CHECK_URL: 'manual' }
+  assert.equal(releaseTarget({ ...env, OUTCLASS_RUNTIME_DATABASE_URL: 'dedicated-web' }, args).datasourceUrl, 'dedicated-web')
   assert.equal(releaseTarget(env, args).datasourceUrl, 'runtime')
   assert.equal(releaseTarget({ ...env, POSTGRES_PRISMA_URL: '' }, args).datasourceUrl, 'operator')
   assert.equal(releaseTarget(env, []).datasourceUrl, 'manual')
+  assert.equal(releaseTarget(env, ['--runtime-env']).datasourceUrl, 'runtime')
   for (const target of ['preview', 'development', undefined]) assert.equal(releaseTarget({ ...env, VERCEL_ENV: target }, args).skip, true)
   const script = path.resolve(__dirname, '../scripts/check-release-database.cjs')
-  const clean = { ...process.env, VERCEL: '1', VERCEL_ENV: 'production', POSTGRES_PRISMA_URL: '', DATABASE_URL: '', OUTCLASS_DATABASE_CHECK_URL: '' }
+  const clean = { ...process.env, VERCEL: '1', VERCEL_ENV: 'production', OUTCLASS_RUNTIME_DATABASE_URL: '', POSTGRES_PRISMA_URL: '', DATABASE_URL: '', OUTCLASS_DATABASE_CHECK_URL: '' }
   const blocked = spawnSync(process.execPath, [script, ...args], { env: clean, encoding: 'utf8' })
   assert.equal(blocked.status, 1)
   assert.match(blocked.stderr, /runtime database connection is missing/)
   const skipped = spawnSync(process.execPath, [script, ...args], { env: { ...clean, VERCEL_ENV: 'preview', DATABASE_URL: 'must-not-connect' }, encoding: 'utf8' })
   assert.equal(skipped.status, 0)
   assert.ok(!skipped.stdout.includes('must-not-connect') && !skipped.stderr.includes('must-not-connect'))
+})
+
+test('release gate requires the reviewed bounded identity, session access and secret denial together', () => {
+  const approved = { role: 'outclass_web_runtime', bounded: true, session_grants: true, secrets_denied: true, session_rls: true, invoker_view: true, session_read_policy: true, session_lock_policy: true, session_write_guard: true, storage_scope: true }
+  assert.deepEqual(runtimeIssues(approved), [])
+  for (const key of Object.keys(approved)) assert.ok(runtimeIssues({ ...approved, [key]: key === 'role' ? 'postgres' : false }).length)
+  assert.ok(runtimeIssues(null).length)
 })
 
 test('release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data', async () => {

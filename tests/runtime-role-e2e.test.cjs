@@ -27,6 +27,20 @@ test('restricted runtime through real Auth, SQL locks, private Storage and Next 
  const session = (await owner.client.auth.getSession()).data.session;
  const sessionId = JSON.parse(Buffer.from(session.access_token.split('.')[1], 'base64url')).session_id;
 
+ const preflight = (url, expected) => {
+  const r = spawnSync(process.execPath, ['scripts/check-release-database.cjs'], { env: { ...process.env, OUTCLASS_DATABASE_CHECK_URL: url }, encoding: 'utf8' });
+  assert.equal(r.status, expected, 'Read-only preflight must enforce the actual runtime identity/permissions');
+  assert.ok(!(r.stdout + r.stderr).includes(url), 'Preflight must never print connection URLs');
+  if (new URL(url).password.length >= 16) assert.ok(!(r.stdout + r.stderr).includes(new URL(url).password), 'Preflight must never print generated runtime credentials');
+ };
+ await t.test('release preflight accepts the actual bounded runtime and rejects the operator binding', async () => {
+  preflight(c.runtimeDatabaseUrl, 0); preflight(c.status.DB_URL, 1);
+  await op.$executeRawUnsafe('DROP POLICY outclass_runtime_session_lock ON auth.sessions');
+  try { preflight(c.runtimeDatabaseUrl, 1); }
+  finally { await op.$executeRawUnsafe('CREATE POLICY outclass_runtime_session_lock ON auth.sessions FOR UPDATE TO outclass_production_app USING(true) WITH CHECK(false)'); }
+  preflight(c.runtimeDatabaseUrl, 0);
+ });
+
  await t.test('actual connection is bounded; operator history, DDL, Auth secrets and unrelated columns deny', async () => {
   const [role] = await db.$queryRaw`SELECT current_user,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,rolreplication,
     has_schema_privilege(current_user,'public','CREATE') creates_public,
@@ -36,24 +50,28 @@ test('restricted runtime through real Auth, SQL locks, private Storage and Next 
     pg_has_role('anon',current_user,'MEMBER') anon_member,
     pg_has_role('authenticated',current_user,'MEMBER') authenticated_member
     FROM pg_roles WHERE rolname=current_user`;
-  assert.deepEqual(role, { current_user: 'outclass_production_app', rolsuper: false, rolbypassrls: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, creates_public: false, creates_auth: false, creates_storage: false, operator_member: false, anon_member: false, authenticated_member: false });
-  for (const sql of ['SELECT * FROM public._prisma_migrations LIMIT 0', 'SELECT encrypted_password FROM auth.users LIMIT 0', 'SELECT refresh_token_hmac_key FROM auth.sessions LIMIT 0', 'SELECT * FROM auth.sessions LIMIT 0', 'SELECT * FROM storage.objects LIMIT 0', 'CREATE TABLE public.runtime_role_forbidden(id int)']) {
+  assert.deepEqual(role, { current_user: 'outclass_web_runtime', rolsuper: false, rolbypassrls: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, creates_public: false, creates_auth: false, creates_storage: false, operator_member: false, anon_member: false, authenticated_member: false });
+  for (const sql of ['SELECT * FROM public._prisma_migrations LIMIT 0', 'SELECT encrypted_password FROM auth.users LIMIT 0', 'SELECT refresh_token_hmac_key FROM auth.sessions LIMIT 0', 'SELECT * FROM auth.sessions LIMIT 0', 'SELECT id FROM auth.sessions LIMIT 0', 'SELECT * FROM storage.objects LIMIT 0', 'CREATE TABLE public.runtime_role_forbidden(id int)']) {
    await assert.rejects(db.$queryRawUnsafe(sql), denied);
   }
  });
  await t.test('three session columns and FOR SHARE work while all session mutations deny and rows stay identical', async () => {
+  assert.equal((await db.$queryRaw`SELECT has_schema_privilege(current_user,'auth','USAGE') AS allowed`)[0].allowed,false);
   const before = await op.$queryRaw`SELECT id,user_id,updated_at,not_after FROM auth.sessions WHERE id=${sessionId}::uuid`;
-  const rows = await db.$transaction(tx => tx.$queryRaw`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid AND user_id=${owner.user.id}::uuid AND (not_after IS NULL OR not_after>clock_timestamp()) FOR SHARE`);
+  const rows = await db.$transaction(tx => tx.$queryRaw`SELECT id FROM public.outclass_auth_sessions WHERE id=${sessionId}::uuid AND user_id=${owner.user.id}::uuid AND (not_after IS NULL OR not_after>clock_timestamp()) FOR SHARE`);
   assert.equal(rows.length, 1);
+  for (const browser of ['anon','authenticated']) await op.$transaction(async tx=>{await tx.$executeRawUnsafe(`SET LOCAL ROLE ${browser}`);await assert.rejects(tx.$queryRaw`SELECT id FROM public.outclass_auth_sessions`,denied);});
   // A real operator DELETE must wait on that shared row lock, then abort on budget.
   await db.$transaction(async tx => {
-   await tx.$queryRaw`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid FOR SHARE`;
+   await tx.$queryRaw`SELECT id FROM public.outclass_auth_sessions WHERE id=${sessionId}::uuid FOR SHARE`;
    await assert.rejects(op.$transaction(async other => {
     await other.$executeRaw`SET LOCAL lock_timeout='150ms'`;
     await other.$executeRaw`DELETE FROM auth.sessions WHERE id=${sessionId}::uuid`;
    }), error => error.code === 'P2010' && error.meta?.code === '55P03');
   });
   for (const sql of [
+   `UPDATE public.outclass_auth_sessions SET id=id WHERE id='${sessionId}'::uuid`,
+   `DELETE FROM public.outclass_auth_sessions WHERE id='${sessionId}'::uuid`,
    `UPDATE auth.sessions SET updated_at=clock_timestamp() WHERE id='${sessionId}'::uuid`,
    `UPDATE auth.sessions SET not_after=NULL WHERE id='${sessionId}'::uuid`,
    `DELETE FROM auth.sessions WHERE id='${sessionId}'::uuid`,
@@ -89,6 +107,10 @@ test('restricted runtime through real Auth, SQL locks, private Storage and Next 
   assert.equal((await op.$queryRaw`SELECT name FROM storage.objects WHERE bucket_id='headshots' AND name=${otherPath}`).length, 1);
   assert.equal((await db.$queryRaw`SELECT name FROM storage.objects WHERE bucket_id='club-assets' AND name=${uploaded.reference.slice(12)}`).length, 1);
   assert.equal((await db.$queryRaw`SELECT name FROM storage.objects WHERE bucket_id<>'club-assets'`).length, 0);
+  await db.$transaction(async tx=>{
+   await tx.$queryRaw`SELECT set_config('request.jwt.claims',${JSON.stringify({sub:owner.user.id,role:'authenticated'})},true)`;
+   assert.equal((await tx.$queryRaw`SELECT name FROM storage.objects WHERE bucket_id<>'club-assets'`).length,0,'Legacy policies and forged request settings cannot expand SQL bucket scope');
+  });
   await assert.rejects(db.$executeRaw`UPDATE storage.objects SET name='forged' WHERE name=${uploaded.reference.slice(12)}`, denied);
   await assert.rejects(db.$executeRaw`DELETE FROM storage.objects WHERE name=${uploaded.reference.slice(12)}`, denied);
   for (const role of ['anon', 'authenticated']) await op.$transaction(async tx => {
@@ -112,10 +134,11 @@ test('restricted runtime through real Auth, SQL locks, private Storage and Next 
     (SELECT qual='(bucket_id <> ''club-assets''::text)' AND with_check=qual FROM pg_policies WHERE schemaname='storage' AND tablename='objects' AND policyname='outclass_club_assets_server_only') guard`;
    assert.deepEqual(baseline, { auth: false, storage: false, sessions: false, objects: false, guard: true });
    await assert.rejects(db.$queryRaw`SELECT id FROM auth.sessions LIMIT 0`, denied);
+   preflight(c.runtimeDatabaseUrl, 1);
    const sentinel = {};
    const api = require('./helpers/communications-loader.cjs').loader({ 'server-only': {}, '@/utils/prisma': { prisma: op }, '@supabase/supabase-js': { createClient: () => ({ storage: { getBucket: async () => ({ data: { public: false }, error: null }), from: () => sentinel } }) } })('utils/club-asset-storage.ts');
    assert.equal(await api.privateClubAssetStorage(), sentinel, 'Application remains compatible with the original policy during rollback');
-   if (i === 0) { run(sql('access-proposal.sql')); assert.equal((await db.$queryRaw`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid FOR SHARE`).length, 1); }
+   if (i === 0) { run(sql('access-proposal.sql')); assert.equal((await db.$queryRaw`SELECT id FROM public.outclass_auth_sessions WHERE id=${sessionId}::uuid FOR SHARE`).length, 1); }
   }
   // Later HTTP groups keep using this running app's bounded connection. Restore
   // its candidate grants after proving both inverses; teardown deletes the stack.

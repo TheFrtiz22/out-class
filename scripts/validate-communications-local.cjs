@@ -11,7 +11,7 @@ for (const [value, port] of [[status.DB_URL, '54322'], [status.API_URL, '54321']
   const url = new URL(value);
   if (!['127.0.0.1', 'localhost'].includes(url.hostname) || url.port !== port) throw Error('Refusing a nonlocal validation target.');
 }
-const env = { ...process.env, DATABASE_URL: status.DB_URL, POSTGRES_PRISMA_URL: status.DB_URL, POSTGRES_URL: status.DB_URL, POSTGRES_URL_NON_POOLING: status.DB_URL,
+const env = { ...process.env, DATABASE_URL: status.DB_URL, OUTCLASS_RUNTIME_DATABASE_URL: status.DB_URL,POSTGRES_PRISMA_URL: status.DB_URL, POSTGRES_URL: status.DB_URL, POSTGRES_URL_NON_POOLING: status.DB_URL,
   NEXT_PUBLIC_SUPABASE_URL: status.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: status.ANON_KEY,
   SUPABASE_SECRET_KEY: status.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: status.SERVICE_ROLE_KEY, OUTCLASS_PUBLISH_BUILD: '1',
   OUTCLASS_SITE_URL: 'http://127.0.0.1:3107', SMTP_HOST: '', RESEND_API_KEY: '', COMMUNICATIONS_EMAIL_ENABLED: 'false' };

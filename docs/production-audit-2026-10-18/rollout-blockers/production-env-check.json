@@ -1,0 +1,9 @@
+{
+  "mode": "production env run from empty directory, no local DB aliases",
+  "exit_code": 2,
+  "secret_values_withheld": true,
+  "local_env_loaded": false,
+  "runtime_identity": null,
+  "missing_credential": false,
+  "connection_error": false
+}

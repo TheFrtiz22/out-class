@@ -81,7 +81,7 @@ test('captured ordinary-session cookies cannot replay protected reads or profile
    const api=loader({react:{cache:fn=>{let value;return()=>value??=(fn());}},'next/headers':{cookies:async()=>({has:()=>false,get:()=>undefined})},'./supabase/server':{createClient:async()=>client},'./prisma':{prisma:{$queryRaw:async(strings,...values)=>{sql++;return runtime.$queryRaw(strings,...values);}}},'@/utils/platform-view-as':{platformViewSession:async()=>null}})('utils/auth.ts');
    assert.equal((await api.getSessionUser()).data.user.id,f.id);assert.equal((await api.getSessionUser()).data.user.id,f.id);
    assert.equal(sql,1);assert.equal(providerRequests,1);
-   const explained=await runtime.$queryRaw`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${f.sessionId}::uuid AND user_id=${f.id}::uuid AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
+   const explained=await runtime.$queryRaw`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) SELECT EXISTS(SELECT 1 FROM public.outclass_auth_sessions WHERE id=${f.sessionId}::uuid AND user_id=${f.id}::uuid AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
    const plan=explained[0]['QUERY PLAN'][0],nodes=[];function visit(n){nodes.push({type:n['Node Type'],index:n['Index Name'],rows:n['Actual Rows'],loops:n['Actual Loops']});for(const child of n.Plans||[])visit(child);}visit(plan.Plan);
    results.push({case:'native_session_query',sql_statements_per_valid_request:sql,provider_requests_per_valid_request:providerRequests,local_execution_ms:plan['Execution Time'],plan:nodes});
   }finally{await runtime.$disconnect();}

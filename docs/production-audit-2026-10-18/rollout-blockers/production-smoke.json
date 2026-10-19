@@ -1,0 +1,34 @@
+{
+  "deployment_id": "dpl_6vMuXwFiQYTHJT9NRQMpeX629t9B",
+  "primary_domain": "https://www.out-class.net",
+  "checks": [
+    {
+      "path": "/",
+      "status": 200,
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate"
+    },
+    {
+      "path": "/api/users/me",
+      "status": 401,
+      "cache_control": "private, no-store"
+    },
+    {
+      "path": "/auth/student-claim",
+      "status": 200,
+      "cache_control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "form_present": true
+    },
+    {
+      "path": "/api/workspace?kind=studentDashboard",
+      "status": 401,
+      "cache_control": "private, no-store"
+    }
+  ],
+  "view_api_post_migration_prior_release_check": [
+    {
+      "path": "Data API session-view limit-zero probe",
+      "status": 401,
+      "error_code": "42501"
+    }
+  ]
+}

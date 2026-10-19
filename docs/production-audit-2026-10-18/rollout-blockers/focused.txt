@@ -1,0 +1,23 @@
+✔ all Admin workspace readers and mutations reject without elevation before touching storage (86.229875ms)
+✔ report resolution checks revision, validates reason, and writes actor/outcome in the same transaction (24.755541ms)
+✔ platform settings have safe defaults, reject infrastructure fields, and audit changes (21.084208ms)
+✔ complete isolated migration chain denies browser CRUD even with broad grants/policies and preserves append-only audit (1489.968041ms)
+✔ session-bound migration preserves legacy deadlines, revocations, ownership and restrictive RLS (463.863583ms)
+✔ sensitive workspace operations demand fresh verification; ordinary settings reads do not (19.051916ms)
+✔ production build gate uses the same runtime connection as the app and fails closed on missing configuration (89.322875ms)
+✔ release gate requires the reviewed bounded identity, session access and secret denial together (0.360042ms)
+✔ release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data (1522.994917ms)
+✔ claim fingerprint is deterministic, domain separated and never the redeemable token hash (0.697042ms)
+✔ bound intended invite verifies at Auth before password, success audit and browser session attachment (55.459208ms)
+✔ unbound links, disabled accounts and another signed-in identity do not consume the link (32.474542ms)
+✔ confirmed, non-invited, mismatched and unavailable provider identities deny before verification (116.92925ms)
+✔ expired or mismatched verification cannot set a password or attach a session (57.648667ms)
+✔ origin, support mode and invalid input fail before database/provider access (51.322167ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2252.474833

@@ -1,0 +1,5 @@
+{
+  "scope": "Reconciliation of existing production Applicants navigation from 2c54a8c into the audit baseline; no new interface design",
+  "reviewed": ["Server actions retain fresh authentication and club/office authorization", "URL filters validated and combined with existing authorization predicates", "Lazy component remains module-level", "Effects depend on primitive filter fields and clean up polling/listeners", "Existing dialog focus and accessible controls preserved", "No interface icon imports changed", "Breadcrumb removal and scheduling round/week state preserved"],
+  "verification": "Combined full regression passed, including Applicants browser navigation, reload, history, mobile active state and revoked-office denial. Typecheck and lint passed."
+}

@@ -1,0 +1,42 @@
+✔ all Admin workspace readers and mutations reject without elevation before touching storage (158.353208ms)
+✔ report resolution checks revision, validates reason, and writes actor/outcome in the same transaction (42.428833ms)
+✔ platform settings have safe defaults, reject infrastructure fields, and audit changes (25.903917ms)
+✔ complete isolated migration chain denies browser CRUD even with broad grants/policies and preserves append-only audit (1117.069166ms)
+✔ session-bound migration preserves legacy deadlines, revocations, ownership and restrictive RLS (381.657583ms)
+✔ sensitive workspace operations demand fresh verification; ordinary settings reads do not (18.056292ms)
+✔ production build gate uses the same runtime connection as the app and fails closed on missing configuration (117.272167ms)
+✔ release gate requires the reviewed bounded identity, session access and secret denial together (0.828208ms)
+✔ release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data (1215.276375ms)
+✔ claim fingerprint is deterministic, domain separated and never the redeemable token hash (2.286875ms)
+✖ bound intended invite verifies at Auth before password, success audit and browser session attachment (142.826041ms)
+✔ unbound links, disabled accounts and another signed-in identity do not consume the link (41.297208ms)
+✔ confirmed, non-invited, mismatched and unavailable provider identities deny before verification (87.996125ms)
+✔ expired or mismatched verification cannot set a password or attach a session (36.301375ms)
+✔ origin, support mode and invalid input fail before database/provider access (57.264625ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1942.595291
+
+✖ failing tests:
+
+test at tests/student-claim.test.cjs:18:1
+✖ bound intended invite verifies at Auth before password, success audit and browser session attachment (142.826041ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 200
+  
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/student-claim.test.cjs:19:53)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

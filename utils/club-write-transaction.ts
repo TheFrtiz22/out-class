@@ -32,7 +32,7 @@ export async function clubWriteTransaction<T>(
         JOIN "User" target ON target.id=s."targetUserId" AND target."disabledAt" IS NULL
         JOIN "PlatformAdmin" g ON g."userId"=actor.id AND g.active
         JOIN "AdminElevation" e ON e.id=${elevation.id} AND e."actorId"=actor.id
-        JOIN auth.sessions a ON a.id=e."authSessionId"::uuid AND a.user_id=actor.id::uuid
+        JOIN public.outclass_auth_sessions a ON a.id=e."authSessionId"::uuid AND a.user_id=actor.id::uuid
         WHERE s.id=${session.id} AND s."actorId"=${session.actorId} AND s."targetUserId"=${session.targetUserId}
           AND s.mode='IMPERSONATION' AND s."endedAt" IS NULL AND s."expiresAt">clock_timestamp()
           AND e."revokedAt" IS NULL AND (e."expiresAt" IS NULL OR e."expiresAt">clock_timestamp())

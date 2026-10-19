@@ -1,5 +1,8 @@
 # Restricted runtime role — local staging, October 19, 2026
 
+**Superseded candidate:** the [rollout-blocker report](../rollout-blockers/README.md) documents the new fresh-login/invoker-view proposal and 44-case real run. The SQL files at this path now describe that revised candidate; the older 25-case evidence below applies to its historical source hashes. Auth schema USAGE is no longer requested. Policy management is delegated through supautils; the actual remaining hosted capability is UPDATE-column delegation for the preserved session lock. The additive view migration and compatibility application release are live, but this role/grant cutover remains unapplied.
+
+
 Baseline: `4dae299`. **Nothing here has been applied to production.** This is a reviewed local candidate, not an automatically deployed migration. [Exact access SQL](access-proposal.sql) and [inverse SQL](rollback.sql) are deliberately outside Prisma's migration directory.
 
 **Subsequent compatibility gates:** the [ordinary-session batch](../session-revocation/README.md) now requires the candidate's three-column session SELECT on every authenticated request and passed all 37 real integration cases with this role. Confirm the actual runtime identity/grants before releasing that application patch. Source review also found `app/api/auth/student-claim/route.ts` querying `auth.users`/invitation-token columns, which this candidate deliberately denies. That legacy path was not covered by this fixture and must be refactored/tested through a provider-supported capability before credential cutover. Do not expand Auth-user/token grants to bypass it. The exact SQL here is unchanged and remains review-only.

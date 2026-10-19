@@ -29,7 +29,7 @@ export const getSessionUser = cache(async () => {
   // Auth can accept an unexpired JWT beyond the session's not_after boundary.
   // Request caching coalesces this indexed check, never across requests/users.
   const [row] = await prisma.$queryRaw<{ live: boolean }[]>`
-    SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${sessionId}::uuid
+    SELECT EXISTS(SELECT 1 FROM public.outclass_auth_sessions WHERE id=${sessionId}::uuid
       AND user_id=${identity.data.user.id}::uuid
       AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
   return row?.live ? identity : { data: { user: null }, error: null };

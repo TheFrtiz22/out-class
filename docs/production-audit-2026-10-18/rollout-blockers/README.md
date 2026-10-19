@@ -1,0 +1,65 @@
+# Rollout blockers — October 19, 2026
+
+Baseline: `16c4be2` (`Security.5`). Application compatibility fixes are released. The additive session view is migrated in production. **The restricted-login cutover remains blocked by one provider-owner permission; it was not attempted with incomplete grants.** No existing password or production credential binding was changed.
+
+## Fixed and released
+
+`app/api/auth/student-claim/route.ts` no longer queries Auth users or invitation-token fields through Prisma. Administrative creation/resend records a domain-separated SHA-256 fingerprint of the issued capability in the existing append-only audit log **before** sending email. The digest cannot be redeemed at Auth. Claim verifies that binding against the intended application account before consuming the link, checks the provider's invited/unconfirmed identity with `admin.getUserById`, then lets `verifyOtp(type: invite)` enforce expiry/single use. Password change, success audit and cookie attachment follow verified identity matching. A wrong address, unrelated session, disabled account, signup hash or stale link cannot bypass those checks. UI fields, link format and response shape remain unchanged.
+
+The deployed compatibility artifact is baseline `16c4be2` plus the claim route, issuance/binding helper, compatible Storage guard and a build-only connection check, with the existing production Applicants navigation delta from `2c54a8c` reconciled into that baseline. The reconciliation preserves the audit baseline’s breadcrumb removal and scheduling state fix. It includes the preceding account-redaction, dependency, signup-response and session-expiry fixes. It retains the existing connection precedence and direct session queries, making it a rollback target for the later role cutover. [Exact compatibility patch](compatibility.patch), [artifact and source hashes](compatibility-deployment.json). The canonical working tree separately contains the invoker-view queries, dedicated-login configuration and stricter cutover gate; those are **not** represented as already deployed.
+
+A final source comparison found that the first compatibility artifact omitted the separate Applicants navigation commit already on production. That artifact was superseded with the reconciled release, followed by the combined full regression and cloud build. The recorded final patch includes both sources; the interim artifact is not the recommended rollback target.
+
+The verified compatibility production build reports `postgres` through its selected database connection and successfully prepares the required session-column query. This replaces the earlier CLI fallback inference with a direct cloud-build observation. No secret value was printed. Vercel production Secrets cannot be pulled into this session; an isolated empty-directory check confirms that limitation. Root-directory `env run` had loaded local fallback files, so that first result is explicitly excluded as deployed-identity evidence. The cloud build uses the same immutable deployment configuration and URL precedence as its application; no authenticated production-user replay was performed.
+
+## Restricted role and session view
+
+The canonical connection now prefers `OUTCLASS_RUNTIME_DATABASE_URL`, then the existing `POSTGRES_PRISMA_URL` / `DATABASE_URL` fallback. Migration/operator configuration remains separate. Every fixture runner overrides the new alias explicitly to prevent an inherited hosted value from overriding its reserved local target.
+
+The proposed new `outclass_web_runtime` login inherits the existing non-BYPASSRLS application grant/ownership role. [Role setup](role-setup.sql) creates it **NOLOGIN**; credential provisioning would be a separate secure step for this new login, not a rotation of any existing password. Local setup exercises the exact role setup/inverse/setup before assigning a disposable password. Production has not created this login or its new Secret. [Role inverse](role-rollback.sql).
+
+Prisma migration `20261019175843_outclass_auth_session_view` adds `public.outclass_auth_sessions` with **`security_invoker=true`**, projecting only `id`, `user_id`, `not_after`. It revokes browser/PUBLIC/application-group view grants. The caller still needs underlying column ACLs and RLS; it needs no Auth schema USAGE. This is documented [PostgreSQL view behavior](https://www.postgresql.org/docs/17/sql-createview.html), not an elevated function or provider ownership transfer. Production has applied **57 migrations**; the view is invoker-secured and anon/authenticated/application-group SELECT is false. The migrated view remains as an owner-only additive object during rollback.
+
+The revised [access proposal](../runtime-role/access-proposal.sql) grants the application group three underlying SELECT columns, lock-only `UPDATE(updated_at)`, the exact SELECT/UPDATE RLS policies and view access. View `UPDATE(id)` and base `UPDATE(updated_at)` deliberately do not overlap; view mutations cannot write the base identifier. The restrictive false write check adds independent denial. **Native tests preserve the underlying session shared lock**: an operator DELETE waits and times out; direct and view writes deny and the row stays identical. Browser view access denies. No Auth schema USAGE, SECURITY DEFINER function, provider table ownership transfer or BYPASSRLS attribute is added.
+
+The Storage policy exception targets only the proposed new login; the application guard accepts the exact original and reviewed predicates, and continues rejecting broadened policies. Browser access, other buckets and object writes remain denied. A server-group restrictive SELECT scope also prevents forged request JWT settings or legacy permissive policies from expanding SQL visibility beyond club-assets; the native test exercises that case. The production Storage guard is still the original predicate because the cutover SQL is unapplied.
+
+The release checker now uses the exact dedicated-URL precedence, verifies the new login/group, role attributes, schema/column access, secret denials, invoker view and all required session read/lock/write-guard policies, then prepares the real session predicate. The strict check accepts the native web login and rejects the operator, removed locking policy and inverse state. It emits only bounded metadata/error codes. **A production build of the canonical cutover tree intentionally fails until that target is provisioned and verified.** The compatibility release uses its separately recorded baseline build gate plus the cloud connection check.
+
+## One remaining provider capability
+
+Read-only hosted inspection found that `postgres` can create roles, delegate the existing application group, create the invoker view and manage these Auth/Storage policies through configured `supautils.policy_grants`. Earlier conclusions based solely on provider-owner membership were too broad. The [extension's documented policy delegation](https://github.com/supabase/supautils#table-ownership-bypass) explains that distinction.
+
+However, `postgres` has **no delegable UPDATE column** on `auth.sessions`. It can use UPDATE itself, but cannot grant it to another role. PostgreSQL requires UPDATE permission for `FOR SHARE`; removing that lock would change revocation guarantees. The available connection is `postgres`, not a provider owner, and cannot assume either provider-owner role. The connected tools also lack access to the referenced hosted staging project. General task authorization cannot supply those missing database capabilities.
+
+The narrowly scoped provider-owner prerequisite is [provider-lock-grant.sql](provider-lock-grant.sql): grant the existing operator delegation on `updated_at` only. It changes neither web access nor any row, password, RLS setting or table owner. Its inverse removes only that new grant option, **after** dependent runtime grants are removed, without CASCADE. [Provider request draft](PROVIDER-REQUEST.md). No request was sent externally.
+
+The access proposal now checks delegation **before** attempting any grants and validates its postconditions before commit. A fixture matching the hosted operator's non-delegable UPDATE fails atomically; no partial policy/grant cutover is accepted. Production role creation, runtime grants, Storage policy changes and the new credential binding remain unapplied.
+
+## Evidence
+
+| Check | Result |
+|---|---|
+| Full default suite | **1,255 passed, 35 fixture-gated skips, zero failures** |
+| Real Next/Auth/SMTP/PostgreSQL/Storage suite | **44 passed, zero failures/skips**, with the fresh inherited web login, all 57 migrations and setup/inverse cycles |
+| Native publication/audiences/scheduling groups | **65 passed** |
+| Native decision/support transactions plus offers/communications | **61 passed** (35 + 26) |
+| Fresh/populated legacy migration replay | **57 migrations**, existing records preserved; 78 application tables RLS-enabled and browser CRUD denied |
+| Invoker-view/atomic migration focused checks | Passed: base ACL and RLS revocation apply through the view; wrong operator cannot partially apply grants |
+| Typecheck / actual Next production builds | Passed |
+| Lint | Zero errors; 26 existing warnings |
+| Hosted canary | Claim form 200; account 401/private-no-store; application Origin denial 403 |
+
+Logs, aggregate production checks, hashes and the final scan/cleanup results are linked from [validation.json](validation.json). No production student records, tokens or passwords are included. Native/default/HTTP counts are separate; skipped tests are not counted as native passes.
+
+The first combined run exposed fixture problems: SMTP chose IPv6 while the reserved sink bound IPv4, and the new claim probe used the wrong Origin. SMTP is now pinned to its reserved IPv4 address with the existing trusted TLS certificate; the Origin matches the actual HTTP host. No product security check or assertion was removed. One overloaded default run also hit a browser timeout; the capped full rerun passed. A later migration-shape test required an explicit transaction around the migration; it now has BEGIN/COMMIT and passed replay/regression checks. Initial failures are retained rather than counted as success.
+
+The local view probe retains **one SQL statement and one Auth user verification per authenticated request**, with request-only coalescing. The view replaces the relation reference and preserves the original predicates/locks. Native EXPLAIN uses an existing session index. There is no production latency, cost or page-speed claim. Claim adds a provider identity-status read and an audit-binding lookup; issuance adds one audit write. These are measured/explicit security costs, not performance optimizations.
+
+## Completion path and rollback
+
+After a provider owner supplies the prerequisite, re-run [operator preflight](operator-preflight.sql), confirm no unbound pending legacy invitations, apply the tested role setup and exact access transaction, provision only the **new** login's credential securely, and add only `OUTCLASS_RUNTIME_DATABASE_URL` as a production Secret. Preserve pooler/TLS/budgets and the rollback values in their approved secret context. After the canary/observation gate, future web deployments must contain only bounded DB credentials: remove operator aliases from web configuration, keep migration credentials in a separate operator/CI context, and retain the immutable compatibility deployment for rollback. Do not claim credential separation complete while operator secrets remain in web environment variables. Stage a production build of the canonical tree, require its strict role preflight, verify safe smoke checks, then promote that exact artifact. Hosted authenticated allow/deny smoke coverage still needs approved test identities; do not enumerate students or send unsolicited mail.
+
+For role-cutover rollback: restore the recorded compatibility deployment first; remove the new runtime alias so future builds use the unchanged old binding; run the exact access inverse; disable/remove only the new login with the separate role inverse. Existing passwords remain unchanged. Current production operator variables were not modified in this batch; the later cutover must move operator values out of future web deployments while preserving their separate approved rollback/operator context. The additive migrated invoker view stays owner-only, avoiding migration-history edits or destructive rollback. Both access directions and role setup/inverse were tested locally. Do not automatically restore a known vulnerable old artifact.
+
+Production session mutations/replay, field performance, second-university policy, worker/Storage optional suites beyond the named checks and the audit's other operational findings are not certified by this batch. The provider grant is a capability blocker, not a request for another user approval.

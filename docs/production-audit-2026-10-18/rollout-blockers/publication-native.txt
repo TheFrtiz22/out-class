@@ -1,0 +1,2223 @@
+84689c9b33840822f358f13953a5f1f33e3da18ef15846dd2f98d8d6aeb453f4
+CREATE ROLE
+CREATE ROLE
+CREATE ROLE
+CREATE SCHEMA
+CREATE TABLE
+GRANT
+GRANT
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_audiences_test", schema "public" at "127.0.0.1:58453"
+
+57 migrations found in prisma/migrations
+
+Applying migration `20260923000000_baseline`
+Applying migration `20260923010000_capabilities`
+Applying migration `20260924000000_club_claims`
+Applying migration `20260924010000_anonymous_review_tests`
+Applying migration `20260924020000_interview_kits`
+Applying migration `20260924030000_meetings`
+Applying migration `20260924040000_member_tasks`
+Applying migration `20260925000000_platform_view_sessions`
+Applying migration `20260925010000_marketing_participants`
+Applying migration `20260927000000_recruiting_rules`
+Applying migration `20260928000000_private_resume_storage`
+Applying migration `20260929000000_club_marketing`
+Applying migration `20260930000000_interview_rooms`
+Applying migration `20261001000000_support_impersonation_tutorials`
+Applying migration `20261001010000_club_onboarding`
+Applying migration `20261002000000_organization_invitation_emails`
+Applying migration `20261002010000_onboarding_security`
+Applying migration `20261003000000_applicant_intelligence`
+Applying migration `20261003010000_durable_voting`
+Applying migration `20261003020000_corkboard`
+Applying migration `20261003030000_task_workflows`
+Applying migration `20261004000000_interview_foundation`
+Applying migration `20261004000000_voting_presentation_join`
+Applying migration `20261005000000_club_settings`
+Applying migration `20261005000000_interview_scheduling_access`
+Applying migration `20261005010000_public_corkboard`
+Applying migration `20261006010000_admin_workspace`
+Applying migration `20261006020000_profile_recruitment_visibility`
+Applying migration `20261007010000_profile_gpa_private_photos`
+Applying migration `20261008000000_school_requests`
+Applying migration `20261009000000_recruitment_offers`
+Applying migration `20261009010000_interview_collaboration`
+Applying migration `20261009234601_private_club_assets`
+Applying migration `20261010180000_communications_foundation`
+Applying migration `20261010190000_communications_center`
+Applying migration `20261010190001_reconciled_decision_letters`
+Applying migration `20261011002000_production_communications_runtime_access`
+Applying migration `20261011180000_submitted_interview_questions`
+Applying migration `20261011194930_decision_letter_runtime_access`
+Applying migration `20261012120000_global_availability`
+Applying migration `20261012160000_unpublished_panel_proposals`
+Applying migration `20261012171752_admin_session_bound_elevation`
+Applying migration `20261012190000_panel_schedule_publication`
+Applying migration `20261012200000_availability_collection`
+Applying migration `20261013002253_recipient_audiences`
+Applying migration `20261013005624_scheduled_communications`
+Applying migration `20261013014837_decision_letter_controls`
+Applying migration `20261013014950_recruitment_cycles`
+Applying migration `20261013015200_scheduled_decisions`
+Applying migration `20261013140024_scheduled_invitation_emails`
+Applying migration `20261013141510_scheduled_availability_requests`
+Applying migration `20261014230000_interview_self_booking`
+Applying migration `20261015010000_editor_drafts`
+Applying migration `20261016010000_saved_campus_events`
+Applying migration `20261016020000_event_scheduling_flyer_limits`
+Applying migration `20261016030000_event_flyer_deletion_runtime_access`
+Applying migration `20261019175843_outclass_auth_session_view`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260923000000_baseline/
+    └─ migration.sql
+  └─ 20260923010000_capabilities/
+    └─ migration.sql
+  └─ 20260924000000_club_claims/
+    └─ migration.sql
+  └─ 20260924010000_anonymous_review_tests/
+    └─ migration.sql
+  └─ 20260924020000_interview_kits/
+    └─ migration.sql
+  └─ 20260924030000_meetings/
+    └─ migration.sql
+  └─ 20260924040000_member_tasks/
+    └─ migration.sql
+  └─ 20260925000000_platform_view_sessions/
+    └─ migration.sql
+  └─ 20260925010000_marketing_participants/
+    └─ migration.sql
+  └─ 20260927000000_recruiting_rules/
+    └─ migration.sql
+  └─ 20260928000000_private_resume_storage/
+    └─ migration.sql
+  └─ 20260929000000_club_marketing/
+    └─ migration.sql
+  └─ 20260930000000_interview_rooms/
+    └─ migration.sql
+  └─ 20261001000000_support_impersonation_tutorials/
+    └─ migration.sql
+  └─ 20261001010000_club_onboarding/
+    └─ migration.sql
+  └─ 20261002000000_organization_invitation_emails/
+    └─ migration.sql
+  └─ 20261002010000_onboarding_security/
+    └─ migration.sql
+  └─ 20261003000000_applicant_intelligence/
+    └─ migration.sql
+  └─ 20261003010000_durable_voting/
+    └─ migration.sql
+  └─ 20261003020000_corkboard/
+    └─ migration.sql
+  └─ 20261003030000_task_workflows/
+    └─ migration.sql
+  └─ 20261004000000_interview_foundation/
+    └─ migration.sql
+  └─ 20261004000000_voting_presentation_join/
+    └─ migration.sql
+  └─ 20261005000000_club_settings/
+    └─ migration.sql
+  └─ 20261005000000_interview_scheduling_access/
+    └─ migration.sql
+  └─ 20261005010000_public_corkboard/
+    └─ migration.sql
+  └─ 20261006010000_admin_workspace/
+    └─ migration.sql
+  └─ 20261006020000_profile_recruitment_visibility/
+    └─ migration.sql
+  └─ 20261007010000_profile_gpa_private_photos/
+    └─ migration.sql
+  └─ 20261008000000_school_requests/
+    └─ migration.sql
+  └─ 20261009000000_recruitment_offers/
+    └─ migration.sql
+  └─ 20261009010000_interview_collaboration/
+    └─ migration.sql
+  └─ 20261009234601_private_club_assets/
+    └─ migration.sql
+  └─ 20261010180000_communications_foundation/
+    └─ migration.sql
+  └─ 20261010190000_communications_center/
+    └─ migration.sql
+  └─ 20261010190001_reconciled_decision_letters/
+    └─ migration.sql
+  └─ 20261011002000_production_communications_runtime_access/
+    └─ migration.sql
+  └─ 20261011180000_submitted_interview_questions/
+    └─ migration.sql
+  └─ 20261011194930_decision_letter_runtime_access/
+    └─ migration.sql
+  └─ 20261012120000_global_availability/
+    └─ migration.sql
+  └─ 20261012160000_unpublished_panel_proposals/
+    └─ migration.sql
+  └─ 20261012171752_admin_session_bound_elevation/
+    └─ migration.sql
+  └─ 20261012190000_panel_schedule_publication/
+    └─ migration.sql
+  └─ 20261012200000_availability_collection/
+    └─ migration.sql
+  └─ 20261013002253_recipient_audiences/
+    └─ migration.sql
+  └─ 20261013005624_scheduled_communications/
+    └─ migration.sql
+  └─ 20261013014837_decision_letter_controls/
+    └─ migration.sql
+  └─ 20261013014950_recruitment_cycles/
+    └─ migration.sql
+  └─ 20261013015200_scheduled_decisions/
+    └─ migration.sql
+  └─ 20261013140024_scheduled_invitation_emails/
+    └─ migration.sql
+  └─ 20261013141510_scheduled_availability_requests/
+    └─ migration.sql
+  └─ 20261014230000_interview_self_booking/
+    └─ migration.sql
+  └─ 20261015010000_editor_drafts/
+    └─ migration.sql
+  └─ 20261016010000_saved_campus_events/
+    └─ migration.sql
+  └─ 20261016020000_event_scheduling_flyer_limits/
+    └─ migration.sql
+  └─ 20261016030000_event_flyer_deletion_runtime_access/
+    └─ migration.sql
+  └─ 20261019175843_outclass_auth_session_view/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+DO
+REVOKE
+GRANT
+BEGIN
+NOTICE:  schema "public" already exists, skipping
+CREATE SCHEMA
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+DO
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DO
+CREATE FUNCTION
+CREATE TRIGGER
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+LOCK TABLE
+INSERT 0 3
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+REVOKE
+DO
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+UPDATE 0
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+INSERT 0 0
+ALTER TABLE
+ALTER TABLE
+REVOKE
+DO
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+REVOKE
+DO
+COMMIT
+ALTER TABLE
+BEGIN
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+DO
+COMMIT
+BEGIN
+DO
+COMMIT
+NOTICE:  Supabase Storage is absent. Re-run this idempotent storage patch after provisioning Storage.
+ALTER TABLE
+BEGIN
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+REVOKE
+DO
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+REVOKE
+COMMIT
+BEGIN
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+INSERT 0 1
+INSERT 0 0
+UPDATE 0
+UPDATE 0
+INSERT 0 1
+UPDATE 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+DO
+REVOKE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+CREATE INDEX
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+UPDATE 0
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+REVOKE
+DO
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+DO
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+DROP INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+UPDATE 0
+ALTER TABLE
+UPDATE 0
+UPDATE 0
+UPDATE 0
+UPDATE 0
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE POLICY
+CREATE POLICY
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+REVOKE
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+DO
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+NOTICE:  Storage is absent; provision it and reapply the storage block before enabling uploads.
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DO
+CREATE FUNCTION
+NOTICE:  Storage is absent on plain PostgreSQL; profile photo uploads require Supabase Storage
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+DO
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+REVOKE
+CREATE POLICY
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+DO
+REVOKE
+COMMIT
+BEGIN
+DO
+COMMIT
+NOTICE:  Storage absent; reapply this block after provisioning Storage before enabling club uploads.
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+UPDATE 0
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DO
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+REVOKE
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+CREATE POLICY
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+COMMIT
+BEGIN
+DO
+COMMIT
+BEGIN
+SET
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+ALTER TABLE
+ALTER TABLE
+DO
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+DO
+ALTER TABLE
+REVOKE
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+ALTER TABLE
+REVOKE
+REVOKE
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+REVOKE
+CREATE POLICY
+CREATE POLICY
+DO
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+REVOKE
+CREATE POLICY
+DO
+COMMIT
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+BEGIN
+ALTER TABLE
+COMMIT
+BEGIN
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+REVOKE
+CREATE POLICY
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+CREATE FUNCTION
+REVOKE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+COMMIT
+BEGIN
+SET
+ALTER TABLE
+CREATE INDEX
+CREATE TABLE
+NOTICE:  identifier "InterviewAvailabilityOverride_clubId_roundId_slotId_revokedAt_idx" will be truncated to "InterviewAvailabilityOverride_clubId_roundId_slotId_revokedAt_i"
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+REVOKE
+REVOKE
+DO
+CREATE FUNCTION
+CREATE FUNCTION
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+REVOKE
+CREATE POLICY
+DO
+COMMIT
+BEGIN
+CREATE TABLE
+CREATE INDEX
+ALTER TABLE
+REVOKE
+CREATE POLICY
+DO
+COMMIT
+BEGIN
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+DO
+CREATE TABLE
+ALTER TABLE
+REVOKE
+CREATE POLICY
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+DELETE 0
+COMMIT
+BEGIN
+SET
+REVOKE
+DO
+COMMIT
+SET
+SET
+DO
+RESET
+RESET
+DO
+DO
+Populated integrated pre-controls-to-current upgrade: letters, answers, evaluations, queued intent, audiences, preferences, membership, notification/outbox preserved.
+Environment variables loaded from .env
+Prisma schema loaded from ../../../../var/folders/j8/wlyll34d16z6dxyrbjnl1knm0000gn/T/outclass-release-schema-JcDYtQ/schema.prisma
+Datasource "db": PostgreSQL database "outclass_release_upgrade", schema "public" at "127.0.0.1:58453"
+
+43 migrations found in prisma/migrations
+
+Applying migration `20260923000000_baseline`
+Applying migration `20260923010000_capabilities`
+Applying migration `20260924000000_club_claims`
+Applying migration `20260924010000_anonymous_review_tests`
+Applying migration `20260924020000_interview_kits`
+Applying migration `20260924030000_meetings`
+Applying migration `20260924040000_member_tasks`
+Applying migration `20260925000000_platform_view_sessions`
+Applying migration `20260925010000_marketing_participants`
+Applying migration `20260927000000_recruiting_rules`
+Applying migration `20260928000000_private_resume_storage`
+Applying migration `20260929000000_club_marketing`
+Applying migration `20260930000000_interview_rooms`
+Applying migration `20261001000000_support_impersonation_tutorials`
+Applying migration `20261001010000_club_onboarding`
+Applying migration `20261002000000_organization_invitation_emails`
+Applying migration `20261002010000_onboarding_security`
+Applying migration `20261003000000_applicant_intelligence`
+Applying migration `20261003010000_durable_voting`
+Applying migration `20261003020000_corkboard`
+Applying migration `20261003030000_task_workflows`
+Applying migration `20261004000000_interview_foundation`
+Applying migration `20261004000000_voting_presentation_join`
+Applying migration `20261005000000_club_settings`
+Applying migration `20261005000000_interview_scheduling_access`
+Applying migration `20261005010000_public_corkboard`
+Applying migration `20261006010000_admin_workspace`
+Applying migration `20261006020000_profile_recruitment_visibility`
+Applying migration `20261007010000_profile_gpa_private_photos`
+Applying migration `20261008000000_school_requests`
+Applying migration `20261009000000_recruitment_offers`
+Applying migration `20261009010000_interview_collaboration`
+Applying migration `20261009234601_private_club_assets`
+Applying migration `20261010180000_communications_foundation`
+Applying migration `20261010190000_communications_center`
+Applying migration `20261010190001_reconciled_decision_letters`
+Applying migration `20261011002000_production_communications_runtime_access`
+Applying migration `20261011180000_submitted_interview_questions`
+Applying migration `20261011194930_decision_letter_runtime_access`
+Applying migration `20261012120000_global_availability`
+Applying migration `20261012160000_unpublished_panel_proposals`
+Applying migration `20261012190000_panel_schedule_publication`
+Applying migration `20261012200000_availability_collection`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20260923000000_baseline/
+    └─ migration.sql
+  └─ 20260923010000_capabilities/
+    └─ migration.sql
+  └─ 20260924000000_club_claims/
+    └─ migration.sql
+  └─ 20260924010000_anonymous_review_tests/
+    └─ migration.sql
+  └─ 20260924020000_interview_kits/
+    └─ migration.sql
+  └─ 20260924030000_meetings/
+    └─ migration.sql
+  └─ 20260924040000_member_tasks/
+    └─ migration.sql
+  └─ 20260925000000_platform_view_sessions/
+    └─ migration.sql
+  └─ 20260925010000_marketing_participants/
+    └─ migration.sql
+  └─ 20260927000000_recruiting_rules/
+    └─ migration.sql
+  └─ 20260928000000_private_resume_storage/
+    └─ migration.sql
+  └─ 20260929000000_club_marketing/
+    └─ migration.sql
+  └─ 20260930000000_interview_rooms/
+    └─ migration.sql
+  └─ 20261001000000_support_impersonation_tutorials/
+    └─ migration.sql
+  └─ 20261001010000_club_onboarding/
+    └─ migration.sql
+  └─ 20261002000000_organization_invitation_emails/
+    └─ migration.sql
+  └─ 20261002010000_onboarding_security/
+    └─ migration.sql
+  └─ 20261003000000_applicant_intelligence/
+    └─ migration.sql
+  └─ 20261003010000_durable_voting/
+    └─ migration.sql
+  └─ 20261003020000_corkboard/
+    └─ migration.sql
+  └─ 20261003030000_task_workflows/
+    └─ migration.sql
+  └─ 20261004000000_interview_foundation/
+    └─ migration.sql
+  └─ 20261004000000_voting_presentation_join/
+    └─ migration.sql
+  └─ 20261005000000_club_settings/
+    └─ migration.sql
+  └─ 20261005000000_interview_scheduling_access/
+    └─ migration.sql
+  └─ 20261005010000_public_corkboard/
+    └─ migration.sql
+  └─ 20261006010000_admin_workspace/
+    └─ migration.sql
+  └─ 20261006020000_profile_recruitment_visibility/
+    └─ migration.sql
+  └─ 20261007010000_profile_gpa_private_photos/
+    └─ migration.sql
+  └─ 20261008000000_school_requests/
+    └─ migration.sql
+  └─ 20261009000000_recruitment_offers/
+    └─ migration.sql
+  └─ 20261009010000_interview_collaboration/
+    └─ migration.sql
+  └─ 20261009234601_private_club_assets/
+    └─ migration.sql
+  └─ 20261010180000_communications_foundation/
+    └─ migration.sql
+  └─ 20261010190000_communications_center/
+    └─ migration.sql
+  └─ 20261010190001_reconciled_decision_letters/
+    └─ migration.sql
+  └─ 20261011002000_production_communications_runtime_access/
+    └─ migration.sql
+  └─ 20261011180000_submitted_interview_questions/
+    └─ migration.sql
+  └─ 20261011194930_decision_letter_runtime_access/
+    └─ migration.sql
+  └─ 20261012120000_global_availability/
+    └─ migration.sql
+  └─ 20261012160000_unpublished_panel_proposals/
+    └─ migration.sql
+  └─ 20261012190000_panel_schedule_publication/
+    └─ migration.sql
+  └─ 20261012200000_availability_collection/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_release_upgrade", schema "public" at "127.0.0.1:58453"
+
+57 migrations found in prisma/migrations
+
+Applying migration `20261012171752_admin_session_bound_elevation`
+Applying migration `20261013002253_recipient_audiences`
+Applying migration `20261013005624_scheduled_communications`
+Applying migration `20261013014837_decision_letter_controls`
+Applying migration `20261013014950_recruitment_cycles`
+Applying migration `20261013015200_scheduled_decisions`
+Applying migration `20261013140024_scheduled_invitation_emails`
+Applying migration `20261013141510_scheduled_availability_requests`
+Applying migration `20261014230000_interview_self_booking`
+Applying migration `20261015010000_editor_drafts`
+Applying migration `20261016010000_saved_campus_events`
+Applying migration `20261016020000_event_scheduling_flyer_limits`
+Applying migration `20261016030000_event_flyer_deletion_runtime_access`
+Applying migration `20261019175843_outclass_auth_session_view`
+
+The following migration(s) have been applied:
+
+migrations/
+  └─ 20261012171752_admin_session_bound_elevation/
+    └─ migration.sql
+  └─ 20261013002253_recipient_audiences/
+    └─ migration.sql
+  └─ 20261013005624_scheduled_communications/
+    └─ migration.sql
+  └─ 20261013014837_decision_letter_controls/
+    └─ migration.sql
+  └─ 20261013014950_recruitment_cycles/
+    └─ migration.sql
+  └─ 20261013015200_scheduled_decisions/
+    └─ migration.sql
+  └─ 20261013140024_scheduled_invitation_emails/
+    └─ migration.sql
+  └─ 20261013141510_scheduled_availability_requests/
+    └─ migration.sql
+  └─ 20261014230000_interview_self_booking/
+    └─ migration.sql
+  └─ 20261015010000_editor_drafts/
+    └─ migration.sql
+  └─ 20261016010000_saved_campus_events/
+    └─ migration.sql
+  └─ 20261016020000_event_scheduling_flyer_limits/
+    └─ migration.sql
+  └─ 20261016030000_event_flyer_deletion_runtime_access/
+    └─ migration.sql
+  └─ 20261019175843_outclass_auth_session_view/
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_release_upgrade", schema "public" at "127.0.0.1:58453"
+
+57 migrations found in prisma/migrations
+
+Database schema is up to date!
+DO
+DO
+Current-main production-equivalent Prisma upgrade: all pending migrations applied in order, populated communications/letters/preferences/members and legacy Admin deadline preserved; bounded ownership/RLS/browser denial verified.
+▶ invitation scheduling and fair worker on actual bounded PostgreSQL
+  ✔ fixed preview and response-loss retry produce no early delivery (104.521791ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 37
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 45
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 9
+}
+  ✔ concurrent execution queues once with outbound disabled; published is not sent (98.973875ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 27
+}
+  ✔ audit failure rolls delivery intent back completely (50.515833ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 38
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 24
+}
+  ✔ changed email, revoked invitation and disabled recipient fail closed (144.900083ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 47
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 50
+}
+  ✔ revocation and suspension cannot publish scheduled work (188.596083ms)
+  ✔ cross-club, support, expired and excessive selections are denied (73.465333ms)
+scheduler.invocation {
+  published: 2,
+  failed: 0,
+  skipped: 1,
+  claimed: 2,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 1, intentRace: 0 },
+  dueCount: 3,
+  oldestDueAgeMs: 1226,
+  durationMs: 119
+}
+  ✔ locked oldest club cannot starve another club; explicit invocation claim bound (301.986458ms)
+✔ invitation scheduling and fair worker on actual bounded PostgreSQL (1217.300875ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1342.860542
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 61
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 103
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 16
+}
+▶ scheduled availability requests on actual bounded PostgreSQL
+  ✔ no early requests/inbox; concurrent execution and retries publish once with email disabled (182.464541ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 36
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 37
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 30
+}
+  ✔ responses and reminder cooldown are evaluated at execution (185.152875ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 30
+}
+  ✔ atomic failure rolls requests, canonical notifications and outbox back (49.679791ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 30
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 17
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 18
+}
+  ✔ disabled target, revoked authority and archived rounds fail closed (134.703291ms)
+  ✔ cross-club, support and oversized selections denied; cancellation retained (38.748458ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 2201
+}
+{"availabilityRecipients":50,"simulatedOrmLatencyMs":10,"elapsedMs":2202,"ormOperations":162,"publicationTimeoutMs":12000}
+  ✔ 50 requests fit existing 12s worker bound under simulated ORM latency (2289.716208ms)
+✔ scheduled availability requests on actual bounded PostgreSQL (3133.799542ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3268.112125
+▶ decision controls, cycles and scheduled publication on bounded PostgreSQL
+  ✔ default letters, disabled letters, valid status destination and immutable history (74.466917ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 24
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 38
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 6
+}
+  ✔ no early outcomes, frozen templates/toggle, concurrent workers and idempotency (84.909416ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 21
+}
+  ✔ letters disabled at capture stay disabled after later settings changes (44.937667ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 44
+}
+  ✔ cancellation race has one atomic winner (59.088208ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 28
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 86
+}
+  ✔ ABA application changes and voting/round state conflicts never overwrite (194.837875ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 24
+}
+  ✔ revoked sender and cross-club application remain denied (65.626958ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 41
+}
+  ✔ audit failure rolls back all domain writes and leaves an explicit failed intent (62.404375ms)
+  ✔ rejected reconsideration preserves answers/evaluations/letter and enables active targeting again (83.399916ms)
+  ✔ cycles preserve unknown legacy assignments and enforce composite club ownership (145.880542ms)
+  ✔ temporary support sessions cannot schedule authority beyond their lifetime (6.720042ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 50
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 29
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 24
+}
+  ✔ crashed claims recover once, disabled recipients stop publication, and voting revisions fence outcomes (207.347333ms)
+  ✔ reconsidered acceptance creates a fresh offer while retaining closed offer history (71.397375ms)
+  ✔ anonymous state guards support scheduling/reconsideration without exposing identity or versions (95.469042ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 34
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 22
+}
+  ✔ closed application deadline blocks new submissions but not authorized scheduled decisions or reconsideration (113.71475ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 48,
+  failed: 1,
+  skipped: 3,
+  claimed: 49,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 16,
+  oldestDueAgeMs: 10471,
+  durationMs: 9372
+}
+scheduler.invocation {
+  published: 16,
+  failed: 0,
+  skipped: 3,
+  claimed: 16,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 3613
+}
+{"capacityBacklog":{"wave":0,"pollReads":32,"simulatedOrmLatencyMs":10,"maxActive":3,"maxDecisions":1,"maxClubActive":1,"small":63,"locked":16,"bulkApplicants":50,"overlappingInvocations":1,"firstInvocationMs":9372,"publishedBeforeUnlock":47,"p50LatenessMs":3677,"p95LatenessMs":5944,"maxLatenessMs":6142,"conservativeMinuteCapacity":48,"cronPhaseAdditionalMs":60000,"afterUnlockPublished":16}}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 6
+}
+{"bulkApplicants":50,"simulatedOrmLatencyMs":10,"elapsedMs":9372,"mixedOrmOperations":1685,"workerPublicationTimeoutMs":20000}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 3, noCandidate: 0, intentRace: 0 },
+  dueCount: 62,
+  oldestDueAgeMs: 1155,
+  durationMs: 103
+}
+scheduler.invocation {
+  published: 48,
+  failed: 1,
+  skipped: 3,
+  claimed: 49,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 16,
+  oldestDueAgeMs: 10934,
+  durationMs: 9881
+}
+scheduler.invocation {
+  published: 16,
+  failed: 0,
+  skipped: 3,
+  claimed: 16,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 3798
+}
+{"capacityBacklog":{"wave":1,"pollReads":34,"simulatedOrmLatencyMs":10,"maxActive":3,"maxDecisions":1,"maxClubActive":1,"small":63,"locked":16,"bulkApplicants":50,"overlappingInvocations":2,"firstInvocationMs":9881,"publishedBeforeUnlock":47,"p50LatenessMs":3727,"p95LatenessMs":6175,"maxLatenessMs":6396,"conservativeMinuteCapacity":48,"cronPhaseAdditionalMs":60000,"afterUnlockPublished":16}}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 11
+}
+{"bulkApplicants":50,"simulatedOrmLatencyMs":10,"elapsedMs":9881,"mixedOrmOperations":1685,"workerPublicationTimeoutMs":20000}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 3, noCandidate: 0, intentRace: 0 },
+  dueCount: 62,
+  oldestDueAgeMs: 1220,
+  durationMs: 165
+}
+scheduler.invocation {
+  published: 23,
+  failed: 0,
+  skipped: 3,
+  claimed: 23,
+  claimErrors: 0,
+  deferrals: { capacity: 2, noCandidate: 1, intentRace: 0 },
+  dueCount: 16,
+  oldestDueAgeMs: 12107,
+  durationMs: 11052
+}
+scheduler.invocation {
+  published: 25,
+  failed: 1,
+  skipped: 3,
+  claimed: 26,
+  claimErrors: 0,
+  deferrals: { capacity: 1, noCandidate: 2, intentRace: 0 },
+  dueCount: 16,
+  oldestDueAgeMs: 19983,
+  durationMs: 18931
+}
+scheduler.invocation {
+  published: 16,
+  failed: 0,
+  skipped: 3,
+  claimed: 16,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 6258
+}
+{"capacityBacklog":{"wave":2,"pollReads":58,"simulatedOrmLatencyMs":20,"maxActive":3,"maxDecisions":1,"maxClubActive":1,"small":63,"locked":16,"bulkApplicants":50,"overlappingInvocations":3,"firstInvocationMs":18931,"publishedBeforeUnlock":47,"p50LatenessMs":7630,"p95LatenessMs":11967,"maxLatenessMs":12347,"conservativeMinuteCapacity":48,"cronPhaseAdditionalMs":60000,"afterUnlockPublished":16}}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 60
+}
+{"bulkApplicants":50,"simulatedOrmLatencyMs":20,"elapsedMs":18931,"mixedOrmOperations":1685,"workerPublicationTimeoutMs":20000}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 3, noCandidate: 0, intentRace: 0 },
+  dueCount: 62,
+  oldestDueAgeMs: 1481,
+  durationMs: 376
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 3, noCandidate: 0, intentRace: 0 },
+  dueCount: 62,
+  oldestDueAgeMs: 1483,
+  durationMs: 378
+}
+scheduler.failure { stage: 'publication', code: 'P2028', sqlState: null }
+scheduler.invocation {
+  published: 47,
+  failed: 2,
+  skipped: 3,
+  claimed: 49,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 16,
+  oldestDueAgeMs: 21698,
+  durationMs: 20593
+}
+scheduler.invocation {
+  published: 16,
+  failed: 0,
+  skipped: 3,
+  claimed: 16,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 13455
+}
+{"capacityBacklog":{"wave":3,"pollReads":70,"simulatedOrmLatencyMs":50,"maxActive":3,"maxDecisions":1,"maxClubActive":1,"small":63,"locked":16,"bulkApplicants":50,"overlappingInvocations":3,"firstInvocationMs":20593,"publishedBeforeUnlock":47,"p50LatenessMs":11250,"p95LatenessMs":19831,"maxLatenessMs":20646,"conservativeMinuteCapacity":47,"cronPhaseAdditionalMs":60000,"afterUnlockPublished":16}}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 10
+}
+{"bulkApplicants":50,"simulatedOrmLatencyMs":50,"elapsedMs":20593,"mixedOrmOperations":1346,"workerPublicationTimeoutMs":20000}
+  ✔ mixed backlog waves preserve capacity, atomic decisions and slow-job rollback (94410.387458ms)
+✔ decision controls, cycles and scheduled publication on bounded PostgreSQL (95918.449916ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96056.561792
+▶ recipient audiences on bounded native PostgreSQL
+  ✔ bounded ownership, restrictive policies and browser-role denial (11.229416ms)
+  ✔ members, officers, access roles, graduation year, cohort, labels and joined date use records (26.044708ms)
+  ✔ active applicant and rejected audiences remain distinct and anonymous identities stay hidden (27.119625ms)
+  ✔ booking, completed interview and effective offer expiry filters (42.387167ms)
+  ✔ event leads are recorded engagement, not private saves or anonymous applicants (19.54375ms)
+  ✔ manual group creation, retry, rule group, include/exclude and deduplication (59.731083ms)
+  ✔ populated browser-role CRUD and cross-club composite keys remain denied (25.639917ms)
+  ✔ fixed versus send-time evaluation, membership changes and disabled recipients (24.941041ms)
+  ✔ manual edits, stale revisions, dependency deletion and cycle rollback (43.576916ms)
+  ✔ foreign, anonymous and disabled people cannot be assigned; denied operations roll back (18.616084ms)
+  ✔ revocation after request authentication, suspension and Demo deny all writes/reads (11.803542ms)
+  ✔ canonical publication snapshots and retries deduplicate notification/outbox independently of preferences (32.695875ms)
+  ✔ failed atomic group audit rolls back edits and recipient assignment (29.999833ms)
+  ✔ saved manual applicant groups do not expose identities after review becomes anonymous (32.909334ms)
+  ✔ delete groups preserves student accounts and immutable publication recipients (11.788875ms)
+✔ recipient audiences on bounded native PostgreSQL (599.037833ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 697.209833
+▶ scheduled publication on bounded native PostgreSQL
+  ✔ bounded owner and restrictive browser denial including accidental grants (4.896625ms)
+  ✔ save retry freezes server snapshot and creates no early inbox/outbox (38.927584ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 22
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 25
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 30
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 5
+}
+  ✔ concurrent workers publish once with global email disabled and canonical outbox (47.513458ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 5
+}
+  ✔ edit revisions, cancellation idempotency and stale commands (45.83275ms)
+scheduler.invocation {
+  published: 2,
+  failed: 0,
+  skipped: 3,
+  claimed: 2,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 35
+}
+  ✔ fixed and dynamic groups recheck disabled users and new membership (59.9745ms)
+scheduler.invocation {
+  published: 2,
+  failed: 0,
+  skipped: 3,
+  claimed: 2,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 41
+}
+  ✔ fixed custom group freezes selection while dynamic group uses current entries (73.686958ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 12
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 21
+}
+  ✔ revoked sender fails closed without partial publication; explicit repair retry (65.884417ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 18
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 21
+}
+  ✔ complete rollback after inbox/outbox writes and failure recovery (61.92475ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 20
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 18
+}
+  ✔ terminated PostgreSQL transaction leaves no orphaned processing or partial inbox (59.45625ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 5
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 10
+}
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 18
+}
+  ✔ processing claim is observable, rejects edit/cancel, and expired crash lease is reclaimed once (46.1175ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 5
+}
+  ✔ simultaneous cancellation/publication has exactly one atomic winner (16.707208ms)
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 11
+}
+  ✔ disabled sender cannot execute a persisted schedule (26.937ms)
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 1,
+  oldestDueAgeMs: 1005,
+  durationMs: 4
+}
+scheduler.invocation {
+  published: 0,
+  failed: 0,
+  skipped: 3,
+  claimed: 0,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 5
+}
+  ✔ cancel winning race never publishes; due lock held by edit skips safely (23.939791ms)
+scheduler.invocation {
+  published: 1,
+  failed: 0,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 22
+}
+scheduler.failure { stage: 'publication', code: 'UNKNOWN', sqlState: null }
+scheduler.invocation {
+  published: 0,
+  failed: 1,
+  skipped: 3,
+  claimed: 1,
+  claimErrors: 0,
+  deferrals: { capacity: 0, noCandidate: 3, intentRace: 0 },
+  dueCount: 0,
+  oldestDueAgeMs: null,
+  durationMs: 12
+}
+  ✔ private group changes, preference separation and suspended club denial (71.547208ms)
+  ✔ cross-club references, untrusted snapshots and support authority are rejected (14.929ms)
+  ✔ another authorized manager may cancel but cannot rewrite the original sender intent (17.768666ms)
+  ✔ populated browser CRUD denied even with permissive policies (11.80575ms)
+✔ scheduled publication on bounded native PostgreSQL (864.972125ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 961.601708
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "outclass_audiences_test", schema "public" at "127.0.0.1:58453"
+
+57 migrations found in prisma/migrations
+
+Database schema is up to date!

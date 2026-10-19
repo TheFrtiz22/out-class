@@ -11,6 +11,7 @@ import { createOrganizationAndInvitePresident } from "@/actions/platform-organiz
 import { createClubIdentityInvitation } from "@/actions/club-onboarding";
 import { sendStudentClaimEmail, invitationEmailConfig } from "@/utils/email";
 import { randomUUID } from "node:crypto";
+import { studentInvitationFingerprint } from "@/lib/student-invitation";
 import { enqueueInvitationEmail } from "@/utils/invitation-delivery";
 import { scheduleInvitationDelivery } from "@/utils/invitation-background";
 import { createIdentityInvitationInTransaction } from "@/utils/club-onboarding";
@@ -116,8 +117,8 @@ export async function createAdminStudent(input: unknown) {
   const relationshipType = relationship?.school.identifierTypes.find(t => t.verification === "EMAIL_LOCAL_PART" && t.emailDomain === "virginia.edu");
   if (relationship && (!relationshipType || !relationship.school.active || relationship.suspendedAt)) throw Error("Choose an active club configured for UVA invitations.");
   const client = adminAuth();
-  // Provider owns expiry, token hashing, intended email binding and single-use verification.
-  // There is no password field and no second invitation/token model.
+  // Auth owns expiry and single use. The audit fingerprint binds the issued
+  // capability to this account before verification can consume it.
   const invitation = await client.auth.admin.generateLink({ type: "invite", email: d.email, options: { data: { first_name: d.firstName, last_name: d.lastName, firstName: d.firstName, lastName: d.lastName, major: d.major, gradYear: d.gradYear } } });
   if (invitation.error || !invitation.data.user) throw Error("Could not provision the student invitation.");
   const userId = invitation.data.user.id;
@@ -125,6 +126,7 @@ export async function createAdminStudent(input: unknown) {
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.create", targetId: userId, reason: d.reason, details: { result: "created", email: d.email } } });
   if (d.major && d.gradYear && /^[a-z][a-z0-9]{1,31}$/.test(d.email.split("@")[0])) await prisma.studentProfile.create({ data: { userId, firstName: d.firstName, lastName: d.lastName, computingId: d.email.split("@")[0], major: d.major, gradYear: d.gradYear } });
   if (relationship && relationshipType) await createClubIdentityInvitation({ clubId: relationship.id, identifierTypeId: relationshipType.id, identifier: d.email.split("@")[0], invitedName: `${d.firstName} ${d.lastName}`, requestedRole: "MEMBER", platformDesignation: true });
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.binding", targetId: userId, details: { fingerprint: studentInvitationFingerprint(invitation.data.properties.hashed_token) } } });
   const receipt = await sendStudentClaimEmail({ recipient: d.email, name: d.firstName, tokenHash: invitation.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.sent", targetId: userId, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
   return { id: userId, email: d.email, status: "INVITED" };
@@ -143,6 +145,7 @@ export async function resendAdminStudentInvitation(userId: string, reason: strin
   });
   const link = await client.auth.admin.generateLink({ type: "invite", email: data.user.email });
   if (link.error) throw Error("Could not renew the invitation.");
+  await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.binding", targetId: userId, details: { fingerprint: studentInvitationFingerprint(link.data.properties.hashed_token) } } });
   const receipt = await sendStudentClaimEmail({ recipient: data.user.email, name: String(data.user.user_metadata.firstName || "Student"), tokenHash: link.data.properties.hashed_token, deliveryId: randomUUID(), siteUrl: config.siteUrl });
   await prisma.auditLog.create({ data: { actorId: actor.id, action: "platform.student.invitation.resend", targetId: userId, reason, details: { result: "accepted_by_smtp", providerMessageId: receipt.messageId } } });
   return { success: true };
