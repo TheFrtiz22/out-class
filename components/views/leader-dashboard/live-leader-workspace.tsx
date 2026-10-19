@@ -157,7 +157,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   useEffect(() => { publish.current?.(data) }, [data])
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
-  const dirty = JSON.stringify([score, notes]) !== baseline && !!activeId
   useEffect(() => {
     let current = true
     setLoading(!retained.current)
@@ -252,10 +251,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     ],
   )
   const active = applicants.find((app) => app.id === activeId)
+  const canEvaluate = active?.canEvaluate === true
+  const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
     scope: { kind: "review", clubId: membership.clubId, resourceId: `${active?.id ?? "none"}:${active?.roundId ?? "none"}` },
     value: { score, notes }, restore: value=>{setScore(value.score);setNotes(value.notes)},
-    enabled: !!active && hasPermission(membership, "applications.review"), base: baseline,
+    enabled: canEvaluate, base: baseline,
   })
   const activeIndex = filtered.findIndex((app) => app.id === activeId)
   useEffect(() => {
@@ -292,7 +293,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           ?.focus()
       })
     }
-    if (active && hasPermission(membership, "applications.review")) void draftSave.flush().then(apply).catch(() => {})
+    if (active?.canEvaluate) void draftSave.flush().then(apply).catch(() => {})
     else apply()
   }
   async function mutate(kind: "review" | "round" | "decision") {
@@ -308,6 +309,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
+        if (!canEvaluate) throw new Error("A current panel assignment is required to submit this identified review.")
         await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
@@ -753,7 +755,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {!active.evaluations.length && (
                   <p className="text-sm text-muted-foreground">No evaluations yet.</p>
                 )}
-                <form data-autosave-editor="true" onBlur={draftSave.onBlur}
+                {canEvaluate ? <form data-autosave-editor="true" onBlur={draftSave.onBlur}
                   onSubmit={(event) => {
                     event.preventDefault()
                     void mutate("review")
@@ -792,7 +794,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       {dirty ? "Draft · not finalized" : score ? "Finalized review" : "No review finalized"}
                     </span>
                   </div>
-                </form>
+                </form> : <p className="text-sm text-muted-foreground">Submitted evaluations are read-only. A new identified interview evaluation requires a current panel assignment; anonymous review requires review permission. You cannot evaluate your own application.</p>}
               </section>
               <section className="space-y-3">
                 <h3 className="oc-card-heading ">Recruitment actions</h3>

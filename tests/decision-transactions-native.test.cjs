@@ -478,6 +478,71 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     finally { state.afterAudit = null; }
     await assertRetainedDraft(f);
   });
+  const reviewDraft = f => ({ scope: { kind: 'review', clubId: f.club.id, resourceId: `${f.app.id}:${f.round.id}` }, content: { score: '8', notes: 'Synthetic draft only' }, base: '["",""]', revision: 0, mutationId: randomUUID() });
+  await t.test('editor draft: serving source expires under slow support Auth; repaired save keeps the same five-second transaction budget', async () => {
+    const legacy = load({ 'actions/editor-drafts.ts': execFileSync('git', ['show', '2c54a8c:actions/editor-drafts.ts'], { encoding: 'utf8' }) });
+    const f = await fixture(), input = reviewDraft(f);
+    providerDelay = 5500;
+    try {
+      await assert.rejects(f.run(() => legacy('actions/editor-drafts.ts').saveEditorDraft(input)), e => e.code === 'P2028');
+      assert.equal(await base.editorDraft.count({ where: { userId: f.user.id } }), 0);
+      const before = providerCalls, start = Date.now();
+      assert.deepEqual(await f.run(() => api('actions/editor-drafts.ts').saveEditorDraft(input)), { revision: 1 });
+      assert.equal(providerCalls - before, 1);
+      const writeTransactionMs = transactionMs;
+      assert.deepEqual((await f.run(() => api('actions/editor-drafts.ts').getEditorDraft(input.scope))).content, input.content);
+      t.diagnostic(`editor simulated Auth=5500ms: command=${Date.now()-start}ms, write transaction=${writeTransactionMs}ms; transaction timeout stays 5000ms`);
+    } finally { providerDelay = 0; }
+  });
+  for (const support of [false, true]) {
+    await t.test(`editor draft retries, conflicts and cross-club denial (support=${support})`, async () => {
+      const f = await fixture(support), input = reviewDraft(f), drafts = api('actions/editor-drafts.ts');
+      assert.deepEqual(await f.run(() => drafts.saveEditorDraft(input)), { revision: 1 });
+      assert.deepEqual(await f.run(() => drafts.saveEditorDraft(input)), { revision: 1 });
+      assert.equal((await f.run(() => drafts.saveEditorDraft({ ...input, mutationId: randomUUID(), content: { score: '2' } }))).error, 'conflict');
+      const other = await fixture(false);
+      await assert.rejects(f.run(() => drafts.saveEditorDraft({ ...input, scope: { ...input.scope, clubId: other.club.id } })), /access denied/);
+      assert.deepEqual((await f.run(() => drafts.getEditorDraft(input.scope))).content, input.content);
+      assert.equal(await base.editorDraft.count({ where: { userId: f.user.id } }), 1);
+      assert.equal(await base.evaluation.count({ where: { applicationId: f.app.id } }), 0);
+      assert.equal(await base.userNotification.count({ where: { clubId: f.club.id } }), 0);
+      const events = await base.auditLog.findMany({ where: { supportSessionId: f.context.session?.id ?? 'none', action: 'platform.impersonation.statement-returned' } });
+      if(support) { assert.ok(events.some(e => e.details.model === 'EditorDraft'));for(const e of events){assert.equal(e.actorId,admin.id);assert.equal(e.effectiveUserId,f.user.id);} }
+    });
+  }
+  await t.test('support revocation after editor persistence rolls the draft back while retaining attributed attempt evidence', async () => {
+    const f = await fixture(), input = reviewDraft(f);
+    state.afterAudit = async data => {
+      if(data.action === 'platform.impersonation.statement-returned' && data.details.model === 'EditorDraft')
+        await operator.platformViewSession.update({ where: { id: f.context.session.id }, data: { endedAt: new Date() } });
+    };
+    try { await assert.rejects(f.run(() => api('actions/editor-drafts.ts').saveEditorDraft(input)), /Impersonation expired/); }
+    finally { state.afterAudit = null; }
+    assert.equal(await base.editorDraft.count({ where: { userId: f.user.id } }), 0);
+    assert.equal(await base.auditLog.count({ where: { supportSessionId: f.context.session.id, action: 'platform.impersonation.statement-returned' } }), 1);
+  });
+  await t.test('editor business work still expires at the unchanged five-second execution limit', async () => {
+    const f = await fixture(), input = reviewDraft(f);
+    state.afterAudit = async data => { if(data.action === 'platform.impersonation.mutation-attempt' && data.details.model === 'EditorDraft') await sleep(5500); };
+    try { await assert.rejects(f.run(() => api('actions/editor-drafts.ts').saveEditorDraft(input)), e => e.code === 'P2028'); }
+    finally { state.afterAudit = null; }
+    assert.equal(await base.editorDraft.count({ where: { userId: f.user.id } }), 0);
+  });
+  await t.test('pipeline evaluation affordance follows live assignment, revocation, anonymity and self-review denial', async () => {
+    const f = await fixture(false), crm = api('actions/crm.ts');
+    const capability = async () => (await f.run(() => crm.getClubPipeline(f.club.id))).applications.find(a => a.id === f.app.id).canEvaluate;
+    assert.equal(await capability(), false);
+    await operator.clubMember.update({ where: { id: f.member.id }, data: { interviewOffices: ['PRESIDENT'] } });
+    assert.equal(await capability(), false, 'an office does not bypass identified assignment');
+    const assignment = await operator.interviewPanelAssignment.create({ data: { applicationId: f.app.id, roundId: f.round.id, memberId: f.member.id, grantedBy: f.user.id } });
+    assert.equal(await capability(), true);
+    await operator.interviewPanelAssignment.update({ where: { id: assignment.id }, data: { revokedAt: new Date() } });
+    assert.equal(await capability(), false);
+    await operator.pipelineRound.update({ where: { id: f.round.id }, data: { anonymousReview: true } });
+    assert.equal(await capability(), true);
+    await operator.application.update({ where: { id: f.app.id }, data: { studentId: f.user.id } });
+    assert.equal(await capability(), false);
+  });
   await t.test('profile authority revoked while waiting on club lock is rechecked inside the transaction', async () => {
     const f=await fixture(false);
     await operator.clubMember.create({data:{clubId:f.club.id,userId:admin.id,isOwner:true}});

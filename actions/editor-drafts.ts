@@ -4,6 +4,11 @@ import { prisma, type AppTransactionClient } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
 import { authorizeClubTransaction } from "@/lib/club-transaction-authorization"
 import { editorScopeSchema, editorSaveSchema, editorDraftKey, draftPermissions, type EditorScope } from "@/lib/editor-drafts"
+import { clubWriteTransaction } from "@/utils/club-write-transaction"
+
+// Preserve Prisma's existing acquisition/execution limits. Provider-backed
+// support validation belongs before acquisition, not inside this five seconds.
+const editorDraftLimits = { maxWait: 2_000, timeout: 5_000 } as const
 
 async function authorize(tx: AppTransactionClient, scope: ReturnType<typeof editorScopeSchema.parse>, userId: string) {
   if (scope.kind === "task-submission") {
@@ -30,7 +35,7 @@ export async function getEditorDraft(input: EditorScope) {
 /** Draft storage has no path to publishing, scheduling, assignments, or submissions. */
 export async function saveEditorDraft(input: unknown) {
   const data = editorSaveSchema.parse(input), { user } = await requireAuth()
-  return prisma.$transaction(async tx => {
+  return clubWriteTransaction(async tx => {
     await authorize(tx, data.scope, user.id)
     // Serialize first creation as well as updates, including personal drafts.
     const key = editorDraftKey(data.scope)
@@ -46,5 +51,5 @@ export async function saveEditorDraft(input: unknown) {
     if (current) await tx.editorDraft.update({ where, data: fields })
     else await tx.editorDraft.create({ data: { userId: user.id, key, ...fields } })
     return { revision: data.revision + 1 }
-  })
+  }, editorDraftLimits)
 }
