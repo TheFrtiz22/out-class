@@ -1,0 +1,44 @@
+[
+  {
+    "case": "global_logout",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "local_logout",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "password_recovery",
+    "provider_user_accepted": false,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "disabled_account",
+    "provider_user_accepted": true,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  },
+  {
+    "case": "session_not_after",
+    "provider_user_accepted": true,
+    "account_status": 200,
+    "profile_write_accepted": true,
+    "profile_unchanged": false
+  },
+  {
+    "case": "malformed_cookie",
+    "provider_user_accepted": true,
+    "account_status": 401,
+    "profile_write_accepted": false,
+    "profile_unchanged": true
+  }
+]

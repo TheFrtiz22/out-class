@@ -117,5 +117,8 @@ test('restricted runtime through real Auth, SQL locks, private Storage and Next 
    assert.equal(await api.privateClubAssetStorage(), sentinel, 'Application remains compatible with the original policy during rollback');
    if (i === 0) { run(sql('access-proposal.sql')); assert.equal((await db.$queryRaw`SELECT id FROM auth.sessions WHERE id=${sessionId}::uuid FOR SHARE`).length, 1); }
   }
+  // Later HTTP groups keep using this running app's bounded connection. Restore
+  // its candidate grants after proving both inverses; teardown deletes the stack.
+  run(sql('access-proposal.sql'));
  });
 });

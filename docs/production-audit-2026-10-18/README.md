@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [ordinary-session replay batch](session-revocation/README.md) reproduced an expired `not_after` session reading and updating account data with an unexpired JWT. The shared auth boundary now verifies the exact token and checks its live session/user/deadline. **37 real integration tests passed**, including captured-cookie denials and the existing restricted-role/onboarding/signup flows. This adds one SQL query per authenticated request and retains one Auth verification. Production remains unchanged; runtime session grants and a newly documented legacy student-claim incompatibility remain release/cutover gates.
+
 The [signup privacy batch](signup-privacy/README.md) removes the explicit existing-account signup response and keeps the verification/sign-in UI uniform. **29 real integration tests passed**, including new/existing desktop/mobile journeys; the default suite passed 1,237 tests with 33 fixture-gated skips. Provider endpoint/timing enumeration remains a separate risk. No production release or setting change occurred.
 
 The next batch stages [restricted runtime credentials and permissions](runtime-role/README.md): **25 real HTTP/Auth/SQL/Storage tests passed** with the built application connected as `outclass_production_app`, including actual write denials, session locking and forward/inverse SQL. The exact SQL is review-only; controlled live identity, hosted staging/operator compatibility, secure credential provisioning and explicit production approval remain gates. Production is unchanged.

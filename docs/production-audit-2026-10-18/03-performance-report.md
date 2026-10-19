@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [session-deadline fix](session-revocation/README.md) deliberately adds **one SQL statement per authenticated request**, retaining one Auth user verification. Repeated getter calls coalesce within a request. Real SDK/restricted-Prisma measurement confirms those counts; the existing session-user index is used (one small-fixture EXPLAIN execution: 0.014 ms, excluding network/connection/pool cost). No production latency, cost or speed gain is claimed; this security tradeoff requires canary observation.
+
 The [signup privacy change](signup-privacy/README.md) adds no application existence query or artificial delay. The existing configuration check and provider signup remain. This is a privacy/compatibility change, with no measured latency improvement or constant-time-response claim.
 
 The later [runtime-role staging batch](runtime-role/README.md) establishes compatibility and permission boundaries, with no page-speed, cost or production latency claim. It preserves the existing session check/lock queries and introduces no private-data cache or production index.

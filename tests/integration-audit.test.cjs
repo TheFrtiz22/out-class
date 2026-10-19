@@ -34,7 +34,7 @@ const personas=[
 for(const [name,access,mode] of personas) test(`${name}: server boundaries ignore forged club IDs and client roles`,async()=>{
   const membership=access?{...access,id:uuid(4),clubId,userId:actorId}:null
   const privateApp={id:uuid(5),clubId,roundId:uuid(6),status:'IN_REVIEW',studentId:'SECRET',submittedAt:new Date(),round:{anonymousReview:true},student:{email:'SECRET@virginia.edu',studentProfile:{firstName:'SECRET',lastName:'PERSON',gradYear:2028}},evaluations:[],answers:[],bookings:[]}
-  const prisma={ $queryRaw: async () => [],
+  const prisma={ $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{live:true}] : [],
     user:{findUnique:async()=>null,upsert:async()=>({id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01',role:'CLUB_ADMIN'})},
     clubMember:{findUnique:async({where})=>where.userId_clubId.clubId===clubId?membership:null,findMany:async()=>[]},
     pipelineRound:{findMany:async({where})=>{assert.equal(where.clubId,clubId);return [privateApp.round]}},
@@ -46,7 +46,7 @@ for(const [name,access,mode] of personas) test(`${name}: server boundaries ignor
   const demoCookie=loader({})('lib/demo/access.ts').DEMO_COOKIE
   const guardLoad=loader({
     '@/utils/prisma':{prisma},'./prisma':{prisma},
-    './supabase/server':{createClient:async()=>({auth:{getUser:async()=>({data:{user:{id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01'}}})}})},
+    './supabase/server':{createClient:async()=>({auth:{getSession:async()=>require('./helpers/auth-session.cjs').sessionFor(actorId),getUser:async()=>({data:{user:{id:actorId,email:'actor@virginia.edu',email_confirmed_at:'2026-01-01'}}})}})},
     'next/headers':{cookies:async()=>({has:()=>false,get:key=>key===demoCookie&&mode==='demo'?{value:'1'}:undefined})},
     'next/navigation':{redirect:()=>{throw Error('Authentication required')}},'next/cache':{revalidatePath(){}},
   })

@@ -2,6 +2,8 @@
 
 Baseline: `4dae299`. **Nothing here has been applied to production.** This is a reviewed local candidate, not an automatically deployed migration. [Exact access SQL](access-proposal.sql) and [inverse SQL](rollback.sql) are deliberately outside Prisma's migration directory.
 
+**Subsequent compatibility gates:** the [ordinary-session batch](../session-revocation/README.md) now requires the candidate's three-column session SELECT on every authenticated request and passed all 37 real integration cases with this role. Confirm the actual runtime identity/grants before releasing that application patch. Source review also found `app/api/auth/student-claim/route.ts` querying `auth.users`/invitation-token columns, which this candidate deliberately denies. That legacy path was not covered by this fixture and must be refactored/tested through a provider-supported capability before credential cutover. Do not expand Auth-user/token grants to bypass it. The exact SQL here is unchanged and remains review-only.
+
 ## What the new evidence establishes
 
 Read-only catalog queries against OutClass (`htlgjluegmdwfjkzzwic`) confirm that `outclass_production_app` currently has no Auth/Storage schema usage, no session column privileges and no Storage object SELECT. It has no superuser, BYPASSRLS, database/role creation or replication attribute, cannot read migration history and is not a member of postgres. `auth.sessions` has RLS, no policies and retains its `supabase_auth_admin` owner. Storage tables retain their `supabase_storage_admin` owner. See [catalog evidence](production-catalog.json).

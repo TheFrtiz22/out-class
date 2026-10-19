@@ -43,6 +43,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
     "./supabase/server": {
       createClient: async () => ({
         auth: {
+          getSession: async () => require('./helpers/auth-session.cjs').sessionFor('actor'),
           getUser: async () => ({
             data: { user: { id: "actor", email: "actor@virginia.edu", email_confirmed_at: "2026-01-01" } },
             error: null,
@@ -53,7 +54,7 @@ test("server capability guard scopes membership, rejects legacy admin and demo w
     "next/headers": { cookies: async () => ({ has: () => false, get: () => (demo ? { value: "1" } : undefined) }) },
     "./prisma": {
       prisma: {
-        $queryRaw: async () => [],
+        $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{live:true}] : [],
         user: { findUnique: async () => null, upsert: async () => ({ id: "actor", role: "CLUB_ADMIN" }) },
         clubMember: {
           findUnique: async ({ where }) => {

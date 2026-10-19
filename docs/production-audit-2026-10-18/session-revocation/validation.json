@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-19",
+  "baseline": "bbef8dbc62d872ede02341be6223577b3a770c24",
+  "production_changes_applied": false,
+  "checks": {
+    "default_suite": {
+      "total": 1276,
+      "passed": 1242,
+      "failed": 0,
+      "skipped": 34
+    },
+    "real_restricted_role_integration": {
+      "total": 37,
+      "passed": 37,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focused_auth_session": {
+      "total": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0
+    },
+    "legacy_auth_harnesses": {
+      "total": 32,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0
+    },
+    "typecheck": "passed",
+    "next_production_build": "passed",
+    "lint": {
+      "errors": 0,
+      "warnings": 26
+    },
+    "native_query": {
+      "case": "native_session_query",
+      "sql_statements_per_valid_request": 1,
+      "provider_requests_per_valid_request": 1,
+      "local_execution_ms": 0.014,
+      "plan": [
+        {
+          "type": "Result",
+          "rows": 1,
+          "loops": 1
+        },
+        {
+          "type": "Index Scan",
+          "index": "sessions_user_id_idx",
+          "rows": 1,
+          "loops": 1
+        }
+      ]
+    },
+    "fixture_credentials_removed": true,
+    "fixture_stack_and_backup_removed": true,
+    "reserved_app_port_released": true,
+    "bounded_changed_artifact_pattern_scan": {
+      "files": 33,
+      "findings": 0,
+      "scope": "batch source, changed audit text and retained text evidence; known local values and high-signal patterns only"
+    }
+  },
+  "limits": [
+    "not deployed; no production session replay",
+    "one added SQL per authenticated request; no production latency claim",
+    "verify effective runtime session SELECT grants and hosted provider/operator compatibility before release",
+    "legacy student-claim Auth-user/token query blocks bounded-role cutover until separately refactored and tested",
+    "request admission only; in-flight work, inactivity policy and signed capabilities are separate"
+  ],
+  "sha256": {
+    "lib/auth-session.ts": "c71db769b03033496f336a346c0d966b9f826f99156c9ef7ac9dc0104f2c1812",
+    "scripts/run-onboarding-e2e.cjs": "69c3740d3c592c7608ac43dbe34270d16ae331e64aee483f2f925b7497538ada",
+    "tests/auth-session.test.cjs": "9a24aa95250b07e7d6632e7f1bfbb39f5569bd1ab2bc7c51a3b3ec710c19b3ac",
+    "tests/authorization.test.cjs": "bb7b905dbb67e31510ea63882f6dc212ba909d335a0803652be9158daefc2154",
+    "tests/club-suspension-p2.test.cjs": "292d727c217a0b407e2d3b726ec48dce15c1c86ef46b49ad72026234838cc80d",
+    "tests/club-suspension.test.cjs": "671818817229f28881c3e47e380000d4733c29c1d146354c357754fb0217a938",
+    "tests/helpers/auth-session.cjs": "72feec9a7d01485946010acf084abd4f1eb6f9edbec9d9138ef2e53803a8200b",
+    "tests/integration-audit.test.cjs": "582757ad18c766c7f06af80c9c28ba76888c368066743d8ff76af085990b2f85",
+    "tests/performance-regressions.test.cjs": "b55f6921d8ecace5d0c193e92cb237d095504251596b1420fa1b57c5b1a8d8ea",
+    "tests/profile-upload-boundary.test.cjs": "b661e0df1df859d3e4b125f275b87e1e5b3a3b3af5cec2f93c7306efae92bebc",
+    "tests/runtime-role-e2e.test.cjs": "f477af3fc2354b941c6ce2a27d026680ee89254d260ef950d6a4c83a3b363322",
+    "tests/session-revocation-e2e.test.cjs": "e0e9d08fe753ab032bade8034932bd5e390c9127ddded15959d74f75baec37c1",
+    "tests/support-tutorials.test.cjs": "3cb35cef6070504e9e0630cfe215cc7cd9d68f1a19ff7e9a3be8d6f82e1b5b00",
+    "utils/auth.ts": "deded45341e7eba592e363274231577a174b80271f893c3a09abde7ca060ffcc"
+  }
+}

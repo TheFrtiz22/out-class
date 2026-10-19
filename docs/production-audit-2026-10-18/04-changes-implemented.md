@@ -2,6 +2,8 @@
 
 ## Local remediation update
 
+The [session replay batch](session-revocation/README.md) changes `utils/auth.ts`, adds `lib/auth-session.ts`, focused failure/cache tests and a real captured-cookie suite. Existing authorization/upload mocks are updated to model candidate sessions and the new query; permission assertions remain. The reserved runner includes replay checks and reapplies its candidate role after inverse testing for those checks. All 37 real integration cases, production build, typecheck and lint passed. No migration, provider policy, dependency, UI, credential or production change is included; before/after aggregates, default-suite counts and source hashes are retained with the batch.
+
 The [signup privacy batch](signup-privacy/README.md) changes `actions/onboarding.ts` and verification copy, expands the provider-response regression matrix, and includes real signup/browser checks in the reserved runner. Twenty-nine integration tests and 1,237 default tests pass. No migration, dependency, RLS, credential or production setting change is included.
 
 The next [runtime-role batch](runtime-role/README.md) adds review-only access/inverse SQL, a guard compatible with the old and narrowly scoped candidate Storage policy, a reserved restricted-role HTTP fixture, permission/lock/Storage/rollback regressions and a deterministic browser clock setup. It passed 25 real tests; production changes remain unapplied. Only the fixture mirrors existing public table ownership/function grants; the proposal does not transfer provider table ownership or add BYPASSRLS.

@@ -1,0 +1,40 @@
+✔ direct application start rejects suspension under the existing transaction lock; active creation and existing application remain valid (93.567666ms)
+✔ authorized Demo workspace renders its existing client boundary without live identity reads (9.407125ms)
+✔ live workspace retains live authorization and suspension view (12.669792ms)
+✔ stale or unauthorized Demo cookies and impersonation cannot skip live authorization (5.963084ms)
+✔ all legacy invitation requests enforce actual Admin MFA, elevation, identity and no-impersonation guards (325.700875ms)
+✔ appropriately elevated Admin can use every legacy invitation request; worker uses durable grants after request elevation expires (142.916083ms)
+✔ ordinary club owner/leader invitation authority is preserved; non-allowlisted outsiders are denied (55.023541ms)
+✔ ordinary student: server boundaries ignore forged club IDs and client roles (231.403458ms)
+✔ applicant: server boundaries ignore forged club IDs and client roles (120.926209ms)
+✔ club member: server boundaries ignore forged club IDs and client roles (95.761875ms)
+✔ limited manager: server boundaries ignore forged club IDs and client roles (94.019042ms)
+✔ broad manager: server boundaries ignore forged club IDs and client roles (61.945875ms)
+✔ MII demo leader: server boundaries ignore forged club IDs and client roles (66.392458ms)
+✔ super-admin: server boundaries ignore forged club IDs and client roles (48.108917ms)
+✔ anonymous reviewer: server boundaries ignore forged club IDs and client roles (47.004ms)
+✔ student dashboard queries exclude private manager review text (45.828917ms)
+✔ account endpoint independently denies demo cookies (64.592917ms)
+✔ OAuth callback ignores forged forwarded hosts and rejects external return paths (27.175958ms)
+✔ exported upload accepts validated image/jpeg with a fresh owner path and no returned capability (168.365208ms)
+✔ exported upload accepts validated image/png with a fresh owner path and no returned capability (55.206584ms)
+✔ exported upload accepts validated image/webp with a fresh owner path and no returned capability (53.28125ms)
+✔ unauthenticated account is rejected by actual auth before Storage (57.873167ms)
+✔ disabled account is rejected by actual auth before Storage (43.711708ms)
+✔ unverified account is rejected by actual auth before Storage (62.845208ms)
+✔ caller cannot supply userId to the upload boundary (35.123792ms)
+✔ caller cannot supply path to the upload boundary (63.345667ms)
+✔ caller cannot supply bucket to the upload boundary (18.9445ms)
+✔ caller cannot supply reference to the upload boundary (34.635333ms)
+✔ invalid sizes, MIME/signature combinations, extensions, paths and duplicate fields never sign (223.145084ms)
+✔ lower-level signing is not an exported action or workspace API (24.207916ms)
+✔ upload reference persists only on explicit profile save and is reloadable (25.505083ms)
+✔ signing/upload failures do not return a successful reference (43.089167ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1101.339125
