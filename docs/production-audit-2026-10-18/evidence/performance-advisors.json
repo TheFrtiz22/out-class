@@ -1,0 +1,1060 @@
+{
+  "lints": [
+    {
+      "name": "unindexed_foreign_keys",
+      "title": "Unindexed foreign keys",
+      "level": "INFO",
+      "facing": "EXTERNAL",
+      "categories": [
+        "PERFORMANCE"
+      ],
+      "description": "Identifies foreign key constraints without a covering index, which can impact database performance.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0001_unindexed_foreign_keys",
+      "count": 59,
+      "findings": [
+        {
+          "detail": "Table \\`public.Application\\` has a foreign key \\`Application_recruitmentCycleId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "Application",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "Application_recruitmentCycleId_clubId_fkey",
+            "fkey_columns": [
+              9,
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ApplicationAnswer\\` has a foreign key \\`ApplicationAnswer_questionId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ApplicationAnswer",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ApplicationAnswer_questionId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.Club\\` has a foreign key \\`Club_schoolId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "Club",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "Club_schoolId_fkey",
+            "fkey_columns": [
+              18
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubAnnouncement\\` has a foreign key \\`ClubAnnouncement_authorId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubAnnouncement",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubAnnouncement_authorId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubClaim\\` has a foreign key \\`ClubClaim_userId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubClaim",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubClaim_userId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubInvitation\\` has a foreign key \\`ClubInvitation_claimedUserId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubInvitation_claimedUserId_fkey",
+            "fkey_columns": [
+              13
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubInvitation\\` has a foreign key \\`ClubInvitation_clubId_schoolId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubInvitation_clubId_schoolId_fkey",
+            "fkey_columns": [
+              2,
+              20
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubInvitation\\` has a foreign key \\`ClubInvitation_invitedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubInvitation_invitedBy_fkey",
+            "fkey_columns": [
+              5
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubInvitation\\` has a foreign key \\`ClubInvitation_schoolId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubInvitation_schoolId_fkey",
+            "fkey_columns": [
+              20
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubInvitation\\` has a foreign key \\`ClubInvitation_schoolIdentityId_schoolId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubInvitation_schoolIdentityId_schoolId_fkey",
+            "fkey_columns": [
+              21,
+              20
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubTask\\` has a foreign key \\`ClubTask_assigneeId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubTask",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubTask_assigneeId_fkey",
+            "fkey_columns": [
+              5
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ClubTask\\` has a foreign key \\`ClubTask_projectId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ClubTask",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ClubTask_projectId_fkey",
+            "fkey_columns": [
+              11
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.Evaluation\\` has a foreign key \\`Evaluation_interviewerId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "Evaluation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "Evaluation_interviewerId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.Evaluation\\` has a foreign key \\`Evaluation_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "Evaluation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "Evaluation_roundId_fkey",
+            "fkey_columns": [
+              8
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.Experience\\` has a foreign key \\`Experience_studentProfileId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "Experience",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "Experience_studentProfileId_fkey",
+            "fkey_columns": [
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAnnotationRevision\\` has a foreign key \\`InterviewAnnotationRevision_actorId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewAnnotationRevision",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewAnnotationRevision_actorId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAvailabilityOverride\\` has a foreign key \\`InterviewAvailabilityOverride_createdBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewAvailabilityOverride",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewAvailabilityOverride_createdBy_fkey",
+            "fkey_columns": [
+              6
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAvailabilityOverride\\` has a foreign key \\`InterviewAvailabilityOverride_memberId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewAvailabilityOverride",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewAvailabilityOverride_memberId_clubId_fkey",
+            "fkey_columns": [
+              5,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAvailabilityOverride\\` has a foreign key \\`InterviewAvailabilityOverride_roundId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewAvailabilityOverride",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewAvailabilityOverride_roundId_clubId_fkey",
+            "fkey_columns": [
+              3,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAvailabilityOverride\\` has a foreign key \\`InterviewAvailabilityOverride_slotId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewAvailabilityOverride",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewAvailabilityOverride_slotId_clubId_fkey",
+            "fkey_columns": [
+              4,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewBooking\\` has a foreign key \\`InterviewBooking_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewBooking",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewBooking_roundId_fkey",
+            "fkey_columns": [
+              4
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewCollaboration\\` has a foreign key \\`InterviewCollaboration_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewCollaboration",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewCollaboration_roundId_fkey",
+            "fkey_columns": [
+              4
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewCollaboration\\` has a foreign key \\`InterviewCollaboration_selectedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewCollaboration",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewCollaboration_selectedBy_fkey",
+            "fkey_columns": [
+              8
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewMove\\` has a foreign key \\`InterviewMove_acceptedInvitationId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewMove",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewMove_acceptedInvitationId_fkey",
+            "fkey_columns": [
+              6
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewMove\\` has a foreign key \\`InterviewMove_destinationId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewMove",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewMove_destinationId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewMove\\` has a foreign key \\`InterviewMove_sourceId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewMove",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewMove_sourceId_fkey",
+            "fkey_columns": [
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelAssignment\\` has a foreign key \\`InterviewPanelAssignment_grantedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewPanelAssignment",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewPanelAssignment_grantedBy_fkey",
+            "fkey_columns": [
+              5
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelAssignment\\` has a foreign key \\`InterviewPanelAssignment_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewPanelAssignment",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewPanelAssignment_roundId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelProposal\\` has a foreign key \\`InterviewPanelProposal_createdBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewPanelProposal",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewPanelProposal_createdBy_fkey",
+            "fkey_columns": [
+              9
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelProposal\\` has a foreign key \\`InterviewPanelProposal_modifiedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewPanelProposal",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewPanelProposal_modifiedBy_fkey",
+            "fkey_columns": [
+              10
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelScheduleVersion\\` has a foreign key \\`InterviewPanelScheduleVersion_publishedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewPanelScheduleVersion",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewPanelScheduleVersion_publishedBy_fkey",
+            "fkey_columns": [
+              13
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRecord\\` has a foreign key \\`InterviewRecord_interviewerId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRecord",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRecord_interviewerId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRecord\\` has a foreign key \\`InterviewRecord_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRecord",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRecord_roundId_fkey",
+            "fkey_columns": [
+              4
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewResumeAnnotation\\` has a foreign key \\`InterviewResumeAnnotation_authorId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewResumeAnnotation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewResumeAnnotation_authorId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewResumeDocument\\` has a foreign key \\`InterviewResumeDocument_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewResumeDocument",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewResumeDocument_roundId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoom\\` has a foreign key \\`InterviewRoom_panelApprovedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRoom",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRoom_panelApprovedBy_fkey",
+            "fkey_columns": [
+              14
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoom\\` has a foreign key \\`InterviewRoom_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRoom",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRoom_roundId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoundParticipation\\` has a foreign key \\`InterviewRoundParticipation_memberId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRoundParticipation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRoundParticipation_memberId_clubId_fkey",
+            "fkey_columns": [
+              3,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoundParticipation\\` has a foreign key \\`InterviewRoundParticipation_roundId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "InterviewRoundParticipation",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "InterviewRoundParticipation_roundId_clubId_fkey",
+            "fkey_columns": [
+              4,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.PipelineRound\\` has a foreign key \\`PipelineRound_bookingCycleId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "PipelineRound",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "PipelineRound_bookingCycleId_clubId_fkey",
+            "fkey_columns": [
+              18,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.PlatformReport\\` has a foreign key \\`PlatformReport_reporterId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "PlatformReport",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "PlatformReport_reporterId_fkey",
+            "fkey_columns": [
+              4
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RecipientGroupEntry\\` has a foreign key \\`RecipientGroupEntry_groupId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RecipientGroupEntry",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RecipientGroupEntry_groupId_clubId_fkey",
+            "fkey_columns": [
+              1,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RecipientGroupEntry\\` has a foreign key \\`RecipientGroupEntry_userId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RecipientGroupEntry",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RecipientGroupEntry_userId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RecruitingRuleFlag\\` has a foreign key \\`RecruitingRuleFlag_applicationId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RecruitingRuleFlag",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RecruitingRuleFlag_applicationId_fkey",
+            "fkey_columns": [
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RosterImport\\` has a foreign key \\`RosterImport_uploadedById_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RosterImport",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RosterImport_uploadedById_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RosterImportRow\\` has a foreign key \\`RosterImportRow_importId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RosterImportRow",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RosterImportRow_importId_clubId_fkey",
+            "fkey_columns": [
+              2,
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RosterImportRow\\` has a foreign key \\`RosterImportRow_invitationId_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RosterImportRow",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RosterImportRow_invitationId_clubId_fkey",
+            "fkey_columns": [
+              12,
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RosterImportRow\\` has a foreign key \\`RosterImportRow_matchedUserId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RosterImportRow",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RosterImportRow_matchedUserId_fkey",
+            "fkey_columns": [
+              11
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.RosterImportRow\\` has a foreign key \\`RosterImportRow_schoolIdentityId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "RosterImportRow",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "RosterImportRow_schoolIdentityId_fkey",
+            "fkey_columns": [
+              10
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.ScheduledCommunication\\` has a foreign key \\`ScheduledCommunication_senderId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "ScheduledCommunication",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "ScheduledCommunication_senderId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.SchoolIdentity\\` has a foreign key \\`SchoolIdentity_identifierTypeId_schoolId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "SchoolIdentity",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "SchoolIdentity_identifierTypeId_schoolId_fkey",
+            "fkey_columns": [
+              3,
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.SchoolRequest\\` has a foreign key \\`SchoolRequest_reviewedBy_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "SchoolRequest",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "SchoolRequest_reviewedBy_fkey",
+            "fkey_columns": [
+              10
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.TaskAssignment\\` has a foreign key \\`TaskAssignment_userId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "TaskAssignment",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "TaskAssignment_userId_fkey",
+            "fkey_columns": [
+              4
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.UserNotification\\` has a foreign key \\`UserNotification_clubId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "UserNotification",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "UserNotification_clubId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.VotingBallot\\` has a foreign key \\`VotingBallot_sessionId_memberId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "VotingBallot",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "VotingBallot_sessionId_memberId_fkey",
+            "fkey_columns": [
+              2,
+              5
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.VotingCandidate\\` has a foreign key \\`VotingCandidate_applicationId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "VotingCandidate",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "VotingCandidate_applicationId_fkey",
+            "fkey_columns": [
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.VotingParticipant\\` has a foreign key \\`VotingParticipant_memberId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "VotingParticipant",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "VotingParticipant_memberId_fkey",
+            "fkey_columns": [
+              2
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.VotingPassCandidate\\` has a foreign key \\`VotingPassCandidate_sessionId_applicationId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "VotingPassCandidate",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "VotingPassCandidate_sessionId_applicationId_fkey",
+            "fkey_columns": [
+              1,
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Table \\`public.VotingSession\\` has a foreign key \\`VotingSession_roundId_fkey\\` without a covering index. This can lead to suboptimal query performance.",
+          "metadata": {
+            "name": "VotingSession",
+            "type": "table",
+            "schema": "public",
+            "fkey_name": "VotingSession_roundId_fkey",
+            "fkey_columns": [
+              3
+            ]
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        }
+      ]
+    },
+    {
+      "name": "unused_index",
+      "title": "Unused Index",
+      "level": "INFO",
+      "facing": "EXTERNAL",
+      "categories": [
+        "PERFORMANCE"
+      ],
+      "description": "Detects if an index has never been used and may be a candidate for removal.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index",
+      "count": 25,
+      "findings": [
+        {
+          "detail": "Index \\`InterviewSlot_publishedPanelMemberIds_idx\\` on table \\`public.InterviewSlot\\` has not been used",
+          "metadata": {
+            "name": "InterviewSlot",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`InterviewSlot_panelScheduleVersionId_idx\\` on table \\`public.InterviewSlot\\` has not been used",
+          "metadata": {
+            "name": "InterviewSlot",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`SchoolRequest_status_createdAt_idx\\` on table \\`public.SchoolRequest\\` has not been used",
+          "metadata": {
+            "name": "SchoolRequest",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`SchoolRequest_createdAt_idx\\` on table \\`public.SchoolRequest\\` has not been used",
+          "metadata": {
+            "name": "SchoolRequest",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`InterviewInvitation_recipientId_dismissedAt_idx\\` on table \\`public.InterviewInvitation\\` has not been used",
+          "metadata": {
+            "name": "InterviewInvitation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`Application_roundId_idx\\` on table \\`public.Application\\` has not been used",
+          "metadata": {
+            "name": "Application",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`TaskAssignment_review_queue_idx\\` on table \\`public.TaskAssignment\\` has not been used",
+          "metadata": {
+            "name": "TaskAssignment",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`InterviewRecord_evaluationId_idx\\` on table \\`public.InterviewRecord\\` has not been used",
+          "metadata": {
+            "name": "InterviewRecord",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`ClubConversation_clubId_updatedAt_idx\\` on table \\`public.ClubConversation\\` has not been used",
+          "metadata": {
+            "name": "ClubConversation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`ClubMessage_conversationId_createdAt_id_idx\\` on table \\`public.ClubMessage\\` has not been used",
+          "metadata": {
+            "name": "ClubMessage",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`ClubMessage_senderId_createdAt_idx\\` on table \\`public.ClubMessage\\` has not been used",
+          "metadata": {
+            "name": "ClubMessage",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`NotificationEmailDelivery_userId_createdAt_idx\\` on table \\`public.NotificationEmailDelivery\\` has not been used",
+          "metadata": {
+            "name": "NotificationEmailDelivery",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`User_email_lower_idx\\` on table \\`public.User\\` has not been used",
+          "metadata": {
+            "name": "User",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`Event_public_date_endDate_idx\\` on table \\`public.Event\\` has not been used",
+          "metadata": {
+            "name": "Event",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`ClubInvitation_email_clubId_idx\\` on table \\`public.ClubInvitation\\` has not been used",
+          "metadata": {
+            "name": "ClubInvitation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`MeetingCheckInToken_meetingId_expiresAt_idx\\` on table \\`public.MeetingCheckInToken\\` has not been used",
+          "metadata": {
+            "name": "MeetingCheckInToken",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`TaskFile_assignmentId_idx\\` on table \\`public.TaskFile\\` has not been used",
+          "metadata": {
+            "name": "TaskFile",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`RosterImport_clubId_createdAt_idx\\` on table \\`public.RosterImport\\` has not been used",
+          "metadata": {
+            "name": "RosterImport",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`RosterImportRow_invitationId_idx\\` on table \\`public.RosterImportRow\\` has not been used",
+          "metadata": {
+            "name": "RosterImportRow",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`ApplicantObservation_authorId_idx\\` on table \\`public.ApplicantObservation\\` has not been used",
+          "metadata": {
+            "name": "ApplicantObservation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`EventPublication_category_status_idx\\` on table \\`public.EventPublication\\` has not been used",
+          "metadata": {
+            "name": "EventPublication",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`EventFlyer_eventId_idx\\` on table \\`public.EventFlyer\\` has not been used",
+          "metadata": {
+            "name": "EventFlyer",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`InterviewRoom_approved_members_gin\\` on table \\`public.InterviewRoom\\` has not been used",
+          "metadata": {
+            "name": "InterviewRoom",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`InterviewPanelProposal_clubId_updatedAt_idx\\` on table \\`public.InterviewPanelProposal\\` has not been used",
+          "metadata": {
+            "name": "InterviewPanelProposal",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        },
+        {
+          "detail": "Index \\`SavedCampusEvent_eventId_idx\\` on table \\`public.SavedCampusEvent\\` has not been used",
+          "metadata": {
+            "name": "SavedCampusEvent",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:13.558Z"
+        }
+      ]
+    },
+    {
+      "name": "auth_db_connections_absolute",
+      "title": "Auth DB Connection Strategy is not Percentage",
+      "level": "INFO",
+      "facing": "EXTERNAL",
+      "categories": [
+        "PERFORMANCE"
+      ],
+      "description": "Using a percentage based allocation connection strategy for Auth can help to improve the server's performance when increasing instance size.",
+      "remediation": "https://supabase.com/docs/guides/deployment/going-into-prod",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Your project's Auth server is configured to use at most 10 connections. Increasing the instance size without manually adjusting this number will not improve the performance of the Auth server. Switch to a percentage based connection allocation strategy instead.",
+          "metadata": {
+            "type": "auth",
+            "entity": "Auth"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-10-18T23:54:04.933Z",
+  "applicantDisplayReads": {
+    "samples": 10,
+    "medianMs": 11.475,
+    "p95Ms": 16.62,
+    "memberReadsPerDisplay": 1,
+    "injectedQueryDelayMs": 5,
+    "note": "Controlled query scheduling inside original repeatable-read loader; not production latency. Initial external permission guard excluded."
+  }
+}

@@ -1,0 +1,51 @@
+Vercel CLI 64.5.0
+Fetching deployment "out-class-h40hojo6m-outclassuva.vercel.app" in outclassuva
+> Fetched deployment "out-class-h40hojo6m-outclassuva.vercel.app" in outclassuva [986ms]
+
+  General
+
+    id		dpl_ACP3hPuvfDeEPYQ2RBgXHDhNd73c
+    name	out-class
+    target	production
+    status	● Ready
+    url		https://out-class-h40hojo6m-outclassuva.vercel.app
+    created	Sun Oct 18 2026 19:50:38 GMT-0400 (Eastern Daylight Time) [7m ago]
+
+
+  Build Machine
+
+    requested build machine standard
+    actual assigned cores   4 vCPU (actual assignment)
+    memory                  8192 MiB
+    selection type          elastic
+    selection source        elastic-algorithm
+
+
+  Duration
+
+    build duration	1m 51s
+    post-build duration	34s
+    billable duration	3m
+    CPU Minutes Usage	12 minutes (3m x 4vCPU)
+
+
+  Aliases
+
+    ╶ https://www.out-class.net
+    ╶ https://out-class.net
+    ╶ https://out-class.vercel.app
+    ╶ https://out-class-outclassuva.vercel.app
+    ╶ https://out-class-git-main-outclassuva.vercel.app
+    
+
+  Builds
+
+    ┌ .        [0ms]
+    ├── λ index (84.72MB) [iad1]
+    ├── λ club/[clubId]/workspace (84.72MB) [iad1]
+    ├── λ club/[clubId]/workspace.rsc (84.72MB) [iad1]
+    ├── λ index.rsc (84.72MB) [iad1]
+    ├── λ _error (57.73MB) [iad1]
+    └── 147 output items hidden
+    
+

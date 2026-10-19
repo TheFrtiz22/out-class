@@ -1,0 +1,338 @@
+[
+  {
+    "name": "20260923000000_baseline",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260923010000_capabilities",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260924000000_club_claims",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260924010000_anonymous_review_tests",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260924020000_interview_kits",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260924030000_meetings",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260924040000_member_tasks",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260925000000_platform_view_sessions",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260925010000_marketing_participants",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260927000000_recruiting_rules",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260928000000_private_resume_storage",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260929000000_club_marketing",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20260930000000_interview_rooms",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261001000000_support_impersonation_tutorials",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261001010000_club_onboarding",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261002000000_organization_invitation_emails",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261002010000_onboarding_security",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261003000000_applicant_intelligence",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261003010000_durable_voting",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261003020000_corkboard",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261003030000_task_workflows",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261004000000_interview_foundation",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261004000000_voting_presentation_join",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261005000000_club_settings",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261005000000_interview_scheduling_access",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261005010000_public_corkboard",
+    "finished": true,
+    "exactChecksumMatch": false,
+    "crlfChecksumMatch": true
+  },
+  {
+    "name": "20261006010000_admin_workspace",
+    "finished": true,
+    "exactChecksumMatch": false,
+    "crlfChecksumMatch": true
+  },
+  {
+    "name": "20261006020000_profile_recruitment_visibility",
+    "finished": true,
+    "exactChecksumMatch": false,
+    "crlfChecksumMatch": true
+  },
+  {
+    "name": "20261007010000_profile_gpa_private_photos",
+    "finished": true,
+    "exactChecksumMatch": false,
+    "crlfChecksumMatch": true
+  },
+  {
+    "name": "20261008000000_school_requests",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261009000000_recruitment_offers",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261009010000_interview_collaboration",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261009234601_private_club_assets",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261010180000_communications_foundation",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261010190000_communications_center",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261010190001_reconciled_decision_letters",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261011002000_production_communications_runtime_access",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261011180000_submitted_interview_questions",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261011194930_decision_letter_runtime_access",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261012120000_global_availability",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261012160000_unpublished_panel_proposals",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261012171752_admin_session_bound_elevation",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261012190000_panel_schedule_publication",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261012200000_availability_collection",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013002253_recipient_audiences",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013005624_scheduled_communications",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013014837_decision_letter_controls",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013014950_recruitment_cycles",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013015200_scheduled_decisions",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013140024_scheduled_invitation_emails",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261013141510_scheduled_availability_requests",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261014230000_interview_self_booking",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261015010000_editor_drafts",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261016010000_saved_campus_events",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261016020000_event_scheduling_flyer_limits",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  },
+  {
+    "name": "20261016030000_event_flyer_deletion_runtime_access",
+    "finished": true,
+    "exactChecksumMatch": true,
+    "crlfChecksumMatch": false
+  }
+]

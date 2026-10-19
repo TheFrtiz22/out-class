@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-10-18T23:54:04.533Z",
+  "directoryEventGrouping": {
+    "samples": 10,
+    "medianMs": 3.083,
+    "p95Ms": 3.815,
+    "clubCount": 250,
+    "eventCount": 5000,
+    "note": "Local original-loader CPU with synthetic data and immediate database mocks, not production latency."
+  }
+}

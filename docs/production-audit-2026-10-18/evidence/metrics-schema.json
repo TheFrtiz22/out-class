@@ -1,0 +1,162 @@
+[
+  {
+    "id": "vercel.speed_insights.cls",
+    "description": "Speed Insights Cumulative Layout Shift",
+    "dimensions": [
+      "projectId",
+      "deploymentId",
+      "environment",
+      "requestHostname",
+      "requestPath",
+      "route",
+      "country",
+      "deviceType",
+      "osName",
+      "browserName",
+      "attributionTarget",
+      "attributionEventName"
+    ],
+    "unit": "score",
+    "aggregations": [
+      "count",
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "p50",
+      "p75",
+      "p90",
+      "p95",
+      "p99",
+      "stddev"
+    ]
+  },
+  {
+    "id": "vercel.speed_insights.fcp_ms",
+    "description": "Speed Insights First Contentful Paint",
+    "dimensions": [
+      "projectId",
+      "deploymentId",
+      "environment",
+      "requestHostname",
+      "requestPath",
+      "route",
+      "country",
+      "deviceType",
+      "osName",
+      "browserName",
+      "attributionTarget",
+      "attributionEventName"
+    ],
+    "unit": "milliseconds",
+    "aggregations": [
+      "count",
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "p50",
+      "p75",
+      "p90",
+      "p95",
+      "p99",
+      "stddev"
+    ]
+  },
+  {
+    "id": "vercel.speed_insights.inp_ms",
+    "description": "Speed Insights Interaction to Next Paint",
+    "dimensions": [
+      "projectId",
+      "deploymentId",
+      "environment",
+      "requestHostname",
+      "requestPath",
+      "route",
+      "country",
+      "deviceType",
+      "osName",
+      "browserName",
+      "attributionTarget",
+      "attributionEventName"
+    ],
+    "unit": "milliseconds",
+    "aggregations": [
+      "count",
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "p50",
+      "p75",
+      "p90",
+      "p95",
+      "p99",
+      "stddev"
+    ]
+  },
+  {
+    "id": "vercel.speed_insights.lcp_ms",
+    "description": "Speed Insights Largest Contentful Paint",
+    "dimensions": [
+      "projectId",
+      "deploymentId",
+      "environment",
+      "requestHostname",
+      "requestPath",
+      "route",
+      "country",
+      "deviceType",
+      "osName",
+      "browserName",
+      "attributionTarget",
+      "attributionEventName"
+    ],
+    "unit": "milliseconds",
+    "aggregations": [
+      "count",
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "p50",
+      "p75",
+      "p90",
+      "p95",
+      "p99",
+      "stddev"
+    ]
+  },
+  {
+    "id": "vercel.speed_insights.ttfb_ms",
+    "description": "Speed Insights Time to First Byte",
+    "dimensions": [
+      "projectId",
+      "deploymentId",
+      "environment",
+      "requestHostname",
+      "requestPath",
+      "route",
+      "country",
+      "deviceType",
+      "osName",
+      "browserName",
+      "attributionTarget",
+      "attributionEventName"
+    ],
+    "unit": "milliseconds",
+    "aggregations": [
+      "count",
+      "sum",
+      "avg",
+      "min",
+      "max",
+      "p50",
+      "p75",
+      "p90",
+      "p95",
+      "p99",
+      "stddev"
+    ]
+  }
+]

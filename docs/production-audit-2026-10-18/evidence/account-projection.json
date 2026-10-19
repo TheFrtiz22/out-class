@@ -1,0 +1,11 @@
+{
+  "httpStatus": 200,
+  "ownApplicationsOnly": true,
+  "ordinaryMemberHasNoAdminRole": true,
+  "twoUniversities": true,
+  "overlappingMemberships": true,
+  "applicationClubExposesDecisionTemplates": true,
+  "membershipClubsExposeDecisionTemplates": true,
+  "classification": "Verified API property exposure; no fix applied. Synthetic content only.",
+  "limitation": "Controlled fixture uses verified UVA accounts; it does not establish second-domain login support."
+}

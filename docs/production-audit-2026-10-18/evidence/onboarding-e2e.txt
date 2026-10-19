@@ -1,0 +1,26 @@
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP
+  ✔ Public authentication — shared CTAs, signup, normal login and isolated administration (58.194167ms)
+  ✔ Microsoft disabled — direct OAuth requests rejected and elevated administrator session preserved (105.089792ms)
+  ✔ OTP — unconfirmed signup, resend, wrong/consumed token rejection, session and repeat login (61953.48375ms)
+  ✔ A — superadmin designation → normal verified signup → profile → atomic ownership → club dashboard (653.876291ms)
+  ✔ B — roster preview, invalid rows, confirmation, no fake users, durable audit and no automatic email (228.92025ms)
+  ✔ C — existing account invitation → dashboard request source → accepted membership (90.20125ms)
+  ✔ D — invitation-only student → normal signup/verification → profile suggestions → join (210.430334ms)
+  ✔ E — Not now hides dashboard only; Settings recovery uses the same acceptance (361.766416ms)
+  ✔ F — incremental upload preserves all prior members and creates only additive invitations (66.673ms)
+  ✔ G — direct HTTP actions enforce member/admin/recruiter/owner boundaries and Supabase browser isolation (377.600417ms)
+  ✔ H — replayed claim/accept/upload/email batch do not duplicate identities, memberships or sends (379.678ms)
+  ✔ I — legacy account re-verifies university mailbox through real password recovery before invitation acceptance (704.472541ms)
+  ✔ J — real MFA recovery requires the email token and owned authenticator, preserves the visitor, and revokes recovered sessions (2039.173167ms)
+✔ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (67703.43175ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67821.034625

@@ -1,0 +1,10 @@
+{
+  "sourceFiles": 626,
+  "pages": 44,
+  "routeHandlers": 25,
+  "actionFiles": 56,
+  "actionExports": 266,
+  "clientFiles": 240,
+  "serverActionModules": 55,
+  "note": "AST/file inventory, not proof of authorization or complete dynamic call resolution. Raw SQL, delegates through helper arguments, dynamic imports and destructured exports require manual review."
+}

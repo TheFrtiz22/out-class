@@ -1,0 +1,34 @@
+[
+  {
+    "operations": {
+      "scheduled": [
+        {
+          "count": 5,
+          "status": "PUBLISHED"
+        },
+        {
+          "count": 2,
+          "status": "CANCELLED"
+        }
+      ],
+      "stale_processing": 0,
+      "overdue_scheduled": 0,
+      "invitation_delivery": [
+        {
+          "count": 1,
+          "status": "QUEUED"
+        },
+        {
+          "count": 20,
+          "status": "CANCELLED"
+        }
+      ],
+      "notification_delivery": [
+        {
+          "count": 16,
+          "status": "SENT"
+        }
+      ]
+    }
+  }
+]

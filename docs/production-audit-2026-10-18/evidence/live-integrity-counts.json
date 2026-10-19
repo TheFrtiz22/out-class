@@ -1,0 +1,25 @@
+{
+  "query": "BEGIN READ ONLY; SET LOCAL statement_timeout='5s';\nSELECT jsonb_build_object(\n 'application_round_cross_club',(SELECT count(*) FROM \"Application\" a JOIN \"PipelineRound\" r ON r.id=a.\"roundId\" WHERE a.\"clubId\"<>r.\"clubId\"),\n 'answer_question_cross_club',(SELECT count(*) FROM \"ApplicationAnswer\" x JOIN \"Application\" a ON a.id=x.\"applicationId\" JOIN \"ApplicationQuestion\" q ON q.id=x.\"questionId\" WHERE a.\"clubId\"<>q.\"clubId\"),\n 'booking_slot_cross_club',(SELECT count(*) FROM \"InterviewBooking\" b JOIN \"Application\" a ON a.id=b.\"applicationId\" JOIN \"InterviewSlot\" s ON s.id=b.\"slotId\" WHERE a.\"clubId\"<>s.\"clubId\"),\n 'booking_round_cross_club',(SELECT count(*) FROM \"InterviewBooking\" b JOIN \"Application\" a ON a.id=b.\"applicationId\" JOIN \"PipelineRound\" r ON r.id=b.\"roundId\" WHERE a.\"clubId\"<>r.\"clubId\"),\n 'slot_over_capacity',(SELECT count(*) FROM (SELECT s.id FROM \"InterviewSlot\" s JOIN \"InterviewBooking\" b ON b.\"slotId\"=s.id GROUP BY s.id HAVING count(*)>s.capacity) x),\n 'duplicate_application_round_booking',(SELECT count(*) FROM (SELECT \"applicationId\",\"roundId\" FROM \"InterviewBooking\" GROUP BY \"applicationId\",\"roundId\" HAVING count(*)>1) x),\n 'active_panel_cross_club',(SELECT count(*) FROM \"InterviewPanelAssignment\" p JOIN \"Application\" a ON a.id=p.\"applicationId\" JOIN \"ClubMember\" m ON m.id=p.\"memberId\" JOIN \"PipelineRound\" r ON r.id=p.\"roundId\" WHERE p.\"revokedAt\" IS NULL AND (m.\"clubId\"<>a.\"clubId\" OR r.\"clubId\"<>a.\"clubId\")),\n 'task_assignment_scope_mismatch',(SELECT count(*) FROM \"TaskAssignment\" x JOIN \"ClubTask\" t ON t.id=x.\"taskId\" JOIN \"ClubMember\" m ON m.id=x.\"memberId\" WHERE m.\"clubId\"<>t.\"clubId\" OR m.\"userId\"<>x.\"userId\"),\n 'invitation_school_mismatch',(SELECT count(*) FROM \"ClubInvitation\" i JOIN \"Club\" c ON c.id=i.\"clubId\" WHERE i.\"schoolId\"<>c.\"schoolId\"),\n 'pending_duplicate_email_invites',(SELECT count(*) FROM (SELECT \"clubId\",lower(email) FROM \"ClubInvitation\" WHERE status='PENDING' AND \"revokedAt\" IS NULL AND \"expiresAt\">now() GROUP BY \"clubId\",lower(email) HAVING count(*)>1) x),\n 'claimed_operational_clubs_without_active_owner',(SELECT count(*) FROM \"Club\" c WHERE c.\"claimedAt\" IS NOT NULL AND c.\"suspendedAt\" IS NULL AND NOT EXISTS(SELECT 1 FROM \"ClubMember\" m JOIN \"User\" u ON u.id=m.\"userId\" WHERE m.\"clubId\"=c.id AND m.\"isOwner\" AND m.status='ACTIVE' AND u.\"disabledAt\" IS NULL)),\n 'notifications_without_outbox',(SELECT count(*) FROM \"UserNotification\" n LEFT JOIN \"NotificationEmailOutbox\" o ON o.\"notificationId\"=n.id WHERE o.\"notificationId\" IS NULL),\n 'decision_letter_club_mismatch',(SELECT count(*) FROM \"DecisionLetter\" d JOIN \"Application\" a ON a.id=d.\"applicationId\" WHERE d.\"clubId\"<>a.\"clubId\"),\n 'schools',(SELECT count(*) FROM \"School\"),\n 'club_university_count',(SELECT count(DISTINCT \"schoolId\") FROM \"Club\"),\n 'not_valid_constraints',(SELECT count(*) FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace WHERE n.nspname='public' AND NOT c.convalidated)\n ) AS checks; COMMIT;",
+  "result": [
+    {
+      "checks": {
+        "schools": 1,
+        "slot_over_capacity": 0,
+        "club_university_count": 1,
+        "not_valid_constraints": 2,
+        "active_panel_cross_club": 0,
+        "booking_slot_cross_club": 0,
+        "booking_round_cross_club": 0,
+        "answer_question_cross_club": 0,
+        "invitation_school_mismatch": 0,
+        "application_round_cross_club": 0,
+        "notifications_without_outbox": 0,
+        "decision_letter_club_mismatch": 0,
+        "task_assignment_scope_mismatch": 0,
+        "pending_duplicate_email_invites": 0,
+        "duplicate_application_round_booking": 0,
+        "claimed_operational_clubs_without_active_owner": 0
+      }
+    }
+  ]
+}

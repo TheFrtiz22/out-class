@@ -1,0 +1,30 @@
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@renovatebot/pep440@4.2.1',
+npm warn EBADENGINE   required: { node: '^20.9.0 || ^22.11.0 || ^24', pnpm: '^10.0.0' },
+npm warn EBADENGINE   current: { node: 'v26.9.0', npm: '11.19.1' }
+npm warn EBADENGINE }
+Vercel CLI 64.5.0
+Retrieving project…
+> Found Project outclassuva/out-class [746ms]
+
+  General
+
+    ID				prj_ZL6azRpYgevP8UVL3ela8tOrh4MO
+    Name			out-class
+    Owner			OutClass
+    Created At			21 September 2026 11:15:49 [27d ago]
+    Root Directory		.
+    Node.js Version		24.x
+
+  Framework Settings
+
+    Framework Preset		Next.js
+    Build Command		`npm run build` or `next build`
+    Output Directory		Next.js default
+    Install Command		`yarn install`, `pnpm install`, `npm install`, or `bun install`
+
+  Sandbox
+
+    Region			iad1
+    Failover Regions		None
+

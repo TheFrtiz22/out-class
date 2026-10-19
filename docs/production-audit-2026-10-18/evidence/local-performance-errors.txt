@@ -1,0 +1,6 @@
+Error: Unmocked service dependency: @/utils/revoke-club-invitations
+    at /Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:20:44
+    at eval (eval at load (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:18:3), <anonymous>:16:35)
+    at load (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:18:57)
+    at directoryScheduling (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:114:15)
+    at /Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:276:32

@@ -1,0 +1,43 @@
+Vercel CLI 64.5.0
+Retrieving project…
+> Environment Variables found for outclassuva/out-class [191ms]
+
+ name                                       value                       type      environments                        created    
+ COMMUNICATIONS_EMAIL_ENABLED               [value omitted]         Config    Production                          5d ago     
+ RESEND_FROM_EMAIL                          [value omitted]         Config    Production                          5d ago     
+ CRON_SECRET                                Hidden                      Secret    Production                          13d ago    
+ SMTP_FROM_EMAIL                            Hidden                      Secret    Production                          16d ago    
+ OUTCLASS_SITE_URL                          Hidden                      Secret    Production                          16d ago    
+ SMTP_HOST                                  Hidden                      Secret    Production                          16d ago    
+ SMTP_PORT                                  Hidden                      Secret    Production                          16d ago    
+ SMTP_USER                                  Hidden                      Secret    Production                          16d ago    
+ SMTP_PASSWORD                              Hidden                      Secret    Production                          16d ago    
+ OUTCLASS_PLATFORM_ADMIN_IDS                Hidden                      Secret    Production                          16d ago    
+ RESEND_API_KEY                             [value omitted]         Config    Production, Preview, Development    18d ago    
+ OUTCLASS_DEMO_ALLOWED_EMAILS               Hidden                      Secret    Production                          25d ago    
+ OUTCLASS_DEMO_ENABLED                      Hidden                      Secret    Production                          25d ago    
+ DATABASE_URL                               Hidden                      Secret    Production                          27d ago    
+ SUPABASE_PUBLISHABLE_KEY                   [value omitted]         Config    Production                          27d ago    
+ SUPABASE_SECRET_KEY                        Hidden                      Secret    Production                          27d ago    
+ NEXT_PUBLIC_SUPABASE_URL                   [value omitted]         Config    Production                          27d ago    
+ NEXT_PUBLIC_SUPABASE_ANON_KEY              [value omitted]         Config    Production                          27d ago    
+ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY       [value omitted]         Config    Production                          27d ago    
+ POSTGRES_URL                               Hidden                      Secret    Production                          27d ago    
+ POSTGRES_PRISMA_URL                        Hidden                      Secret    Production                          27d ago    
+ POSTGRES_URL_NON_POOLING                   Hidden                      Secret    Production                          27d ago    
+ POSTGRES_USER                              [value omitted]         Config    Production                          27d ago    
+ POSTGRES_HOST                              [value omitted]         Config    Production                          27d ago    
+ POSTGRES_PASSWORD                          Hidden                      Secret    Production                          27d ago    
+ POSTGRES_DATABASE                          [value omitted]         Config    Production                          27d ago    
+ SUPABASE_URL                               [value omitted]         Config    Production                          27d ago    
+ SUPABASE_JWT_SECRET                        Hidden                      Secret    Production                          27d ago    
+ SUPABASE_ANON_KEY                          [value omitted]         Config    Production                          27d ago    
+ SUPABASE_SERVICE_ROLE_KEY                  Hidden                      Secret    Production                          27d ago    
+
+Next steps:
+- Add an Environment Variable:
+  vercel env add --scope team_6XQ7VBnJB9b85un6nQKVicnx
+- Remove an Environment Variable:
+  vercel env rm --scope team_6XQ7VBnJB9b85un6nQKVicnx
+- Pull Development Environment Variables into .env.local:
+  vercel env pull --scope team_6XQ7VBnJB9b85un6nQKVicnx

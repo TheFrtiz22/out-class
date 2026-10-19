@@ -1,0 +1,398 @@
+supabase-start: PASS
+migrate-local: PASS
+build: PASS
+No-op confirmation UI/server agreement: PASS
+Realistic fixture: 8 eligible, 2 ineligible, 3 rooms, multiple rounds, existing approved booking panels: PASS
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('heading', { name: 'Interview Scheduling', exact: true }) to be visible[22m
+
+    at open (/Users/jesseklinger/Documents/out-class/tests/scheduling-quality-browser.cjs:72:323)
+    at async Object.verify (/Users/jesseklinger/Documents/out-class/tests/scheduling-quality-browser.cjs:100:43)
+    at async main (/Users/jesseklinger/Documents/out-class/scripts/run-availability-e2e.cjs:76:3) [] [
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: the server responded with a status of 404 (Not Found)',
+  'Failed to load resource: the server responded with a status of 403 (Forbidden)',
+  'Failed to load resource: the server responded with a status of 404 (Not Found)'
+] Recent action traffic: [
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getAssignedInterviewRooms' },
+  {
+    event: 'response',
+    action: 'getAssignedInterviewRooms',
+    status: 200
+  },
+  { event: 'request', action: 'getInterviewWorkspace' },
+  { event: 'response', action: 'getInterviewWorkspace', status: 200 },
+  { event: 'request', action: 'getRoomWorkspace' },
+  { event: 'response', action: 'getRoomWorkspace', status: 200 },
+  { event: 'request', action: 'getAssignedInterviewRooms' },
+  {
+    event: 'response',
+    action: 'getAssignedInterviewRooms',
+    status: 200
+  },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getInterviewBookingPublication' },
+  {
+    event: 'response',
+    action: 'getInterviewBookingPublication',
+    status: 200
+  },
+  { event: 'request', action: 'getAvailabilitySchedules' },
+  {
+    event: 'response',
+    action: 'getAvailabilitySchedules',
+    status: 200
+  },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getAssignedInterviewRooms' },
+  {
+    event: 'response',
+    action: 'getAssignedInterviewRooms',
+    status: 200
+  },
+  { event: 'request', action: 'getInterviewWorkspace' },
+  { event: 'response', action: 'getInterviewWorkspace', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getAssignedInterviewRooms' },
+  {
+    event: 'response',
+    action: 'getAssignedInterviewRooms',
+    status: 200
+  },
+  { event: 'request', action: 'getInterviewWorkspace' },
+  { event: 'response', action: 'getInterviewWorkspace', status: 200 },
+  { event: 'request', action: 'getDurableNotifications' },
+  { event: 'response', action: 'getDurableNotifications', status: 200 },
+  { event: 'request', action: 'getAvailabilitySchedules' },
+  {
+    event: 'response',
+    action: 'getAvailabilitySchedules',
+    status: 200
+  }
+]
+Browser 0: http://127.0.0.1:3126/settings/availability?clubId=0ef98b8d-9369-440a-890e-655842d4e3e6&roundId=1a93da95-1298-4c3c-bce8-0ad899f0134f ilable
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+12:00 PM
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+Available
+1:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+2:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+3:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+4:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+5:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+6:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+7:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+8:00 PM
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Not marked
+Clear Mon
+Clear Tue
+Clear Wed
+Clear Thu
+Clear Fri
+Clear Sat
+Clear Sun
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+to
+Monday
+Tuesday
+Wednesday
+Thursday
+Friday
+Saturday
+Sunday
+Copy day
+Clear entire week
+
+Already using your current global schedule. Your response is unchanged.
+Browser 1: http://127.0.0.1:3126/club/0ef98b8d-9369-440a-890e-655842d4e3e6/workspace?section=recruitment&tool=interviews&roundId=1a93da95-1298-4c3c-bce8-0ad899f0134f&schedule=availability&week=2026-10-26 Scheduling Quality Audit
+/
+Interviews
+
+Scheduling Quality Audit
+
+Interviews
+Interview rooms
+Interview master kit
+Scheduling
+Interview access setup
+Your interview rooms
+Date
+
+No assigned interviews.
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('heading', { name: 'Interview Scheduling', exact: true }) to be visible[22m
+
+cleanup: PASS

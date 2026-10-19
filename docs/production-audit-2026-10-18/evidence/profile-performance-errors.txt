@@ -1,0 +1,16 @@
+Error: ENOENT: no such file or directory, open '/Users/jesseklinger/Documents/out-class/components/shell/authenticated-page-layout.ts'
+    at Object.readFileSync (node:fs:620:20)
+    at load (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:15:42)
+    at /Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:21:36
+    at eval (eval at load (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:18:3), <anonymous>:8:37)
+    at load (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:18:57)
+    at publicProfileRendering (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:141:15)
+    at /Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:268:157
+    at Object.<anonymous> (/Users/jesseklinger/Documents/out-class/scripts/performance-audit.cjs:285:3)
+    at Module._compile (node:internal/modules/cjs/loader:1956:14)
+    at Object..js (node:internal/modules/cjs/loader:2096:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/jesseklinger/Documents/out-class/components/shell/authenticated-page-layout.ts'
+}

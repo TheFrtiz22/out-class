@@ -1,0 +1,2387 @@
+[
+  {
+    "diagnostics": {
+      "extensions": [
+        "plpgsql",
+        "pg_stat_statements",
+        "uuid-ossp",
+        "pgcrypto",
+        "supabase_vault"
+      ],
+      "connections": [
+        {
+          "role": "authenticator",
+          "count": 1,
+          "state": "idle"
+        },
+        {
+          "role": "pgbouncer",
+          "count": 2,
+          "state": "idle"
+        },
+        {
+          "role": "postgres",
+          "count": 1,
+          "state": "active"
+        },
+        {
+          "role": "postgres",
+          "count": 9,
+          "state": "idle"
+        },
+        {
+          "role": "supabase_admin",
+          "count": 2,
+          "state": "idle"
+        },
+        {
+          "role": "supabase_admin",
+          "count": 1,
+          "state": null
+        },
+        {
+          "role": "supabase_auth_admin",
+          "count": 2,
+          "state": "idle"
+        }
+      ],
+      "table_stats": [
+        {
+          "bytes": 876544,
+          "table": "AuditLog",
+          "idx_scan": 61,
+          "seq_scan": 56,
+          "dead_rows": 0,
+          "live_rows": 866,
+          "last_autoanalyze": "2026-10-18T18:10:48.419+00:00"
+        },
+        {
+          "bytes": 270336,
+          "table": "Club",
+          "idx_scan": 13402,
+          "seq_scan": 265035,
+          "dead_rows": 25,
+          "live_rows": 44,
+          "last_autoanalyze": "2026-10-17T22:05:22.321442+00:00"
+        },
+        {
+          "bytes": 204800,
+          "table": "InterviewSlot",
+          "idx_scan": 670,
+          "seq_scan": 5661,
+          "dead_rows": 16,
+          "live_rows": 78,
+          "last_autoanalyze": "2026-10-14T22:30:54.929687+00:00"
+        },
+        {
+          "bytes": 188416,
+          "table": "UserNotification",
+          "idx_scan": 414215,
+          "seq_scan": 79548,
+          "dead_rows": 31,
+          "live_rows": 61,
+          "last_autoanalyze": "2026-10-14T19:48:51.734832+00:00"
+        },
+        {
+          "bytes": 188416,
+          "table": "AdminElevationChallenge",
+          "idx_scan": 142,
+          "seq_scan": 73,
+          "dead_rows": 5,
+          "live_rows": 37,
+          "last_autoanalyze": "2026-10-18T18:24:48.701678+00:00"
+        },
+        {
+          "bytes": 180224,
+          "table": "ClubInvitation",
+          "idx_scan": 1892,
+          "seq_scan": 10089,
+          "dead_rows": 25,
+          "live_rows": 27,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 172032,
+          "table": "NotificationEmailDelivery",
+          "idx_scan": 3757,
+          "seq_scan": 67,
+          "dead_rows": 32,
+          "live_rows": 16,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 163840,
+          "table": "ScheduledCommunication",
+          "idx_scan": 66741,
+          "seq_scan": 32,
+          "dead_rows": 12,
+          "live_rows": 7,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 131072,
+          "table": "InvitationDelivery",
+          "idx_scan": 23179,
+          "seq_scan": 54,
+          "dead_rows": 20,
+          "live_rows": 21,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 131072,
+          "table": "Application",
+          "idx_scan": 2557,
+          "seq_scan": 6844,
+          "dead_rows": 26,
+          "live_rows": 22,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 131072,
+          "table": "InterviewPanelProposal",
+          "idx_scan": 203,
+          "seq_scan": 19,
+          "dead_rows": 18,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 114688,
+          "table": "PipelineRound",
+          "idx_scan": 4729,
+          "seq_scan": 114725,
+          "dead_rows": 4,
+          "live_rows": 13,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 106496,
+          "table": "InterviewRecord",
+          "idx_scan": 1189,
+          "seq_scan": 84,
+          "dead_rows": 14,
+          "live_rows": 20,
+          "last_autoanalyze": "2026-10-12T02:55:58.960819+00:00"
+        },
+        {
+          "bytes": 98304,
+          "table": "AdminElevation",
+          "idx_scan": 2399,
+          "seq_scan": 248,
+          "dead_rows": 7,
+          "live_rows": 35,
+          "last_autoanalyze": "2026-10-17T21:52:21.949591+00:00"
+        },
+        {
+          "bytes": 98304,
+          "table": "ClubMember",
+          "idx_scan": 2208,
+          "seq_scan": 68086,
+          "dead_rows": 2,
+          "live_rows": 29,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 98304,
+          "table": "User",
+          "idx_scan": 4196,
+          "seq_scan": 367960,
+          "dead_rows": 4,
+          "live_rows": 45,
+          "last_autoanalyze": "2026-10-06T19:21:27.538654+00:00"
+        },
+        {
+          "bytes": 98304,
+          "table": "InterviewPanelScheduleVersion",
+          "idx_scan": 8422,
+          "seq_scan": 19,
+          "dead_rows": 1,
+          "live_rows": 4,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 98304,
+          "table": "DecisionLetter",
+          "idx_scan": 154,
+          "seq_scan": 29,
+          "dead_rows": 0,
+          "live_rows": 9,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 98304,
+          "table": "InterviewPresence",
+          "idx_scan": 668,
+          "seq_scan": 2154,
+          "dead_rows": 44,
+          "live_rows": 3,
+          "last_autoanalyze": "2026-10-13T15:42:16.542877+00:00"
+        },
+        {
+          "bytes": 98304,
+          "table": "RosterImportRow",
+          "idx_scan": 157,
+          "seq_scan": 45,
+          "dead_rows": 20,
+          "live_rows": 20,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 81920,
+          "table": "InterviewPanelAssignment",
+          "idx_scan": 2877,
+          "seq_scan": 919,
+          "dead_rows": 37,
+          "live_rows": 28,
+          "last_autoanalyze": "2026-10-12T02:53:58.912479+00:00"
+        },
+        {
+          "bytes": 81920,
+          "table": "SchoolIdentity",
+          "idx_scan": 11671,
+          "seq_scan": 44,
+          "dead_rows": 5,
+          "live_rows": 26,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 81920,
+          "table": "RosterImport",
+          "idx_scan": 174,
+          "seq_scan": 44,
+          "dead_rows": 2,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 81920,
+          "table": "SchoolRequest",
+          "idx_scan": 1,
+          "seq_scan": 23,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 81920,
+          "table": "RecipientGroup",
+          "idx_scan": 17,
+          "seq_scan": 8,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 81920,
+          "table": "InterviewRoundParticipation",
+          "idx_scan": 8492,
+          "seq_scan": 19,
+          "dead_rows": 5,
+          "live_rows": 4,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 73728,
+          "table": "InterviewRoom",
+          "idx_scan": 43797,
+          "seq_scan": 102620,
+          "dead_rows": 5,
+          "live_rows": 6,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "InterviewCollaboration",
+          "idx_scan": 1776,
+          "seq_scan": 21,
+          "dead_rows": 5,
+          "live_rows": 5,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "SchoolIdentifierType",
+          "idx_scan": 141,
+          "seq_scan": 1951,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "_prisma_migrations",
+          "idx_scan": 52,
+          "seq_scan": 325,
+          "dead_rows": 12,
+          "live_rows": 56,
+          "last_autoanalyze": "2026-10-13T02:01:27.848144+00:00"
+        },
+        {
+          "bytes": 65536,
+          "table": "InterviewBooking",
+          "idx_scan": 6856,
+          "seq_scan": 241,
+          "dead_rows": 3,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "RecruitmentCycle",
+          "idx_scan": 86,
+          "seq_scan": 7,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "NotificationEmailOutbox",
+          "idx_scan": 923,
+          "seq_scan": 2299,
+          "dead_rows": 43,
+          "live_rows": 61,
+          "last_autoanalyze": "2026-10-13T14:08:14.74017+00:00"
+        },
+        {
+          "bytes": 65536,
+          "table": "ApplicationQuestion",
+          "idx_scan": 839,
+          "seq_scan": 109,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "ClubAnnouncement",
+          "idx_scan": 35,
+          "seq_scan": 34,
+          "dead_rows": 2,
+          "live_rows": 2,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "PlatformViewSession",
+          "idx_scan": 771,
+          "seq_scan": 46,
+          "dead_rows": 8,
+          "live_rows": 8,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "InterviewInvitation",
+          "idx_scan": 37,
+          "seq_scan": 21,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 65536,
+          "table": "StudentProfile",
+          "idx_scan": 1874,
+          "seq_scan": 5925,
+          "dead_rows": 4,
+          "live_rows": 33,
+          "last_autoanalyze": "2026-10-11T05:06:32.609855+00:00"
+        },
+        {
+          "bytes": 57344,
+          "table": "Evaluation",
+          "idx_scan": 276,
+          "seq_scan": 54,
+          "dead_rows": 0,
+          "live_rows": 12,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "InterviewResumeAnnotation",
+          "idx_scan": 82,
+          "seq_scan": 33,
+          "dead_rows": 2,
+          "live_rows": 8,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "VotingCandidate",
+          "idx_scan": 726,
+          "seq_scan": 40,
+          "dead_rows": 1,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "School",
+          "idx_scan": 4337,
+          "seq_scan": 353,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "InterviewResumeDocument",
+          "idx_scan": 274,
+          "seq_scan": 33,
+          "dead_rows": 0,
+          "live_rows": 7,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "InterviewAvailabilityOverride",
+          "idx_scan": 407,
+          "seq_scan": 2,
+          "dead_rows": 1,
+          "live_rows": 5,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "InterviewMove",
+          "idx_scan": 50,
+          "seq_scan": 815,
+          "dead_rows": 2,
+          "live_rows": 5,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "InterviewAnnotationRevision",
+          "idx_scan": 3,
+          "seq_scan": 33,
+          "dead_rows": 0,
+          "live_rows": 2,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "VotingBallot",
+          "idx_scan": 414,
+          "seq_scan": 39,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "ApplicationAnswer",
+          "idx_scan": 768,
+          "seq_scan": 48,
+          "dead_rows": 0,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "RecipientGroupEntry",
+          "idx_scan": 12,
+          "seq_scan": 5,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "ClubClaim",
+          "idx_scan": 59,
+          "seq_scan": 50,
+          "dead_rows": 1,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "EditorDraft",
+          "idx_scan": 58,
+          "seq_scan": 2,
+          "dead_rows": 3,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "VotingSession",
+          "idx_scan": 1702,
+          "seq_scan": 74,
+          "dead_rows": 8,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "CorkboardClub",
+          "idx_scan": 2543,
+          "seq_scan": 39,
+          "dead_rows": 2,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 49152,
+          "table": "VotingPassCandidate",
+          "idx_scan": 420,
+          "seq_scan": 40,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 40960,
+          "table": "TaskAssignment",
+          "idx_scan": 13250,
+          "seq_scan": 50,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 40960,
+          "table": "EventPublication",
+          "idx_scan": 149,
+          "seq_scan": 40,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 40960,
+          "table": "ClubConversation",
+          "idx_scan": 2299757,
+          "seq_scan": 31,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 40960,
+          "table": "ClubMessage",
+          "idx_scan": 0,
+          "seq_scan": 31,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "TaskFile",
+          "idx_scan": 0,
+          "seq_scan": 41,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "VotingPass",
+          "idx_scan": 707,
+          "seq_scan": 39,
+          "dead_rows": 1,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "VotingParticipant",
+          "idx_scan": 860,
+          "seq_scan": 39,
+          "dead_rows": 1,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "EventFlyer",
+          "idx_scan": 0,
+          "seq_scan": 42,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "ApplicantObservation",
+          "idx_scan": 49,
+          "seq_scan": 38,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "PlatformReport",
+          "idx_scan": 95,
+          "seq_scan": 29,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "UserTutorial",
+          "idx_scan": 667,
+          "seq_scan": 39,
+          "dead_rows": 24,
+          "live_rows": 18,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "RecruitingRule",
+          "idx_scan": 16,
+          "seq_scan": 40,
+          "dead_rows": 0,
+          "live_rows": 1,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "UserNotificationPreference",
+          "idx_scan": 147,
+          "seq_scan": 28,
+          "dead_rows": 1,
+          "live_rows": 15,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "MeetingCheckInToken",
+          "idx_scan": 0,
+          "seq_scan": 40,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "UserAvailability",
+          "idx_scan": 416,
+          "seq_scan": 12,
+          "dead_rows": 12,
+          "live_rows": 4,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "PlatformAdmin",
+          "idx_scan": 4086,
+          "seq_scan": 48,
+          "dead_rows": 0,
+          "live_rows": 3,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "EventAttendance",
+          "idx_scan": 1268,
+          "seq_scan": 55,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "Event",
+          "idx_scan": 1720,
+          "seq_scan": 1263,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 32768,
+          "table": "Experience",
+          "idx_scan": 2,
+          "seq_scan": 253,
+          "dead_rows": 0,
+          "live_rows": 7,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 24576,
+          "table": "PlatformContent",
+          "idx_scan": 522,
+          "seq_scan": 39,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 24576,
+          "table": "EventRsvp",
+          "idx_scan": 39,
+          "seq_scan": 38,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 24576,
+          "table": "SavedCampusEvent",
+          "idx_scan": 5,
+          "seq_scan": 3,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 24576,
+          "table": "ClubTask",
+          "idx_scan": 278,
+          "seq_scan": 50,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 16384,
+          "table": "EventFlyerDeletion",
+          "idx_scan": 0,
+          "seq_scan": 3,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        },
+        {
+          "bytes": 16384,
+          "table": "RecruitingRuleFlag",
+          "idx_scan": 1,
+          "seq_scan": 41,
+          "dead_rows": 0,
+          "live_rows": 0,
+          "last_autoanalyze": null
+        }
+      ],
+      "database_stats": {
+        "commits": 3696223,
+        "deadlocks": 0,
+        "rollbacks": 2688,
+        "temp_bytes": 93345623783,
+        "connections": 18,
+        "stats_reset": "2026-08-25T20:33:23.891825+00:00"
+      },
+      "function_exposure": [
+        {
+          "definer": false,
+          "function": "outclass_event_revision",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_event_withdraw",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_notify",
+          "return_type": "void",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_audit_immutable",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_room_booking_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_school_identity_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_identifier_type_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_invitation_onboarding_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_roster_row_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_membership_onboarding_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_roster_import_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_owner_account_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": true,
+          "function": "handle_new_user",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_immutable_ballot",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "voting_display_snapshot_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_interview_scope_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_interview_immutable",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_application_notification",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_interview_submission_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_annotation_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_revoke_interview_grants",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_cancel_booking_panel",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_publication_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_flyer_immutable",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_rsvp_guard",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_collaboration_scope",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_scholar_status_valid",
+          "return_type": "boolean",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_validate_changed_gpa",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_notification_email_outbox",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_booking_notification",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_task_notification",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_invitation_notification",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_immutable_decision_letter",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_valid_availability_ranges",
+          "return_type": "boolean",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_valid_availability",
+          "return_type": "boolean",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_decision_state_revision",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_validate_panel_proposal",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_reject_panel_preview_write",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_booking_panel_scope",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_room_panel_change",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_invalidate_room_approval",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_disabled_room_approval",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_official_slot_panel_guard",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_round_panel_revision_guard",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_queue_flyer_deletion",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_remove_replaced_flyer",
+          "return_type": "trigger",
+          "anon_execute": true,
+          "authenticated_execute": true
+        },
+        {
+          "definer": false,
+          "function": "outclass_valid_availability_override",
+          "return_type": "boolean",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_availability_override_guard",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        },
+        {
+          "definer": false,
+          "function": "outclass_panel_publication_guard",
+          "return_type": "trigger",
+          "anon_execute": false,
+          "authenticated_execute": false
+        }
+      ],
+      "role_schema_privileges": {
+        "app_create": false,
+        "anon_create": false,
+        "authenticated_create": false
+      },
+      "effective_browser_grants": [
+        {
+          "role": "authenticated",
+          "table": "UserTutorial",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "UserTutorial",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingPass",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingPass",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingPassCandidate",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingPassCandidate",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "AdminElevation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "AdminElevation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "AdminElevationChallenge",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "AdminElevationChallenge",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "PlatformReport",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "PlatformReport",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "School",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "School",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "SchoolIdentifierType",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "SchoolIdentifierType",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewPanelScheduleVersion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewPanelScheduleVersion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "SchoolRequest",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "SchoolRequest",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubInvitation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubInvitation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "User",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "User",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewCollaboration",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewCollaboration",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewPresence",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewPresence",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "StudentProfile",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "StudentProfile",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewMove",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewMove",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewInvitation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewInvitation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ApplicationQuestion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ApplicationQuestion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "UserNotification",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "UserNotification",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "UserNotificationPreference",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "UserNotificationPreference",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ApplicationAnswer",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ApplicationAnswer",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "Evaluation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "Evaluation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "CorkboardClub",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "CorkboardClub",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "Application",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "Application",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "_prisma_migrations",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "_prisma_migrations",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubAnnouncement",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubAnnouncement",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "Event",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "Event",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubConversation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubConversation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubMessage",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubMessage",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "NotificationEmailOutbox",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "NotificationEmailOutbox",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "Experience",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "Experience",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "NotificationEmailDelivery",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "NotificationEmailDelivery",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewSlot",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewSlot",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "Club",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "Club",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubMember",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubMember",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EventAttendance",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EventAttendance",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "PipelineRound",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "PipelineRound",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewBooking",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewBooking",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RecipientGroup",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RecipientGroup",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "DecisionLetter",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "DecisionLetter",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewRoom",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewRoom",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RecipientGroupEntry",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RecipientGroupEntry",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubTask",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubTask",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "TaskAssignment",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "TaskAssignment",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "TaskFile",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "TaskFile",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "PlatformViewSession",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "PlatformViewSession",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewRecord",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewRecord",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EventPublication",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EventPublication",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EventRsvp",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EventRsvp",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EventFlyer",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EventFlyer",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "UserAvailability",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "UserAvailability",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "PlatformAdmin",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "PlatformAdmin",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "AuditLog",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "AuditLog",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ClubClaim",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ClubClaim",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "PlatformContent",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "PlatformContent",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "MeetingCheckInToken",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "MeetingCheckInToken",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RecruitingRule",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RecruitingRule",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RecruitingRuleFlag",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RecruitingRuleFlag",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "SchoolIdentity",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "SchoolIdentity",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RosterImport",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RosterImport",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RosterImportRow",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RosterImportRow",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InvitationDelivery",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InvitationDelivery",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ApplicantObservation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ApplicantObservation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingSession",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingSession",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingParticipant",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingParticipant",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingCandidate",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingCandidate",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "VotingBallot",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "VotingBallot",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewPanelAssignment",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewPanelAssignment",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewResumeDocument",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewResumeDocument",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewResumeAnnotation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewResumeAnnotation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewAnnotationRevision",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewAnnotationRevision",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewRoundParticipation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewRoundParticipation",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewPanelProposal",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewPanelProposal",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "RecruitmentCycle",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "RecruitmentCycle",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "ScheduledCommunication",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "ScheduledCommunication",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "SavedCampusEvent",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "SavedCampusEvent",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "InterviewAvailabilityOverride",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "InterviewAvailabilityOverride",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EditorDraft",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EditorDraft",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "authenticated",
+          "table": "EventFlyerDeletion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        },
+        {
+          "role": "anon",
+          "table": "EventFlyerDeletion",
+          "delete": false,
+          "insert": false,
+          "select": false,
+          "update": false
+        }
+      ]
+    }
+  }
+]

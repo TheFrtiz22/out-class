@@ -1,0 +1,422 @@
+[
+  {
+    "queryid": "1918662762133061436",
+    "role": "postgres",
+    "calls": 17883,
+    "total_ms": "4634476.02",
+    "mean_ms": "259.16",
+    "max_ms": "938.06",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": true,
+    "tables": []
+  },
+  {
+    "queryid": "-2647655532108368607",
+    "role": "postgres",
+    "calls": 597,
+    "total_ms": "247692.26",
+    "mean_ms": "414.89",
+    "max_ms": "1190.25",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-8614051923781968731",
+    "role": "postgres",
+    "calls": 590,
+    "total_ms": "172825.96",
+    "mean_ms": "292.93",
+    "max_ms": "8260.74",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Club"
+    ]
+  },
+  {
+    "queryid": "3055962001150132623",
+    "role": "postgres",
+    "calls": 9138,
+    "total_ms": "124599.63",
+    "mean_ms": "13.64",
+    "max_ms": "10481.87",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Club"
+    ]
+  },
+  {
+    "queryid": "3393632725691790249",
+    "role": "pgbouncer",
+    "calls": 102198,
+    "total_ms": "88442.42",
+    "mean_ms": "0.87",
+    "max_ms": "424.83",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-8335566644447710645",
+    "role": "postgres",
+    "calls": 1523,
+    "total_ms": "72850.05",
+    "mean_ms": "47.83",
+    "max_ms": "3066.69",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-7726440967385220442",
+    "role": "authenticator",
+    "calls": 95,
+    "total_ms": "31145.11",
+    "mean_ms": "327.84",
+    "max_ms": "1126.66",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "8929488959168471965",
+    "role": "postgres",
+    "calls": 154,
+    "total_ms": "26133.68",
+    "mean_ms": "169.70",
+    "max_ms": "7259.63",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Application"
+    ]
+  },
+  {
+    "queryid": "-8335566644447710645",
+    "role": "outclass_production_app",
+    "calls": 383,
+    "total_ms": "23251.66",
+    "mean_ms": "60.71",
+    "max_ms": "1382.77",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "8074250554804319433",
+    "role": "supabase_auth_admin",
+    "calls": 122520,
+    "total_ms": "13910.21",
+    "mean_ms": "0.11",
+    "max_ms": "116.77",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-345908313092019944",
+    "role": "postgres",
+    "calls": 971,
+    "total_ms": "13118.13",
+    "mean_ms": "13.51",
+    "max_ms": "6269.42",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Application"
+    ]
+  },
+  {
+    "queryid": "4641178386044046622",
+    "role": "postgres",
+    "calls": 223760,
+    "total_ms": "12499.20",
+    "mean_ms": "0.06",
+    "max_ms": "186.60",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Club",
+      "ClubMember",
+      "Application",
+      "ClubConversation",
+      "User"
+    ]
+  },
+  {
+    "queryid": "-5015395177739500386",
+    "role": "postgres",
+    "calls": 246012,
+    "total_ms": "11758.49",
+    "mean_ms": "0.05",
+    "max_ms": "87.62",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "UserNotification"
+    ]
+  },
+  {
+    "queryid": "-5809707244063863639",
+    "role": "postgres",
+    "calls": 223760,
+    "total_ms": "11225.08",
+    "mean_ms": "0.05",
+    "max_ms": "125.43",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "UserNotification"
+    ]
+  },
+  {
+    "queryid": "8580411586163530256",
+    "role": "pgbouncer",
+    "calls": 372,
+    "total_ms": "9485.96",
+    "mean_ms": "25.50",
+    "max_ms": "98.47",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "8379974453916687502",
+    "role": "postgres",
+    "calls": 19627,
+    "total_ms": "8006.69",
+    "mean_ms": "0.41",
+    "max_ms": "193.64",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "3963509879429659759",
+    "role": "supabase_auth_admin",
+    "calls": 122913,
+    "total_ms": "7996.18",
+    "mean_ms": "0.07",
+    "max_ms": "129.97",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "1814397480003180384",
+    "role": "postgres",
+    "calls": 31,
+    "total_ms": "7377.18",
+    "mean_ms": "237.97",
+    "max_ms": "7375.77",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": true,
+    "tables": []
+  },
+  {
+    "queryid": "4868794970434878014",
+    "role": "supabase_admin",
+    "calls": 28,
+    "total_ms": "7060.49",
+    "mean_ms": "252.16",
+    "max_ms": "428.22",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "427033481802320170",
+    "role": "postgres",
+    "calls": 227533,
+    "total_ms": "6817.22",
+    "mean_ms": "0.03",
+    "max_ms": "61.27",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "User"
+    ]
+  },
+  {
+    "queryid": "-6324624604000189562",
+    "role": "supabase_auth_admin",
+    "calls": 123473,
+    "total_ms": "6772.15",
+    "mean_ms": "0.05",
+    "max_ms": "173.27",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "8929488959168471965",
+    "role": "outclass_production_app",
+    "calls": 147,
+    "total_ms": "6498.70",
+    "mean_ms": "44.21",
+    "max_ms": "1240.81",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "Application"
+    ]
+  },
+  {
+    "queryid": "230215718170511731",
+    "role": "postgres",
+    "calls": 61332,
+    "total_ms": "6157.40",
+    "mean_ms": "0.10",
+    "max_ms": "199.00",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "User"
+    ]
+  },
+  {
+    "queryid": "3189417850087602215",
+    "role": "postgres",
+    "calls": 22253,
+    "total_ms": "5949.38",
+    "mean_ms": "0.27",
+    "max_ms": "250.92",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "UserNotification"
+    ]
+  },
+  {
+    "queryid": "-3881422609760141299",
+    "role": "supabase_auth_admin",
+    "calls": 122956,
+    "total_ms": "4684.73",
+    "mean_ms": "0.04",
+    "max_ms": "52.41",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-411766952249247349",
+    "role": "postgres",
+    "calls": 70,
+    "total_ms": "4386.91",
+    "mean_ms": "62.67",
+    "max_ms": "130.78",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "-4350002980815958391",
+    "role": "postgres",
+    "calls": 317,
+    "total_ms": "3625.78",
+    "mean_ms": "11.44",
+    "max_ms": "55.88",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "5468470386064375665",
+    "role": "postgres",
+    "calls": 3892,
+    "total_ms": "3531.57",
+    "mean_ms": "0.91",
+    "max_ms": "2122.92",
+    "temp_blks_written": 0,
+    "row_lock": true,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "User"
+    ]
+  },
+  {
+    "queryid": "-3079557995040807313",
+    "role": "supabase_auth_admin",
+    "calls": 123458,
+    "total_ms": "3519.62",
+    "mean_ms": "0.03",
+    "max_ms": "33.58",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": []
+  },
+  {
+    "queryid": "861898382508274035",
+    "role": "postgres",
+    "calls": 17883,
+    "total_ms": "3349.78",
+    "mean_ms": "0.19",
+    "max_ms": "24.24",
+    "temp_blks_written": 0,
+    "row_lock": false,
+    "intentional_sleep": false,
+    "advisory_lock": false,
+    "tables": [
+      "ScheduledCommunication"
+    ]
+  }
+]

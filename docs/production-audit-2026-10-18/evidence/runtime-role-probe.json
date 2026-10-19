@@ -1,0 +1,432 @@
+{
+  "before": [
+    {
+      "queryid": "-1318962032563151486",
+      "role": "postgres",
+      "calls": 10,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-711591101810389829",
+      "role": "postgres",
+      "calls": 202,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "3998604353618703954",
+      "role": "postgres",
+      "calls": 34,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "6341064489074581982",
+      "role": "postgres",
+      "calls": 4,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5900754561046847109",
+      "role": "postgres",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "720307279545934027",
+      "role": "postgres",
+      "calls": 16,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "7864133654229380660",
+      "role": "postgres",
+      "calls": 2075,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "1142562546705431056",
+      "role": "postgres",
+      "calls": 5,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2620105640551352566",
+      "role": "postgres",
+      "calls": 100,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2195187447863865403",
+      "role": "postgres",
+      "calls": 229,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5245527651934802627",
+      "role": "postgres",
+      "calls": 3,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4252528803269872580",
+      "role": "postgres",
+      "calls": 138,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-1247546365902174990",
+      "role": "postgres",
+      "calls": 7280,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-9175270302658619444",
+      "role": "postgres",
+      "calls": 24,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2751924302902465591",
+      "role": "postgres",
+      "calls": 76,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "4792992502075896969",
+      "role": "postgres",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-3296009032159338897",
+      "role": "postgres",
+      "calls": 656,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "7918663711007583184",
+      "role": "postgres",
+      "calls": 10,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4922982732828066598",
+      "role": "postgres",
+      "calls": 8,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-3932970745421502778",
+      "role": "postgres",
+      "calls": 2,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "997815010169172707",
+      "role": "postgres",
+      "calls": 89,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2620105640551352566",
+      "role": "outclass_production_app",
+      "calls": 322,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-219547056893650966",
+      "role": "outclass_production_app",
+      "calls": 6,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4922982732828066598",
+      "role": "outclass_production_app",
+      "calls": 7,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-6501603849511215695",
+      "role": "outclass_production_app",
+      "calls": 7,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5245527651934802627",
+      "role": "outclass_production_app",
+      "calls": 4,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "1142562546705431056",
+      "role": "outclass_production_app",
+      "calls": 10,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-1869820913615164490",
+      "role": "outclass_production_app",
+      "calls": 16,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-8109409154151510800",
+      "role": "outclass_production_app",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    }
+  ],
+  "after": [
+    {
+      "queryid": "-1318962032563151486",
+      "role": "postgres",
+      "calls": 11,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-711591101810389829",
+      "role": "postgres",
+      "calls": 202,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "3998604353618703954",
+      "role": "postgres",
+      "calls": 34,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "6341064489074581982",
+      "role": "postgres",
+      "calls": 4,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5900754561046847109",
+      "role": "postgres",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "720307279545934027",
+      "role": "postgres",
+      "calls": 16,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "7864133654229380660",
+      "role": "postgres",
+      "calls": 2075,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "1142562546705431056",
+      "role": "postgres",
+      "calls": 5,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2620105640551352566",
+      "role": "postgres",
+      "calls": 100,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2195187447863865403",
+      "role": "postgres",
+      "calls": 229,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5245527651934802627",
+      "role": "postgres",
+      "calls": 3,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4252528803269872580",
+      "role": "postgres",
+      "calls": 138,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-1247546365902174990",
+      "role": "postgres",
+      "calls": 7280,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-9175270302658619444",
+      "role": "postgres",
+      "calls": 24,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2751924302902465591",
+      "role": "postgres",
+      "calls": 76,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "4792992502075896969",
+      "role": "postgres",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-3296009032159338897",
+      "role": "postgres",
+      "calls": 656,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "7918663711007583184",
+      "role": "postgres",
+      "calls": 11,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4922982732828066598",
+      "role": "postgres",
+      "calls": 8,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-3932970745421502778",
+      "role": "postgres",
+      "calls": 2,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "997815010169172707",
+      "role": "postgres",
+      "calls": 89,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-2620105640551352566",
+      "role": "outclass_production_app",
+      "calls": 322,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-219547056893650966",
+      "role": "outclass_production_app",
+      "calls": 6,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-4922982732828066598",
+      "role": "outclass_production_app",
+      "calls": 7,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-6501603849511215695",
+      "role": "outclass_production_app",
+      "calls": 7,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-5245527651934802627",
+      "role": "outclass_production_app",
+      "calls": 4,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "1142562546705431056",
+      "role": "outclass_production_app",
+      "calls": 10,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-1869820913615164490",
+      "role": "outclass_production_app",
+      "calls": 16,
+      "filters_slug": true,
+      "checks_suspension": true
+    },
+    {
+      "queryid": "-8109409154151510800",
+      "role": "outclass_production_app",
+      "calls": 1,
+      "filters_slug": true,
+      "checks_suspension": true
+    }
+  ],
+  "delta": [
+    {
+      "queryid": "-1318962032563151486",
+      "role": "postgres",
+      "calls": 11,
+      "filters_slug": true,
+      "checks_suspension": true,
+      "delta": 1
+    },
+    {
+      "queryid": "7918663711007583184",
+      "role": "postgres",
+      "calls": 11,
+      "filters_slug": true,
+      "checks_suspension": true,
+      "delta": 1
+    }
+  ],
+  "probe": "GET /club/audit-nonexistent-20261018-tenant-check; no authentication or writes",
+  "limitation": "Small observation window; unrelated concurrent requests may contribute deltas."
+}

@@ -1,0 +1,7 @@
+{
+  "jsonFiles": 33,
+  "markdownFiles": 8,
+  "linkAndJsonErrors": [],
+  "sourceCommit": "03571d5d2275f2899373193a7cd2fbb404a3eb73",
+  "scope": "Audit reports and local probes only; no application/dependency/config changes."
+}

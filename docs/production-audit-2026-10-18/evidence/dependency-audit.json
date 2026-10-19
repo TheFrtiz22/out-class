@@ -1,0 +1,277 @@
+{
+  "actions": [
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1241209,
+          "path": ".>@tailwindcss/postcss>@tailwindcss/node>source-map-js",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": "source-map-js",
+      "target": "1.2.2",
+      "depth": 4
+    },
+    {
+      "action": "update",
+      "resolves": [
+        {
+          "id": 1241331,
+          "path": ".>next>sharp",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ],
+      "module": null,
+      "target": null,
+      "depth": 3
+    },
+    {
+      "action": "review",
+      "module": "braces",
+      "resolves": [
+        {
+          "id": 1240992,
+          "path": ".>eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces",
+          "dev": false,
+          "bundled": false,
+          "optional": false
+        }
+      ]
+    },
+    {
+      "action": "review",
+      "module": "next",
+      "resolves": [
+        {
+          "id": 1241491,
+          "path": ".>next",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        },
+        {
+          "id": 1241494,
+          "path": ".>next",
+          "dev": false,
+          "optional": false,
+          "bundled": false
+        }
+      ]
+    }
+  ],
+  "advisories": {
+    "1240992": {
+      "findings": [
+        {
+          "version": "3.0.3",
+          "paths": [
+            ".>eslint-config-next>@next/eslint-plugin-next>fast-glob>micromatch>braces"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://nvd.nist.gov/vuln/detail/CVE-2026-93687\n- https://github.com/micromatch/braces/issues/70\n- https://github.com/micromatch/braces/blob/3.0.3/lib/compile.js#L49-L53\n- https://github.com/micromatch/braces/blob/3.0.3/lib/expand.js#L102-L105\n- https://github.com/micromatch/braces/blob/3.0.3/lib/parse.js#L38-L40\n- https://www.vulncheck.com/advisories/braces-through-3.0.3-stack-overflow-via-deeply-nested-patterns\n- https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+      "created": "2026-09-18T18:31:41.000Z",
+      "id": 1240992,
+      "npm_advisory_id": null,
+      "overview": "braces through 3.0.3 contains a stack overflow vulnerability in the recursive AST walkers that lack depth guards. Attackers can supply deeply nested brace patterns under the character limit to exhaust the call stack and terminate the Node.js process with an uncaught RangeError.",
+      "reported_by": null,
+      "title": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-93687"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "braces",
+      "vulnerable_versions": "<=3.0.3",
+      "github_advisory_id": "GHSA-vfj7-8cjw-p6xm",
+      "recommendation": "None",
+      "patched_versions": "<0.0.0",
+      "updated": "2026-10-02T22:36:34.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-674"
+      ],
+      "url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm"
+    },
+    "1241209": {
+      "findings": [
+        {
+          "version": "1.2.1",
+          "paths": [
+            ".>@tailwindcss/postcss>@tailwindcss/node>source-map-js"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://nvd.nist.gov/vuln/detail/CVE-2026-93749\n- https://github.com/7rulnik/source-map-js/issues/76\n- https://github.com/7rulnik/source-map-js\n- https://github.com/7rulnik/source-map-js/blob/c1cd8904bb7bd0c7fb5879fcda48134d82a27934/lib/source-node.js#L115-L118\n- https://www.vulncheck.com/advisories/source-map-js-through-1.2.1-event-loop-denial-of-service\n- https://github.com/7rulnik/source-map-js/pull/79\n- https://github.com/7rulnik/source-map-js/commit/cf7658058ceeaa8619d5ae0ec90be6905209d016\n- https://github.com/7rulnik/source-map-js/releases/tag/v1.2.2\n- https://github.com/advisories/GHSA-68fv-2mgg-jv7q",
+      "created": "2026-09-18T18:31:44.000Z",
+      "id": 1241209,
+      "npm_advisory_id": null,
+      "overview": "source-map-js through 1.2.1 fails to validate the per-section offset line value in indexed source maps, allowing attackers to specify arbitrary numeric values. Attackers can supply extremely large offset line values that cause synchronous event loop blocking for extended periods, preventing the service from handling other requests.",
+      "reported_by": null,
+      "title": "source-map-js allows event-loop denial of service through indexed source-map section offsets",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-93749"
+      ],
+      "access": "public",
+      "severity": "high",
+      "module_name": "source-map-js",
+      "vulnerable_versions": ">=1.0.0 <1.2.2",
+      "github_advisory_id": "GHSA-68fv-2mgg-jv7q",
+      "recommendation": "Upgrade to version 1.2.2 or later",
+      "patched_versions": ">=1.2.2",
+      "updated": "2026-10-05T23:31:22.000Z",
+      "cvss": {
+        "score": 7.5,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "cwe": [
+        "CWE-1284"
+      ],
+      "url": "https://github.com/advisories/GHSA-68fv-2mgg-jv7q"
+    },
+    "1241331": {
+      "findings": [
+        {
+          "version": "0.35.4",
+          "paths": [
+            ".>next>sharp"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/lovell/sharp/security/advisories/GHSA-wq5f-xc86-pv6w\n- https://github.com/lovell/sharp/commit/96de105d9d36ab04c76c2b78b97255171630d236\n- https://github.com/lovell/sharp/releases/tag/v0.35.5\n- https://gitlab.gnome.org/GNOME/librsvg/-/work_items/1241\n- https://www.cve.org/CVERecord?id=CVE-2026-96889\n- https://github.com/advisories/GHSA-wq5f-xc86-pv6w",
+      "created": "2026-10-06T13:43:57.000Z",
+      "id": 1241331,
+      "npm_advisory_id": null,
+      "overview": "### Impact\n\nA memory-related vulnerability has been discovered and fixed in the upstream librsvg dependency. When certain runtime-specific conditions apply, this vulnerability can lead to possible remote code execution (RCE) on glibc-based Linux.\n\n### Patches\n\n#### Using prebuilt binaries provided by sharp?\n\nMost people rely on the prebuilt binaries provided by sharp.\n\nPlease upgrade sharp to the latest version, currently 0.35.5, which provides librsvg 2.63.2.\n\n#### Using a globally-installed librsvg?\n\nPlease ensure you are using the latest librsvg 2.63.2.\n\n### Workarounds\n\nAdd the following to your code to prevent sharp from decoding SVG images.\n```js\nsharp.block({ operation: [\"VipsForeignLoadSvg\"] });\n```\n\nTo avoid RCE, ensure you are using a `node` executable binary compiled as a Position Independent Executable (PIE). Most Linux package managers already use this security-hardening feature however be warned that the \"official\" Node.js binaries do not.\n1",
+      "reported_by": null,
+      "title": "sharp : Vulnerability in librsvg dependency CVE-2026-96889",
+      "metadata": null,
+      "cves": [],
+      "access": "public",
+      "severity": "high",
+      "module_name": "sharp",
+      "vulnerable_versions": "<0.35.5",
+      "github_advisory_id": "GHSA-wq5f-xc86-pv6w",
+      "recommendation": "Upgrade to version 0.35.5 or later",
+      "patched_versions": ">=0.35.5",
+      "updated": "2026-10-06T13:43:58.000Z",
+      "cvss": {
+        "score": 0,
+        "vectorString": null
+      },
+      "cwe": [
+        "CWE-416",
+        "CWE-1395"
+      ],
+      "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w"
+    },
+    "1241491": {
+      "findings": [
+        {
+          "version": "15.5.26",
+          "paths": [
+            ".>next"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/vercel/next.js/security/advisories/GHSA-4jqv-mc3x-m676\n- https://nvd.nist.gov/vuln/detail/CVE-2026-94543\n- https://github.com/vercel/next.js/commit/52c94abdd2ea5f416f5e8353ea8a2edd3fe311b8\n- https://github.com/vercel/next.js/commit/719e4c67d6e92df60246f95e1d96e2dd60789a52\n- https://github.com/vercel/next.js/releases/tag/v15.5.27\n- https://github.com/vercel/next.js/releases/tag/v16.3.8\n- https://github.com/advisories/GHSA-4jqv-mc3x-m676",
+      "created": "2026-10-07T20:32:06.000Z",
+      "id": 1241491,
+      "npm_advisory_id": null,
+      "overview": "Self-hosted Next.js applications that use the Pages Router with statically generated (SSG) or incrementally regenerated (ISR) pages can have a page's cache entry replaced with content from a different route, causing the affected page to serve wrong content to every visitor until the entry is revalidated. Applications deployed on Vercel are not affected.",
+      "reported_by": null,
+      "title": "Next.js has cache poisoning of SSG and ISR pages in self-hosted applications",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-94543"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "next",
+      "vulnerable_versions": ">=15.0.0 <15.5.27",
+      "github_advisory_id": "GHSA-4jqv-mc3x-m676",
+      "recommendation": "Upgrade to version 15.5.27 or later",
+      "patched_versions": ">=15.5.27",
+      "updated": "2026-10-07T20:32:07.000Z",
+      "cvss": {
+        "score": 5.3,
+        "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "cwe": [
+        "CWE-524"
+      ],
+      "url": "https://github.com/advisories/GHSA-4jqv-mc3x-m676"
+    },
+    "1241494": {
+      "findings": [
+        {
+          "version": "15.5.26",
+          "paths": [
+            ".>next"
+          ]
+        }
+      ],
+      "found_by": null,
+      "deleted": null,
+      "references": "- https://github.com/vercel/next.js/security/advisories/GHSA-mcj8-r9mp-w47p\n- https://nvd.nist.gov/vuln/detail/CVE-2026-94484\n- https://github.com/vercel/next.js/commit/52c94abdd2ea5f416f5e8353ea8a2edd3fe311b8\n- https://github.com/vercel/next.js/commit/719e4c67d6e92df60246f95e1d96e2dd60789a52\n- https://github.com/vercel/next.js/releases/tag/v15.5.27\n- https://github.com/vercel/next.js/releases/tag/v16.3.8\n- https://github.com/advisories/GHSA-mcj8-r9mp-w47p",
+      "created": "2026-10-07T20:31:13.000Z",
+      "id": 1241494,
+      "npm_advisory_id": null,
+      "overview": "Next.js applications that use a root-level catch-all page together with statically generated or Incremental Static Regeneration routes can have their shared response cache poisoned by a single unauthenticated crafted request.",
+      "reported_by": null,
+      "title": "Next.js has cache poisoning in SSG/ISR rendering that leads to cross-user content substitution and persistent denial of service",
+      "metadata": null,
+      "cves": [
+        "CVE-2026-94484"
+      ],
+      "access": "public",
+      "severity": "moderate",
+      "module_name": "next",
+      "vulnerable_versions": ">=15.0.0 <15.5.27",
+      "github_advisory_id": "GHSA-mcj8-r9mp-w47p",
+      "recommendation": "Upgrade to version 15.5.27 or later",
+      "patched_versions": ">=15.5.27",
+      "updated": "2026-10-07T20:31:15.000Z",
+      "cvss": {
+        "score": 4.8,
+        "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:L"
+      },
+      "cwe": [
+        "CWE-524"
+      ],
+      "url": "https://github.com/advisories/GHSA-mcj8-r9mp-w47p"
+    }
+  },
+  "muted": [],
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 2,
+      "high": 3,
+      "critical": 0
+    },
+    "dependencies": 580,
+    "devDependencies": 0,
+    "optionalDependencies": 0,
+    "totalDependencies": 580
+  }
+}

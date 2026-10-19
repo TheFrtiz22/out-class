@@ -1,0 +1,81 @@
+{
+  "managed": [
+    {
+      "id": "bot-protection",
+      "name": "Bot Protection",
+      "action": "off",
+      "wafRuleId": "managed_bot_protection"
+    },
+    {
+      "id": "ai-bots",
+      "name": "AI Bots",
+      "action": "allow",
+      "wafRuleId": "managed_ai_bots"
+    },
+    {
+      "id": "bot-id",
+      "name": "BotID",
+      "action": "basic",
+      "wafRuleId": null
+    }
+  ],
+  "rules": [
+    {
+      "name": "OutClass retired production writers",
+      "description": "Retired production artifacts cannot run against the new immutable guards. Current production and unrelated previews retain normal authentication.",
+      "active": true,
+      "action": {
+        "mitigate": {
+          "action": "deny"
+        }
+      },
+      "id": "rule_out_class_retired_production_writers_DPztgn",
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "host",
+              "op": "re",
+              "value": "^(?:out-class-nxwoxu4eu-outclassuva\\.vercel\\.app|out-class-leacr93oz-outclassuva\\.vercel\\.app|out-class-cb7g9rydo-outclassuva\\.vercel\\.app|out-class-1zmdp9at1-outclassuva\\.vercel\\.app|out-class-6ht4mi10s-outclassuva\\.vercel\\.app|out-class-pt4w679pm-outclassuva\\.vercel\\.app|out-class-7agix75zn-outclassuva\\.vercel\\.app|out-class-f0ylqyp44-outclassuva\\.vercel\\.app|out-class-5tg5x89uw-outclassuva\\.vercel\\.app|out-class-5dq31mavr-outclassuva\\.vercel\\.app|out-class-nlpmzyh74-outclassuva\\.vercel\\.app|out-class-6vrjr82ff-outclassuva\\.vercel\\.app|out-class-el81qdgxq-outclassuva\\.vercel\\.app|out-class-r2qc6uszw-outclassuva\\.vercel\\.app|out-class-4ieg4mdp2-outclassuva\\.vercel\\.app|out-class-keqq15ouh-outclassuva\\.vercel\\.app|out-class-eu9980xxd-outclassuva\\.vercel\\.app|out-class-n84e6jkbe-outclassuva\\.vercel\\.app|out-class-7pds1ubuk-outclassuva\\.vercel\\.app|out-class-hyalagoha-outclassuva\\.vercel\\.app|out-class-rd0vhckks-outclassuva\\.vercel\\.app|out-class-4wnsafre9-outclassuva\\.vercel\\.app|out-class-kk9gzokap-outclassuva\\.vercel\\.app|out-class-2sbplbfld-outclassuva\\.vercel\\.app|out-class-9h2jc6a5j-outclassuva\\.vercel\\.app|out-class-8wouupclc-outclassuva\\.vercel\\.app|out-class-43ylmmvu2-outclassuva\\.vercel\\.app|out-class-53z80r7qe-outclassuva\\.vercel\\.app|out-class-mq6naexpr-outclassuva\\.vercel\\.app|out-class-fth33qj28-outclassuva\\.vercel\\.app|out-class-gizli7jju-outclassuva\\.vercel\\.app|out-class-oekeb7jqa-outclassuva\\.vercel\\.app|out-class-r6t278jnb-outclassuva\\.vercel\\.app|out-class-mqcq57diu-outclassuva\\.vercel\\.app|out-class-iwzwnvl1q-outclassuva\\.vercel\\.app|out-class-hi4zra7ki-outclassuva\\.vercel\\.app|out-class-7ssgechf4-outclassuva\\.vercel\\.app|out-class-qxlnu62jj-outclassuva\\.vercel\\.app|out-class-eahg9eqgt-outclassuva\\.vercel\\.app|out-class-nvm5ltv02-outclassuva\\.vercel\\.app|out-class-kx7stiipu-outclassuva\\.vercel\\.app|out-class-gyp52mjpx-outclassuva\\.vercel\\.app|out-class-alxty089a-outclassuva\\.vercel\\.app|out-class-5ngkdwfwz-outclassuva\\.vercel\\.app|out-class-dpoznek4m-outclassuva\\.vercel\\.app|out-class-d11e28v1p-outclassuva\\.vercel\\.app|out-class-j2pwke67v-outclassuva\\.vercel\\.app|out-class-9hyz32cqc-outclassuva\\.vercel\\.app|out-class-6fbdui4no-outclassuva\\.vercel\\.app|out-class-k6atru4ya-outclassuva\\.vercel\\.app|out-class-1b1tzsj9x-outclassuva\\.vercel\\.app|out-class-mg09gg44z-outclassuva\\.vercel\\.app|out-class-my97t5w3n-outclassuva\\.vercel\\.app|out-class-eml9n28wd-outclassuva\\.vercel\\.app|out-class-myllwt2de-outclassuva\\.vercel\\.app|out-class-kplg72fe8-thefritz2008-5266\\.vercel\\.app|out-class-7rkkqhi89-thefritz2008-5266\\.vercel\\.app|out-class-arilmzom7-thefritz2008-5266\\.vercel\\.app|out-class-1ph4ncurc-thefritz2008-5266\\.vercel\\.app|out-class-6h89mbz6k-thefritz2008-5266\\.vercel\\.app|out-class-purdenakd-thefritz2008-5266\\.vercel\\.app|out-class-ojn9ja25d-thefritz2008-5266\\.vercel\\.app|out-class-1xlsr9gux-thefritz2008-5266\\.vercel\\.app|out-class-qn2qxw89o-thefritz2008-5266\\.vercel\\.app|out-class-gbc5donvt-thefritz2008-5266\\.vercel\\.app|out-class-85gw4oev7-thefritz2008-5266\\.vercel\\.app|out-class-3gh5i7ole-thefritz2008-5266\\.vercel\\.app|out-class-ml7qf94hh-thefritz2008-5266\\.vercel\\.app|out-class-be0tr0cdn-thefritz2008-5266\\.vercel\\.app|out-class-cebt148ya-thefritz2008-5266\\.vercel\\.app|out-class-k35jx6ord-thefritz2008-5266\\.vercel\\.app|out-class-m0toq4aoo-thefritz2008-5266\\.vercel\\.app|out-class-om8zyad2i-thefritz2008-5266\\.vercel\\.app|out-class-6eyy26n29-thefritz2008-5266\\.vercel\\.app|out-class-nstdu0eqq-thefritz2008-5266\\.vercel\\.app|out-class-ib52cc95h-thefritz2008-5266\\.vercel\\.app|out-class-a1bk70t39-thefritz2008-5266\\.vercel\\.app|out-class-44lmb9bv0-thefritz2008-5266\\.vercel\\.app|out-class-cr4x7lrx9-thefritz2008-5266\\.vercel\\.app|out-class-39mmjme9y-thefritz2008-5266\\.vercel\\.app|out-class-5ypos8r7e-thefritz2008-5266\\.vercel\\.app|out-class-nytn8rm58-thefritz2008-5266\\.vercel\\.app|out-class-mbsoxh70y-thefritz2008-5266\\.vercel\\.app|out-class-nc44l6d3b-thefritz2008-5266\\.vercel\\.app|out-class-nqbv79rd5-thefritz2008-5266\\.vercel\\.app|out-class-ieecz9a3z-thefritz2008-5266\\.vercel\\.app|out-class-j9alr0sb4-thefritz2008-5266\\.vercel\\.app|out-class-1ccm7wj9w-thefritz2008-5266\\.vercel\\.app|out-class-nvjsz7etu-thefritz2008-5266\\.vercel\\.app|out-class-oeaqf9oai-thefritz2008-5266\\.vercel\\.app|out-class-1m08li8i8-thefritz2008-5266\\.vercel\\.app|out-class-ywlawm6zd-thefritz2008-5266\\.vercel\\.app|out-class-o37gvk1hz-thefritz2008-5266\\.vercel\\.app|out-class-5ic9sqs89-thefritz2008-5266\\.vercel\\.app|out-class-7qgn4d4f6-thefritz2008-5266\\.vercel\\.app|out-class-bu1gwvzem-thefritz2008-5266\\.vercel\\.app|out-class-131zuxu4h-thefritz2008-5266\\.vercel\\.app|out-class-fvmecn2je-thefritz2008-5266\\.vercel\\.app|out-class-o5h8ph63c-thefritz2008-5266\\.vercel\\.app|out-class-aremzcrg3-thefritz2008-5266\\.vercel\\.app|out-class-pwljb80mx-thefritz2008-5266\\.vercel\\.app|out-class-lhdr0gew4-thefritz2008-5266\\.vercel\\.app|out-class-57t5hs0x2-thefritz2008-5266\\.vercel\\.app|out-class-hzct7ssiq-thefritz2008-5266\\.vercel\\.app|out-class-5vh8hdj5d-thefritz2008-5266\\.vercel\\.app|out-class-r6m8ekqwv-thefritz2008-5266\\.vercel\\.app|out-class-naahrt8a1-thefritz2008-5266\\.vercel\\.app|out-class-34ou30mx8-thefritz2008-5266\\.vercel\\.app|out-class-msw5oytzc-thefritz2008-5266\\.vercel\\.app|out-class-nwt4d9d6z-thefritz2008-5266\\.vercel\\.app|out-class-9ldhargsd-thefritz2008-5266\\.vercel\\.app|out-class-61mtfu04k-thefritz2008-5266\\.vercel\\.app|out-class-jiivmvfeh-thefritz2008-5266\\.vercel\\.app|out-class-gvzfyn1qq-thefritz2008-5266\\.vercel\\.app|out-class-98a86g9pj-thefritz2008-5266\\.vercel\\.app|out-class-4wb1hxa7x-thefritz2008-5266\\.vercel\\.app|out-class-5pe0z6r7h-thefritz2008-5266\\.vercel\\.app|out-class-oc9s8k7bq-thefritz2008-5266\\.vercel\\.app|out-class-jm6vqgrb1-thefritz2008-5266\\.vercel\\.app|out-class-doci4ueol-thefritz2008-5266\\.vercel\\.app|out-class-gg62qz979-thefritz2008-5266\\.vercel\\.app|out-class-5ougyvab2-thefritz2008-5266\\.vercel\\.app|out-class-mjb7qvxss-thefritz2008-5266\\.vercel\\.app|out-class-bzh42nqy6-thefritz2008-5266\\.vercel\\.app|out-class-57q4m3dwb-thefritz2008-5266\\.vercel\\.app|out-class-9xj5r2shg-thefritz2008-5266\\.vercel\\.app)$"
+            }
+          ]
+        }
+      ],
+      "valid": true,
+      "validationErrors": null,
+      "_status": "live"
+    },
+    {
+      "name": "OutClass pre-answer-key artifact writers",
+      "action": {
+        "mitigate": {
+          "action": "deny"
+        }
+      },
+      "description": "Retired immutable application artifacts cannot discard newly preserved answer-key snapshots. Current domains, current staging and future builds are unaffected.",
+      "active": true,
+      "id": "rule_out_class_pre_answer_key_artifact_writers_aOCM1Q",
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "host",
+              "value": "^(?:out-class-lzhj8l8gw-outclassuva\\.vercel\\.app|out-class-3jtiu1ou2-outclassuva\\.vercel\\.app|out-class-jsejmti23-outclassuva\\.vercel\\.app|out-class-e84m5rzcw-outclassuva\\.vercel\\.app|out-class-e9grvduik-outclassuva\\.vercel\\.app|out-class-oyqqimpz5-outclassuva\\.vercel\\.app|out-class-ojf7kc1ur-outclassuva\\.vercel\\.app|out-class-pnk05dwxo-outclassuva\\.vercel\\.app|out-class-rkj30omh7-outclassuva\\.vercel\\.app|out-class-psm45ksod-outclassuva\\.vercel\\.app|out-class-ppvzodfe4-outclassuva\\.vercel\\.app|out-class-pl23gdn0o-outclassuva\\.vercel\\.app|out-class-agigq6sej-outclassuva\\.vercel\\.app|out-class-i4r9ua1q9-outclassuva\\.vercel\\.app|out-class-dn6wpco4z-outclassuva\\.vercel\\.app|out-class-cw5uncd7j-outclassuva\\.vercel\\.app|out-class-9olbfdopz-outclassuva\\.vercel\\.app|out-class-9tdp15yt5-outclassuva\\.vercel\\.app|out-class-bwb574gb7-outclassuva\\.vercel\\.app|out-class-9cumc3e2g-outclassuva\\.vercel\\.app|out-class-1qfe2krct-outclassuva\\.vercel\\.app|out-class-7jshxtx2u-outclassuva\\.vercel\\.app|out-class-itrbiub7d-outclassuva\\.vercel\\.app|out-class-p8h574k95-outclassuva\\.vercel\\.app|out-class-nxwoxu4eu-outclassuva\\.vercel\\.app|out-class-knh12gsk5-outclassuva\\.vercel\\.app|out-class-kq44vlgy0-outclassuva\\.vercel\\.app|out-class-39ye164sm-outclassuva\\.vercel\\.app|out-class-8ks9vx704-outclassuva\\.vercel\\.app|out-class-4yo89oidz-outclassuva\\.vercel\\.app|out-class-leacr93oz-outclassuva\\.vercel\\.app|out-class-cb7g9rydo-outclassuva\\.vercel\\.app|out-class-mid6hj31x-outclassuva\\.vercel\\.app|out-class-8gts27zsz-outclassuva\\.vercel\\.app|out-class-o1310o825-outclassuva\\.vercel\\.app|out-class-rd1yn3m0u-outclassuva\\.vercel\\.app|out-class-osc1ri686-outclassuva\\.vercel\\.app|out-class-1zmdp9at1-outclassuva\\.vercel\\.app|out-class-bps5u57sl-outclassuva\\.vercel\\.app|out-class-3nwuh8ha4-outclassuva\\.vercel\\.app|out-class-52jcn0ek2-outclassuva\\.vercel\\.app|out-class-6ht4mi10s-outclassuva\\.vercel\\.app|out-class-pt4w679pm-outclassuva\\.vercel\\.app|out-class-7agix75zn-outclassuva\\.vercel\\.app|out-class-f0ylqyp44-outclassuva\\.vercel\\.app|out-class-5tg5x89uw-outclassuva\\.vercel\\.app|out-class-5dq31mavr-outclassuva\\.vercel\\.app|out-class-nlpmzyh74-outclassuva\\.vercel\\.app|out-class-6vrjr82ff-outclassuva\\.vercel\\.app|out-class-el81qdgxq-outclassuva\\.vercel\\.app|out-class-r2qc6uszw-outclassuva\\.vercel\\.app|out-class-4ieg4mdp2-outclassuva\\.vercel\\.app|out-class-keqq15ouh-outclassuva\\.vercel\\.app|out-class-eu9980xxd-outclassuva\\.vercel\\.app|out-class-n84e6jkbe-outclassuva\\.vercel\\.app|out-class-7pds1ubuk-outclassuva\\.vercel\\.app|out-class-hyalagoha-outclassuva\\.vercel\\.app|out-class-rd0vhckks-outclassuva\\.vercel\\.app|out-class-4wnsafre9-outclassuva\\.vercel\\.app|out-class-kk9gzokap-outclassuva\\.vercel\\.app|out-class-2sbplbfld-outclassuva\\.vercel\\.app|out-class-9h2jc6a5j-outclassuva\\.vercel\\.app|out-class-8wouupclc-outclassuva\\.vercel\\.app|out-class-43ylmmvu2-outclassuva\\.vercel\\.app|out-class-53z80r7qe-outclassuva\\.vercel\\.app|out-class-mq6naexpr-outclassuva\\.vercel\\.app|out-class-fth33qj28-outclassuva\\.vercel\\.app|out-class-gizli7jju-outclassuva\\.vercel\\.app|out-class-oekeb7jqa-outclassuva\\.vercel\\.app|out-class-r6t278jnb-outclassuva\\.vercel\\.app|out-class-mqcq57diu-outclassuva\\.vercel\\.app|out-class-iwzwnvl1q-outclassuva\\.vercel\\.app|out-class-hi4zra7ki-outclassuva\\.vercel\\.app|out-class-7ssgechf4-outclassuva\\.vercel\\.app|out-class-qxlnu62jj-outclassuva\\.vercel\\.app|out-class-eahg9eqgt-outclassuva\\.vercel\\.app|out-class-nvm5ltv02-outclassuva\\.vercel\\.app|out-class-kx7stiipu-outclassuva\\.vercel\\.app|out-class-gyp52mjpx-outclassuva\\.vercel\\.app|out-class-alxty089a-outclassuva\\.vercel\\.app|out-class-5ngkdwfwz-outclassuva\\.vercel\\.app|out-class-dpoznek4m-outclassuva\\.vercel\\.app|out-class-d11e28v1p-outclassuva\\.vercel\\.app|out-class-j2pwke67v-outclassuva\\.vercel\\.app|out-class-9hyz32cqc-outclassuva\\.vercel\\.app|out-class-6fbdui4no-outclassuva\\.vercel\\.app|out-class-k6atru4ya-outclassuva\\.vercel\\.app|out-class-7c4fdcwt2-outclassuva\\.vercel\\.app|out-class-1b1tzsj9x-outclassuva\\.vercel\\.app|out-class-mg09gg44z-outclassuva\\.vercel\\.app|out-class-pfomu4ddz-outclassuva\\.vercel\\.app|out-class-7tbdkwu9k-outclassuva\\.vercel\\.app|out-class-ao72oevb1-outclassuva\\.vercel\\.app|out-class-h3le07ug8-outclassuva\\.vercel\\.app|out-class-my97t5w3n-outclassuva\\.vercel\\.app|out-class-eml9n28wd-outclassuva\\.vercel\\.app)$",
+              "op": "re"
+            },
+            {
+              "type": "method",
+              "op": "eq",
+              "value": "POST"
+            }
+          ]
+        }
+      ],
+      "valid": true,
+      "validationErrors": null,
+      "_status": "live"
+    }
+  ],
+  "hasDraft": false,
+  "pendingChanges": 0
+}

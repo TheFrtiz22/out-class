@@ -1,0 +1,859 @@
+{
+  "lints": [
+    {
+      "name": "rls_enabled_no_policy",
+      "title": "RLS Enabled No Policy",
+      "level": "INFO",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Detects cases where row level security (RLS) has been enabled on a table but no RLS policies have been created.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy",
+      "count": 43,
+      "findings": [
+        {
+          "detail": "Table \\`public.ApplicantObservation\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "ApplicantObservation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.Application\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "Application",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.ApplicationAnswer\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "ApplicationAnswer",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.AuditLog\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "AuditLog",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.ClubClaim\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "ClubClaim",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.ClubTask\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "ClubTask",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.CorkboardClub\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "CorkboardClub",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.Evaluation\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "Evaluation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.Event\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "Event",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.EventAttendance\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "EventAttendance",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.Experience\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "Experience",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAnnotationRevision\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewAnnotationRevision",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewAvailabilityOverride\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewAvailabilityOverride",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewBooking\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewBooking",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewCollaboration\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewCollaboration",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewInvitation\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewInvitation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewMove\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewMove",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelAssignment\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewPanelAssignment",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelProposal\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewPanelProposal",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPanelScheduleVersion\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewPanelScheduleVersion",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewPresence\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewPresence",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRecord\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewRecord",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewResumeAnnotation\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewResumeAnnotation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewResumeDocument\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewResumeDocument",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoom\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewRoom",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewRoundParticipation\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewRoundParticipation",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.InterviewSlot\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "InterviewSlot",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.MeetingCheckInToken\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "MeetingCheckInToken",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.PlatformAdmin\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "PlatformAdmin",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.PlatformContent\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "PlatformContent",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.PlatformViewSession\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "PlatformViewSession",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.RecruitingRule\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "RecruitingRule",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.RecruitingRuleFlag\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "RecruitingRuleFlag",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.TaskAssignment\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "TaskAssignment",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.TaskFile\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "TaskFile",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.UserAvailability\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "UserAvailability",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.UserTutorial\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "UserTutorial",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingBallot\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingBallot",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingCandidate\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingCandidate",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingParticipant\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingParticipant",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingPass\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingPass",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingPassCandidate\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingPassCandidate",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Table \\`public.VotingSession\\` has RLS enabled, but no policies exist",
+          "metadata": {
+            "name": "VotingSession",
+            "type": "table",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        }
+      ]
+    },
+    {
+      "name": "function_search_path_mutable",
+      "title": "Function Search Path Mutable",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Detects functions where the search_path parameter is not set.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable",
+      "count": 41,
+      "findings": [
+        {
+          "detail": "Function \\`public.outclass_event_revision\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_event_revision",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_event_withdraw\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_event_withdraw",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_notify\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_notify",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_audit_immutable\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_audit_immutable",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_room_booking_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_room_booking_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_immutable_ballot\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_immutable_ballot",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.voting_display_snapshot_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "voting_display_snapshot_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_interview_scope_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_interview_scope_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_interview_immutable\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_interview_immutable",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_application_notification\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_application_notification",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_interview_submission_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_interview_submission_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_annotation_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_annotation_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_revoke_interview_grants\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_revoke_interview_grants",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_cancel_booking_panel\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_cancel_booking_panel",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_publication_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_publication_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_flyer_immutable\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_flyer_immutable",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_rsvp_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_rsvp_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_collaboration_scope\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_collaboration_scope",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_scholar_status_valid\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_scholar_status_valid",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_validate_changed_gpa\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_validate_changed_gpa",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_notification_email_outbox\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_notification_email_outbox",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_booking_notification\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_booking_notification",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_task_notification\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_task_notification",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_invitation_notification\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_invitation_notification",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_immutable_decision_letter\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_immutable_decision_letter",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_valid_availability_ranges\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_valid_availability_ranges",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_valid_availability\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_valid_availability",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_decision_state_revision\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_decision_state_revision",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_validate_panel_proposal\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_validate_panel_proposal",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_reject_panel_preview_write\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_reject_panel_preview_write",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_booking_panel_scope\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_booking_panel_scope",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_room_panel_change\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_room_panel_change",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_invalidate_room_approval\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_invalidate_room_approval",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_disabled_room_approval\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_disabled_room_approval",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_official_slot_panel_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_official_slot_panel_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_round_panel_revision_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_round_panel_revision_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_queue_flyer_deletion\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_queue_flyer_deletion",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_remove_replaced_flyer\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_remove_replaced_flyer",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_valid_availability_override\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_valid_availability_override",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_availability_override_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_availability_override_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        },
+        {
+          "detail": "Function \\`public.outclass_panel_publication_guard\\` has a role mutable search_path",
+          "metadata": {
+            "name": "outclass_panel_publication_guard",
+            "type": "function",
+            "schema": "public"
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        }
+      ]
+    },
+    {
+      "name": "anon_security_definer_function_executable",
+      "title": "Public Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Detects `SECURITY DEFINER` functions that are callable without signing in. Revoke `EXECUTE`, switch the function to `SECURITY INVOKER`, or move it out of your exposed API schema if it is not meant to be public.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Function `public.handle_new_user()` can be executed by the `anon` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/handle_new_user`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+          "metadata": {
+            "name": "handle_new_user",
+            "schema": "public",
+            "language": "plpgsql",
+            "arguments": "",
+            "security_definer": true
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        }
+      ]
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "title": "Signed-In Users Can Execute SECURITY DEFINER Function",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Detects `SECURITY DEFINER` functions that are callable by signed-in users. Revoke `EXECUTE`, switch the function to `SECURITY INVOKER`, or move it out of your exposed API schema if signed-in users should not call it.",
+      "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Function `public.handle_new_user()` can be executed by the `authenticated` role as a `SECURITY DEFINER` function via `/rest/v1/rpc/handle_new_user`. Revoke `EXECUTE` or switch it to `SECURITY INVOKER` if that is not intentional.",
+          "metadata": {
+            "name": "handle_new_user",
+            "schema": "public",
+            "language": "plpgsql",
+            "arguments": "",
+            "security_definer": true
+          },
+          "observed_at": "2026-10-18T23:52:10.862Z"
+        }
+      ]
+    },
+    {
+      "name": "auth_leaked_password_protection",
+      "title": "Leaked Password Protection Disabled",
+      "level": "WARN",
+      "facing": "EXTERNAL",
+      "categories": [
+        "SECURITY"
+      ],
+      "description": "Leaked password protection is currently disabled.",
+      "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection",
+      "count": 1,
+      "findings": [
+        {
+          "detail": "Supabase Auth prevents the use of compromised passwords by checking against HaveIBeenPwned.org. Enable this feature to enhance security.",
+          "metadata": {
+            "type": "auth",
+            "entity": "Auth"
+          }
+        }
+      ]
+    }
+  ]
+}

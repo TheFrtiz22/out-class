@@ -1,0 +1,5060 @@
+{
+  "query": {
+    "metric": "vercel.speed_insights.lcp_ms",
+    "aggregation": "p75",
+    "groupBy": [
+      "route"
+    ],
+    "filter": "environment:production",
+    "startTime": "2026-10-11T20:00:00.000Z",
+    "endTime": "2026-10-19T00:00:00.000Z",
+    "granularity": {
+      "hours": 4
+    },
+    "orderBy": "count",
+    "orderDirection": "desc"
+  },
+  "summary": [
+    {
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4422
+    },
+    {
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 7668
+    },
+    {
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 3352
+    },
+    {
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3788
+    },
+    {
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 8456
+    },
+    {
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 2336
+    },
+    {
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 2960
+    },
+    {
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 14924
+    },
+    {
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": 3564
+    },
+    {
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": 8208
+    },
+    {
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": 11276
+    },
+    {
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": 1480
+    },
+    {
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": 8280
+    },
+    {
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 2822
+    },
+    {
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": 13912
+    },
+    {
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": 3240
+    },
+    {
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": 2648
+    },
+    {
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": 1432
+    },
+    {
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": 3936
+    },
+    {
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": 2596
+    },
+    {
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": 1976
+    },
+    {
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": 3712
+    },
+    {
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": 2088
+    }
+  ],
+  "data": [
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 2840
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2278
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 361
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 2000
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 2592
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": 1432
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": 3936
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-11T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3424
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 8044
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 1672
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 6576
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 5320
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 4652232
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 1852
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 4728
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": 4692
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": 1480
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 2064
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": 2596
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 12740
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 9012
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3360
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 1832
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": 267744
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4372
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 20608
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 5108
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 3316
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 3560
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 58072
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": 11276
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": 3100
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": 7272
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": 1976
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 1644
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4374
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 49376
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-12T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3620
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2348
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3364
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 3792
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 692
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": 2424
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": 3712
+    },
+    {
+      "timestamp": "2026-10-13T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 11064
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 4812
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 5300
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3024
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 14392
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 14924
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": 12728
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": 6080
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4344
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 9856
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3068
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": 2648
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 10736
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 6269
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 3464
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 25300
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 20936
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": 13072
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-13T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 5086
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 576
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4236
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2552
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 3508
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 2284
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 3120
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 6356
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 3708
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 9660
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 7800
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 5752
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 6308
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": 5656
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": 2616
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3641
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 6372
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3088
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 1720
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 1813
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-14T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 8108
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2320
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3451
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 33584
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4596
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 8780
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3236
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 2336
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": 191152
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": 2088
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4180
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 8891
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 640
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": 3240
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4040
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 9384
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 1172
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 2010
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 3308
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 2632
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-15T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3092
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2091
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 288
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 3701
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4559
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2908
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 2260
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 1276
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 1892
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3824
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 6072
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 400
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 2568
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 2332
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 1324
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 7204
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3576
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 1724
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-16T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4038
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 5496
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 453
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 5204
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 1076
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": 2388
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4316
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 7496
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4293
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2374
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": 2822
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3562
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 4281
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 3648
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": 622
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 2936
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 6948
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3428
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 692
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 2232
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 2787
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": 4612
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-17T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 1837
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T00:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 6436
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 2708
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 2084
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": 3648
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T04:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T08:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 844
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T12:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 4072
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 2472
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 552
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": 3788
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": 3488
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": 596
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": 3108
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": 8280
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": 59824
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T16:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/",
+      "vercel_speed_insights_lcp_ms_p75": 3820
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/club/[clubId]/workspace",
+      "vercel_speed_insights_lcp_ms_p75": 11452
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/login",
+      "vercel_speed_insights_lcp_ms_p75": 436
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/platform",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/about",
+      "vercel_speed_insights_lcp_ms_p75": 2788
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/platform/login",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/uva",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/signup",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/platform/clubs",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/forgot-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/applications/[applicationId]/decision",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/reset-password",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/club/[clubId]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/request-school",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/platform/[section]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/invitations/[id]",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/settings/interviews",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/Beginning",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/corkboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/dashboard",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/settings",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/settings/availability",
+      "vercel_speed_insights_lcp_ms_p75": null
+    },
+    {
+      "timestamp": "2026-10-18T20:00:00.000Z",
+      "route": "/voting/[sessionId]/join",
+      "vercel_speed_insights_lcp_ms_p75": null
+    }
+  ],
+  "orderBy": "count",
+  "orderDirection": "desc"
+}

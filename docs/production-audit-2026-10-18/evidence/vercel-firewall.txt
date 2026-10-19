@@ -1,0 +1,14 @@
+Vercel CLI 64.5.0
+Retrieving project…
+Fetching firewall status for out-class
+
+  Firewall        Enabled
+  Bypass          0 IPs
+  Mitigations     Active
+  Attack Mode     Off
+  IP Blocks       0
+  Rules           2 active, 0 inactive (2 total)
+  Bot Protection  Off
+  AI Bots         Allow
+  OWASP           Off
+
