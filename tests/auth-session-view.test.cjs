@@ -35,3 +35,27 @@ test('migrated invoker session view preserves base ACLs, RLS and locking without
  await db.exec('ROLLBACK;RESET ROLE');
  assert.deepEqual((await db.query('SELECT * FROM auth.sessions')).rows,before);
 });
+
+test('provider prerequisite rejects a warning-only GRANT and verifies owner-issued delegation',async t=>{
+ const db=new PGlite();t.after(()=>db.close());
+ // PGlite reserves postgres as its bootstrap superuser; use a non-superuser
+ // recipient for the same operator ACL semantics exercised on hosted Postgres.
+ await db.exec(`CREATE ROLE fixture_provider;CREATE ROLE fixture_operator;CREATE ROLE fixture_postgres;
+ CREATE SCHEMA auth;CREATE TABLE auth.sessions(updated_at timestamptz);
+ INSERT INTO auth.sessions VALUES('2026-10-19T12:00:00Z');
+ ALTER TABLE auth.sessions OWNER TO fixture_provider;
+ GRANT USAGE ON SCHEMA auth TO fixture_provider,fixture_operator,fixture_postgres;
+ GRANT UPDATE(updated_at) ON auth.sessions TO fixture_postgres,fixture_operator;
+ SET ROLE fixture_operator;`);
+ const sql=fs.readFileSync('docs/production-audit-2026-10-18/rollout-blockers/provider-lock-grant.sql','utf8').replace(/\bpostgres\b/g,'fixture_postgres');
+ await assert.rejects(db.exec(sql),/Provider grant did not take effect/);
+ await db.exec('ROLLBACK;RESET ROLE');
+ assert.equal((await db.query("SELECT has_column_privilege('fixture_postgres','auth.sessions','updated_at','UPDATE WITH GRANT OPTION') AS allowed")).rows[0].allowed,false);
+ await db.exec('SET ROLE fixture_provider');
+ const before=(await db.query('SELECT * FROM auth.sessions')).rows;
+ await db.exec(sql);
+ assert.equal((await db.query("SELECT has_column_privilege('fixture_postgres','auth.sessions','updated_at','UPDATE WITH GRANT OPTION') AS allowed")).rows[0].allowed,true);
+ assert.deepEqual((await db.query('SELECT * FROM auth.sessions')).rows,before);
+ await db.exec('RESET ROLE;SET ROLE fixture_postgres;GRANT UPDATE(updated_at) ON auth.sessions TO fixture_operator');
+ assert.equal((await db.query("SELECT has_column_privilege('fixture_operator','auth.sessions','updated_at','UPDATE WITH GRANT OPTION') AS allowed")).rows[0].allowed,false);
+});

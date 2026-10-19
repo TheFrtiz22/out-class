@@ -1,0 +1,10 @@
+✔ migrated invoker session view preserves base ACLs, RLS and locking without Auth schema usage (553.370708ms)
+✔ provider prerequisite rejects a warning-only GRANT and verifies owner-issued delegation (243.578917ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 884.083458

@@ -1,0 +1,28 @@
+{
+  "observed_date": "2026-10-19",
+  "project": "htlgjluegmdwfjkzzwic",
+  "read_only": true,
+  "readiness": {
+    "view_migrated": true,
+    "runtime_auth_usage": false,
+    "auth_owner_settable": false,
+    "pending_app_invites": 0,
+    "auth_owner_inherited": false,
+    "runtime_session_read": false,
+    "storage_owner_settable": false,
+    "pending_without_binding": 0,
+    "storage_owner_inherited": false,
+    "operator_lock_grant_delegable": false,
+    "auth_policy_management_delegated": true,
+    "storage_policy_management_delegated": true
+  },
+  "direct_operator_confirmation": {
+    "current_user": "postgres",
+    "lock_grant_delegable": false
+  },
+  "user_reported_asserted_provider_sql_error": {
+    "code": "P0001",
+    "message": "Provider grant did not take effect: execute as auth.sessions owner or an operator with UPDATE(updated_at) WITH GRANT OPTION"
+  },
+  "production_mutations_this_followup": false
+}

@@ -43,7 +43,7 @@
       "limitation": "Low-volume, unauthenticated smoke only"
     },
     "secret_scan": {
-      "files_scanned": 242,
+      "files_scanned": 180,
       "secret_findings": 0,
       "files": [],
       "scope": "Changed/untracked source, all audit evidence, retained local Next client static output. No matched secret bytes printed."
@@ -100,7 +100,7 @@
     "tests/admin-elevation.test.cjs": "b1f3d7ef00f7a03a4ee48a7e7b1fbdc37d2988bafd09be22db3cf57f3ecaf819",
     "tests/applicant-interview-navigation.test.cjs": "d37e9c4f419ebe41eb717963b7499410eb625a11e3c8b9ed68e806cf462dd2b2",
     "tests/applicant-review-navigation-browser.test.cjs": "c70430e066b2614e4274fed1cf1d3d62031a072e7caa8ce74cc957f85736a0a8",
-    "tests/auth-session-view.test.cjs": "62b90f474a29207f862b4deba4c0c489aaf553da3cfd7efb8f7d3709dbedc647",
+    "tests/auth-session-view.test.cjs": "a1fa8a656ca6def413b7de1902babd554527a3ffba7fc43a6e5ee2498d363e24",
     "tests/auth-session.test.cjs": "2a6f5515bb86a221c0022bc7127ddc43333d1c79a9dca09493d1928e3a0a4501",
     "tests/authorization.test.cjs": "bae132f7b6b230998786b852ab2b1ec30288936945de63586f2d806389373ed5",
     "tests/club-assets.test.cjs": "a196b11d2cd56054aab58a5470ebfc4079bda0ac6d57058b92490b3183691240",
@@ -130,8 +130,8 @@
     "utils/prisma.ts": "5dcd1ea5553554324ec896a4de69d6367a1d46428530c7147860f1dca09cfc87"
   },
   "retained_evidence_sha256": {
-    "PROVIDER-REQUEST.md": "3fb6ed0e781b34f3d81649ae1b6fdf3f6af20e531d818a50624abfa06d507990",
-    "README.md": "bdfadead8fb6427ae544fc9b6b08d1a7a13717b0546a59a9e6dee526c9c178c1",
+    "PROVIDER-REQUEST.md": "309a327d09cb3b07bc0586a841fd5dbd2fc18bb660d4da7d27e7ad5564c4059b",
+    "README.md": "f3dcd39450c1464c017b4e457826f29256a1c1f8560652a37e396b2052a583a0",
     "atomic-grant-guard.txt": "f635a8db510667c829dab7ae433955f1fd9bf063df9a6c2b6db3a96d36330a97",
     "build.txt": "21666006ff5dd01ad313db6b53c996f1c9602f001b39c52352dfaf6fafe32a82",
     "canary-smoke.json": "082f9b084e8b3b35f9edbd5092e683814e7fce04867760d34e74f943d374c31e",
@@ -158,16 +158,34 @@
     "production-smoke.json": "88ad2e2f117fa40a6c91ef1ccd7ebfcecd8628651bd9fbe07256d3ebd86094ee",
     "production-verification.json": "c6fcb973172059459e4989c3f9a2c724999a8559d5b60e8cbb427ad2fe85929b",
     "promotion.txt": "fa185dd91bcf2adcae2619560c5eff166938948271383065caba08b4bc5f89a3",
-    "provider-lock-grant.sql": "28cf732f34303f52e7bb54826862febe4264e4e2546b19281c03c26ce28b11a1",
+    "provider-grant-recheck.json": "26398e476552f0748e2830f079b89dd8916d47edba971022649b0688e90c2f57",
+    "provider-lock-grant.sql": "8510a4c4b397aa8f3948bd1dac3723b34a3537b7af45b5334957aa22d1dd64f7",
+    "provider-prerequisite-tests.txt": "f070de657436a77d6665981c25863cb9d6b5dfc8b8bcf611fad647c15803d08f",
     "publication-native.txt": "2ca453f91a86dc6ae224151ee0c4927aa877a0d512506d329eb0c8867ca649a7",
     "react-review.json": "7a057dc654b78681446a79b0dca36065da1618eed0bc12b79f04a0c134b35b31",
     "role-rollback.sql": "eecfa28e44529c2072adabebbcf2fbc80907a0bff75e7c75fc136f7ae7213c45",
     "role-setup.sql": "d912ead8bd677c61fb5e23797623b6cb14c5b633928b1d865e5a9a460e9ba6b0",
     "runtime-preflight.txt": "5990d10a47ebb52bd5ffd0a57a53226aa5c7bca5141a8a003781b50823ed8ec3",
-    "secret-scan.json": "b7dbb1084c90012a4fda400970a513e3bceeb7b71080a5cf7adcc3c52a6879af",
+    "secret-scan.json": "ecbb8fa1714238cb33835026fd38c7e80a87cd335c9d0928fe637730ee14b311",
     "session-view-results.json": "113a4824221ce2c5a70d136c9ba2779b5d0c2f75891dbe1cf5ce06ac47ed23f2",
     "tests.txt": "d685b0aa8c4123067c7bc73f2f915fddd04e2fd3074058716cdba063bbb49755",
     "transactions-native.txt": "84c2ad7a0afe36703c0b97c0d605c15986d0b69f801fdeb64b9263a2f87116e1",
     "typecheck.txt": "7da6452aa37538bc1cec2c414adc9ac2f8dfdd59afdd7e07fce582e9b6a3ac4e"
+  },
+  "provider_grant_followup": {
+    "observed_date": "2026-10-19",
+    "baseline": "30c8a40",
+    "live_connector_grant_option": false,
+    "direct_operator_grant_option": false,
+    "user_asserted_sql_error": "P0001: Provider grant did not take effect",
+    "new_focused_tests": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    "deployed_application_changed": false,
+    "production_mutation_attempted": false,
+    "remaining_action": "Provider-approved owner must execute complete provider-lock-grant.sql and pass its postcondition",
+    "fixture_note": "PGlite postgres is permanently the bootstrap superuser; test substitutes a named non-superuser recipient."
   }
 }
