@@ -63,3 +63,17 @@
 .ir-slot-editor .ir-field, .ir-slot-editor .grid { min-width:0; max-width:100%; }
 .ir-slot-editor select { min-width:0; width:100%; max-width:100%; }
 @media (max-width:639px) { .ir-schedule-row { grid-template-columns:minmax(0,1fr) auto; } .ir-schedule-row > :nth-child(2) { grid-row:2; grid-column:1 / -1; } .ir-manager button { min-height:44px; } }
+
+/* Date disclosure is presentation only; slot editors and the draft remain mounted. */
+.ir-panel-day { border-bottom: 1px solid var(--border); }
+.ir-manager .ir-panel-day-trigger { display:flex; align-items:center; flex-wrap:wrap; gap:8px; width:100%; min-height:48px; padding:12px 0; text-align:left; font-size:14px; font-weight:500; }
+.ir-panel-day-trigger:hover { color:var(--primary); }
+.ir-panel-day-trigger:focus-visible { outline:2px solid var(--ring); outline-offset:3px; border-radius:4px; }
+.ir-panel-day-summary { margin-left:auto; font-size:12px; font-weight:400; color:var(--muted-foreground); }
+.ir-panel-day-chevron { flex-shrink:0; transform:rotate(-90deg); transition:transform 140ms ease; }
+.ir-panel-day-chevron.is-open { transform:rotate(0); }
+.ir-panel-day-content { padding:4px 0 16px; }
+.ir-panel-day-content > div + div { margin-top:16px; }
+.ir-panel-day-content[hidden] { display:none; }
+@media (max-width:639px) { .ir-panel-day-summary { flex-basis:100%; margin-left:24px; } }
+@media (prefers-reduced-motion:reduce) { .ir-panel-day-chevron { transition:none; } }
