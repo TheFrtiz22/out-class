@@ -5,7 +5,7 @@ import { InteractiveFooterWordmark } from "@/components/landing/interactive-foot
 import type { LandingPerspective } from "./journey-content"
 
 /** One shared public footer; account workspaces retain their own layouts. */
-export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPerspectiveChange, contact, children, legalNote = "OutClass is an independent platform." }: {
+export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPerspectiveChange, contact, children, legalNote = "OutClass is operated by OutClassPlatforms LLC and is independent from universities." }: {
   homeHref?: string
   overviewHref?: string
   onPerspectiveChange?: (perspective: LandingPerspective) => void
@@ -43,7 +43,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
         </nav>
         <InteractiveFooterWordmark />
         <div className="oc-footer-bottom">
-          <small>© {new Date().getFullYear()} OutClass</small>
+          <small>© {new Date().getFullYear()} OutClassPlatforms LLC · OutClass</small>
           <p>{legalNote}</p>
           <FooterBackToTop />
         </div>
