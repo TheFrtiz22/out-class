@@ -63,7 +63,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   const assigned=f.state().bookingFlow.panels[f.scope.roundId].draft.document.assignments[0],target=f.state().memberships.find(m=>m.id===assigned.memberId),student=f.state().students.find(s=>s.id===target.userId),name=student.profile.firstName+' '+student.profile.lastName
   await editor.getByRole('button',{name:`Remove ${name}`,exact:true}).click();await editor.getByRole('button',{name:'Done',exact:true}).click()
   f.mutate(s=>s.bookingFlow.availability[`${f.scope.roundId}:${target.id}`]={confirmed:false,state:'unavailable'})
-  await page.reload();await panel.getByText('Resolve staffing issues',{exact:true}).click();await page.getByRole('region',{name:'Staffing issues'}).getByRole('button').first().click()
+  await page.reload();await panel.getByRole('button',{name:'Review slots',exact:true}).click();await page.waitForFunction(()=>document.activeElement?.classList.contains('ir-schedule-row'));await page.keyboard.press('Enter')
   await editor.getByLabel('Add interviewer',{exact:true}).selectOption(target.id)
   const override=page.getByRole('dialog',{name:'Assign despite availability?',exact:true});await override.getByRole('button',{name:'Assign anyway',exact:true}).click();await override.waitFor({state:'hidden'})
   assert.ok(f.state().bookingFlow.overrides.some(o=>o.memberId===target.id&&!o.revokedAt));await editor.getByRole('button',{name:'Done',exact:true}).click()
