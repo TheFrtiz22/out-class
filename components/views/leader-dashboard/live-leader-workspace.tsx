@@ -328,6 +328,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   app.id === active.id
                     ? {
                         ...app,
+                        canEvaluate: false,
                         evaluations: [
                           ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
                           result.evaluation,
