@@ -70,3 +70,13 @@ test('published session access survives legacy room-attestation edits but actual
  const notice=(await h.snapshot()).UserNotification.find(n=>n.userId===h.ids.panel&&n.eventKey.startsWith('panel-schedule:'))
  assert.equal(await h.load('utils/official-panel-schedule.ts').currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
 })
+
+test('availability rechecks preserve assignments and never waive concurrent confirmation/publication guards',async t=>{
+ const h=await fixture(t);let draft=(await h.generate()).proposal;const assignments=structuredClone(draft.document.assignments),official=await h.snapshot();
+ ok(await h.publish.revalidatePanelDraft(h.input(draft)));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(draft.stale,false);assert.deepEqual(draft.document.assignments,assignments);assert.deepEqual(await h.snapshot(),official);
+ await h.db.query('UPDATE "PipelineRound" SET configuration=COALESCE(configuration,\'{}\'::jsonb)||\'{"syntheticRecheck":1}\'::jsonb WHERE id=$1',[h.ids.round]);
+ assert.equal((await h.api.getPanelProposalWorkspace(h.scope)).proposal.stale,true);const failedReview=await h.review();assert.equal(failedReview.ok,false);assert.match(failedReview.error,/changed|Revalidate/);
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;ok(await h.publish.revalidatePanelDraft(h.input(draft)));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(draft.stale,false);assert.deepEqual(draft.document.assignments,assignments);const review=ok(await h.review());
+ await h.db.query('UPDATE "PipelineRound" SET configuration=configuration||\'{"syntheticRecheck":2}\'::jsonb WHERE id=$1',[h.ids.round]);const afterChange=await h.snapshot();const failedPublication=await h.confirm(review);assert.equal(failedPublication.ok,false);assert.match(failedPublication.error,/stale|Revalidate/);assert.deepEqual(await h.snapshot(),afterChange);
+ draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;await h.db.query('UPDATE "InterviewSlot" SET "endTime"="endTime"+interval \'5 minutes\' WHERE id=$1',[h.slotIds[0]]);const beforeFailure=await h.snapshot(),failedCheck=await h.publish.revalidatePanelDraft(h.input(draft));assert.equal(failedCheck.ok,false);assert.match(failedCheck.error,/Session times|configuration changed/);const retained=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(retained.revision,draft.revision);assert.deepEqual(retained.document.assignments,assignments);assert.deepEqual(await h.snapshot(),beforeFailure);
+})
