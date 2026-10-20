@@ -60,3 +60,7 @@ test('stable round history permits rename and rename-back without rewriting eval
 test('round rename-back without evaluation history remains valid',async()=>{
  const h=harness();for(const[version,name]of [[0,'Panel'],[1,'Interview']])await h.api.savePipelineSettings({clubId,version,rounds:[round(r1,'Applied','APPLICATION_REVIEW'),round(r2,name,'INTERVIEW')]});assert.equal(h.state.rounds[1].name,'Interview');assert.equal(h.state.renamedReviews,undefined);
 });
+
+test('kit-only and booking-only rounds cannot change type or lose saved setup on archive',async()=>{
+ for(const data of [{interviewKit:[{id:q1,prompt:'Saved kit'}]},{bookingPublishedAt:new Date()}]){const h=harness();Object.assign(h.state.rounds[1],data,{_count:{applications:0,interviewRooms:0,interviewRecords:0,votingSessions:0,scheduledBookings:0}});await assert.rejects(h.api.savePipelineSettings({clubId,version:0,rounds:[round(r1,'Applied','APPLICATION_REVIEW'),round(r2,'Interview','CUSTOM')]}),/protected/);await h.api.savePipelineSettings({clubId,version:0,rounds:[round(r1,'Applied','APPLICATION_REVIEW')]});assert.ok(h.state.rounds.find(r=>r.id===r2).archivedAt);}
+});

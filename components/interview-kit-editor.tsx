@@ -222,6 +222,7 @@ export function ClubInterviewKitSettings({ clubId, initialRoundId }: { clubId: s
       current = false;
     };
   }, [clubId, retry, accessKey]);
+  useEffect(() => { const changed = () => setRetry(v => v + 1); window.addEventListener("outclass:interview-rounds-changed", changed); return () => window.removeEventListener("outclass:interview-rounds-changed", changed); }, []);
   if (error)
     return (
       <div role="alert">

@@ -8,6 +8,7 @@ import { CalendarDays, ListChecks } from "@/components/icons"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { ClubInterviewKitSettings } from "@/components/interview-kit-editor"
 import { RoomManager } from "@/components/interviews/room-manager"
+import { interviewSetupHref } from "@/lib/interview-setup"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { interviewCapabilities } from "@/lib/interview-access"
 import { InterviewAccessSetup } from "@/components/interview-access-setup"
@@ -25,7 +26,7 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
   const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canManageGrants ? ["access"] : [])]
   const requested = initialTab === "availability" ? "schedule" : initialTab
   const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits")
-  return <div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={`/club/${encodeURIComponent(clubId)}/workspace?section=recruitment&tool=interviews&interviewTab=schedule`} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
+  return <div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
     if (value !== tab && canLeaveWorkspace()) {
       setTab(value)
       if (window.location && window.history) {
@@ -38,6 +39,6 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
     <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
     {canSchedule && !settingsOnly && <TabsContent value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} /></TabsContent>}
-    {canManageGrants && <TabsContent value="access"><InterviewAccessSetup clubId={clubId} /></TabsContent>}
+    {canManageGrants && <TabsContent value="access"><InterviewAccessSetup clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>}
   </Tabs></div>
 }

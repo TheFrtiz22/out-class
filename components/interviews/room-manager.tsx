@@ -36,6 +36,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
   const [create, setCreate] = useState(false), [source, setSource] = useState<InterviewRoom>(), [busy, setBusy] = useState(""), [notice, setNotice] = useState("")
   const [panelVisited, setPanelVisited] = useState(false), [autoStart, setAutoStart] = useState(false), [autoRequest, setAutoRequest] = useState(0), [autoFillPublished, setAutoFillPublished] = useState(false), [selectedSession, setSelectedSession] = useState("")
   const [coverage, setCoverage] = useState<Awaited<ReturnType<typeof getRoundStaffingCoverage>> | null>(null)
+  useEffect(() => { const changed = () => setRefresh(v => v + 1); window.addEventListener("outclass:interview-rounds-changed", changed); return () => window.removeEventListener("outclass:interview-rounds-changed", changed); }, []);
   const proposalGenerated = useCallback(() => { setTab("review"); const next = new URL(window.location.href); next.searchParams.set("schedule", "review"); window.history.replaceState(null, "", next.pathname + next.search) }, [])
   function url(section: string, roundId = round, filterDate = date, selectedWeek = week, sessionId = selectedSession) {
     const next = new URL(window.location.href)
@@ -53,7 +54,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
     if (!demo.ready) return
     let active = true
     setLoading(true)
-    getRoomWorkspace(clubId).then(value => { if (active) { setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || /interview/i.test(r.name) || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (active) setError("Could not load interview scheduling.") }).finally(() => { if (active) setLoading(false) })
+    getRoomWorkspace(clubId).then(value => { if (active) { setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (active) setError("Could not load interview scheduling.") }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [clubId, refresh, demo.ready])
   useEffect(() => {

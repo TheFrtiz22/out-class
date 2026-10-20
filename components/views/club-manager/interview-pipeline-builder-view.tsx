@@ -3,15 +3,11 @@ import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
 import { NativeSelect } from "@/components/ui/native-select"
-import { getPipelineSettings } from "@/lib/workspace-read";
+import { getPipelineSettings, savePipelineSettings, getPipelineInterviewStatus } from "@/lib/workspace-api";
+import { PipelineInterviewStatus } from "@/components/interviews/pipeline-interview-status";
+import { INTERVIEW_ROUNDS_CHANGED, type InterviewSetupStatus } from "@/lib/interview-round-workflow";
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { interviewSetupHref } from "@/lib/interview-setup";
-import { handleClubLink } from "@/lib/workspace-navigation";
-import { ArrowUp, ArrowDown, Plus, Trash2, ArrowUpRight } from "@/components/icons";
-import {
-  savePipelineSettings,
-} from "@/actions/club-settings";
+import { ArrowUp, ArrowDown, Plus, Trash2 } from "@/components/icons";
 import {
   pipelineSettingsSchema,
   roundConfigurationSchema,
@@ -50,10 +46,12 @@ export function InterviewPipelineBuilderView({
       { id: string; name: string; anonymousReview: boolean }[]
     >([]),
     working = useRef(false);
+  const [setup, setSetup] = useState<InterviewSetupStatus[]>([]), [setupError, setSetupError] = useState(false), [setupRetry, setSetupRetry] = useState(0);
+  useEffect(() => { if (!demo.ready || !clubId) return; let active = true; setSetupError(false); setSetup([]); getPipelineInterviewStatus(clubId).then(value => { if (active) setSetup(value); }).catch(() => { if (active) setSetupError(true); }); return () => { active = false; }; }, [clubId, demo.ready, demo.isDemoEnabled, retry, setupRetry]);
   const snapshot = JSON.stringify(rounds),
     dirty = loaded && snapshot !== baseline;
   useEffect(() => {
-    if (!demo.ready || demo.isDemoEnabled || !clubId) return;
+    if (!demo.ready || !clubId) return;
     let current = true;
     setLoaded(false);
     setError("");
@@ -123,6 +121,7 @@ export function InterviewPipelineBuilderView({
       setBaseline(snapshot);
       setNotice("Recruiting pipeline saved.");
       setRetry((n) => n + 1);
+      window.dispatchEvent(new Event(INTERVIEW_ROUNDS_CHANGED));
       onSaved?.();
     } catch (e) {
       setError(
@@ -140,13 +139,6 @@ export function InterviewPipelineBuilderView({
       <p className="text-sm text-muted-foreground">
         Open a club workspace with recruiting-management access to configure its
         rounds.
-      </p>
-    );
-  if (demo.isDemoEnabled)
-    return (
-      <p className="text-sm text-muted-foreground">
-        Recruiting configuration is saved to your club outside Demo Mode. Exit
-        Demo Mode to edit the live pipeline.
       </p>
     );
   return (
@@ -187,6 +179,7 @@ export function InterviewPipelineBuilderView({
           {notice}
         </p>
       )}
+      {setupError && <p role="alert">Could not check interview setup. <Button variant="ghost" size="sm" onClick={() => setSetupRetry(v => v + 1)}>Retry setup status</Button></p>}
       {!loaded ? (
         !error && <p role="status">Loading pipeline…</p>
       ) : (
@@ -302,19 +295,7 @@ export function InterviewPipelineBuilderView({
                           }
                         />
                       </label>
-                      <Link
-                        href={interviewSetupHref(clubId, r.id)}
-                        className="oc-profile-link"
-                        onClick={event => {
-                          if (dirty || busy || !savedRounds.some(saved => saved.id === r.id)) {
-                            event.preventDefault();
-                            setError("Save your pipeline changes before configuring this round. Your edits are still here.");
-                          } else handleClubLink(event, interviewSetupHref(clubId, r.id));
-                        }}
-                      >
-                        Configure this round’s kit, rooms, and interviewer panel
-                        <ArrowUpRight size={14} className="inline-block align-text-bottom" />
-                      </Link>
+                      {savedRounds.some(saved => saved.id === r.id) ? <PipelineInterviewStatus clubId={clubId} roundId={r.id} status={setup.find(item => item.roundId === r.id)} disabled={dirty || busy} /> : <p className="text-xs text-muted-foreground">Save this round to set up interviews.</p>}
                     </>
                   )}
                 </fieldset>
