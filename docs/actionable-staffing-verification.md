@@ -17,3 +17,6 @@ The standalone published-to-proposed panel was already removed by the preceding 
 - Type checking and lint pass (26 existing warnings, zero errors). Production build and final protected CI/hosted results are recorded in the PR and private release receipt.
 
 No migration, schema, dependency, credential or infrastructure change. Live and Demo share the component; no real applicant or club writes for testing. Physical touchscreen and authenticated hosted restricted-role testing are not claimed.
+## Mobile focus follow-up
+
+Hosted acceptance confirmed the new summary, failed and successful rechecks, separate conflicts, keyboard review, comparison and refresh persistence. It also exposed native focus scrolling partly covering the focused slot with the fixed mobile navigation. Review/revalidation now focuses without the browser's default scroll and explicitly centers the row, avoiding fixed headers/footers without changing assignments or validation. A browser regression adds an 80px fixed navigation bar at 390px width and 520px height and asserts the focused row is entirely above it. The existing date/focus regression remains in use. No smooth animation is introduced, and reduced-motion behavior is preserved.
