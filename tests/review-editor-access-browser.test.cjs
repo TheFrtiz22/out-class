@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),os=require('node:os'),path=require('node:path'),cp=require('node:child_process');
 const {chromium}=require('playwright'),{bundle}=require('./helpers/browser-bundle.cjs');
-test('browser: unassigned reviews have no editor or draft requests; assigned reviews save on desktop and remain usable on mobile',async()=>{
+test('browser: unassigned reviews have no editor or draft requests; assigned reviews save on desktop/mobile and become read-only immediately after finalization',async()=>{
  const club='00000000-0000-4000-8000-000000000001',app='00000000-0000-4000-8000-000000000002',round='00000000-0000-4000-8000-000000000003';
  const pipeline={rounds:[{id:round,name:'Interview',order:0,type:'INTERVIEW'},{id:'next-round',name:'Next round',order:1,type:'CUSTOM'}],applications:[{id:app,studentId:'synthetic-student',roundId:round,status:'IN_REVIEW',student:{email:'synthetic@demo.invalid',studentProfile:{firstName:'Synthetic',lastName:'Applicant',major:'Economics',experiences:[]}},evaluations:[],answers:[],bookings:[]}]};
  const mocks={
@@ -8,7 +8,7 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
   '@/contexts/auth-context':`exports.useAuth=()=>({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
   '@/contexts/demo-context':`exports.useDemoMode=()=>({isDemoEnabled:false,ready:true});`,
   '@/lib/application-state':`exports.useApplicationState=()=>({leaderFocus:null,clearLeaderFocus(){}});`,
-  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned');return p};`,
+  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned');return p};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');return r.json()};`,
   '@/actions/editor-drafts':`exports.getEditorDraft=async()=>{const r=await fetch('/draft');return r.json()};exports.saveEditorDraft=async input=>{const r=await fetch('/draft',{method:'POST',body:JSON.stringify(input)});return r.json()};`,
   '@/components/applicant-intelligence':`exports.ApplicantDisplayPanel=()=>null;`,
   '@/components/recruitment-attendance-summary':`exports.RecruitmentAttendanceSummary=()=>null;`,
@@ -20,8 +20,9 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
  };
  const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main><LiveLeaderWorkspace scoped/></main>);`,mocks);
  const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-review-editor-'));cp.execFileSync(process.execPath,[path.join(__dirname,'helpers/interview-browser-css.cjs'),path.join(tmp,'style.css')]);const css=fs.readFileSync(path.join(tmp,'style.css'),'utf8');
- const writes=[];let reads=0;
+ const writes=[],evaluations=[];let reads=0;
  const server=http.createServer((req,res)=>{
+  if(req.url==='/evaluation'){let body='';req.on('data',b=>body+=b);req.on('end',()=>{const input=JSON.parse(body);evaluations.push(input);res.setHeader('content-type','application/json');res.end(JSON.stringify({success:true,evaluation:{id:'final-evaluation',interviewerId:'synthetic-member',roundId:round,round:'Interview',score:input.score,notes:null,submittedAt:null}}))});return;}
   if(req.url==='/draft'){res.setHeader('content-type','application/json');if(req.method==='POST'){let body='';req.on('data',b=>body+=b);req.on('end',()=>{writes.push(JSON.parse(body));res.end(JSON.stringify({revision:writes.at(-1).revision+1}))});}else{reads++;res.end('null')}return;}
   res.setHeader('content-type',req.url==='/fixture.js'?'text/javascript':req.url==='/style.css'?'text/css':'text/html');res.end(req.url==='/fixture.js'?js:req.url==='/style.css'?css:'<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="root"></div><script src="/fixture.js"></script>');
  });await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
@@ -31,6 +32,11 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
   await page.getByRole('combobox',{name:'Round',exact:true}).selectOption('next-round');assert.equal(await page.getByRole('button',{name:'Move round',exact:true}).isEnabled(),true);await page.getByRole('button',{name:'Close',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});assert.equal(await page.getByRole('dialog').count(),0);
   await page.goto(base+'?assigned=1');const loaded=page.waitForResponse(r=>r.url().endsWith('/draft')&&r.request().method()==='GET');await page.getByRole('button',{name:/Synthetic Applicant.*Open applicant/}).click();const score=page.getByRole('spinbutton',{name:'Score (1–10)'});await score.waitFor();await loaded;
   const saved=page.waitForResponse(r=>r.url().endsWith('/draft')&&r.request().method()==='POST'&&JSON.parse(r.request().postData()).content?.notes==='Synthetic browser draft');await score.fill('8');await page.getByRole('textbox',{name:'Overall evaluation feedback',exact:true}).fill('Synthetic browser draft');await page.getByText('Your review · Interview',{exact:true}).click();await saved;assert.ok(writes.length>=1);assert.equal(writes.at(-1).scope.resourceId,app+':'+round);assert.equal(writes.at(-1).content.notes,'Synthetic browser draft');
-  await page.setViewportSize({width:390,height:844});assert.ok(await score.isVisible());assert.equal(await score.inputValue(),'8');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
+  await page.setViewportSize({width:390,height:844});assert.ok(await score.isVisible());assert.equal(await score.inputValue(),'8');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.clock.install();await page.getByRole('button',{name:'Finalize evaluation',exact:true}).click();await page.getByText('Evaluation saved.',{exact:true}).waitFor();
+  assert.equal(evaluations.length,1);assert.equal(evaluations[0].applicationId,app);assert.equal(evaluations[0].score,8);
+  assert.equal(await page.getByRole('spinbutton',{name:'Score (1–10)'}).count(),0);assert.equal(await page.getByRole('textbox',{name:'Overall evaluation feedback',exact:true}).count(),0);assert.equal(await page.getByRole('button',{name:'Finalize evaluation',exact:true}).count(),0);
+  await page.getByText(/Submitted evaluations are read-only/).waitFor();assert.equal(await page.getByRole('button',{name:'Accepted',exact:true}).isEnabled(),true);
+  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');assert.deepEqual(errors,[]);
  }finally{await browser?.close();await new Promise(r=>server.close(r));fs.rmSync(tmp,{recursive:true,force:true});}
 });
