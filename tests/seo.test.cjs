@@ -26,6 +26,7 @@ test('public metadata uses one absolute www canonical and factual social text', 
   assert.equal(meta.robots.index, true)
   assert.ok(seo.SITE_DESCRIPTION.length >= 140 && seo.SITE_DESCRIPTION.length <= 160)
   assert.equal(meta.twitter.creator, undefined)
+  assert.equal(meta.publisher, 'OutClassPlatforms LLC')
 })
 test('sitemap candidates exclude unclaimed listings, empty profiles, and seed boilerplate', async () => {
   const h = publicClubs([club, { ...club, id: 'unclaimed', claimedAt: null }, { ...club, id: 'empty', description: '' }, { ...club, id: 'seed', description: 'Basic directory listing provided by OutClass. Club leadership has not yet claimed this profile.' }])
@@ -73,6 +74,7 @@ test('structured data identifies only the established organization and website',
   assert.equal(data['@context'], 'https://schema.org')
   assert.deepEqual(data['@graph'].map(item => item['@type']), ['Organization', 'WebSite'])
   assert.equal(data['@graph'][1].publisher['@id'], data['@graph'][0]['@id'])
+  assert.equal(data['@graph'][0].legalName, 'OutClassPlatforms LLC')
   assert.equal(data['@graph'][0].logo.url, 'https://www.out-class.net/apple-icon.png')
   assert.deepEqual(data['@graph'][1].alternateName, ['OutClass UVA', 'Out Class'])
   for (const item of data['@graph']) {
@@ -128,7 +130,10 @@ test('public information pages render factual content, consistent entity referen
         assert.ok(html.includes(`<summary>${item.name}<span`))
         assert.ok(html.includes(`<p>${item.acceptedAnswer.text}</p>`))
       }
-    } else assert.equal(meta.title.absolute, 'OutClass | About')
+    } else {
+      assert.equal(meta.title.absolute, 'OutClass | About')
+      assert.match(html, /OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company/)
+    }
   }
 })
 test('shared public footer connects all public pages with real HTML links', () => {
@@ -143,7 +148,8 @@ test('shared public footer connects all public pages with real HTML links', () =
   for (const path of ['/', '/about', '/uva', '/uva#faq', '/request-school', '/signup', '/login', '/?audience=student#students', '/?audience=leader#club-leaders', '#top']) assert.ok(html.includes(`href="${path}"`))
   assert.ok(html.includes('<span class="sr-only">OutClass</span>'))
   assert.ok(html.includes('class="oc-footer-letters" aria-hidden="true"'))
-  assert.ok(html.includes('OutClass is an independent platform.'))
+  assert.ok(html.includes('OutClass is operated by OutClassPlatforms LLC'))
+  assert.ok(html.includes('© 2026 OutClassPlatforms LLC. All rights reserved.'))
   assert.ok(!html.includes('href="/privacy"') && !html.includes('href="/terms"'))
 })
 test('landing entry preserves student and leader sign-in intent without loading a workspace view first', () => {

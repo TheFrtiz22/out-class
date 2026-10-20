@@ -22,7 +22,7 @@ export const publicFaqGroups = [
     id: "accounts-campus", label: "Accounts & campus", items: [
       { id: "sign-in-options", question: "How do I sign in?", answer: "Choose Log In to use the existing UVA sign-in flow. You can continue with UVA, or use your UVA email and password. Existing accounts can also request an email sign-in code." },
       { id: "application-access", question: "Are application responses on public club profiles?", answer: "Public club profiles describe organizations; they do not display student application responses. Applications are reviewed through authenticated club workspaces with role and permission checks." },
-      { id: "uva-independence", question: "Is OutClass part of the University of Virginia?", answer: "OutClass is an independent platform being built for students and student organizations beginning at the University of Virginia. It is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university." },
+      { id: "uva-independence", question: "Is OutClass part of the University of Virginia?", answer: "OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company. It is an independent platform being built for students and student organizations beginning at the University of Virginia. It is not an official University of Virginia service and is not owned, sponsored, or endorsed by the university." },
     ],
   },
   {

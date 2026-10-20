@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, type MouseEvent } from "react"
-import { ArrowUpRight } from "@/components/icons"
 import { publicFaqGroups } from "@/lib/public-faq"
 
 function FaqEntry({ id, question, answer }: { id: string; question: string; answer: string }) {
@@ -43,7 +42,7 @@ function FaqEntry({ id, question, answer }: { id: string; question: string; answ
   }
   return <details id={`faq-answer-${id}`} ref={details} className="oc-faq-entry">
     <summary onClick={toggle}>{question}<span className="oc-faq-indicator" aria-hidden="true" /></summary>
-    <div ref={body} className="oc-faq-answer"><p>{answer}</p><a className="oc-faq-permalink" href={`#faq-answer-${id}`} aria-label={`Link to question: ${question}`}>Link to this answer <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+    <div ref={body} className="oc-faq-answer"><p>{answer}</p></div>
   </details>
 }
 
