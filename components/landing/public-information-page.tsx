@@ -35,7 +35,7 @@ export function PublicInformationPage({ eyebrow, title, introduction, children, 
         </section>
         <div className="oc-information-content">{children}</div>
       </main>
-      <PublicFooter legalNote="OutClass is an independent platform, not an official University of Virginia service." />
+      <PublicFooter legalNote="OutClass is operated by OutClassPlatforms LLC and is not an official University of Virginia service." />
     </ScrollMotion>
   )
 }
