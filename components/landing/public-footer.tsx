@@ -43,7 +43,7 @@ export function PublicFooter({ homeHref = "/", overviewHref = "/#about", onPersp
         </nav>
         <InteractiveFooterWordmark />
         <div className="oc-footer-bottom">
-          <small>© {new Date().getFullYear()} OutClassPlatforms LLC · OutClass</small>
+          <small>© 2026 OutClassPlatforms LLC. All rights reserved.</small>
           <p>{legalNote}</p>
           <FooterBackToTop />
         </div>

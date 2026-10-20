@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+export const LEGAL_ORGANIZATION_NAME = "OutClassPlatforms LLC"
 export const SITE_URL = "https://www.out-class.net"
 export const SITE_TITLE = "OutClass | UVA Club Applications & Recruitment"
 export const SITE_DESCRIPTION = "Find and apply to participating UVA clubs with one OutClass profile. Manage applications, interviews, and recruitment decisions in one place."
@@ -18,6 +19,7 @@ export function publicPageMetadata(title: string, description: string, path: str
   return {
     title: { absolute: title },
     description,
+    publisher: LEGAL_ORGANIZATION_NAME,
     alternates: { canonical: url },
     robots: publicRobots,
     openGraph: { title, description, url, siteName: "OutClass", type: "website", locale: "en_US", ...(socialImage ? { images: [socialImage] } : {}) },
@@ -28,7 +30,7 @@ export function publicPageMetadata(title: string, description: string, path: str
 export const websiteStructuredData = {
   "@context": "https://schema.org",
   "@graph": [
-    { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "OutClass", legalName: "OutClassPlatforms LLC", url: `${SITE_URL}/`, description: ORGANIZATION_DESCRIPTION, logo: { "@type": "ImageObject", url: `${SITE_URL}/apple-icon.png`, width: 180, height: 180 } },
+    { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: "OutClass", legalName: LEGAL_ORGANIZATION_NAME, url: `${SITE_URL}/`, description: ORGANIZATION_DESCRIPTION, logo: { "@type": "ImageObject", url: `${SITE_URL}/apple-icon.png`, width: 180, height: 180 } },
     { "@type": "WebSite", "@id": `${SITE_URL}/#website`, name: "OutClass", alternateName: ["OutClass UVA", "Out Class"], url: `${SITE_URL}/`, description: SITE_DESCRIPTION, inLanguage: "en", publisher: { "@id": `${SITE_URL}/#organization` } },
   ],
 }

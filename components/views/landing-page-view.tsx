@@ -102,8 +102,8 @@ export function LandingPageView({
             <DialogTitle>{info}</DialogTitle>
             <DialogDescription>
               {info === "Contact"
-                ? "Interested in bringing OutClass to your club? Explore the club workspace to learn about the campus pilot."
-                : `${info ?? "Service"} information will be published before launch. The product examples on this page use illustrative data.`}
+                ? "OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company. Interested in bringing OutClass to your club? Explore the club workspace to learn about the campus pilot."
+                : `OutClass is operated by OutClassPlatforms LLC, a Virginia limited liability company. The ${info === "Privacy" ? "Privacy Policy" : "Terms of Service"} has not yet been published. The product examples on this page use illustrative data.`}
             </DialogDescription>
           </DialogHeader>
           <Button
