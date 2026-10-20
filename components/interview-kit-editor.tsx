@@ -93,7 +93,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
         <span className="oc-kit-round-status" role="status">{autosave.error ? "Couldn’t save" : busy ? "Saving…" : autosave.recovery != null ? "Draft available" : dirty ? "Unsaved changes" : ""}</span>
       </button></h3>
       <div id={'kit-panel-' + round} role="region" aria-labelledby={'kit-heading-' + round} hidden={!open} className="oc-kit-builder" onBlur={event => {
-        if (event.relatedTarget !== document.getElementById('kit-heading-' + round)) autosave.onBlur();
+        if (!event.relatedTarget?.closest('.oc-kit-round-trigger')) autosave.onBlur();
       }}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
