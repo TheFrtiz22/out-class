@@ -2,10 +2,11 @@
 
 import { hasWorkspace } from "@/lib/permissions";
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import type { User, StudentProfile, Application, Club, ClubMember } from '@prisma/client';
+import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
+import type { AccountClub } from '@/lib/account-data';
 
-export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: Club };
-export type ExtendedMembership = ClubMember & { club: Club };
+export type ExtendedApplication = Omit<Application, "anonymousReviewText"> & { club: AccountClub };
+export type ExtendedMembership = ClubMember & { club: AccountClub };
 
 export type PopulatedUser = User & {
   impersonating?: boolean;

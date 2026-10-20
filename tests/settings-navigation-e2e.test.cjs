@@ -59,7 +59,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     assert.equal(response.status, 200); assert.ok(!(await response.text()).includes('data-product-shell'));
   });
   const studentPage = await session(student);
-  await t.test('desktop settings keeps one shell, breadcrumbs and state across personal sections', async () => {
+  await t.test('desktop settings keeps one shell, active navigation and state across personal sections', async () => {
     await open(studentPage, '/settings/profile');
     await studentPage.getByRole('heading', { name: 'Profile', exact: true }).waitFor();
     await studentPage.getByRole('heading', { name: 'Education', exact: true }).waitFor();
@@ -71,7 +71,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     await studentPage.getByRole('heading', { name: 'Account & Security', exact: true }).waitFor();
     assert.equal(await studentPage.locator('[data-product-shell]').getAttribute('data-persistence-probe'), 'kept');
     assert.ok(await studentPage.getByRole('button', { name: 'Send password reset email' }).isVisible());
-    assert.ok((await studentPage.getByRole('navigation', { name: 'Breadcrumb', exact: true }).textContent()).includes('Account & Security'));
+    assert.equal(await nav.getByRole('link', { name: 'Account & Security', exact: true }).getAttribute('aria-current'), 'page');
     await noOverflow(studentPage);
     await studentPage.screenshot({ path: path.join(artifacts, 'desktop-account.png'), fullPage: true });
   });
@@ -134,7 +134,7 @@ test('settings and authenticated navigation across roles, saves, history and res
     await leaderPage.waitForFunction(name => document.querySelector('.oc-workspace-switcher-trigger strong')?.textContent === name, second.name);
     await openApplications.waitFor(); assert.equal(await openApplications.isChecked(), true);
     await leaderPage.reload(); await openApplications.waitFor();
-    assert.ok((await leaderPage.getByRole('navigation', { name: 'Breadcrumb', exact: true }).textContent()).includes(second.name));
+    assert.ok((await leaderPage.getByRole('button', { name: 'Switch workspace', exact: true }).textContent()).includes(second.name));
     await noOverflow(leaderPage);
     await leaderPage.screenshot({ path: path.join(artifacts, 'desktop-organization.png'), fullPage: true });
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=cycles`);

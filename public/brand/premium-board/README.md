@@ -38,3 +38,9 @@ These are traced vector reconstructions based on a raster brand board. They are 
 ## Email compatibility
 
 `email_wordmark.png` is a high-resolution, ivory-backed **PNG fallback** rendered from the board's sword-free wordmark SVG. It is pinned to a versioned GitHub URL in the shared transactional email template for Outlook and dark-mode legibility. Keep the SVG as the design source; use the PNG only where SVG isn't supported.
+
+## JPEG counterparts
+
+Every `01_...` through `10_...` SVG above also has a same-named `.jpg` copy in this directory, rasterized at 2×–6× dimensions with quality 95, full-color chroma, and 300-DPI metadata. JPEG cannot carry an alpha channel: ivory `#FFF9F1` is used behind navy and orange artwork, while the transparent ivory/orange hero uses a navy `#0F2E56` background. The SVGs remain the preferred format for logos on the live site.
+
+To regenerate or update the JPEGs after editing SVGs, run `python scripts/export-premium-board-jpegs.py` after installing `pillow` and `cairosvg`. A dedicated GitHub Action does the same whenever the SVGs or generator change, and commits the JPEGs alongside the originals.

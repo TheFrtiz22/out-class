@@ -18,7 +18,15 @@ function guards(config) {
     const url = new URL(value); assert.ok(['127.0.0.1', 'localhost'].includes(url.hostname)); assert.equal(url.port, port)
   }
 }
+async function assertAppPortAvailable() {
+  const server = require('node:net').createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', () => reject(Error('Reserved scheduling port 3126 is already in use. Stop the retained fixture before starting another run.')));
+    server.listen(3126, '127.0.0.1', () => server.close(resolve));
+  });
+}
 async function main() {
+  await assertAppPortAvailable();
   if (!resume && fs.existsSync(path.join(root, 'config.json'))) throw Error('A retained local fixture exists. Remove it with --cleanup before starting another run.')
   fs.mkdirSync(path.join(root, 'supabase/templates'), { recursive: true, mode: 0o700 })
   const config = fs.readFileSync(path.join(repo, 'supabase/config.toml'), 'utf8').replace('project_id = "out-class"', `project_id = "${project}"`).replaceAll('5432', '5732').replaceAll('http://127.0.0.1:3000', 'http://127.0.0.1:3126').replaceAll('http://localhost:3000', 'http://127.0.0.1:3126')
@@ -72,7 +80,13 @@ async function main() {
   server = spawn(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'start', '-p', '3126', '-H', '127.0.0.1'], { cwd: path.join(root, 'app'), env, stdio: ['ignore', fd, fd] })
   fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid))
   fs.closeSync(fd)
-  for (let i = 0; i < 100; i++) { try { const r = await fetch(settings.appUrl); if (r.ok) break } catch {} await new Promise(resolve => setTimeout(resolve, 100)) }
+  let ready = false
+  for (let i = 0; i < 100; i++) {
+    if (server.exitCode !== null || server.signalCode !== null) throw Error('Reserved scheduling server failed to start; inspect server.log.')
+    try { const r = await fetch(settings.appUrl); if (r.ok) { ready = true; break } } catch {}
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+  if (!ready) throw Error('Reserved scheduling server did not become ready; inspect server.log.')
   await require(audit?'../tests/scheduling-quality-browser.cjs':ux?'../tests/availability-scheduling-browser.cjs':publication?'../tests/panel-publication-browser.cjs':panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
   console.log('Browser → actual server actions → local Prisma/Postgres: PASS')
   if (keep) { server.unref(); fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid)); console.log('Local fixture retained at ' + settings.appUrl) }
@@ -88,4 +102,4 @@ function cleanup() {
   for (const item of ['config.json', 'server.pid', 'app']) fs.rmSync(path.join(root, item), { recursive: true, force: true })
 }
 if (process.argv.includes('--cleanup')) cleanup()
-else main().catch(error => { console.error(error.message); process.exitCode = 1; if (keep && server) server.unref() }).finally(() => { if (!keep) cleanup() })
+else main().catch(error => { console.error(error.message); process.exitCode = 1; if (keep && server) server.unref() }).finally(() => { if (!keep && touched) cleanup() })

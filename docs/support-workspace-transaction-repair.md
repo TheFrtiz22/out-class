@@ -32,6 +32,10 @@ These logs establish failures, **not a shared root cause or exact action attribu
 
 ## Validation
 
+October 20 integration: merged current main `6289ceb043b2fc9b73ce4f26fb161f1f45aac3b9` without textual conflicts. Reviewed its verified-token/live-session checks alongside pre-acquisition support validation; draft authority checks remain transactional. The repair adds no migration; main's migration history is retained. Integrated focused checks passed **37/37** and TypeScript passed. Complete final-source CI remains authoritative.
+
+The previous native CI attempts stopped before tests because ECR Public rejected the PostgreSQL download (rate/data limits). The isolated runner now uses Supabase's official GHCR image for the **same 17.11.0.002 version**, pinned to multi-platform digest `sha256:0450166354dc9c1d25f0322ac8b580774d4fb0184d2b087f6e4fe9499c66cf53`. This changes distribution only, not fixtures, assertions, roles, timeouts or application behavior. A successful native run is still required.
+
 - Focused database/domain/UI group: **59 passed**.
 - Affected authorization/UI group: **27 passed**.
 - Existing autosave and Demo-entry real browser checks: **3 passed** after restoring the missing local Chrome launcher.

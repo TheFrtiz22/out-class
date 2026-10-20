@@ -1,0 +1,39 @@
+{
+  "deployed_artifact": {
+    "id": "dpl_6vMuXwFiQYTHJT9NRQMpeX629t9B",
+    "url": "https://out-class-ltfljkeuy-outclassuva.vercel.app",
+    "target": "production",
+    "readyState": "READY"
+  },
+  "deployed_baseline": "16c4be28f5e61674ef6a09882bf14eee2c9bc134",
+  "main_base": "2c54a8cb1e9402b04708514291b316ec9aeecb80",
+  "runtime_config_dependency_files_verified": 943,
+  "compatibility_patch_files_verified": 25,
+  "additive_migration": "20261019175843_outclass_auth_session_view",
+  "migration_sha256": "fa70d980652625b9a2407af3bc58babf6c630cd2dfef12507660b5d99ea22186",
+  "excluded": "Restricted login provisioning/grants, runtime URL precedence, invoker-view application queries, strict role gate",
+  "fixture_scope": "Compatibility operator connection; role-cutover fixture mode omitted; invitation binding and view ACL tests included",
+  "credentials_changed": false,
+  "validation": {
+    "default_tests": {
+      "passed": 1254,
+      "failed": 0,
+      "skipped": 34
+    },
+    "real_integration": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0
+    },
+    "migration_replay": 57,
+    "typecheck": "passed",
+    "production_build": "passed",
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 26
+    },
+    "frozen_lockfile_install": "passed",
+    "react_review": "Existing Applicants routing preserved; hook order and focus behavior unchanged; interface icon imports unchanged.",
+    "reserved_fixture_cleanup": "verified; unrelated local stacks preserved"
+  }
+}

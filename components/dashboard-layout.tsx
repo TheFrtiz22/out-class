@@ -1,6 +1,5 @@
 "use client"
 import { useEffect, type ReactNode } from "react"
-import { WorkspaceBreadcrumb } from "@/components/shell/workspace-breadcrumb"
 import { PageHeader } from "@/components/product/page-header"
 import { ProductShell } from "@/components/shell/product-shell"
 import { personalMode, personalItems, personalModes, personalDestination, type PersonalSection } from "@/lib/product-navigation"
@@ -50,7 +49,6 @@ function DashboardContent({ children, view, appMode, onNavigate, personalSection
   const universalView = ["student-dashboard", "calendar", "student-profile", "inbox"].includes(view)
   const title = universalView ? viewTitles[view].title : view === "my-clubs" && section === "clubs" ? "My Clubs" : items.find(i => i.id === section)?.label || viewTitles[view].title
   return <ProductShell mode={mode} modes={personalModes} items={items} active={universalView ? view : section} title={title} onSelect={select} onNavigate={onNavigate}>
-    {view !== "student-dashboard" && <WorkspaceBreadcrumb items={[{ label: "Personal workspace", href: "/?workspace=student" }, { label: title }]} />}
     {view !== "student-dashboard" && view !== "explore" && view !== "tracker" && view !== "status" && view !== "corkboard" && <PageHeader title={["student-profile", "inbox"].includes(view) ? viewTitles[view].title : title} description={view === "inbox" ? "Your club updates and tasks, together in one place." : undefined} className={view === "inbox" ? "oc-notifications-header" : undefined} />}
     {(["interview-scheduler", "club-management-portal", "screening-dashboard", "broadcast-messages"].includes(view) || appMode === "admin") && <p className="mb-6 border-l-2 pl-4 text-sm text-muted-foreground">Existing workspace tools · preview controls do not publish changes or send messages.</p>}
     {children}

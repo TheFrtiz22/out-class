@@ -14,7 +14,7 @@ import {
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ListChecks, ChevronRight } from "@/components/icons";
+import { ListChecks, ChevronDown } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,
@@ -25,15 +25,27 @@ export function InterviewKitEditor({
   rounds: { id: string; name: string; canReadKit?: boolean }[];
   initialRoundId?: string;
 }) {
+  return <section className="oc-kit-editor" aria-label="Interview kit editor">
+    <header className="oc-kit-heading"><h2>Interview master kit</h2><p className="text-sm text-muted-foreground">Configure questions and guidance for each round. Changes apply to new interviews; existing interviews retain their original kit.</p></header>
+    <div className="oc-kit-sections">{rounds.map(round => <RoundKitEditor key={clubId + ':' + round.id} clubId={clubId} roundInfo={round} initiallyOpen={round.id === initialRoundId} />)}</div>
+  </section>;
+}
+
+// A mounted editor owns each round's draft, version and independent save queue.
+export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
+  clubId: string; roundInfo: { id: string; name: string; canReadKit?: boolean }; initiallyOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(initiallyOpen);
+  useEffect(() => { if (initiallyOpen) setOpen(true); }, [initiallyOpen]);
   const { user } = useAuth();
   const version = useRef(0);
   const canEdit = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).editKit;
-  const [round, setRound] = useState(rounds.find(r => r.id === initialRoundId)?.id || rounds[0]?.id || ""),
-    [questions, setQuestions] = useState<KitQuestion[]>([]),
+  const round = roundInfo.id;
+  const [questions, setQuestions] = useState<KitQuestion[]>([]),
         [loaded, setLoaded] = useState(false),
     [message, setMessage] = useState("");
   const [retry, setRetry] = useState(0);
-  const canReadKit = rounds.find(r => r.id === round)?.canReadKit !== false;
+  const canReadKit = roundInfo.canReadKit !== false;
   const canManageGrants = interviewCapabilities(user?.memberships.find(m => m.clubId === clubId)).manageGrants;
   useEffect(() => {
     let current = true;
@@ -73,38 +85,25 @@ export function InterviewKitEditor({
     edit(items);
   }
   return (
-    <section className="oc-kit-editor" data-autosave-editor="true" onBlur={autosave.onBlur} data-unsaved={dirty} data-saving={busy} aria-label="Interview kit editor">
-      <header className="oc-kit-heading"><h2>Interview master kit</h2>
-      <div>
-        <p className="text-sm text-muted-foreground">
-          Configure questions and guidance for each round. Changes apply to new
-          interviews; existing interviews retain their original kit.
-        </p>
-      </div></header>
-      <div className="oc-kit-layout">
-        <nav className="oc-kit-rounds" aria-label="Interview kit rounds"><h3>Rounds</h3>
-          {rounds.map((r, index) => <button key={r.id} type="button" aria-current={r.id === round ? "true" : undefined} disabled={busy} onClick={async () => {
-            try { await autosave.flush() } catch { return }
-            if (r.id !== round) {
-              setRound(r.id);
-              if (window.location && window.history) {
-                const url = new URL(window.location.href); url.searchParams.set("roundId", r.id);
-                window.history.replaceState(null, "", url.pathname + url.search);
-              }
-            }
-          }}><span>{index + 1}</span><strong>{r.name}</strong><ChevronRight size={17} aria-hidden="true" /></button>)}
-        </nav>
-        <div className="oc-kit-builder">
-          <header><div><p>Selected round</p><h3>{rounds.find(r => r.id === round)?.name || "Choose a round"}</h3></div>{canReadKit && <span>{loaded ? `${questions.length} questions` : "Loading…"}</span>}</header>
+    <section className="oc-kit-round" data-autosave-editor="true" data-unsaved={dirty} data-saving={busy} aria-label={roundInfo.name}>
+      <h3><button className="oc-kit-round-trigger" type="button" aria-expanded={open} aria-controls={'kit-panel-' + round} id={'kit-heading-' + round} onClick={() => setOpen(value => !value)}>
+        <ChevronDown size={18} aria-hidden="true" className={open ? "oc-kit-chevron is-open" : "oc-kit-chevron"} />
+        <span className="oc-kit-round-name">{roundInfo.name}</span>
+        <span className="oc-kit-round-count">{!canReadKit ? "Restricted" : loaded ? questions.length + (questions.length === 1 ? ' question' : ' questions') : message ? "Could not load" : "Loading…"}</span>
+        <span className="oc-kit-round-status" role="status">{autosave.error ? "Couldn’t save" : busy ? "Saving…" : autosave.recovery != null ? "Draft available" : dirty ? "Unsaved changes" : ""}</span>
+      </button></h3>
+      <div id={'kit-panel-' + round} role="region" aria-labelledby={'kit-heading-' + round} hidden={!open} className="oc-kit-builder" onBlur={event => {
+        if (!event.relatedTarget?.closest('.oc-kit-round-trigger')) autosave.onBlur();
+      }}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
-          <p className="mb-4 text-sm text-muted-foreground">{canEdit ? "You can edit the selected round master kit." : "Read-only question bank. Use questions in your assigned interview workspace."}</p>
+          {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
         <fieldset disabled={!loaded || !canEdit || autosave.recovery != null} className="space-y-5">
           {questions.map((q, i) => (
             <section key={q.id} className="oc-kit-question space-y-2">
-              <label htmlFor={`prompt-${q.id}`}>Question {i + 1}</label>
+              <label htmlFor={`prompt-${round}-${q.id}`}>Question {i + 1}</label>
               <Textarea
-                id={`prompt-${q.id}`}
+                id={`prompt-${round}-${q.id}`}
                 value={q.prompt}
                 maxLength={3000}
                 onChange={(e) =>
@@ -118,9 +117,9 @@ export function InterviewKitEditor({
                 }
               />
               <details className="oc-kit-guidance"><summary>Answer key / evaluation guidance{q.guidance?.trim() ? " · Added" : " · Optional"}</summary>
-              <label className="sr-only" htmlFor={`guidance-${q.id}`}>Answer key / evaluation guidance</label>
+              <label className="sr-only" htmlFor={`guidance-${round}-${q.id}`}>Answer key / evaluation guidance</label>
               <Textarea
-                id={`guidance-${q.id}`}
+                id={`guidance-${round}-${q.id}`}
                 value={q.guidance}
                 maxLength={5000}
                 onChange={(e) =>
@@ -195,7 +194,6 @@ export function InterviewKitEditor({
           Reload kit
         </Button>
         </>}
-        </div>
       </div>
     </section>
   );

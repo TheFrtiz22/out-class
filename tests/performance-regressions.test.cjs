@@ -105,20 +105,20 @@ test('root bootstrap starts authenticated content without an identity HTTP water
 });
 
 test('verified Supabase identity is reused only inside the same React request; membership remains live', async () => {
-  let requestCache = new Map(), authCalls = 0, memberReads = 0, allowed = true;
+  let requestCache = new Map(), authCalls = 0, memberReads = 0, sessionReads = 0, allowed = true;
   const react = { cache: fn => { const key = Symbol(); return (...args) => { if (!requestCache.has(key)) requestCache.set(key, fn(...args)); return requestCache.get(key); }; } };
   const load = loader({
     react, 'next/headers': { cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Unauthenticated'); } },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
-    './supabase/server': { createClient: async () => ({ auth: { getUser: async () => { authCalls++; return { data: { user: { id: 'user', email: 'user@virginia.edu', email_confirmed_at: '2026-01-01' } }, error: null }; } } }) },
-    './prisma': { prisma: { $queryRaw: async () => [], user: { findUnique: async () => ({ id: 'user', email: 'user@virginia.edu', disabledAt: null }) }, clubMember: { findUnique: async ({ where }) => { memberReads++; assert.equal(where.userId_clubId.clubId, clubId); return { isOwner: allowed, status: 'ACTIVE', permissions: [] }; } } } },
+    './supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor('user'), getUser: async token => { assert.equal(token,require('./helpers/auth-session.cjs').tokenFor('user')); authCalls++; return { data: { user: { id: 'user', email: 'user@virginia.edu', email_confirmed_at: '2026-01-01' } }, error: null }; } } }) },
+    './prisma': { prisma: { $queryRaw: async strings => { if(strings.join('').includes('FROM auth.sessions')) { sessionReads++; return [{live:true}]; } return []; }, user: { findUnique: async () => ({ id: 'user', email: 'user@virginia.edu', disabledAt: null }) }, clubMember: { findUnique: async ({ where }) => { memberReads++; assert.equal(where.userId_clubId.clubId, clubId); return { isOwner: allowed, status: 'ACTIVE', permissions: [] }; } } } },
   });
   const auth = load('utils/auth.ts');
   await auth.getSessionUser(); await auth.requireClubPermission(clubId, ['members.manage']);
   allowed = false; await assert.rejects(auth.requireClubPermission(clubId, ['members.manage']), /permission/);
-  assert.equal(authCalls, 1); assert.equal(memberReads, 2);
-  requestCache = new Map(); await auth.getSessionUser(); assert.equal(authCalls, 2);
+  assert.equal(authCalls, 1); assert.equal(memberReads, 2); assert.equal(sessionReads, 1);
+  requestCache = new Map(); await auth.getSessionUser(); assert.equal(authCalls, 2); assert.equal(sessionReads, 2);
 });
 
 test('duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap', async () => {
