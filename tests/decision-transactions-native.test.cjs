@@ -478,6 +478,96 @@ test('decision/invitation transaction repair on isolated native PostgreSQL', { s
     finally { state.afterAudit = null; }
     await assertRetainedDraft(f);
   });
+  // Exercise the server actions through the actual support audit extension.
+  // Provider latency belongs outside the unchanged 2s acquisition / 5s execution budget.
+  async function offerFixture(support = true) {
+    const f = await fixture(false);
+    await direct(f, 'ACCEPTED');
+    const r = await recipient(f, support);
+    const offer = await base.clubInvitation.findUniqueOrThrow({ where: { applicationId: f.app.id } });
+    return { f, r, offer };
+  }
+  async function assertOfferPending(f, offer) {
+    assert.equal((await base.clubInvitation.findUniqueOrThrow({ where: { id: offer.id } })).status, 'PENDING');
+    assert.equal(await base.clubMember.count({ where: { clubId: f.club.id, userId: f.student.id } }), 0);
+    assert.equal(await base.userNotification.count({ where: { eventKey: { startsWith: `offer:${offer.id}:` } } }), 0);
+  }
+  await t.test('offer response: raw transaction expires under slow support Auth; repaired command keeps five-second budget', async () => {
+    const file = 'actions/recruitment-offers.ts';
+    const legacy = load({ [file]: execFileSync('git', ['show', '0c30fe4:actions/recruitment-offers.ts'], { encoding: 'utf8' }) });
+    const { f, r, offer } = await offerFixture();
+    providerDelay = 5500;
+    try {
+      await assert.rejects(r.run(() => legacy(file).respondToOffer(f.app.id, 'ACCEPT')), e => e.code === 'P2028');
+      await assertOfferPending(f, offer);
+      const before = providerCalls, start = Date.now();
+      const result = await r.run(() => api(file).respondToOffer(f.app.id, 'ACCEPT'));
+      assert.equal(result.status, 'ACCEPTED');
+      assert.equal(providerCalls - before, 1);
+      t.diagnostic(`offer simulated Auth=5500ms: command=${Date.now()-start}ms transaction=${transactionMs}ms; execution timeout remains 5000ms`);
+    } finally { providerDelay = 0; }
+  });
+  for (const support of [false, true]) {
+    for (const response of ['ACCEPT', 'DECLINE']) {
+      await t.test(`offer ${response}: concurrent retries, least privilege, canonical counts and attribution (support=${support})`, async () => {
+        const { f, r, offer } = await offerFixture(support);
+        const respond = () => r.run(() => api('actions/recruitment-offers.ts').respondToOffer(f.app.id, response));
+        await Promise.all([respond(), respond()]); await respond();
+        const status = response === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';
+        assert.equal((await base.clubInvitation.findUniqueOrThrow({ where: { id: offer.id } })).status, status);
+        const memberships = await base.clubMember.findMany({ where: { clubId: f.club.id, userId: f.student.id } });
+        assert.equal(memberships.length, response === 'ACCEPT' ? 1 : 0);
+        if (memberships.length) {
+          assert.equal(memberships[0].accessRole, 'MEMBER'); assert.equal(memberships[0].role, 'GENERAL_MEMBER');
+          assert.equal(memberships[0].isOwner, false); assert.deepEqual(memberships[0].permissions, []);
+        }
+        const key = `offer:${offer.id}:${response}`;
+        assert.equal(await base.userNotification.count({ where: { eventKey: key } }), 1);
+        assert.equal(await base.notificationEmailOutbox.count({ where: { notification: { eventKey: key } } }), 1);
+        assert.equal(await base.decisionLetter.count({ where: { applicationId: f.app.id } }), 1);
+        assert.equal((await base.application.findUniqueOrThrow({ where: { id: f.app.id } })).decisionVersion, 1);
+        const events = await base.auditLog.findMany({ where: { targetId: offer.id, action: response === 'ACCEPT' ? 'offer.accepted' : 'offer.declined' } });
+        assert.equal(events.length, 1);
+        assert.equal(events[0].actorId, support ? admin.id : f.student.id);
+        assert.equal(events[0].effectiveUserId, support ? f.student.id : null);
+        assert.equal(events[0].supportSessionId, r.context.session?.id ?? null);
+      });
+    }
+  }
+  await t.test('support revoked after offer membership write rolls membership, response and notification back', async () => {
+    const { f, r, offer } = await offerFixture();
+    state.afterAudit = async data => {
+      if (data.action === 'platform.impersonation.statement-returned' && data.details.model === 'ClubMember')
+        await operator.platformViewSession.update({ where: { id: r.context.session.id }, data: { endedAt: new Date() } });
+    };
+    try { await assert.rejects(r.run(() => api('actions/recruitment-offers.ts').respondToOffer(f.app.id, 'ACCEPT')), /Impersonation expired/); }
+    finally { state.afterAudit = null; }
+    await assertOfferPending(f, offer);
+  });
+  await t.test('offer business work still expires at five seconds and leaves no partial membership', async () => {
+    const { f, r, offer } = await offerFixture();
+    state.afterAudit = async data => {
+      if (data.action === 'platform.impersonation.mutation-attempt' && data.details.model === 'ClubMember') await sleep(5500);
+    };
+    try { await assert.rejects(r.run(() => api('actions/recruitment-offers.ts').respondToOffer(f.app.id, 'ACCEPT')), e => e.code === 'P2028'); }
+    finally { state.afterAudit = null; }
+    await assertOfferPending(f, offer);
+  });
+  await t.test('offer rescind also preflights support Auth and retains canonical attributed revocation', async () => {
+    const f = await fixture(); await direct(f, 'ACCEPTED');
+    const offer = await base.clubInvitation.findUniqueOrThrow({ where: { applicationId: f.app.id } });
+    providerDelay = 5500;
+    try {
+      const before = providerCalls;
+      await f.run(() => api('actions/recruitment-offers.ts').revokeRecruitmentOffer(f.club.id, f.app.id));
+      assert.equal(providerCalls - before, 1);
+    } finally { providerDelay = 0; }
+    assert.equal((await base.clubInvitation.findUniqueOrThrow({ where: { id: offer.id } })).status, 'REVOKED');
+    const events = await base.auditLog.findMany({ where: { targetId: offer.id, action: 'offer.revoked' } });
+    assert.equal(events.length, 1); assert.equal(events[0].actorId, admin.id);
+    assert.equal(events[0].effectiveUserId, f.user.id); assert.equal(events[0].supportSessionId, f.context.session.id);
+  });
+
   const reviewDraft = f => ({ scope: { kind: 'review', clubId: f.club.id, resourceId: `${f.app.id}:${f.round.id}` }, content: { score: '8', notes: 'Synthetic draft only' }, base: '["",""]', revision: 0, mutationId: randomUUID() });
   await t.test('editor draft: serving source expires under slow support Auth; repaired save keeps the same five-second transaction budget', async () => {
     const legacy = load({ 'actions/editor-drafts.ts': execFileSync('git', ['show', '2c54a8c:actions/editor-drafts.ts'], { encoding: 'utf8' }) });
