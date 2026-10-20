@@ -116,7 +116,7 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
   useEffect(() => {
     if (!focusSlot || busy || review) return
     const button = rowButtons.current.get(focusSlot)
-    if (button && !button.closest('[hidden]')) { button.focus(); setFocusSlot("") }
+    if (button && !button.closest('[hidden]')) { button.focus({ preventScroll: true }); button.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" }); setFocusSlot("") }
   }, [focusSlot, busy, review, expandedDays])
   function revealIssues(value: PanelProposalView | null | undefined, kind: "all" | "staffing" | "conflicts" = "all") {
     if (!value) return
