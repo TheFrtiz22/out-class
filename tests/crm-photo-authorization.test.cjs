@@ -14,9 +14,9 @@ function fixture() {
   const app = { id: applicationId, clubId, studentId: owner, status: 'SUBMITTED', roundId,
     round: { id: roundId, name: 'Review', anonymousReview: false, applicantDisplay: { version: 1, fields: ['name'] } },
     student: { id: owner, email: 'owner@virginia.edu', studentProfile: { id: id(6), userId: owner, firstName: 'Student', lastName: 'Fixture', computingId: 'fixture', major: 'Math', gradYear: 2028, headshotUrl: `${owner}/photo.png`, experiences: [] } },
-    evaluations: [], answers: [], bookings: [] };
+    evaluations: [], interviewAssignments: [], answers: [], bookings: [] };
   const permissions = load('lib/permissions.ts');
-  const membership = () => ({ id: id(7), status: state.status, permissions: state.permissions });
+  const membership = () => ({ id: id(7), userId: state.actor, status: state.status, permissions: state.permissions, isOwner: state.isOwner, interviewOffices: state.offices || [] });
   const auth = {
     requireAuth: async () => { if (state.anonymous) throw { digest: 'NEXT_REDIRECT' }; return { user: { id: state.actor } }; },
     requireClubPermission: async (club, required) => {
@@ -31,7 +31,7 @@ function fixture() {
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {
-      findMany: async ({ where }) => (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : [],
+      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
@@ -122,4 +122,26 @@ test('CRM photo uses one narrow read, never the pipeline, and denies inactive me
  const f=fixture(); assert.equal((await f.get('crm')).status,200);assert.equal(f.state.narrowReads,1);assert.equal(f.state.pipelineReads,0);
  f.state.status='SUSPENDED';assert.equal((await f.get('crm')).status,403);
  f.state.status='ACTIVE';f.state.disabled=true;assert.equal((await f.get('crm')).status,403);assert.equal(f.state.downloads,1);
+});
+
+test('evaluation capability follows current panel assignment, anonymous review and self-review rules', async()=>{
+ const f=fixture();f.state.permissions=['applications.review','applicants.identify'];
+ const allowed=async()=>(await f.crm.getClubPipeline(clubId)).applications[0].canEvaluate;
+ assert.equal(await allowed(),false);
+ f.state.isOwner=true;f.state.offices=['PRESIDENT'];assert.equal(await allowed(),false,'owner/office does not bypass identified panel assignment');
+ f.app.interviewAssignments=[{roundId,memberId:id(7)}];assert.equal(await allowed(),true);
+ f.app.evaluations=[{roundId,interviewerId:id(7),submittedAt:new Date()}];assert.equal(await allowed(),false,'submitted evaluations stay read-only');f.app.evaluations=[];
+ f.app.interviewAssignments=[{roundId:id(99),memberId:id(7)}];assert.equal(await allowed(),false,'another round does not authorize this evaluation');
+ f.app.interviewAssignments=[];f.app.round.anonymousReview=true;f.state.isOwner=false;f.state.offices=[];f.state.permissions=['applications.review'];assert.equal(await allowed(),true);
+ f.state.actor=owner;assert.equal(await allowed(),false,'self-review stays denied');
+});
+
+test('pipeline failure diagnostics identify the failing phase without serializing private exception content',async()=>{
+ const f=fixture(),error={code:'P2028',message:'SELECT private applicant fixture@example.invalid',meta:{secret:'must not log'}};
+ f.state.pipelineError=error;const rows=[],prior=console.error;console.error=(...args)=>rows.push(args);
+ try { await assert.rejects(f.crm.getClubPipeline(clubId),e=>e===error); } finally { console.error=prior; }
+ assert.equal(rows.length,1);assert.equal(rows[0][0],'recruitment.pipeline.read.failure');
+ assert.equal(rows[0][1].code,'P2028');assert.equal(rows[0][1].phase,'applications');
+ assert.ok(rows[0][1].elapsedMs>=0);assert.ok(rows[0][1].acquisitionMs>=0);assert.ok(rows[0][1].transactionMs>=0);
+ assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
 });

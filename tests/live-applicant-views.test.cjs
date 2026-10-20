@@ -23,12 +23,12 @@ const text = node => typeof node === 'string' ? node : Array.isArray(node) ? nod
 const flush = () => new Promise(resolve => setImmediate(resolve))
 function harness(permissions = ['applications.review','applicants.identify','decisions.manage','recruitment.manage'], decisionsOnly = false, rejectedOnly = false) {
   const slots = [], effects = [], calls = [], lookups = []
-  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
+  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
   const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
   const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);if(input.expectedStatus!==pipeline.applications[0].status)throw Error('stale');pipeline.applications[0].status=input.status;if(input.status==='ACCEPTED')pipeline.applications[0].recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
   const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
   const membership = {id:'member',clubId:'club',permissions,club:{name:'Test club'}}
-  return {calls,api,lookups,addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
+  return {calls,api,lookups,setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
 }
 const button = (tree,label) => nodes(tree).find(n=>n.type==='Button'&&text(n)===label)
 const view = tree => nodes(tree).find(n=>['LiveApplicantList','LiveApplicantKanban'].includes(n.type))
@@ -58,6 +58,17 @@ test('evaluation save updates both presentations and explicit round movement rel
   nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
   assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate');assert.equal(view(tree).props.applicants[0].student.email,'');assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false)
   button(tree,'Kanban').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].studentId,'anonymous-candidate')
+})
+
+test('an identified applicant without current panel authority has no review editor or blocking review draft', async () => {
+  const h=harness();h.setCanEvaluate(false);h.render();await flush();let tree=h.render()
+  view(tree).props.open(view(tree).props.applicants[0]);tree=h.render()
+  assert.equal(button(tree,'Finalize evaluation'),undefined)
+  assert.equal(nodes(tree).find(n=>n.props?.id==='review-score'),undefined)
+  assert.match(text(tree),/current panel assignment/)
+  assert.equal(button(tree,'Move round').props.disabled,true,'unchanged round is still disabled')
+  assert.ok(button(tree,'Accepted'),'recruitment actions remain available')
+  assert.equal(h.calls.some(c=>c[0]==='review'),false)
 })
 
 const { applicationDecisionGroup } = compile('lib/application-decisions.ts')
