@@ -11,7 +11,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 import { ClubCustomizationProvider } from "@/lib/club-customization"
-import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, privateRobots } from "@/lib/seo"
+import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, LEGAL_ORGANIZATION_NAME, privateRobots } from "@/lib/seo"
 
 // One Caslon family, with real variable weights and a real italic face.
 const libreCaslonText = localFont({
@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   title: { default: SITE_TITLE, template: "%s | OutClass" },
   description: SITE_DESCRIPTION,
   applicationName: "OutClass",
+  publisher: LEGAL_ORGANIZATION_NAME,
   // Public pages opt in explicitly; new product routes stay out of search by default.
   robots: privateRobots,
   manifest: "/manifest.webmanifest",

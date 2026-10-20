@@ -18,7 +18,7 @@ async function setup(t){
    update:async({where,data})=>sql.query('UPDATE "EditorDraft" SET content=$1,base=$2,"mutationId"=$3,revision=$4 WHERE "userId"=$5 AND key=$6',[data.content===require('@prisma/client').Prisma.DbNull?null:JSON.stringify(data.content),data.base,data.mutationId,data.revision,where.userId_key.userId,where.userId_key.key]),
   },
  })
- const api=loader({'@/utils/auth':{requireAuth:async()=>{if(!actor)throw Error('Sign in required');return {user:{id:actor}}}},'@/utils/prisma':{prisma:{$transaction:fn=>db.transaction(tx=>fn(adapter(tx)))}}})('actions/editor-drafts.ts')
+ const api=loader({'@/utils/support-audit':{supportContext:async()=>null,supportTransactionScope:new (require('node:async_hooks').AsyncLocalStorage)()},'@/utils/auth':{requireAuth:async()=>{if(!actor)throw Error('Sign in required');return {user:{id:actor}}}},'@/utils/prisma':{prisma:{$transaction:fn=>db.transaction(tx=>fn(adapter(tx)))}}})('actions/editor-drafts.ts')
  return {db,api,as:id=>actor=id}
 }
 const input=(kind='announcement',content={title:'Private unfinished title',body:''},revision=0)=>({scope:{kind,clubId},content,base:'new',revision,mutationId:randomUUID()})

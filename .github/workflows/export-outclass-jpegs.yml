@@ -1,0 +1,37 @@
+name: Export OutClass premium JPEG logos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/export-premium-board-jpegs.py
+      - public/brand/premium-board/*.svg
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export-jpeg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install SVG rasterizer
+        run: python -m pip install --disable-pip-version-check pillow cairosvg
+      - name: Export and verify 10 JPEG variants
+        run: python scripts/export-premium-board-jpegs.py
+      - name: Commit new JPEG files alongside the SVG originals
+        run: |
+          git add public/brand/premium-board/*.jpg
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Add JPEG counterparts for all premium OutClass logos"
+            git push origin HEAD:main
+          fi

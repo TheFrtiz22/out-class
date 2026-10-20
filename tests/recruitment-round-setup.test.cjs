@@ -50,11 +50,11 @@ test('round loader reports loading, real empty state, permission denial and fail
  }
  const requests=[],list={status:'ready',rounds:[{id:id(2),name:'First interviews',canReadKit:true},{id:id(3),name:'Round 2',canReadKit:true}]},api={getInterviewRounds:async()=>list,getInterviewKit:async(c,r)=>{requests.push([c,r]);return{version:7,questions:[]}}};
  const loader=ui('components/interview-kit-editor.tsx','ClubInterviewKitSettings',{clubId:id(1),initialRoundId:id(3)},{...auth,'@/lib/workspace-api':api});loader.render();await flush();const editor=loader.render();assert.equal(editor.props.initialRoundId,id(3));
- const kit=ui('components/interview-kit-editor.tsx','InterviewKitEditor',editor.props,{...auth,'@/lib/workspace-api':api});kit.render();await flush();assert.deepEqual(requests,[[id(1),id(3)]]);assert.match(text(kit.render()),/Round 2/);loader.close();kit.close();
+ const kit=ui('components/interview-kit-editor.tsx','RoundKitEditor',{clubId:id(1),roundInfo:list.rounds[1],initiallyOpen:true},{...auth,'@/lib/workspace-api':api});kit.render();await flush();assert.deepEqual(requests,[[id(1),id(3)]]);assert.match(text(kit.render()),/Round 2/);loader.close();kit.close();
 });
 test('an owner lacking an office sees the saved round and access setup rather than issuing an unauthorized kit read',async t=>{
  const before=global.window;global.window={addEventListener(){},removeEventListener(){}};t.after(()=>global.window=before);let reads=0;
- const h=ui('components/interview-kit-editor.tsx','InterviewKitEditor',{clubId:id(1),rounds:[{id:id(3),name:'Round 2',canReadKit:false}]},{'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:id(1),status:'ACTIVE',isOwner:true,interviewOffices:[]}]}})},'@/lib/workspace-api':{getInterviewKit:async()=>{reads++}}});
+ const h=ui('components/interview-kit-editor.tsx','RoundKitEditor',{clubId:id(1),roundInfo:{id:id(3),name:'Round 2',canReadKit:false}},{'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:id(1),status:'ACTIVE',isOwner:true,interviewOffices:[]}]}})},'@/lib/workspace-api':{getInterviewKit:async()=>{reads++}}});
  const tree=h.render();await flush();assert.match(text(tree),/This round is saved/);assert.equal(reads,0);const link=nodes(tree).find(n=>n.type==='Link');const url=new URL(link.props.href,'https://example.test');assert.equal(url.searchParams.get('roundId'),id(3));assert.equal(url.searchParams.get('interviewTab'),'access');assert.equal(nodes(tree).some(n=>n.type==='Textarea'),false);h.close();
 });
 test('pipeline configuration link targets the exact persisted round and successful saves refresh setup through its existing callback',async t=>{

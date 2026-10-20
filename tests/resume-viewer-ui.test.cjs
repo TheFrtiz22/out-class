@@ -76,13 +76,15 @@ test('single-page toolbar has zoom/download but no pagination or routine access 
   assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Résumé zoom'));assert.ok(nodes(t).find(n=>n.props?.['aria-label']==='Download original PDF'));assert.equal(button(t,'Refresh access'),undefined);assert.equal(button(t,'Retry access'),undefined);assert.equal(calls,1);h.close();
  }
 });
-test('management shows moderation only for active explicit presidents/VPs, independent of admin scheduling rights', () => {
+test('Applicants shows moderation only for active explicit presidents/VPs; Interviews never duplicates review destinations', () => {
   const h=harness(), code=ts.transpileModule(fs.readFileSync('components/interview-management-tabs.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
   let offices=[],status='ACTIVE'; const m={exports:{}};
   const mocks={'@/components/interviews/interview-rooms-list':{InterviewRoomsList:'InterviewRoomsList'},'@/components/availability/admin-overview':{AdminAvailabilityOverview:'Availability'},'@/components/interview-access-setup':{InterviewAccessSetup:'AccessSetup'},'@/components/interview-submitted-reviews':{InterviewSubmittedReviews:'Reviews'},react:{useState:v=>[v,()=>{}]},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices}]}})},'@/lib/product-navigation':{canLeaveWorkspace:()=>true},'@/components/interview-kit-editor':{ClubInterviewKitSettings:'Kit'},'@/components/interview-resume-moderation':{InterviewResumeModeration:'Moderation'},'@/components/interviews/room-manager':{RoomManager:'Rooms'}};
   new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n==='@/components/icons'?require('./helpers/icons.cjs'):n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
   const render=()=>m.exports.InterviewManagementTabs({clubId:'c',onInterview(){}});
-  assert.doesNotMatch(text(render()),/Résumé moderation/); offices=['BOARD'];assert.match(text(render()),/Submitted reviews/);assert.doesNotMatch(text(render()),/Résumé moderation/);
-  offices=['VICE_PRESIDENT'];assert.match(text(render()),/Résumé moderation/); offices=['PRESIDENT'];assert.match(text(render()),/Résumé moderation/);
-  status='INACTIVE';assert.doesNotMatch(text(render()),/Submitted reviews/);assert.doesNotMatch(text(render()),/Résumé moderation/);
+  const menu=()=>h.load('lib/product-navigation.ts').managerNavigation({clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices},'c','recruiting').map(i=>i.label).join(' ');
+  assert.doesNotMatch(menu(),/Résumé moderation|Submitted reviews/); offices=['BOARD'];assert.match(menu(),/Submitted reviews/);assert.doesNotMatch(menu(),/Résumé moderation/);
+  offices=['VICE_PRESIDENT'];assert.match(menu(),/Résumé moderation/); offices=['PRESIDENT'];assert.match(menu(),/Résumé moderation/);
+  for(const office of [[],['BOARD'],['VICE_PRESIDENT'],['PRESIDENT']]){offices=office;assert.doesNotMatch(text(render()),/Résumé moderation|Submitted reviews/);}
+  status='INACTIVE';assert.doesNotMatch(menu(),/Submitted reviews|Résumé moderation/);
 });

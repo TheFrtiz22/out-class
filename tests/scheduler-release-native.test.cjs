@@ -10,7 +10,7 @@ test('release defects on actual bounded PostgreSQL/Prisma',{skip:!url,timeout:45
  let actor=await db.user.create({data:{email:randomUUID()+'@demo.invalid'}});
  const owner=actor,club=await db.club.create({data:{slug:randomUUID(),name:'Draft isolation',tagline:'',description:'',category:'Other',color:'#142d45'}});
  const member=await db.clubMember.create({data:{clubId:club.id,userId:actor.id,isOwner:true}});
- const api=loader({'@/utils/prisma':{prisma:db},'@/utils/auth':{requireAuth:async()=>({user:actor})}})('actions/editor-drafts.ts');
+ const api=loader({'@/utils/support-audit':{supportContext:async()=>null,supportTransactionScope:new (require('node:async_hooks').AsyncLocalStorage)()},'@/utils/prisma':{prisma:db},'@/utils/auth':{requireAuth:async()=>({user:actor})}})('actions/editor-drafts.ts');
  const scope={kind:'announcement',clubId:club.id},input={scope,revision:0,mutationId:randomUUID(),base:'new',content:{title:'Unpublished',body:'Retained draft'}};
  await t.test('legacy void query reproduces P2010; fixed action persists and reloads without domain publication',async()=>{
   await assert.rejects(db.$transaction(tx=>tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${owner.id+':legacy'},0))`),e=>e.code==='P2010'&&/void/.test(e.message));

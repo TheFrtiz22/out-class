@@ -115,6 +115,8 @@ async function directoryScheduling() {
     '@/utils/auth': { requireAuth: async () => ({ user: { id: 'actor' } }) },
     '@/utils/prisma': { prisma: { $transaction: fn => fn(tx) } },
     '@/utils/email': {}, '@/utils/invitation-delivery': {}, '@/utils/invitation-background': {},
+    '@/utils/revoke-club-invitations': {}, '@/utils/panel-publication': {},
+    '@/utils/official-panel-conflicts': {}, '@/utils/interview-assignment-notifications': {},
     '@/actions/invitation-emails': {}, '@/actions/club-onboarding': {},
   });
   const start = performance.now();
@@ -128,7 +130,8 @@ async function pipelineScheduling() {
   const query = async () => { active++; maxActive = Math.max(maxActive, active); await new Promise(resolve => setTimeout(resolve, 5)); active--; return []; };
   const api = load('actions/crm.ts', {
     '@/utils/auth': { requireClubPermission: async () => ({ membership: { isOwner: true, status: 'ACTIVE' } }) },
-    '@/utils/prisma': { prisma: { pipelineRound: { findMany: query }, application: { findMany: query } } },
+    '@/utils/prisma': { prisma: { $transaction: fn => fn({ pipelineRound: { findMany: query }, application: { findMany: query } }) } },
+    '@/utils/club-write-transaction': {}, '@/utils/recruitment-offers': {},
     'next/cache': {},
   });
   const timings = [];
@@ -144,6 +147,7 @@ async function publicProfileRendering() {
     '@/actions/club-directory': { getPublicClub: async () => ({ club: { id: 'synthetic-club', name: 'Synthetic Club' } }) },
     '@/actions/applications': { getStudentDashboardData: async () => { privateReads++; await new Promise(resolve => setTimeout(resolve, 5)); return { applications: [], attendances: [], meetings: [] }; } },
     '@/components/qr/public-club-page': { PublicClubPage: 'PublicClubPage' },
+    '@/components/shell/authenticated-page-layout': { AuthenticatedPageLayout: 'AuthenticatedPageLayout' },
     '@/lib/public-club-seo': {}, '@/lib/public-clubs': { publicClubs: [] },
   });
   const timings = [];

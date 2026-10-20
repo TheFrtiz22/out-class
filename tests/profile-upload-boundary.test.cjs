@@ -33,10 +33,11 @@ function harness({ account = 'active', signingError = false, uploadError = false
     'next/cache': { revalidatePath() {} },
     '@/utils/support-audit': { auditSupportAction: async () => calls.push({ step: 'audit' }) },
     '@/utils/supabase/server': { createClient: async () => ({
-      auth: { getUser: async () => ({ data: { user: account === 'unauthenticated' ? null : { id: owner, email: 'student@virginia.edu', email_confirmed_at: account === 'unverified' ? null : '2026-01-01' } } }) },
+      auth: { getSession: async () => account === 'unauthenticated' ? { data: { session: null }, error: null } : require('./helpers/auth-session.cjs').sessionFor(owner), getUser: async () => ({ data: { user: account === 'unauthenticated' ? null : { id: owner, email: 'student@virginia.edu', email_confirmed_at: account === 'unverified' ? null : '2026-01-01' } } }) },
       storage: { from: name => { calls.push({ step: 'bucket', name }); return bucket; } },
     }) },
     '@/utils/prisma': { prisma: {
+      $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{ live: true }] : [],
       user: { findUnique: async () => null, upsert: async () => ({ id: owner, email: 'student@virginia.edu', disabledAt: account === 'disabled' ? new Date() : null }) },
       studentProfile: { update: async ({ where, data }) => { profiles.set(where.userId, data); return data; }, findUnique: async ({ where }) => profiles.get(where.userId) },
     } },

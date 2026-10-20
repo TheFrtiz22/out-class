@@ -18,6 +18,10 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { RecruitmentAttendanceSummary } from "@/components/recruitment-attendance-summary"
 import { RevealApplicant } from "@/components/reveal-applicant"
 import { hasPermission } from "@/lib/permissions"
+import { interviewCapabilities } from "@/lib/interview-access"
+import { applicantInterviewHref } from "@/lib/applicant-interview-navigation"
+import Link from "next/link"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
 
 import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -153,7 +157,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   useEffect(() => { publish.current?.(data) }, [data])
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
-  const dirty = JSON.stringify([score, notes]) !== baseline && !!activeId
   useEffect(() => {
     let current = true
     setLoading(!retained.current)
@@ -248,10 +251,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     ],
   )
   const active = applicants.find((app) => app.id === activeId)
+  const canEvaluate = active?.canEvaluate === true
+  const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
     scope: { kind: "review", clubId: membership.clubId, resourceId: `${active?.id ?? "none"}:${active?.roundId ?? "none"}` },
     value: { score, notes }, restore: value=>{setScore(value.score);setNotes(value.notes)},
-    enabled: !!active && hasPermission(membership, "applications.review"), base: baseline,
+    enabled: canEvaluate, base: baseline,
   })
   const activeIndex = filtered.findIndex((app) => app.id === activeId)
   useEffect(() => {
@@ -288,7 +293,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           ?.focus()
       })
     }
-    if (active && hasPermission(membership, "applications.review")) void draftSave.flush().then(apply).catch(() => {})
+    if (active?.canEvaluate) void draftSave.flush().then(apply).catch(() => {})
     else apply()
   }
   async function mutate(kind: "review" | "round" | "decision") {
@@ -304,6 +309,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setMessage("")
     try {
       if (kind === "review") {
+        if (!canEvaluate) throw new Error("A current panel assignment is required to submit this identified review.")
         await draftSave.flush()
         const roundName = data?.rounds.find((item) => item.id === active.roundId)?.name
         if (!roundName) throw new Error()
@@ -322,6 +328,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   app.id === active.id
                     ? {
                         ...app,
+                        canEvaluate: false,
                         evaluations: [
                           ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
                           result.evaluation,
@@ -627,6 +634,9 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   {active.studentId.startsWith("anonymous-") ? "Anonymous review · identity and appointments withheld" : [active.student.studentProfile?.major || "Academic profile not provided", active.student.email].filter(Boolean).join(" · ")}
                 </SheetDescription>
               </SheetHeader>
+              {(interviewCapabilities(membership).readClosing || interviewCapabilities(membership).moderateResume) && <nav aria-label="Applicant interview records" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                {([...(interviewCapabilities(membership).readClosing ? [{ tool: "reviews" as const, label: "Submitted reviews" }] : []), ...(interviewCapabilities(membership).moderateResume && !active.studentId.startsWith("anonymous-") ? [{ tool: "resumes" as const, label: "Résumé moderation" }] : [])]).map(item => <Link key={item.tool} className="inline-flex min-h-10 items-center underline" href={applicantInterviewHref(membership.clubId, item.tool, (() => { const query = new URLSearchParams(typeof window === "undefined" ? "" : window.location.search); if (round) query.set("roundId", round); return query.toString(); })(), active.id)} onClick={e => { if (busy || dirty || !canLeaveWorkspace()) e.preventDefault(); }}>{item.label}</Link>)}
+              </nav>}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
                 <Badge variant="secondary">{applicationStatusLabels[active.status]}</Badge>
                 <div className="flex items-center gap-2">
@@ -746,7 +756,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 {!active.evaluations.length && (
                   <p className="text-sm text-muted-foreground">No evaluations yet.</p>
                 )}
-                <form data-autosave-editor="true" onBlur={draftSave.onBlur}
+                {canEvaluate ? <form data-autosave-editor="true" onBlur={draftSave.onBlur}
                   onSubmit={(event) => {
                     event.preventDefault()
                     void mutate("review")
@@ -785,7 +795,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                       {dirty ? "Draft · not finalized" : score ? "Finalized review" : "No review finalized"}
                     </span>
                   </div>
-                </form>
+                </form> : <p className="text-sm text-muted-foreground">Submitted evaluations are read-only. A new identified interview evaluation requires a current panel assignment; anonymous review requires review permission. You cannot evaluate your own application.</p>}
               </section>
               <section className="space-y-3">
                 <h3 className="oc-card-heading ">Recruitment actions</h3>

@@ -31,7 +31,7 @@ function identityHarness() {
   const accounts = { [actor]: { id: actor, email: 'admin@virginia.edu' }, [target]: { id: target, email: 'target@virginia.edu', role: 'STUDENT' } };
   const session = { id: 'support-session', actorId: actor, targetUserId: target, mode: 'IMPERSONATION', expiresAt: new Date(Date.now() + 60000), endedAt: null };
   let tokenHash;
-  const prisma = { $queryRaw: async () => [],
+  const prisma = { $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{live:true}] : [],
     user: { upsert: async () => accounts[login], findUnique: async ({ where }) => ({ ...accounts[where.id], disabledAt: where.id === target && disabled ? new Date() : null }) },
     platformAdmin: { findUnique: async ({ where }) => where.userId === actor ? { active: grant } : targetGrant ? { active: true } : null },
     platformViewSession: { findUnique: async ({ where }) => where.tokenHash === tokenHash ? session : null },
@@ -42,8 +42,8 @@ function identityHarness() {
     "@/utils/admin-elevation": { requireAdminElevation: async () => ({}) },
     '@/utils/prisma': { prisma }, './prisma': { prisma },
     'next/headers': { cookies: async () => ({ has: key => key === cookie && !!token, get: key => key === cookie && token ? { value: token } : undefined }) },
-    '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }), mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: aal } }) } } }) },
-    './supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }) } }) },
+    '@/utils/supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor(login), getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }), mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: { currentLevel: aal } }) } } }) },
+    './supabase/server': { createClient: async () => ({ auth: { getSession: async () => require('./helpers/auth-session.cjs').sessionFor(login), getUser: async () => ({ data: { user: { ...accounts[login], email_confirmed_at: '2026-01-01', app_metadata: { role: 'admin' } } } }) } }) },
     'next/navigation': { redirect: () => { throw Error('login required'); } },
   });
   const helper = load('utils/platform-view-as.ts');

@@ -37,6 +37,10 @@ async function main() {
   try {
     const columns = await prisma.$transaction(async tx => {
       await tx.$executeRawUnsafe('SET TRANSACTION READ ONLY')
+      const [identity] = await tx.$queryRawUnsafe('SELECT current_user AS role')
+      if (identity?.role !== 'postgres') throw Object.assign(new Error('Unexpected compatibility binding'), { code: 'COMPATIBILITY_ROLE_UNVERIFIED' })
+      await tx.$queryRawUnsafe("SELECT id,user_id,not_after FROM auth.sessions WHERE false")
+      console.log('Compatibility build database role: postgres; required session query access verified. No credential changed.')
       return tx.$queryRawUnsafe(catalogQuery)
     })
     const missing = missingColumns(columns)

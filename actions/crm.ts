@@ -33,7 +33,12 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
   )
     throw new Error("Applicant access denied.");
 
-  return prisma.$transaction(async tx => {
+  const started = Date.now();
+  let transactionStarted: number | null = null;
+  let phase = "acquire";
+  try { return await prisma.$transaction(async tx => {
+    transactionStarted = Date.now();
+    phase = "rounds";
     const rounds = await tx.pipelineRound.findMany({
       where: { clubId, archivedAt: null },
       orderBy: { order: "asc" },
@@ -45,6 +50,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
       if (!selectedRound.anonymousReview && !hasPermission(membership, "applicants.identify")) throw new Error("Applicant access denied.");
     }
     const where = { clubId, status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
+    phase = "applications";
     const applications = await tx.application.findMany({
       where: {
         ...where,
@@ -62,9 +68,11 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
         bookings: { include: { slot: true } },
       },
     });
+    phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
 
+    phase = "projection-or-commit";
     return {
       rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
@@ -78,10 +86,20 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
         const safe = { ...raw }; delete (safe as Partial<typeof raw>).interviewAssignments;
         const app = { ...safe, evaluations: raw.evaluations.filter(e => raw.studentId !== membership.userId && e.submittedAt && (caps.participate && e.interviewerId === membership.id && assignments.some(a => a.memberId === membership.id && a.roundId === e.roundId) || canSeeRound && (e.roundId === raw.roundId || caps.readClosing))).map(e => ({ ...e, notes: null, applicantQuestions: null })) };
         const projected = !hasPermission(membership, "applicants.identify") || app.round.anonymousReview ? anonymousApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay)) : identifiedApplication(app, hasPermission(membership, "applications.review") && genderVisibility(app.round.applicantDisplay), "crm");
-        return { ...projected, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
+        const canEvaluate = !ownSubmitted && raw.studentId !== membership.userId && (raw.round.anonymousReview ? hasPermission(membership, "applications.review") : caps.participate && assigned);
+        return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
       }),
     };
   }, { isolationLevel: "RepeatableRead" });
+  } catch (error) {
+    // Never serialize the exception, query, identifiers, or applicant content.
+    const rawCode = error && typeof error === "object" && "code" in error ? error.code : null;
+    const code = typeof rawCode === "string" && ["P2024", "P2028", "P2034"].includes(rawCode) ? rawCode : "other";
+    console.error("recruitment.pipeline.read.failure", { code, phase, elapsedMs: Date.now() - started,
+      acquisitionMs: transactionStarted === null ? null : transactionStarted - started,
+      transactionMs: transactionStarted === null ? null : Date.now() - transactionStarted });
+    throw error;
+  }
 }
 
 const moveApplicantSchema = z.object({

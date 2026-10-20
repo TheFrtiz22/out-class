@@ -5,8 +5,10 @@ import { useDemoMode } from "@/contexts/demo-context";
 import { getInterviewResumeModerationQueue } from "@/lib/workspace-api";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { ApplicantInterviewFilters } from "@/lib/applicant-interview-navigation";
 type Row = Awaited<ReturnType<typeof getInterviewResumeModerationQueue>>[number];
-export function InterviewResumeModeration({ clubId }: { clubId: string }) {
+export function InterviewResumeModeration({ clubId, filters = {}, initialDocumentId }: { clubId: string; filters?: ApplicantInterviewFilters; initialDocumentId?: string }) {
+  const { applicationId, roundId, cycleId } = filters;
   const { isDemoEnabled } = useDemoMode();
   const [rows, setRows] = useState<Row[]>([]), [selected, setSelected] = useState<Row | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0);
   const trigger = useRef<HTMLButtonElement | null>(null), refreshButton = useRef<HTMLButtonElement>(null);
@@ -15,7 +17,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
     let current = true, pending = false;
     const refresh = async () => {
       if (pending) return; pending = true;
-      try { const value = await getInterviewResumeModerationQueue(clubId); if (current) { setRows(value); setError(""); } }
+      try { const value = await getInterviewResumeModerationQueue(clubId, { applicationId, roundId, cycleId }); if (current) { setRows(value); setSelected(previous => value.find(row => row.documentId === (previous?.documentId || initialDocumentId)) || null); setError(""); } }
       catch { if (current) { setRows([]); setSelected(null); setError("Résumé moderation unavailable. Check your current office assignment and access."); } }
       finally { pending = false; if (current) setLoading(false); }
     };
@@ -23,7 +25,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
     setRows([]); setSelected(null); setLoading(true); void refresh();
     const timer = setInterval(visible, 10000); window.addEventListener("focus", visible);
     return () => { current = false; clearInterval(timer); window.removeEventListener("focus", visible); };
-  }, [clubId, retry]);
+  }, [clubId, retry, applicationId, roundId, cycleId, initialDocumentId]);
   return <section className="space-y-4 p-4" aria-label="Résumé moderation">
     <h2 className="oc-section-heading">Résumé moderation</h2>
     <p className="text-sm text-muted-foreground">Preserved interview documents, including past rounds. Only explicit presidents and vice-presidents can moderate other authors’ comments. The latest 100 documents are shown.</p>
@@ -34,7 +36,7 @@ export function InterviewResumeModeration({ clubId }: { clubId: string }) {
     <Dialog open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="flex h-[94dvh] max-w-[96vw] flex-col overflow-hidden sm:max-w-[96vw]" onCloseAutoFocus={e => { e.preventDefault(); (trigger.current?.isConnected ? trigger.current : refreshButton.current)?.focus(); }}>
       <DialogHeader className="pr-10"><DialogTitle>{selected?.applicantName} · Résumé</DialogTitle><DialogDescription>The document preserved for {selected?.roundName}. Moderated changes are audited.</DialogDescription></DialogHeader>
       <Button type="button" size="sm" variant="outline" className="self-start" onClick={() => setSelected(null)}>Close résumé</Button>
-      {selected && scope && <Viewer scope={scope} documentId={selected.documentId} isDemo={isDemoEnabled} onAccessLost={() => { setRows([]); }} />}
+      {selected && scope && <Viewer scope={scope} documentId={selected.documentId} isDemo={isDemoEnabled} onAccessLost={() => { setRows([]); setSelected(null); }} />}
     </DialogContent></Dialog>
   </section>;
 }

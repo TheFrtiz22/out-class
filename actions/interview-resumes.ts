@@ -13,13 +13,14 @@ import { validateResumeAnchor } from "@/lib/resume-anchor-validation";
 
 const documentSelect = { id: true, contentHash: true, mimeType: true, createdAt: true } as const;
 /** Explicit moderation entry point includes only preserved documents, never private question drafts. */
-export async function getInterviewResumeModerationQueue(clubId: string) {
+export async function getInterviewResumeModerationQueue(clubId: string, filters: import("@/lib/applicant-interview-navigation").ApplicantInterviewFilters = {}) {
   z.string().uuid().parse(clubId); const { user } = await requireAuth();
+  const selected = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), cycleId: z.string().uuid().optional() }).parse(filters);
   return prisma.$transaction(async tx => {
     const { caps } = await interviewActor(tx, clubId, user.id);
     if (!caps.moderateResume) throw new Error("President or vice-president moderation access required.");
     const documents = await tx.interviewResumeDocument.findMany({
-      where: { application: { clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
+      where: { ...(selected.applicationId ? { applicationId: selected.applicationId } : {}), ...(selected.roundId ? { roundId: selected.roundId } : {}), application: { ...(selected.cycleId ? { recruitmentCycleId: selected.cycleId } : {}), clubId, studentId: { not: user.id }, status: { not: "DRAFTING" }, round: { anonymousReview: false } }, round: { clubId, anonymousReview: false } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 100,
       select: { id: true, applicationId: true, roundId: true, round: { select: { name: true } }, application: { select: { student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } },
     });
