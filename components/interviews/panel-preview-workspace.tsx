@@ -14,6 +14,7 @@ import { NativeSelect } from "@/components/ui/native-select"
 import { LoadingState } from "@/components/ui/loading-state"
 import { availabilityOverrideConditions, assignmentKey, canProposeMember, panelDraftScene,panelScheduleChanges,mergePanelPublication, panelIssueMessages, type PanelAssignment, type PanelOptions, type PanelProposalView, type PanelWorkspace,type PanelApprovalReview } from "@/lib/panel-proposals"
 import { dayKey, slotTime, zonedInstant } from "@/lib/interview-rooms"
+import { panelIssueSummary } from "@/lib/panel-issue-summary"
 import { panelPublicationStatus } from "@/lib/panel-publication-status"
 import type { BookingSettings } from "@/lib/interview-rooms"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
@@ -30,11 +31,15 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
   const [settingsOpen, setSettingsOpen] = useState(false), [focusSlot, setFocusSlot] = useState("")
   const [comparisonOpen, setComparisonOpen] = useState(false), [historyOpen, setHistoryOpen] = useState(false), [showPublished, setShowPublished] = useState(false)
   const comparisonOrigin = useRef<HTMLButtonElement>(null), historyOrigin = useRef<HTMLButtonElement>(null)
+  const [recheckRequired, setRecheckRequired] = useState(false), [rechecking, setRechecking] = useState(false), [recheckError, setRecheckError] = useState(""), [recheckResult, setRecheckResult] = useState("")
+  const checking = useRef(false), availabilityGeneration = useRef(0)
   const approvalSummary = useRef<HTMLDListElement>(null)
   const initial = useRef<Promise<PanelWorkspace> | null>(null)
   const rowButtons = useRef(new Map<string, HTMLButtonElement>())
   const scope = { clubId, roundId }
   const accept = (value: PanelWorkspace) => {
+    if (value.proposal?.stale) setRecheckRequired(true)
+    if (!value.proposal) { setRecheckRequired(false); setRecheckError(""); setRecheckResult("") }
     setWorkspace(previous=>({...previous,...value,clubName:value.clubName??previous?.clubName,canPublish:value.canPublish??previous?.canPublish,canOverrideAvailability:value.canOverrideAvailability??previous?.canOverrideAvailability,published:value.published===undefined?previous?.published:value.published,history:value.history??previous?.history})); setDraft(value.proposal); setDirty(false)
     const window = value.proposal?.document.window ?? initialWindow ?? value.suggestedWindow
     if (window) { setStart(dayKey(window.start, SCHEDULING_TIMEZONE)); setEnd(dayKey(new Date(+new Date(window.end) - 1), SCHEDULING_TIMEZONE)) }
@@ -71,9 +76,18 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
     else if (workspace) onSummary?.({ hasDraft: false, required: workspace.scene.sessions.reduce((n, s) => n + s.required, 0), filled: workspace.scene.sessions.reduce((n, s) => n + s.existingMemberIds.length, 0), state: panelPublicationStatus(bookingSettings, workspace.published?.document).label })
   }, [draft, workspace, bookingSettings, onSummary])
   useEffect(() => {
-    const changed = () => { void getPanelProposalWorkspace({ clubId, roundId }).then(value => { setWorkspace(value); setDraft(previous => previous ? { ...previous, stale: true } : previous); if (value.suggestedWindow) { const window = value.suggestedWindow; setStart(previous => previous || dayKey(window.start, SCHEDULING_TIMEZONE)); setEnd(previous => previous || dayKey(new Date(+new Date(window.end) - 1), SCHEDULING_TIMEZONE)) } }).catch(() => setError("Staffing changed. Reload or revalidate before publishing.")) }
-    window.addEventListener("outclass:staffing-changed", changed)
-    return () => window.removeEventListener("outclass:staffing-changed", changed)
+    const changed = () => {
+      availabilityGeneration.current += 1
+      setRecheckRequired(true); setRecheckResult("")
+      setDraft(previous => previous ? { ...previous, stale: true } : previous)
+      void getPanelProposalWorkspace({ clubId, roundId }).then(value => {
+        setWorkspace(value)
+        if (value.suggestedWindow) { const window = value.suggestedWindow; setStart(previous => previous || dayKey(window.start, SCHEDULING_TIMEZONE)); setEnd(previous => previous || dayKey(new Date(+new Date(window.end) - 1), SCHEDULING_TIMEZONE)) }
+      }).catch(() => setRecheckError("Could not refresh availability. Your assignments are retained; retry the availability check."))
+    }
+    const events = ["outclass:staffing-changed", "outclass:availability-changed"]
+    events.forEach(event => window.addEventListener(event, changed))
+    return () => events.forEach(event => window.removeEventListener(event, changed))
   }, [clubId, roundId])
   async function run(work: () => Promise<void>) {
     if (busy) return
@@ -104,22 +118,36 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
     const button = rowButtons.current.get(focusSlot)
     if (button && !button.closest('[hidden]')) { button.focus(); setFocusSlot("") }
   }, [focusSlot, busy, review, expandedDays])
-  function revealIssues(value: PanelProposalView | null | undefined) {
+  function revealIssues(value: PanelProposalView | null | undefined, kind: "all" | "staffing" | "conflicts" = "all") {
     if (!value) return
-    const issueIds = value.validation.sessions.filter(row => row.unfilled || value.validation.issues.some(issue => issue.slotId === row.slotId)).map(row => row.slotId)
-    const days = value.document.sessions.filter(s => issueIds.includes(s.id)).map(s => dayKey(s.startTime, SCHEDULING_TIMEZONE))
-    if (days.length) { setShowPublished(false); setExpandedDays(previous => new Set([...previous, ...days])); setFocusSlot(issueIds[0]) }
+    const summary = panelIssueSummary(value.validation)
+    const ids = new Set(kind === "staffing" ? summary.missingSlots : kind === "conflicts" ? summary.conflictSlots : [...summary.missingSlots, ...summary.conflictSlots])
+    const affected = value.document.sessions.filter(s => ids.has(s.id)).sort((a,b) => a.startTime.localeCompare(b.startTime) || a.id.localeCompare(b.id))
+    const days = affected.map(s => dayKey(s.startTime, SCHEDULING_TIMEZONE))
+    if (days.length) { setShowPublished(false); setExpandedDays(previous => new Set([...previous, ...days])); setFocusSlot(affected[0].id) }
   }
   async function revalidate() {
-    if (!draft) return
-    await run(async () => {
-      const saved = dirty ? await savePanelProposalDraft({ ...scope, proposalId: draft.id, revision: draft.revision, assignments, requirements: requirements() }) : draft
-      setDraft(saved); setDirty(false)
-      const result = await revalidatePanelDraft({ ...scope, proposalId: saved.id, revision: saved.revision })
-      const current = await getPanelProposalWorkspace(scope); accept(current); revealIssues(current.proposal)
-      if (!result.ok) throw new Error(result.error)
-      setNotice("Draft revalidated. Review before publishing.")
-    })
+    if (!draft || busy || checking.current) return
+    checking.current = true
+    try { await run(async () => {
+      const generation = availabilityGeneration.current
+      setRechecking(true); setRecheckError(""); setRecheckResult("")
+      try {
+        const saved = dirty ? await savePanelProposalDraft({ ...scope, proposalId: draft.id, revision: draft.revision, assignments, requirements: requirements() }) : draft
+        setDraft(saved); setDirty(false)
+        const result = await revalidatePanelDraft({ ...scope, proposalId: saved.id, revision: saved.revision })
+        const current = await getPanelProposalWorkspace(scope)
+        if (!current.proposal || current.proposal.id !== saved.id || !result.ok && current.proposal.revision !== saved.revision) throw new Error("The draft changed. Reload before confirming.")
+        accept(current); revealIssues(current.proposal)
+        if (!result.ok) throw new Error(result.error)
+        if (current.proposal.validation.issues.length) throw new Error("Assignments still have conflicts. Review the affected slots and recheck availability.")
+        if (generation !== availabilityGeneration.current || current.proposal.stale) throw new Error("Availability changed again while checking. Recheck availability before confirming.")
+        setRecheckRequired(false); setRecheckResult("Availability rechecked.")
+      } catch (error) {
+        setRecheckRequired(true); setDraft(previous => previous ? { ...previous, stale: true } : previous)
+        setRecheckError(error instanceof Error && !("digest" in error) ? error.message : "Could not check availability. Retry the check.")
+      } finally { setRechecking(false) }
+    }) } finally { checking.current = false }
   }
   const assignments = draft?.document.assignments ?? []
   const session = sessions.find(s => s.id === selected), scene = workspace?.scene ? draft?panelDraftScene(draft.document,workspace.scene):workspace.scene:undefined
@@ -154,21 +182,31 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
   }
   async function finalize(){if(!draft)return;await run(async()=>{let current=draft;if(dirty)current=await savePanelProposalDraft({...scope,proposalId:draft.id,revision:draft.revision,assignments,requirements:requirements()});setDraft(current);setDirty(false);const result=await reviewPanelPublication({...scope,proposalId:current.id,revision:current.revision});const refreshed=await getPanelProposalWorkspace(scope);accept(refreshed);revealIssues(refreshed.proposal);if(!result.ok)throw new Error(result.error);setOverride(false);setReason("");setReview(result.value)})}
   const changes=draft?panelScheduleChanges(workspace?.published?.document??null,mergePanelPublication(workspace?.published?.document??null,draft.document)):[]
+  const issues = draft ? panelIssueSummary(draft.validation) : null
+  const needsRecheck = !!draft && (draft.stale || recheckRequired)
   const publication = panelPublicationStatus(bookingSettings, workspace?.published?.document, draft?.document)
   const official = showPublished && !!draft && !!workspace?.published
   const scheduleSessions = official ? workspace!.published!.document.sessions : sessions
   const scheduleAssignments = official ? workspace!.published!.document.assignments : assignments
   return <section className="min-w-0 space-y-5" aria-label="Review Panel Assignments" data-saving={busy} data-unsaved={dirty}>
-<header className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium">Confirm interviewers</h3><span role="status" className="text-xs text-muted-foreground">{busy ? "Saving…" : draft ? "Draft saved" : workspace?.published ? "Interviewers confirmed" : "Not assigned"}</span></header>
-    {error && <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{error} <Button variant="outline" size="sm" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button></p>}
+<header className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium">Confirm interviewers</h3><span role="status" className="text-xs text-muted-foreground">{rechecking ? "Checking…" : busy ? "Saving…" : draft ? "Draft saved" : workspace?.published ? "Interviewers confirmed" : "Not assigned"}</span></header>
+    {!draft && error && <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{error} <Button variant="outline" size="sm" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button></p>}
     {draft && initialWindow && (draft.document.window.start !== initialWindow.start || draft.document.window.end !== initialWindow.end) && <p className="text-xs text-muted-foreground">This saved draft covers {dayKey(draft.document.window.start, SCHEDULING_TIMEZONE)} through {dayKey(new Date(+new Date(draft.document.window.end) - 1), SCHEDULING_TIMEZONE)}. The date filter applies to Rooms; it does not replace this draft.</p>}
     {notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
     {!workspace && busy ? <LoadingState label="Preparing panel planning…" rows={3}/> : workspace && <>
       {!workspace.scene.sessions.some(s => s.active) && !draft && <div className="space-y-2 rounded-xl border border-dashed p-4"><h4 className="font-semibold">No upcoming interview sessions</h4><p className="text-sm text-muted-foreground">Create or reopen a room with future interview times before filling panels.</p>{onRooms && <Button variant="outline" onClick={onRooms}>Go to Rooms</Button>}</div>}
       <div className="flex flex-wrap gap-2">{workspace.published && !draft ? <><Button variant="outline" disabled={busy} onClick={() => begin()}>Edit interviewers</Button>{onApproved && <Button onClick={onApproved}>Continue to booking</Button>}</> : <><Button variant={draft ? "outline" : "default"} disabled={busy || !start || !end} onClick={() => generate(draft ? "FILL_MISSING" : "REGENERATE")}>{busy ? "Working…" : "Assign available interviewers"}</Button>{draft && <Button disabled={busy || !workspace.canPublish} onClick={finalize}>Confirm interviewers</Button>}</>}<div className="ml-auto"><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="sm" disabled={busy}>Schedule tools</Button></DropdownMenuTrigger><DropdownMenuContent align="end">
         <DropdownMenuItem className="min-h-11" onSelect={() => setSettingsOpen(true)}>Assignment rules</DropdownMenuItem>
-        {draft && <><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => generate("REGENERATE")}>Regenerate unlocked assignments</DropdownMenuItem><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => revalidate()}>Revalidate draft</DropdownMenuItem><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => { if (window.confirm("Discard unapproved changes? Confirmed reservations and the published schedule are retained.")) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) }}>Discard draft</DropdownMenuItem></>}
+        {draft && <><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => generate("REGENERATE")}>Regenerate unlocked assignments</DropdownMenuItem><DropdownMenuItem className="min-h-11" disabled={busy} onSelect={() => { if (window.confirm("Discard unapproved changes? Confirmed reservations and the published schedule are retained.")) void run(async () => { await discardPanelProposal({...scope,proposalId:draft.id,revision:draft.revision}); accept(await getPanelProposalWorkspace(scope)); setNotice("Draft discarded.") }) }}>Discard draft</DropdownMenuItem></>}
       </DropdownMenuContent></DropdownMenu></div></div>
+      {draft && issues && <section aria-label="Staffing issues" className="space-y-2 text-sm">
+        {error && <p role="alert" className="text-destructive">{error} <Button size="sm" variant="outline" disabled={busy} onClick={() => { if (canLeaveWorkspace()) void run(async () => accept(await getPanelProposalWorkspace(scope))) }}>Reload draft</Button></p>}
+        {needsRecheck && <p role="status" className="text-amber-800">Availability has changed. Recheck assignments before confirming.</p>}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1"><Button size="sm" variant={needsRecheck ? "outline" : "link"} className={needsRecheck ? "" : "h-9 px-0 text-muted-foreground"} disabled={busy} onClick={() => void revalidate()}>{rechecking ? "Checking availability…" : "Recheck availability"}</Button>{recheckResult && <p role="status" className="text-xs text-muted-foreground">{recheckResult}</p>}</div>
+        {recheckError && <p role="alert" className="text-destructive">{recheckError} Your assignments are retained. Recheck availability to retry.</p>}
+        {issues.staffingText && <div className="flex flex-wrap items-center gap-x-4 gap-y-1"><p role="status" className={issues.missingSlots.length ? "text-amber-800" : "text-muted-foreground"}>{issues.staffingText}</p>{!!issues.missingSlots.length && <Button size="sm" variant="link" className="h-9 px-0" disabled={busy} onClick={() => revealIssues(draft, "staffing")}>Review slots</Button>}</div>}
+        {!!issues.conflictSlots.length && <div className="flex flex-wrap items-center gap-x-4 gap-y-1"><p role="status" className="text-amber-800">{issues.conflictText}</p><Button size="sm" variant="link" className="h-9 px-0" disabled={busy} onClick={() => revealIssues(draft, "conflicts")}>Review conflicts</Button></div>}
+      </section>}
       <section aria-label="Publication status" className="space-y-1 text-sm"><p role="status" className="font-medium">{publication.label}</p>{publication.detail && <p className="text-xs text-muted-foreground">{publication.detail}</p>}<div className="flex flex-wrap items-center gap-4">{draft && <Button type="button" variant="link" size="sm" className="h-9 px-0" onClick={event => { comparisonOrigin.current = event.currentTarget; setComparisonOpen(true) }}>Review changes</Button>}{workspace.published && <Button type="button" variant="link" size="sm" className="h-9 px-0 text-muted-foreground" onClick={event => { historyOrigin.current = event.currentTarget; setHistoryOpen(true) }}>Publication history</Button>}</div></section>
       {(!workspace.published || draft) && <p className="text-xs text-muted-foreground">Both actions include slots in collapsed dates.</p>}
       {!workspace.canPublish && <p className="text-xs text-muted-foreground">A club owner must approve interviewer access.</p>}
@@ -188,8 +226,6 @@ export function PanelPreviewWorkspace({ clubId, roundId, autoStart = false, auto
         })}</ul></div>)}</div></section>})}</div>
 
       {draft && <>
-        {draft.stale && <p role="status" className="text-sm text-amber-800">Availability or scheduling changed. Recheck before approving.</p>}
-        <div className="space-y-2 text-sm" role="region" aria-label="Staffing issues"><p>{draft.validation.filled} of {draft.validation.required} positions covered · {draft.validation.sessions.filter(s => s.unfilled || draft.validation.issues.some(i => i.slotId === s.slotId)).length} times need attention</p>{draft.validation.sessions.some(s => s.unfilled) || draft.validation.issues.length ? <details><summary className="cursor-pointer font-medium">Resolve staffing issues</summary><ul className="mt-2 divide-y">{draft.validation.sessions.filter(s => s.unfilled || draft.validation.issues.some(i => i.slotId === s.slotId)).map(row => <li key={row.slotId}><button type="button" className="min-h-11 w-full py-2 text-left underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2" onClick={() => setSelected(row.slotId)}>{sessionLabel(row.slotId)} · {row.unfilled ? `${row.unfilled} interviewers needed` : "Review conflict"}</button></li>)}</ul></details> : null}</div>
         {session && scene && <Sheet open={!!selected} onOpenChange={open => { if (!open && !busy) setSelected("") }}><SheetContent className="ir-slot-editor w-full overflow-y-auto sm:max-w-xl motion-reduce:animate-none motion-reduce:transition-none" onEscapeKeyDown={event => { if (busy) event.preventDefault() }} onPointerDownOutside={event => { if (busy) event.preventDefault() }} onCloseAutoFocus={event => { event.preventDefault(); rowButtons.current.get(session.id)?.focus() }}><SheetHeader className="pr-14"><SheetTitle>Interviewers · {sessionLabel(session.id)}</SheetTitle><SheetDescription>Changes save automatically. Confirm the full schedule before applicants can book.</SheetDescription></SheetHeader><div className="space-y-4 px-4 pb-6" aria-label="Edit selected session">
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm">{notice}</p>}
           {draft.validation.issues.filter(i => i.slotId === session.id).map((i,index) => <p key={index} className="text-sm text-destructive">{i.memberId ? `${name(i.memberId)}: ` : ""}{i.message}</p>)}
