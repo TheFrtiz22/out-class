@@ -171,8 +171,6 @@
 .oc-faq-entry[open] .oc-faq-indicator::after { transform: rotate(0); }
 .oc-faq-answer { overflow: hidden; }
 .oc-information-faq .oc-faq-answer p { margin: 0; max-width: 62ch; padding: 0 36px 16px 0; font-size: 16px; line-height: 1.8; }
-.oc-faq-permalink { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-bottom: 12px; color: var(--muted-foreground); font-size: 11px; }
-.oc-faq-permalink:hover { text-decoration: underline; text-underline-offset: 4px; }
 .oc-faq-next { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 32px; background: var(--oc-public-linen); border-left: 3px solid var(--brand-orange); margin-top: 16px; }
 .oc-faq-next h3 { margin: 0 0 8px !important; }
 .oc-faq-next p { color: var(--muted-foreground); font-size: 15px; }
