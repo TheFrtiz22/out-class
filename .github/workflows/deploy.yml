@@ -20,6 +20,7 @@ jobs:
           node-version: "22"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm validate
       # Vercel's Git integration deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.

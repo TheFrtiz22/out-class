@@ -64,7 +64,7 @@ async function ready(url,headers={}){
  // Stop only this explicitly disposable project; the normal out-class stack is untouched.
  stackTouched=true;
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
- logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,analytics,vector,imgproxy'],'supabase-start.log');
+ logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'],'supabase-start.log');
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
  const settings={projectId:'outclass-onboarding-e2e',appUrl:'http://127.0.0.1:3107',status,buildDir:path.join(repo,'.next-publish')};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
