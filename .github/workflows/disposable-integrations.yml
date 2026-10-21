@@ -46,6 +46,9 @@ jobs:
           node-version: "22"
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build compiled site CSS for event-browser fixture
+        if: matrix.suite == 'events'
+        run: pnpm build
       - name: Install browser for event discovery fixture
         if: matrix.suite == 'events'
         run: pnpm exec playwright install --with-deps chromium
