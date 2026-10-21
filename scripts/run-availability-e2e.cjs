@@ -73,6 +73,19 @@ async function main() {
     fs.writeFileSync(path.join(root, 'config.json'), JSON.stringify(settings), { mode: 0o600 })
     }
   } finally { await db.$disconnect() }
+  // Native Storage needs a real local API/database but not an app server.
+  if (process.argv.includes('--event-storage')) {
+    const storageConfig = path.join(root, 'event-storage-config.json')
+    fs.writeFileSync(storageConfig, JSON.stringify({
+      DB_URL: settings.status.DB_URL, API_URL: settings.status.API_URL,
+      SECRET_KEY: settings.status.SECRET_KEY, SERVICE_ROLE_KEY: settings.status.SERVICE_ROLE_KEY,
+      ANON_KEY: settings.status.ANON_KEY
+    }), { mode: 0o600 })
+    run(['--test', 'tests/event-storage-native.test.cjs'], 'event-storage-native',
+      { ...env, OUTCLASS_EVENT_STORAGE_TEST_CONFIG: storageConfig })
+    console.log('Local Storage + native PostgreSQL integration: PASS')
+    return
+  }
   const existingPid = path.join(root, 'server.pid'); if (fs.existsSync(existingPid)) { try { process.kill(Number(fs.readFileSync(existingPid)), 'SIGTERM') } catch {} fs.rmSync(existingPid) }
   run([path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], 'build', env, path.join(root, 'app'))
   if (buildOnly) return
