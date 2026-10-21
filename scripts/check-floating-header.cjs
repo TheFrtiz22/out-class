@@ -55,6 +55,22 @@ async function check() {
     await page.goto(`${base}/club/fixture-mii/workspace?section=recruitment&role=owner`, { waitUntil: 'networkidle' })
     await page.locator('.oc-product-header').waitFor({ state: 'visible' })
     await page.screenshot({ path: '/tmp/outclass-floating-header-desktop.png' })
+    // The same real shell now owns an accessible desktop floating dock.
+    const dockRail = page.locator('aside .oc-dock-rail')
+    assert.equal(await dockRail.count(), 1)
+    assert.equal(await dockRail.evaluate(el => el.classList.contains('oc-dock-collapsed')), true)
+    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'false')
+    await dockRail.getByRole('link', { name: 'Overview', exact: true }).hover()
+    await page.getByRole('tooltip', { name: 'Overview' }).waitFor()
+    await dockRail.getByRole('button', { name: 'Expand navigation dock' }).click()
+    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'true')
+    assert.equal(await dockRail.evaluate(el => el.classList.contains('oc-dock-collapsed')), false)
+    assert.equal(await dockRail.getByRole('link', { name: 'Overview', exact: true }).count(), 1)
+    await dockRail.getByRole('button', { name: 'Collapse navigation dock' }).click()
+    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'false')
+    assert.equal(await page.evaluate(() => localStorage.getItem('oc:navigation-dock-expanded')), 'false')
+    console.log('PASS compact floating rail, portaled labels, expanded navigation and stored preference')
+
     console.log('FIXTURE READY', base)
     if (process.argv.includes('--serve')) { console.log('Isolated header fixture is running; no production data or sessions.'); await new Promise(() => {}); return }
     // Browser assertions are kept below so all role and action checks exercise this same shell.
