@@ -27,6 +27,7 @@ const suites = {
     ],
   },
 };
+if (process.platform !== "linux") throw Error("Native fixture uses Linux Docker host networking to enforce loopback-only SQL.");
 const suite = suites[process.argv[2]];
 if (!suite || process.argv.length !== 3) {
   console.error("Usage: node scripts/run-disposable-postgres.cjs security|events");
@@ -79,23 +80,23 @@ try {
     "chown postgres:postgres /tmp/fixturedb",
     'su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/initdb -D /tmp/fixturedb -U fixture_superuser --auth=trust >/dev/null"',
     "printf 'host all all 0.0.0.0/0 trust\\n' >> /tmp/fixturedb/pg_hba.conf",
-    'exec su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/postgres -D /tmp/fixturedb -c listen_addresses=\\\"*\\\""',
+    'exec su postgres -s /bin/bash -c "/nix/var/nix/profiles/default/bin/postgres -D /tmp/fixturedb -p ' + suite.port + ' -c listen_addresses=127.0.0.1"',
   ].join("\n");
   command("docker", ["run", "-d", "--name", suite.container,
     "--label", "outclass.integration-suite=" + process.argv[2],
-    "-p", "127.0.0.1:" + suite.port + ":5432",
+    "--network", "host", // Required: native tests verify inet_server_addr() is loopback.
     "--entrypoint", "bash", image, "-ec", init]);
   created = true;
   let ready = false;
   for (let i = 0; i < 60; i++) {
-    if (spawnSync("docker", ["exec", suite.container, "pg_isready", "-U", "fixture_superuser"],
+    if (spawnSync("docker", ["exec", suite.container, "pg_isready", "-p", String(suite.port), "-U", "fixture_superuser"],
       { stdio: "ignore" }).status === 0) { ready = true; break; }
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
   }
   if (!ready) throw Error("Disposable PostgreSQL did not become ready");
   if (suite.database !== "postgres")
-    command("docker", ["exec", suite.container, "createdb", "-U", "fixture_superuser", suite.database]);
-  command("docker", ["exec", "-i", suite.container, "psql", "-U", "fixture_superuser",
+    command("docker", ["exec", suite.container, "createdb", "-p", String(suite.port), "-U", "fixture_superuser", suite.database]);
+  command("docker", ["exec", "-i", suite.container, "psql", "-p", String(suite.port), "-U", "fixture_superuser",
     "-d", suite.database, "-v", "ON_ERROR_STOP=1"], {
     input: "CREATE ROLE anon; CREATE ROLE authenticated; " +
       "CREATE ROLE outclass_production_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE; " +
