@@ -105,7 +105,7 @@ try {
       "GRANT SELECT ON auth.sessions TO outclass_production_app;",
   });
   command(process.execPath, ["node_modules/prisma/build/index.js", "migrate", "deploy"], { env });
-  command("docker", ["exec", "-i", suite.container, "psql", "-U", "fixture_superuser",
+  command("docker", ["exec", "-i", suite.container, "psql", "-p", String(suite.port), "-U", "fixture_superuser",
     "-d", suite.database, "-v", "ON_ERROR_STOP=1"], {
     input: "DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables " +
       "WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP " +
