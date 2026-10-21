@@ -24,3 +24,11 @@ Logs and raw reports are retained separately under [evidence/merge-verification]
 ## Release status
 
 **Not ready** for accessibility-focused release review: complete the human scripts, actual zoom, remaining full workflows, document/content/contrast review and scanner incomplete triage. Merging code does not change this recommendation. The public statement remains an unpublished draft. GitHub job execution and required branch protection remain operational follow-ups.
+
+## Subsequent integration for GitHub main synchronization
+
+On 2026-10-21, local integration `b9296d77c9ac71fc3fa3efca5e5780209014a0b5` was combined without conflicts with newer GitHub main `9bdcdbef1ab3787ca56ebcf0e20a57cae322f520` (landing/loading polish, PR #65). All accessibility changes and the newer landing changes are preserved. Of the original 60 audited source/config/test files, 59 remain byte-identical; the footer incorporates the new background while preserving every accessibility rule.
+
+This combined tree passed `npx --yes pnpm@10.17.1 validate` (1,274 passes, 0 failures, 34 skips; migrations, lint, types and production build passed) and `npx --yes pnpm@10.17.1 test:a11y` (27 passes, 0 failures/skips; 52 scans with zero axe violations). The 31 scanner incomplete records remain review obligations. The earlier authenticated results above cover b9296d7; they were not rerun after these seven landing/loading changes.
+
+The tested tree before this additional evidence was `c73914fa8ceee84eb492fb5f86c3f7cd1fe38d81`. Separate [summary](evidence/main-sync/summary.json), [validation log](evidence/main-sync/validation.txt), [accessibility log](evidence/main-sync/accessibility-tests.txt) and [raw reports](evidence/main-sync/public-component-reports.zip) retain the precise scope. The release recommendation and unpublished statement status remain unchanged.

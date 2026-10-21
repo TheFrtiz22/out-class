@@ -1,0 +1,39 @@
+
+> my-v0-project@0.1.0 test:a11y /Users/jesseklinger/Documents/out-class
+> node scripts/run-accessibility.cjs
+
+✔ axe: actual availability UI with isolated data, desktop and 320px (2647.764334ms)
+✔ axe: actual booking UI with isolated data, desktop and 320px (1051.310458ms)
+✔ axe: actual application UI with isolated data, desktop and 320px (959.142458ms)
+✔ axe: actual primitives UI with isolated data, desktop and 320px (932.189541ms)
+✔ axe: actual events UI with isolated data, desktop and 320px (1244.5155ms)
+✔ axe: actual leader UI with isolated data, desktop and 320px (964.967041ms)
+✔ axe: actual admin UI with isolated data, desktop and 320px (951.049541ms)
+✔ axe: actual voting UI with isolated data, desktop and 320px (919.421625ms)
+✔ availability: row/column structure, roving focus, toggle, range, touch and drag cancellation (1257.138125ms)
+✔ dialogs and select: keyboard entry, containment, Escape, focus restoration and state (940.834792ms)
+✔ application: associated errors, first invalid field, confirmation and upload feedback (1172.579084ms)
+✔ booking: reserve, reschedule, cancel, selected date/time and focus after action removal (1335.613792ms)
+✔ events: corkboard/list, filter, empty state and dialog focus restoration (1698.479084ms)
+✔ leader: event creation, labelled date controls and equivalent flyer information (1137.751875ms)
+✔ admin: named table, inspection dialog and keyboard dismissal using fictional records (887.669708ms)
+✔ voting: joining, persistent candidate announcement and ballot result (1007.256375ms)
+✔ public route: /, semantics, axe, 320px and text spacing (11561.517875ms)
+✔ public route: /?audience=leader, semantics, axe, 320px and text spacing (2205.009333ms)
+✔ public route: /about, semantics, axe, 320px and text spacing (2503.989542ms)
+✔ public route: /uva, semantics, axe, 320px and text spacing (2986.566875ms)
+✔ public route: /request-school, semantics, axe, 320px and text spacing (2210.174125ms)
+✔ public route: /login, semantics, axe, 320px and text spacing (1515.586583ms)
+✔ public route: /signup, semantics, axe, 320px and text spacing (2641.225708ms)
+✔ public route: /forgot-password, semantics, axe, 320px and text spacing (2614.811959ms)
+✔ public route: /reset-password, semantics, axe, 320px and text spacing (2146.349875ms)
+✔ public route: /platform/login, semantics, axe, 320px and text spacing (2273.163792ms)
+✔ homepage: keyboard skip link, mobile navigation Escape and reduced motion (1186.743375ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 53861.378916

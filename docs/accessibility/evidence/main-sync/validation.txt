@@ -1,0 +1,1684 @@
+
+> my-v0-project@0.1.0 validate /Users/jesseklinger/Documents/out-class
+> npm run test && npm run test:migrations && npm run lint && npm run typecheck && npm run build
+
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 test
+> node --test tests/*.test.cjs
+
+﹣ real account HTTP and RSC keep internal templates behind recruiting permission across campuses and overlapping memberships (0.287709ms) # SKIP
+Account data unavailable
+✔ account HTTP and RSC omit internal Club data for student across user/club scopes (145.768709ms)
+✔ account HTTP and RSC omit internal Club data for recruiter across user/club scopes (45.162667ms)
+✔ account HTTP and RSC omit internal Club data for owner across user/club scopes (23.60175ms)
+✔ all account denial/error branches are private and no-store (114.328709ms)
+✔ RSC rejects disabled/missing accounts and retains the effective support identity (19.903459ms)
+✔ Admin index guards identity, uses narrow projection and retains search with recruitment filter (105.483084ms)
+✔ operational Admin loader failure returns support recovery without leaking exception (64.490667ms)
+✔ create uses canonical Club, reauthorizes, audits and does not assign leadership (55.55825ms)
+✔ edits require current version; platform metadata and school consistency fail closed (41.271167ms)
+✔ new images cannot be assigned before canonical Club creation (50.159083ms)
+✔ image assignment rejects foreign-club objects and missing objects; preserves historical fields (6.214375ms)
+✔ structured sections retain order and visibility and reject unsafe links (4.011584ms)
+✔ launch fixtures use reusable data, omit unknown statistics/people/dates and preserve four identities (4.094042ms)
+✔ raster decoder rejects signatures without valid pixels and normalizes valid images (103.68625ms)
+✔ public profile uses canonical published Corkboard events and excludes suspended clubs while retaining unlisted direct links (33.653875ms)
+✔ duplicate canonical slug produces safe validation response without leaking database details (11.194709ms)
+✔ ADMIN_AUTH_REQUIRED retains secure login denial and logs only safe fields (117.628042ms)
+✔ ADMIN_ACCESS_DENIED retains secure login denial and logs only safe fields (9.097542ms)
+✔ ADMIN_ELEVATION_REQUIRED retains secure login denial and logs only safe fields (6.121625ms)
+✔ ADMIN_MFA_REQUIRED retains secure login denial and logs only safe fields (3.067959ms)
+✔ ADMIN_GRANT_REVOKED retains secure login denial and logs only safe fields (11.070209ms)
+✔ ADMIN_SESSION_EXPIRED retains secure login denial and logs only safe fields (2.196875ms)
+✔ ADMIN_SUPPORT_SESSION_CONFLICT retains secure login denial and logs only safe fields (1.83525ms)
+✔ successful overview returns data; unexpected loader and guard errors never return protected data or redirect (27.997ms)
+✔ provider classification requires explicit Supabase denial semantics (10.75475ms)
+✔ overview actually renders recovery instead of login when its loader throws (11.901625ms)
+✔ overview actually renders protected metrics on loader success (7.68525ms)
+✔ Next dynamic-render signals and navigation control flow are rethrown without diagnostic noise (3.779292ms)
+✔ eligibility distinguishes expected denial from operational failure without leaking details (45.133833ms)
+✔ diagnostic faults {"logger":true} preserve recovery, denial and API classification (25.1645ms)
+✔ diagnostic faults {"uuid":true} preserve recovery, denial and API classification (62.40125ms)
+✔ diagnostic faults {"logger":true,"uuid":true} preserve recovery, denial and API classification (15.859625ms)
+✔ new school-request Admin route preserves denials and recovers from operational guard failures (25.379667ms)
+✔ signed-out Admin login uses the canonical login route and preserves its Admin return destination (11.221083ms)
+✔ student, club leader, disabled admin, inactive grant and missing MFA are denied (284.96ms)
+✔ eligibility and an existing aal2 session do not grant elevation; fresh password plus MFA does (71.417833ms)
+✔ expired, revoked, forged, wrong-actor and different Auth-session elevations fail closed (190.788583ms)
+✔ wrong passwords, wrong MFA, actor mismatch, origin and expired/reused challenges cannot mint elevation (121.798958ms)
+✔ password attempts and committed MFA failures are limited, and logout revokes elevation and unfinished challenges (207.375209ms)
+✔ direct Admin routes and server actions use the elevated guard; impersonation cannot bypass it (49.352917ms)
+✔ provider server failure is a safe internal error, never elevation or leaked exception (11.855542ms)
+✔ malformed client JSON and invalid input remain safe 403 denials (38.476167ms)
+✔ malformed decrypted server challenge JSON is operational 500 with matching safe diagnostic (33.943ms)
+✔ unrelated internal SyntaxError is operational 500 rather than client/auth denial (26.920958ms)
+✔ elevation API survives diagnostic faults {"logger":true} (29.283542ms)
+✔ elevation API survives diagnostic faults {"uuid":true} (54.077459ms)
+✔ elevation API survives diagnostic faults {"logger":true,"uuid":true} (35.385667ms)
+✔ session-bound Admin survives 30 minutes; sensitive actions require fresh password AND MFA (17.51125ms)
+✔ aged session-bound elevation still enforces grant, account, AAL2, live session, logout and revocation (168.883333ms)
+✔ support impersonation remains separately restricted with session-bound Admin (21.520541ms)
+﹣ real local Admin session survives elevation, navigation and refresh and rejects revoked authority (0.25225ms) # SKIP
+﹣ disposable real Auth/password/MFA elevation, Admin routes/actions, invitations, reports, impersonation and logout (0.636333ms) # SKIP
+✔ all Admin workspace readers and mutations reject without elevation before touching storage (131.436917ms)
+✔ report resolution checks revision, validates reason, and writes actor/outcome in the same transaction (23.55975ms)
+✔ platform settings have safe defaults, reject infrastructure fields, and audit changes (43.9655ms)
+✔ complete isolated migration chain denies browser CRUD even with broad grants/policies and preserves append-only audit (1729.632084ms)
+✔ session-bound migration preserves legacy deadlines, revocations, ownership and restrictive RLS (1358.19475ms)
+✔ sensitive workspace operations demand fresh verification; ordinary settings reads do not (19.699667ms)
+✔ anonymous wire payload uses an allowlist and removes every identity-bearing field and free-text source (5.290958ms)
+✔ pipeline redacts even owners; anonymous-only reviewers receive only anonymous-round applications (292.521667ms)
+✔ identity reveal requires permission and a reason, writes audit before returning identity (290.210791ms)
+✔ SAT and ACT requirements accept either, both, or neither without conversion (1.656792ms)
+✔ anonymous narrative must be explicitly prepared; raw essays are never copied automatically (41.803917ms)
+✔ publishing anonymous content requires manager permission, explicit review, and prior audited reveal (211.546917ms)
+✔ anonymous evaluation submission conceals notes and cannot later overwrite a submitted score (32.401833ms)
+✔ anonymous finalization preserves withheld notes from an unsubmitted legacy draft and redacts its response (97.576667ms)
+✔ attachment signer binds authorization to the saved answer and preserves anonymous/draft/club restrictions (186.492834ms)
+✔ missing/inaccessible references, foreign paths, external URLs and public buckets never sign (195.419666ms)
+✔ legacy task writer rejects authorized old clients without any task mutation (60.909166ms)
+✔ resume upload refuses public buckets and issues only an owner-scoped private key (140.778125ms)
+✔ only active identified reviewers can obtain application attachment downloads; suspension fails before signing (68.279084ms)
+Missing Supabase server secret for resume generation
+✔ API allows owner current resume (17.817167ms)
+✔ API denies owner requesting a different/old object under own UUID (7.396583ms)
+✔ legacy path route cannot bypass context-scoped interview authorization (2.174542ms)
+✔ API denies authorized reviewer guessed old resume under same student UUID (1.762084ms)
+✔ API blocks valid UUID + ../ traversal (2.175208ms)
+✔ API blocks extra path segments (3.894417ms)
+✔ API denies unrelated club member (5.2635ms)
+✔ API denies unauthenticated (12.103416ms)
+✔ API missing server secret does not become 401 (8.325417ms)
+✔ resume signing fails closed for a public bucket (29.297375ms)
+✔ PRO creation, attribution, own edit/delete and other-author denial (600.309167ms)
+✔ CON creation, attribution, own edit/delete and other-author denial (568.701916ms)
+✔ ordinary applicant display omits closing feedback; authorized closing endpoints are separate (243.832667ms)
+✔ anonymous reviewer with the same configuration cannot recover identity, free text, observations, or files (297.354625ms)
+✔ student, unauthorized, suspended, cross-club, forged applicant and extra author inputs fail closed (235.217916ms)
+✔ configuration updates reject unknown fields, duplicate fields, stale versions and cross-club scope (286.844333ms)
+✔ Interview uses a narrow panel and Voting retains its server-filtered panel; legacy voting transport never receives production data (0.902084ms)
+✔ migration preserves historical feedback and links canonical evaluations, constraints and browser isolation (1049.794333ms)
+✔ configured résumé/LinkedIn links reuse private download access and disappear anonymously (1.446625ms)
+✔ configured submitted feedback reaches explicit PRESIDENT with review/identify access (261.847209ms)
+✔ configured submitted feedback reaches explicit VICE_PRESIDENT with review/identify access (202.535958ms)
+✔ configured submitted feedback reaches explicit BOARD with review/identify access (242.625209ms)
+✔ authorized absent feedback is absent; withheld feedback is explicit without existence disclosure (171.390417ms)
+✔ feedback never discloses drafts, unresolved legacy rounds, historical anonymous evidence, self-review, or owner-only rights (1161.260584ms)
+✔ configuration cannot override feedback disclosure in voting or preview (92.40075ms)
+✔ legacy bookmarks and submitted-review destinations move to Applicants without losing selected records or filters (18.683791ms)
+✔ Applicants submenu and mobile grouping retain explicit office permissions, never infer moderation from applicant access (644.576417ms)
+✔ Demo existing review/document discovery filters applicant and historical round before limits, retaining privacy and no live calls (568.429584ms)
+✔ live discovery scopes filters inside existing authorized queries; applicant-only access cannot discover restricted records (151.314875ms)
+✔ browser: Applicants destinations select correct records, retain bookmarks/refresh/Back and activate mobile Applicants (2204.3025ms)
+✔ interviews use recorded status or bookings, never an inferred club round (0.309541ms)
+✔ decisions include waitlists and final statuses but not interview or draft stages (0.05725ms)
+✔ next interview uses the earliest future booking without mutating data; past is explicitly identified (1.058ms)
+✔ public header exposes separate signup and login links without identity-dependent administration routing (65.497ms)
+✔ new visitors get normal signup and login; only confirmed UVA sessions reach existing accounts (117.6915ms)
+✔ completed students, club leaders, ordinary members and platform operators get permission-based public destinations (170.47575ms)
+✔ incomplete profiles resume existing onboarding and retain invitation/claim context (50.682417ms)
+✔ disabled accounts cannot enter either flow and signup excludes platform destinations (62.766792ms)
+✔ switching login/signup retains the exact return query; signup completion returns to invitations (5.101ms)
+✔ enabled signup Microsoft authentication uses guarded route and preserves claim context (2.259292ms)
+✔ default signup exposes onboarding without any Microsoft option or provider loading state (2.01975ms)
+✔ signup blocks identity changes in support/demo modes (32.927959ms)
+✔ OAuth callback preserves signup, invitations and claims on both success and failure (68.949666ms)
+✔ migrated invoker session view preserves base ACLs, RLS and locking without Auth schema usage (1192.829125ms)
+✔ session claim parser rejects missing, malformed, non-UUID and foreign-user claims (50.145375ms)
+✔ only an exactly verified token can reach the live session query; cache stays within its request (100.570959ms)
+✔ untrusted cookie content, refresh errors and provider verification failures never authorize or query sessions (152.228083ms)
+✔ missing/expired rows fail closed and database errors remain operational failures (12.888875ms)
+✔ request-cached session checks never cache current disabled-account status (84.635291ms)
+✔ capabilities never derive from legacy roles; owner and custom grants are contextual (0.490709ms)
+✔ server capability guard scopes membership, rejects legacy admin and demo writes (90.199959ms)
+✔ platform access requires independent server allowlist, database grant, and MFA (13.814ms)
+✔ access editing cannot escalate or remove the last owner (416.857375ms)
+✔ invitations bind acceptance to verified email, expiry, and current inviter authority (587.249083ms)
+✔ every platform action checks its guard before reading or mutating data (114.865375ms)
+✔ suspended inviters and unverified recipient emails cannot grant access (224.441042ms)
+✔ ownership cannot be transferred to a suspended account (26.171834ms)
+✔ application autosave compares persisted answers, permits idempotent retries, and never submits (150.062708ms)
+✔ profile autosave compares only the current section and rejects competing edits while preserving other sections (29.584542ms)
+✔ decision template autosave changes future wording without publishing decisions, letters, notifications or email (137.737875ms)
+✔ browser: debounce, slow writes, caret, retry, refresh recovery, navigation, mobile and tab conflicts (10335.243ms)
+✔ browser: private draft hydration, lost acknowledgement followed by new edits, and successful publication despite cleanup failure (4568.633292ms)
+✔ rapid typing debounces writes and Saved waits for actual persistence (2.097625ms)
+✔ overlapping flushes serialize immutable snapshots and cannot revert late edits (0.3675ms)
+✔ failure retains newest changes and recovery, retry and offline edits are safe (0.253084ms)
+✔ unmount keeps an in-flight writer and flushes its latest edit without notifying disposed UI (0.945417ms)
+✔ synchronous validation failure does not wedge the queue and empty strings are saved (0.349541ms)
+✔ typing within the same pending state does not cause redundant status renders (0.204541ms)
+✔ round requests are eligible/club scoped, idempotent and atomically queue the existing optional email; draft edits are not responses (2390.945458ms)
+✔ reminders skip responses, enforce a 24h cooldown and invalidate stale request delivery after confirmation, decline or eligibility loss (1326.482416ms)
+✔ responses across clubs are independent and coverage reuses actual requirements, buffers and official conflicts without foreign details (1713.024542ms)
+✔ coverage counts only confirmed round snapshots after draft save, confirmation and decline (1329.937875ms)
+✔ global availability is account-bound, revision-safe and shared across clubs; confirmed rounds remain independent snapshots (2299.542584ms)
+✔ admin overview and pool count only eligible confirmed participants and whole sessions; no raw or foreign schedules escape (1223.034834ms)
+✔ bulk and role defaults, membership overrides, round overrides, and revocation never grant permissions or touch panels (1354.58275ms)
+✔ migration enforces compact schedules, cross-club foreign keys and browser isolation even with permissive default grants (1165.181ms)
+✔ private availability tables remain usable by the bounded runtime owner while browser roles are denied (1081.534125ms)
+✔ eligibility changes preserve existing panel grants and room approval exactly (1291.98525ms)
+✔ both save actions reject new hidden hours atomically and retain saved history on visible edits (1054.701167ms)
+✔ eligibility and Auto-Fill candidates honor the final Eastern block on either side of DST (1661.952334ms)
+✔ a lost acknowledgement recovers exactly the next account-bound write without resending (0.84975ms)
+✔ offline, newer concurrent edits, another account, and mismatched round confirmation retain the original failure (0.568416ms)
+﹣ scheduled availability requests on actual bounded PostgreSQL (0.581375ms) # SKIP
+✔ Monday-first recurrence, empty declarations, exceptions replace rather than add, and reset restores recurrence (34.101917ms)
+✔ unknown schedules never imply availability; one-time declarations do not submit recurrence (0.607166ms)
+✔ DST keeps local recurring hours; spring gaps and autumn folds are explicit; both repeated instants resolve (5.137833ms)
+✔ cross-day sessions, fractional-offset zones, and southern hemisphere transitions (21.210833ms)
+✔ validated compact intervals reject malformed dates, zones, large payloads and non-quarter-hour boundaries (33.937333ms)
+✔ eligibility is per membership and round, with no administrative capability grants (0.1125ms)
+✔ pointer/keyboard rectangle painting adds and removes complete 15-minute ranges without changing unrelated days (6.39775ms)
+✔ autosaves serialize requests, preserve edits during a save and keep failed edits for retry (1.095167ms)
+✔ the shared window has 52 quarter-hours on every day and exact DST-aware boundaries (18.992542ms)
+✔ editing, clearing and copying visible hours retain overnight recurrence and exceptions (1.145292ms)
+✔ new hidden selections are rejected while saved legacy hours and zone conversions remain valid (40.54475ms)
+✔ calendar timestamp projections and exports use Eastern Time independently of the host zone (83.443541ms)
+✔ legacy exception knowledge follows the Eastern editing day across native date boundaries (82.803ms)
+✔ new demo interviews use the same Eastern wall clock in winter and summer (537.011542ms)
+✔ leader edits and submits; a different administrator can approve (265.931917ms)
+✔ Corkboard save, flyer upload and submission authors cannot review their own work (437.824792ms)
+✔ real legacy platform editor records authorship and blocks that administrator after leader resubmission (73.892334ms)
+✔ another administrator can approve legacy content edited by the first administrator (98.994333ms)
+✔ unrelated actions, other events and authorship before independent publication do not block approval (82.28ms)
+✔ resubmission retains unapproved authorship across rejection and starts after the last successful review (181.711666ms)
+✔ timestamp ties retain authorship conservatively and server admin authorization still runs (56.508291ms)
+﹣ Events: desktop/tablet/mobile views share filters, saves, RSVP, details and pagination; calendar downloads actual instants (0.244875ms) # SKIP
+✔ calendar keeps actual overnight, multi-day and DST instants without availability-hour restrictions (32.715708ms)
+✔ calendar TEXT is escaped, Unicode lines fold by UTF-8 octets, and invalid dates reject (0.392334ms)
+✔ saved-event migration enforces uniqueness, cascading cleanup and server-only access even with permissive browser grants (1243.788125ms)
+﹣ native Prisma: account-scoped idempotent saves, shared filtered pagination, publication restrictions and existing RSVP (0.110166ms) # SKIP
+✔ board uses original flyer in accessible modal, keyboard button activation and origin focus return (201.706125ms)
+✔ reduced motion removes pull and overlay animation; Escape and focus trapping use the existing Radix primitive (0.361792ms)
+✔ leader local Meetings switch keeps member tools and isolates unavailable Demo events (3.361333ms)
+✔ leader removal requires confirmation and returns keyboard focus to its origin (100.642084ms)
+✔ Eastern date windows respect midnight, week/weekend, DST gaps/folds and multi-day overlap (27.591375ms)
+✔ strict editor/review inputs reject incomplete ranges, capacity, impossible RSVP settings and missing rejection reasons (1.20975ms)
+✔ publication helper and legacy reader deny pending/rejected/stale revisions but preserve ordinary meetings (54.495042ms)
+✔ complete migration chain enforces moderation, revision withdrawal, flyer ownership, RSVP constraints and restrictive database/storage RLS (1822.151416ms)
+✔ approved assets preserve full viewBoxes and filled external vector groups (2.1ms)
+✔ decorative rendering is silent, unfocusable and references both exact asset groups (40.963833ms)
+✔ page headers preserve titles and actions without decorative artwork (9.896875ms)
+✔ Settings keeps settings navigation identity and URLs (142.927875ms)
+✔ standalone brand artwork keeps original colors and reduced-motion support without header layout rules (0.161458ms)
+✔ approved SVG bytes remain unchanged (1.829625ms)
+✔ effective settings/art: owner Appearance (0.084625ms)
+✔ effective settings/art: profile capability Appearance (0.060042ms)
+✔ effective settings/art: application-only inaccessible General (0.041333ms)
+✔ effective settings/art: members-only inaccessible General (0.064167ms)
+✔ effective settings/art: interviews-only inaccessible General (0.039709ms)
+✔ effective settings/art: direct operational tab (0.026542ms)
+✔ effective settings/art: inaccessible operational request falls back to Appearance (0.034292ms)
+✔ effective settings/art: inaccessible operational request falls back to permitted operational tab (0.028375ms)
+✔ effective settings/art: unknown requested tab follows permitted Appearance fallback (0.018667ms)
+✔ effective settings/art: default limited-permission tab (0.018667ms)
+✔ effective settings/art: no permitted settings (0.018666ms)
+✔ effective settings/art: revoked membership (0.016292ms)
+✔ actual settings content and header agree: owner Appearance (208.537583ms)
+✔ actual settings content and header agree: profile capability Appearance (113.130834ms)
+✔ actual settings content and header agree: application-only inaccessible General (125.482041ms)
+✔ actual settings content and header agree: members-only inaccessible General (116.423667ms)
+✔ actual settings content and header agree: interviews-only inaccessible General (156.599125ms)
+✔ actual settings content and header agree: direct operational tab (122.368041ms)
+✔ actual settings content and header agree: inaccessible operational request falls back to Appearance (141.34325ms)
+✔ actual settings content and header agree: inaccessible operational request falls back to permitted operational tab (68.854125ms)
+✔ actual settings content and header agree: unknown requested tab follows permitted Appearance fallback (125.837ms)
+✔ actual settings content and header agree: default limited-permission tab (80.800292ms)
+✔ actual settings content and header agree: no permitted settings (119.928459ms)
+✔ actual settings content and header agree: revoked membership (260.991ms)
+✔ club Overview keeps its name and heading without repetitive public profile shortcuts or artwork (75.680333ms)
+﹣ real local club assets: elevated Admin/leader writes, browser denial, assignment boundaries, suspension and authoritative replacement/removal (0.231542ms) # SKIP
+✔ club assets fresh storage is private and denies browser CRUD without changing other buckets (922.336042ms)
+✔ club assets legacy storage is private and denies browser CRUD without changing other buckets (694.2595ms)
+✔ asset references reject traversal, foreign layouts and privileged URL substitutions (34.367625ms)
+✔ hidden section images are excluded from public delivery but retained for assignment validation (2.950541ms)
+✔ Storage readiness accepts only the exact original or bounded-runtime guard and fails closed on broader policies (781.814ms)
+✔ claim requests reject managed clubs, reuse pending requests, and audit new requests (159.983375ms)
+✔ approving claims is atomic and cannot replace existing club ownership (70.603083ms)
+✔ decline only closes a pending invitation belonging to the signed-in email and is audited (139.94325ms)
+✔ leader overview scopes and projects event data without fetching attendees or recruitment graphs (137.994792ms)
+✔ RSVP dashboard uses one canonical snapshot and redacts anonymous applicant identity (44.53275ms)
+✔ live reauthorization rejects disabled, revoked, wrong-capability and suspended actors before event reads/writes (158.608125ms)
+✔ leader labels preserve canonical states and capacity semantics (4.605875ms)
+✔ GPA and class-year filters use AND and a strict greater-than comparison (1.120459ms)
+✔ deleting a populated stage reassigns seeded and custom applicants and cleans saved filters (0.270625ms)
+✔ one stage is retained and outcome assignments survive deletion (0.097334ms)
+✔ customized state round-trips through browser persistence without losing IDs or hidden columns (8.9845ms)
+✔ invalid saved settings are rejected before hydration (0.597625ms)
+✔ default discovery includes clubs above 25% and unknown acceptance, without fabricated rankings (6.99475ms)
+✔ search matches words across real name, description, interests, and category fields (0.47325ms)
+✔ filters combine and unknown facts do not satisfy a numerical filter (0.53075ms)
+✔ timeline does not mark drafts or unknown custom stages as submitted (0.183875ms)
+✔ public directory selects explicit public fields and preserves missing facts (44.251667ms)
+✔ starting an existing application never updates or deletes its answers (24.706333ms)
+✔ concurrent starts use an empty update branch and session-derived identity (140.395ms)
+✔ category URL filters are case-insensitive without introducing a second directory (0.18525ms)
+✔ cached public directory deadlines survive JSON serialization and retain availability (59.480458ms)
+✔ legacy fund-size parameters are ignored and removed without losing other filters or public AUM (23.591917ms)
+✔ employer search matches only explicitly recorded destinations and combines with category filters (0.743459ms)
+✔ open and not-open filters partition the full directory without hiding clubs with unpublished recruitment (20.35275ms)
+✔ club interview URL restores the room on a fresh mount without assigning phase or score (94.0755ms)
+✔ scheduled list replaces generic entry and unrelated screens do not restore a room (212.536541ms)
+✔ URL restoration still waits for current membership and selected club permissions (78.723958ms)
+✔ marketing round trips optional content, zero counts, visibility, and uploaded images (2.093333ms)
+✔ invalid links, non-raster uploads, oversized images, and impossible stats cannot publish (10.857875ms)
+✔ publishing checks club permission and atomically saves every profile field with an audit (30.186917ms)
+✔ Discover receives saved marketing while hidden statistics are omitted (36.819125ms)
+✔ marketing migration preserves existing clubs and persists JSON content (1255.592209ms)
+✔ shared public renderer displays marketing content and respects empty and hidden sections (199.165833ms)
+✔ published profile compare tokens reject concurrent authors and recover identical retries (30.6165ms)
+✔ selectivity context round trips and does not present unknown or hidden rates as facts (16.596333ms)
+✔ researched package keeps cohort/approximation explicit and does not confuse McIntire admission with club admission (38.810875ms)
+✔ import rejects duplicate clubs, path escapes and preassigned remote images (12.269042ms)
+✔ import preflights the entire package before writes, publishes only after uploads, preserves version checks and stops on conflict (12.011125ms)
+✔ commerce packages cover every verified directory club without fabricated admissions or replacement identities (14.95725ms)
+✔ white logos can retain their original artwork on a brand-color background with backward-compatible defaults (0.352042ms)
+✔ profile enrichment preserves an existing live intake and deadline rather than closing recruitment (20.195333ms)
+✔ full migration stack preserves legacy data and enforces onboarding constraints and browser isolation (1742.354833ms)
+✔ membership roles cannot appoint owners through global role or ordinary admin capabilities (192.726875ms)
+✔ inactive memberships confer neither capabilities nor private meeting visibility (109.514292ms)
+✔ identity invitation creation normalizes identifiers without creating recipient accounts (65.281166ms)
+✔ ordinary members cannot invite owners; platform designations require platform authorization (33.156125ms)
+✔ pending imports cannot silently upgrade a pending invitation (84.751792ms)
+✔ wrong, unverified, and verification-skipped identities cannot accept invitations (211.892458ms)
+✔ acceptance preserves existing access and records recipient and membership attribution (34.805625ms)
+✔ revoked inviter authority and inactive memberships prevent acceptance (64.023792ms)
+✔ platform owner invitations recheck allowlist and cannot replace another owner (56.399792ms)
+✔ dismissal stays pending, disappears from dashboard, remains in settings, and restores (43.999041ms)
+✔ roster audit guards uploads and records every raw input row idempotently (78.729833ms)
+✔ verified identity binding never moves a university identifier between accounts (54.120292ms)
+✔ first login binds the normalized provider identity and discovers invitations without a recipient User insert (47.756625ms)
+✔ expired, revoked, declined, or previously claimed invitations cannot be replayed (263.893875ms)
+✔ ownership claiming upgrades an existing member once and records claim timestamps (50.868209ms)
+✔ concurrent claiming attempts revalidate after the organization transaction lock; only one grants access (53.743375ms)
+✔ dismiss and restore revalidate identity and terminal state without any mutation on failure (237.185292ms)
+✔ explicit decline is terminal; a dismissed pending member invitation can instead be accepted (57.825666ms)
+✔ Settings invitation listing includes every pending request while retaining verified identity scope (44.198ms)
+✔ manual identity invitations reject existing active memberships instead of creating duplicate requests (51.28075ms)
+✔ only a newly authorized invitation can reactivate a removed membership; suspensions remain blocked (126.010583ms)
+✔ additive settings migration retains application history, backfills order/capabilities, enforces types and restrictive RLS, and uses indexed lookup plans (1580.071125ms)
+ℹ {"QUERY PLAN":[{"Plan":{"Node Type":"Index Scan","Parallel Aware":false,"Async Capable":false,"Scan Direction":"Forward","Index Name":"User_email_lower_idx","Relation Name":"User","Alias":"User","Startup Cost":0.29,"Total Cost":8.3,"Plan Rows":1,"Plan Width":45,"Actual Startup Time":0.023,"Actual Total Time":0.025,"Actual Rows":1,"Actual Loops":1,"Index Cond":"(lower(email) = ANY ('{perf7000@virginia.edu}'::text[]))","Rows Removed by Index Recheck":0,"Shared Hit Blocks":3,"Shared Read Blocks":0,"Shared Dirtied Blocks":0,"Shared Written Blocks":0,"Local Hit Blocks":0,"Local Read Blocks":0,"Local Dirtied Blocks":0,"Local Written Blocks":0,"Temp Read Blocks":0,"Temp Written Blocks":0},"Planning":{"Shared Hit Blocks":39,"Shared Read Blocks":0,"Shared Dirtied Blocks":0,"Shared Written Blocks":0,"Local Hit Blocks":0,"Local Read Blocks":0,"Local Dirtied Blocks":0,"Local Written Blocks":0,"Temp Read Blocks":0,"Temp Written Blocks":0},"Planning Time":0.239,"Triggers":[],"Execution Time":0.083}]}
+✔ real application editor loads shared configuration, reorders/marks questions and previews the exact saved shape (158.802291ms)
+✔ new recruiting rounds and duration/instructions changes reach the versioned pipeline action (53.233833ms)
+✔ application builder persists ordering, required flags, real choices, availability and deadline; answers are archived rather than deleted (123.730125ms)
+✔ stale edits, ungranted capability, suspension, type changes with answers and invalid choices cannot commit (211.56775ms)
+✔ pipeline save renames/reorders real rounds, retains extension config, and archives historical rounds (26.355292ms)
+✔ round removal rejects active applicants, open rooms and live voting; history-protected type and stale pipeline edits cannot commit (174.719833ms)
+✔ choice responses are validated on the student submission boundary and legacy prompt-only choices stay usable (13.775667ms)
+✔ open/close and deadlines use server time and settings sections reflect individual capabilities (5.581042ms)
+✔ round names from archived or renamed evaluation history cannot be reassigned to another round (24.623708ms)
+✔ legacy prompt-only multiple choice can retain its immutable answers while new questions require defined choices (46.395625ms)
+✔ removing a progressed round with manual evaluation history archives the stage instead of deleting it (26.2155ms)
+✔ stable round history permits rename and rename-back without rewriting evaluations; other rounds cannot claim its historical name (65.480916ms)
+✔ round rename-back without evaluation history remains valid (33.378042ms)
+✔ kit-only and booking-only rounds cannot change type or lose saved setup on archive (57.529292ms)
+✔ direct application start rejects suspension under the existing transaction lock; active creation and existing application remain valid (151.577667ms)
+✔ authorized Demo workspace renders its existing client boundary without live identity reads (12.957209ms)
+✔ live workspace retains live authorization and suspension view (48.552208ms)
+✔ stale or unauthorized Demo cookies and impersonation cannot skip live authorization (9.996875ms)
+✔ all legacy invitation requests enforce actual Admin MFA, elevation, identity and no-impersonation guards (448.976542ms)
+✔ appropriately elevated Admin can use every legacy invitation request; worker uses durable grants after request elevation expires (270.164542ms)
+✔ ordinary club owner/leader invitation authority is preserved; non-allowlisted outsiders are denied (66.645833ms)
+✔ active operations succeed; suspension denies actual server mutations and restoration retains membership/capabilities (133.809125ms)
+✔ historical read exception preserves capability checks, members and unrelated club authorization (67.937792ms)
+✔ both suspend and restore require elevated Admin authority before any writes (48.957208ms)
+✔ canonical publication visibility hides suspended clubs and still requires current approved revision on restoration (22.158833ms)
+✔ transaction suspension gate runs after obtaining the club lock and before mutation (0.830792ms)
+✔ workspace is membership scoped and notice settings explicitly make no delivery claim (0.121167ms)
+✔ new submissions and drafts recheck suspension inside their transaction before changing stored answers (208.613959ms)
+✔ legacy interview booking rechecks suspension after student ownership authorization (204.929667ms)
+✔ applicant observations and interview display settings reject a suspension race inside the transaction (372.809333ms)
+✔ browser: workspace entry, explicit choices, club changes and history stay synchronized on desktop and mobile (3006.8495ms)
+✔ first leader entry shows a neutral loader and selects Recruiting overview without a router redirect or Club data read (134.959042ms)
+✔ only explicit mode choices persist and general entries restore either saved workspace (110.721208ms)
+✔ specific Club and Recruiting links keep their page and query parameters despite a saved opposite preference (362.416667ms)
+✔ permission-limited leaders fall back to Club even with a saved Recruiting preference; ordinary members retain their shell (166.533542ms)
+✔ entry waits for identity and demo readiness, and synchronizes the selected club before mounting recruiting tools (119.638667ms)
+✔ preferences are isolated per account, club and live/demo/preview, with safe fallback for blocked or invalid storage (108.18125ms)
+✔ default routing checks active membership and available recruiting capabilities, including owner and interview roles (65.5295ms)
+✔ workspace navigation follows explicit capabilities and never changes identity permissions (55.074208ms)
+✔ member overview reads personal outstanding work and sends no recruitment or club submission counts (8.309167ms)
+✔ review-only overview restricts recruitment counts to anonymous rounds and round settings require their own capability (14.427375ms)
+✔ product modes preserve scoped URLs and limit manager destinations by capability (27.531625ms)
+✔ explicit timezone and calendar validation (21.028417ms)
+✔ spring gap rejected and autumn repeated hour explicitly resolved (0.771625ms)
+✔ future bounds and untrusted fields fail closed (0.7775ms)
+✔ scheduled cron requires the existing secret and never gates on email (24.04475ms)
+﹣ scheduling through local Auth, production actions and authenticated cron (1.058083ms) # SKIP
+﹣ scheduled publication on bounded native PostgreSQL (0.291958ms) # SKIP
+﹣ announcements over real Next HTTP, verified local Auth and PostgreSQL; provider delivery is mocked (0.513917ms) # SKIP
+﹣ native decision communications: atomic snapshots, ownership, history, retries and outbox (0.731458ms) # SKIP
+✔ batched communications snapshot preserves inbox/legacy conversation revisions, ownership and disable checks with two queries (1790.81575ms)
+✔ durable inbox categories preserve announcement filtering and persisted read state (23.856041ms)
+✔ retired direct-message actions reject old clients without accessing live services (233.847625ms)
+✔ every optional notification category honors its switch, global OFF, and opt-in platform default (0.11275ms)
+✔ private conversations require eligibility in the exact club and applicant identification grants (0.237209ms)
+✔ owned cursor and runtime read flags fail closed before inbox writes (136.475333ms)
+✔ Resend transport keeps one recipient and a stable key and distinguishes retryable failures (15.821958ms)
+✔ worker and real-time endpoints reject unauthenticated requests before accessing the database (6.910375ms)
+✔ announcement branding and automated wording coexist with neutral decision digest CTAs (0.366167ms)
+✔ plain Enter invokes only the supplied composer action and prevents enclosing form submission (1.132292ms)
+✔ newlines, shortcuts, IME and already-handled events remain native (0.217167ms)
+﹣ real local Auth + server actions + PostgreSQL + private Storage: moderation, revision replacement, privacy, RSVP concurrency and attendee authorization (0.285417ms) # SKIP
+✔ server-backed save/read/remove are idempotent and derive ownership only from the authenticated session (197.665458ms)
+✔ unauthenticated reads/writes, forged owners, unknown clubs, malformed state and extra fields fail closed (84.902917ms)
+✔ Corkboard reuses the public directory selection, without applicants, members, private events or subscriptions (24.645417ms)
+✔ actual migration persists across database reopen, isolates users and enforces uniqueness/FKs/browser restrictions (1765.584875ms)
+✔ CRM identification-only reader retrieves the exact photo returned by canonical CRM (740.866125ms)
+✔ CRM photo denies unrelated application, foreign club and draft application (445.6765ms)
+✔ CRM photo denies missing identification permission, revoked membership and anonymous rounds (298.432ms)
+✔ ordinary reviewer photo context still requires explicitly enabled round photo (231.921084ms)
+✔ photo proxy retains unauthenticated denial and owner access (325.107791ms)
+✔ CRM context rejects conflicting scopes and mismatched stored photo paths (335.697708ms)
+✔ CRM photo uses one narrow read, never the pipeline, and denies inactive membership and disabled actor (374.12325ms)
+✔ evaluation capability follows current panel assignment, anonymous review and self-review rules (334.06775ms)
+✔ pipeline failure diagnostics identify the failing phase without serializing private exception content (491.261708ms)
+✔ multiple member/owner requests render for existing users; accepting removes only that request immediately and refreshes memberships (75.175375ms)
+✔ Not now removes the dashboard card without rejection and links to Settings recovery (32.548708ms)
+✔ Settings reads dismissed requests and restores without accepting or removing pending requests (8.405041ms)
+✔ member Accept validates only invitation ID, blocks repeated clicks, and does not navigate away (23.109625ms)
+✔ Not now and Show on dashboard call only dismissal preference changes, never decline (27.340917ms)
+✔ OWNER wording and claiming route are preserved and use the server-returned organization (21.745917ms)
+✔ stale, revoked, expired and wrong-account errors retain the card and allow retry without success (51.521459ms)
+✔ a delayed refresh cannot resurrect a request accepted while the query was running (10.896458ms)
+✔ a membership refresh failure never reverses committed acceptance or invites the user to accept again (12.763083ms)
+✔ organization Settings is protected by server authentication before rendering recovery controls (2.591042ms)
+✔ Settings decline requires confirmation, supports cancel, and reuses the identity server action (41.376ms)
+✔ failed decline retains the invitation and allows retry (20.538166ms)
+✔ decline removes only that pending Settings request and stale refresh cannot resurrect it (13.950291ms)
+✔ Settings memberships use each organization role and exclude inactive memberships (6.875ms)
+✔ Settings memberships handle loading, empty, and failed authenticated data (14.63125ms)
+✔ zero requests render literally nothing before and after discovery, including failed discovery (34.510958ms)
+✔ one invitation is a compact action card; two or more have a counted review disclosure (48.497916ms)
+✔ the final accepted or declined invitation collapses, unmounts and clears the shared notification count (70.340292ms)
+✔ compact cards expose invitation details and confirmed decline, while failed decline retains the card (61.941584ms)
+✔ refresh retains actionable cards, reconciles dismissal, and cannot resurrect terminal responses (72.196083ms)
+✔ guests and demo mode make no invitation calls; account switches cancel reads and conceal previous requests (20.601625ms)
+✔ returning to the tab discovers new requests without reloading the page (9.514792ms)
+✔ responses finishing together still collapse the final request (19.186084ms)
+✔ Settings explains missing university proof and conceals previously loaded invitations on a denied refresh (13.255417ms)
+✔ generated User has no local credential field and retains nullable suspension (0.488ms)
+✔ nine existing indexes are represented exactly once in schema and fresh baseline (0.28675ms)
+✔ capabilities guards suspension type without rewriting existing values (0.158375ms)
+✔ required arrays have non-null empty defaults and each migration is transactional or a single atomic statement (1.163709ms)
+✔ canonical Auth SQL rejects cross-ID email collisions and stale installers cannot run (0.206209ms)
+﹣ real Auth, RSC, PostgreSQL, private Storage and shared email-provider decision lifecycle (0.527792ms) # SKIP
+✔ formal defaults, safe small variables, custom copy and unknown-variable rejection (123.041834ms)
+✔ shared decision email is outcome-neutral, canonical and preference-aware (118.0585ms)
+✔ Demo letters, templates, notifications and offer confirmations persist without live calls (912.130875ms)
+✔ formal letter renderer escapes untrusted text and keeps print content semantic (26.127667ms)
+✔ letter offer controls respect current decision, expiry, revocation and suspension (83.527166ms)
+✔ reconciled migration preserves current-main announcements, preferences, notifications and queued intent (1593.024666ms)
+﹣ decision lifecycle through local Auth/Storage and production server actions (0.369125ms) # SKIP
+﹣ decision controls, cycles and scheduled publication on bounded PostgreSQL (0.533042ms) # SKIP
+✔ DecisionLetter bounded runtime: fresh upgrade preserves populated data (1446.174084ms)
+✔ DecisionLetter bounded runtime: current-main upgrade preserves populated data (1292.821042ms)
+✔ DecisionLetter bounded runtime: original-reconciliation upgrade preserves populated data (1378.196792ms)
+✔ DecisionLetter runtime repair does nothing without the bounded role (684.821583ms)
+﹣ decision/invitation transaction repair on isolated native PostgreSQL (0.548708ms) # SKIP
+✔ deployed demo endpoint verifies identity, issues secure cookie, and rejects failed auth (18.373125ms)
+✔ demo cookie blocks live identity reads and mutations without granting a session (4.463541ms)
+✔ dashboard retains membership-scoped meetings, applications and attendance without identity projections in comparisons (621.44825ms)
+✔ dashboard uses the current snapshot identity after switching, membership revocation, reset and restart (612.118958ms)
+✔ missing Demo identities fail closed and dashboard reads do not persist or notify (616.428208ms)
+✔ browser: Demo interview entry, direct links and redundant club selection retain the room and drafts (1919.291292ms)
+✔ unchanged interview reads write/notify zero times; genuine selection and refresh commit once (814.311333ms)
+✔ missing session and collaboration initialize atomically once, keeping the preserved questions (779.507708ms)
+✔ storage failure rolls back initialization/selection, propagates failure, and retry persists (581.262791ms)
+✔ failed first-room initialization cannot leave a partial session or lose existing data (715.993125ms)
+✔ another tab refreshes once, preserves its saved draft, never echoes storage writes or duplicate notices (1233.424375ms)
+✔ unchanged cache never bypasses authorization; changed invalid snapshots fail without replacing state (907.885791ms)
+✔ fresh MII demo opens a prepared applicant, persists resume/notes/completion and submits a half-point score without live actions (1247.249833ms)
+✔ legacy MII demo opens a prepared applicant, persists resume/notes/completion and submits a half-point score without live actions (1414.453125ms)
+✔ previously hydrated legacy MII demo opens a prepared applicant, persists resume/notes/completion and submits a half-point score without live actions (1509.217875ms)
+✔ demo hydration preserves current explicit denials, revoked assignments and saved interview content (1254.112625ms)
+✔ legacy upgrade preserves revoked grants, application edits, kit snapshots and annotations (1206.028ms)
+✔ legacy score mapping uses canonical identities, preserves exact historical values and leaves ambiguous records blocked (1112.261584ms)
+✔ profile additions preserve historical GPA and saved Demo work instead of resetting the snapshot (894.751458ms)
+✔ deterministic season: unique fictional people, club/application/slot/reviewer relationships (711.475584ms)
+✔ adapter isolates demo mutations, cross-view scores/decisions, conflicts, refresh and reset (1223.414666ms)
+✔ production access requires explicit switch and verified allowlisted email (3.820541ms)
+✔ corrupt demo storage resets safely and failed writes retain the previous state (675.108458ms)
+✔ demo configuration fails closed consistently across all deployment environments (10.027833ms)
+✔ demo workspace switching preserves one identity and grants leadership only at MII (937.430083ms)
+✔ demo interview kits persist drafts and completed interviews without real API calls (822.8825ms)
+✔ demo meetings keep member resources private and QR attendance idempotent without live calls (1166.1045ms)
+✔ semester tasks preserve one demo identity, target real demo memberships, and never call live actions (1215.378708ms)
+✔ saved demo seasons upgrade tasks without resetting recruiting state (701.427292ms)
+✔ club workspace overview uses persisted demo activity and excludes unrelated clubs without server calls (706.190625ms)
+✔ canonical expansion covers club ownership, requirements, privacy, safe files, and student membership (649.728209ms)
+✔ attendance, meeting edits, member targeting and decisions propagate; reset restores every record (1758.814084ms)
+✔ saved graph validation rejects cross-club records and duplicate attendance (649.900708ms)
+✔ live applicant board uses demo adapter data, preserves anonymity, and follows round/status mutations (1323.132459ms)
+✔ persisted recruiting rules stay inside Demo, guard previews, retain flags, and reset canonically (962.508667ms)
+✔ published demo club branding survives reload and reaches Explore without live actions (493.088208ms)
+✔ demo interview room creation, booking, reschedule and cancel persist through the real client boundary (1366.49875ms)
+✔ persisted voting demo uses the same boundary, holds and two-pass history survive refresh, reset restores seeded sessions (1206.715709ms)
+✔ Explore and Corkboard share deterministic demo clubs; saved items survive refresh/reset and never call production (974.881125ms)
+Question focus samples: [{"condition":"fresh context","ms":21.6},{"condition":"fresh context","ms":20.3},{"condition":"fresh context","ms":22.1},{"condition":"fresh context","ms":24.6},{"condition":"fresh context","ms":20},{"condition":"warm","ms":23},{"condition":"warm","ms":20.7},{"condition":"warm","ms":28.5},{"condition":"warm","ms":28.1},{"condition":"warm","ms":18.2}]
+✔ production React Demo question opening, continuous input, reload and cross-tab persistence (12097.732292ms)
+✔ failed stale-cookie cleanup keeps live account children gated; retry clears rather than enables demo (93.770459ms)
+✔ normal users mount without demo calls; successful stale cleanup precedes account mounting (29.511875ms)
+✔ demo initialization uses the branded fallback only until isolated data is ready (14.748791ms)
+✔ demo storage failures expose the existing exit action without an indefinite loader (10.946875ms)
+✔ demo perspective changes and reset clear obsolete student view/section routing without touching live data (9.176166ms)
+✔ an explicit student bookmark survives the perspective change needed to open it (12.352833ms)
+✔ reset from a club route returns to canonical student Home instead of re-entering leadership (23.178625ms)
+✔ reselecting the active demo leader preserves the interview route and mounted drafts (6.30075ms)
+✔ opening a direct demo interview link from a saved student perspective retains its full destination (17.187667ms)
+✔ preserving club deep links never permits management of another demo club (9.7415ms)
+✔ preview and sample asset URLs deny public/forged sessions before static bypasses (41.641542ms)
+✔ preview layout requires an active demo and a confirmed allowlisted presenter (2.215375ms)
+✔ anonymous homepage workspace and demo query URLs use the existing login return flow (11.351666ms)
+✔ authorized creation, unauthorized creation/access, cross-club and participant authorization (775.451084ms)
+✔ creation validates participant capabilities, membership, round and submitted candidates (1807.203792ms)
+✔ durable immutable ballots, refreshed read, duplicate/replayed concurrent ballots and revoked voter (491.698166ms)
+✔ multiple passes preserve Hold and ballots, advisory target permits continued voting, finish/reopen (539.707125ms)
+✔ publication is explicit, authorized, atomic and records source pass; ballots are preserved (398.5695ms)
+✔ unresolved candidates cannot publish, override requires reason and preserves ballots, stale lifecycle fails (424.624708ms)
+✔ rules use all invited participants, no hidden demographic heuristics; ties become Hold (0.651ms)
+✔ academic-year filtering is server authorized and no inferred or unsupported gender is exposed (500.904375ms)
+✔ migration enforces persistent ballot uniqueness, immutable history, foreign keys, configuration and browser isolation (2032.703583ms)
+✔ view, pass control, configuration, finish, reopen and publication are distinct server capabilities (677.102041ms)
+✔ explicit unanimous rule makes advancement visible/audited while preserving application status and overrides (608.0585ms)
+✔ draft text survives reload reads; publication/submission/assignment APIs are never reachable (1601.624083ms)
+✔ two tabs cannot overwrite each other; retry recovers an acknowledgement and tombstones prevent resurrection (1202.708791ms)
+✔ every read/write rechecks ownership, live permissions, membership, suspension and disabled accounts (942.60325ms)
+✔ personal drafts are owner scoped, bounded, and cannot be read through the Data API (918.870875ms)
+✔ Auth publication files reproduce the shared generator and preserve each supported action (120.316208ms)
+✔ organization artwork validates its URL, escapes attributes and never affects invitation identity (51.646625ms)
+✔ specified small-text, code and CTA colors have accessible contrast in both palettes (3.440375ms)
+✔ design-test rendering neutralizes auth fragments and legacy invitation grants (110.216208ms)
+✔ canonical club asset references in invitation artwork use proxy delivery rather than nonexistent site paths (11.716ms)
+✔ SMTP transport reuses server configuration, requires encryption and sends one safe recipient without token URLs (139.874042ms)
+✔ Resend receipts record the provider dashboard ID instead of the custom MIME Message-ID (26.10775ms)
+✔ browser: duration, custom end, all-day toggle, upload recovery and flyer-free saving on desktop/mobile (2787.99475ms)
+✔ flyer queue is invisible to the runtime schema gate before repair; bounded ownership restores access without schema CREATE (2131.907458ms)
+✔ flyer replacement and event cascade deletion enqueue work under the actual bounded runtime role (1502.630208ms)
+✔ every duration recalculates elapsed time across midnight and DST (30.732209ms)
+✔ single/multi-day all-day dates and calendar export use exclusive local dates across DST (8.964417ms)
+✔ editing existing fall-fold times preserves exact instants and off-quarter minutes (0.474875ms)
+✔ server validates actual image signatures and 10 MB limit without changing profile limits (44.53225ms)
+✔ student calendar preserves canonical ends and all-day export/overlap instead of defaulting to one hour (312.183ms)
+﹣ isolated native database + Supabase: authorized flyers, replacement/removal/cascade cleanup, public serving and all-day edits (5.527208ms) # SKIP
+✔ optimistic Corkboard removal is immediate, blocks stale focus reads, and persists after reload (79.125084ms)
+✔ failed removal restores only the affected item; account changes immediately conceal prior private saves (34.917792ms)
+✔ saving is immediate, produces one shared saved state, and repeated clicks while pending cannot duplicate requests (27.122042ms)
+✔ Corkboard has loading, sign-in, empty, populated and retry states, reusing the existing card/profile (13.072792ms)
+✔ desktop and mobile share contextual modes with Corkboard in Explore (123.678625ms)
+✔ student tutorials keep their eight-step indices/version contract while replacing the existing Corkboard placeholder (3.868833ms)
+✔ every stop has a stable, upright reading interval despite small scroll changes (2.264875ms)
+✔ the sequence has at most one upright demo and no discontinuities in either direction (25.385417ms)
+✔ neighboring panels travel around the same wheel with complementary rotations (0.40725ms)
+✔ motion eases to rest at the reading boundary and retraces exactly when scrolling back (1.061125ms)
+✔ checklist derives completion from real profile, reviewed roster, active administrator capabilities and saved rounds (320.5065ms)
+✔ checklist revalidates current organization access and scopes every read, excluding invalid imports and disabled administrators (105.307291ms)
+✔ first-login suggestions include dismissed invitations but never offer acceptance before profile completion (22.112709ms)
+✔ suggestion failures permit profile completion and retry; unauthenticated requests do not run (25.684708ms)
+✔ wizard prepopulates blank name/year fields and preserves edits, provider email and existing metadata (113.62725ms)
+✔ profile suggestions use available fields from other verified invitations when an owner designation omits them (4.432417ms)
+✔ setup UI refreshes saved state and preserves existing workspace links with completion and retry states (96.049333ms)
+✔ ordinary student: server boundaries ignore forged club IDs and client roles (526.85475ms)
+✔ applicant: server boundaries ignore forged club IDs and client roles (228.429583ms)
+✔ club member: server boundaries ignore forged club IDs and client roles (258.112583ms)
+✔ limited manager: server boundaries ignore forged club IDs and client roles (126.489958ms)
+✔ broad manager: server boundaries ignore forged club IDs and client roles (147.165875ms)
+✔ MII demo leader: server boundaries ignore forged club IDs and client roles (246.579833ms)
+✔ super-admin: server boundaries ignore forged club IDs and client roles (99.010041ms)
+✔ anonymous reviewer: server boundaries ignore forged club IDs and client roles (173.723083ms)
+✔ student dashboard queries exclude private manager review text (84.3985ms)
+✔ account endpoint independently denies demo cookies (142.038833ms)
+✔ OAuth callback ignores forged forwarded hosts and rejects external return paths (27.440375ms)
+✔ native select retains form data, options, labels, disabled state and change handler (405.536375ms)
+✔ loading layouts announce one message and keep visual skeletons decorative (14.051458ms)
+✔ empty state keeps its named heading and actionable content across presentation modes (5.38675ms)
+✔ leadership anonymous reopening returns decision labels and scores with explicit unavailable free text, no identity or timestamps (302.828833ms)
+✔ authorized bank keys persist and snapshot; ordinary panel can read but cannot edit; revoked and cross-club reads fail (366.257125ms)
+✔ newly selected bank keys are authenticated snapshots, immutable after kit changes; off-script never inherits a key (128.713667ms)
+✔ keys are optional for legacy questions and absent from leadership closing projections (81.420791ms)
+✔ Material candidate motion coordinates three inert panes, stable height and 750ms unscaled 56px movement (2.729917ms)
+✔ reduced motion changes immediately; resize/unmount cancellation removes all copies and interaction locks (0.3185ms)
+✔ legacy and fresh Demo rooms simulate selection/invitations without calling any live action (1501.749416ms)
+﹣ native collaboration: ordered simultaneous picks, revision conflicts, exact queue advancement, invitations and revocation (1.334375ms) # SKIP
+✔ a later panel member inherits the room bank snapshot after master-kit edits (2316.289083ms)
+✔ shared selection is ordered and narrow; private notes, phase, completion remain per reviewer; revoked peers disappear (1758.426958ms)
+✔ same member tabs deduplicate presence; distinct candidate sessions isolate; shared snapshots cannot be rewritten; browser roles denied (1535.385125ms)
+✔ exact destination invitations require own final review; confirm is idempotent and acceptance cannot create a loop (1495.477125ms)
+✔ published slot panels use their actual approving owner and never borrow legacy, foreign or revoked authority (140.084458ms)
+✔ opening and joining a published booking use its exact slot duration and deny removed panel or approval authority (147.675666ms)
+✔ countdown uses the exact booked slot, explicit stable round configuration, and no missing-duration default (5.085958ms)
+✔ timestamp countdown survives pause, background elapsed, refresh, zero and explicit schedule reset without extending time (2.012125ms)
+✔ highlight input preserves shortcuts, interactive controls, unicode and native composition (42.28375ms)
+✔ live timing metadata honors authorization and does not rely on the schema default for missing configuration (86.903167ms)
+✔ browser: date sections preserve choices across refresh, background reads and exact-room return; filter, keyboard and mobile work (3874.235166ms)
+Actual PDF selection → continuous typing → Enter, multiline, validation, save failure, focus, completion and review isolation passed.
+✔ interview composer Enter actions, multiline, validation, duplicate guards, failure retry and review isolation in Chromium (14839.013083ms)
+✔ browser: first-tab scheduled entry opens exact candidate, keeps IDs across reload and returns to filtered list; mobile tabs never wrap (4248.90525ms)
+✔ status does not invent completion or call a missed session upcoming; ongoing work precedes history (71.461375ms)
+✔ exact destinations retain slot, booking, club and round; Back preserves originating filters and never accepts an external return (10.172334ms)
+✔ server exact entry denies revoked, cross-club/round, cancelled and replaced bookings; supported manual assignments remain available (175.134542ms)
+✔ assignment notification projects the identical current booking destination and never adds a time gate (64.075292ms)
+✔ server list is official-panel and personal-grant scoped; withheld/empty slots never expose a candidate (71.453792ms)
+✔ Demo booked rooms open exactly, including simultaneous different rounds; drafts, own phases, refresh and submitted review remain scoped (1151.313708ms)
+✔ saved Demo initialization is additive/idempotent and unchanged room reads never persist (465.14375ms)
+✔ disposable in-memory PostgreSQL enforces immutable finals, snapshots, scope, annotation evidence, scholar and score constraints (1584.771459ms)
+✔ new demo foundation persists isolated grants, pinned documents, annotations and immutable reviews without live calls (1546.056208ms)
+✔ demo previous-five excludes current, other reviewers, other rounds, drafts and revoked assignments with deterministic ties (760.136958ms)
+✔ scholar validation preserves null and enforces exclusive Not Applicable, duplicates and Other (131.626209ms)
+✔ only owner can attest offices or grant panel; titles and admin capabilities never imply offices (839.652209ms)
+✔ pinned resume bytes and hash remain stable across replacement uploads; unrelated round denied (135.467666ms)
+✔ panel annotations allow independent concurrent comments, enforce author/moderator revisions and conceal deleted history (52.682416ms)
+✔ annotation validation requires version-scoped document, page, quote and valid offsets (805.011959ms)
+✔ migrated database captures immutable final questions, deduplicates notifications, and scopes later-round history and averages (2409.806125ms)
+✔ booking cancellation notifies direct grants once without revoking their independent access; stale round notices reveal no context (1383.602041ms)
+✔ assignment inbox projects current contexts and removes all identity after revocation without aborting the read (1341.977042ms)
+✔ submission deliberately publishes only used questions and retains stable prompts; draft is never mutated (115.368041ms)
+✔ server score summary excludes unsubmitted invalid duplicates, preserves historical precision and revoked evidence (27.196584ms)
+✔ timer timestamp accounting handles background elapsed time, pause/resume and refresh without drift (7.923375ms)
+✔ earlier-round endpoint queries exact application club and lower stable round only; legacy drafts never projected (137.943583ms)
+✔ current-round scores require own submission even for a participating leader; denied response contains no peer data (71.403084ms)
+✔ fresh and saved demo fixtures demonstrate later history, exact and provisional averages and private isolation (721.674292ms)
+✔ synthetic integrated journey preserves scholars, snapshots, independent reviews, old documents, history and anonymous boundaries with zero live calls (1722.881458ms)
+✔ round kit accordion keeps independent drafts, saves, errors and direct links on desktop/mobile (5443.285041ms)
+✔ master kit requires explicit office; assigned interviewers can read but not edit (188.196833ms)
+✔ per-interviewer notes and completions survive kit edits and never modify another record (141.587833ms)
+✔ submission is canonical, atomic, immutable, and exactly retryable; alternate endpoint cannot edit it (54.142542ms)
+✔ audit failure rolls back submission; half steps, foreign IDs, stale revisions and changed prompts are enforced (90.316917ms)
+✔ current authorization blocks cross club, revoked panel, disabled membership and anonymous transitions (128.929708ms)
+✔ submitted review remains readable after advancement; leaders never receive private notes; bank history uses stable IDs (75.854625ms)
+✔ leadership review discovery projects safe anonymous metadata and excludes applicant-owned and unfinished records (46.538875ms)
+✔ concurrent exact final retries create one evaluation and do not change application status, round or another session (72.389167ms)
+✔ loads only this reviewer’s evaluation for the chosen round (0.316167ms)
+✔ progress counts saved evaluations for the current reviewer and round only (0.306041ms)
+✔ elapsed timer formats zero and longer interviews without a fabricated deadline (0.054708ms)
+﹣ native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening (0.603167ms) # SKIP
+✔ Education checkboxes enforce exclusivity and Other, and save only the education section (271.57975ms)
+✔ master kit denies non-office editing and retains local text after version conflicts (52.616916ms)
+✔ actual interview actions isolate two panel members, persist completion and preserve snapshots during kit edits (90.926459ms)
+✔ workspace queue query scopes identity to current panel and projects no academic, answer, or private review fields (62.808583ms)
+✔ verified offices enable workspace navigation without granting unrelated permissions (2.031083ms)
+✔ completion moves a fixed-size inert summary over 760ms and crossfades only in its final 250ms (68.188125ms)
+✔ resize, scroll, reduction and cancellation remove clones and release the interaction exactly once (37.243583ms)
+✔ reduced motion completes immediately and a stacked layout never flies toward an offscreen panel (4.147958ms)
+✔ next applicant keeps name/ID order, skips completed/unassigned/other rounds and wraps unfinished earlier rows (26.995917ms)
+✔ fresh Demo queue honors current assignments, independent completion, anonymity, revocation and membership denial with zero server calls (965.492875ms)
+✔ interview PDF proxy scopes each download/range and revocation denies cached document IDs (122.531167ms)
+✔ resume annotations never appear in compact applicant payload (63.250833ms)
+✔ first page is prioritized without loading all pages; the scroll region stays native and keyboard focusable (76.647625ms)
+✔ overlay rerenders preserve PDF and scroll node; resize redraws without downloading or owning another worker (29.348833ms)
+✔ date groups and slots stay chronological regardless of interview status, with stable tie ordering (17.831833ms)
+✔ today uses the schedule timezone; absent today opens only nearest upcoming day; past-only dates stay collapsed (1.301459ms)
+✔ URL choices distinguish never initialized from deliberately all collapsed and retain multiple days safely (0.211458ms)
+✔ selection controls exist only on the interview list; active and post-interview room has no strip or candidate navigation (120.94775ms)
+✔ a destination response after leaving the room cannot change selection or recovery state (42.036333ms)
+✔ advancement waits for destination authorization/data, guards duplicate clicks and preserves current screen on denial (31.675625ms)
+✔ next applicant refreshes assignments, skips completed/revoked rows and changes the keyed session together (27.25475ms)
+✔ failed arrival confirmation retains only its receipt and resumes after refresh (47.28725ms)
+✔ slot generation respects time zones, buffers, repeated dates and unused trailing time (19.835917ms)
+✔ invalid dates, past windows, DST gaps/ambiguity and unsafe virtual links are rejected (1.422375ms)
+✔ booking rejects ownership, invitation, club, round, capacity, past time and paused rooms (754.091958ms)
+✔ booking is idempotent, retries serialization, and refuses cross-club student overlaps (245.67925ms)
+✔ rescheduling replaces only on success, and cancellation checks ownership and start time (77.002416ms)
+✔ room creation checks permission, round, panel membership, and overlapping location/panel windows (172.575083ms)
+✔ SQL migration preserves legacy data and enforces capacity, round, overlap and browser isolation (3352.263291ms)
+✔ room names: historical anonymous=false, current anonymous=false, identify=false (266.840834ms)
+✔ room names: historical anonymous=false, current anonymous=false, identify=true (755.40775ms)
+✔ room names: historical anonymous=false, current anonymous=true, identify=false (655.986166ms)
+✔ room names: historical anonymous=false, current anonymous=true, identify=true (694.879209ms)
+✔ room names: historical anonymous=true, current anonymous=false, identify=false (484.017084ms)
+✔ room names: historical anonymous=true, current anonymous=false, identify=true (306.719875ms)
+✔ room names: historical anonymous=true, current anonymous=true, identify=false (244.521916ms)
+✔ room names: historical anonymous=true, current anonymous=true, identify=true (130.933875ms)
+✔ browser: Demo pipeline save immediately links exact round, kit persists and scheduling inherits duration (9427.452167ms)
+✔ setup status reflects actual booking, pause, kit, sessions and canonical staffing readiness (76.672084ms)
+✔ saved Interview round → kit → schedule → approved publication → eligible booking → exact interviewer room, no duplicate setup/live calls (1808.886833ms)
+✔ setup status action authorizes current club and returns no private bank or panel content; failures remain failures (925.951458ms)
+✔ real migrated SQL plus live room/booking/grant/session actions enforce owner setup, rescheduling, cancellation and revocation (7682.152541ms)
+✔ legacy booking review stays unresolved and panel edits cannot introduce scheduling conflicts (1971.1845ms)
+✔ switching rounds finds the earliest open future session in its room timezone, independent of room ordering (15.037042ms)
+✔ new, configured and published rounds open their appropriate screen within the selected round (0.76225ms)
+✔ booking presentation distinguishes draft, paused, full and published without changing server eligibility (0.234625ms)
+✔ Demo scheduling exposes saved per-round duration just like the live room workspace (898.002667ms)
+✔ Demo panel planning preserves the MII management boundary (3988.670917ms)
+✔ isolated manager override → approval → publication → applicant booking/reload/cancel makes zero live calls (4779.812917ms)
+✔ saved legacy Demo sessions retain reservations, explicit panel denial and unrelated interview notes (1083.320958ms)
+✔ president attestation counts toward approval/publication/booking without changing personal availability; retries notify once (6574.481791ms)
+✔ unfilled staffing blocks booking publication; scope, pause, policy and changed slot snapshots retain confirmed reservations (2801.920292ms)
+✔ overrides cannot waive official conflicts, lost access or session changes; caller-supplied proof cannot grant access (2320.936833ms)
+✔ loaded questions open before a slow sharing response; quick switches and saves keep notes under their own stable IDs (556.191125ms)
+✔ failed sharing keeps the loaded editable question and private draft, with an independent retry (121.456459ms)
+✔ incoming shared changes preserve typing and composition, wait for explicit opening, and never change closing phase (142.253875ms)
+✔ Proceed never submits an unfinished review and Stay here leaves private content and phase untouched (648.879125ms)
+✔ fresh and legacy drafts stay in interview until explicit ending; saved phase belongs only to that personal record (1331.41725ms)
+✔ completion requires acknowledged Save and close; failed text stays open with retry (260.443208ms)
+✔ two interviewer UIs remain independent and reload restores only acknowledged personal completion (674.346709ms)
+✔ assigned interviewer browses current bank without editing; session wording and stable IDs survive kit changes (108.903459ms)
+✔ off-script questions persist independently of opening and typing (141.214584ms)
+✔ End interview opens a nullable-score draft, and explicit half-point slider selection enables final submission (70.229084ms)
+✔ edits during an in-flight autosave use the acknowledged next revision (73.995625ms)
+✔ repeated Save & close clicks issue one acknowledged completion and retain private text on failure (48.284916ms)
+✔ discussion has no score or submission; pointer and touch select unchanged lower endpoint and exact upper endpoint (232.616208ms)
+✔ keyboard focus alone is unscored; Home, End and half-step arrow interactions explicitly score (249.984208ms)
+✔ keyboard scoring clamps endpoints and steps from current draft despite a stale native input value (199.234292ms)
+✔ finish flushes latest text after autosave and double clicks create one final request (192.733583ms)
+✔ failed finish retains closing text and exposes explicit final retry (44.814167ms)
+✔ lost successful response retries the identical final revision and locks without duplicate completion (83.311791ms)
+✔ post-interview replaces only the middle, keeps side nodes and notes, and restores its saved screen on reload (82.179834ms)
+✔ completion stays locked, next failures retry without duplicate requests, and empty queue is explicit (91.006625ms)
+✔ bank browsing keeps unsaved personal notes and does not mark completion; autosave is the only routine save (123.720333ms)
+✔ one header save indicator shows pending, failure and acknowledged retry without clearing notes (49.542958ms)
+✔ miscellaneous notes occupy one persistent right-panel slot; used questions keep keys without false completion (96.482833ms)
+✔ End interview waits for a pending save, preserves late miscellaneous edits and remains active on failure (85.584459ms)
+✔ finish waits for autosave and submits the latest miscellaneous notes exactly once (35.06175ms)
+✔ desktop renders an inert flight, preserves notes above its stable landing and uses an unscaled 1040ms crossfade (34.73925ms)
+✔ owner setup uses isolated adapters, persists office/panel approvals and grants entry without live writes (4672.849333ms)
+✔ shared candidates cannot staff multiple simultaneous positions; disjoint pools can (0.649958ms)
+✔ a shortage in a subset is detected even when the total union meets demand (0.072625ms)
+✔ capacity warnings respect nonoverlapping sessions, trailing buffers and inactive rooms (0.138084ms)
+✔ leadership UI renders only closing DTO, supports empty/retry, and clears opened reviews on revoked access (533.446375ms)
+✔ email migration backfills metadata, coalesces legacy queues, constrains counts and prevents active duplicate attempts (2377.10025ms)
+✔ review queues once, returns while provider work is pending, and never drains email on the UI request (341.533625ms)
+✔ configuration/network errors preserve retry and standalone control schedules a background pass (52.698792ms)
+✔ explicit batch send queues once under simultaneous clicks; worker records timestamps and counts once (470.650458ms)
+✔ batch requires complete review, authorization, and configured SMTP; accepted/revoked rows are skipped (511.65225ms)
+✔ resend enforces cooldown, rate limits, target scope and role authority (194.45225ms)
+✔ worker cancels accepted/revoked/expired/identity-mismatched or no-longer-authorized deliveries before SMTP (174.116417ms)
+✔ SMTP rejection is recorded; ambiguous timeout and post-send audit failure never retry automatically (98.769291ms)
+✔ template escapes input and uses normal sign-in without identifiers or secrets in URLs (107.743583ms)
+﹣ scheduled invitation dispatch through local Auth and production actions (0.567042ms) # SKIP
+﹣ invitation scheduling and fair worker on actual bounded PostgreSQL (0.614083ms) # SKIP
+✔ handoff enters at the navbar edge and requires 24px of upward travel to reverse (0.761042ms)
+✔ showcase exit has its own hysteresis and never exposes a compact toggle beyond the section (0.12175ms)
+✔ observers detect large scroll jumps, coordinate one state, and rebuild after navbar resize (8.441667ms)
+✔ keyboard focus follows the original control into the compact control and back without scrolling (3.55925ms)
+✔ mobile handoff yields keyboard focus to the accessible menu entry point (7.158917ms)
+✔ original and compact controls expose the same state and invoke the same switching callback (4.447917ms)
+✔ refreshing either perspective and legacy club links selects the correct walkthrough (117.934292ms)
+✔ switches update the URL without scrolling, and browser history restores the perspective (19.726584ms)
+✔ leaving the landing page removes both navigation listeners (17.968375ms)
+✔ direct numbered chapter links retain their audience, while legacy hashes take precedence (39.157875ms)
+✔ first visits default to leaders, manual choices persist, and explicit navigation wins (159.541ms)
+✔ audience and chapter navigation preserve existing campaign parameters (26.892791ms)
+✔ five student and six leader stages map by task, including interview and membership (2.625667ms)
+✔ hero-to-paper boundary stays crisp with a readable scroll cue (13.6995ms)
+✔ launch participants require explicit UVA marketing approval and expose only public identity (54.412416ms)
+✔ unavailable database or unapplied migration never substitutes demo partnerships (6.407375ms)
+✔ round moves reject foreign rounds before any mutation (842.180875ms)
+✔ status updates are decision-capability-only and scope mutations to non-draft applications in the club (286.6345ms)
+✔ foreign applicant evaluation cannot write (174.610625ms)
+✔ evaluation reads enforce club and panel isolation (259.2585ms)
+✔ valid evaluations preserve stable round and server reviewer identity (128.574208ms)
+✔ board decisions use the expected status and reject stale writes (134.77ms)
+✔ round moves atomically check the expected round within the authorized club (129.030792ms)
+Password reset completed; university identity proof unavailable
+Password reset completed; university identity proof unavailable
+Password reset completed; university identity proof unavailable
+✔ legacy mailbox recovery proof accepts only exact trusted provider identity and confirmation (50.4135ms)
+✔ only consumed recovery token and successful password change can record provider-bound proof (877.360459ms)
+✔ provider-issued Microsoft identity verifies UVA ownership without signup email OTP (8.437ms)
+✔ live board lanes are status-based, exclude drafts, and keep waitlists distinct from closed decisions (0.520458ms)
+✔ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (872.854042ms)
+✔ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (287.323292ms)
+✔ read/review access alone never exposes enabled round moves or decision buttons (354.485583ms)
+✔ evaluation save updates both presentations and explicit round movement reloads anonymous identity (203.403792ms)
+✔ an identified applicant without current panel authority has no review editor or blocking review draft (135.620167ms)
+✔ decision groups use persisted status, exclude drafts, and keep waitlists out of Pending (0.1325ms)
+✔ Decisions reuses expected-status mutations and moves saved outcomes between groups (193.741291ms)
+✔ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (394.965667ms)
+✔ Kanban round moves reject stale data and share the refreshed anonymous projection with List (122.1635ms)
+✔ Kanban decisions use expected status and appear in List after server reload (357.290208ms)
+✔ drawer renders stable-ID review with historical label when current name is Panel (322.013125ms)
+✔ drawer renders stable-ID review with historical label when current name is Review (235.888709ms)
+✔ drawer legacy label compatibility, roundId=null (266.369917ms)
+✔ drawer legacy label compatibility, roundId=undefined (89.30175ms)
+✔ drawer legacy label compatibility, roundId=different-round (215.569917ms)
+✔ moving from the drawer locates the target-round review by stable ID despite an old label (163.323042ms)
+✔ rejected applicants leave active queues and remain in the deliberate retained-history tab (256.413916ms)
+✔ majority uses the configured electorate, not only received votes (1.641875ms)
+✔ a tie stays unresolved and No Pass removes an applicant from the remaining pool (0.154583ms)
+✔ duplicate votes, stale slides, capacity, and ended sessions are rejected (0.216ms)
+✔ simultaneous members accumulate and an over-quota count keeps the bar bounded (0.189333ms)
+✔ validates quotas, member counts, empty pools, and navigation bounds (0.384458ms)
+✔ lobby rejects votes and cannot begin until a connected member joins (0.284875ms)
+✔ joins enforce PIN, membership, capacity, and ended status (0.139458ms)
+✔ duplicate joins and tabs share identity, presence expires and reconnects (0.172333ms)
+✔ anonymous entry never blocks on identity or sends a users/me request (129.771958ms)
+✔ known sessions stay pending only until the real identity request resolves (33.927917ms)
+✔ HTTP failures, lost connections, and invalid responses all release the entry loader (85.753125ms)
+✔ identity refreshes and club selection keep ready workspace content mounted (6.390542ms)
+✔ demo identity never waits for live authentication; support view retains its identity flag (14.787833ms)
+✔ session boundary swaps immediately and returns ready children without a wrapper (2.891917ms)
+✔ route loader uses the branded mark with a stable image box and accessible status (3.17575ms)
+✔ email stays collapsed, callback errors remain visible, and reveal retains entered credentials (161.585042ms)
+✔ invalid UVA addresses never call Supabase for password or code login (61.719875ms)
+✔ password login preserves normalized credentials, pending state, provider errors and safe return routing (18.033708ms)
+✔ enabled Microsoft login uses the guarded server route and retains return routing (9.765459ms)
+✔ disabled Microsoft login cannot initiate OAuth even when its handler is called (14.696667ms)
+✔ email-code flow preserves existing-account restriction, resend cooldown, token validation and confirmed identity redirect (31.655375ms)
+✔ expired OTP and identity mismatch cannot redirect, and mismatched sessions sign out (15.915458ms)
+✔ auth presentation keeps collapsed controls inert and callback errors announced (189.963458ms)
+✔ public login cannot enter a demo and account creation retains its existing callback (42.641292ms)
+✔ default login renders email immediately and omits Microsoft controls, branding and the email toggle (54.58425ms)
+✔ meeting periods preserve ongoing meetings until their actual end, with no inferred duration (0.598458ms)
+✔ meetings are scoped by audience and membership in the server query (181.164625ms)
+✔ short-lived QR tokens are hashed and check-in is idempotent even with concurrent scans (55.563458ms)
+✔ member meetings reject outsiders, preserve permission after the meeting, and accept members (261.563416ms)
+✔ expired, invalid, closed, wrong-meeting, and revoked-issuer codes cannot record attendance (133.567791ms)
+✔ meeting edits require permission and revision, invalidate QR tokens, and keep audience consistent (45.365291ms)
+✔ old meetings cannot issue new check-in codes and unsafe resource links are rejected (53.202792ms)
+✔ attendance history redacts anonymous applicants and summary only counts held recruitment meetings (45.895041ms)
+✔ member and access reads retain separate permission gates and project only a brief profile (374.154791ms)
+✔ member drawer access editor disables higher-authority edits and capabilities outside delegation (16.547083ms)
+✔ Microsoft auth defaults off in every environment; only exact true opts in (89.654167ms)
+✔ direct Microsoft initiation requests are rejected without provider, cookie or database calls (112.909833ms)
+✔ enabled server initiation retains Azure configuration, cookie-backed client and safe redirects (8.903ms)
+✔ enabled Microsoft initiation still rejects impersonation and demo sessions (18.982667ms)
+✔ provider errors never redirect or expose configuration details (32.527ms)
+✔ disabled Microsoft callbacks are rejected before code exchange and leave existing sessions intact (4.831666ms)
+✔ browser: grouped keyboard navigation, saved popover/shared persistence, scoped availability, avatars and mobile (3054.2985ms)
+✔ browser: tutorial X dismisses immediately during pending progress, persists offline, restores focus and restarts (6136.20575ms)
+✔ recruiting navigation groups preserve original routes and individually gated children (1.776792ms)
+✔ Announcements in both modes retain one destination, same permission, and Recruiting context (0.308625ms)
+✔ current-person initials and photo handling use stored identity with safe fallback (52.719959ms)
+✔ exact task, decision, interview and invitation destinations are preserved; general inbox updates read inline (0.726375ms)
+✔ legacy application actions retain draft/status semantics and missing destinations remain readable (0.222167ms)
+✔ feed sorts newest first, filters unread, deduplicates IDs, and formats relative/invalid times (14.390292ms)
+✔ read mutation updates badge immediately, survives stale realtime data, and persists without duplicate entries (197.082042ms)
+✔ failed read restores the item and count while preserving new arrivals (143.694292ms)
+✔ archive remains absent through stale snapshots; failure restores it without losing arrivals (100.642417ms)
+✔ mark all reads owned older pages and splits backend writes at its 100-ID limit (154.621ms)
+✔ failed bulk pagination never marks a partial loaded feed as read (142.309708ms)
+✔ durable task history sharing one destination survives pagination while the derived task duplicate is suppressed (131.966125ms)
+✔ overlapping bulk clicks share one pagination operation and retain IDs displaced by a realtime refresh (140.238459ms)
+✔ platform notification expansion reaches the existing inbox while profile and personal destinations remain intact (14.136875ms)
+﹣ native PostgreSQL: concurrent claims, duplicate imports, email delivery, and owner suspensions (0.617792ms) # SKIP
+﹣ complete onboarding over real Next HTTP, Supabase Auth/MFA, PostgreSQL and captured SMTP (0.296041ms) # SKIP
+✔ profile completion accepts HTTP and Next streamed redirects with the exact return path (16.371625ms)
+✔ profile completion rejects ordinary pages, protected content and incorrect redirects (3.998666ms)
+✔ university identity proof fails closed for auto-confirm, missing settings, errors, and unavailable Auth (62.104542ms)
+✔ changed verified mailbox never discovers historical university identities; client metadata cannot spoof the key (41.797542ms)
+✔ all onboarding tables retain independent restrictive RLS even with browser grants and permissive policies (2164.554208ms)
+✔ malformed Unicode and duplicate flooding are bounded; export-formula prefixes cannot become ready rows (49.710667ms)
+✔ validates and normalizes account and academic fields (1.7975ms)
+✔ signup never bypasses confirmation, even with obsolete skip arguments and environment flag (28.6415ms)
+✔ OTP format, confirmed identity/session and safe errors are enforced (2.776542ms)
+✔ signup conceals existing-account outcomes while rejecting sessions and retaining operational errors (5.312042ms)
+✔ profile saving derives identity from session and persists experience (83.172292ms)
+✔ first-login discovery and atomic ownership acceptance run against all repository migrations (2753.899042ms)
+✔ authenticated discovery surfaces ownership requests and editable profile suggestions; disabled discovery makes no calls (89.0145ms)
+✔ failed discovery offers retry and successful empty discovery is unobtrusive (55.2475ms)
+✔ claim button blocks repeated clicks, sends only invitation ID, and routes to existing club workspace (48.643875ms)
+✔ failed acceptance remains on the request and allows retry; no navigation occurs (30.273084ms)
+✔ profile suggestions prefer ownership, reject unsupported years, and tolerate incomplete names (53.792583ms)
+✔ member management uses real migrated constraints, atomic transfer, queued delivery cancellation and soft removal (2549.739625ms)
+✔ existing Members UI displays Member, Year, Role, Status and school-bound manual/CSV controls (217.191333ms)
+✔ admin drawer cannot change owner role, remove owners or transfer ownership (135.086125ms)
+✔ ownership transfer requires an intentional confirmation and passes only scoped trusted input (30.050958ms)
+✔ revocation confirms, resend is explicitly queued and duplicate queued delivery is disabled (65.728583ms)
+✔ directory errors have retry states and drawer preserves unsaved-change confirmation (69.163ms)
+✔ uncertain delivery is presented for review and cannot be resent automatically (90.346375ms)
+✔ an ordinary role label updates immediately and rolls back if the server rejects the grant (39.104958ms)
+✔ warm members remain usable during revalidation and are cleared on an access failure (38.857583ms)
+✔ centralized capabilities ignore global/legacy roles and reject inactive authority (1.180416ms)
+✔ ordinary members and recruiters cannot read or modify the directory or upload authority (1068.582083ms)
+✔ directory reads are organization-scoped and include only brief profiles and delivery status (318.196083ms)
+✔ admins can grant ordinary roles but cannot grant ownership or edit/remove an owner (1395.721459ms)
+✔ custom managers cannot grant or strip capabilities above their authority (344.40125ms)
+✔ role changes validate IDs, scope targets, reject disabled/inactive accounts, and revoke stale pending grants (521.480958ms)
+✔ removal preserves the membership row/history and clears every capability (213.875333ms)
+✔ last active owner cannot be removed or demoted; disabled owners do not count (264.293459ms)
+✔ concurrent owner demotions serialize and leave one owner (304.042416ms)
+✔ intentional ownership transfer grants first, demotes the actor to ADMIN, preserves other owners, and blocks replay (336.216ms)
+✔ audit failure rolls back ownership transfer and removal (556.312834ms)
+✔ manual member creation delegates to identity invitations and rejects role/authority injection (597.329583ms)
+✔ resend queues once under repeated/concurrent clicks and never claims email was sent (981.375417ms)
+✔ revoke and resend enforce invitation scope, state, expiry, role and capability boundaries (2672.28375ms)
+✔ an enabled owner can remove a disabled owner when another enabled owner remains (743.067875ms)
+✔ bulk selection protects all owners together, rejects stale versions and escalation, and updates granted capabilities atomically (411.00525ms)
+✔ panel date sections preserve assignments, scoped bulk actions, issue focus and explicit targets across steps (9682.408292ms)
+✔ staffing summary counts distinct vacant slots, separates full-panel conflicts and uses correct grammar (0.62075ms)
+✔ actual proposal actions generate, edit, save, reopen and discard without changing official tables or applicant APIs (3654.8135ms)
+✔ staffing requirements preserve approvals and enforce revisions; changed availability locks remain explicit conflicts (3484.058167ms)
+✔ cross-club official commitments block confirmed interviewers without exposing foreign schedules; manual invalid additions are rejected (3353.802459ms)
+✔ database guards roll back unpublished official writes; proposal scope, status, browser access and runtime ownership are enforced (2905.781792ms)
+✔ confirmed local-date exceptions and the full following buffer determine eligibility; global changes never silently alter a snapshot (1561.998042ms)
+✔ manual replacements, moves and swaps validate atomically and cannot spoof automatic provenance or official access (2265.247958ms)
+✔ different room requirements and simultaneous rooms never double book; scarcity has explicit status (2.716834ms)
+✔ whole-window lookahead reserves a constrained interviewer instead of creating an avoidable gap (0.372042ms)
+✔ eligibility, participation, unknown availability, access and official conflicts all fail closed (0.228833ms)
+✔ buffers prevent adjacent bookings and consecutive limits include official commitments (0.497917ms)
+✔ locks survive regeneration and invalid locks are conflicts; fill missing retains all manual positions (0.404875ms)
+✔ workloads balance and ties prefer the existing panel; changed times and overstaffing are visible (0.592208ms)
+✔ bounded global search improves a duty-limit greedy gap and reports budget exhaustion (0.313667ms)
+✔ whole-window coverage matches exhaustive feasible solutions across all small eligibility graphs (746.437417ms)
+✔ publication differences identify room/time reassignment and preserve unaffected scope in recoverable history (2.540541ms)
+✔ approved panel email details are escaped and linked canonically; mixed digests preserve decision links and private-message privacy (5.449042ms)
+✔ official panel calendar events preserve exact instants and do not synthesize applicant bookings (214.952208ms)
+✔ official panels and existing applicant bookings retain the second repeated DST hour in calendar exports (5.416292ms)
+✔ A–D: proposal/manual changes save privately; owner confirmation publishes atomically and queues each affected member once (3799.595875ms)
+✔ E–F: working revisions preserve official grants; publishing a replacement notifies only affected members and keeps unaffected access (4600.118375ms)
+✔ G, H, J: staleness, eligibility loss and conflicting official commitments cannot be overridden; draft and official version survive failures (3915.023666ms)
+✔ understaffing defaults to blocked, safe explicit overrides are recorded, and booked zero-staff sessions cannot be approved (2054.795708ms)
+✔ K: booking publication is separate from safe understaffed panel publication and preserves existing reservations (2509.039459ms)
+✔ ready tokens are owner-bound; editing clears readiness; history is immutable and recovery produces a revalidated working revision (2850.85075ms)
+✔ safe interviewer notices project only official details; cancellation and permission revocation suppress inaccessible contexts (2153.036708ms)
+✔ published session access survives legacy room-attestation edits but actual approving-owner revocation removes private grants (2290.004792ms)
+✔ availability rechecks preserve assignments and never waive concurrent confirmation/publication guards (2703.57275ms)
+✔ compact publication status, nonmutating comparisons/history, official schedule and approval safeguards (11211.611708ms)
+✔ publication labels distinguish actual booking, draft and approval state without bookkeeping false positives (1.365042ms)
+✔ actionable staffing checks preserve assignments, separate conflicts, reveal slots and retain stale warning on failed or concurrent rechecks (9293.536542ms)
+Password recovery delivery unavailable { code: 'user_not_found', status: undefined }
+Password recovery provider unavailable
+Password reset completed; session revocation unavailable
+✔ recovery requests normalize email and never expose account/provider outcomes (471.208458ms)
+✔ origin, demo, view-as, UVA and password validation fail before provider calls (19.65925ms)
+✔ only provider recovery verification authorizes a password change; no auth cookie or token response (60.58875ms)
+✔ expired/replayed token, missing session and non-UVA token never update password (91.671416ms)
+✔ provider password policy failures invalidate the consumed link without exposing provider details (18.700333ms)
+✔ MFA-protected recovery explains the assurance requirement and revokes the isolated session (7.910042ms)
+✔ recovery plus verified owned authenticator and AAL2 permits the password change without attaching a session (13.698084ms)
+✔ MFA recovery rejects unverified factors, bad codes, wrong identity and AAL1 before changing a password (55.94ms)
+✔ a code from a later verified authenticator works, while provider rate limits stop factor attempts (20.883625ms)
+✔ a completed reset remains successful if subsequent session revocation fails (6.484916ms)
+✔ missing provider configuration fails safely without attempting authentication (5.764292ms)
+✔ Recruiting Interviews retains the scheduling tab when round navigation remounts it (250.92775ms)
+✔ read API preserves dates and user JSON, validates scope, and never caches private responses (282.675125ms)
+✔ ordinary read fetches overlap rather than enter the Server Action queue (10.522625ms)
+✔ root bootstrap starts authenticated content without an identity HTTP waterfall (3.409625ms)
+✔ verified Supabase identity is reused only inside the same React request; membership remains live (19.945292ms)
+✔ duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap (3.541083ms)
+✔ middleware avoids duplicate refresh only after demo/support guards; loaders own authentication (10.665125ms)
+✔ query-only club transitions skip RSC navigation and preserve modified/cross-club links (1.003917ms)
+✔ Members mounts without Overview and its resource survives navigation only within the same identity/grants (124.784584ms)
+✔ advanced permissions delegate one directory and one self-identity refresh to their owner (30.171916ms)
+✔ a stalled workspace read times out, aborts its request and releases the deadline (3.626167ms)
+✔ status uses actual club rounds without inventing interviews or marking later rounds as complete (0.93875ms)
+✔ submitted applications use their recorded current round even if the status was not changed with a round move (0.069333ms)
+✔ status excludes drafts, keeps each outcome distinct, and does not interpret round names as interview invitations (0.097125ms)
+✔ earlier-round bookings do not hide current-round interview actions, and ongoing bookings remain upcoming (0.129125ms)
+✔ status sorts attention before upcoming interviews and orders interview appointments chronologically (0.133375ms)
+✔ Status presents every submitted application once, with counted filters and no form-management cards (159.899042ms)
+✔ Applications keeps drafts and submitted responses together without repeating the status journey (111.608875ms)
+✔ booking changes refresh the same application and synchronize calendar bookings without a page reload (104.919375ms)
+✔ application deep links focus only an owned submitted application in Status (99.889333ms)
+✔ empty, loading, failed and signed-out status states preserve retry and sign-in behavior (179.87675ms)
+✔ unsaved or busy application forms retain their existing navigation guard (64.885708ms)
+✔ old applicant URLs retain focus and unrelated parameters, while manager routes remain separate (3.33425ms)
+✔ legacy applicant path redirects preserve repeated parameters and leave the booking route intact (12.712625ms)
+✔ personal shell keeps page headings in content once, with universal and contextual navigation (168.44025ms)
+✔ signed-in account menu mounts the existing Demo entry; anonymous and support sessions cannot use it (359.450542ms)
+✔ Demo menu respects allowed access and existing saving/unsaved guards when enabling or exiting (16.809542ms)
+✔ authoritative booking synchronization replaces cancelled/rescheduled bookings while preserving other calendar events (211.098834ms)
+✔ universal destinations work from a member club shell whose context links use hrefs (137.624833ms)
+✔ Calendar is shared account navigation in every personal mode and keeps its title and active state (825.848708ms)
+✔ every shared icon renders native Phosphor SVG geometry without raster masks (76.234ms)
+✔ icons preserve size, inherited color, selectors and decorative semantics (8.367291ms)
+✔ selected fill weights change actual glyph geometry (1.535666ms)
+✔ standalone labels, titles, alt and caller accessibility overrides are preserved (1.810625ms)
+✔ individual SSR imports render without React client context (35.706375ms)
+✔ view-as validates MFA guard, origin, explicit confirmation, target and membership before starting (361.179583ms)
+✔ view-as stores only hashed tokens, binds original actor, preserves auth cookies, and audits explicit end (158.406333ms)
+✔ expiry, revoked grants, newly privileged targets and replaced sessions fail closed (76.872875ms)
+✔ middleware allows effective application access but denies provider identity changes (25.22125ms)
+✔ blocked mutation attempts produce attributed audit events and never execute a target mutation (28.109917ms)
+✔ search filters remain server-side and exclude password hashes and view-session tokens (111.834542ms)
+✔ admin suspension protects self, privileged administrators, and the last active club owner (673.12925ms)
+✔ invalid support context and platform mutations fail closed even if middleware is bypassed (324.230625ms)
+✔ normal account API queries the authenticated identity without obsolete omit fields (18.157292ms)
+✔ context synchronization reports only a marker and session ID, never tokens or target data (26.868375ms)
+✔ form disables submission while loading or saving and exposes the committed success and unsent email state (283.783708ms)
+✔ invalid computing IDs show an accessible field error without invoking the server action (35.772292ms)
+✔ server conflicts preserve form inputs and retry identity; a transport failure allows safe retry (25.696542ms)
+✔ failed school loading shows a retry state and keeps creation disabled (39.779792ms)
+✔ platform onboarding respects the actual allowlist, grant, MFA and impersonation guard (280.350292ms)
+▶ organization and owner invitation workflow runs atomically against the complete local SQL stack
+  ✔ unauthorized requests never begin a transaction (0.557ms)
+  ✔ valid creation reserves a normalized university identity without a fake User or membership (56.128167ms)
+  ✔ duplicate normalized organization names are rejected, including alternate capitalization and spacing (25.412125ms)
+  ✔ repeated submissions cannot create duplicate owner invitations (20.562666ms)
+  ✔ verified existing school identities are reused and remain pending until acceptance (23.870875ms)
+  ✔ email-only account matches are advisory and do not invent verification (46.468208ms)
+  ✔ malformed computing IDs and invalid form fields fail without writes (59.749416ms)
+  ✔ failed audit writes roll back organization, identity, and invitation together (50.847125ms)
+  ✔ school options are protected and expose the identifier validation rule (21.117084ms)
+✔ organization and owner invitation workflow runs atomically against the complete local SQL stack (3278.183625ms)
+✔ current demo graph is deterministic, connected, and resets every new workflow without production calls (2494.737916ms)
+✔ student profile → Explore filters → Corkboard → shared club → application draft/submission → tracker/calendar persists (3031.360417ms)
+✔ leader kits → configured applicant → Pros/Cons → interview → repeated voting → reopen → explicit publish reaches student (1613.786583ms)
+✔ demo tutorials persist independently, keep old indices, reset deterministically, and cannot access live actions (1488.396292ms)
+✔ saved demo graph rejects broken current-workflow relationships and privacy configs (1213.494625ms)
+✔ older admin demo templates reset safely without restarting saved applications or requiring new tutorial fields (1098.927958ms)
+✔ demo publication enforces production conflict rules and atomically rejects duplicate or moved candidates (933.449875ms)
+✔ Demo profile photos/PDF/LinkedIn survive reload and reset with no production uploads (1347.905166ms)
+✔ browser-origin Demo projection has one résumé link and a working photo URL (857.072625ms)
+✔ Demo voting setup → QR-scoped member join → synchronized voting → multiple passes → publish → reset stays isolated (2130.200042ms)
+✔ every scene has one principal action, a 6–9 second timeline and a held result (0.477709ms)
+✔ interface responses occur after the deliberate click, from the same progress clock (0.094083ms)
+✔ offscreen and paused time never advances progress; resuming preserves the same timeline (0.316083ms)
+✔ completion stops the clock and remains completed across visibility changes (0.303667ms)
+✔ rapid replay cancels the prior frame, resets the interface and retains one clock (0.403125ms)
+✔ reduced motion presents the completed example and accessible replay stays static (6.984958ms)
+✔ disposing a scene cancels its clock, including when another audience mounts (4.90875ms)
+✔ prominence selects one scene, resists minor scrolling and adapts to landscape (0.15475ms)
+✔ Auto-Fill only creates an unpublished proposal; publication is outside this vignette (0.490292ms)
+✔ shell focuses content on primary mode or club changes even when the destination remains Overview (354.920333ms)
+✔ pending invitations drive the notification bell and are reviewable in the inbox without a separate notification record (727.595375ms)
+✔ production ownership repair preserves records and bounded-role protections while enabling announcement and notification transactions (3505.872917ms)
+✔ the runtime-access migration is a no-op where the production role is absent (805.116625ms)
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'rounds',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'rounds',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'rounds',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'rounds',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+recruitment.pipeline.read.failure {
+  code: 'other',
+  phase: 'rounds',
+  elapsedMs: 0,
+  acquisitionMs: 0,
+  transactionMs: 0
+}
+✔ canonical academic projection covers semester boundary, future/completed education and transfer without raw year (4.232708ms)
+✔ gender defaults fail closed and anonymous voting/preview cannot independently grant demographic visibility (1.795792ms)
+✔ profile section stores fields only for authenticated owner and roundtrips canonical values (114.299334ms)
+✔ server filters gender in scoped round and counts unfiltered authorized round applicants transactionally (796.9665ms)
+✔ GPA preserves three-decimal 4.0 values and importer never infers demographics or converts alternate scales (83.288333ms)
+✔ crop bounds preserve pixels at zoom/reposition extremes and reject invalid state/images (0.258459ms)
+✔ migration preserves historical GPA/scholar data, defaults and application relations without conversion (2259.548875ms)
+✔ generic audited Admin inspection cannot acquire new private fields by schema expansion (72.539792ms)
+✔ external, public, foreign and proxy references cannot be saved as owned photos (362.503334ms)
+✔ private photo proxy authenticates owner and context, denies students/anonymous/path attacks, and returns no bearer URL (233.231291ms)
+✔ Postgres migration preserves legacy GPA and photos while validating changed GPA and closing public Storage (2300.032542ms)
+✔ web imports normalize domains, preserve explicit protocols and reject malformed/unsafe URLs (3.302042ms)
+✔ PDF/image validation examines bytes, accepts generic PDF MIME, and enforces size/type (2.116167ms)
+✔ canonical interview/voting projection hides historical Bio/subsections and avoids résumé duplication (3.400667ms)
+✔ identity updates persist the headshot while leaving historical bio and academic data untouched (127.032667ms)
+✔ authenticated PDF uploads retain private owner keys and canonical MIME; rejected uploads do not write (151.671958ms)
+✔ headshots use the existing owner storage flow and return a private owner reference (42.738792ms)
+✔ interview uses a narrow panel while voting retains the shared image fallback; profile overview excludes retired sections (0.486791ms)
+✔ profile link edits store normalized external URLs without weakening private-key ownership (16.461208ms)
+✔ shared Avatar renders initials while missing/broken images have not loaded (46.0925ms)
+✔ application résumé links normalize independently of essays and retain private ownership checks (105.048625ms)
+✔ exported upload accepts validated image/jpeg with a fresh owner path and no returned capability (612.777625ms)
+✔ exported upload accepts validated image/png with a fresh owner path and no returned capability (192.001291ms)
+✔ exported upload accepts validated image/webp with a fresh owner path and no returned capability (167.94475ms)
+✔ unauthenticated account is rejected by actual auth before Storage (159.822083ms)
+✔ disabled account is rejected by actual auth before Storage (90.016042ms)
+✔ unverified account is rejected by actual auth before Storage (24.774125ms)
+✔ caller cannot supply userId to the upload boundary (108.323459ms)
+✔ caller cannot supply path to the upload boundary (117.305208ms)
+✔ caller cannot supply bucket to the upload boundary (68.678792ms)
+✔ caller cannot supply reference to the upload boundary (72.160791ms)
+✔ invalid sizes, MIME/signature combinations, extensions, paths and duplicate fields never sign (664.766709ms)
+✔ lower-level signing is not an exported action or workspace API (73.860166ms)
+✔ upload reference persists only on explicit profile save and is reloadable (121.835625ms)
+✔ signing/upload failures do not return a successful reference (260.935125ms)
+✔ FAQ opening and closing animate measured content height without dropping the native summary (53.290125ms)
+✔ rapid accordion toggles cancel the prior animation and reverse from the current height (10.41625ms)
+✔ reduced motion preserves immediate native open/close semantics without animation (23.491334ms)
+✔ initial and subsequent question links open the right answer and focus its summary (27.078791ms)
+✔ unmounting a FAQ cancels unfinished animations (9.884459ms)
+✔ every public destination is preserved in desktop and mobile navigation (31.109167ms)
+✔ opening the menu exposes its links and Escape restores focus to the toggle (16.188791ms)
+✔ outside pointer, focus departure, and link activation dismiss the disclosure (37.54025ms)
+✔ resizing an open mobile menu to desktop moves focus to the visible home link (5.564ms)
+✔ scroll and fragment updates preserve hero styling, current link, and dismissal semantics (68.43075ms)
+✔ rolling labels have one readable accessible name and hide decorative copies (3.22525ms)
+✔ audience schema rejects invented cycles/cohorts, forged identity fields and invalid selectors (1.676208ms)
+✔ audience comparison ignores object key ordering and preserves filter values (9.599333ms)
+✔ live group management and audience actions remain outside Demo, with discoverable announcement controls (0.303416ms)
+﹣ recipient groups through real local Auth and production Next server actions (0.309834ms) # SKIP
+﹣ recipient audiences on bounded native PostgreSQL (0.310709ms) # SKIP
+✔ actual recruiting link helper reaches authorized private application proxy without exposing an object key or signed URL (185.780292ms)
+✔ recruiter resume scope denies anonymous, outsider, cross-club, inactive, disabled, unidentified and path-forging requests (262.261833ms)
+✔ private download reauthorizes after fetching bytes; changed resume or revoked access cannot return them (55.896208ms)
+✔ rule UI saves configuration independently; preview never applies flags without the explicit action (123.491625ms)
+✔ limited permissions disable apply and stale failures discard the preview for a safe retry (64.255333ms)
+✔ rules validate ranges, requirement compatibility, and missing/either/both semantics (6.096958ms)
+✔ preview fingerprint captures scores, rules, requirements and eligible cohort; decisions and drafts excluded (6.057625ms)
+✔ explicit apply flags only and audits; stale previews cannot delete or create flags (101.051ms)
+✔ save is versioned and audited, clears obsolete flags and never evaluates applicants (37.549792ms)
+✔ server enforces scope, granular permissions and anonymous-only reviewer restrictions (160.703875ms)
+✔ move rereads permission after its transaction lock (378.086833ms)
+✔ move rereads membership after its transaction lock (122.276791ms)
+✔ move rereads disabled-user after its transaction lock (160.186584ms)
+✔ decision rereads permission after its transaction lock (325.203916ms)
+✔ decision rereads membership after its transaction lock (141.005917ms)
+✔ decision rereads disabled-user after its transaction lock (205.429042ms)
+✔ anonymity rereads permission after its transaction lock (241.577917ms)
+✔ anonymity rereads membership after its transaction lock (228.406333ms)
+✔ anonymity rereads disabled-user after its transaction lock (146.914208ms)
+✔ testRequirement rereads permission after its transaction lock (145.887791ms)
+✔ testRequirement rereads membership after its transaction lock (79.6225ms)
+✔ testRequirement rereads disabled-user after its transaction lock (194.08275ms)
+✔ anonymousContent rereads permission after its transaction lock (159.906917ms)
+✔ anonymousContent rereads membership after its transaction lock (199.404459ms)
+✔ anonymousContent rereads disabled-user after its transaction lock (303.967292ms)
+✔ reveal rereads permission after its transaction lock (186.234459ms)
+✔ reveal rereads membership after its transaction lock (275.203916ms)
+✔ reveal rereads disabled-user after its transaction lock (172.573916ms)
+✔ canonical transaction gate keeps operational mutations suspended, while historical reads retain their existing suspension policy (7.537834ms)
+✔ demo applicants complete the full workflow before the resting snapshot (0.401208ms)
+✔ staggering creates concurrent stages and stays inside the desktop lane capacity (0.136959ms)
+✔ the reduced-motion snapshot contains four accepted and two not-advanced decisions (0.05275ms)
+﹣ native recruitment authorization races, immutable round rename, feedback and narrow photos (0.545333ms) # SKIP
+﹣ native offers: publication, student authority, membership, retries and races (0.683042ms) # SKIP
+✔ final decisions cannot reopen or move, and interview invitations require interview rounds (43.417417ms)
+✔ Demo pending offers accept and decline durably, preserve MII leadership and existing access, and never call live actions (1526.49725ms)
+✔ Demo direct decisions and voting share offers, reversal revokes pending but retains membership (1373.222584ms)
+✔ student offer controls show only for a valid pending accepted application; no invitation IDs are rendered (26.393583ms)
+✔ inactive membership response is actionable in student and legacy invitation UI without navigation or refresh (6.442917ms)
+✔ Demo preserves inactive membership and pending offer even when the offer is newer (1433.931291ms)
+✔ a persisted pipeline interview round is discoverable without applicant assignments, and kit writes preserve its ID (439.246917ms)
+✔ round discovery distinguishes denial, transport failure, archives and current panel scope without broadening bank access (183.247833ms)
+✔ round loader reports loading, real empty state, permission denial and failed request distinctly; deep link selects the saved ID (305.920917ms)
+✔ an owner lacking an office sees the saved round and access setup rather than issuing an unauthorized kit read (45.137375ms)
+✔ pipeline configuration link targets the exact persisted round and successful saves refresh setup through its existing callback (97.436458ms)
+✔ Demo fresh and saved fixtures discover by stable type/ID and persist kits with zero live calls (1131.943334ms)
+✔ both setup entry points admit explicit kit editors and pipeline managers without granting scheduling or kit-edit privileges (101.074417ms)
+✔ production build gate uses the same runtime connection as the app and fails closed on missing configuration (431.740709ms)
+✔ release check rejects the production schema that breaks authenticated account loading; approved additive SQL preserves existing data (2364.97275ms)
+✔ normalized highlight geometry stays aligned at zoom and clips to page boundaries (130.761958ms)
+Warning: UnknownErrorException: Ensure that the `standardFontDataUrl` API parameter is provided.
+✔ server verifies highlight quote/context/page against original pinned PDF and rejects forged anchors (1661.642084ms)
+✔ annotation reads/writes/downloads deny applicants, outsiders, cross-club scopes and revoked memberships; moderation is explicit (66.734625ms)
+✔ image-only PDFs have no selectable text; general notes still save and unknown document IDs deny access (258.660042ms)
+✔ moderation queue requires explicit president/VP, scopes privacy/club/current applicant exclusion and returns no private drafts (72.243ms)
+﹣ isolated built Next action loads PDF.js and its worker, returns proposals and structured failures (0.658667ms) # SKIP
+✔ review defaults to no changes; edits require explicit acceptance and confirmation (213.701208ms)
+✔ cancel discards review without saving; selected experiences are independent from scalar replacements (19.898375ms)
+✔ Demo import entry is disabled without action calls (15.672708ms)
+✔ failed confirmation preserves editable proposal and reports an error (11.956375ms)
+✔ structured extraction errors remain actionable with a retry input and no generic Next wording (19.509125ms)
+✔ real bounded PDF worker extracts representative text; deterministic proposal uses only canonical fields (379.775708ms)
+✔ real worker rejects malformed PDFs; empty/scanned documents report no meaningful text (253.867083ms)
+✔ extraction rejects oversized text and malformed structured results (5.908208ms)
+✔ prepare authenticates and rejects non-PDF, oversized, invalid signature, arbitrary owner/path without storage or profile writes (567.182416ms)
+✔ valid prepare stores through the hardened private upload action but never updates profile (32.310542ms)
+✔ extraction failure does not upload or expose parser/database details (37.557917ms)
+✔ explicit edited selection updates atomically, rejected values stay, experiences append and duplicates skip (46.887292ms)
+✔ confirmed attachment replaces only selected reference and selected values (26.49225ms)
+✔ final boundary rejects unauthorized saves, forged fields, invalid values and foreign references (105.586833ms)
+✔ stale replacement and save failure never partially apply proposed fields (74.180292ms)
+✔ review builds only accepted edited values; invalid edits cannot become a save payload (0.167625ms)
+✔ worker timeout terminates parsing and returns a controlled error (35.146083ms)
+✔ ambiguous values and unsupported GPA scales do not become confident proposals (0.259958ms)
+✔ real worker enforces page and extracted-text limits (205.925875ms)
+✔ parser concurrency is bounded and terminated workers release their slot (40.028791ms)
+✔ real malformed and empty PDFs return structured action failures without uploads (242.95325ms)
+✔ stationary primary click/tap opens once, while scroll, drag, selection, wheel and cancellation cannot expand (0.973ms)
+✔ preview and repeated expansions share one download, parser and worker; invalidation revokes bytes and releases render caches (28.796958ms)
+✔ candidate, actor, immutable version and Demo scope cannot reuse one another; arbitrary Demo paths are never fetched (20.810333ms)
+✔ denied access is not cached, parse retry retains original bytes, and late results cannot revive invalidated state (32.528917ms)
+✔ code warming mounts no authorized viewer and performs no document/comment reads until opening (312.172542ms)
+✔ slow authorization refreshes are not superseded by overlapping polls and still detect revocation (114.452125ms)
+✔ failed comment saves retain text and creation ID; explicit retry saves once without replacing shared peers (81.093541ms)
+✔ polling preserves edit draft revision; concurrent changes require explicit conflict review; revocation clears shared content (50.047917ms)
+✔ lazy viewer failure stays inside overlay and retry creates a fresh loader without a page reload (5.132625ms)
+✔ single-page toolbar has zoom/download but no pagination or routine access refresh; multipage retains navigation (95.502208ms)
+✔ Applicants shows moderation only for active explicit presidents/VPs; Interviews never duplicates review destinations (91.650916ms)
+✔ browser: unassigned reviews have no editor or draft requests; assigned reviews save on desktop/mobile and become read-only immediately after finalization (5324.920792ms)
+✔ threshold preview evaluates GPA, SAT and ACT independently without interpreting missing scores as failure (0.731084ms)
+✔ limited recruitment managers can change test requirements but cannot toggle anonymous rounds (21.840417ms)
+✔ CSV accepts BOM, normalized explicit headers, CRLF, escaped quotes, commas and quoted multiline cells (2.104292ms)
+✔ headers and malformed structural CSV fail explicitly instead of guessing mappings or shifting columns (0.400542ms)
+✔ size, row and per-cell limits apply before persistence (4.286375ms)
+✔ required fields, normalized computing IDs, optional years and duplicate identifiers produce actionable row results (0.819708ms)
+✔ blank spreadsheet records are validated; invalid duplicate predecessors cannot suppress valid rows (0.20975ms)
+✔ formula-like values and controls are invalid; markup is inert text, never executable output (0.163709ms)
+✔ roster preview, confirmation, rollback and retry respect the complete SQL migration stack (4425.375417ms)
+✔ upload renders loading, summary, safe text and missing-year warning; confirmation is explicit and blocks double clicks (174.093791ms)
+✔ invalid or oversized uploads fail locally and never invoke the server (23.726167ms)
+✔ network retry reuses the upload key and unsuccessful confirmation preserves preview for retry (92.028042ms)
+✔ drop rejects multiple files, supports a single CSV and disables confirmation with no ready rows (14.388125ms)
+✔ UI drives successive batches, retains progress after interruption, and resumes without restarting the import (24.816667ms)
+✔ completed additional CSV imports refresh the member directory once without reversing committed results (104.527666ms)
+✔ batch-scoped database checks retain complete-file duplicate semantics after a normalization change (282.630875ms)
+✔ preview enforces server permissions and never creates users, identities, invitations or memberships (49.886792ms)
+✔ preview distinguishes existing users, active members and pending identity or legacy-email invitations (64.838709ms)
+✔ explicit confirmation creates only MEMBER invitations, is idempotent, and does not send email (47.367125ms)
+✔ confirmation rechecks uploader/access and skips rows that became active members or invited after preview (28.603875ms)
+✔ ambiguous or disabled account identities fail validation without granting access (29.061041ms)
+✔ retried preview exclusions remain authoritative and never silently add previously excluded rows (46.730042ms)
+✔ expired invitations are audited and replaced only after confirmation, preserving the existing school identity (26.67475ms)
+✔ 1,000-row imports advance in bounded batches, preserve absent members, and return exact durable category totals (162.392541ms)
+✔ an existing account is associated through the audit row while its identity remains unclaimed; other clubs do not contaminate classification (45.271333ms)
+✔ claim errors are sanitized, distinct from deferrals, and leave work untouched even if logging throws (608.598334ms)
+✔ ordinary no-candidate deferral is not a claim exception (127.046916ms)
+✔ authenticated cron reports claim failure as 503 without treating it as an empty queue (11.709291ms)
+✔ claim phase diagnostics distinguish callback acquisition, query failure and commit, without raw messages (11.023416ms)
+﹣ real PostgreSQL voting polling versus scheduler progress (0.731ms) # SKIP
+﹣ release defects on actual bounded PostgreSQL/Prisma (0.319125ms) # SKIP
+✔ browser: adding the first times after visiting an empty panel initializes assignment dates without reload (4632.01375ms)
+Ordinary setup/publish button actions: ["Open times form","Save times","Assign available interviewers","Review interviewer approval","Explicit owner approval","Publish booking"]
+Mobile editor geometry: {
+  left: 0,
+  right: 390,
+  width: 390,
+  viewport: 390,
+  transform: 'matrix(1, 0, 0, 1, 0, 0)',
+  position: 'fixed',
+  overflow: false
+}
+✔ browser: times → confirmed interviewers → booking, issue editor/override, pause and edits preserve reservations in isolated Demo (11881.103459ms)
+✔ browser: an existing published round opens bookings directly; request failure is not an empty schedule (1487.50025ms)
+School request storage unavailable
+✔ school requests accept each role and unrestricted university emails, normalize and bound fields (3.511208ms)
+✔ public submission saves anonymous requests only after locked database limits; no grants are created (81.436417ms)
+✔ public endpoint rejects foreign origins, demo/support writes, malformed and oversized input (131.312083ms)
+✔ honeypot, durable limits and storage failures never report a real unsaved request as successful (65.807792ms)
+✔ superadmin list and review require live elevation; stale reviews cannot mutate requests (7.038833ms)
+✔ school request migration persists pending interest and denies browser access or unaudited review state (1557.12175ms)
+✔ indicator is a labelled native button with a decorative icon and stable target (79.559875ms)
+✔ activation preserves query/history state, updates the native fragment contract and focuses without jumping (12.219125ms)
+✔ reduced motion scrolls instantly and a repeated target does not add duplicate history entries (9.475625ms)
+✔ leaving the hero removes the indicator from interaction and pauses its repeating animation (5.026833ms)
+✔ mobile availability measures visible viewport area and suppresses collisions or offscreen controls (39.301917ms)
+✔ hidden tabs pause the indicator and unmount cleans up observers and listeners (24.629167ms)
+✔ public metadata uses one absolute www canonical and factual social text (0.980291ms)
+✔ sitemap candidates exclude unclaimed listings, empty profiles, and seed boilerplate (9.950042ms)
+✔ club metadata lookup selects public identity and copy, never recruitment or account relations (5.248417ms)
+✔ public SEO fails closed during a database outage without loading sample clubs (18.691458ms)
+✔ sitemap emits canonical public pages without query strings or fabricated timestamps (4.655709ms)
+✔ robots permits marketing and public clubs while excluding actual product interfaces (3.807541ms)
+✔ account queries and session cookies opt out of indexing, tracking queries retain the homepage canonical (54.751458ms)
+✔ structured data identifies only the established organization and website (0.273833ms)
+✔ public information pages render factual content, consistent entity references, and matching visible FAQs (298.859625ms)
+✔ shared public footer connects all public pages with real HTML links (75.18875ms)
+✔ landing entry preserves student and leader sign-in intent without loading a workspace view first (4.5555ms)
+✔ sign-in intent overrides a saved demo perspective or existing session and survives the landing effect (67.429167ms)
+✔ slow polls share one read, accept its result, and do not starve under repeated ticks (0.65525ms)
+✔ post-command refresh drains the older read then loads current persisted state without stale publication (2.0895ms)
+✔ errors clear protected data through the caller; retry reauthorizes and disposal ignores old account/session responses (0.6025ms)
+✔ built action lookup matches Windows and Unix source paths without matching a different action file (0.865375ms)
+✔ hosted import explicitly pins staging while the onboarding guard remains local-only (12.156084ms)
+✔ legacy event reads expose public recruitment metadata only (337.827208ms)
+✔ legacy static attendance endpoints fail closed without a current token (122.7465ms)
+✔ booking rejects foreign clubs, past slots, and full slots without writes (475.238458ms)
+✔ booking retries are idempotent and normal bookings succeed (172.287792ms)
+✔ available slots expose counts without leaking applicant identifiers (123.121958ms)
+✔ interview blocks reject reversed dates before writing (136.001375ms)
+✔ draft, submitted and decided applicants cannot reserve interview capacity (761.384166ms)
+﹣ captured ordinary-session cookies cannot replay protected reads or profile writes after revocation (0.613708ms) # SKIP
+﹣ settings and authenticated navigation across roles, saves, history and responsive layouts (0.614625ms) # SKIP
+✔ shared route layout authenticates protected pages and retains public pages for visitors (132.907917ms)
+✔ organization Settings includes only supported configuration and keeps operations reachable (126.824291ms)
+✔ legacy task URL retains filters and repeated query values in the shared workspace destination (2.354625ms)
+✔ demo-capable layouts require the verified allowlist and never bypass live Settings or support authorization (9.437083ms)
+﹣ signup privacy on real Next, Auth, SMTP and desktop/mobile browsers (0.3005ms) # SKIP
+Prisma is the sole application migration source. This repository check does not verify deployed schema drift; follow docs/database-deployment.md before deployment.
+✔ resume privacy patch defeats public and broad legacy policies, preserves owner inserts and service signing access (1467.84675ms)
+✔ only Prisma has an active migration history; archived snapshot remains evidence (7.459ms)
+✔ agenda uses local day boundaries across month/year changes and keeps current events (19.477208ms)
+✔ past toggle restores history and invalid timestamps do not break grouping (0.764291ms)
+✔ a passed deadline has no implicit one-hour grace period (0.606875ms)
+✔ notification priority uses structured metadata rather than guesses from titles (0.119875ms)
+✔ club grouping retains every notification; chronological mode retains input order (0.210833ms)
+✔ Eastern deadline boundaries use actual instants without host-timezone grace (121.849375ms)
+✔ Eastern DST and explicit UTC event instants retain correct deadline grouping (6.964875ms)
+✔ draft permits incomplete and over-limit essays; submission enforces requirements (1.475125ms)
+✔ question ownership, duplicates, and unsafe attachment links are rejected (2.584458ms)
+✔ draft save is authenticated, conditional on draft state, and preserves status (298.879584ms)
+✔ draft save and repeat submission cannot overwrite submitted answers (301.625917ms)
+✔ submission requires profile and validated responses before writing (241.929208ms)
+✔ submission transitions once to the first round and saves exact answers (91.302125ms)
+✔ submission enforces club SAT/ACT policy; drafts remain available without required scores (436.633083ms)
+✔ FILE_UPLOAD accepts private owned paths and external links but rejects unsafe/foreign attachments (68.6255ms)
+✔ owned private attachments persist unchanged in drafts and submissions (178.945417ms)
+✔ student status projection remains owned and exposes only public round names and booking details (83.443875ms)
+﹣ student invitations claim and resend through the compatibility runtime without Auth token SQL (0.339792ms) # SKIP
+✔ claim email escapes names, binds the fragment to the supported route and rejects unsafe URLs/tokens (105.16175ms)
+✔ claim SMTP sends both MIME alternatives and returns its receipt without exposing the token in metadata (65.336541ms)
+✔ claim fingerprint is deterministic, domain separated and never the redeemable token hash (1.963208ms)
+✔ bound intended invite verifies at Auth before password, success audit and browser session attachment (90.155667ms)
+✔ unbound links, disabled accounts and another signed-in identity do not consume the link (56.412417ms)
+✔ confirmed, non-invited, mismatched and unavailable provider identities deny before verification (108.298917ms)
+✔ expired or mismatched verification cannot set a password or attach a session (80.255875ms)
+✔ origin, support mode and invalid input fail before database/provider access (114.361375ms)
+✔ empty persisted applications never fall back to local drafts or invented completion (2.255084ms)
+✔ decisions are retained but ordered behind drafts and active applications (8.763291ms)
+✔ agenda excludes declined, past, invalid, and deadline entries and sorts future meetings (8.233583ms)
+✔ the nearest time-sensitive action wins without turning unknown deadlines into urgency (1.348292ms)
+✔ persisted bookings and attendances keep their timestamps, location, and safe calendar identity (92.8645ms)
+✔ updates prioritize unread urgent messages without mutating inbox order (0.162375ms)
+✔ cached open flags cannot advertise expired recruitment; absent dates never create urgency (0.4705ms)
+✔ recruitment filters combine with search and sort only open published deadlines (12.047959ms)
+✔ directory query round trips preserve workspace context and clear every selected filter (0.3415ms)
+✔ required response progress distinguishes nonempty answers from valid readiness (0.519666ms)
+✔ student terminology shares canonical labels without changing custom round names (0.515292ms)
+✔ recruitment dates include UVA time zone and observe daylight saving changes (16.165041ms)
+✔ public club entry retains unified Status, submitted responses, Calendar, and profile navigation (26.010709ms)
+✔ education edits preserve unrelated profile fields and allow clearing optional scores (57.72225ms)
+✔ experience changes use one nested update and strip client record IDs (37.925708ms)
+✔ invalid links and scores never reach persistence (19.298834ms)
+✔ links can be removed without modifying other sections (8.696791ms)
+✔ completion reflects saved supported data and excludes optional scores (0.124833ms)
+✔ resume path validation rules (0.095083ms)
+✔ resume ownership authorization during save (32.5995ms)
+✔ scholar status section saves persist normalized selections and preserve unanswered legacy profiles (22.297708ms)
+✔ effective authorization uses target membership; exit restores original identity and provider verification never leaks (119.760458ms)
+✔ student cannot acquire support authority with a manufactured cookie (46.844042ms)
+✔ club member cannot acquire support authority with a manufactured cookie (27.167125ms)
+✔ club manager cannot acquire support authority with a manufactured cookie (68.581458ms)
+✔ forged, revoked, MFA-downgraded, disabled, privileged and historical read-only contexts fail closed (381.317417ms)
+✔ all effective ORM writes have durable attempts; application audit events retain actor, subject and session (38.588625ms)
+✔ failed statements remain attempts; ordinary users retain their own audit identity (2.267583ms)
+✔ first-time student starts at step zero; completion persists across independently loaded sessions and devices (108.647417ms)
+✔ leader tutorial is independent, requires workspace authorization, and skipped tutorials can restart (37.001542ms)
+✔ tutorial input cannot choose another user; support walkthrough does not consume target progress (16.626917ms)
+✔ support banner is a root-level fixed non-dismissable element and exit only clears the support cookie (0.789834ms)
+✔ async support resolution keeps simultaneous administrator sessions isolated and clears recursion scope (27.663333ms)
+✔ feature migration preserves old data, keeps historical tokens read-only, isolates progress, and retains append-only audit (1762.240333ms)
+(node:24084) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ tutorial UI advances, goes back, skips with Escape, restarts, highlights context and remains dismissible on save failure (335.995333ms)
+✔ support uploads sign only fresh effective-user paths and fail closed before issuance if audit fails (55.347084ms)
+✔ verification-dependent actions read the target provider identity and reject mismatches instead of borrowing admin verification (144.784ms)
+✔ account API denies forged support context and returns 401 for an unauthenticated normal request (53.550166ms)
+✔ other tabs and restored pages reload on server context changes; broadcasts never carry credentials (35.084375ms)
+✔ browser: compact tasks retain assignment, audience selection, deadlines, review, submission and bulk operations on desktop/mobile (18979.841ms)
+✔ task workspace keeps Team gated and opens a shared detail drawer without changing task revisions (831.510667ms)
+✔ submitted filter separates work awaiting review from outstanding assignments (323.7325ms)
+✔ personal task totals separate due, missing and submitted work and filter on click (222.251083ms)
+✔ personal empty states distinguish no assignments from filtered or completed work (375.262209ms)
+✔ assignment builder confirms exact server recipients before publishing (298.84375ms)
+✔ duplicate stages task content/formats/project without publishing or issuing it (209.863375ms)
+✔ review requests require feedback and auto-advance wraps to all unprocessed submissions (190.126959ms)
+✔ manager review filters combine member search, class year and group (457.571375ms)
+✔ revision requests leave the review queue and count as outstanding overdue work (0.452708ms)
+✔ task notifications deduplicate source records across refresh and reflect latest review state (0.872417ms)
+✔ demo bulk writes roll back all earlier changes when any expected revision is stale (806.722125ms)
+✔ Overdue opens the affected members directly rather than a submission review queue (249.058667ms)
+✔ reopening a simple saved member draft restores the member selector (183.903959ms)
+✔ Completed exposes partially reviewed tasks and opens their reviewed work, matching the metric (228.821375ms)
+✔ Due this week limits Active to the time window and can restore all active tasks (185.355ms)
+✔ audiences union groups, cohorts, individuals, roles and graduation year without duplicating recipients (203.060584ms)
+✔ task creation denies non-managers, foreign assignees/projects, empty audiences, and stale changes (210.89725ms)
+✔ member reads scope both tasks and recipients; manager reads require current membership (124.16275ms)
+✔ submissions enforce ownership, current membership, formats, revision and closed/reviewed status (1104.011166ms)
+✔ review requires a submission, supports reopen, and prevents stale overwrite (99.579166ms)
+✔ late status comes from deadline and submission time rather than a score (0.096709ms)
+✔ private uploads validate ownership, file size/type/name, storage metadata, and signed download access (56.441917ms)
+✔ advanced AND and exclusions are explicit; legacy targeting remains a union (0.20225ms)
+✔ random samples and balanced groups are deterministic across roster ordering and persist at assignment (33.334292ms)
+✔ drafts create no assignments; publishing a draft checks the exact recipient preview and fixed audiences (51.257833ms)
+✔ revision requests require feedback, persist separately from approval, and clear on resubmission (162.959584ms)
+✔ bulk approval rejects unsubmitted, revision-requested, stale, foreign and non-manager work (799.612708ms)
+✔ adding recipients preserves existing work and checks membership, permission and expected recipients (88.171917ms)
+✔ task notification reads stay scoped to the authenticated active member and expose no other submissions (145.115875ms)
+✔ legacy cohort audiences project academic labels without changing stored targeting or assigned recipients (144.772625ms)
+(node:24089) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ club search selection honors unsaved and in-flight guards before leaving the page (106.900708ms)
+✔ failed event deep links provide retry and distinguish unavailable events from request errors (122.316833ms)
+✔ same-route event changes invalidate old lookups and open the currently linked event (106.824667ms)
+✔ RSVP history distinguishes loading from empty and does not show a false zero (89.008417ms)
+✔ a stale RSVP refresh cannot resurrect a successfully cancelled RSVP (77.318917ms)
+✔ malformed event identifiers are unavailable links rather than endless request retries (58.18825ms)
+✔ board uses shared presentation, saves a ballot without publishing, and continues past advisory target (1040.934541ms)
+✔ leadership explicitly completes/finishes then confirms selected candidates before publication (369.562875ms)
+✔ server polling refreshes ballots from another device and clears applicant panel after access revocation (387.149375ms)
+✔ setup checkboxes use the shared preview and block opening until changes are saved and the slide fits (326.302333ms)
+✔ completed-pass browsing remains local and never changes the live candidate or ballots (418.800417ms)
+✔ persisted draft is displayed even when a read takes longer than several polling intervals; retry clears revoked content (259.56275ms)
+✔ account changes conceal an existing voting snapshot immediately and discard a late old-account response (471.281834ms)
+✔ session snapshot overrides general settings, returns only selected fields and keeps Prompt 37 privacy (398.935625ms)
+✔ voting display and previews require real server capabilities and correct session/candidate scope (450.085417ms)
+✔ unauthenticated join retains a safe return route and makes no voting calls (284.788875ms)
+✔ join UI explicitly handles NOT_FOUND (170.550208ms)
+✔ join UI explicitly handles NOT_JOINABLE (188.954042ms)
+✔ join UI explicitly handles FINISHED (217.240666ms)
+✔ join UI explicitly handles UNAUTHORIZED (183.841709ms)
+✔ join UI explicitly handles ROSTER_LOCKED (322.522625ms)
+✔ successful/idempotent join enters the same durable candidate, saves ballots, and polls leader navigation (139.980083ms)
+✔ Demo and production join paths cannot cross the boundary or silently fall back (197.868542ms)
+✔ display selection persists as a session snapshot; setup edits and lobby/start/history locks are enforced (565.488916ms)
+✔ configuration rejects oversized/duplicated content, ACT subsections, duplicate fields and unauthorized participants (168.879542ms)
+✔ QR links contain only a UUID, scope Demo explicitly and reuse safe sign-in return handling (1.680417ms)
+✔ join verifies existence, authentication, membership, capabilities, joinability, and reuses participants (119.41925ms)
+✔ the voting roster freezes at start, invited members may check in late, finished sessions reject joins and reopened sessions permit them (365.139334ms)
+✔ active candidate is persisted, synchronized, permission checked and rejects stale ordinary-member ballots (158.138292ms)
+✔ migration adds snapshots/check-in/candidate state without erasing history and enforces locked snapshots (845.603125ms)
+✔ session labels distinguish setup, joinable lobby, active voting, finished and published (0.244041ms)
+✔ Student workspace navigation uses the incoming route, even before the browser URL commits (69.79075ms)
+✔ explicit leader workspace still forwards to the permitted MII workspace (20.64425ms)
+✔ main site link opens landing even with a saved demo leader session (23.223083ms)
+✔ landing Sign in opens authentication despite a saved demo session (17.937958ms)
+✔ legacy Discovery/Categories bookmarks resolve into one canonical Explore destination (196.676459ms)
+✔ student route scope preserves existing interviews, decisions, membership tasks and rejects unrelated sections (0.140959ms)
+✔ student tab changes retain the client shell and update browser history without a server navigation (21.947542ms)
+✔ opening the universal Calendar retains each originating tab in the URL and on reload (94.93075ms)
+✔ voting GET allowlist validates scope, uses private no-store responses and denies Demo; invitation proof and provider errors stay distinct (218.164417ms)
+✔ workspace reads carry no client identity, bound slow reads, and expose only allowlisted invitation recovery messages (13.272958ms)
+✔ short queries never enumerate records (91.329292ms)
+✔ student search is scoped to own applications with bounded result counts (12.1735ms)
+✔ a client requesting leader search gains no private results without authorized memberships (9.1645ms)
+✔ applicant and round queries use only server-derived leader clubs and exclude drafts (6.362334ms)
+✔ full applicant names match across first and last name fields (3.680041ms)
+ℹ tests 1308
+ℹ suites 0
+ℹ pass 1274
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 34
+ℹ todo 0
+ℹ duration_ms 85060.23825
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 test:migrations
+> node tests/authorization-migration.cjs
+
+Baseline + additive migration applied; all existing identities/memberships preserved; access backfill verified; no implicit platform admin; append-only audit enforced.
+Claim migration preserves owners/profiles; directory preload avoids duplicates and fabricated statistics.
+Anonymous review/test migration preserves default behavior and enforces valid ACT scores and requirements.
+Interview kit migration preserves existing evaluations and enforces session uniqueness and API isolation.
+Unified meeting migration preserves event IDs/attendance and protects member visibility and QR secrets.
+Task migration preserves legacy assignments and former-member submissions; unique recipients and browser isolation verified.
+Platform view sessions are isolated from browser roles; token hashes unique; existing user and task data retained.
+Recruiting rules preserve decisions, validate thresholds, and isolate versioned flags from browser access.
+Task workflow migration preserves existing responses, validates revision requests, and persists group labels.
+All 57 migrations applied on fresh and legacy databases; all 78 tables enforce RLS and deny browser-role CRUD.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 lint
+> eslint .
+
+
+/Users/jesseklinger/Documents/out-class/app/platform/login/page.tsx
+  83:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/admin/admin-clubs.tsx
+  41:1208  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/app-shell.tsx
+  140:6  warning  React Hook useEffect has missing dependencies: 'demo' and 'router'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/club-logo.tsx
+  55:7  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/club-workspace.tsx
+  141:6  warning  React Hook useEffect has a missing dependency: 'selectClub'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/clubs/marketing-profile.tsx
+  17:179  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  19:163  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  35:511  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  38:241  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/clubs/profile-image-input.tsx
+  38:16  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/communications/decision-letter.tsx
+  13:54  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/landing/launch-clubs.tsx
+  8:63  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/qr/meeting-check-in.tsx
+  40:6  warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/shell/navigation-search.tsx
+  89:6  warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/views/application-tracker-view.tsx
+  123:6  warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/views/club-management-portal-view.tsx
+  148:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/jesseklinger/Documents/out-class/components/views/interview-workspace-view.tsx
+   32:6  warning  React Hook useEffect has missing dependencies: 'activeClubId', 'scoped', and 'setClubId'. Either include them or remove the dependency array     react-hooks/exhaustive-deps
+  196:6  warning  React Hook useEffect has missing dependencies: 'leaderFocus?.applicantId' and 'recoveryKey'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  236:6  warning  React Hook useEffect has a missing dependency: 'active'. Either include it or remove the dependency array                                        react-hooks/exhaustive-deps
+  242:6  warning  React Hook useEffect has missing dependencies: 'choose' and 'queue'. Either include them or remove the dependency array                          react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/views/leader-dashboard-view.tsx
+  99:53  warning  React Hook useMemo has a missing dependency: 'stageName'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/views/leader-dashboard/live-leader-workspace.tsx
+  270:6  warning  React Hook useEffect has missing dependencies: 'decisionsOnly' and 'open'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/components/views/unified-student-profile-view.tsx
+  59:6  warning  React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/lib/application-state.tsx
+  175:6  warning  React Hook useEffect has a missing dependency: 'serverApps'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/jesseklinger/Documents/out-class/lib/club-customization.tsx
+  22:6  warning  React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  26:6  warning  React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 26 problems (0 errors, 26 warnings)
+
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 typecheck
+> tsc --noEmit
+
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 prebuild
+> node scripts/check-release-database.cjs --vercel-production-build && npm run pdf:assets
+
+Release database check applies only to Vercel production builds; skipping in this environment.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "allow-builds". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "overrides". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> my-v0-project@0.1.0 pdf:assets
+> node scripts/copy-pdfjs-assets.cjs
+
+
+> my-v0-project@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+   - Environments: .env.local, .env
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 4.6s
+   Linting and checking validity of types ...
+
+./app/platform/login/page.tsx
+83:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/admin/admin-clubs.tsx
+41:1208  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/app-shell.tsx
+140:6  Warning: React Hook useEffect has missing dependencies: 'demo' and 'router'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/club-logo.tsx
+55:7  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/club-workspace.tsx
+141:6  Warning: React Hook useEffect has a missing dependency: 'selectClub'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/clubs/marketing-profile.tsx
+17:179  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+19:163  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+35:511  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+38:241  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/clubs/profile-image-input.tsx
+38:16  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/communications/decision-letter.tsx
+13:54  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/landing/launch-clubs.tsx
+8:63  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/qr/meeting-check-in.tsx
+40:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/shell/navigation-search.tsx
+89:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/application-tracker-view.tsx
+123:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/club-management-portal-view.tsx
+148:17  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./components/views/interview-workspace-view.tsx
+32:6  Warning: React Hook useEffect has missing dependencies: 'activeClubId', 'scoped', and 'setClubId'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+196:6  Warning: React Hook useEffect has missing dependencies: 'leaderFocus?.applicantId' and 'recoveryKey'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+236:6  Warning: React Hook useEffect has a missing dependency: 'active'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+242:6  Warning: React Hook useEffect has missing dependencies: 'choose' and 'queue'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard/live-leader-workspace.tsx
+270:6  Warning: React Hook useEffect has missing dependencies: 'decisionsOnly' and 'open'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/leader-dashboard-view.tsx
+99:53  Warning: React Hook useMemo has a missing dependency: 'stageName'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./components/views/unified-student-profile-view.tsx
+59:6  Warning: React Hook useEffect has a missing dependency: 'user'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/application-state.tsx
+175:6  Warning: React Hook useEffect has a missing dependency: 'serverApps'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/club-customization.tsx
+22:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+26:6  Warning: React Hook useEffect has a missing dependency: 'storageKey'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/64) ...
+   Generating static pages (16/64) 
+   Generating static pages (32/64) 
+   Generating static pages (48/64) 
+ ✓ Generating static pages (64/64)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size  First Load JS  Revalidate  Expire
+┌ ƒ /                                         652 B         226 kB
+├ ƒ /_not-found                               227 B         105 kB
+├ ƒ /about                                    671 B         194 kB
+├ ƒ /api/application-attachments              227 B         105 kB
+├ ƒ /api/auth/logout                          227 B         105 kB
+├ ƒ /api/auth/password-recovery               227 B         105 kB
+├ ƒ /api/auth/student-claim                   227 B         105 kB
+├ ƒ /api/club-assets                          227 B         105 kB
+├ ƒ /api/communications/stream                227 B         105 kB
+├ ƒ /api/decision-letter-assets               227 B         105 kB
+├ ƒ /api/demo                                 227 B         105 kB
+├ ƒ /api/event-flyers                         227 B         105 kB
+├ ƒ /api/internal/invitation-delivery         227 B         105 kB
+├ ƒ /api/internal/notification-delivery       227 B         105 kB
+├ ƒ /api/internal/scheduled-communications    227 B         105 kB
+├ ƒ /api/interview-resumes                    227 B         105 kB
+├ ƒ /api/platform/elevation                   227 B         105 kB
+├ ƒ /api/platform/eligibility                 227 B         105 kB
+├ ƒ /api/platform/view-as                     227 B         105 kB
+├ ƒ /api/platform/view-as/blocked             227 B         105 kB
+├ ƒ /api/profile-photos                       227 B         105 kB
+├ ƒ /api/recruiting-resumes                   227 B         105 kB
+├ ƒ /api/resumes                              227 B         105 kB
+├ ƒ /api/school-requests                      227 B         105 kB
+├ ƒ /api/users/me                             227 B         105 kB
+├ ƒ /api/workspace                            227 B         105 kB
+├ ○ /apple-icon                               227 B         105 kB
+├ ƒ /applications/[applicationId]/decision  6.39 kB         238 kB
+├ ƒ /auth/callback                            227 B         105 kB
+├ ƒ /auth/microsoft                           227 B         105 kB
+├ ƒ /auth/student-claim                      2.1 kB         116 kB
+├ ƒ /check-in                               5.45 kB         233 kB
+├ ƒ /club-access/[clubId]                   6.25 kB         197 kB
+├ ƒ /club-claims/[clubId]                   2.11 kB         120 kB
+├ ƒ /club/[clubId]                          33.3 kB         487 kB
+├ ƒ /club/[clubId]/tasks                      227 B         105 kB
+├ ƒ /club/[clubId]/workspace                  36 kB         499 kB
+├ ƒ /corkboard                              17.2 kB         336 kB
+├ ƒ /decisions                                227 B         105 kB
+├ ƒ /design-system                          19.2 kB         370 kB
+├ ƒ /forgot-password                          143 B         206 kB
+├ ○ /icon                                     227 B         105 kB
+├ ƒ /interviews                               227 B         105 kB
+├ ƒ /interviews/book                        8.28 kB         305 kB
+├ ƒ /invitations/[id]                       4.38 kB         135 kB
+├ ƒ /live-voting                              182 B         196 kB
+├ ƒ /login                                  8.63 kB         334 kB
+├ ○ /manifest.webmanifest                     227 B         105 kB
+├ ƒ /meetings                               4.12 kB         316 kB
+├ ƒ /meetings/[id]                          4.14 kB         316 kB
+├ ƒ /platform                                 165 B         108 kB
+├ ƒ /platform/[section]                     13.4 kB         227 kB
+├ ƒ /platform/claims                        2.51 kB         120 kB
+├ ƒ /platform/clubs                         10.9 kB         293 kB
+├ ƒ /platform/events                        5.59 kB         219 kB
+├ ƒ /platform/login                         5.73 kB         196 kB
+├ ƒ /platform/school-requests               2.72 kB         199 kB
+├ ƒ /platform/view-as                         168 B         108 kB
+├ ƒ /preview                                9.85 kB         474 kB
+├ ƒ /request-school                         3.75 kB         210 kB
+├ ƒ /reset-password                           143 B         206 kB
+├ ○ /robots.txt                               227 B         105 kB
+├ ƒ /saved-clubs                            6.67 kB         357 kB
+├ ƒ /settings                                 168 B         108 kB
+├ ƒ /settings/account                       1.84 kB         116 kB
+├ ƒ /settings/availability                  13.4 kB         206 kB
+├ ƒ /settings/interviews                    7.18 kB         138 kB
+├ ƒ /settings/notifications                 5.08 kB         185 kB
+├ ƒ /settings/organizations                   11 kB         211 kB
+├ ƒ /settings/profile                         20 kB         343 kB
+├ ƒ /signup                                 31.3 kB         382 kB
+├ ○ /sitemap.xml                              227 B         105 kB         10m      1y
+├ ƒ /uva                                    3.06 kB         196 kB
+├ ƒ /vote                                     182 B         196 kB
+└ ƒ /voting/[sessionId]/join                11.4 kB         243 kB
++ First Load JS shared by all                105 kB
+  ├ chunks/22637299-a8b9fb7af9b20019.js     54.2 kB
+  ├ chunks/5841-b5c9660c4f5a3049.js         46.2 kB
+  └ other shared chunks (total)             4.09 kB
+
+
+ƒ Middleware                                95.2 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

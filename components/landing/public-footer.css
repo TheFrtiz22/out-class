@@ -1,5 +1,5 @@
 /* The final invitation and brand signature share one quiet navy surface. */
-.oc-landing .oc-final-invitation { background: #142d4e; color: #fff7ec; border: 0; padding-block: clamp(72px, 7vw, 104px) 64px; }
+.oc-landing .oc-final-invitation { background: radial-gradient(ellipse 75% 120% at 50% 100%, rgb(48 82 116 / 34%), transparent 75%), #142d4e; color: #fff7ec; border: 0; padding-block: clamp(72px, 7vw, 104px) 64px; }
 .oc-landing .oc-final-invitation h2 { color: #fff7ec; }
 .oc-landing .oc-final-invitation :is(.oc-invitation-note, p[data-motion="body"]) { color: #c6cbd1; }
 .oc-landing .oc-final-invitation .oc-invitation-campus { color: #ef9d70; }

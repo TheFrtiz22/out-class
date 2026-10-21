@@ -1,0 +1,496 @@
+{
+  "date": "2026-10-21",
+  "localIntegrationParent": "b9296d77c9ac71fc3fa3efca5e5780209014a0b5",
+  "githubMainParent": "9bdcdbef1ab3787ca56ebcf0e20a57cae322f520",
+  "testedTreeBeforeAdditionalEvidence": "c73914fa8ceee84eb492fb5f86c3f7cd1fe38d81",
+  "preservation": "59 original audited source/config/test files remain byte-identical; the footer only incorporates the upstream background update and retains all accessibility rules.",
+  "commands": [
+    {
+      "command": "npx --yes pnpm@10.17.1 validate",
+      "exitCode": 0,
+      "tests": 1308,
+      "passed": 1274,
+      "failed": 0,
+      "skipped": 34,
+      "migrationCheck": "57 migrations; RLS verified on 78 tables",
+      "lint": "0 errors; 26 existing warnings",
+      "typecheck": "pass",
+      "productionBuild": "pass"
+    },
+    {
+      "command": "npx --yes pnpm@10.17.1 test:a11y",
+      "exitCode": 0,
+      "tests": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "reports": [
+    {
+      "state": "admin-320",
+      "evaluatedAt": "2026-10-21T14:24:53.028Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "admin-desktop",
+      "evaluatedAt": "2026-10-21T14:24:52.860Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "admin-inspection",
+      "evaluatedAt": "2026-10-21T14:25:02.355Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "application-320",
+      "evaluatedAt": "2026-10-21T14:24:48.937Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "application-confirmation",
+      "evaluatedAt": "2026-10-21T14:24:57.288Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "application-desktop",
+      "evaluatedAt": "2026-10-21T14:24:48.767Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "application-errors",
+      "evaluatedAt": "2026-10-21T14:24:57.068Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "availability-320",
+      "evaluatedAt": "2026-10-21T14:24:46.925Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "state": "availability-desktop",
+      "evaluatedAt": "2026-10-21T14:24:46.411Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 7
+        }
+      ]
+    },
+    {
+      "state": "availability-selected-mobile",
+      "evaluatedAt": "2026-10-21T14:24:55.206Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "state": "booking-320",
+      "evaluatedAt": "2026-10-21T14:24:47.978Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-cancelled",
+      "evaluatedAt": "2026-10-21T14:24:58.656Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-choice",
+      "evaluatedAt": "2026-10-21T14:24:58.243Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-desktop",
+      "evaluatedAt": "2026-10-21T14:24:47.760Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "carousel-manual",
+      "evaluatedAt": "2026-10-21T14:25:14.521Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 125
+        }
+      ]
+    },
+    {
+      "state": "dialog-open",
+      "evaluatedAt": "2026-10-21T14:24:56.070Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "event-detail",
+      "evaluatedAt": "2026-10-21T14:24:59.754Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 13
+        }
+      ]
+    },
+    {
+      "state": "events-320",
+      "evaluatedAt": "2026-10-21T14:24:51.114Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "state": "events-desktop",
+      "evaluatedAt": "2026-10-21T14:24:50.902Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "events-empty",
+      "evaluatedAt": "2026-10-21T14:25:00.355Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "events-list",
+      "evaluatedAt": "2026-10-21T14:25:00.004Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "faq-expanded",
+      "evaluatedAt": "2026-10-21T14:25:22.349Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "leader-320",
+      "evaluatedAt": "2026-10-21T14:24:52.079Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "leader-desktop",
+      "evaluatedAt": "2026-10-21T14:24:51.902Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "leader-event-editor-320",
+      "evaluatedAt": "2026-10-21T14:25:01.493Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "leader-event-editor",
+      "evaluatedAt": "2026-10-21T14:25:01.260Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "primitives-320",
+      "evaluatedAt": "2026-10-21T14:24:49.867Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "primitives-desktop",
+      "evaluatedAt": "2026-10-21T14:24:49.708Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "public-0-320",
+      "evaluatedAt": "2026-10-21T14:25:14.914Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 28
+        }
+      ]
+    },
+    {
+      "state": "public-0-desktop",
+      "evaluatedAt": "2026-10-21T14:25:13.516Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 125
+        }
+      ]
+    },
+    {
+      "state": "public-1-320",
+      "evaluatedAt": "2026-10-21T14:25:17.120Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 28
+        }
+      ]
+    },
+    {
+      "state": "public-1-desktop",
+      "evaluatedAt": "2026-10-21T14:25:16.714Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 125
+        }
+      ]
+    },
+    {
+      "state": "public-2-320",
+      "evaluatedAt": "2026-10-21T14:25:19.647Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-2-desktop",
+      "evaluatedAt": "2026-10-21T14:25:19.190Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "state": "public-3-320",
+      "evaluatedAt": "2026-10-21T14:25:22.627Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-3-desktop",
+      "evaluatedAt": "2026-10-21T14:25:21.937Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-4-320",
+      "evaluatedAt": "2026-10-21T14:25:24.848Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-4-desktop",
+      "evaluatedAt": "2026-10-21T14:25:24.606Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 28
+        }
+      ]
+    },
+    {
+      "state": "public-5-320",
+      "evaluatedAt": "2026-10-21T14:25:26.366Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-5-desktop",
+      "evaluatedAt": "2026-10-21T14:25:26.153Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-6-320",
+      "evaluatedAt": "2026-10-21T14:25:29.001Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-6-desktop",
+      "evaluatedAt": "2026-10-21T14:25:28.797Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-7-320",
+      "evaluatedAt": "2026-10-21T14:25:31.623Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-7-desktop",
+      "evaluatedAt": "2026-10-21T14:25:31.443Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-8-320",
+      "evaluatedAt": "2026-10-21T14:25:33.770Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-8-desktop",
+      "evaluatedAt": "2026-10-21T14:25:33.596Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-9-320",
+      "evaluatedAt": "2026-10-21T14:25:36.041Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-9-desktop",
+      "evaluatedAt": "2026-10-21T14:25:35.845Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-320",
+      "evaluatedAt": "2026-10-21T14:24:53.950Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-desktop",
+      "evaluatedAt": "2026-10-21T14:24:53.789Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-open",
+      "evaluatedAt": "2026-10-21T14:25:03.207Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-recorded",
+      "evaluatedAt": "2026-10-21T14:25:03.385Z",
+      "violationCount": 0,
+      "incomplete": []
+    }
+  ],
+  "incompleteRuleStateRecords": 31,
+  "authenticatedEvidence": "The 18 authenticated tests/35 scans passed for b9296d7 before these seven upstream landing/loading files; not rerun for this cosmetic integration. See ../merge-verification.",
+  "releaseRecommendation": "Not ready: human AT, zoom and remaining complete workflow/document/contrast reviews remain pending."
+}
