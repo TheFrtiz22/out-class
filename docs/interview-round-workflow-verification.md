@@ -21,3 +21,5 @@ Validation completed before release:
 - Local lint: zero errors,26 existing warnings. Type/build and protected final CI results recorded in private release receipt when complete.
 
 Production: existing automatic main/Vercel pipeline, protected PR merge, compatible application rollback to the prior deployment. No database change, credential rotation or maintenance needed. Physical touchscreen not tested. Hosted verification and exact deployed revision must be recorded before calling release live.
+
+Hosted acceptance follow-up: Demo access setup previously hardcoded sessionManaged=false even after session-panel publication. It now derives the same future published-slot predicate as live access setup and rejects room-level panel changes/approval for those rooms, preserving the official schedule. The full isolated workflow asserts the projection and both denied writes leave slots unchanged. No live authorization/model/schema change.
