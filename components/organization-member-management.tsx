@@ -1,5 +1,7 @@
 "use client";
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
+import { SortLabel } from "@/components/product/sort-label";
+import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
 import { ActionWorkflow } from "@/components/product/action-workflow";
@@ -27,6 +29,7 @@ import {
   inviteOrganizationMember,
   manageOrganizationInvitation,
   bulkOrganizationMembers,
+  assignOrganizationMemberGroups,
   bulkOrganizationInvitations,
 } from "@/actions/organization-members";
 import {
@@ -81,6 +84,13 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [dirty, setDirty] = useState(false);
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
+  const [sort, setSort] = useState("Member"), [descending, setDescending] = useState(false);
+  const [groupFilter, setGroupFilter] = useState(""), [groupLabel, setGroupLabel] = useState("");
+  function sortBy(label: string) {
+    if (sort === label) setDescending(value => !value);
+    else { setSort(label); setDescending(label === "Year"); }
+    setPage(0);
+  }
   const [scheduledInviteId,setScheduledInviteId] = useState<string|null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]),
@@ -207,11 +217,20 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             member: null,
             invitation,
           })),
-      ].filter(row => Boolean(row.invitation) === invitesOpen && (!roleFilter || row.role === roleFilter) && (!yearFilter || row.year === yearFilter)).filter((row) =>
-        `${row.name} ${row.detail} ${row.year || ""} ${organizationRoleLabels[row.role]} ${row.status}`
+      ].filter(row => Boolean(row.invitation) === invitesOpen && (!groupFilter || row.member?.groups.includes(groupFilter)) && (!roleFilter || row.role === roleFilter) && (!yearFilter || row.year === yearFilter)).filter((row) =>
+        `${row.name} ${row.detail} ${row.year || ""} ${organizationRoleLabels[row.role]} ${row.status} ${row.member?.groups.join(" ") || ""}`
           .toLowerCase()
           .includes(needle),
-      )
+      ).sort((a, b) => {
+        let compared = 0;
+        if (sort === "Year") {
+          if (!a.year || !b.year) return a.year === b.year ? a.name.localeCompare(b.name) : !a.year ? 1 : -1;
+          compared = compareAcademicYears(a.year, b.year);
+        } else if (sort === "Role") compared = organizationRoleLabels[a.role].localeCompare(organizationRoleLabels[b.role]);
+        else if (sort === "Status") compared = a.status.localeCompare(b.status);
+        else compared = a.name.localeCompare(b.name);
+        return (descending ? -compared : compared) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+      })
     : [];
   const pages = Math.max(1, Math.ceil(rows.length / 50));
   const visiblePage = Math.min(page, pages - 1);
@@ -320,6 +339,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 onChange={(event) => {
                   setQuery(event.target.value);
                   setPage(0);
+                  setSelection([]);
                 }}
               />
               <label className="text-sm"><span className="sr-only">Role</span><select aria-label="Filter members by role" className="min-h-11 rounded-md border bg-card px-3" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</select></label>
@@ -344,6 +364,15 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 Refresh members
               </Button>
             </div>
+            {!invitesOpen && caps.canManageMembers && <section aria-label="Assign member groups" className="space-y-3 rounded-xl border bg-card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold">Groups</h3><p className="text-xs text-muted-foreground">Filter by year or role, select the matching members, then assign a group.</p></div><Button type="button" size="sm" variant="outline" disabled={busy || !rows.some(row => row.member && selectable(row))} onClick={() => setSelection(rows.filter(row => row.member && selectable(row)).map(row => row.id).slice(0, 100))}>Select matching members{rows.length > 100 ? " (first 100)" : ""}</Button></div>
+              <div className="flex flex-wrap items-center gap-2"><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select>
+                {["Boys", "Girls", ...new Set(data.members.flatMap(member => member.groups).filter(group => !["Boys", "Girls"].includes(group)))].map(group => <Button key={group} type="button" variant={groupLabel === group ? "secondary" : "outline"} size="sm" aria-pressed={groupLabel === group} disabled={busy} onClick={() => setGroupLabel(group)}>{group}</Button>)}
+                <Input aria-label="Custom group name" placeholder="Custom group…" maxLength={80} className="w-44" value={groupLabel} onChange={event => setGroupLabel(event.target.value)} />
+                <Button type="button" disabled={busy || !selectedMembers.length || !groupLabel.trim()} onClick={() => void run(() => assignOrganizationMemberGroups({ clubId, targets: selectedMembers.map(member => ({ id: member.id, updatedAt: member.updatedAt })), group: groupLabel.trim(), operation: "ADD" }), `Added ${selectedMembers.length} members to ${groupLabel.trim()}.`)}>Add to group{selectedMembers.length ? ` · ${selectedMembers.length}` : ""}</Button>
+                <Button type="button" variant="ghost" disabled={busy || !selectedMembers.length || !groupLabel.trim()} onClick={() => void run(() => assignOrganizationMemberGroups({ clubId, targets: selectedMembers.map(member => ({ id: member.id, updatedAt: member.updatedAt })), group: groupLabel.trim(), operation: "REMOVE" }), `Removed ${selectedMembers.length} members from ${groupLabel.trim()}.`)}>Remove from group</Button>
+              </div>
+            </section>}
             {selection.length > 0 && (
               <div
                 role="toolbar"
@@ -523,8 +552,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                     </th>
                     {["Member", "Year", "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
                       (label) => (
-                        <th key={label} scope="col" className="p-3">
-                          {label}
+                        <th key={label} scope="col" className="px-3" aria-sort={label === "Actions" ? undefined : sort === label ? descending ? "descending" : "ascending" : "none"}>
+                          {label === "Actions" ? label : <SortLabel label={label} active={sort === label} descending={descending} onClick={() => sortBy(label)} />}
                         </th>
                       ),
                     )}
@@ -575,6 +604,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         <p className="mt-1 break-all text-xs text-muted-foreground">
                           {row.detail}
                         </p>
+                        {!!row.member?.groups.length && <p className="mt-1 text-xs text-muted-foreground">{row.member.groups.join(" · ")}</p>}
                       </td>
                       <td data-label="Year" className={onboardingTable.cell}>
                         {row.year || "—"}

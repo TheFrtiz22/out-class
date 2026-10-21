@@ -1,4 +1,5 @@
 "use client";
+import { MeetingGroupInvitation } from "@/components/meeting-group-invitation"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 
@@ -368,6 +369,7 @@ export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () =>
         </p>
         <p className="whitespace-pre-wrap">{meeting.description}</p>
       </header>
+      {hasPermission(member, "meetings.manage") && <MeetingGroupInvitation meeting={meeting} />}
       {(["agenda", "recap"] as const).map((key) => (
         <section key={key} className="space-y-3 border-t pt-5">
           <h2 className="oc-section-heading capitalize">{key}</h2>

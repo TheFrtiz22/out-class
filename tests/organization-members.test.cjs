@@ -7,7 +7,7 @@ function load(file,mocks={}){
  new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts',mocks):require(n),mod,mod.exports);return mod.exports;
 }
 const rules=load('lib/organization-authorization.ts');
-const member=(id,role='MEMBER')=>({id,userId:id,clubId,accessRole:role,isOwner:role==='OWNER',permissions:[...rules.organizationRolePermissions[role]],status:'ACTIVE',user:{disabledAt:null,email:id+'@virginia.edu'}});
+const member=(id,role='MEMBER')=>({id,userId:id,clubId,accessRole:role,isOwner:role==='OWNER',permissions:[...rules.organizationRolePermissions[role]],status:'ACTIVE',groups:[],updatedAt:new Date('2026-10-21T12:00:00Z'),user:{disabledAt:null,email:id+'@virginia.edu'}});
 function harness(actorRole='OWNER',targetRole='MEMBER'){
  const state={members:[member(actorId,actorRole),member(memberId,targetRole)],invitation:{id:inviteId,clubId,status:'PENDING',requestedRole:'MEMBER',permissions:[],expiresAt:new Date(Date.now()+86400000),email:'member@virginia.edu'},deliveries:[],audits:[],reads:[],locks:0,failAudit:false};
  const tx={
@@ -18,9 +18,10 @@ function harness(actorRole='OWNER',targetRole='MEMBER'){
   clubMember:{
    findUnique:async({where})=>state.members.find(m=>m.clubId===where.userId_clubId.clubId&&m.userId===where.userId_clubId.userId)||null,
    findFirst:async({where})=>state.members.find(m=>m.id===where.id&&m.clubId===where.clubId&&(!where.status||m.status===where.status)&&(!where.user||!m.user.disabledAt))||null,
-   findMany:async args=>{state.reads.push(args);return state.members.filter(m=>m.clubId===args.where.clubId);},
+   findMany:async args=>{state.reads.push(args);return state.members.filter(m=>m.clubId===args.where.clubId&&(!args.where.id?.in||args.where.id.in.includes(m.id))&&(!args.where.status||m.status===args.where.status)&&(!args.where.user||!m.user.disabledAt));},
    count:async args=>{assert.equal(args.where.status,'ACTIVE');assert.deepEqual(args.where.user,{disabledAt:null});return state.members.filter(m=>m.clubId===args.where.clubId&&m.id!==args.where.id.not&&m.isOwner&&m.status==='ACTIVE'&&!m.user.disabledAt).length;},
    update:async({where,data})=>Object.assign(state.members.find(m=>m.id===where.id),data),
+   updateMany:async({where,data})=>{const rows=state.members.filter(m=>m.id===where.id&&m.clubId===where.clubId&&(!where.updatedAt||+m.updatedAt===+where.updatedAt));for(const row of rows)Object.assign(row,data,{updatedAt:new Date(+row.updatedAt+1)});return{count:rows.length};},
   },
   clubInvitation:{
    findFirst:async({where})=>state.invitation.id===where.id&&state.invitation.clubId===where.clubId?state.invitation:null,
@@ -154,4 +155,20 @@ test('bulk selection protects all owners together, rejects stale versions and es
  await api.bulkOrganizationMembers({clubId,targets:targets([otherId]),action:'ROLE',role:'ADMIN'});assert.equal(writes,1);assert.ok(state.members[2].permissions.includes('application.manage'));
  actor=otherId;await assert.rejects(api.bulkOrganizationMembers({clubId,targets:targets([targetId]),action:'ROLE',role:'MEMBER'}),/cannot grant/);
  actor=actorId;await api.bulkOrganizationMembers({clubId,targets:targets([otherId]),action:'PERMISSIONS',permissions:['applications.review']});assert.deepEqual(state.members[2].permissions,['applications.review']);assert.equal(state.audits.length,2);
+});
+
+const groupTargets = h => h.state.members.map(m=>({id:m.id,updatedAt:m.updatedAt}));
+test('bulk groups append and remove targeting labels without changing roles or other groups',async()=>{
+ const h=harness();for(const m of h.state.members)m.groups=['Existing'];const before=h.state.members.map(m=>({role:m.accessRole,permissions:[...m.permissions]}));
+ const input={clubId,targets:groupTargets(h),group:'Boys',operation:'ADD'};assert.deepEqual(await h.api.assignOrganizationMemberGroups(input),{updated:2});assert.ok(h.state.members.every(m=>m.groups.join(',')==='Existing,Boys'));
+ await h.api.assignOrganizationMemberGroups({...input,targets:groupTargets(h)});assert.ok(h.state.members.every(m=>m.groups.length===2));
+ await h.api.assignOrganizationMemberGroups({...input,targets:groupTargets(h),operation:'REMOVE'});assert.ok(h.state.members.every(m=>m.groups.join(',')==='Existing'));assert.deepEqual(h.state.members.map(m=>({role:m.accessRole,permissions:m.permissions})),before);assert.equal(h.state.audits.at(-1).action,'club.member.groups.bulk');
+});
+test('bulk group changes reject stale batches and roll back all changes on audit failure',async()=>{
+ for(const kind of ['stale','audit','limit']){const h=harness();const targets=groupTargets(h);if(kind==='stale')targets[1].updatedAt=new Date(0);if(kind==='audit')h.state.failAudit=true;if(kind==='limit')h.state.members[1].groups=Array.from({length:20},(_,i)=>'Group '+i);const before=structuredClone(h.state.members);await assert.rejects(h.api.assignOrganizationMemberGroups({clubId,targets,group:'Finance',operation:'ADD'}));assert.deepEqual(h.state.members,before);assert.equal(h.state.audits.length,0);}
+});
+test('group assignment enforces authority, club scope, active accounts and strict selection input',async()=>{
+ const input=h=>({clubId,targets:groupTargets(h),group:'Girls',operation:'ADD'});
+ for(const role of ['MEMBER','INTERVIEWER','RECRUITING_ADMIN']){const h=harness(role);await assert.rejects(h.api.assignOrganizationMemberGroups(input(h)),/denied/);}
+ for(const kind of ['foreign','disabled','inactive','duplicate','injected']){const h=harness(),value=input(h);if(kind==='foreign')h.state.members[1].clubId=otherClub;if(kind==='disabled')h.state.members[1].user.disabledAt=new Date();if(kind==='inactive')h.state.members[1].status='LEFT';if(kind==='duplicate')value.targets.push(value.targets[0]);if(kind==='injected')value.permissions=['leaders.manage'];await assert.rejects(h.api.assignOrganizationMemberGroups(value));assert.equal(h.state.audits.length,0);}
 });

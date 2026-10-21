@@ -45,3 +45,13 @@
   @keyframes oc-nav-expand { from { height: 0; opacity: 0; } to { height: var(--radix-collapsible-content-height); opacity: 1; } }
   @keyframes oc-nav-collapse { from { height: var(--radix-collapsible-content-height); opacity: 1; } to { height: 0; opacity: 0; } }
 }
+
+/* Candidate profiles use a wide side drawer, with the document beside the review. */
+.oc-workspace-drawer.oc-applicant-drawer { width: min(96vw, 1480px); max-width: 96vw; }
+.oc-applicant-profile-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+.oc-applicant-resume { min-width: 0; padding: 1rem; border-radius: var(--oc-radius-lg); background: var(--oc-surface-blue); }
+@media (min-width: 1024px) {
+  .oc-applicant-profile-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .oc-applicant-resume { position: sticky; top: 0; }
+}
+@media (max-width: 639px) { .oc-workspace-drawer.oc-applicant-drawer { width: 100vw; max-width: 100vw; } }

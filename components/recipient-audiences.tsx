@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { academicYear } from "@/lib/recruitment-profile";
+import { organizationRoleLabels } from "@/lib/organization-authorization";
 import { useDemoMode } from "@/contexts/demo-context";
 import { getRecipientGroups, previewRecipientAudience, saveRecipientGroup, deleteRecipientGroup } from "@/actions/recipient-groups";
 import { recipientAudienceSchema, type AudienceRule, type RecipientAudience } from "@/lib/recipient-audience";
@@ -45,8 +47,38 @@ function RuleEditor({ rule, onChange, catalog }: { rule: AudienceRule; onChange:
   {rule.source==="GROUP" && <label className="block text-sm">Saved club group<select className="w-full rounded border bg-background p-2" value={rule.groupId} onChange={e=>patch({groupId:e.target.value})}><option value="">Choose a group</option>{catalog?.groups.map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label>}
  </div>;
 }
-export function AudienceEditor({ value, onChange, catalog, disabled = false }: { value: RecipientAudience; onChange: (v: RecipientAudience)=>void; catalog: Catalog | null; disabled?: boolean }) {
+function AdvancedAudienceEditor({ value, onChange, catalog, disabled = false }: { value: RecipientAudience; onChange: (v: RecipientAudience)=>void; catalog: Catalog | null; disabled?: boolean }) {
  return <fieldset disabled={disabled} className="space-y-4">{(["include","exclude"] as const).map(key=><fieldset key={key} className="space-y-3"><legend className="mb-2 text-sm font-semibold">{key==="include"?"Include — match any audience":"Exclude — remove anyone matching"}</legend>{value[key].map((rule,i)=><div key={i} className="space-y-1"><RuleEditor rule={rule} catalog={catalog} onChange={r=>onChange({...value,[key]:value[key].map((old,j)=>j===i?r:old)})} /><Button type="button" size="sm" variant="ghost" disabled={key==="include"&&value.include.length===1} onClick={()=>onChange({...value,[key]:value[key].filter((_,j)=>j!==i)})}>Remove filter</Button></div>)}<Button type="button" variant="outline" size="sm" disabled={value[key].length>=20} onClick={()=>onChange({...value,[key]:[...value[key],initial().include[0]]})}>Add {key} filter</Button></fieldset>)}<p className="text-xs text-muted-foreground">Recipients are deduplicated. Email preferences and channel eligibility are applied separately by canonical delivery. Missing graduation/cohort values never match a specific value.</p></fieldset>;
+}
+function simpleMode(value: RecipientAudience) {
+ const rule = value.include[0];
+ if (value.exclude.length || value.include.length !== 1) return "custom";
+ if (rule.source === "GROUP") return "groups";
+ if (rule.source !== "MEMBERS" || rule.cohorts.length || rule.joinedAfter || rule.joinedBefore) return "custom";
+ if ([rule.labels.length, rule.gradYears.length, rule.accessRoles.length].filter(Boolean).length > 1) return "custom";
+ if (rule.labels.length) return rule.labels.length === 1 && ["Boys", "Girls"].includes(rule.labels[0]) ? rule.labels[0] : "groups";
+ if (rule.gradYears.length && !rule.accessRoles.length) return "year";
+ if (rule.accessRoles.length && !rule.gradYears.length) return "role";
+ return rule.gradYears.length || rule.accessRoles.length ? "custom" : "everyone";
+}
+export function AudienceEditor({ value, onChange, catalog, disabled = false }: { value: RecipientAudience; onChange: (v: RecipientAudience) => void; catalog: Catalog | null; disabled?: boolean }) {
+ const [chosen, setChosen] = useState<string | null>(null);
+ const emitted = useRef<RecipientAudience | null>(null);
+ useEffect(() => { if (emitted.current !== value) setChosen(null); }, [value]);
+ const emit = (next: RecipientAudience) => { emitted.current = next; onChange(next); };
+ const mode = chosen ?? simpleMode(value), rule = value.include[0];
+ const memberRule = rule.source === "MEMBERS" ? rule : null;
+ const set = (fields: object) => emit(recipientAudienceSchema.parse({ include: Object.values(fields).length && Object.values(fields).every(value => Array.isArray(value) && !value.length) ? [{ source: "PEOPLE", userIds: [] }] : [{ source: "MEMBERS", ...fields }] }));
+ function choose(next: string) { setChosen(next); if (next === "everyone") set({}); else if (["Boys", "Girls"].includes(next)) set({ labels: [next] }); else if (next !== "custom") emit(recipientAudienceSchema.parse({ include: [{ source: "PEOPLE", userIds: [] }] })); }
+ return <fieldset disabled={disabled} className="space-y-4"><legend className="mb-2 text-sm font-medium">Who is this for?</legend>
+  <div role="group" aria-label="Audience shortcuts" className="flex flex-wrap gap-2">{[["everyone", "Everyone"], ["Boys", "Boys"], ["Girls", "Girls"], ["year", "By year"], ["role", "By role"], ["groups", "Groups"], ["custom", "Custom"]].map(([id, label]) => <Button type="button" key={id} variant={mode === id ? "secondary" : "outline"} size="sm" aria-pressed={mode === id} onClick={() => choose(id)}>{label}</Button>)}</div>
+  {mode === "everyone" && <p className="text-sm text-muted-foreground">All active club members.</p>}
+  {["Boys", "Girls"].includes(mode) && <p className="text-sm text-muted-foreground">Members assigned to the “{mode}” group in Members.</p>}
+  {mode === "year" && <div className="flex flex-wrap gap-2" role="group" aria-label="Audience class years">{(catalog?.gradYears ?? []).map(year => <Button type="button" key={year} size="sm" variant={memberRule?.gradYears.includes(year) ? "secondary" : "outline"} aria-pressed={!!memberRule?.gradYears.includes(year)} onClick={() => set({ gradYears: memberRule?.gradYears.includes(year) ? memberRule.gradYears.filter(item => item !== year) : [...(memberRule?.gradYears ?? []), year] })}>{academicYear({ gradYear: year })} · {year}</Button>)}{!catalog?.gradYears?.length && <p className="text-sm text-muted-foreground">No class years are recorded yet.</p>}</div>}
+  {mode === "role" && <div className="flex flex-wrap gap-2" role="group" aria-label="Audience roles">{Object.entries(organizationRoleLabels).map(([role, label]) => <Button type="button" key={role} size="sm" variant={memberRule?.accessRoles.includes(role as typeof memberRule.accessRoles[number]) ? "secondary" : "outline"} onClick={() => set({ accessRoles: memberRule?.accessRoles.includes(role as typeof memberRule.accessRoles[number]) ? memberRule.accessRoles.filter(item => item !== role) : [...(memberRule?.accessRoles ?? []), role] })}>{label}</Button>)}</div>}
+  {mode === "groups" && <div className="flex flex-wrap gap-2" role="group" aria-label="Audience groups">{(catalog?.rosterLabels ?? []).map(label => <Button key={label} type="button" size="sm" variant={memberRule?.labels.includes(label) ? "secondary" : "outline"} onClick={() => set({ labels: [label] })}>{label}</Button>)}{catalog?.groups.map(group => <Button key={group.id} type="button" size="sm" variant={rule.source === "GROUP" && rule.groupId === group.id ? "secondary" : "outline"} onClick={() => emit(recipientAudienceSchema.parse({ include: [{ source: "GROUP", groupId: group.id }] }))}>{group.name}</Button>)}{!catalog?.rosterLabels?.length && !catalog?.groups.length && <p className="text-sm text-muted-foreground">Assign groups from Members, or create a reusable audience.</p>}</div>}
+  {mode === "custom" && <AdvancedAudienceEditor disabled={disabled} value={value} onChange={emit} catalog={catalog} />}
+ </fieldset>;
 }
 export function AudiencePreview({ preview }: { preview: Preview | null }) {
  if(!preview)return null;
@@ -69,7 +101,7 @@ export function RecipientGroups({ clubId }: { clubId: string }) {
   <Sheet open={open} onOpenChange={v=>{if(busy)return;if(!v&&dirty&&!window.confirm("Discard unsaved audience group changes?"))return;setOpen(v);}}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-2xl"><SheetTitle>{editing?"Edit":"Create"} recipient group</SheetTitle><SheetDescription>Only active authorized club managers can edit groups. Groups never change student accounts or email preferences.</SheetDescription><form data-saving={busy} data-unsaved={dirty} onChangeCapture={()=>setDirty(true)} className="mt-5 space-y-5" onSubmit={e=>{e.preventDefault();void work(async()=>{await saveRecipientGroup({clubId,id:editing?.id||draftId.current,revision:editing?.revision??null,name,kind,...(kind==="MANUAL"?{userIds:selected}:{rules:spec})});setCatalog(await getRecipientGroups(clubId));setDirty(false);setOpen(false);setPreview(null);});}}>
    <label className="block text-sm">Group name<Input required maxLength={100} value={name} onChange={e=>setName(e.target.value)} /></label><label className="block text-sm">Group membership<select className="w-full rounded border bg-background p-2" value={kind} onChange={e=>{setKind(e.target.value as typeof kind);setPreview(null);}}><option value="MANUAL">Manual — select recorded people</option><option value="RULES">Rules — reevaluate current records</option></select></label>
    <AudienceEditor disabled={busy} value={spec} onChange={v=>{setDirty(true);setSpec(v);setPreview(null);}} catalog={catalog} /><Button disabled={busy} variant="outline" type="button" onClick={()=>void work(async()=>setPreview(await previewRecipientAudience(clubId,spec)))}>Preview {kind==="MANUAL"?"people to add":"rule audience"}</Button>
-   {kind==="MANUAL"&&<><p className="text-sm">{selected.length} selected. Preview additional audiences to add people; selections are kept across previews.</p><div className="max-h-64 overflow-y-auto">{preview?.recipients.map(r=><label key={r.id} className="flex gap-2 py-1 text-sm"><input type="checkbox" checked={selected.includes(r.id)} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,r.id])]:selected.filter(id=>id!==r.id))} />{r.email}</label>)}</div><Button variant="ghost" type="button" onClick={()=>{setDirty(true);setSelected([])}}>Clear all selections</Button></>}
+   {kind==="MANUAL"&&<><Button variant="outline" type="button" disabled={!preview?.recipients.length} onClick={() => { setDirty(true); setSelected([...new Set([...selected, ...(preview?.recipients.map(person => person.id) ?? [])])]); }}>Select everyone in preview</Button><p className="text-sm">{selected.length} selected. Preview additional audiences to add people; selections are kept across previews.</p><div className="max-h-64 overflow-y-auto">{preview?.recipients.map(r=><label key={r.id} className="flex gap-2 py-1 text-sm"><input type="checkbox" checked={selected.includes(r.id)} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,r.id])]:selected.filter(id=>id!==r.id))} />{r.email}</label>)}</div><Button variant="ghost" type="button" onClick={()=>{setDirty(true);setSelected([])}}>Clear all selections</Button></>}
    {kind==="RULES"&&<AudiencePreview preview={preview} />}{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}<Button disabled={busy||!name.trim()} type="submit">Save group</Button>
   </form></SheetContent></Sheet>
  </section>;

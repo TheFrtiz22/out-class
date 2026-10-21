@@ -19,6 +19,8 @@ test('member management uses real migrated constraints, atomic transfer, queued 
   clubMember:{
    findUnique:async({where})=>one('SELECT * FROM "ClubMember" WHERE "userId"=$1 AND "clubId"=$2',[where.userId_clubId.userId,where.userId_clubId.clubId]),
    findFirst:async({where})=>one(`SELECT m.*,jsonb_build_object('disabledAt',u."disabledAt") AS "user" FROM "ClubMember" m JOIN "User" u ON u.id=m."userId" WHERE m.id=$1 AND m."clubId"=$2 ${where.status?'AND m.status=\'ACTIVE\'':''} ${where.user?'AND u."disabledAt" IS NULL':''}`,[where.id,where.clubId]),
+   findMany:async({where})=>(await db.query('SELECT m.* FROM "ClubMember" m JOIN "User" u ON u.id=m."userId" WHERE m."clubId"=$1 AND m.id=ANY($2::text[]) AND m.status=\'ACTIVE\' AND u."disabledAt" IS NULL',[where.clubId,where.id.in])).rows,
+   updateMany:async({where,data})=>{const result=await db.query('UPDATE "ClubMember" SET groups=$1::text[],"updatedAt"=CURRENT_TIMESTAMP WHERE id=$2 AND "clubId"=$3 AND "updatedAt"=$4 RETURNING id',[data.groups,where.id,where.clubId,where.updatedAt]);return{count:result.rows.length};},
    count:async({where})=>(await one('SELECT count(*)::int AS n FROM "ClubMember" m JOIN "User" u ON u.id=m."userId" WHERE m."clubId"=$1 AND m.id<>$2 AND m."isOwner" AND m.status=\'ACTIVE\' AND u."disabledAt" IS NULL',[where.clubId,where.id.not])).n,
    update:async({where,data})=>update('ClubMember',where.id,data),
   },
@@ -41,6 +43,13 @@ test('member management uses real migrated constraints, atomic transfer, queued 
  const cache={};function load(file){file=path.resolve(file);if(cache[file])return cache[file].exports;const mod={exports:{}};cache[file]=mod;const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;new Function('require','module','exports',code)(name=>name==='@/utils/email'?{invitationEmailConfig:()=>{}}:name==='next/server'?{after:()=>{}}:name==='@/utils/prisma'?{prisma}:name==='@/utils/auth'?{requireAuth:async()=>({user:{id:actorId}})}:name==='@/actions/club-onboarding'?{}:name.startsWith('@/')?load(name.slice(2)+'.ts'):require(name),mod,mod.exports);return mod.exports;}
  const api=load('actions/organization-members.ts');
  await assert.rejects(db.query('UPDATE "ClubMember" SET "isOwner"=false WHERE id=$1',[ownerMember]),/active owner/);
+ const groupTargets=async()=>(await db.query(`SELECT id,"updatedAt" AT TIME ZONE 'UTC' AS "updatedAt" FROM "ClubMember" WHERE "clubId"=$1 ORDER BY id`,[clubId])).rows;
+ await api.assignOrganizationMemberGroups({clubId,targets:await groupTargets(),group:'Finance',operation:'ADD'});
+ assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>m.groups.includes('Finance')));
+ const stale=await groupTargets();stale[1].updatedAt=new Date(0);await assert.rejects(api.assignOrganizationMemberGroups({clubId,targets:stale,group:'Boys',operation:'ADD'}),/changed/);
+ assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>!m.groups.includes('Boys')));
+ failAudit=true;await assert.rejects(api.assignOrganizationMemberGroups({clubId,targets:await groupTargets(),group:'Girls',operation:'ADD'}),/Audit failure/);failAudit=false;
+ assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>!m.groups.includes('Girls')));
  const queued=await Promise.all([api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'}),api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'})]);
  assert.ok(queued.every(row=>row.queued||row.reused));assert.equal((await one('SELECT count(*)::int AS n FROM "InvitationDelivery"')).n,1);
  await api.changeOrganizationMemberRole({clubId,memberId:targetMember,role:'ADMIN'});

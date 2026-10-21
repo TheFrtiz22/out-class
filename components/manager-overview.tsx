@@ -1,10 +1,7 @@
 "use client"
-import dynamic from "next/dynamic";
-import { Button } from "@/components/ui/button";
-const MeetingCreateAction = dynamic(() => import("@/components/meeting-workspace").then(module => module.MeetingCreateAction));
 import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck } from "@/components/icons"
+import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck, Megaphone } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { hasPermission } from "@/lib/permissions"
@@ -26,13 +23,12 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
     ...(interviews > 0 ? [{ title: `${interviews} application${interviews === 1 ? "" : "s"} at interview stage`, detail: "Check recorded interview details and next steps in Applicants.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
   ]
   return <div className="oc-manager-overview">
-    <div className="flex flex-wrap items-start gap-2">{hasPermission(membership, "meetings.manage") && <MeetingCreateAction clubId={club.id} />}{hasPermission(membership, "tasks.manage") && <Button variant="outline" asChild><Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`}>Manage tasks</Link></Button>}{hasPermission(membership, "members.manage") && <Button variant="outline" asChild><Link href={clubWorkspaceHref(club.id, "members")}>Manage members</Link></Button>}</div>
     {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
       ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
       ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),
     ]} />}
     <div className="oc-manager-overview-grid">
-      {operations.length > 0 && <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul></section>}
+      <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul>{!operations.length && <p className="oc-overview-empty">You’re caught up. Applications and task submissions needing attention will appear here.</p>}</section>
       <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
         <header><h2 id="club-next-meeting"><CalendarDays aria-hidden="true" size={20} />Next meeting</h2><Link href={clubWorkspaceHref(club.id, "meetings")} className={linkStyle}>All meetings <ArrowRight aria-hidden="true" size={15} /></Link></header>
         {meeting ? <div className="oc-overview-meeting">
@@ -52,6 +48,12 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
         </Link></li>)}</ul> : <p className="oc-overview-empty">You have no outstanding assignments. Your submissions and feedback remain available in Tasks.</p>}
         {hasPermission(membership, "tasks.manage") && <Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`} className="oc-overview-team-link">View team tasks & projects <ArrowRight aria-hidden="true" size={15} /></Link>}
       </section>
+      {hasPermission(membership, "meetings.manage") ? <section className="oc-overview-panel oc-overview-updates" aria-labelledby="club-updates">
+        <header><h2 id="club-updates"><Megaphone aria-hidden="true" size={20} />Club updates</h2></header>
+        <p className="oc-overview-empty">Keep up with announcements shared with your club.</p>
+        <Link href={`/club/${club.id}/workspace?section=announcements`} className="oc-overview-team-link">Open announcements <ArrowRight aria-hidden="true" size={15} /></Link>
+      </section>
+      : <section className="oc-overview-panel oc-overview-updates" aria-label="Club resources"><header><h2><CalendarDays aria-hidden="true" size={20} />Club resources</h2></header><p className="oc-overview-empty">Find agendas, shared documents, and meeting recaps in Meetings.</p><Link href={clubWorkspaceHref(club.id, "meetings")} className="oc-overview-team-link">Browse meeting resources <ArrowRight aria-hidden="true" size={15} /></Link></section>}
       {showRecaps && <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>}
     </div>
   </div>

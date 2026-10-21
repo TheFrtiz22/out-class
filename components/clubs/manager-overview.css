@@ -1,7 +1,7 @@
 /* Manager Club Overview only; permission-aware data and member layouts stay unchanged. */
 .oc-manager-overview { container-type: inline-size; max-width: 1160px; }
 .oc-overview-intro { margin: -12px 0 28px; max-width: 700px; font-size: var(--oc-size-14); line-height: var(--oc-leading-body); color: var(--muted-foreground); }
-.oc-manager-overview-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; align-items: start; }
+.oc-manager-overview-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; align-items: stretch; }
 .oc-overview-panel, .oc-overview-recaps > section { min-width: 0; border: 1px solid var(--border); border-radius: 15px; background: var(--card); padding: 24px; box-shadow: 0 4px 18px #14243b03; }
 .oc-overview-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .oc-overview-panel > header h2 { display: flex; align-items: center; gap: 10px; color: var(--primary); font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); }
@@ -67,3 +67,9 @@
 [data-product-shell] .oc-overview-follow-up h3 { font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
 [data-product-shell] .oc-overview-follow-up p { margin-top: .25rem; }
 [data-product-shell] .oc-overview-team-link { margin-top: .25rem; }
+
+[data-product-shell] .oc-manager-overview-grid > .oc-overview-panel { min-height: 220px; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); display: flex; flex-direction: column; background: var(--oc-surface-blue); }
+[data-product-shell] .oc-manager-overview-grid > .oc-overview-follow-up,
+[data-product-shell] .oc-manager-overview-grid > .oc-overview-updates { background: var(--oc-surface-warm); }
+.oc-manager-overview-grid > .oc-overview-panel > .oc-overview-team-link { margin-top: auto; padding-top: 12px; }
+.oc-overview-recaps { grid-column: 1 / -1; }

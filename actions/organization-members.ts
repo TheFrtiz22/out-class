@@ -24,6 +24,33 @@ import { notifyInterviewAssignment } from "@/utils/interview-assignment-notifica
 
 const id = z.string().uuid();
 
+/** Group labels are targeting metadata, never an access-role or permission grant. */
+export async function assignOrganizationMemberGroups(input: unknown) {
+  const data = z.object({
+    clubId: id,
+    targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(100),
+    group: z.string().trim().min(1).max(80),
+    operation: z.enum(["ADD", "REMOVE"]),
+  }).strict().parse(input);
+  if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
+  const { user } = await requireAuth();
+  return prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
+    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
+    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members and try again.");
+    for (const member of members) {
+      const expected = data.targets.find(target => target.id === member.id)!;
+      const groups = data.operation === "ADD" ? [...new Set([...member.groups, data.group])] : member.groups.filter(group => group !== data.group);
+      if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
+      const result = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
+      if (result.count !== 1) throw new Error("A member changed. Refresh members before assigning groups.");
+    }
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, action: "club.member.groups.bulk", targetId: data.clubId, details: { memberIds: members.map(member => member.id), group: data.group, operation: data.operation } } });
+    return { updated: members.length };
+  });
+}
+
 /** Explicit attestation by an active owner, never inferred from an access-role template. */
 export async function setMemberInterviewOffices(input: unknown) {
   const data = z.object({ clubId: id, memberId: id, offices: interviewOfficesSchema }).strict().parse(input);

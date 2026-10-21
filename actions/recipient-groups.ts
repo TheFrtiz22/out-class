@@ -30,8 +30,11 @@ export async function getRecipientGroups(clubId: string) {
     const member = await authorizeClubTransaction(tx, clubId, user.id, ["meetings.manage"], { readOnly: true });
     const groups = await tx.recipientGroup.findMany({ where: { clubId }, orderBy: { name: "asc" }, take: 101 });
     if (groups.length > 100) throw Error("This club exceeds the 100-group limit.");
+    const roster = await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { groups: true, user: { select: { studentProfile: { select: { gradYear: true } } } } } });
     // Counts and identities are resolved on demand, never leaked from a stored group.
     return { groups, canEdit: hasPermission(member, "members.manage"), capabilities: audienceCapabilities,
+      rosterLabels: [...new Set(roster.flatMap(member => member.groups))].sort(),
+      gradYears: [...new Set(roster.flatMap(member => member.user.studentProfile ? [member.user.studentProfile.gradYear] : []))].sort((a, b) => a - b),
       cohorts: (await tx.clubMember.findMany({ where: { clubId, status: "ACTIVE", cohort: { not: null } }, select: { cohort: true }, distinct: ["cohort"], take: 100 })).map(r=>r.cohort!),
       cycles: await tx.recruitmentCycle.findMany({where:{clubId},select:{id:true,name:true},orderBy:{createdAt:"desc"},take:100}),
       rounds: await tx.pipelineRound.findMany({ where: { clubId, archivedAt: null, anonymousReview: false }, select: { id: true, name: true }, orderBy: { order: "asc" }, take: 100 }),
