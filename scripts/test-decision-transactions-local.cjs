@@ -34,7 +34,7 @@ try {
   });
   run(process.execPath, ['--test', 'tests/decision-transactions-native.test.cjs'], { env });
   // Also rerun the existing native offer and canonical communications producers.
-  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/recruitment-offers-native.test.cjs', 'tests/communications-native.test.cjs'], {
+  run(process.execPath, ['--test', '--test-concurrency=1', 'tests/recruitment-native.test.cjs', 'tests/recruitment-offers-native.test.cjs', 'tests/communications-native.test.cjs'], {
     env: { ...env, OUTCLASS_RECRUITMENT_TEST_DATABASE_URL: databaseUrl.replace('fixture_superuser@', 'outclass_production_app@') },
   });
 } finally {
