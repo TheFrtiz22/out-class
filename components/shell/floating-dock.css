@@ -1,0 +1,190 @@
+/* Desktop-only floating rail. Mobile keeps the existing labeled drawer/bottom bar. */
+@media (min-width: 1024px) {
+  [data-product-shell] { --oc-shell-rail-width: 6.5rem; }
+  [data-product-shell][data-dock-expanded="true"] { --oc-shell-rail-width: 17.5rem; }
+
+  [data-product-shell] > div > aside {
+    left: 14px;
+    top: calc(var(--support-banner-height, 0px) + 16px);
+    width: calc(var(--oc-shell-rail-width) - 28px);
+    height: calc(100dvh - var(--support-banner-height, 0px) - 32px);
+    overflow: visible;
+    transition: width 260ms var(--oc-floating-ease);
+  }
+  .oc-dock-rail {
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px 12px;
+    background: color-mix(in srgb, var(--oc-rail) 96%, transparent);
+    color: var(--oc-rail-text);
+    border: 1px solid rgb(255 255 255 / 13%);
+    border-radius: 22px;
+    box-shadow: 0 12px 40px rgb(20 45 69 / 18%), inset 0 1px 0 rgb(255 255 255 / 12%);
+    -webkit-backdrop-filter: blur(18px) saturate(118%);
+    backdrop-filter: blur(18px) saturate(118%);
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 20%) transparent;
+  }
+  .oc-dock-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 18px;
+    min-height: 48px;
+  }
+  .oc-dock-top .oc-rail-brand {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    padding: 4px;
+    border-radius: 10px;
+  }
+  .oc-dock-top .oc-rail-brand img { max-width: 100%; height: 34px; object-fit: contain; }
+  .oc-dock-toggle {
+    display: grid;
+    flex: 0 0 38px;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    min-height: 38px;
+    border-radius: 10px;
+    color: var(--oc-rail-muted);
+    transition: color 160ms ease, background 160ms ease;
+  }
+  .oc-dock-toggle:hover { background: var(--oc-rail-selected); color: var(--oc-rail-text); }
+  .oc-dock-rail :is(.oc-dock-toggle,.oc-rail-brand):focus-visible {
+    outline: 2px solid var(--brand-orange);
+    outline-offset: 2px;
+  }
+  .oc-dock-rail .oc-workspace-switcher-trigger { min-height: 48px; }
+  .oc-dock-rail nav :is(a,button) { transition: background 150ms ease, color 150ms ease; }
+  .oc-dock-rail nav .oc-dock-item-label { min-width: 0; }
+  .oc-dock-rail nav [aria-current="page"] { background: var(--oc-rail-selected); color: var(--oc-rail-text); }
+  .oc-dock-rail nav [aria-current="page"] svg { color: var(--brand-orange); }
+  .oc-dock-rail .oc-workspace-nav-group > [data-navigation-toggle]:focus-visible {
+    outline: 2px solid var(--brand-orange);
+    outline-offset: 2px;
+  }
+
+  /* Compact default: familiar icons, a full-size focus target, and zero label ambiguity
+     (link names are still in the DOM and Radix supplies portaled hover/focus tooltips). */
+  .oc-dock-collapsed { padding: 12px 8px; scrollbar-width: none; }
+  .oc-dock-collapsed::-webkit-scrollbar { display: none; }
+  .oc-dock-collapsed .oc-dock-top {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .oc-dock-collapsed .oc-dock-top .oc-rail-brand { padding: 2px; }
+  .oc-dock-collapsed .oc-dock-top .oc-rail-brand img { width: 36px; height: 36px; }
+  .oc-dock-collapsed .oc-workspace-switcher-trigger {
+    justify-content: center;
+    padding: 7px;
+    border-radius: 13px;
+    min-height: 48px;
+    width: 100%;
+  }
+  .oc-dock-collapsed .oc-workspace-switcher-trigger > :first-child { width: 30px; height: 30px; }
+  .oc-dock-collapsed .oc-workspace-switcher-trigger > span:nth-child(2) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+  .oc-dock-collapsed .oc-workspace-switcher-trigger > svg:last-child { display: none; }
+  .oc-dock-collapsed .oc-context-sidebar, .oc-dock-collapsed nav { min-width: 0; }
+  .oc-dock-collapsed > p,
+  .oc-dock-collapsed > div > p { display: none; }
+  .oc-dock-collapsed nav :is(a,button) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0;
+    margin-inline: auto;
+    border-radius: 14px;
+  }
+  .oc-dock-collapsed nav :is(a,button) > .oc-dock-item-label,
+  .oc-dock-collapsed nav :is(a,button) > .oc-dock-preview,
+  .oc-dock-collapsed .oc-workspace-nav-group > button > span,
+  .oc-dock-collapsed .oc-workspace-nav-group > button > svg:last-child:not(:first-child) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .oc-dock-collapsed nav :is(a,button) > svg,
+  .oc-dock-collapsed nav :is(a,button) > [data-slot="avatar"] {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+  }
+  .oc-dock-collapsed nav [aria-current="page"]::before {
+    left: -4px;
+    top: 16px;
+    bottom: 16px;
+  }
+  .oc-dock-collapsed nav [aria-current="page"]::after { display: none; }
+  .oc-dock-collapsed nav[aria-label="Account navigation"] {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  .oc-dock-collapsed .oc-workspace-nav-children > div {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+  .oc-dock-collapsed .oc-workspace-nav-children nav :is(a,button) { margin-inline: auto; }
+  .oc-dock-collapsed nav[aria-label="Context navigation"] .oc-workspace-nav-group { margin-block: 2px; }
+  .oc-dock-collapsed nav[aria-label="Review tools"] { margin-top: 0; }
+  .oc-dock-collapsed nav[aria-label="Review tools"]::before,
+  .oc-dock-collapsed nav[aria-label="Context navigation"]::before {
+    content: "";
+    display: block;
+    height: 1px;
+    margin: 9px 8px 12px;
+    background: rgb(255 255 255 / 14%);
+  }
+  .oc-dock-collapsed nav[aria-label="Context navigation"]::before { margin-top: 0; }
+  .oc-dock-collapsed nav[aria-label="Universal navigation"] { margin-bottom: 8px; }
+  .oc-dock-collapsed .oc-workspace-nav-group [data-navigation-toggle][data-active="true"] {
+    color: var(--brand-orange);
+    background: var(--oc-rail-selected);
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .oc-dock-collapsed nav :is(a,button) > svg,
+    .oc-dock-collapsed nav :is(a,button) > [data-slot="avatar"] {
+      transition: transform 260ms var(--oc-floating-spring), color 160ms ease;
+      transform-origin: center center;
+    }
+    .oc-dock-collapsed nav :is(a,button):is(:hover,:focus-visible) > svg,
+    .oc-dock-collapsed nav :is(a,button):is(:hover,:focus-visible) > [data-slot="avatar"] {
+      transform: translateX(2px) scale(1.18);
+    }
+    .oc-dock-collapsed nav :is(a,button):has(+ :is(a,button):hover) > svg {
+      transform: scale(1.08);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-product-shell] > div > aside,
+  .oc-dock-rail nav :is(a,button),
+  .oc-dock-rail nav :is(a,button) > svg,
+  .oc-dock-toggle { transition: none !important; }
+}
