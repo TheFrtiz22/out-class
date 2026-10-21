@@ -1,0 +1,1031 @@
+{
+  "date": "2026-10-21",
+  "parents": {
+    "main": "c6fcded367d6a58818edafc2917303477b331fbe",
+    "accessibility": "f330c83cbe170dfae6c68c83cca4191f2222a6f4"
+  },
+  "testedTreeBeforeVerificationDocuments": "2ff0a9d5848bbdfc8941db64225e71b85c65aa33",
+  "originalAuditedSourceHashesUnchanged": 60,
+  "testRepair": {
+    "path": "tests/interview-kit-accordion-browser.test.cjs",
+    "sha256": "540f6d8c594ffb34a7ff5792e97afce354ba12e78c73228cf392753691d3d38e"
+  },
+  "commands": [
+    {
+      "command": "node --test tests/interview-kit-accordion-browser.test.cjs",
+      "exitCode": 0,
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npx --yes pnpm@10.17.1 validate",
+      "exitCode": 0,
+      "tests": 1308,
+      "passed": 1274,
+      "failed": 0,
+      "skipped": 34,
+      "migrationCheck": "57 migrations on fresh and legacy local databases; RLS checked on 78 tables",
+      "lint": "0 errors, 26 existing warnings",
+      "typecheck": "pass",
+      "productionBuild": "pass"
+    },
+    {
+      "command": "npx --yes pnpm@10.17.1 test:a11y",
+      "exitCode": 0,
+      "tests": 27,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "npx --yes pnpm@10.17.1 test:a11y:authenticated",
+      "exitCode": 0,
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "reports": [
+    {
+      "suite": "accessibility",
+      "state": "admin-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "admin-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "admin-inspection",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "application-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "application-confirmation",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "application-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "application-errors",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "availability-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "availability-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 7
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "availability-selected-mobile",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "booking-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "booking-cancelled",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "booking-choice",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "booking-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "carousel-manual",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "dialog-open",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "event-detail",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 13
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "events-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "events-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "events-empty",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "events-list",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "faq-expanded",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "leader-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "leader-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "leader-event-editor-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "leader-event-editor",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "primitives-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "primitives-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-0-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-0-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-1-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-1-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-2-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-2-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-3-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-3-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-4-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-4-desktop",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 28
+        }
+      ]
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-5-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-5-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-6-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-6-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-7-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-7-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-8-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-8-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-9-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "public-9-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "voting-320",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "voting-desktop",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "voting-open",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility",
+      "state": "voting-recorded",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-claims-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-claims",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-events-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-events",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-overview-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-overview",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-school-requests-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-school-requests",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-users-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "admin-users",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-applicants-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-applicants",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-interviews-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-interviews",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-members-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-members",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-overview-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-overview",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-settings-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "leader-settings",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "real-application-errors",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "real-application-review",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 9
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 4
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "real-application-submitted",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-availability-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 31
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-availability",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 9
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-discovery-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 2
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-discovery",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 2
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-home-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-home",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-notifications-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-notifications",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-profile-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-profile",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-saved-320",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "suite": "accessibility-authenticated",
+      "state": "student-saved",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    }
+  ],
+  "releaseRecommendation": "Not ready: essential human AT, zoom, remaining complete workflows and scanner review are pending.",
+  "scope": "Local merge only; no push or deployment. Original audit evidence remains historical and unchanged.",
+  "incompleteRuleStateRecords": 98
+}

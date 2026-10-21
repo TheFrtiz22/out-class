@@ -1,0 +1,701 @@
+{
+  "command": "npx --yes pnpm@10.17.1 test:a11y:authenticated",
+  "tests": 18,
+  "passed": 18,
+  "failed": 0,
+  "skipped": 0,
+  "routes": 16,
+  "transport": "Real local Supabase Auth/MFA, Next HTTP/actions and PostgreSQL. User, club and questions fictional. Actual application persisted SUBMITTED.",
+  "executedOn": "2026-10-20",
+  "evidenceReviewedOn": "2026-10-21",
+  "reports": [
+    {
+      "state": "admin-claims-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "admin-claims",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "admin-events-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "admin-events",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "admin-overview-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "admin-overview",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "admin-school-requests-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "admin-school-requests",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "admin-users-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "admin-users",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "leader-applicants-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "leader-applicants",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "leader-interviews-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "leader-interviews",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "leader-members-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "leader-members",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "leader-overview-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "leader-overview",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "leader-settings-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "state": "leader-settings",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "real-application-errors",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "real-application-review",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 9
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 4
+        }
+      ]
+    },
+    {
+      "state": "real-application-submitted",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "student-availability-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 31
+        }
+      ]
+    },
+    {
+      "state": "student-availability",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 9
+        }
+      ]
+    },
+    {
+      "state": "student-discovery-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 2
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "student-discovery",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 2
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "student-home-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 2
+        }
+      ]
+    },
+    {
+      "state": "student-home",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "student-notifications-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "student-notifications",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "student-profile-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "student-profile",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "student-saved-320",
+      "authenticated": true,
+      "viewport": {
+        "width": 320,
+        "height": 800
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "student-saved",
+      "authenticated": true,
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "156.0.8078.4",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    }
+  ]
+}

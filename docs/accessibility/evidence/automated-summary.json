@@ -1,0 +1,525 @@
+{
+  "command": "npx --yes pnpm@10.17.1 test:a11y",
+  "tests": 27,
+  "passed": 27,
+  "failed": 0,
+  "skipped": 0,
+  "executedOn": "2026-10-20",
+  "evidenceReviewedOn": "2026-10-21",
+  "reports": [
+    {
+      "state": "admin-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:41.822Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "admin-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:41.653Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "admin-inspection",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:51.279Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "application-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:37.707Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "application-confirmation",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:46.019Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "application-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:37.436Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "application-errors",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:45.810Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "availability-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:35.201Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "state": "availability-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:34.421Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 7
+        }
+      ]
+    },
+    {
+      "state": "availability-selected-mobile",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:44.026Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 41
+        }
+      ]
+    },
+    {
+      "state": "booking-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:36.563Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-cancelled",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:47.464Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-choice",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:47.027Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "booking-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:36.138Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "carousel-manual",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:03.125Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "state": "dialog-open",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:44.872Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "event-detail",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:48.561Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-hidden-focus",
+          "nodes": 6
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 13
+        }
+      ]
+    },
+    {
+      "state": "events-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:39.934Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 5
+        }
+      ]
+    },
+    {
+      "state": "events-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:39.711Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        },
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "events-empty",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:49.178Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "events-list",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:48.809Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 3
+        }
+      ]
+    },
+    {
+      "state": "faq-expanded",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:11.351Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "leader-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:40.881Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "leader-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:40.703Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "leader-event-editor-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:50.356Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "leader-event-editor",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:50.109Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 6
+        }
+      ]
+    },
+    {
+      "state": "primitives-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:38.666Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "primitives-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:38.488Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "aria-valid-attr-value",
+          "nodes": 1
+        }
+      ]
+    },
+    {
+      "state": "public-0-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:03.642Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "state": "public-0-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:02.170Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "state": "public-1-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:06.074Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "state": "public-1-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:05.574Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 121
+        }
+      ]
+    },
+    {
+      "state": "public-2-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:08.858Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-2-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:08.592Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 24
+        }
+      ]
+    },
+    {
+      "state": "public-3-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:11.643Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-3-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:10.986Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-4-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:14.017Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 10
+        }
+      ]
+    },
+    {
+      "state": "public-4-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:13.749Z",
+      "violationCount": 0,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "nodes": 28
+        }
+      ]
+    },
+    {
+      "state": "public-5-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:15.825Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-5-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:15.604Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-6-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:18.785Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-6-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:18.585Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-7-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:21.135Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-7-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:20.948Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-8-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:23.608Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-8-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:23.395Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-9-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:27.801Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "public-9-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:27:27.586Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-320",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:42.790Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-desktop",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:42.619Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-open",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:52.181Z",
+      "violationCount": 0,
+      "incomplete": []
+    },
+    {
+      "state": "voting-recorded",
+      "browser": "156.0.8078.4",
+      "evaluatedAt": "2026-10-20T20:26:52.386Z",
+      "violationCount": 0,
+      "incomplete": []
+    }
+  ]
+}

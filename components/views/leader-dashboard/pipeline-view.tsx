@@ -133,10 +133,11 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                 return (
                   <div
                     key={a.id}
+                    role="group"
+                    aria-label={`${a.name} recruitment card`}
                     draggable
                     onDragStart={(event) => { event.dataTransfer.setData("text/plain", a.id); event.dataTransfer.effectAllowed = "move"; setDraggedId(a.id) }}
                     onDragEnd={() => setDraggedId(null)}
-                    onClick={() => onViewProfile(a.id)}
                     className={cn(
                       "group relative cursor-grab rounded-xl border border-neutral-200 bg-white p-2.5 shadow-none transition-colors hover:shadow-none active:cursor-grabbing",
                       draggedId === a.id && "opacity-40",
@@ -168,9 +169,9 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <p className={cn("truncate text-xs font-semibold", isRejected ? "text-gray-500" : "text-foreground")}>
+                        <button type="button" onClick={() => onViewProfile(a.id)} className={cn("block max-w-full truncate text-left text-xs font-semibold hover:underline", isRejected ? "text-gray-500" : "text-foreground")}>
                           {a.name}
-                        </p>
+                        </button>
                         <p className={cn("truncate text-[length:var(--oc-size-11)]", isRejected ? "text-gray-400" : "text-muted-foreground")}>
                           {a.major}
                         </p>

@@ -102,7 +102,7 @@ export function UnifiedStudentProfileView({ settings = false }: { settings?: boo
           <Button
             variant={section === "links" ? "outline" : "ghost"}
             size="sm"
-            aria-label={label ?? `Edit ${section === "identity" ? "name and photo" : section}`}
+            aria-label={label ?? `Edit ${section === "identity" ? "name and photo" : section === "experience" ? "structured experience" : section}`}
             className="shrink-0 text-muted-foreground"
           >
             <Pencil className="size-3.5" />

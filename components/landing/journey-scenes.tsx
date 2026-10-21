@@ -18,7 +18,7 @@ function Facts({ items }: { items: [string, ReactNode][] }) {
   return <dl className="oc-demo-facts">{items.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
 }
 function Action({ children, target, done }: { children: ReactNode; target: string; done: boolean }) {
-  return <button type="button" tabIndex={-1} className="oc-demo-button" data-demo-target={target} disabled={done}>{children}{done ? <Check size={18} /> : <ArrowRight size={18} />}</button>
+  return <span className="oc-demo-button" data-demo-target={target} data-complete={done}>{children}{done ? <Check size={18} aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}</span>
 }
 function Result({ children, done }: { children: ReactNode; done: boolean }) {
   return <div className="oc-demo-result" data-visible={done} data-demo-entering={done}><CheckCircle2 size={20} /><p>{children}</p></div>

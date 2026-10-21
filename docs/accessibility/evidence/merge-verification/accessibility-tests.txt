@@ -1,0 +1,39 @@
+
+> my-v0-project@0.1.0 test:a11y /Users/jesseklinger/Documents/out-class
+> node scripts/run-accessibility.cjs
+
+✔ axe: actual availability UI with isolated data, desktop and 320px (3098.724833ms)
+✔ axe: actual booking UI with isolated data, desktop and 320px (1060.963875ms)
+✔ axe: actual application UI with isolated data, desktop and 320px (980.016625ms)
+✔ axe: actual primitives UI with isolated data, desktop and 320px (944.469625ms)
+✔ axe: actual events UI with isolated data, desktop and 320px (1200.981166ms)
+✔ axe: actual leader UI with isolated data, desktop and 320px (933.812542ms)
+✔ axe: actual admin UI with isolated data, desktop and 320px (946.399208ms)
+✔ axe: actual voting UI with isolated data, desktop and 320px (927.610083ms)
+✔ availability: row/column structure, roving focus, toggle, range, touch and drag cancellation (1237.667459ms)
+✔ dialogs and select: keyboard entry, containment, Escape, focus restoration and state (910.657459ms)
+✔ application: associated errors, first invalid field, confirmation and upload feedback (1057.777667ms)
+✔ booking: reserve, reschedule, cancel, selected date/time and focus after action removal (1291.76525ms)
+✔ events: corkboard/list, filter, empty state and dialog focus restoration (1694.305375ms)
+✔ leader: event creation, labelled date controls and equivalent flyer information (1124.051625ms)
+✔ admin: named table, inspection dialog and keyboard dismissal using fictional records (872.184542ms)
+✔ voting: joining, persistent candidate announcement and ballot result (996.6595ms)
+✔ public route: /, semantics, axe, 320px and text spacing (6010.1345ms)
+✔ public route: /?audience=leader, semantics, axe, 320px and text spacing (2114.284917ms)
+✔ public route: /about, semantics, axe, 320px and text spacing (2236.30725ms)
+✔ public route: /uva, semantics, axe, 320px and text spacing (2523.093417ms)
+✔ public route: /request-school, semantics, axe, 320px and text spacing (2432.601792ms)
+✔ public route: /login, semantics, axe, 320px and text spacing (1409.910209ms)
+✔ public route: /signup, semantics, axe, 320px and text spacing (2374.746208ms)
+✔ public route: /forgot-password, semantics, axe, 320px and text spacing (2188.39125ms)
+✔ public route: /reset-password, semantics, axe, 320px and text spacing (2274.672167ms)
+✔ public route: /platform/login, semantics, axe, 320px and text spacing (2842.343792ms)
+✔ homepage: keyboard skip link, mobile navigation Escape and reduced motion (1142.783083ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47767.755875

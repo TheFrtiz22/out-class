@@ -19,6 +19,7 @@ export function QuestionField({
   const props = {
     id: `answer-${question.id}`,
     disabled,
+    required: question.required,
     "aria-required": question.required,
     "aria-invalid": !!invalid,
     "aria-describedby": `help-${question.id}`,

@@ -28,3 +28,5 @@ html.oc-native-navigation { scroll-padding-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   .oc-landing :is(.oc-public-text-link, .oc-faq-indicator, .oc-request-submit) { transition: none; }
 }
+/* Keep long editorial words readable with increased text spacing and zoom. */
+.oc-landing :is(h1, h2, h3, p) { overflow-wrap: anywhere; }

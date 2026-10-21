@@ -1,0 +1,30 @@
+✔ calendar keeps actual overnight, multi-day and DST instants without availability-hour restrictions (9.784333ms)
+✔ calendar TEXT is escaped, Unicode lines fold by UTF-8 octets, and invalid dates reject (0.392792ms)
+✔ saved-event migration enforces uniqueness, cascading cleanup and server-only access even with permissive browser grants (546.057584ms)
+﹣ native Prisma: account-scoped idempotent saves, shared filtered pagination, publication restrictions and existing RSVP (0.189666ms) # SKIP
+✔ board uses original flyer in accessible modal, keyboard button activation and origin focus return (106.666ms)
+✔ reduced motion removes pull and overlay animation; Escape and focus trapping use the existing Radix primitive (0.362625ms)
+✔ leader local Meetings switch keeps member tools and isolates unavailable Demo events (3.311625ms)
+✔ leader removal requires confirmation and returns keyboard focus to its origin (36.701041ms)
+✔ refreshing either perspective and legacy club links selects the correct walkthrough (70.437625ms)
+✔ switches update the URL without scrolling, and browser history restores the perspective (8.239709ms)
+✔ leaving the landing page removes both navigation listeners (6.335291ms)
+✔ direct numbered chapter links retain their audience, while legacy hashes take precedence (23.541542ms)
+✔ first visits default to leaders, manual choices persist, and explicit navigation wins (48.1585ms)
+✔ audience and chapter navigation preserve existing campaign parameters (4.201291ms)
+✔ five student and six leader stages map by task, including interview and membership (1.009875ms)
+✔ hero-to-paper boundary stays crisp with a readable scroll cue (0.257958ms)
+✔ every public destination is preserved in desktop and mobile navigation (22.375792ms)
+✔ opening the menu exposes its links and Escape restores focus to the toggle (20.145208ms)
+✔ outside pointer, focus departure, and link activation dismiss the disclosure (8.438208ms)
+✔ resizing an open mobile menu to desktop moves focus to the visible home link (9.38525ms)
+✔ scroll and fragment updates preserve hero styling, current link, and dismissal semantics (10.26825ms)
+✔ rolling labels have one readable accessible name and hide decorative copies (3.621875ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 911.625292

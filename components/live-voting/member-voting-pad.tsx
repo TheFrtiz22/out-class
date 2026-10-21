@@ -35,10 +35,11 @@ export function MemberVotingPad({
     !session.memberIds.includes(memberId) &&
     session.memberIds.length >= session.memberCount
   return (
-    <main data-workspace-detail
+    <div data-workspace-detail role={embedded ? "group" : "main"} aria-label="Member voting"
       className={`oc-voting-pad ${embedded ? "" : "min-h-svh px-5 py-8"} flex items-center justify-center bg-background font-sans text-foreground`}
     >
       <div className="w-full max-w-md space-y-7 rounded-2xl border border-neutral-200 bg-white p-6 shadow-none">
+        <p className="sr-only" role="status" aria-atomic="true">{session?.status === "live" && applicant ? `Applicant ${session.activeIndex + 1} of ${session.applicants.length}: ${applicant.name}. ${choice ? "Vote recorded. Waiting for the next applicant." : "Voting is open."}` : ""}</p>
         <header className="flex items-center justify-between gap-3">
           <span className="text-sm font-semibold">
             OutClass <span className="font-normal text-neutral-500">/ Voting preview</span>
@@ -71,7 +72,6 @@ export function MemberVotingPad({
           <>
             <div
               key={applicant.id}
-              aria-live="polite"
               className="oc-voting-candidate space-y-4 text-center"
             >
               <p className="text-xs uppercase tracking-widest text-neutral-500">
@@ -170,6 +170,6 @@ export function MemberVotingPad({
           connection.
         </footer>
       </div>
-    </main>
+    </div>
   )
 }

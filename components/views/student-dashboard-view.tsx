@@ -72,7 +72,6 @@ function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => v
         type="button"
         className="oc-home-application"
         onClick={onOpen}
-        aria-label={`${app.draft ? "Continue" : "View"} ${app.name} application`}
       >
         <ClubLogo
           clubId={app.clubId}
@@ -114,7 +113,6 @@ function AgendaRow({ event, onOpen }: { event: ClubEvent; onOpen: () => void }) 
         type="button"
         className="oc-home-agenda-row"
         onClick={onOpen}
-        aria-label={`${event.title}, ${when(event)}`}
       >
         <span className="oc-home-date" aria-hidden="true">
           <span>{date.toLocaleDateString("en-US", { timeZone: SCHEDULING_TIMEZONE, month: "short" })}</span>

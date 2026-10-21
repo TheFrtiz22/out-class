@@ -23,6 +23,46 @@ jobs:
       - run: pnpm validate
       # Vercel's Git integration deploys the authenticated App Router application.
       # Never publish the obsolete static out/ directory to GitHub Pages.
+  accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:a11y
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-evidence
+          path: test-results/accessibility
+          retention-days: 14
+  authenticated-accessibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # The existing runner pins the app, Auth, SMTP and PostgreSQL to its
+      # reserved disposable localhost project and cleans it up after testing.
+      - run: pnpm test:a11y:authenticated
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: authenticated-accessibility-evidence
+          path: test-results/accessibility-authenticated
+          retention-days: 14
   native-application-transactions:
     runs-on: ubuntu-latest
     timeout-minutes: 15

@@ -1,0 +1,34 @@
+
+> my-v0-project@0.1.0 test:a11y:authenticated /Users/jesseklinger/Documents/out-class
+> node scripts/run-onboarding-e2e.cjs --a11y
+
+Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.
+All Prisma migrations applied through the authoritative deployment command.
+Administrator bootstrapped through normal verified signup and actual TOTP MFA.
+▶ authenticated accessibility against isolated real Auth, MFA, Next actions and PostgreSQL
+  ✔ student-home (2004.072209ms)
+  ✔ student-profile (2198.809375ms)
+  ✔ student-discovery (1968.460625ms)
+  ✔ student-saved (1214.021333ms)
+  ✔ student-availability (2645.963084ms)
+  ✔ student-notifications (1398.7585ms)
+  ✔ leader-overview (1366.552042ms)
+  ✔ leader-members (1273.465083ms)
+  ✔ leader-applicants (1192.8295ms)
+  ✔ leader-interviews (1320.6945ms)
+  ✔ leader-settings (1372.694125ms)
+  ✔ admin-overview (1262.019125ms)
+  ✔ admin-users (1261.458459ms)
+  ✔ admin-school-requests (1183.774541ms)
+  ✔ admin-claims (1161.050959ms)
+  ✔ admin-events (1191.293291ms)
+  ✔ student submits actual application and server persistence is verified (1832.301083ms)
+✔ authenticated accessibility against isolated real Auth, MFA, Next actions and PostgreSQL (27902.102417ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28258.299042

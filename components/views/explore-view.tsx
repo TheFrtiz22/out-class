@@ -158,7 +158,6 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
             return (
             <button
               key={category}
-              aria-label={`${category}, ${clubs.filter(club => club.category === category).length} clubs`}
               aria-pressed={filters.category.toLowerCase() === category.toLowerCase()}
               onClick={() => change("category", filters.category.toLowerCase() === category.toLowerCase() ? "all" : category)}
             >

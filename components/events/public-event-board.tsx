@@ -166,7 +166,7 @@ export function PublicEventBoard() {
       {linkedError && <div role="alert" className="mb-4 space-y-2"><p>{linkedError}</p><Button variant="outline" onClick={() => setLinkedRetry(n => n + 1)}>Retry event</Button></div>}
       {linkedMissing && <p role="status" className="mb-4 text-sm text-muted-foreground">This event is no longer available. Browse the campus events below.</p>}
       <div className="oc-event-toolbar">
-        <div className="oc-event-periods" aria-label="Event date range">
+        <div className="oc-event-periods" role="group" aria-label="Event date range">
           {["All", "Today", "This Week", "Weekend"].map((period) => (
             <button
               type="button"
@@ -291,7 +291,7 @@ export function PublicEventBoard() {
             setOpen(value);
           }}
         >
-          <div key={view} className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
+          <div key={view} role="region" className={view === "corkboard" ? "oc-physical-board oc-event-view" : "oc-event-list oc-event-view"} data-empty={!events.length || undefined} aria-busy={loading} aria-label={view === "corkboard" ? "Corkboard events" : "Event list"}>
             {!loading && !events.length ? (
               <div className="oc-events-empty">
                 <h2>{filters.savedOnly ? "No saved events here yet." : filters.query ? "No search results." : filters.category || filters.clubId || filters.date || filters.location || filters.required || filters.period !== "All" ? "No events match your filters." : "No upcoming events yet."}</h2>
@@ -340,7 +340,6 @@ export function PublicEventBoard() {
                         <button
                           type="button"
                           className="oc-pinned-flyer"
-                          aria-label={`View ${event.title}, hosted by ${event.clubName}`}
                           data-selected={open && selected?.id === event.id}
                           onClick={(e) => {
                             origin.current = e.currentTarget;
@@ -348,7 +347,7 @@ export function PublicEventBoard() {
                           }}
                         >
                           <span className="oc-flyer-pin" aria-hidden="true" />
-                          <EventFlyer event={event} />
+                          <span className="sr-only">View event: </span><EventFlyer event={event} />
                         </button>
                       </DialogTrigger>
                     </li>

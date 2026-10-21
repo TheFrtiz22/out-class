@@ -92,3 +92,4 @@
   .oc-feature-orbit[data-orbit-enhanced="true"] .oc-orbit-title h2 { max-width: none; }
   .oc-landing .oc-feature-orbit .oc-story-interface { padding: 20px 28px; }
 }
+.oc-orbit-index a { overflow-wrap: anywhere; }

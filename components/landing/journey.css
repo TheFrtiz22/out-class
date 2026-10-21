@@ -9,11 +9,12 @@
 .oc-journey-controls { position: relative; z-index: 25; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; transition: opacity var(--oc-motion-state) var(--oc-motion-ease), transform var(--oc-motion-scene) var(--oc-motion-ease); }
 .oc-journey-controls-slot[data-merged="true"] .oc-journey-controls { opacity: 0; transform: translateY(-12px); pointer-events: none; }
 .oc-journey-controls > h2 { margin: 0; color: var(--primary); font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: var(--oc-tracking-heading); text-wrap: balance; }
-.oc-perspective-switcher { position: relative; isolation: isolate; display: grid; grid-template-columns: 1fr 1fr; flex-shrink: 0; width: 360px; max-width: 100%; padding: 4px; border: 1px solid var(--primary); background: var(--primary); border-radius: var(--oc-radius-md); }
+.oc-perspective-switcher { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex-shrink: 0; width: 360px; max-width: 100%; padding: 4px; border: 1px solid var(--primary); background: var(--primary); border-radius: var(--oc-radius-md); }
 .oc-perspective-indicator { position: absolute; z-index: -1; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / 2); border-radius: var(--oc-radius-sm); background: #fff7ec; border-bottom: 2px solid var(--brand-orange); transition: transform var(--oc-motion-state, 260ms) var(--oc-motion-ease, ease-out); }
 .oc-perspective-switcher[data-perspective="leader"] .oc-perspective-indicator { transform: translateX(100%); }
 .oc-perspective-switcher button { min-height: 48px; padding: 10px 12px; border-radius: var(--oc-radius-sm); font-size: var(--oc-text-small); font-weight: 500; color: #fff7ec; white-space: nowrap; }
 .oc-perspective-switcher button[aria-pressed="true"] { color: var(--primary); font-weight: 600; }
+.oc-perspective-switcher[data-compact="false"] button { white-space: normal; }
 .oc-landing .oc-perspective-switcher button:focus-visible { outline-color: var(--brand-orange); outline-offset: -4px; }
 .oc-perspective-copy > p:last-child { margin-top: 20px; color: var(--muted-foreground); }
 /* A close product crop uses the app's navy, paper, borders and native controls. */
@@ -39,7 +40,7 @@
 .oc-demo-focus [data-slot="badge"], .oc-demo-heading [data-slot="badge"] { font-size: 12px; padding: 5px 10px; }
 .oc-demo-outcome { display: flex; align-items: center; gap: 20px; min-height: 72px; border-top: 1px solid var(--border); padding-top: 16px; margin-top: auto; }
 .oc-landing .oc-demo-button { display: inline-flex; justify-content: center; align-items: center; gap: 12px; flex-shrink: 0; margin-left: auto; padding: 12px 20px; min-width: 220px; min-height: 52px; max-width: 100%; font-size: 15px; line-height: 1.45; font-weight: 500; border: 1px solid var(--primary); border-radius: 8px; background: var(--primary); color: #fffefa; box-shadow: 0 2px 3px #142d4510; }
-.oc-demo-button:disabled { background: #e9efe8; border-color: #afc1b0; color: #31513d; }
+.oc-demo-button[data-complete="true"] { background: #e9efe8; border-color: #afc1b0; color: #31513d; }
 .oc-demo-button > svg { flex-shrink: 0; }
 .oc-demo-result { display: flex; align-items: center; gap: 10px; color: #31513d; font-size: 14px; line-height: 1.55; min-height: 44px; max-width: 38ch; }
 .oc-demo-result > svg { flex-shrink: 0; }

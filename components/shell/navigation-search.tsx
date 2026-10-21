@@ -166,7 +166,6 @@ export function NavigationSearch({
         </DialogHeader>
         <Command shouldFilter={false}>
           <CommandInput
-            autoFocus
             aria-label="Search OutClass"
             placeholder={
               leader

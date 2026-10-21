@@ -321,6 +321,7 @@ function ExecutiveRosterPanel() {
                 {isEditing ? (
                   <div className="mt-1 flex items-center gap-1.5">
                     <Input
+                      // eslint-disable-next-line jsx-a11y/no-autofocus -- The Edit title action opens this inline editor.
                       autoFocus
                       value={editingTitle}
                       onChange={(e) => setEditingTitle(e.target.value)}

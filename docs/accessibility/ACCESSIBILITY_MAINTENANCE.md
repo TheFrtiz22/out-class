@@ -1,0 +1,32 @@
+# Accessibility maintenance
+
+Use semantic native controls first. Preserve OutClass fonts, spacing, artwork and business behavior. Do not install overlays. Standard: [WCAG 2.2 A/AA](https://www.w3.org/TR/WCAG22/); engineering evidence does not constitute legal certification.
+
+- **Forms:** persistent label associated with each control; fieldsets/legends for related choices; native required and input purpose/autocomplete; allow password-manager and OTP paste. Associate help/errors with aria-describedby, identify invalid fields and render text errors. Provide a linked summary for multiple errors and focus deliberately after React commits validation. Preserve entered information and avoid redundant entry.
+- **Dialogs/menus/selects:** use shared Radix primitives; title and useful description, focus entry/containment, Escape policy and origin restoration. Test actual content and mobile scrolling. Never nest interactive buttons/checkboxes inside buttons. A popover with pressed options is not automatically a combobox. Shared library use alone is not proof.
+- **Animation:** respect reduced motion in CSS and JS; stop autoplay with visible controls; stop work offscreen/hidden; do not announce animation frames or poll ticks. Keep explanatory content available independently of visual simulation.
+- **Tables/calendars:** use captions and scoped headers. Grid metadata must match exposed rows/columns at every breakpoint; preserve roving focus, selected state and instructions. Always supply tap/click and keyboard alternatives to dragging. Prevent sticky headers obscuring focus.
+- **Notifications:** persistent concise status regions; role alert for actionable failures; avoid remounting live region containers on every update. Do not move focus due to background collaboration. Move it deliberately when the user's own action removes the focused control.
+- **SVG/icons:** follow [icons.md](../icons.md) and AGENTS.md: named mappings from `@/components/icons`, individual Phosphor SSR imports, Regular/default and Fill/selected, MIT notice retained. Decorative icons aria-hidden; icon-only controls get contextual names. Branding/artwork are separate.
+- **Visuals:** measure rendered/composited colors and all interactive states, including custom club branding, charts and focus. Add textual chart/table equivalents. Validate 320px, 200% text, actual 400% zoom and WCAG spacing overrides; overflow-only assertions cannot detect all clipping.
+- **Multimedia/documents:** useful image alternatives or complete equivalent event descriptions; accessible transcripts/captions for future audio/video; include image-only poster instructions as text. Preserve actual PDF text and profile alternatives; downloads do not guarantee user-uploaded PDFs are accessible.
+- **New routes:** meaningful title/language/landmarks, skip repeated navigation, useful heading hierarchy, loading/empty/error/success states, keyboard reachability and visible focus. Register route and states in COVERAGE.csv and add scanner/semantic/keyboard coverage.
+
+## Local and CI checks
+
+1. Install the pinned package manager (`corepack` or `npx pnpm@10.17.1`), then `pnpm install --frozen-lockfile` and `pnpm exec playwright install chromium`.
+2. Run `pnpm test:a11y`. It starts a localhost Next app with database/auth/mail targets overridden, tests public routes plus actual student/leader/admin component fixtures and saves reports under `test-results/accessibility/`. Use no production credentials. Fixtures deliberately mock transport; they do not establish authenticated server correctness.
+3. Run `pnpm validate`. Native/local database tests that require explicit services remain visibly skipped unless their documented isolated environment is available. Do not report skips as passes.
+4. The `accessibility` and `authenticated-accessibility` jobs in `.github/workflows/deploy.yml` run on the workflow's PR/push triggers and upload raw JSON, screenshots and server logs even on failure. These jobs have not been executed on GitHub during this assignment. Repository branch-protection settings must make them required before merge; no repository/infrastructure setting was changed in this assignment.
+5. Triage every violation and axe `incomplete` item. No axe rule is excluded in this suite. New exclusions require a narrow technical justification in the finding register, an alternative assertion and review; do not hide real violations.
+6. Complete manual scripts for materially changed workflows. Repeat core AT journeys before release and after major browser/framework/widget updates; review third-party updates and user-created content limitations.
+
+ESLint uses `jsx-a11y/recommended` with project control mappings, including Input/Label/Textarea/native selects. Scrollable document/region/tabpanel tabindex and three user-opened autofocus fields have documented scoped accommodations; retain manual verification. Do not use blanket rule disabling.
+
+## Authenticated coverage and further extension
+
+Run `pnpm test:a11y:authenticated` with Docker and OpenSSL installed. It reuses the guarded disposable onboarding runner, creates verified student/owner and admin/MFA accounts, tests actual signed-in pages and verifies application submission in PostgreSQL, then cleans up its reserved stack. It never accepts a hosted URL. Evidence goes to `test-results/accessibility-authenticated/`. For further tasks, provision authorized fictional interviewer/member accounts as well. Reuse the repo's isolated onboarding/scheduling runners rather than weakening auth. Store browser session files only in ignored test output, supply CI secrets through protected settings and assert the real role/task/fixture record before each test. Extend axe/keyboard checks after real server actions and verify persistence on reload, cleanup and network failures. Never accept an unexpected login page as a passing protected-page scan.
+
+Owner assignment, monitored feedback contact and required CI branch protection are operational follow-ups. Re-evaluate pending criteria, record the actual tester/environment/evidence and update the draft statement only after approved review.
+
+The suite uses Chromium installed for the pinned Playwright version. Do not substitute an arbitrary system browser for CI. The initial machine was missing Playwright's browser binaries; installing Chromium resolved that prerequisite. Use `test-results/accessibility/server.log` to distinguish app boot failures from accessibility failures. Set a job timeout and always retain failure evidence.

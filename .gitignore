@@ -42,3 +42,6 @@ node_modules/
 # Build outputs
 dist/
 build/
+
+# Local browser evidence and test server logs
+/test-results/
