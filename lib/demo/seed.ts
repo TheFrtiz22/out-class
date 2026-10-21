@@ -221,6 +221,7 @@ export function createDemoSeed(anchor = dayKey(new Date(), SCHEDULING_TIMEZONE))
                 "What would you test before committing resources?",
                 "Describe a time you helped a quieter teammate contribute.",
               ],
+    pipelineVersion: 0 as number | undefined,
     rounds: [
       "Applied",
       "Review",

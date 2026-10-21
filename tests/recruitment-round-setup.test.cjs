@@ -42,7 +42,7 @@ test('round discovery distinguishes denial, transport failure, archives and curr
  h.deny(true);assert.equal((await kits.getInterviewRounds(id(1))).status,'denied');
 });
 test('round loader reports loading, real empty state, permission denial and failed request distinctly; deep link selects the saved ID',async t=>{
- const before=global.window;global.window={addEventListener(){},removeEventListener(){},confirm:()=>true};t.after(()=>global.window=before);
+ const before=global.window;global.window={dispatchEvent(){},addEventListener(){},removeEventListener(){},confirm:()=>true,dispatchEvent(){}};t.after(()=>global.window=before);
  const member={clubId:id(1),status:'ACTIVE',isOwner:true,interviewOffices:['BOARD']},auth={'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[member]}})}};
  for(const [result,expected]of [[{status:'ready',rounds:[]},/No active interview rounds/],[{status:'denied',rounds:[]},/access denied/],[Error('Synthetic unavailable'),/Could not load interview rounds/]]){
   const h=ui('components/interview-kit-editor.tsx','ClubInterviewKitSettings',{clubId:id(1)},{...auth,'@/lib/workspace-api':{getInterviewRounds:async()=>{if(result instanceof Error)throw result;return result}}});
@@ -53,15 +53,15 @@ test('round loader reports loading, real empty state, permission denial and fail
  const kit=ui('components/interview-kit-editor.tsx','RoundKitEditor',{clubId:id(1),roundInfo:list.rounds[1],initiallyOpen:true},{...auth,'@/lib/workspace-api':api});kit.render();await flush();assert.deepEqual(requests,[[id(1),id(3)]]);assert.match(text(kit.render()),/Round 2/);loader.close();kit.close();
 });
 test('an owner lacking an office sees the saved round and access setup rather than issuing an unauthorized kit read',async t=>{
- const before=global.window;global.window={addEventListener(){},removeEventListener(){}};t.after(()=>global.window=before);let reads=0;
+ const before=global.window;global.window={dispatchEvent(){},addEventListener(){},removeEventListener(){}};t.after(()=>global.window=before);let reads=0;
  const h=ui('components/interview-kit-editor.tsx','RoundKitEditor',{clubId:id(1),roundInfo:{id:id(3),name:'Round 2',canReadKit:false}},{'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:id(1),status:'ACTIVE',isOwner:true,interviewOffices:[]}]}})},'@/lib/workspace-api':{getInterviewKit:async()=>{reads++}}});
  const tree=h.render();await flush();assert.match(text(tree),/This round is saved/);assert.equal(reads,0);const link=nodes(tree).find(n=>n.type==='Link');const url=new URL(link.props.href,'https://example.test');assert.equal(url.searchParams.get('roundId'),id(3));assert.equal(url.searchParams.get('interviewTab'),'access');assert.equal(nodes(tree).some(n=>n.type==='Textarea'),false);h.close();
 });
 test('pipeline configuration link targets the exact persisted round and successful saves refresh setup through its existing callback',async t=>{
- const before=global.window;global.window={addEventListener(){},removeEventListener(){},confirm:()=>true};t.after(()=>global.window=before);let saved=0,payload;
+ const before=global.window;global.window={dispatchEvent(){},addEventListener(){},removeEventListener(){},confirm:()=>true};t.after(()=>global.window=before);let saved=0,payload;
  const props={clubId:id(1),onSaved:()=>saved++},api={getPipelineSettings:async()=>({pipelineVersion:2,pipelineRounds:[{id:id(2),name:'Review',type:'APPLICATION_REVIEW',archivedAt:null,anonymousReview:false,configuration:{}},{id:id(3),name:'Round 2',type:'INTERVIEW',archivedAt:null,anonymousReview:false,configuration:{duration:20}}]}),savePipelineSettings:async input=>{payload=input;return{version:3}}};
- const h=ui('components/views/club-manager/interview-pipeline-builder-view.tsx','InterviewPipelineBuilderView',props,{'@/lib/workspace-read':api,'@/actions/club-settings':api,'@/contexts/auth-context':{useAuth:()=>({activeClubId:id(1),user:{memberships:[{clubId:id(1),isOwner:true}]}})},'@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})}});
- h.render();await flush();let tree=h.render();const link=nodes(tree).find(n=>n.type==='Link'&&text(n).includes('Configure this round'));const url=new URL(link.props.href,'https://example.test');assert.equal(url.searchParams.get('roundId'),id(3));assert.equal(url.searchParams.get('interviewTab'),'kits');
+ const h=ui('components/views/club-manager/interview-pipeline-builder-view.tsx','InterviewPipelineBuilderView',props,{'@/lib/workspace-api':{getPipelineInterviewStatus:async()=>[],...api},'@/lib/workspace-read':api,'@/actions/club-settings':api,'@/contexts/auth-context':{useAuth:()=>({activeClubId:id(1),user:{memberships:[{clubId:id(1),isOwner:true}]}})},'@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})}});
+ h.render();await flush();let tree=h.render();const link=nodes(tree).find(n=>n.type==='PipelineInterviewStatus');const href=ui('components/interviews/pipeline-interview-status.tsx','PipelineInterviewStatus',link.props,{}).render();const url=new URL(nodes(href).find(n=>n.type==='Link').props.href,'https://example.test');assert.equal(url.searchParams.get('roundId'),id(3));assert.equal(url.searchParams.get('interviewTab'),'kits');
  nodes(tree).find(n=>n.type==='Input'&&n.props.type==='number').props.onChange({target:{value:'25'}});tree=h.render();await nodes(tree).find(n=>n.type==='Button'&&text(n)==='Save pipeline').props.onClick();await flush();assert.equal(saved,1,text(h.render()));assert.equal(payload.rounds[1].id,id(3));assert.equal(payload.rounds[1].configuration.duration,25);h.close();
 });
 test('Demo fresh and saved fixtures discover by stable type/ID and persist kits with zero live calls',async()=>{

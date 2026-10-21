@@ -1,4 +1,7 @@
 "use client"
+import * as pipelineActions from "@/actions/club-settings";
+import * as pipelineInterviewActions from "@/actions/pipeline-interviews";
+import * as demoPipeline from "@/lib/demo/pipeline";
 import * as interviewEntry from "@/actions/interview-entry";
 import * as demoInterviewEntry from "@/lib/demo/interview-entry";
 import * as availabilitySchedules from "@/actions/availability-schedules";
@@ -622,3 +625,7 @@ export const cancelInvitationSchedule = adapt(invitationSchedules.cancelInvitati
 export const saveAvailabilitySchedule = adapt(availabilitySchedules.saveAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
 export const getAvailabilitySchedules = adapt(availabilitySchedules.getAvailabilitySchedules, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
 export const cancelAvailabilitySchedule = adapt(availabilitySchedules.cancelAvailabilitySchedule, async()=>{throw Error("Availability scheduling is unavailable in Demo.")});
+
+export const getPipelineSettings = adapt(pipelineActions.getPipelineSettings, demoPipeline.getPipelineSettings);
+export const savePipelineSettings = adapt(pipelineActions.savePipelineSettings, demoPipeline.savePipelineSettings);
+export const getPipelineInterviewStatus = adapt(pipelineInterviewActions.getPipelineInterviewStatus, demoPipeline.getPipelineInterviewStatus);

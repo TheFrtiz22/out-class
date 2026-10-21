@@ -271,6 +271,8 @@ export async function savePipelineSettings(input: unknown) {
           );
         if (
           Object.values(r._count).some(Boolean) ||
+          (Array.isArray(r.interviewKit) && r.interviewKit.length > 0) ||
+          r.bookingPublishedAt ||
           r.screeningRule ||
           historicalNames.has(r.name.toLowerCase())
         )
@@ -297,6 +299,9 @@ export async function savePipelineSettings(input: unknown) {
             saved.type !== r.type &&
             (saved._count.interviewRooms ||
               saved._count.interviewRecords ||
+              saved._count.scheduledBookings ||
+              (Array.isArray(saved.interviewKit) && saved.interviewKit.length > 0) ||
+              saved.bookingPublishedAt ||
               saved._count.votingSessions)
           )
             throw new Error(
