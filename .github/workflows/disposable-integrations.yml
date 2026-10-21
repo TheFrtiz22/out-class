@@ -81,6 +81,21 @@ jobs:
       - name: Run Next.js / Supabase Auth / SMTP / settings integration
         run: node scripts/run-onboarding-e2e.cjs --club-integration
 
+  local-storage:
+    name: Private Storage and native PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run local Supabase Storage fixture
+        run: node scripts/run-availability-e2e.cjs --event-storage
+
   coverage-report:
     name: Integration infrastructure coverage
     runs-on: ubuntu-latest
