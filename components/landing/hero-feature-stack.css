@@ -1,7 +1,7 @@
 /* A compact, quiet index-card stage. Only three cards show any depth. */
 .oc-feature-stack { --oc-feature-height: 208px; position: relative; width: 100%; max-width: 390px; min-width: 0; justify-self: center; padding-top: 42px; color: #fff7ec; }
 .oc-feature-stage { position: relative; height: calc(var(--oc-feature-height) + 62px); perspective: 1100px; perspective-origin: 50% 50%; transform-style: preserve-3d; }
-.oc-feature-card { position: absolute; inset: 0 0 auto; height: var(--oc-feature-height); transform-origin: 50% 50%; border: 1px solid rgb(255 247 236 / 22%); border-radius: 8px; background: rgb(20 45 78 / 22%); backface-visibility: hidden; pointer-events: none; }
+.oc-feature-card { position: absolute; inset: 0 0 auto; height: var(--oc-feature-height); transform-origin: 50% 50%; border: 1px solid rgb(255 247 236 / 22%); border-radius: 8px; background: linear-gradient(145deg, rgb(32 56 83 / 87%), rgb(13 33 57 / 86%)); box-shadow: 0 20px 55px rgb(2 14 30 / 25%), inset 0 1px 0 rgb(255 255 255 / 10%); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); backface-visibility: hidden; pointer-events: none; }
 .oc-feature-ink { padding: 26px 28px; }
 .oc-feature-category { display: flex; align-items: center; gap: 16px; margin: 0; font-family: var(--oc-font-sans); font-size: 10px; line-height: 1.6; letter-spacing: .14em; font-weight: 500; text-transform: uppercase; }
 .oc-feature-category > span { color: #f3a16f; letter-spacing: .06em; font-variant-numeric: tabular-nums; }

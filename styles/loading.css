@@ -9,10 +9,10 @@
     max(var(--oc-space-content), env(safe-area-inset-right))
     max(var(--oc-space-content), env(safe-area-inset-bottom))
     max(var(--oc-space-content), env(safe-area-inset-left));
-  background: var(--background);
+  background: radial-gradient(ellipse 48% 40% at 50% 45%, rgb(220 230 236 / 45%), transparent 80%), var(--background);
   color: var(--foreground);
 }
-.oc-loading-screen[data-variant="navy"] { background: var(--primary); color: var(--primary-foreground); }
+.oc-loading-screen[data-variant="navy"] { background: radial-gradient(ellipse 46% 38% at 50% 47%, rgb(87 121 153 / 23%), transparent 80%), var(--primary); color: var(--primary-foreground); }
 html:has([aria-label="Administrator view-as session"]) .oc-route-content .oc-loading-screen {
   --oc-loading-top-inset: var(--support-banner-height, 120px);
 }
@@ -25,6 +25,7 @@ body > .oc-loading-screen {
   inline-size: clamp(3.5rem, 5vw, 4.5rem);
   block-size: auto;
   aspect-ratio: 1;
+  filter: drop-shadow(0 12px 22px rgb(10 30 52 / 18%));
   animation: oc-loading-resolve var(--oc-duration-signature) var(--oc-ease-out) both;
 }
 @keyframes oc-loading-resolve {
@@ -44,3 +45,21 @@ body > .oc-loading-screen {
     transform: none;
   }
 }
+
+.oc-loading-identity { position: relative; display: grid; justify-items: center; gap: 19px; }
+.oc-loading-identity::before {
+  content: "";
+  position: absolute;
+  width: 164px;
+  height: 164px;
+  top: -43px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgb(86 121 154 / 12%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.oc-loading-screen[data-variant="navy"] .oc-loading-identity::before { border-color: rgb(255 247 236 / 14%); }
+.oc-loading-line { display: block; width: 45px; height: 1px; background: linear-gradient(90deg, transparent, var(--brand-orange), transparent); transform-origin: center; animation: oc-loading-line-reveal 800ms var(--oc-ease-out) both; }
+@keyframes oc-loading-line-reveal { from { opacity: 0; transform: scaleX(.2); } to { opacity: 1; transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .oc-loading-line { animation: none; } }

@@ -142,7 +142,10 @@ test("route loader uses the branded mark with a stable image box and accessible 
   assert.equal(light.props.role, "status")
   assert.equal(light.props["aria-busy"], "true")
   assert.equal(light.props["data-variant"], "light")
-  const [mark, label] = light.props.children
+  const [identity, label] = light.props.children
+  const [mark, accent] = identity.props.children
+  assert.equal(identity.props.className, "oc-loading-identity")
+  assert.equal(accent.props.className, "oc-loading-line")
   assert.equal(mark.props.src, "/brand/premium-board/07_favicon.svg")
   assert.equal(mark.props.width, 72)
   assert.equal(mark.props.height, 72)

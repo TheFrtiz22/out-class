@@ -4,6 +4,18 @@
 .oc-intro-backdrop { position: absolute; inset: 0; z-index: -1; overflow: clip; pointer-events: none; }
 .oc-intro-backdrop .oc-campus-backdrop { position: absolute; inset: 0; }
 .oc-intro-backdrop .oc-campus-photo { width: 100%; height: 100%; object-fit: cover; object-position: center 62%; filter: saturate(.85); }
-.oc-intro-backdrop::after { content: ""; position: absolute; inset: 0; background: rgb(12 25 43 / 72%); }
+.oc-intro-backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgb(7 19 35 / 88%) 0%, rgb(11 25 45 / 72%) 42%, rgb(11 23 39 / 70%) 100%), linear-gradient(180deg, rgb(7 18 34 / 30%), transparent 35%, rgb(9 21 38 / 58%) 100%); }
 .oc-intro-scroll { position: absolute; z-index: 1; bottom: max(clamp(30px, 4vw, 52px), calc(env(safe-area-inset-bottom, 0px) + 12px)); left: 50%; transform: translateX(-50%); }
 @media (max-width: 800px) { .oc-intro-scroll { bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px)); } }
+
+/* Depth and reflected light are atmospheric, not decorative UI content. */
+.oc-intro-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 68% at 78% 47%, rgb(91 131 164 / 17%), transparent 78%),
+    radial-gradient(ellipse 58% 52% at 18% 18%, rgb(232 91 25 / 9%), transparent 77%);
+}

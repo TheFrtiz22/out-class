@@ -4,6 +4,7 @@ import Image from "next/image"
 export function OutClassLoadingScreen({ variant = "light" }: { variant?: "light" | "navy" }) {
   return (
     <div className="oc-loading-screen" data-variant={variant} role="status" aria-busy="true">
+      <div className="oc-loading-identity" aria-hidden="true">
       <Image
         src={variant === "navy" ? "/brand/premium-board/06_app_icon_light.svg" : "/brand/premium-board/07_favicon.svg"}
         alt=""
@@ -14,6 +15,8 @@ export function OutClassLoadingScreen({ variant = "light" }: { variant?: "light"
         priority
         className="oc-loading-mark"
       />
+      <span className="oc-loading-line" />
+      </div>
       <span className="sr-only">Loading OutClass</span>
     </div>
   )
