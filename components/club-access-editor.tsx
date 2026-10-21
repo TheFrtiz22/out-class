@@ -60,7 +60,7 @@ export function ClubAccessEditor({
     }
   }
   return (
-    <div data-workspace-detail className="space-y-6" data-saving={busy}>
+    <div data-workspace-detail className="space-y-6" data-saving={busy} data-unsaved={target ? JSON.stringify([...selected].sort()) !== JSON.stringify([...target.permissions].sort()) || owner !== target.isOwner : !!email.trim()}>
       <p>
         Capabilities apply only to this club. Owners retain every capability. Only owners can
         appoint or change other owners. Anonymous reviewers need only “Review applications”. Identified review, identity reveals, moving applicants, and recording decisions require “View identified applicants”.

@@ -1,5 +1,7 @@
 "use client";
 
+import { ActionWorkflow } from "@/components/product/action-workflow";
+import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 import { ArrowUpRight } from "@/components/icons"
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -176,6 +178,7 @@ export function ClubSettingsWorkspace({
             <p className="text-sm text-muted-foreground">
               Configure evaluation kits and interview access for your recruitment rounds. Manage rooms, panels, and upcoming bookings in Interview Scheduling.
             </p>
+            {hasPermission(member, "members.manage") && <ActionWorkflow title="Interviewer eligibility" description="Configure eligible membership roles. Individual and round overrides remain in Members." trigger="Interviewer eligibility" presentation="sheet"><InterviewerEligibilityControls clubId={clubId} selectedIds={[]} /></ActionWorkflow>}
             <Interviews
               key={`${pipelineRevision}:${params.get("interviewTab") || "kits"}:${params.get("roundId") || ""}`}
               clubId={clubId}

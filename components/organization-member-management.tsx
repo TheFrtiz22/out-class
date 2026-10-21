@@ -2,6 +2,8 @@
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
 
+import { ActionWorkflow } from "@/components/product/action-workflow";
+import { addClubMember } from "@/actions/club-access";
 import {InvitationScheduleComposer} from "@/components/invitation-schedules";
 import { InvitationEmailControls } from "@/components/invitation-email-controls";
 import {
@@ -15,7 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy } from "@/components/icons";
+import { MoreHorizontal, Copy, Plus } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -77,6 +79,8 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
     [history, setHistory] = useState(false),
     [page, setPage] = useState(0);
   const [dirty, setDirty] = useState(false);
+  const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
+  const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
   const [scheduledInviteId,setScheduledInviteId] = useState<string|null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selection, setSelection] = useState<string[]>([]),
@@ -159,9 +163,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
           "The change was saved, but the directory could not be refreshed. Reload members to check your current access.",
         );
       }
+      return true;
     } catch (e) {
       if (optimistic) setData(previous);
       setError(e instanceof Error ? e.message : "Could not save. Try again.");
+      return false;
     } finally {
       working.current = false;
       setBusy(false);
@@ -201,7 +207,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
             member: null,
             invitation,
           })),
-      ].filter((row) =>
+      ].filter(row => Boolean(row.invitation) === invitesOpen && (!roleFilter || row.role === roleFilter) && (!yearFilter || row.year === yearFilter)).filter((row) =>
         `${row.name} ${row.detail} ${row.year || ""} ${organizationRoleLabels[row.role]} ${row.status}`
           .toLowerCase()
           .includes(needle),
@@ -304,174 +310,11 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
       false,
     );
   }
-  return (
-    <div
-      className="oc-member-directory min-w-0 max-w-5xl space-y-6"
-      data-saving={busy}
-      data-unsaved={dirty}
-      aria-busy={busy}
-    >
-      <p className="text-sm leading-7 text-muted-foreground">
-        Manage memberships and invitations for this organization. Roles grant
-        organization-specific capabilities; groups, cohorts, and custom access
-        remain available in member details.
-      </p>
-      <p className="text-xs leading-5 text-muted-foreground">
-        Invitation emails are sent only when requested. Resends have a 15-minute
-        cooldown.
-      </p>
-      {notice && (
-        <p role="status" className="rounded-lg border bg-muted/40 p-4 text-sm">
-          {notice}
-        </p>
-      )}
-      {error && (
-        <div className="space-y-3">
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => setAttempt((value) => value + 1)}
-          >
-            Reload members
-          </Button>
-        </div>
-      )}
-      {loading ? (
-        <p role="status">Loading members…</p>
-      ) : (
-        data && (
-          <>
-            <InvitationEmailControls clubId={clubId} onSent={reload} />
-            {scheduledInviteId&&<div className="space-y-3 border rounded p-4"><p>Selected individual invitation email</p><InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId}/><Button variant="outline" onClick={()=>setScheduledInviteId(null)}>Close selected invitation schedule</Button></div>}
-            {caps.canManageMembers && <InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={selectedMembers.map(member => member.id)} refreshKey={String(Math.max(...data.members.map(member => +new Date(member.updatedAt))))} onSaved={() => reload()} />}
-            {caps.canManageMembers && (
-              <details className="rounded-xl border p-4">
-                <summary
-                  className={`min-h-11 cursor-pointer py-2 font-medium ${onboardingFocus}`}
-                >
-                  Upload additional CSV
-                </summary>
-                <div className="mt-4">
-                  <RosterCsvImporter clubId={clubId} onImported={reload} />
-                </div>
-              </details>
-            )}
-            <details className="rounded-xl border p-4">
-              <summary
-                className={`min-h-11 cursor-pointer py-2 font-medium ${onboardingFocus}`}
-              >
-                Add member manually
-              </summary>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Create an invitation using the member’s school identity. They
-                must accept before becoming a member. No account or email is
-                created.
-              </p>
-              {!data.identifierTypes.length ? (
-                <p className="mt-3 text-sm">
-                  This school has no configured email identity mapping. Contact
-                  OutClass support.
-                </p>
-              ) : (
-                <form
-                  className="mt-4 grid gap-4 sm:grid-cols-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const form = new FormData(event.currentTarget);
-                    const input = {
-                      clubId,
-                      invitedName: String(form.get("name")),
-                      invitedYear: String(form.get("year")) || null,
-                      identifierTypeId: String(form.get("identifierType")),
-                      identifier: String(form.get("identifier")),
-                      requestedRole: String(form.get("role")),
-                    };
-                    if (
-                      input.requestedRole === "OWNER" &&
-                      !window.confirm(
-                        "Invite an additional owner with full control of this organization?",
-                      )
-                    )
-                      return;
-                    void run(
-                      () => inviteOrganizationMember(input),
-                      "Invitation is pending. No email has been sent.",
-                    );
-                  }}
-                >
-                  <fieldset disabled={busy} className="contents">
-                    <label className="space-y-2 text-sm font-medium">
-                      Name
-                      <Input name="name" required maxLength={200} />
-                    </label>
-                    <label className="space-y-2 text-sm font-medium">
-                      Year (optional)
-                      <select
-                        name="year"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <option value="">Not provided</option>
-                        {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
-                          <option key={year}>{year}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="space-y-2 text-sm font-medium">
-                      School identifier type
-                      <select
-                        name="identifierType"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {data.identifierTypes.map((type) => (
-                          <option key={type.id} value={type.id}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="space-y-2 text-sm font-medium">
-                      School identifier
-                      <Input
-                        name="identifier"
-                        required
-                        maxLength={128}
-                        autoCapitalize="none"
-                        autoComplete="off"
-                      />
-                    </label>
-                    <label className="space-y-2 text-sm font-medium">
-                      Organization role
-                      <select
-                        name="role"
-                        defaultValue="MEMBER"
-                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {organizationRoles
-                          .filter((role) =>
-                            canGrantOnboardingRole(data.actor, role),
-                          )
-                          .map((role) => (
-                            <option key={role} value={role}>
-                              {organizationRoleLabels[role]}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                    <Button className="self-end min-h-11">
-                      Create member invitation
-                    </Button>
-                  </fieldset>
-                </form>
-              )}
-            </details>
-            <div className="flex flex-wrap items-center gap-3">
+  const directory = data && <div className="space-y-5">            <div className="flex flex-wrap items-center gap-3">
               <Input
                 type="search"
                 aria-label="Search members and invitations"
-                placeholder="Search name, year, role, or status"
+                placeholder={invitesOpen ? "Search invitations…" : "Search members…"}
                 className="max-w-md"
                 value={query}
                 onChange={(event) => {
@@ -479,7 +322,9 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                   setPage(0);
                 }}
               />
-              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
+              <label className="text-sm"><span className="sr-only">Role</span><select aria-label="Filter members by role" className="min-h-11 rounded-md border bg-card px-3" value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All roles</option>{organizationRoles.map(role => <option key={role} value={role}>{organizationRoleLabels[role]}</option>)}</select></label>
+              <label className="text-sm"><span className="sr-only">Year</span><select aria-label="Filter members by year" className="min-h-11 rounded-md border bg-card px-3" value={yearFilter} onChange={e => { setYearFilter(e.target.value); setPage(0); setSelection([]) }}><option value="">All years</option>{[...new Set([...data.members.map(m => m.user.studentProfile?.academicYear), ...data.invitations.map(i => i.invitedYear)].filter((year): year is string => !!year))].sort().map(year => <option key={year}>{year}</option>)}</select></label>
+              {invitesOpen && <>              <label className="inline-flex min-h-11 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={history}
@@ -490,6 +335,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 />
                 Show invitation history
               </label>
+</>}
               <Button
                 variant="ghost"
                 disabled={busy}
@@ -572,6 +418,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         </Button>
                       </>
                     )}
+                    {caps.canManageMembers && <ActionWorkflow title="Interview eligibility" description="Update the selected members for this club or a specific round." trigger="Interview eligibility"><InterviewerEligibilityControls clubId={clubId} selectedIds={selectedMembers.map(m => m.id)} individual onSaved={() => reload()} /></ActionWorkflow>}
                     {caps.canManageMembers && (
                       <Button
                         size="sm"
@@ -674,7 +521,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                         }
                       />
                     </th>
-                    {["Member", "Year", "Role", "Status", "Actions"].map(
+                    {["Member", "Year", "Role", "Status", ...(invitesOpen ? ["Actions"] : [])].map(
                       (label) => (
                         <th key={label} scope="col" className="p-3">
                           {label}
@@ -751,7 +598,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                           </p>
                         )}
                       </td>
-                      <td
+                      {invitesOpen && (<td
                         data-label="Actions"
                         className={`${onboardingTable.cell} ${onboardingTable.wideCell}`}
                       >
@@ -851,7 +698,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                               </DropdownMenu>
                             </div>
                           )}
-                      </td>
+                      </td>)}
                     </tr>
                   ))}
                 </tbody>
@@ -862,7 +709,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 role="status"
                 className="rounded-xl border border-dashed bg-muted/20 p-6 text-sm text-muted-foreground"
               >
-                No members or invitations match.
+                {invitesOpen ? "No invitations match." : "No members match."}
               </p>
             )}
             {pages > 1 && (
@@ -889,6 +736,155 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </Button>
               </nav>
             )}
+</div>;
+  return (
+    <div
+      className="oc-member-directory min-w-0 max-w-5xl space-y-6"
+      data-saving={busy}
+      data-unsaved={dirty}
+      aria-busy={busy}
+    >
+      <p className="text-sm text-muted-foreground">Manage your club’s members and access.</p>
+      {notice && (
+        <p role="status" className="rounded-lg border bg-muted/40 p-4 text-sm">
+          {notice}
+        </p>
+      )}
+      {error && (
+        <div className="space-y-3">
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() => setAttempt((value) => value + 1)}
+          >
+            Reload members
+          </Button>
+        </div>
+      )}
+      {loading ? (
+        <p role="status">Loading members…</p>
+      ) : (
+        data && (
+          <>
+            <div className="flex flex-wrap gap-2" aria-label="Member actions">
+              {caps.canManageMembers && <ActionWorkflow showCloseAction={false} title="Add member" description="Add an existing OutClass account by UVA email. Use Invite members for someone who still needs to accept an invitation." trigger={<><Plus size={16} />Add member</>} variant="default">{done => <form data-saving={busy} className="space-y-4" onSubmit={event => { event.preventDefault(); const email = String(new FormData(event.currentTarget).get("email")); void run(() => addClubMember(clubId, email), "Member added.").then(saved => { if (saved) done() }) }}><label className="block space-y-2 text-sm">UVA email<Input name="email" type="email" required disabled={busy} placeholder="name@virginia.edu" /></label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={busy} onClick={done}>Cancel</Button><Button disabled={busy}>{busy ? "Adding…" : "Add member"}</Button></div></form>}</ActionWorkflow>}
+              <ActionWorkflow title="Invite members" description="Create invitations, review pending access, and explicitly choose email delivery." trigger="Invite members" presentation="sheet" open={invitesOpen} onOpenChange={open => { setInvitesOpen(open); setSelection([]); setPage(0); setQuery(""); setRoleFilter(""); setYearFilter("") }}>
+                {invitesOpen && <div data-saving={busy} className="space-y-5">
+                  <div role="group" aria-label="Invitation workspace" className="flex flex-wrap gap-1 border-b pb-3">{[["pending", "Pending invitations"], ["new", "New invitation"], ["delivery", "Delivery & schedules"]].map(([id, label]) => <Button key={id} variant={inviteTab === id ? "secondary" : "ghost"} aria-pressed={inviteTab === id} onClick={() => { if (dirty && !window.confirm("Discard unsaved invitation changes?")) return; setDirty(false); setInviteTab(id) }}>{label}</Button>)}</div>
+                  {notice && <p role="status" className="text-sm">{notice}</p>}{error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                  {inviteTab === "pending" && <>{directory}{scheduledInviteId && <InvitationScheduleComposer key={scheduledInviteId} clubId={clubId} invitationId={scheduledInviteId} />}</>}
+                  {inviteTab === "new" && <div data-unsaved={dirty} onChangeCapture={() => setDirty(true)}>              <p className="mt-3 text-sm text-muted-foreground">
+                Create an invitation using the member’s school identity. They
+                must accept before becoming a member. No account or email is
+                created.
+              </p>
+              {!data.identifierTypes.length ? (
+                <p className="mt-3 text-sm">
+                  This school has no configured email identity mapping. Contact
+                  OutClass support.
+                </p>
+              ) : (
+                <form
+                  className="mt-4 grid gap-4 sm:grid-cols-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const form = new FormData(event.currentTarget);
+                    const input = {
+                      clubId,
+                      invitedName: String(form.get("name")),
+                      invitedYear: String(form.get("year")) || null,
+                      identifierTypeId: String(form.get("identifierType")),
+                      identifier: String(form.get("identifier")),
+                      requestedRole: String(form.get("role")),
+                    };
+                    if (
+                      input.requestedRole === "OWNER" &&
+                      !window.confirm(
+                        "Invite an additional owner with full control of this organization?",
+                      )
+                    )
+                      return;
+                    void run(
+                      () => inviteOrganizationMember(input),
+                      "Invitation is pending. No email has been sent.",
+                    );
+                  }}
+                >
+                  <fieldset disabled={busy} className="contents">
+                    <label className="space-y-2 text-sm font-medium">
+                      Name
+                      <Input name="name" required maxLength={200} />
+                    </label>
+                    <label className="space-y-2 text-sm font-medium">
+                      Year (optional)
+                      <select
+                        name="year"
+                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="">Not provided</option>
+                        {[2025, 2026, 2027, 2028, 2029, 2030].map((year) => (
+                          <option key={year}>{year}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-2 text-sm font-medium">
+                      School identifier type
+                      <select
+                        name="identifierType"
+                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {data.identifierTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="space-y-2 text-sm font-medium">
+                      School identifier
+                      <Input
+                        name="identifier"
+                        required
+                        maxLength={128}
+                        autoCapitalize="none"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label className="space-y-2 text-sm font-medium">
+                      Organization role
+                      <select
+                        name="role"
+                        defaultValue="MEMBER"
+                        className="mt-1 min-h-11 w-full rounded-md border border-input bg-card px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {organizationRoles
+                          .filter((role) =>
+                            canGrantOnboardingRole(data.actor, role),
+                          )
+                          .map((role) => (
+                            <option key={role} value={role}>
+                              {organizationRoleLabels[role]}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    <Button className="self-end min-h-11">
+                      Create invitation
+                    </Button>
+                  </fieldset>
+                </form>
+              )}
+</div>}
+                  {inviteTab === "delivery" && <InvitationEmailControls clubId={clubId} onSent={reload} />}
+                </div>}
+              </ActionWorkflow>
+              {caps.canManageMembers && <ActionWorkflow title="Import CSV" description="Upload, validate, and confirm a roster. Emails are sent only when explicitly requested." trigger="Import CSV" presentation="sheet"><RosterCsvImporter clubId={clubId} onImported={reload} /></ActionWorkflow>}
+              {caps.canManageMembers && <ActionWorkflow title="Member settings" description="Configure club-wide interviewer eligibility. Edit individual roles and access from the member directory." trigger="Settings" presentation="sheet"><InterviewerEligibilityControls key={`${clubId}:${attempt}`} clubId={clubId} selectedIds={[]} onSaved={() => reload()} /></ActionWorkflow>}
+            </div>
+            {!invitesOpen && directory}
           </>
         )
       )}
@@ -1120,22 +1116,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 </form>
               )}
               {caps.canChangeRoles && active.status === "ACTIVE" && (
-                <details className="border-t pt-4">
-                  <summary
-                    className={`min-h-11 cursor-pointer py-2 text-sm font-medium ${onboardingFocus}`}
-                  >
-                    Advanced custom capabilities
-                  </summary>
-                  <div className="mt-4">
-                    <ClubAccessEditor
-                      key={`${active.id}:${active.updatedAt}`}
-                      clubId={clubId}
-                      initial={data}
-                      selectedMemberId={active.id}
-                      onSaved={() => reload(active.id === data.actor.id)}
-                    />
-                  </div>
-                </details>
+                <ActionWorkflow title="Management permissions" description="Edit capabilities for this member. Owner and grant restrictions still apply." trigger="Manage permissions"> <ClubAccessEditor key={`${active.id}:${active.updatedAt}`} clubId={clubId} initial={data} selectedMemberId={active.id} onSaved={() => reload(active.id === data.actor.id)} /> </ActionWorkflow>
               )}
               {caps.canTransferOwnership &&
                 active.status === "ACTIVE" &&

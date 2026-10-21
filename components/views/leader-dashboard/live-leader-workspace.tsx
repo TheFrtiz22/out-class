@@ -470,10 +470,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         <label className="flex gap-2"><input type="checkbox" checked={showGenderCounts} onChange={e => setShowGenderCounts(e.target.checked)} />Show round gender composition</label>
         {showGenderCounts && data?.genderCounts && <dl className="flex flex-wrap gap-3">{data.genderCounts.map(c => <div key={c.gender ?? "unset"}><dt className="inline">{c.gender ?? "Not provided"}: </dt><dd className="inline">{c.count}</dd></div>)}</dl>}
       </div>}
-      {!decisionsOnly && <details className="text-sm">
-        <summary className="w-fit cursor-pointer rounded py-2 text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
-          Academic filters
-        </summary>
+      {!decisionsOnly && <section className="w-full text-sm"><h3 className="font-medium">Academic filters</h3>
         <div className="mt-3 flex flex-wrap items-end gap-3">
           <select
             aria-label="Filter major"
@@ -538,16 +535,17 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           </div>
         </div>
           <div className="mt-3"><Label htmlFor="leader-act">ACT greater than</Label><Input id="leader-act" type="number" min={1} max={36} className="mt-2 w-36" value={act} onChange={e => setAct(e.target.value)} /></div>
-      </details>}
+      </section>}
         </div></details>
         <Button size="sm" variant="ghost" onClick={() => setRevision((value) => value + 1)}>
           <RefreshCw className="size-3.5" />
           Refresh
         </Button>
       </div>
-      <details className="text-sm"><summary className="min-h-11 cursor-pointer py-3 text-muted-foreground">{decisionsOnly ? "Board decision review" : "Interview kits & board review"}</summary><div className="space-y-4 border-l pl-4">
-      <p className="text-xs leading-6 text-muted-foreground">Recruitment voting saves immutable ballots across multiple passes. Leadership reviews and explicitly publishes application decisions when ready.</p>
-      <BoardDecisionMode
+      <section aria-label="Recruitment review" className="flex flex-wrap items-center justify-between gap-4 border-y py-4">
+        <div><h2 className="oc-card-heading">{decisionsOnly ? "Decision review" : "Recruitment review"}</h2><p className="mt-1 text-xs text-muted-foreground">Review candidates together. Publish decisions only after an explicit review.</p></div>
+        <div className="flex flex-wrap gap-2">
+      {hasPermission(membership, "applications.review") && (["decisions.view", "decisions.manage", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <BoardDecisionMode
         applicants={filtered}
         rounds={data.rounds}
         clubId={membership.clubId}
@@ -565,8 +563,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
               : previous,
           )
         }
-      />
-      </div></details>
+      />}
+
+          <Button variant="outline" asChild><Link href={`/club/${membership.clubId}/workspace?section=recruitment&tool=${decisionsOnly ? "applicants" : "decisions"}`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>{decisionsOnly ? "Review applicants" : "Review decisions"}</Link></Button>
+        </div>
+      </section>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground" role="status">
           {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}

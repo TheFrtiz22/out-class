@@ -29,7 +29,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   await page.route('**/*',route=>route.request().url().startsWith(f.url)?route.continue():route.abort())
   await page.goto(`${f.url}/?roundId=${f.scope.roundId}`)
   const nav=page.getByRole('navigation',{name:'Scheduling workflow'}),panel=page.getByRole('region',{name:'Review Panel Assignments'}),publication=page.getByRole('region',{name:'Publish interview booking'}),dialog=page.getByRole('dialog')
-  await nav.waitFor();assert.equal(await nav.getByRole('button').count(),3)
+  await nav.waitFor();assert.equal(await nav.getByRole('button').count(),4);assert.equal(await nav.getByRole('button',{name:/Availability/}).count(),1)
   const steps=[];async function step(label,locator){await locator.click();steps.push(label)}
   await step('Open times form',page.getByRole('button',{name:'Add interview times',exact:true}))
   await dialog.getByRole('textbox',{name:'Room name',exact:true}).fill('Synthetic Hall A')
@@ -69,7 +69,7 @@ test('browser: times → confirmed interviewers → booking, issue editor/overri
   assert.ok(f.state().bookingFlow.overrides.some(o=>o.memberId===target.id&&!o.revokedAt));await editor.getByRole('button',{name:'Done',exact:true}).click()
   await panel.getByRole('button',{name:'Confirm interviewers',exact:true}).click();await dialog.getByRole('button',{name:'Approve interviewers',exact:true}).click()
   assert.deepEqual(f.state().roomBookings,reservation)
-  await publication.getByText('More options',{exact:true}).click();await publication.getByRole('button',{name:'Pause booking',exact:true}).click();await dialog.getByRole('button',{name:'Pause booking',exact:true}).click();await publication.getByText('Paused',{exact:true}).waitFor()
+  await publication.getByRole('button',{name:'Pause booking',exact:true}).click();await dialog.getByRole('button',{name:'Pause booking',exact:true}).click();await publication.getByText('Paused',{exact:true}).waitFor()
   await applicant.reload();await applicant.getByText('Interview confirmed',{exact:true}).waitFor();await applicant.getByText(/paused new bookings/).waitFor();assert.deepEqual(f.state().roomBookings,reservation)
   const publishedBeforeAddingTimes=structuredClone(f.state().bookingFlow.panels[f.scope.roundId].published);await nav.getByRole('button',{name:/Set interview times/}).click();await page.getByRole('button',{name:'Add interview times',exact:true}).click();await dialog.getByLabel('Room name',{exact:true}).fill('Synthetic Hall B');await dialog.getByLabel('End time',{exact:true}).fill('10:20');await dialog.getByRole('button',{name:'Save times & continue',exact:true}).click();assert.deepEqual(f.state().roomBookings,reservation)
   await page.setViewportSize({width:390,height:844});await shot(page,'scheduling-publish-mobile');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false)

@@ -7,8 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state"
 import { NativeSelect } from "@/components/ui/native-select"
 import "@/components/shell/responsive-workspace.css"
 import Link from "next/link";
+import { ActionWorkflow } from "@/components/product/action-workflow";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { flushEditors } from "@/lib/autosave-navigation";
 import { meetingIsUpcoming, meetingDate } from "@/lib/meeting-presentation";
-import { CalendarDays, MapPin, ArrowRight } from "@/components/icons";
+import { CalendarDays, MapPin, ArrowRight, Plus } from "@/components/icons";
 import { useEffect, useState } from "react";
 import { useDemoMode } from "@/contexts/demo-context";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,7 +24,7 @@ import {
   closeMeetingCheckIn,
   meetingAttendance,
 } from "@/lib/workspace-api";
-import { resourceSchema } from "@/lib/meetings";
+import { meetingInputSchema, resourceSchema } from "@/lib/meetings";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +41,7 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
     [error, setError] = useState(""),
     [period, setPeriod] = useState<"upcoming" | "past">("upcoming"),
     [audience, setAudience] = useState(initialAudience),
-    [refresh, setRefresh] = useState(0);
+    [refresh, setRefresh] = useState(0), [activeId, setActiveId] = useState<string | null>(null), [notice, setNotice] = useState("");
   useEffect(() => {
     let current = true;
     setLoading(true);
@@ -64,21 +67,30 @@ export function MeetingList({ clubId, embedded = false, initialAudience = "ALL",
   const visible = meetings.filter(m => (audience === "ALL" || m.audience === audience) && meetingIsUpcoming(m) === (period === "upcoming")).sort((a, b) => (period === "upcoming" ? 1 : -1) * (+new Date(a.date) - +new Date(b.date)));
   return <section className="max-w-5xl space-y-7">
     {!embedded && <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading ">Club meetings</h2><Link className="text-sm underline" href="/meetings">All available meetings</Link></div>}
-    <p className="max-w-2xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance in one place. Past meetings include any recaps your club has shared.</p>
+    <div className="flex flex-wrap items-start justify-between gap-4"><p className="max-w-xl text-sm leading-7 text-muted-foreground">Agendas, resources, and attendance for your club.</p>
+      {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <MeetingCreateAction clubId={clubId} onSaved={() => { setPeriod("upcoming"); setAudience("ALL"); setNotice("Meeting created."); setRefresh(v => v + 1) }} />}
+    </div>
+    {notice && <p role="status" className="text-sm">{notice}</p>}
     <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
       <div role="group" aria-label="Meeting time" className="flex gap-1">{(["upcoming", "past"] as const).map(value => <Button key={value} variant={period === value ? "secondary" : "ghost"} aria-pressed={period === value} onClick={() => setPeriod(value)}>{value === "upcoming" ? "Upcoming" : "Past"}</Button>)}</div>
       <label className="flex items-center gap-3 text-sm">Audience<NativeSelect className="min-h-11 max-w-full rounded-md border bg-card px-3" value={audience} onChange={e => setAudience(e.target.value)}><option value="ALL">All permitted meetings</option><option value="RECRUITMENT">Recruitment / Interest</option><option value="MEMBERS">Members</option></NativeSelect></label>
     </div>
-    {!personalOnly && clubId && hasPermission(member, "meetings.manage") && <details className="rounded-lg border bg-card px-5"><summary className="min-h-12 cursor-pointer py-4 text-sm font-medium">Create a meeting</summary><MeetingEditor clubId={clubId} onSaved={() => setRefresh(v => v + 1)} /></details>}
+
     {loading && <LoadingState label="Loading meetings…" rows={3} />}
     {error && <div role="alert" className="space-y-3"><p>{error}</p><Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}
     {!loading && !error && !visible.length && <EmptyState density="compact" align="start" title={`No ${period} meetings for this audience`} description={period === "upcoming" ? "Check Past for earlier agendas and recaps." : "Shared meeting history will appear here."} />}
     <ul className="divide-y">{visible.map(meeting => <li key={meeting.id} className="py-5 first:pt-0">
-      <Link href={`/meetings/${meeting.id}`} className="group flex gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></Link>
+      <button type="button" onClick={() => setActiveId(meeting.id)} className="group flex w-full text-left gap-4 rounded-lg border bg-card p-5 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:p-6"><CalendarDays aria-hidden="true" className="mt-1 size-5 shrink-0 text-primary" /><div className="min-w-0 flex-1"><p className="text-xs text-muted-foreground">{!clubId && `${meeting.club.name} · `}{meeting.audience === "MEMBERS" ? "Members" : "Recruitment / Interest"}</p><h3 className="oc-card-heading mt-2 break-words">{meeting.title}</h3><p className="mt-3 text-sm">{meetingDate(meeting.date)}{meeting.endDate && ` — ${meetingDate(meeting.endDate)}`}</p><p className="mt-2 flex items-start gap-2 break-words text-sm text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />{meeting.location}</p><p className="mt-4 text-xs text-muted-foreground">{meeting.recap?.trim() ? "Recap available · " : ""}Open agenda, resources & attendance</p></div><ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0" /></button>
       {!personalOnly && hasPermission(user?.memberships.find(m => m.clubId === meeting.clubId), "meetings.attendance") && <MeetingAttendanceState key={`${meeting.id}:${refresh}`} meeting={meeting} />}
     </li>)}</ul>
+    <Sheet open={!!activeId} onOpenChange={open => { if (!open && !document.querySelector('[data-saving="true"]')) void flushEditors().then(() => setActiveId(null)).catch(() => {}) }}><SheetContent className="oc-workspace-drawer w-full overflow-y-auto sm:max-w-3xl"><SheetTitle className="sr-only">Meeting details</SheetTitle><SheetDescription className="sr-only">Agenda, resources, and attendance.</SheetDescription>{activeId && <MeetingDetail id={activeId} onUpdated={() => { setRefresh(value => value + 1); setNotice("Meeting updated.") }} />}</SheetContent></Sheet>
   </section>;
 }
+export function MeetingCreateAction({ clubId, onSaved }: { clubId: string; onSaved?: () => void }) {
+  const [notice, setNotice] = useState("");
+  return <div className="space-y-2"><ActionWorkflow showCloseAction={false} title="New meeting" description="Choose a time, place, and audience. Add an agenda or resources when you’re ready." trigger={<><Plus size={16} />New meeting</>} variant="default">{done => <MeetingEditor clubId={clubId} onCancel={done} onSaved={() => { done(); setNotice("Meeting created."); onSaved?.() }} />}</ActionWorkflow>{!onSaved && notice && <p role="status" className="text-xs">{notice}</p>}</div>;
+}
+
 /** Fetch the existing permission-checked roster only on request; list browsing does not fan out roster queries. */
 function MeetingAttendanceState({ meeting }: { meeting: Meeting }) {
   const [count, setCount] = useState<number | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(false);
@@ -89,44 +101,48 @@ function MeetingEditor({
   clubId,
   meeting,
   onSaved,
+  onCancel,
 }: {
   clubId: string;
   meeting?: Meeting;
   onSaved: () => void;
+  onCancel: () => void;
 }) {
   const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""), [failed, setFailed] = useState(false);
   const initial = resourceSchema.array().safeParse(meeting?.resources || []);
   const [resources, setResources] = useState(
     initial.success ? initial.data : [],
   );
   const [fields,setFields] = useState(() => ({ title: meeting?.title ?? "", description: meeting?.description ?? "", date: localDate(meeting ? new Date(meeting.date) : new Date()), endDate: meeting?.endDate ? localDate(new Date(meeting.endDate)) : "", location: meeting?.location ?? "", audience: meeting?.audience ?? "RECRUITMENT", agenda: meeting?.agenda ?? "", recap: meeting?.recap ?? "" }));
   const draftSave = useEditorDraft({ scope: { kind: "meeting", clubId, resourceId: meeting?.id ?? "new" }, value: { fields,resources }, restore: d=>{setFields(d.fields);setResources(d.resources)}, base: meeting ? String(meeting.revision) : "new" });
+  const [tab, setTab] = useState("details");
   const change = (key: keyof typeof fields, value: string) => setFields(current=>({...current,[key]:value}));
   return (
-    <form data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
+    <form data-saving={busy} data-autosave-editor="true" onBlur={draftSave.onBlur} data-unsaved={draftSave.dirty}
       className="space-y-4 py-4"
+      onInvalidCapture={event => { const field = event.target as HTMLElement; if (field.closest('section[hidden]')) setTab("resources"); else if (field.closest('div[hidden]')) setTab("details") }}
       onSubmit={async (e) => {
         e.preventDefault();
-        const form = e.currentTarget,
-          data = new FormData(form);
         setBusy(true);
-        setMessage("");
+        setMessage(""); setFailed(false);
         try {
+          const input = meetingInputSchema.safeParse({ ...fields, id: meeting?.id, clubId, resources, revision: meeting?.revision ?? 0, endDate: fields.endDate || null });
+          if (!input.success) throw new Error(input.error.issues[0].message);
           await draftSave.flush();
           await saveMeeting({
             id: meeting?.id,
             clubId,
-            title: data.get("title"),
-            description: data.get("description"),
-            date: new Date(String(data.get("date"))),
-            endDate: data.get("endDate")
-              ? new Date(String(data.get("endDate")))
+            title: fields.title,
+            description: fields.description,
+            date: new Date(fields.date),
+            endDate: fields.endDate
+              ? new Date(fields.endDate)
               : null,
-            location: data.get("location"),
-            audience: data.get("audience"),
-            agenda: data.get("agenda"),
-            recap: data.get("recap"),
+            location: fields.location,
+            audience: fields.audience,
+            agenda: fields.agenda,
+            recap: fields.recap,
             resources,
             revision: meeting?.revision || 0,
           });
@@ -138,6 +154,7 @@ function MeetingEditor({
           }
           onSaved();
         } catch (error) {
+          setFailed(true);
           setMessage(
             error instanceof Error ? error.message : "Could not save.",
           );
@@ -147,7 +164,9 @@ function MeetingEditor({
       }}
     >
       <AutosaveStatus save={draftSave} />
+      <div role="group" aria-label="Meeting editor sections" className="flex flex-wrap gap-1 border-b pb-3">{[["details", "Details"], ["content", "Description & agenda"], ["resources", "Resources"]].map(([id, label]) => <Button key={id} type="button" variant={tab === id ? "secondary" : "ghost"} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</Button>)}</div>
       <fieldset disabled={busy || !draftSave.ready || draftSave.recovery != null} className="space-y-4">
+        <div hidden={tab !== "details"} className="space-y-4">
         <label className="block">
           Title
           <Input
@@ -196,9 +215,11 @@ function MeetingEditor({
             value={fields.location} onChange={e=>change("location",e.target.value)}
           />
         </label>
-        {(["description", "agenda", "recap"] as const).map((key) => (
+        </div>
+        <div hidden={tab !== "content"} className="space-y-4">
+        {(["description", "agenda", ...(meeting ? ["recap" as const] : [])] as const).map((key) => (
           <label className="block capitalize" key={key}>
-            {key}
+            {key.charAt(0).toUpperCase() + key.slice(1)}
             <Textarea
               name={key}
               rows={4}
@@ -207,7 +228,8 @@ function MeetingEditor({
             />
           </label>
         ))}
-        <section className="space-y-3">
+        </div>
+        <section hidden={tab !== "resources"} className="space-y-3">
           <h3 className="oc-card-heading ">Slides, files, and links</h3>
           <p className="text-xs text-muted-foreground">
             Attach links to resources. For member-only documents, also restrict
@@ -289,13 +311,13 @@ function MeetingEditor({
             Add resource
           </Button>
         </section>
-        <Button type="submit">{busy ? "Saving…" : "Save meeting"}</Button>
+        <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={async () => { try { await draftSave.flush(); onCancel() } catch { /* Inline recovery keeps the draft open. */ } }}>Cancel</Button><Button type="submit">{busy ? "Saving…" : meeting ? "Save changes" : "Create meeting"}</Button></div>
       </fieldset>
-      <p role="status">{message}</p>
+      <p role={failed ? "alert" : "status"} className={failed ? "text-sm text-destructive" : "text-sm"}>{message}</p>
     </form>
   );
 }
-export function MeetingDetail({ id }: { id: string }) {
+export function MeetingDetail({ id, onUpdated }: { id: string; onUpdated?: () => void }) {
   const [meeting, setMeeting] = useState<Meeting | null>(null),
     [error, setError] = useState(""),
     [refresh, setRefresh] = useState(0);
@@ -378,15 +400,7 @@ export function MeetingDetail({ id }: { id: string }) {
         <MeetingAttendance meeting={meeting} />
       )}
       {hasPermission(member, "meetings.manage") && (
-        <details className="border-t pt-5">
-          <summary className="cursor-pointer font-medium">Edit meeting</summary>
-          <MeetingEditor
-            key={meeting.revision}
-            clubId={meeting.clubId}
-            meeting={meeting}
-            onSaved={() => setRefresh((v) => v + 1)}
-          />
-        </details>
+        <ActionWorkflow showCloseAction={false} title="Edit meeting" description="Update the meeting details, agenda, recap, or shared resources." trigger="Edit meeting">{done => <MeetingEditor key={meeting.revision} clubId={meeting.clubId} meeting={meeting} onCancel={done} onSaved={() => { done(); setRefresh(v => v + 1); onUpdated?.() }} />}</ActionWorkflow>
       )}
     </article>
   );

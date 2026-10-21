@@ -1,4 +1,5 @@
 "use client";
+import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useState } from "react";
 import {
   revealApplicantIdentity,
@@ -21,10 +22,7 @@ export function RevealApplicant({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
-    <details className="border-y py-4">
-      <summary className="cursor-pointer font-medium">
-        Authorized identity reveal
-      </summary>
+    <ActionWorkflow title="Authorized identity reveal" description="Reveal identity only with a recorded reason. Other reviewers remain in anonymous mode." trigger="Authorized identity reveal" presentation="sheet"><div data-saving={busy}>
       <p className="my-3 text-sm">
         This explicit exception is recorded in the audit log. Other reviewers
         remain in anonymous mode.
@@ -127,6 +125,6 @@ export function RevealApplicant({
         </div>
       )}
       {error && <p role="alert">{error}</p>}
-    </details>
+    </div></ActionWorkflow>
   );
 }

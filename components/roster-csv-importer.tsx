@@ -51,7 +51,7 @@ export function RosterCsvImporter({ clubId, onImported }: { clubId: string; onIm
     catch (e) { setError(e instanceof Error ? e.message : "Could not confirm import. Try again."); }
     finally { working.current = false; setBusy(false); }
   }
-  return <section className="space-y-4 rounded-xl border p-4 sm:p-6" aria-label="CSV member roster import" aria-busy={busy}>
+  return <section className="space-y-4 rounded-xl border p-4 sm:p-6" aria-label="CSV member roster import" aria-busy={busy} data-saving={busy} data-unsaved={!!preview && !result?.completed}>
     <div><h2 className="oc-section-heading ">Import member roster</h2><p className="text-sm text-muted-foreground">Upload → preview → confirm. Required: name, computing_id. Optional: year (2025–2030). Up to {ROSTER_MAX_ROWS.toLocaleString()} rows and 1 MB.</p></div>
     <div className="rounded-xl border border-dashed bg-muted/20 p-4 transition-colors hover:bg-muted/40 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/30 sm:p-5" onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (working.current) return; if (e.dataTransfer.files.length !== 1) { setError("Upload one CSV file at a time."); return; } void load(e.dataTransfer.files[0]); }}>
       <label className="block space-y-2"><span className="text-sm">Drop a CSV here or choose a file</span><Input type="file" accept=".csv,text/csv" aria-describedby={`roster-help-${clubId}`} aria-invalid={!!error} disabled={busy} onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; void load(file); }} /></label>

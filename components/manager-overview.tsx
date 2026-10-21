@@ -1,4 +1,7 @@
 "use client"
+import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
+const MeetingCreateAction = dynamic(() => import("@/components/meeting-workspace").then(module => module.MeetingCreateAction));
 import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
 import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck } from "@/components/icons"
@@ -23,6 +26,7 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
     ...(interviews > 0 ? [{ title: `${interviews} application${interviews === 1 ? "" : "s"} at interview stage`, detail: "Check recorded interview details and next steps in Applicants.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
   ]
   return <div className="oc-manager-overview">
+    <div className="flex flex-wrap items-start gap-2">{hasPermission(membership, "meetings.manage") && <MeetingCreateAction clubId={club.id} />}{hasPermission(membership, "tasks.manage") && <Button variant="outline" asChild><Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`}>Manage tasks</Link></Button>}{hasPermission(membership, "members.manage") && <Button variant="outline" asChild><Link href={clubWorkspaceHref(club.id, "members")}>Manage members</Link></Button>}</div>
     {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
       ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
       ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),

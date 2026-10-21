@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/ui/button";
 import { MetricStrip } from "@/components/product/metric-strip"
 import Link from "next/link"
 import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "@/components/icons"
@@ -23,6 +24,7 @@ export function RecruitingOverview({ data }: { data: Overview }) {
   ]
   const tools = navigation.filter(item => item.quiet)
   return <div className="oc-recruiting-overview">
+    <div className="flex flex-wrap gap-2">{hasPermission(membership, "applications.review") && (["decisions.manage", "decisions.view", "decisions.vote"] as const).some(permission => hasPermission(membership, permission)) && <Button asChild><Link href={`/club/${club.id}/workspace?section=recruitment&tool=applicants&voting=1`}>Start voting</Link></Button>}{navigation.find(item => item.id === "applicants")?.href && <Button variant="outline" asChild><Link href={navigation.find(item => item.id === "applicants")!.href!}>Review applicants</Link></Button>}{navigation.find(item => item.id === "decisions")?.href && <Button variant="outline" asChild><Link href={navigation.find(item => item.id === "decisions")!.href!}>Review decisions</Link></Button>}</div>
     {anonymousOnly && <p className="oc-recruiting-privacy"><ShieldCheck aria-hidden="true" size={17} />Your overview includes only anonymous rounds available to your review access.</p>}
     {canRead && recruitment && <MetricStrip label="Recruitment status" items={[
       { label: "to review", value: count("SUBMITTED", "IN_REVIEW"), href: navigation.find(item => item.id === "applicants")?.href, action: "Review applicants" },

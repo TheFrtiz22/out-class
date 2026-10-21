@@ -1,4 +1,5 @@
 "use client";
+import { ActionWorkflow } from "@/components/product/action-workflow";
 import { useAutosave } from "@/hooks/use-autosave";
 import { AutosaveStatus } from "@/components/ui/autosave-status";
 import { useAuth } from "@/contexts/auth-context";
@@ -14,7 +15,7 @@ import {
 import type { KitQuestion } from "@/lib/interview-kits";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ListChecks, ChevronDown } from "@/components/icons";
+import { ListChecks } from "@/components/icons";
 import "@/components/clubs/interview-kit-editor.css";
 export function InterviewKitEditor({
   clubId,
@@ -86,15 +87,8 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
   }
   return (
     <section className="oc-kit-round" data-autosave-editor="true" data-unsaved={dirty} data-saving={busy} aria-label={roundInfo.name}>
-      <h3><button className="oc-kit-round-trigger" type="button" aria-expanded={open} aria-controls={'kit-panel-' + round} id={'kit-heading-' + round} onClick={() => setOpen(value => !value)}>
-        <ChevronDown size={18} aria-hidden="true" className={open ? "oc-kit-chevron is-open" : "oc-kit-chevron"} />
-        <span className="oc-kit-round-name">{roundInfo.name}</span>
-        <span className="oc-kit-round-count">{!canReadKit ? "Restricted" : loaded ? questions.length + (questions.length === 1 ? ' question' : ' questions') : message ? "Could not load" : "Loading…"}</span>
-        <span className="oc-kit-round-status" role="status">{autosave.error ? "Couldn’t save" : busy ? "Saving…" : autosave.recovery != null ? "Draft available" : dirty ? "Unsaved changes" : ""}</span>
-      </button></h3>
-      <div id={'kit-panel-' + round} role="region" aria-labelledby={'kit-heading-' + round} hidden={!open} className="oc-kit-builder" onBlur={event => {
-        if (!event.relatedTarget?.closest('.oc-kit-round-trigger')) autosave.onBlur();
-      }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4"><div><h3 id={'kit-heading-' + round} className="font-medium">{roundInfo.name}</h3><p className="mt-1 text-xs text-muted-foreground">{!canReadKit ? "Restricted" : loaded ? `${questions.length} questions` : message ? "Could not load" : "Loading…"}</p></div><Button variant="outline" onClick={() => setOpen(true)}>{canEdit ? "Manage questions" : "View question bank"}<span className="sr-only"> · {roundInfo.name}</span></Button></div>
+      <ActionWorkflow title={roundInfo.name + " · Interview kit"} description="Questions and evaluation guidance for this round. Existing interviews retain their original kit." open={open} onOpenChange={setOpen} presentation="sheet"><div id={'kit-panel-' + round} className="oc-kit-builder" onBlur={autosave.onBlur} data-autosave-editor="true" data-unsaved={dirty} data-saving={busy}>
           {!canReadKit ? <div role="alert" className="space-y-3"><p>This round is saved. Editing its kit requires an explicit President, Vice-president or Board grant. Assigned interviewers can browse its question bank.</p>{canManageGrants && <Link className="underline" href={interviewSetupHref(clubId, round, "access")}>Manage interview access</Link>}</div> : <>
           {!canEdit && <p className="mb-4 text-sm text-muted-foreground">Read-only question bank. Use questions in your assigned interview workspace.</p>}
           <h4 className="oc-kit-builder-label"><ListChecks size={19} aria-hidden="true" />Question builder</h4>
@@ -116,7 +110,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
                   )
                 }
               />
-              <details className="oc-kit-guidance"><summary>Answer key / evaluation guidance{q.guidance?.trim() ? " · Added" : " · Optional"}</summary>
+              <section className="oc-kit-guidance"><label className="mb-2 block text-sm" htmlFor={`guidance-${round}-${q.id}`}>Answer key / evaluation guidance · Optional</label>
               <label className="sr-only" htmlFor={`guidance-${round}-${q.id}`}>Answer key / evaluation guidance</label>
               <Textarea
                 id={`guidance-${round}-${q.id}`}
@@ -132,7 +126,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
                   )
                 }
               />
-              </details>
+              </section>
               {canEdit && <div className="oc-kit-question-actions flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -194,7 +188,7 @@ export function RoundKitEditor({ clubId, roundInfo, initiallyOpen = false }: {
           Reload kit
         </Button>
         </>}
-      </div>
+      </div></ActionWorkflow>
     </section>
   );
 }

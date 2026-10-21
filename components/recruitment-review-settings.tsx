@@ -1,4 +1,5 @@
 "use client";
+import { ActionWorkflow } from "@/components/product/action-workflow";
 import { DecisionTemplateEditor } from "@/components/communications/template-editor";
 import { useState } from "react";
 import {
@@ -99,5 +100,5 @@ export function RecruitmentReviewSettings({
         <DecisionTemplateEditor clubId={clubId} />
       </div>
   );
-  return embedded ? content : <details className="border-y py-4"><summary className="cursor-pointer font-medium">Review privacy and test requirements</summary>{content}</details>;
+  return embedded ? content : <ActionWorkflow title="Review privacy & test requirements" description="Configure round privacy and required applicant test information." trigger="Review privacy & test requirements" presentation="sheet">{content}</ActionWorkflow>;
 }
