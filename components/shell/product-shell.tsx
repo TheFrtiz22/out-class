@@ -15,7 +15,7 @@ import { TutorialWalkthrough } from "@/components/tutorial-walkthrough"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
-import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, SidebarSimple } from "@/components/icons"
+import { Bell, Menu, UserRound, LogOut, Home, Users2, Compass, Bookmark, CalendarDays, FileText, ListChecks, CheckCircle2, Settings, Megaphone, Shield, SlidersHorizontal, Video, RefreshCw, PanelLeftIcon } from "@/components/icons"
 import { toast } from "sonner"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
@@ -150,7 +150,7 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   function sidebar(dock = false) { return <div className={cn("oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6", dock && "oc-dock-rail", dock && !dockExpanded && "oc-dock-collapsed")}>
     {dock ? <div className="oc-dock-top">
       <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant={dockExpanded ? "dark" : "mark"} /></button>
-      <button type="button" className="oc-dock-toggle" aria-label={dockExpanded ? "Collapse navigation dock" : "Expand navigation dock"} aria-expanded={dockExpanded} onClick={toggleDock}><SidebarSimple size={20} aria-hidden="true" /></button>
+      <button type="button" className="oc-dock-toggle" aria-label={dockExpanded ? "Collapse navigation dock" : "Expand navigation dock"} aria-expanded={dockExpanded} onClick={toggleDock}><PanelLeftIcon size={20} aria-hidden="true" /></button>
     </div> : <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /></button>}
     <div className="mb-7"><ClubWorkspaceSwitcher clubId={manager ? clubId : ""} managersOnly={!platform} adminActive={platform} /></div>
     {!manager && clubId && clubName && <p className="mb-4 break-words px-3 text-sm font-semibold text-primary">{clubName}</p>}
