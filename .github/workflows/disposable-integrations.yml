@@ -1,0 +1,95 @@
+name: Disposable integration verification
+
+# No repository secrets, hosted Auth, production database or external SMTP
+# credentials. Each job provisions its own local fixture on a fresh runner.
+on:
+  pull_request:
+    paths:
+      - "actions/**"
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "prisma/**"
+      - "scripts/**"
+      - "supabase/**"
+      - "tests/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/disposable-integrations.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: disposable-integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-postgres:
+    name: Native PostgreSQL / ${{ matrix.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [security, events, audiences, transactions, scheduler]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Scheduler baseline compares against a reviewed historical commit.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install browser for event discovery fixture
+        if: matrix.suite == 'events'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run native tests on dedicated disposable PostgreSQL
+        env:
+          # No secrets or hosted connection strings are supplied to this job.
+          OUTCLASS_POLL_ONLY: "0"
+        run: |
+          case "${{ matrix.suite }}" in
+            security) node scripts/run-disposable-postgres.cjs security ;;
+            events) node scripts/run-disposable-postgres.cjs events ;;
+            audiences) node scripts/test-decision-publication-local.cjs ;;
+            transactions) node scripts/test-decision-transactions-local.cjs ;;
+            scheduler) node scripts/test-scheduler-polling-local.cjs ;;
+            *) echo "Unknown suite" >&2; exit 2 ;;
+          esac
+
+  authenticated-next-supabase:
+    name: Local Auth, settings and navigation
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Run Next.js / Supabase Auth / SMTP / settings integration
+        run: node scripts/run-onboarding-e2e.cjs --club-integration
+
+  coverage-report:
+    name: Integration infrastructure coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/check-disposable-integration-coverage.cjs
