@@ -150,6 +150,10 @@
   .oc-public-nav .oc-public-primary { padding-inline: 16px; }
   .oc-public-mobile .oc-public-mobile-login { display: flex; }
 }
+@media (max-width: 380px) {
+  .oc-public-nav-row { padding-inline: 12px 8px; gap: 8px; }
+  .oc-public-nav .oc-public-primary { padding-inline: 8px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .oc-public-nav *, .oc-landing .oc-public-nav :is(a, button) { transition: none !important; }
   .oc-public-nav :is(a, button) .oc-public-letter-track { transform: none !important; }

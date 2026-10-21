@@ -8,7 +8,7 @@ export default async function EventApprovalsPage() {
   const result = await adminPageLoad("/platform/events", requirePlatformAdmin);
   if (result.supportCode) return <AdminRecovery supportCode={result.supportCode} />;
   return (
-    <main data-workspace-detail className="mx-auto max-w-6xl space-y-6 p-6">
+    <section data-workspace-detail className="mx-auto max-w-6xl space-y-6 p-6">
       <Link href="/platform" className="underline">
         Admin workspace
       </Link>
@@ -18,6 +18,6 @@ export default async function EventApprovalsPage() {
         description="Review public campus events before their flyers appear on Corkboard."
       />
       <EventApprovals />
-    </main>
+    </section>
   );
 }

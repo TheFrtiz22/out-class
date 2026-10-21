@@ -1,0 +1,25 @@
+﹣ disposable real Auth/password/MFA elevation, Admin routes/actions, invitations, reports, impersonation and logout (0.375125ms) # SKIP
+✔ real application editor loads shared configuration, reorders/marks questions and previews the exact saved shape (69.030875ms)
+✔ new recruiting rounds and duration/instructions changes reach the versioned pipeline action (26.514542ms)
+✔ view-as validates MFA guard, origin, explicit confirmation, target and membership before starting (75.89175ms)
+✔ view-as stores only hashed tokens, binds original actor, preserves auth cookies, and audits explicit end (10.980875ms)
+✔ expiry, revoked grants, newly privileged targets and replaced sessions fail closed (22.323625ms)
+✔ middleware allows effective application access but denies provider identity changes (5.353916ms)
+✔ blocked mutation attempts produce attributed audit events and never execute a target mutation (5.764458ms)
+✔ search filters remain server-side and exclude password hashes and view-session tokens (25.917791ms)
+✔ admin suspension protects self, privileged administrators, and the last active club owner (19.513542ms)
+✔ invalid support context and platform mutations fail closed even if middleware is bypassed (23.802375ms)
+✔ normal account API queries the authenticated identity without obsolete omit fields (4.052625ms)
+✔ context synchronization reports only a marker and session ID, never tokens or target data (4.652625ms)
+✔ form disables submission while loading or saving and exposes the committed success and unsent email state (63.818416ms)
+✔ invalid computing IDs show an accessible field error without invoking the server action (11.342167ms)
+✔ server conflicts preserve form inputs and retry identity; a transport failure allows safe retry (13.363709ms)
+✔ failed school loading shows a retry state and keeps creation disabled (7.465ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 480.759917

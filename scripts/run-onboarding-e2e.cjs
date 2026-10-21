@@ -97,8 +97,8 @@ async function ready(url,headers={}){
  const appLog=fs.openSync(path.join(root,'server.log'),'w');app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,stdio:['ignore',appLog,appLog]});
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
- const testFile=process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
- const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,'tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
+ const testFile=process.argv.includes('--a11y')?'tests/accessibility/authenticated.test.cjs':process.argv.includes('--settings')?'tests/settings-navigation-e2e.test.cjs':'tests/onboarding-e2e.test.cjs';
+ const result=spawnSync(process.execPath,['--test','--test-concurrency=1',testFile,...(process.argv.includes('--a11y')?[]:['tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'])],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});
  if(result.status!==0)throw Error(`${process.argv.includes('--settings')?'Settings navigation':'Complete onboarding'} E2E failed`);
  if(keep){console.log(`Keeping the isolated app for review at ${settings.appUrl}. Local test configuration: ${configFile}`);return;}
 })().catch(error=>{console.error(error.message);process.exitCode=1;}).finally(()=>{

@@ -28,13 +28,13 @@ function CardHeader({ className, ...props }: React.ComponentProps<'div'>) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<'h3'>) {
+function CardTitle({ className, children, ...props }: React.ComponentProps<'h3'>) {
   return (
     <h3
       data-slot="card-title"
       className={cn('oc-card-heading text-card-foreground', className)}
       {...props}
-    />
+    >{children}</h3>
   )
 }
 

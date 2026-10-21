@@ -13,7 +13,7 @@ export function FeatureOrbit({ perspective, onComplete }: { perspective: Landing
   const chapters = journeyChapters[perspective]
   const search = useSearchParams().toString()
   const { rootRef, active, settled, enhanced } = useFeatureOrbit(chapters.length)
-  return <div ref={rootRef} id="product-journey" className="oc-feature-orbit" data-perspective={perspective} aria-label={`${perspective === "student" ? "Student" : "Club leader"} feature showcase`}>
+  return <div ref={rootRef} id="product-journey" className="oc-feature-orbit" role="group" data-perspective={perspective} aria-label={`${perspective === "student" ? "Student" : "Club leader"} feature showcase`}>
     <div className="oc-orbit-waypoints">
       {chapters.map((chapter, index) => <div key={chapter.stage} id={`journey-${index + 1}`} tabIndex={-1} role="group" aria-label={`${chapter.label} feature`} data-orbit-anchor="" data-stage={chapter.stage} style={{ top: `calc(var(--oc-orbit-step, 80svh) * ${index})` }} />)}
     </div>

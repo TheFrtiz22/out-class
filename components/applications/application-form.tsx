@@ -131,6 +131,7 @@ export function ApplicationForm({
         ...current,
         [id]: "Choose a PDF up to 10 MB, or add a document link.",
       }))
+      setError("The selected document could not be uploaded.")
       return
     }
     setBusy(true)
@@ -180,13 +181,15 @@ export function ApplicationForm({
         </div>
       </div>
       {error && (
-        <p
+        <div
           role="alert"
           className="rounded-md border border-destructive/30 p-4 text-sm text-destructive"
         >
-          {error}
-        </p>
+          <p>{error}</p>
+          {!!Object.keys(errors).length && <ul className="mt-2 list-disc pl-5">{questions.filter(question => errors[question.id]).map(question => <li key={question.id}><a className="underline" href={`#answer-${question.id}`} onClick={event => { event.preventDefault(); document.getElementById(`answer-${question.id}`)?.focus() }}>{question.prompt}: {errors[question.id]}</a></li>)}</ul>}
+        </div>
       )}
+      <p role="status" aria-atomic="true" className="text-sm">{message}</p>
       <form onSubmit={review} noValidate className="space-y-8">
         {closed && <p role="status" className="text-sm text-muted-foreground">Applications are closed. You can still save your draft.</p>}
         <fieldset disabled={busy} className="min-w-0 space-y-9">
@@ -212,6 +215,8 @@ export function ApplicationForm({
                   <Input
                     id={`upload-${question.id}`}
                     type="file"
+                    aria-describedby={`help-${question.id}`}
+                    aria-invalid={!!errors[question.id]}
                     accept="application/pdf"
                     onChange={(event) => {
                       void upload(question.id, event.target.files?.[0])
@@ -228,9 +233,9 @@ export function ApplicationForm({
                   ? `${wordCount(responses[question.id] || "")} words${question.wordLimit != null ? ` · ${question.wordLimit} maximum` : " · No word limit specified"}`
                   : question.type === "FILE_UPLOAD"
                     ? "Use a document link the club can access. Attachments save automatically; uploading never submits your application."
-                    : "Enter your selection from the choices in the prompt. If no choices are listed, ask the club for clarification."}
+                    : question.type === "MULTIPLE_CHOICE" ? "Select one option. If no choices are listed, ask the club for clarification." : "Enter your response."}
                 {errors[question.id] && (
-                  <p className="mt-2 text-destructive" role="alert">
+                  <p className="mt-2 text-destructive">
                     {errors[question.id]}
                   </p>
                 )}

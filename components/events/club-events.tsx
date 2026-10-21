@@ -266,12 +266,14 @@ function EventEditor({
           <label>
             Description
             <textarea
+              aria-describedby="event-description-help"
               required
               maxLength={10000}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </label>
+          <p id="event-description-help" className="text-xs leading-relaxed text-muted-foreground">Include all important flyer information here, including access details and any instructions shown only in the image. Students can read this description in the event details without viewing the flyer.</p>
           <div className="oc-event-editor-pair">
             <label>
               Category

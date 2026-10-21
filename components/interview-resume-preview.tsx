@@ -68,7 +68,9 @@ export default function InterviewResumePreview({ resource, name, onExpand, focus
   return <div className="oc-resume-mini">
     {!ready && !error && <p role="status">Loading résumé…</p>}
     {error && <p role="status">Preview unavailable. Use Expand résumé to view or download the document.</p>}
-    <div ref={element => { host.current = element; if (focusRef) focusRef.current = element; }} className="oc-resume-preview" role="region" aria-label={`${name} résumé preview. Scroll to read all pages. Click to expand.`} tabIndex={0}
+    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- The read-only region scrolls; the button variant handles Enter/Space. */}
+    <div ref={element => { host.current = element; if (focusRef) focusRef.current = element; }} className="oc-resume-preview" role={onExpand ? "button" : "region"} aria-label={`${name} résumé preview. Scroll to read all pages.${onExpand ? " Press Enter to expand." : ""}`} tabIndex={0}
+      onKeyDown={event => { if (onExpand && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); onExpand(1) } }}
       onPointerDown={e => gesture.down(e, e.currentTarget)} onPointerMove={gesture.move} onPointerCancel={gesture.cancel} onWheel={gesture.cancel} onScroll={gesture.cancel}
       onPointerUp={e => gesture.up(e, e.currentTarget, !!window.getSelection()?.toString())}
       onClick={e => { if (onExpand && gesture.click()) onExpand(Number((e.target as HTMLElement).closest('[data-page]')?.getAttribute('data-page') || 1)); }} />

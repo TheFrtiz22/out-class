@@ -107,10 +107,14 @@ test("board uses original flyer in accessible modal, keyboard button activation 
   let tree = render();
   const trigger = all(tree).find(
     (n) =>
-      n.type === "button" && n.props["aria-label"]?.includes("Campus Night"),
+      n.type === "button" && n.props.className === "oc-pinned-flyer",
   );
   assert.ok(trigger);
   assert.equal(trigger.props.type, "button");
+  // The poster's visible content supplies its name, including its event title.
+  // An overriding aria-label previously omitted visible words (WCAG 2.5.3).
+  assert.equal(trigger.props["aria-label"], undefined);
+  assert.ok(all(trigger).some(n => n.props?.event?.title === "Campus Night"));
   let focused = false;
   const origin = {
     isConnected: true,

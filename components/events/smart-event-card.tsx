@@ -21,7 +21,7 @@ export function SmartEventCard({ event, save, onOpen }: { event: CampusEvent; sa
     <div className="oc-smart-event-media" data-template={event.template}>
       {hasImage ? <Image src={event.flyerUrl!} alt={`${event.title} event poster`} fill sizes="(max-width: 700px) 100vw, (max-width: 1100px) 38vw, 420px" unoptimized loading="lazy" onError={() => setFailedImage(event.flyerUrl)} /> :
         <div className="oc-smart-event-fallback" aria-hidden="true"><span>{event.clubName}</span><strong>{event.title}</strong><span className="oc-smart-event-fallback-rule" /><span>{event.category || "On Grounds"} · OutClass</span></div>}
-      <time className="oc-smart-event-date" dateTime={event.date} aria-label={eventDateLabel(event.date)}><span>{month.format(new Date(event.date))}</span><strong>{day.format(new Date(event.date))}</strong></time>
+      <time className="oc-smart-event-date" dateTime={event.date}><span className="sr-only">{eventDateLabel(event.date)}</span><span aria-hidden="true">{month.format(new Date(event.date))}</span><strong aria-hidden="true">{day.format(new Date(event.date))}</strong></time>
     </div>
     <div className="oc-smart-event-copy">
       <div className="oc-smart-event-meta"><span className="oc-smart-event-host">{event.clubName}</span>{event.category && <span className="oc-smart-event-category">{event.category}</span>}</div>

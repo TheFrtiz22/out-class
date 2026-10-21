@@ -8,7 +8,7 @@ export type EventSaveState = { identity: string; saved: boolean; ready: boolean;
 
 export function EventSaveButton({ event, identity, saved, ready, pending, onSave }: EventSaveState & { event: CampusEvent }) {
   if (!identity) return <Link className="oc-event-pill" href={`/login?next=${encodeURIComponent(`/corkboard?event=${event.id}`)}`} aria-label={`Sign in to save ${event.title}`}><Bookmark size={17} aria-hidden="true" />Save</Link>;
-  return <button type="button" className="oc-event-pill" aria-pressed={saved} aria-label={`${saved ? "Unsave" : "Save"} ${event.title}`} disabled={!ready || pending} onClick={onSave}>
+  return <button type="button" className="oc-event-pill" aria-pressed={saved} aria-label={`${pending ? "Saving…" : saved ? "Saved" : "Save"} ${event.title}`} disabled={!ready || pending} onClick={onSave}>
     <Bookmark size={17} weight={saved ? "fill" : "regular"} aria-hidden="true" />{pending ? "Saving…" : saved ? "Saved" : "Save"}
   </button>;
 }
@@ -28,5 +28,5 @@ export function EventCalendarButton({ event }: { event: CampusEvent }) {
     // Keep the object alive until the browser has started the download.
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
-  return <button type="button" className="oc-event-pill" onClick={download} aria-label={`Add ${event.title} to calendar`}><CalendarPlus size={17} aria-hidden="true" />Add to Calendar</button>;
+  return <button type="button" className="oc-event-pill" onClick={download} aria-label={`Add to Calendar: ${event.title}`}><CalendarPlus size={17} aria-hidden="true" />Add to Calendar</button>;
 }

@@ -98,7 +98,7 @@ function StepProgress({ current }: { current: number }) {
             <div
               key={step.label}
               className={`flex flex-1 items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
-                i + 1 <= current ? "text-primary" : "text-neutral-400"
+                i + 1 <= current ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {i + 1 < current ? (
@@ -156,7 +156,8 @@ function ResumeDropZone({
         <button
           type="button"
           onClick={onRemove}
-          className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+          aria-label="Remove résumé"
+          className="rounded-md p-1 text-muted-foreground hover:bg-neutral-100 hover:text-neutral-700"
         >
           <X className="size-4" />
         </button>
@@ -166,6 +167,10 @@ function ResumeDropZone({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Drag & drop your resume here, or press Enter to upload. PDF up to 10 MB."
+      onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); inputRef.current?.click() } }}
       onDragOver={(e) => {
         e.preventDefault()
         setDragOver(true)
@@ -180,7 +185,7 @@ function ResumeDropZone({
       }`}
     >
       <Upload
-        className={`size-8 ${dragOver ? "text-primary" : "text-neutral-400"}`}
+        className={`size-8 ${dragOver ? "text-primary" : "text-muted-foreground"}`}
       />
       <p className="text-sm font-medium text-neutral-700">
         Drag & drop your resume here
@@ -646,7 +651,7 @@ export function StudentOnboardingWizard({
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label>Graduation year</Label>
+                    <Label htmlFor="onboarding-grad-year">Graduation year</Label>
                     <Select
                       value={step3Form.watch("gradYear")}
                       onValueChange={(v) =>
@@ -655,7 +660,7 @@ export function StudentOnboardingWizard({
                         })
                       }
                     >
-                      <SelectTrigger className="h-11 w-full rounded-md border-neutral-200 shadow-none">
+                      <SelectTrigger id="onboarding-grad-year" className="h-11 w-full rounded-md border-neutral-200 shadow-none">
                         <SelectValue placeholder="Year" />
                       </SelectTrigger>
                       <SelectContent>
@@ -693,7 +698,7 @@ export function StudentOnboardingWizard({
                   <div className="space-y-1.5">
                     <Label htmlFor="gpa">
                       GPA out of 4.0{" "}
-                      <span className="font-normal text-neutral-400">
+                      <span className="font-normal text-muted-foreground">
                         (optional)
                       </span>
                     </Label>
@@ -718,7 +723,7 @@ export function StudentOnboardingWizard({
                     {step3Form.formState.errors.actScore && <p role="alert" className="text-xs text-red-600">{step3Form.formState.errors.actScore.message}</p>}
                     <Label htmlFor="satScore">
                       SAT score{" "}
-                      <span className="font-normal text-neutral-400">
+                      <span className="font-normal text-muted-foreground">
                         (optional)
                       </span>
                     </Label>
@@ -768,7 +773,7 @@ export function StudentOnboardingWizard({
               >
 
                 <div className="space-y-3">
-                  <Label>Experience (optional)</Label>
+                  <p className="text-sm font-medium">Experience (optional)</p>
                   {experienceFields.fields.map((field, index) => <div key={field.id} className="space-y-2 rounded-lg border p-3">
                     <Input aria-label={`Experience ${index + 1} role`} placeholder="Role or title" {...step4Form.register(`experiences.${index}.title`)} />
                     <Input aria-label={`Experience ${index + 1} organization`} placeholder="Club, employer, or organization" {...step4Form.register(`experiences.${index}.subtitle`)} />
@@ -781,7 +786,7 @@ export function StudentOnboardingWizard({
                 <div className="space-y-1.5">
                   <Label htmlFor="linkedinUrl">
                     LinkedIn profile{" "}
-                    <span className="font-normal text-neutral-400">
+                    <span className="font-normal text-muted-foreground">
                       — Optional / Skippable
                     </span>
                   </Label>
@@ -802,7 +807,7 @@ export function StudentOnboardingWizard({
                 <div className="space-y-1.5">
                   <Label>
                     Resume{" "}
-                    <span className="font-normal text-neutral-400">
+                    <span className="font-normal text-muted-foreground">
                       (optional)
                     </span>
                   </Label>
@@ -846,7 +851,7 @@ export function StudentOnboardingWizard({
         {step === 4 && <Button variant="ghost" disabled={loading} onClick={() => setStep(3)} className="mt-3"><ArrowLeft className="size-4" />Back to academics</Button>}
         {onSignIn && <p className="mt-5 text-center text-sm text-neutral-600">Already have an account? <button type="button" disabled={loading} onClick={onSignIn} className="font-semibold text-primary underline">Sign in</button></p>}
         {/* Footer */}
-        <p className="mt-5 text-center text-xs text-neutral-400">
+        <p className="mt-5 text-center text-xs text-muted-foreground">
           For University of Virginia students and club leaders.
         </p>
       </div>

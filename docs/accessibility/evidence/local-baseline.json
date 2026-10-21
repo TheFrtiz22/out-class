@@ -1,0 +1,4466 @@
+{
+  "evaluatedAt": "2026-10-20T19:53:26.712Z",
+  "url": "http://127.0.0.1:3119/",
+  "title": "OutClass | UVA Club Applications & Recruitment",
+  "version": "7ad83d46a3d533b54b9503dd25f7793e5dbb1881",
+  "violations": [],
+  "incomplete": [
+    {
+      "id": "aria-prohibited-attr",
+      "impact": "serious",
+      "tags": [
+        "cat.aria",
+        "wcag2a",
+        "wcag412",
+        "EN-301-549",
+        "EN-9.4.1.2",
+        "RGAAv4",
+        "RGAA-7.1.1"
+      ],
+      "description": "Ensure ARIA attributes are not prohibited for an element's role",
+      "help": "Elements must only use permitted ARIA attributes",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/aria-prohibited-attr?application=playwright",
+      "nodes": [
+        {
+          "any": [],
+          "all": [],
+          "none": [
+            {
+              "id": "aria-prohibited-attr",
+              "data": {
+                "role": null,
+                "nodeName": "div",
+                "messageKey": "noRoleSingular",
+                "prohibited": [
+                  "aria-label"
+                ]
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "aria-label attribute is not well supported on \"div\" elements with no valid role attribute."
+            }
+          ],
+          "impact": "serious",
+          "html": "<div id=\"product-journey\" class=\"oc-feature-orbit\" data-perspective=\"leader\" aria-label=\"Club leader feature showcase\" data-orbit-enhanced=\"false\" data-active-chapter=\"0\" style=\"--oc-orbit-step: 800px; --oc-orbit-run: 4280px;\">",
+          "target": [
+            "#product-journey"
+          ],
+          "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on \"div\" elements with no valid role attribute."
+        }
+      ]
+    },
+    {
+      "id": "color-contrast",
+      "impact": "serious",
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT",
+        "RGAAv4",
+        "RGAA-3.2.1"
+      ],
+      "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.14/color-contrast?application=playwright",
+      "nodes": [
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>H</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">H</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>w</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">w</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>I</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">I</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>W</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(8) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">W</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(8) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>r</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">r</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>k</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">k</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"/#about\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>A</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">A</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>b</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">b</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(4) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(4) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>O</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(7) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">O</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(7) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(8) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(8) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>C</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">C</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>l</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">l</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>a</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">a</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(13) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(13) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(14) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"about\"]:nth-child(2) > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(14) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>F</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">F</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>A</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">A</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>Q</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">Q</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"uva#faq\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>R</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">R</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>e</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">e</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>q</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">q</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(4) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(4) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>e</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">e</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">s</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(7) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(7) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>Y</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">Y</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">u</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>r</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">r</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(12) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>S</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(14) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">S</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(14) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>c</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(15) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">c</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(15) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>h</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(16) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">h</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(16) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(17) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(17) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(18) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(18) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>l</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(19) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">l</span>",
+          "target": [
+            ".oc-public-desktop > .oc-public-link[href$=\"request-school\"] > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(19) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>L</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">L</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>o</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">o</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>g</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">g</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>I</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">I</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>n</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<div class=\"oc-public-nav-surface\">",
+                  "target": [
+                    ".oc-public-nav-surface"
+                  ]
+                },
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">n</span>",
+          "target": [
+            ".oc-public-login > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">G</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(1) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">e</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(2) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(3) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">S</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(5) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(6) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">a</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(7) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">r</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(8) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">t</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(9) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">e</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(10) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.8pt (13px)",
+                "fontWeight": "normal",
+                "messageKey": "shortTextContent",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<a data-slot=\"button\" data-size=\"default\" class=\"inline-flex items-ce...\" href=\"/signup\">",
+                  "target": [
+                    ".h-10"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element content is too short to determine if it is actual text content"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-public-letter-copy\">d</span>",
+          "target": [
+            ".h-10 > .oc-public-label > .oc-public-label-visual[aria-hidden=\"true\"] > .oc-public-letter:nth-child(11) > .oc-public-letter-track > .oc-public-letter-copy"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element content is too short to determine if it is actual text content"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "8.3pt (11px)",
+                "fontWeight": "bold",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p class=\"oc-hero-context\">Made for University of Virginia</p>",
+          "target": [
+            ".oc-hero-context"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "39.4pt (52.56px)",
+                "fontWeight": "bold",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "3:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<h1 id=\"outclass-hero-title\" class=\"oc-hero-headline\">Build your next class. Bring your club together.</h1>",
+          "target": [
+            "#outclass-hero-title"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "17.8pt (23.76px)",
+                "fontWeight": "normal",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p class=\"oc-hero-tagline\">Your people. A clearer process.</p>",
+          "target": [
+            ".oc-hero-tagline"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "12.0pt (16px)",
+                "fontWeight": "normal",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p>Applications, interview panels, decisions, and member life. One workspace for the team behind it all.</p>",
+          "target": [
+            ".oc-hero-support > p:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "9.0pt (12px)",
+                "fontWeight": "normal",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p class=\"oc-hero-audience\">For UVA students and the clubs they’ll call home.</p>",
+          "target": [
+            ".oc-hero-audience"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p class=\"oc-feature-category\"><span>01</span>Set Up</p>",
+          "target": [
+            "div[aria-label=\"1 of 6\"] > .oc-feature-ink > .oc-feature-category"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>01</span>",
+          "target": [
+            "div[aria-label=\"1 of 6\"] > .oc-feature-ink > .oc-feature-category > span"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "25.8pt (34.4px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "3:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<p class=\"oc-feature-statement\">Make your club’s workspace your own.</p>",
+          "target": [
+            "div[aria-label=\"1 of 6\"] > .oc-feature-ink > .oc-feature-statement"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "8.3pt (11px)",
+                "fontWeight": "normal",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span class=\"oc-feature-position\" aria-hidden=\"true\">01<span> / 06</span></span>",
+          "target": [
+            ".oc-feature-position"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "8.3pt (11px)",
+                "fontWeight": "normal",
+                "messageKey": "imgNode",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [
+                {
+                  "html": "<img alt=\"\" fetchpriority=\"high\" loading=\"eager\" width=\"2500\" height=\"1667\" decoding=\"async\" data-nimg=\"1\" class=\"oc-campus-photo\" style=\"color:transparent\" sizes=\"100vw\" srcset=\"/_next/image?url=%2F...\" src=\"/_next/image?url=%2F...\">",
+                  "target": [
+                    ".oc-campus-photo"
+                  ]
+                }
+              ],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because element contains an image node"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span> / 06</span>",
+          "target": [
+            ".oc-feature-position > span"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "10.5pt (14px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<button type=\"button\" data-perspective-option=\"leader\" aria-pressed=\"true\" aria-controls=\"product-journey\">For Club Leaders</button>",
+          "target": [
+            "div[aria-labelledby=\"perspective-title\"] > button[data-perspective-option=\"leader\"][aria-controls=\"product-journey\"][type=\"button\"]"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>Your next class</span>",
+          "target": [
+            ".oc-orbit-heading > span:nth-child(1)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>",
+          "target": [
+            ".oc-orbit-heading > span:nth-child(2)"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<a class=\"oc-orbit-exit\" href=\"#create-account\">",
+          "target": [
+            ".oc-orbit-exit"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        },
+        {
+          "any": [
+            {
+              "id": "color-contrast",
+              "data": {
+                "contrastRatio": 0,
+                "fontSize": "7.5pt (10px)",
+                "fontWeight": "normal",
+                "messageKey": "bgOverlap",
+                "expectedContrastRatio": "4.5:1"
+              },
+              "relatedNodes": [],
+              "impact": "serious",
+              "message": "Element's background color could not be determined because it is overlapped by another element"
+            }
+          ],
+          "all": [],
+          "none": [],
+          "impact": "serious",
+          "html": "<span>Skip to get started</span>",
+          "target": [
+            ".oc-orbit-exit > span"
+          ],
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element"
+        }
+      ]
+    }
+  ]
+}

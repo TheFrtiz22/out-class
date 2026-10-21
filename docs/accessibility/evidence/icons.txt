@@ -1,0 +1,13 @@
+✔ every shared icon renders native Phosphor SVG geometry without raster masks (8.786792ms)
+✔ icons preserve size, inherited color, selectors and decorative semantics (0.342916ms)
+✔ selected fill weights change actual glyph geometry (1.285209ms)
+✔ standalone labels, titles, alt and caller accessibility overrides are preserved (0.65575ms)
+✔ individual SSR imports render without React client context (79.745917ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 727.960792

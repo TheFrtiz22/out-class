@@ -39,3 +39,6 @@
 @media (prefers-reduced-motion: reduce) {
   .oc-landing .oc-public-footer :is(a, button), .oc-landing .oc-final-invitation [data-slot="button"] { transition: none; }
 }
+/* The wordmark is artwork; text-spacing overrides must not widen its canvas. */
+.oc-footer-field { overflow: clip; }
+.oc-landing .oc-final-invitation .oc-invitation-cta { max-width: 100%; white-space: normal; }

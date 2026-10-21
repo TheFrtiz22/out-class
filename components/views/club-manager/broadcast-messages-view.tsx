@@ -113,16 +113,16 @@ export function BroadcastMessagesView() {
           <div className="grid gap-6 sm:grid-cols-2">
             {/* Audience Selector */}
             <div className="flex flex-col gap-2">
-              <Label className="text-foreground">Audience</Label>
+              <p id="broadcast-audience-label" className="text-sm font-medium text-foreground">Audience</p>
               <Popover open={audiencePopoverOpen} onOpenChange={setAudiencePopoverOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    role="combobox"
+                    aria-labelledby="broadcast-audience-label broadcast-audience-value"
                     aria-expanded={audiencePopoverOpen}
                     className="w-full justify-between border-slate-200 bg-white font-normal text-foreground hover:bg-slate-50"
                   >
-                    <span className="truncate">{audienceLabel}</span>
+                    <span id="broadcast-audience-value" className="truncate">{audienceLabel}</span>
                     <ChevronDown className="size-4 shrink-0 text-slate-400" />
                   </Button>
                 </PopoverTrigger>
@@ -132,10 +132,11 @@ export function BroadcastMessagesView() {
                       <button
                         key={a}
                         type="button"
+                        aria-pressed={audiences.has(a)}
                         onClick={() => toggleAudience(a)}
                         className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-foreground hover:bg-slate-50"
                       >
-                        <Checkbox checked={audiences.has(a)} className="pointer-events-none" />
+                        <span aria-hidden="true" className="flex size-4 items-center justify-center rounded border border-input">{audiences.has(a) ? <Check className="size-3" aria-hidden="true" /> : null}</span>
                         <span className="flex-1">{a}</span>
                         <span className="text-xs text-slate-400">
                           {a === "Subscribed Followers" && "Public"}
@@ -151,14 +152,14 @@ export function BroadcastMessagesView() {
 
             {/* Notification Type */}
             <div className="flex flex-col gap-2">
-              <Label className="text-foreground">Notification Type</Label>
-              <div className="flex flex-wrap gap-2">
+              <p id="broadcast-type-label" className="text-sm font-medium text-foreground">Notification Type</p>
+              <div role="group" aria-labelledby="broadcast-type-label" className="flex flex-wrap gap-2">
                 {BROADCAST_TYPES.map((t) => (
                   <button
                     key={t}
                     type="button"
-                    onClick={() => setType(t)}
                     aria-pressed={type === t}
+                    onClick={() => setType(t)}
                     className={cn(
                       "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                       type === t

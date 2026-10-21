@@ -34,11 +34,11 @@ export function ProfileImageInput({ label, value, onChange, banner = false, onUp
   }
   return <div className="space-y-2" data-saving={busy}>
     <p className="text-sm font-medium">{label}</p>
-    <label className={`relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/30 ${banner ? "h-36 w-full" : "size-20 rounded-full"}`} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); void upload(e.dataTransfer.files[0]) }}>
+    <label className={`relative flex cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed bg-muted/30 focus-within:outline-2 focus-within:outline-ring focus-within:outline-offset-4 ${banner ? "h-36 w-full" : "size-20 rounded-full"}`} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); void upload(e.dataTransfer.files[0]) }}>
       {value ? <img src={clubAssetSource(value, true)} alt={`${label} preview`} className={`size-full ${banner ? "object-cover" : "object-contain"}`} /> : <ImagePlus className="size-6 text-muted-foreground" />}
       <input aria-label={`Upload ${label}`} className="absolute inset-0 cursor-pointer opacity-0" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e => { void upload(e.target.files?.[0]); e.target.value = "" }} />
     </label>
-    <div className="flex items-center gap-2"><Input className={onUpload ? "sr-only" : ""} readOnly={!!onUpload} aria-label={`${label} image URL`} placeholder="https://… or click above to upload" value={value?.startsWith("data:") ? "" : value ?? ""} onChange={e => onChange(e.target.value || null)} />{value && <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${label}`} onClick={() => onChange(null)}><X size={16} /></Button>}</div>
+    <div className="flex items-center gap-2">{!onUpload && <Input aria-label={`${label} image URL`} placeholder="https://… or click above to upload" value={value?.startsWith("data:") ? "" : value ?? ""} onChange={e => onChange(e.target.value || null)} />}{value && <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${label}`} onClick={() => onChange(null)}><X size={16} /></Button>}</div>
     <p className="text-xs text-muted-foreground">{busy ? "Preparing image…" : value?.startsWith("data:") ? "Image ready to publish." : "Drop an image or click to upload. PNG, JPEG, WebP up to 5 MB."}</p>
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
   </div>

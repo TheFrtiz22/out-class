@@ -2,7 +2,6 @@
 
 import { Check } from "@/components/icons"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { brandColorPresets } from "@/lib/data"
 import { cn } from "@/lib/utils"
 
@@ -16,7 +15,7 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
 
   return (
     <div className="space-y-2.5">
-      <Label>Primary brand accent color</Label>
+      <p className="text-sm font-medium">Primary brand accent color</p>
       <div className="flex flex-wrap gap-3">
         {brandColorPresets.map((preset) => {
           const active = value.toLowerCase() === preset.hex.toLowerCase()
