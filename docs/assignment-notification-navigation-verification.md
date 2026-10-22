@@ -26,3 +26,9 @@ Physical touchscreen input is not tested. The local browser checks emulate touch
 Use the normal PR checks and Vercel Git deployment from main. Retain the previous production deployment as an application-only rollback option. No environment changes or database operations are required.
 
 With QA one in the existing hidden synthetic club, mark an existing assignment notification unread if needed. Activate it once and verify the exact club/application/round/room/slot/booking destination opens, then verify it remains read after returning/reloading. Repeat with an already-read notification. Use submitted synthetic reviews read-only. Hosted mutation-failure injection is not required; that case is covered in the isolated real-router fixture. Record the actual merge SHA, deployment identity and hosted results in the release receipt.
+
+## Existing-check harness reconciliation
+
+Current main's validation already fails `product-shell-focus.test.cjs` because its fake DOM ref was hardcoded to hook slot 3 before the floating-dock hooks were added. The test now locates the actual rendered workspace-content ref and retains all original focus/scroll assertions.
+
+The native security suite also expected exactly one successful call when accepting the same invitation concurrently. Current main deliberately permits idempotent accepted retries. The test now checks both calls resolve to the same club, exactly one membership and exactly one acceptance audit; foreign-user denial, distinct-invitation races, and owner safeguards are unchanged. No invitation runtime code is changed. These are test harness corrections needed to run existing release checks, not additional product features.

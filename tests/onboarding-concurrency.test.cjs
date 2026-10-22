@@ -25,7 +25,12 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  }
  const ownerInvite=await invitation(account,club.id);
  const accepted=await Promise.allSettled([api.acceptIdentityClubInvitation(ownerInvite.id),api.acceptIdentityClubInvitation(ownerInvite.id)]);
- assert.equal(accepted.filter(x=>x.status==='fulfilled').length,1);assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id}}),1);
+ // The second caller may observe the committed acceptance and safely retry it.
+ // Both must resolve to this club without duplicating the grant or its audit.
+ assert.equal(accepted.filter(x=>x.status==='fulfilled').length,2);
+ assert.ok(accepted.every(x=>x.value.clubId===club.id));
+ assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id}}),1);
+ assert.equal(await prisma.auditLog.count({where:{clubId:club.id,targetId:ownerInvite.id,action:'club.invite.accept'}}),1);
  const outsider=await createUser('outsider');const ownAccount=account;account=outsider;
  await assert.rejects(api.acceptIdentityClubInvitation(ownerInvite.id));await assert.rejects(roster.previewRosterImport({clubId:club.id,requestId:randomUUID(),filename:'roster.csv',csv:'name,computing_id\nJohn,jms8xy'}),/Denied/);account=ownAccount;
  // Different owner invitations, same unclaimed organization: only one platform claim succeeds.
