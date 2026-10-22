@@ -13,9 +13,8 @@ import type { WorkspaceAccess } from "@/components/shell/use-workspace-access"
 export function ClubWorkspaceSwitcher({ clubId, access, onSwitch }: { clubId: string; access: WorkspaceAccess; onSwitch?: () => void }) {
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const current = access.clubs.find(member => member.clubId === clubId)
-  if (!current) return null
+  if (!current || access.clubs.length < 2) return null
   const identity = <><ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0, 2)} /><span className="oc-header-club-name">{current.club.name}</span></>
-  if (access.clubs.length === 1) return <div className="oc-header-club" aria-label={`Current club: ${current.club.name}`}>{identity}</div>
   function switchTo(id: string) {
     if (id === clubId || !canLeaveWorkspace()) return
     const next = access.clubs.find(member => member.clubId === id)

@@ -9,7 +9,7 @@ import { availableSettings } from "@/lib/club-settings"
 import type { WorkspaceAccess } from "./use-workspace-access"
 
 export type WorkspaceKind = "personal" | "leader" | "admin"
-export function WorkspaceSelector({ access, current, clubId, onSwitch, children }: { access: WorkspaceAccess; current: WorkspaceKind; clubId: string; onSwitch?: () => void; children?: ReactNode }) {
+export function WorkspaceSelector({ access, current, clubId, onSwitch, children, clubSwitcher }: { access: WorkspaceAccess; current: WorkspaceKind; clubId: string; onSwitch?: () => void; children?: ReactNode; clubSwitcher?: ReactNode }) {
   const pathname = usePathname(), params = useSearchParams()
   const club = access.clubs.find(member => member.clubId === (clubId || access.activeClubId)) ?? access.clubs[0]
   const inSettings = params.get("section") === "settings" || pathname.startsWith("/settings") && pathname !== "/settings/interviews"
@@ -21,13 +21,15 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, children 
     ...(access.admin ? [{ id: "admin", label: "Admin", href: "/platform" }] : []),
   ]
   if (!options.length) return children ? <div className="oc-evolving-toggle oc-evolving-guest">{children}</div> : null
-  const expanded = current !== "admin" && !!children
+  const divided = current !== "admin" && !!children
   const index = options.findIndex(option => option.id === current)
-  return <div className="oc-workspace-selector oc-evolving-toggle" data-workspace-count={options.length} data-current-workspace={current} data-expanded={expanded}>
-    <nav aria-label="Workspaces" className="oc-evolving-segments" data-has-active={index >= 0} style={{ "--workspace-count": options.length, "--workspace-index": Math.max(0, index), "--workspace-columns": options.map(option => option.id === current && expanded ? "var(--workspace-expanded-width)" : "var(--workspace-option-width)").join(" ") } as CSSProperties}>
+  const columns = options.map((_, position) => position === index ? "var(--workspace-selected-track)" : "minmax(0,1fr)").join(" ")
+  return <div className="oc-workspace-selector oc-evolving-toggle" data-workspace-count={options.length} data-current-workspace={current} data-subdivided={divided} style={{ "--workspace-count": options.length, "--workspace-index": Math.max(0, index), "--workspace-columns": columns } as CSSProperties}>
+    <div className="oc-workspace-captions">{options.map(option => <span key={option.id} aria-label={option.id === current ? `Current workspace: ${option.label}` : undefined}>{option.id === current && divided ? option.label : null}</span>)}</div>
+    <div className="oc-evolving-bar"><nav aria-label="Workspaces" className="oc-evolving-segments" data-has-active={index >= 0}>
       <span className="oc-evolving-indicator" aria-hidden="true" />
-      {options.map(option => <div key={option.id} className="oc-workspace-segment" data-selected={current === option.id}>
-        {options.length === 1 && option.id === current ? <div className="oc-current-workspace" aria-label={`Current workspace: ${option.label}`}>{option.label}</div> : <Link data-workspace-option href={option.href!} prefetch={false} className="oc-workspace-option" aria-current={current === option.id ? "page" : undefined} onKeyDown={event => {
+      {options.map(option => <div key={option.id} className="oc-workspace-segment" data-selected={current === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
+        {current === option.id && divided ? <div className="oc-workspace-segment-content" role="group" aria-label={`${option.label} workspace`}>{children}</div> : <Link data-workspace-option href={option.href!} prefetch={false} className="oc-workspace-option" aria-current={current === option.id ? "page" : undefined} onKeyDown={event => {
           if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return
           const links = Array.from(event.currentTarget.closest("nav")!.querySelectorAll<HTMLAnchorElement>("a[data-workspace-option]"))
           const position = links.indexOf(event.currentTarget)
@@ -36,12 +38,9 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, children 
         }} onClick={event => {
           if (current === option.id || !canLeaveWorkspace()) event.preventDefault()
           else if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) onSwitch?.()
-        }}>
-          <span>{option.label}</span>
-          {option.id !== current && option.id !== "admin" && <small aria-hidden="true">{option.id === "leader" ? "Recruiting · Club" : "Explore · Apply · My Clubs"}</small>}
-        </Link>}
-        {current === option.id && expanded && <div className="oc-workspace-segment-content">{children}</div>}
+        }}>{option.label}</Link>}
       </div>)}
-    </nav>
+    </nav></div>
+    {current === "leader" && access.clubs.length > 1 && clubSwitcher && <div className="oc-workspace-club-switch">{clubSwitcher}</div>}
   </div>
 }
