@@ -14,7 +14,7 @@ import "@/components/clubs/manager-overview.css"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 const linkStyle = "inline-flex min-h-11 items-center text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
 export function ManagerOverview({ data, showRecaps = true }: { data: Overview; showRecaps?: boolean }) {
-  const { club, meeting, work, membership, awaitingReview, recruitment } = data
+  const { club, meeting, work, membership, awaitingReview, recruitment, upcomingInterviews, votingSessions } = data
   const canReview = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
   const pending = canReview ? recruitment?.filter(row => ["SUBMITTED", "IN_REVIEW"].includes(row.status)).reduce((sum, row) => sum + row.count, 0) ?? 0 : 0
   const interviews = canReview ? recruitment?.find(row => row.status === "INTERVIEWING")?.count ?? 0 : 0
@@ -22,6 +22,8 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
   const actions: DashboardAction[] = [
     ...(submissions > 0 ? [{ id: "submitted-tasks", title: `Review ${submissions} task submission${submissions === 1 ? "" : "s"}`, description: "Assess submitted work and provide feedback.", urgency: "critical" as const, count: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team` }] : []),
     ...(pending > 0 ? [{ id: "pending-applicants", title: `Review ${pending} pending application${pending === 1 ? "" : "s"}`, description: hasPermission(membership, "applicants.identify") ? "Open the current applicant review queue." : "Open only rounds available to your anonymous review access.", urgency: "soon" as const, count: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
+    ...(upcomingInterviews !== null && upcomingInterviews > 0 ? [{ id: "upcoming-interviews", title: `${upcomingInterviews} interview booking${upcomingInterviews === 1 ? "" : "s"} this week`, description: "Prepare for scheduled interviews.", urgency: "soon" as const, count: upcomingInterviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=interviews` }] : []),
+    ...(votingSessions?.length ? [{ id: "voting-sessions", title: `${votingSessions.length} open voting session${votingSessions.length === 1 ? "" : "s"}`, description: "Continue voting and confirm round outcomes.", urgency: "soon" as const, count: votingSessions.length, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=decisions` }] : []),
     ...work.map(item => ({ id: `task-${item.id}`, title: item.task.title, description: item.task.kind === "PROJECT" ? "Your assigned project" : "Your assigned task", urgency: item.task.dueAt && +new Date(item.task.dueAt) < Date.now() ? "critical" as const : "normal" as const, dueAt: item.task.dueAt, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=mine` })),
     ...(meeting ? [{ id: "meeting", title: `Upcoming: ${meeting.title}`, description: memberDate(meeting.date), urgency: "normal" as const, dueAt: meeting.date, href: `/meetings/${meeting.id}` }] : []),
   ]
