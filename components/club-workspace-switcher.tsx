@@ -11,7 +11,7 @@ import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { ClubLogo } from "@/components/club-logo"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, adminActive = false }: { clubId?: string; managersOnly?: boolean; adminActive?: boolean }) {
+export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, adminActive = false, open, onOpenChange }: { clubId?: string; managersOnly?: boolean; adminActive?: boolean; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const { user } = useAuth()
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
   const [eligible, setEligible] = useState(false)
@@ -38,7 +38,7 @@ export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, admin
     router.push(id ? clubWorkspaceHref(id) : inSettings ? "/settings" : "/?workspace=student")
   }
   return <div className="oc-workspace-switcher">
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild><button type="button" className="oc-workspace-switcher-trigger">
         {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}
         <span><span className="sr-only">Switch workspace: </span><strong>{adminActive ? "Admin" : current?.club.name || "Personal"}</strong><small>{adminActive ? "Platform administration" : current ? "Club workspace" : user.profile?.firstName || "Your campus"}</small></span><ChevronsUpDown size={14} aria-hidden="true" />

@@ -24,13 +24,8 @@ async function build(root, { realNotificationState = false } = {}) {
   const postcss = require('postcss'), plugin = require('@tailwindcss/postcss')
   const css = await fs.readFile(path.join(repo, 'app/globals.css'), 'utf8')
   const result = await postcss([plugin({ base: repo })]).process(css, { from: path.join(repo, 'app/globals.css') })
-  // Use the app's already-built local font assets; the fixture has no remote dependencies.
-  let fonts = ''
-  for (const file of await fs.readdir(path.join(repo, '.next/static/css'))) {
-    const source = await fs.readFile(path.join(repo, '.next/static/css', file), 'utf8')
-    for (const face of source.match(/@font-face\{[^}]+\}/g) || []) if (/DM_Sans|Libre_Caslon/.test(face) && /\.woff2/.test(face)) fonts += face.replace(/font-family:[^;]+;/, `font-family:${/DM_Sans/.test(face) ? '"DM Sans"' : '"Libre Caslon Text"'};`).replaceAll('../media/', '/assets/media/')
-  }
-  await fs.writeFile(path.join(root, 'styles.css'), fonts + result.css + ':root{--font-dm-sans:"DM Sans";--font-libre-caslon-text:"Libre Caslon Text";}')
+  const fonts = `@font-face{font-family:"Source Sans 3";src:url('/assets/fonts/source-sans-3/source-sans-3-upright.woff2');font-weight:200 900;font-display:swap}@font-face{font-family:"Libre Caslon Text";src:url('/assets/fonts/libre-caslon-text/libre-caslon-text-variable.woff2');font-weight:400 700;font-display:swap}`
+  await fs.writeFile(path.join(root, 'styles.css'), fonts + result.css + ':root{--font-source-sans-3:"Source Sans 3";--font-libre-caslon-text:"Libre Caslon Text";}')
 }
 async function check() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'outclass-floating-header-'))
@@ -42,7 +37,7 @@ async function check() {
       if (resource === '/api/platform/eligibility') { response.setHeader('Content-Type', 'application/json'); response.end('{"eligible":false}'); return }
       if (resource === '/api/communications/stream') { response.writeHead(204); response.end(); return }
       if (resource === '/api/auth/logout') { response.setHeader('Content-Type', 'application/json'); response.end('{"ok":true}'); return }
-      const file = resource === '/bundle.js' || resource === '/styles.css' ? path.join(root, resource.slice(1)) : resource.startsWith('/assets/media/') ? path.join(repo, '.next/static/media', path.basename(resource)) : path.join(repo, 'public', resource)
+      const file = resource === '/bundle.js' || resource === '/styles.css' ? path.join(root, resource.slice(1)) : resource.startsWith('/assets/fonts/') ? path.join(repo, 'app/fonts', resource.slice('/assets/fonts/'.length)) : resource.startsWith('/assets/media/') ? path.join(repo, '.next/static/media', path.basename(resource)) : path.join(repo, 'public', resource)
       try { const data = await fs.readFile(file); response.setHeader('Content-Type', resource.endsWith('.js') ? 'text/javascript' : resource.endsWith('.css') ? 'text/css' : resource.endsWith('.svg') ? 'image/svg+xml' : resource.endsWith('.woff2') ? 'font/woff2' : resource.endsWith('.jpg') ? 'image/jpeg' : 'image/png'); response.end(data) }
       catch { response.setHeader('Content-Type', 'text/html; charset=utf-8'); response.end('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/styles.css"></head><body><div id="root"></div><script src="/bundle.js"></script></body></html>') }
     })
@@ -55,21 +50,18 @@ async function check() {
     await page.goto(`${base}/club/fixture-mii/workspace?section=recruitment&role=owner`, { waitUntil: 'networkidle' })
     await page.locator('.oc-product-header').waitFor({ state: 'visible' })
     await page.screenshot({ path: '/tmp/outclass-floating-header-desktop.png' })
-    // The same real shell now owns an accessible desktop floating dock.
-    const dockRail = page.locator('aside .oc-dock-rail')
+    // The desktop dock expands without changing the shell's reserved content width.
+    const dockRail = page.locator('aside .oc-dock-rail'), dock = page.getByRole('complementary', { name: 'Workspace dock' })
     assert.equal(await dockRail.count(), 1)
-    assert.equal(await dockRail.evaluate(el => el.classList.contains('oc-dock-collapsed')), true)
-    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'false')
+    assert.equal(await dock.getAttribute('data-dock-expanded'), 'false')
+    const contentWidth = await page.locator('main').evaluate(el => el.getBoundingClientRect().width)
     await dockRail.getByRole('link', { name: 'Overview', exact: true }).hover()
-    await page.getByRole('tooltip', { name: 'Overview' }).waitFor()
-    await dockRail.getByRole('button', { name: 'Expand navigation dock' }).click()
-    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'true')
-    assert.equal(await dockRail.evaluate(el => el.classList.contains('oc-dock-collapsed')), false)
-    assert.equal(await dockRail.getByRole('link', { name: 'Overview', exact: true }).count(), 1)
-    await dockRail.getByRole('button', { name: 'Collapse navigation dock' }).click()
-    assert.equal(await page.locator('[data-product-shell]').getAttribute('data-dock-expanded'), 'false')
-    assert.equal(await page.evaluate(() => localStorage.getItem('oc:navigation-dock-expanded')), 'false')
-    console.log('PASS compact floating rail, portaled labels, expanded navigation and stored preference')
+    await page.waitForFunction(() => document.querySelector('[data-dock-expanded]')?.dataset.dockExpanded === 'true')
+    await page.waitForTimeout(350)
+    assert.equal(await page.locator('main').evaluate(el => el.getBoundingClientRect().width), contentWidth)
+    await page.mouse.move(900, 600)
+    await page.waitForFunction(() => document.querySelector('[data-dock-expanded]')?.dataset.dockExpanded === 'false')
+    console.log('PASS automatic dock expansion, delayed collapse and constant content reservation')
 
     console.log('FIXTURE READY', base)
     if (process.argv.includes('--serve')) { console.log('Isolated header fixture is running; no production data or sessions.'); await new Promise(() => {}); return }
@@ -89,7 +81,7 @@ async function check() {
     console.log('PASS floating layout and route-derived selection after tab changes and browser back/forward')
     const utilityPositions = () => header.locator('.oc-product-utilities').evaluate(el => Array.from(el.children).map(child => { const rect = child.getBoundingClientRect(); return [rect.x, rect.y, rect.width, rect.height] }))
     const beforeSearch = await utilityPositions()
-    await page.getByRole('button', { name: 'Search OutClass', exact: true }).click()
+    await page.getByRole('button', { name: /^Search OutClass(?: |$)/ }).click()
     const dialog = page.getByRole('dialog', { name: 'Search OutClass', exact: true })
     await dialog.getByRole('combobox').fill('Avery')
     await dialog.getByRole('option', { name: /Avery Morgan/ }).waitFor()
@@ -97,13 +89,13 @@ async function check() {
     assert.equal(await header.locator('.oc-floating-search').evaluate(el => { const rect = el.getBoundingClientRect(), scale = new DOMMatrix(getComputedStyle(el, '::before').transform).a, bell = document.querySelector('[data-tour="notifications"]').getBoundingClientRect(); return rect.right + (scale - 1) * rect.width / 2 < bell.left }), true)
     assert.equal(await page.evaluate(() => window.fixtureSearchCalls.at(-1).leader), true)
     await page.keyboard.press('ArrowDown'); await page.keyboard.press('Escape')
-    await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Search OutClass' && document.activeElement?.tagName === 'BUTTON')
+    await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label')?.startsWith('Search OutClass') && document.activeElement?.tagName === 'BUTTON')
     for (const shortcut of ['Meta+k', 'Control+k']) {
       await modes.getByRole('link', { name: 'Club', exact: true }).focus()
       await page.keyboard.press(shortcut); await dialog.waitFor(); await page.keyboard.press('Escape')
       await page.waitForFunction(() => document.activeElement?.getAttribute('data-tour') === 'mode-club')
     }
-    await page.getByRole('button', { name: 'Search OutClass', exact: true }).click()
+    await page.getByRole('button', { name: /^Search OutClass(?: |$)/ }).click()
     await dialog.getByRole('combobox').fill('Profile')
     await dialog.getByRole('option', { name: 'Profile', exact: true }).click()
     await page.waitForURL('**view=student-profile')
@@ -123,17 +115,17 @@ async function check() {
     await page.evaluate(() => scrollTo(0, 700))
     await header.locator('[data-tour="profile"]').click()
     const menu = page.getByRole('menu')
-    await menu.getByRole('menuitem', { name: 'Organization settings', exact: true }).waitFor()
+    await menu.getByRole('menuitem', { name: 'Settings', exact: true }).waitFor()
     assert.equal(await menu.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }), true)
     await page.keyboard.press('Escape')
     await page.evaluate(() => scrollTo(0, 0))
-    await page.locator('aside').getByRole('button', { name: 'Switch workspace', exact: true }).click()
+    await page.locator('aside').getByRole('button', { name: /^Switch workspace:/ }).click()
     await page.getByRole('menuitem', { name: /Virginia Volunteers/ }).click()
     await page.waitForURL('**/club/fixture-volunteers/workspace*')
-    assert.equal(await page.locator('aside').getByRole('button', { name: 'Switch workspace' }).getAttribute('aria-expanded'), 'false')
+    assert.equal(await page.locator('aside').getByRole('button', { name: /^Switch workspace:/ }).getAttribute('aria-expanded'), 'false')
     console.log('PASS portaled account menu while scrolling and preserved sidebar club switching')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=owner&searchError=1`, { waitUntil: 'networkidle' })
-    await page.getByRole('button', { name: 'Search OutClass', exact: true }).click()
+    await page.getByRole('button', { name: /^Search OutClass(?: |$)/ }).click()
     await dialog.getByRole('combobox').fill('Profile')
     await dialog.getByRole('alert').waitFor()
     assert.equal(await dialog.getByRole('option', { name: 'Profile', exact: true }).count(), 1)
@@ -171,7 +163,7 @@ async function check() {
     console.log('PASS mobile account menu and existing drawer close correctly on desktop resize')
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto(`${base}/club/fixture-mii/workspace?section=recruitment&role=owner&avatar=1`, { waitUntil: 'networkidle' })
-    await header.getByRole('img', { name: 'Your profile photo' }).waitFor()
+    await header.locator('[data-tour="profile"] img').waitFor(); assert.equal(await header.locator('[data-tour="profile"] img').getAttribute('alt'), '')
     await page.emulateMedia({ reducedMotion: 'reduce' })
     assert.ok(await page.locator('.oc-floating-mode-indicator').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(value => parseFloat(value) <= .001)))
     await page.evaluate(() => { const guard = document.createElement('div'); guard.id = 'fixture-saving'; guard.dataset.saving = 'true'; document.body.append(guard) })

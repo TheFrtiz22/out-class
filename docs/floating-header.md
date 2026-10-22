@@ -31,10 +31,12 @@ Run `node scripts/check-floating-header.cjs`, or set
 shell, search dialog, dropdown, and drawer using Next's existing Webpack and
 project styles. Test-only providers and fictional records isolate identity and
 network operations. No app route, production auth, or database is modified.
-Local fonts are read from `.next`, so run the production build first.
+Local fonts are served directly from `app/fonts`; the fixture does not require a build first.
 
 Checks cover route/history selection, keyboard shortcuts and focus return,
 search results and failure feedback, unread updates, notification expand navigation, account menus, club
 switching, mobile drawer resizing, six roles at ten viewport widths, saving
 guards, avatars, reduced motion, and successful/failed logout. These checks do
 not replace a live authenticated backend test.
+
+Desktop dock interactions and the fixed header inset at 1024–1439px are documented in [Premium expanding dock V2](expanding-dock-v2/README.md).
