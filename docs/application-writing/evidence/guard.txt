@@ -1,0 +1,11 @@
+✔ writing integration config is pinned to its own disposable local project and ports (2.858084ms)
+✔ built action lookup matches Windows and Unix source paths without matching a different action file (0.0615ms)
+✔ hosted import explicitly pins staging while the onboarding guard remains local-only (1.050167ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107.2465

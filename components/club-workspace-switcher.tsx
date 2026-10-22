@@ -40,14 +40,14 @@ export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, admin
   return <div className="oc-workspace-switcher">
     <DropdownMenu>
       <DropdownMenuTrigger asChild><button type="button" className="oc-workspace-switcher-trigger">
-        {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}
+        {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} marketing={current.club.marketing} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}
         <span><span className="sr-only">Switch workspace: </span><strong>{adminActive ? "Admin" : current?.club.name || "Personal"}</strong><small>{adminActive ? "Platform administration" : current ? "Club workspace" : user.profile?.firstName || "Your campus"}</small></span><ChevronsUpDown size={14} aria-hidden="true" />
       </button></DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="oc-workspace-menu w-72">
         <DropdownMenuItem onSelect={() => switchTo("")}><AccountAvatar user={user} className="size-6" /><span className="flex-1">Personal workspace</span>{!clubId && !adminActive && <Check />}</DropdownMenuItem>
         {memberships.length > 0 && <DropdownMenuSeparator />}
         {memberships.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchTo(member.clubId)}>
-          <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} color={member.club.color || "#142d45"} text={member.club.name.slice(0,2)} />
+          <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} marketing={member.club.marketing} color={member.club.color || "#142d45"} text={member.club.name.slice(0,2)} />
           <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{member.club.name}</strong><small className="text-xs text-muted-foreground">{hasWorkspace(member) ? "Leader workspace" : "Member workspace"}</small></span>{member.clubId === clubId && <Check />}
         </DropdownMenuItem>)}
         {eligible && !isImpersonating && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/platform") }}><Shield /><span className="flex-1">Admin</span>{adminActive && <Check />}</DropdownMenuItem></>}

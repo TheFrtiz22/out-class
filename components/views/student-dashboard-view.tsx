@@ -75,7 +75,7 @@ function ApplicationRow({ app, onOpen }: { app: HomeApplication; onOpen: () => v
       >
         <ClubLogo
           clubId={app.clubId}
-          logoUrl={app.logoUrl}
+          logoUrl={app.logoUrl} marketing={app.marketing}
           text={app.name.slice(0, 2)}
           color={app.color}
         />

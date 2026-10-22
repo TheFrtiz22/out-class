@@ -294,7 +294,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                         <div className="flex items-center gap-2">
                           <ClubLogo
                             clubId={item.clubId}
-                            logoUrl={item.logoUrl}
+                            logoUrl={item.logoUrl} marketing={item.marketing}
                             text={item.logoText}
                             color={item.color}
                             className="size-7 shrink-0 rounded-md text-[length:var(--oc-size-10)]"
@@ -404,7 +404,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                 <div className="flex items-center gap-3">
                   <ClubLogo
                     clubId={selected.clubId}
-                    logoUrl={selected.logoUrl}
+                    logoUrl={selected.logoUrl} marketing={selected.marketing}
                     text={selected.logoText}
                     color={selected.color}
                     className="size-10 shrink-0 rounded-lg"

@@ -12,8 +12,9 @@ function totp(secret){
 }
 function readConfig(filename){
  const config=JSON.parse(fs.readFileSync(filename));
- assert.equal(config.projectId,'outclass-onboarding-e2e');
- for(const [value,port] of [[config.appUrl,'3107'],[config.status.API_URL,'55321'],[config.status.DB_URL,'55322'],[config.status.MAILPIT_URL,'55324']]){
+ const writing=config.suite==='application-writing',prefix=writing?'573':'553';
+ assert.equal(config.projectId,writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e');
+ for(const [value,port] of [[config.appUrl,config.suite==='application-writing'?'3109':'3107'],[config.status.API_URL,`${prefix}21`],[config.status.DB_URL,`${prefix}22`],[config.status.MAILPIT_URL,`${prefix}24`]]){
   const url=new URL(value);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.equal(url.port,port,'E2E requires dedicated local ports; never use an application/production URL');
  }
  return config;

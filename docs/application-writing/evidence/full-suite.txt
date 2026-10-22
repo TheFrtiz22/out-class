@@ -1,0 +1,30 @@
+ℹ tests 1354
+ℹ suites 0
+ℹ pass 1316
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 37
+ℹ todo 0
+ℹ duration_ms 91812.492042
+
+✖ failing tests:
+
+test at tests/workspace-reliability.test.cjs:4:1
+✖ voting GET allowlist validates scope, uses private no-store responses and denies Demo; invitation proof and provider errors stay distinct (126.234625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'Cookie, Accept-Encoding'
+  - 'Cookie'
+           ^
+
+      at TestContext.<anonymous> (/Users/jesseklinger/Documents/out-class/tests/workspace-reliability.test.cjs:9:182)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Cookie, Accept-Encoding',
+    expected: 'Cookie',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

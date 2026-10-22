@@ -1,4 +1,6 @@
 "use client"
+import { logoBackgroundColor } from "@/lib/club-logo-background"
+import { useLogoAnalysis } from "@/hooks/use-logo-analysis"
 import { clubAssetSource } from "@/lib/club-assets"
 
 import { useState, type ReactNode } from "react"
@@ -18,6 +20,8 @@ type ClubLogoProps = {
   clubId?: string
   logoUrl?: string | null
   imageBackground?: string
+  marketing?: unknown
+  assetPreview?: boolean
   alt?: string
   size?: keyof typeof sizeMap
   className?: string
@@ -25,12 +29,14 @@ type ClubLogoProps = {
 }
 
 export function ClubLogo(props: ClubLogoProps) {
-  const src = clubAssetSource(props.logoUrl?.trim()) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
+  const src = clubAssetSource(props.logoUrl?.trim(), props.assetPreview) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
   // Remount on source changes so a failed image never hides a replacement logo.
   return <ClubLogoImage key={src} {...props} src={src} />
 }
 
-function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fallback, imageBackground }: ClubLogoProps & { src: string }) {
+function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fallback, imageBackground, marketing }: ClubLogoProps & { src: string }) {
+  const { analysis } = useLogoAnalysis(src)
+  const background = logoBackgroundColor(marketing, color, analysis)
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const dimensions = cn("shrink-0 shadow-none", sizeMap[size], className)
@@ -50,14 +56,14 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
   }
 
   return (
-    <span className={cn("relative inline-flex items-center justify-center overflow-hidden font-semibold text-white", dimensions)} style={{ backgroundColor: "var(--muted)", color: "var(--foreground)", borderColor: color }}>
-      <span aria-hidden="true">{text}</span>
+    <span className={cn("relative inline-flex items-center justify-center overflow-hidden font-semibold text-white", dimensions)} style={{ backgroundColor: loaded ? (imageBackground || background) : "var(--muted)", color: "var(--foreground)", borderColor: color }}>
+      <span aria-hidden="true" className={loaded ? "invisible" : undefined}>{text}</span>
       <img
         src={src}
         ref={(image) => { if (image?.complete) { if (image.naturalWidth === 0) setFailed(true); else setLoaded(true) } }}
         alt={alt}
         className={cn("absolute inset-0 size-full rounded-[inherit] border border-border bg-card object-contain", loaded ? "opacity-100" : "opacity-0")}
-        style={imageBackground ? { backgroundColor: imageBackground } : undefined}
+        style={{ backgroundColor: imageBackground || background }}
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
