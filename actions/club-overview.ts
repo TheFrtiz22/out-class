@@ -10,7 +10,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
     hasPermission(membership, "applicants.identify") ||
     hasPermission(membership, "applications.review");
   const now = new Date();
-  const [club, meeting, work, awaitingReview, recruitment] = await Promise.all([
+  const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions] = await Promise.all([
     prisma.club.findUniqueOrThrow({
       where: { id: clubId },
       select: { id: true, name: true, tagline: true },
@@ -62,6 +62,12 @@ export async function getClubWorkspaceOverview(clubId: string) {
           _count: { _all: true },
         })
       : Promise.resolve(null),
+    hasPermission(membership, "interviews.manage")
+      ? prisma.interviewBooking.count({ where: { slot: { clubId, startTime: { gte: now, lte: new Date(now.getTime() + 7 * 86400000) } } } })
+      : Promise.resolve(null),
+    hasPermission(membership, "decisions.manage")
+      ? prisma.votingSession.findMany({ where: { clubId, state: { in: ["OPEN", "ACTIVE"] } }, select: { id: true, state: true }, take: 10, orderBy: { createdAt: "desc" } })
+      : Promise.resolve(null),
   ]);
   return {
     club,
@@ -75,6 +81,8 @@ export async function getClubWorkspaceOverview(clubId: string) {
     meeting,
     work,
     awaitingReview,
+    upcomingInterviews,
+    votingSessions,
     recruitment:
       recruitment?.map((row) => ({
         status: row.status,
