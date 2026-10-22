@@ -49,6 +49,8 @@
   .oc-floating-mode-link:not([aria-current]):hover { color: var(--brand-ink); }
   .oc-floating-search:hover::before { border-color: rgb(20 45 69 / 22%); }
 }
+/* Leave room for the dock overlay without moving these controls on hover. */
+@media (min-width: 1024px) and (max-width: 1439px) { .oc-product-modes { margin-left: 172px; } }
 @media (min-width: 1440px) {
   .oc-product-header { padding-inline: 32px; }
   .oc-product-modes { position: absolute; left: 50%; transform: translateX(-50%); }

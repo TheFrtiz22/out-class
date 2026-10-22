@@ -12,7 +12,7 @@ export function FixtureBoundary({ children }) {
   useEffect(() => { const update = event => setCounts(event.detail); window.addEventListener('fixture:counts', update); return () => window.removeEventListener('fixture:counts', update) }, [])
   const value = useMemo(() => {
     const permissions = role === 'settings' ? ['club.settings'] : role === 'reviewer' ? ['applications.review'] : role === 'member' || role === 'student' ? [] : clubPermissions
-    return { role, pathname, counts, setCounts, user: { id: 'fixture-user', email: 'fixture@virginia.edu', profile: { firstName: 'Avery', lastName: 'Morgan', headshotUrl: photo ? '/images/landing/jordan-avery.jpg' : null }, memberships: clubs.map(club => ({ id: `member-${club.id}`, clubId: club.id, club, status: 'ACTIVE', isOwner: role === 'owner', permissions })) } }
+    return { role, pathname, counts, setCounts, user: { id: 'fixture-user', email: 'fixture@virginia.edu', profile: { firstName: 'Avery', lastName: 'Morgan', headshotUrl: photo ? '/images/landing/jordan-avery.jpg' : null }, memberships: clubs.map(club => ({ id: `member-${club.id}`, clubId: club.id, club, status: 'ACTIVE', interviewOffices: role === 'president' ? ['PRESIDENT'] : [], isOwner: role === 'owner', permissions })) } }
   }, [role, pathname, photo, counts])
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
