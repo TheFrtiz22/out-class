@@ -312,62 +312,72 @@ export function InterviewKitSession({
     return () => onState(false, false);
   }, [dirty, saving, closingQuestion, newQuestion, onState]);
   async function persist(complete = false, next = false, patch?: Partial<InterviewDraft>): Promise<boolean | undefined> {
-    if (complete && (finishingRef.current || recovery.recovery != null)) return;
+    if (finishingRef.current || (complete && recovery.recovery != null)) return;
     if (complete) { finishingRef.current = true; setCompleting(true); }
-    if (pendingSave.current) await pendingSave.current;
-    const record = sessionRef.current;
-    if (!record || savingRef.current || record.completedAt) { if (complete) { finishingRef.current = false; setCompleting(false); } return; }
-    if (complete && draftRef.current.score === null) {
-      setError("Choose an overall score before ending the post-interview.");
-      finishingRef.current = false; setCompleting(false);
-      return false;
-    }
-    if (complete && newQuestion.trim()) {
-      setError("Add or clear the additional question before completing.");
-      finishingRef.current = false; setCompleting(false);
-      return;
-    }
-    savingRef.current = true;
-    setSaving(true);
-    setError("");
-    setFailedFinish(false);
-    const snapshot = structuredClone({ ...draftRef.current, ...patch });
-    const request = (async () => { try {
-      const result = await saveInterviewSession({
-        clubId,
-        applicationId,
-        roundId,
-        revision: record.revision,
-        draft: snapshot,
-        complete,
-      });
-      sessionRef.current = { ...record, ...result.session };
-      if (mounted.current) {
-        setSession(sessionRef.current);
-        savedRef.current = JSON.stringify(snapshot);
-        setSaved(savedRef.current);
-        if (patch) setDraft(current => ({ ...current, ...patch }));
-        if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
+    try {
+      // Completion owns the queue before waiting. Blur/visibility flushes must
+      // not start another draft write ahead of the explicit submission.
+      while (pendingSave.current) await pendingSave.current;
+      if (!complete && finishingRef.current) return;
+      const record = sessionRef.current;
+      if (!record || record.completedAt) return;
+      if (complete && draftRef.current.score === null) {
+        setError("Choose an overall score before ending the post-interview.");
+        return false;
       }
-      return true;
-    } catch {
-      if (mounted.current) setFailedFinish(complete);
-      if (mounted.current)
-        setError("Your interview could not be saved. Retry, or refresh your access and revision.");
-      return false;
+      if (complete && newQuestion.trim()) {
+        setError("Add or clear the additional question before completing.");
+        return;
+      }
+      savingRef.current = true;
+      setSaving(true);
+      setError("");
+      setFailedFinish(false);
+      const snapshot = structuredClone({ ...draftRef.current, ...patch });
+      const request = (async () => { try {
+        const result = await saveInterviewSession({
+          clubId,
+          applicationId,
+          roundId,
+          revision: record.revision,
+          draft: snapshot,
+          complete,
+        });
+        if (complete && (!result.session.completedAt || !result.evaluation)) {
+          throw Error("Submission was not acknowledged.");
+        }
+        sessionRef.current = { ...record, ...result.session };
+        if (mounted.current) {
+          setSession(sessionRef.current);
+          savedRef.current = JSON.stringify(snapshot);
+          setSaved(savedRef.current);
+          if (patch) setDraft(current => ({ ...current, ...patch }));
+          if (complete && result.evaluation) { setActiveQuestion(""); setDraft(result.session.draft); onComplete(result.evaluation, next); }
+        }
+        return true;
+      } catch {
+        if (mounted.current) setFailedFinish(complete);
+        if (mounted.current)
+          setError("Your interview could not be saved. Retry, or refresh your access and revision.");
+        return false;
+      } finally {
+        savingRef.current = false;
+        if (mounted.current) {
+          setSaving(false);
+        }
+      } })();
+      pendingSave.current = request;
+      try { return await request; } finally { if (pendingSave.current === request) pendingSave.current = null; }
     } finally {
-      savingRef.current = false;
-      if (mounted.current) {
-        setSaving(false);
-        if (complete) { finishingRef.current = false; setCompleting(false); }
+      if (complete) {
+        finishingRef.current = false;
+        if (mounted.current) setCompleting(false);
       }
-    } })();
-    pendingSave.current = request;
-    try { return await request; } finally { if (pendingSave.current === request) pendingSave.current = null; }
+    }
   }
   async function flushLatest() {
     if (pendingSave.current) await pendingSave.current;
-    while (sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
+    while (!finishingRef.current && sessionRef.current && !sessionRef.current.completedAt && JSON.stringify(draftRef.current) !== savedRef.current) {
       if (!(await persist())) throw Error("Your private notes are retained. Retry before leaving.");
     }
   }
