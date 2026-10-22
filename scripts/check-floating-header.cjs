@@ -119,11 +119,11 @@ async function check() {
     assert.equal(await menu.evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight }), true)
     await page.keyboard.press('Escape')
     await page.evaluate(() => scrollTo(0, 0))
-    await page.locator('aside').getByRole('button', { name: /^Switch workspace:/ }).click()
+    await header.getByRole('button', { name: /^Switch club:/ }).click()
     await page.getByRole('menuitem', { name: /Virginia Volunteers/ }).click()
     await page.waitForURL('**/club/fixture-volunteers/workspace*')
-    assert.equal(await page.locator('aside').getByRole('button', { name: /^Switch workspace:/ }).getAttribute('aria-expanded'), 'false')
-    console.log('PASS portaled account menu while scrolling and preserved sidebar club switching')
+    assert.equal(await header.getByRole('button', { name: /^Switch club:/ }).getAttribute('aria-expanded'), 'false')
+    console.log('PASS portaled account menu while scrolling and preserved header club switching')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=owner&searchError=1`, { waitUntil: 'networkidle' })
     await page.getByRole('button', { name: /^Search OutClass(?: |$)/ }).click()
     await dialog.getByRole('combobox').fill('Profile')
@@ -132,9 +132,10 @@ async function check() {
     await page.keyboard.press('Escape')
     console.log('PASS search failure remains visible and page navigation remains available')
     for (const role of ['owner', 'reviewer', 'settings', 'student', 'member', 'platform']) {
-      await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=${role}`, { waitUntil: 'networkidle' })
+      await page.route('**/api/platform/eligibility', route => route.fulfill({ json: { eligible: role === 'platform' } }))
+      await page.goto(role === 'platform' ? `${base}/platform?role=platform` : `${base}/club/fixture-mii/workspace?section=overview&role=${role}`, { waitUntil: 'networkidle' })
       const expected = role === 'platform' ? [] : role === 'settings' ? ['Club'] : ['student', 'member'].includes(role) ? ['Explore', 'Apply', 'My Clubs'] : ['Recruiting', 'Club']
-      assert.deepEqual(await header.locator('.oc-floating-mode-link').allTextContents(), expected)
+      assert.deepEqual(await header.locator('.oc-product-modes .oc-floating-mode-link').allTextContents(), expected)
       for (const width of [1600, 1440, 1280, 1024, 900, 768, 640, 540, 390, 320]) {
         await page.setViewportSize({ width, height: 844 })
         assert.equal(await header.evaluate(el => {
@@ -146,10 +147,11 @@ async function check() {
         if (role === 'owner' && width === 390) await page.screenshot({ path: '/tmp/outclass-floating-header-mobile.png' })
       }
     }
+    await page.unroute('**/api/platform/eligibility')
     console.log('PASS six permission roles and ten desktop/tablet/mobile widths')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=settings`, { waitUntil: 'networkidle' })
-    await header.locator('.oc-floating-mode-link').evaluate(el => { el.textContent = 'Local workspace preview' })
-    assert.equal(await header.evaluate(el => { const mode = el.querySelector('.oc-product-modes').getBoundingClientRect(), utilities = el.querySelector('.oc-product-utilities').getBoundingClientRect(); return mode.right + 7 <= utilities.left && utilities.right <= innerWidth && el.scrollWidth <= innerWidth }), true)
+    await header.locator('.oc-product-modes .oc-floating-mode-link').evaluate(el => { el.textContent = 'Local workspace preview' })
+    assert.equal(await header.evaluate(el => { const mode = el.querySelector('.oc-product-modes').getBoundingClientRect(), utilities = el.querySelector('.oc-product-utilities').getBoundingClientRect(); return (mode.right + 7 <= utilities.left || mode.top >= utilities.bottom) && utilities.right <= innerWidth && el.scrollWidth <= innerWidth }), true)
     console.log('PASS long single-mode labels wrap without crowding mobile utilities')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=owner`, { waitUntil: 'networkidle' })
     await header.locator('[data-tour="profile"]').click()
@@ -165,7 +167,7 @@ async function check() {
     await page.goto(`${base}/club/fixture-mii/workspace?section=recruitment&role=owner&avatar=1`, { waitUntil: 'networkidle' })
     await header.locator('[data-tour="profile"] img').waitFor(); assert.equal(await header.locator('[data-tour="profile"] img').getAttribute('alt'), '')
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    assert.ok(await page.locator('.oc-floating-mode-indicator').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(value => parseFloat(value) <= .001)))
+    assert.ok(await modes.locator('.oc-floating-mode-indicator').evaluate(el => getComputedStyle(el).transitionDuration.split(',').every(value => parseFloat(value) <= .001)))
     await page.evaluate(() => { const guard = document.createElement('div'); guard.id = 'fixture-saving'; guard.dataset.saving = 'true'; document.body.append(guard) })
     const guardedURL = page.url()
     await modes.getByRole('link', { name: 'Club', exact: true }).click()

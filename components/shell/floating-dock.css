@@ -31,11 +31,6 @@
   .oc-dock-brand-mark img { width: 36px; height: 36px; }
   .oc-dock-brand-name { color: var(--oc-rail-text); font: 24px var(--oc-font-display); white-space: nowrap; }
   .oc-dock-brand-name > span { color: var(--brand-orange); }
-  .oc-dock-rail > .oc-workspace-switcher { margin-bottom: 8px; flex-shrink: 0; }
-  .oc-dock-rail .oc-workspace-switcher-trigger { height: 54px; min-height: 54px; gap: 0; padding: 0; border-color: rgb(255 255 255 / 14%); background: rgb(255 255 255 / 5%); border-radius: 13px; }
-  .oc-dock-rail .oc-workspace-switcher-trigger > :first-child { flex: 0 0 30px; width: 30px; height: 30px; margin-inline: 14px; }
-  .oc-dock-rail .oc-workspace-switcher-trigger > span:nth-child(2) { min-width: 168px; }
-  .oc-dock-rail .oc-workspace-switcher-trigger > svg:last-child { flex-shrink: 0; margin-right: 10px; }
   .oc-dock-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
   .oc-dock-navigation::-webkit-scrollbar { display: none; }
   .oc-dock-navigation-content { position: relative; isolation: isolate; padding-block: 2px; }
@@ -60,12 +55,11 @@
   .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
   .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
   .oc-dock-hover-highlight { position: absolute; z-index: -1; inset: 0 0 auto; height: 48px; opacity: 0; border-radius: 13px; background: var(--oc-rail-selected); pointer-events: none; transform: translateY(var(--dock-hover-y, 0px)); transition: transform 300ms var(--oc-floating-ease), height 240ms var(--oc-floating-ease), opacity 140ms ease; }
-  .oc-dock-brand-name, .oc-dock-rail .oc-workspace-switcher-trigger > span:nth-child(2), .oc-dock-rail .oc-workspace-switcher-trigger > svg:last-child, .oc-dock-section-heading, .oc-dock-rail .oc-dock-item-label, .oc-dock-preview, .oc-dock-chevron {
+  .oc-dock-brand-name, .oc-dock-section-heading, .oc-dock-rail .oc-dock-item-label, .oc-dock-preview, .oc-dock-chevron {
     opacity: 0; transform: translateX(-7px); transition: opacity 160ms ease, transform 260ms var(--oc-floating-ease);
   }
-  [data-dock-expanded="true"] :is(.oc-dock-brand-name,.oc-dock-section-heading,.oc-dock-item-label,.oc-dock-preview,.oc-dock-chevron), [data-dock-expanded="true"] .oc-workspace-switcher-trigger > :is(span:nth-child(2),svg:last-child) { opacity: 1; transform: translateX(0); transition-delay: 65ms; }
+  [data-dock-expanded="true"] :is(.oc-dock-brand-name,.oc-dock-section-heading,.oc-dock-item-label,.oc-dock-preview,.oc-dock-chevron) { opacity: 1; transform: translateX(0); transition-delay: 65ms; }
   /* Opacity preserves names for assistive technology; clipping keeps the compact surface clean. */
-  [data-dock-expanded="false"] .oc-workspace-switcher-trigger { overflow: hidden; }
   .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
   @media (hover: hover) and (pointer: fine) {
     .oc-dock-rail [data-magnify="current"] .oc-dock-icon { transform: scale(1.17); }
