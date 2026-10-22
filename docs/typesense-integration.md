@@ -71,3 +71,20 @@ clubs: correct matches, typos, category filter, active/deactivated
 publication, blank query, network outage, demo mode, index withdrawal and
 stale-result rejection. Run `npm run typecheck`, `npm run lint`,
 `npm run build`, and browser navigation tests before activating production.
+
+## Global command search integration
+
+The existing authenticated command palette uses Typesense **only for public
+club discovery results**. Returned IDs are checked against the current
+PostgreSQL public visibility/suspension predicates before presentation.
+Personal applications, club applicants and rounds remain on the existing
+session-authenticated, permission-filtered PostgreSQL queries; these private
+records are **not** copied to Typesense. The user interface still presents
+all four record types together with local page destinations.
+
+This is a deliberately security-preserving incremental rollout, not a claim
+that Typesense indexes every OutClass record type. A separate private search
+project requires verified per-user/per-club auth filtering, atomic revocation,
+redaction, deletion propagation, and isolated authorization tests first.
+
+Never set a publicly exposed Typesense key or a broad all-collections key.
