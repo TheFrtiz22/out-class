@@ -35,7 +35,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.locator('.oc-pinned-flyer').count(), 13);
     assert.equal(await page.getByLabel('Search events', { exact: true }).inputValue(), 'After Hours');
     assert.equal(reads(), before);
-    await page.getByRole('button', { name: 'View After Hours at the Art Museum, hosted by OutClass Events Test', exact: true }).click();
+    await page.getByRole('button', { name: 'View event: After Hours at the Art Museum flyer', exact: true }).click();
     const dialog = page.getByRole('dialog'); await dialog.waitFor();
     await dialog.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).waitFor();
     await dialog.getByRole('button', { name: 'RSVP', exact: true }).click();
