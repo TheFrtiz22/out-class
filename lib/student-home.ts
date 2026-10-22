@@ -6,7 +6,7 @@ export type HomeApplicationSource = {
   clubId: string
   status: string
   submittedAt?: Date | string | null
-  club: { name: string; color?: string | null; logoUrl?: string | null }
+  club: { name: string; color?: string | null; logoUrl?: string | null; marketing?: unknown }
   answers?: { response: string }[]
 }
 export type HomeApplication = {
@@ -15,6 +15,7 @@ export type HomeApplication = {
   name: string
   color: string
   logoUrl?: string | null
+  marketing?: unknown
   status: string
   draft: boolean
   closed: boolean
@@ -45,6 +46,7 @@ export function homeApplications(
           name: app.club.name,
           color: app.club.color || "#142d4e",
           logoUrl: app.club.logoUrl,
+          marketing: app.club.marketing,
           status: statusLabels[app.status] || app.status,
           responsesSaved: app.answers?.filter((answer) => answer.response.trim()).length,
         }))
@@ -54,6 +56,7 @@ export function homeApplications(
           name: app.clubName,
           color: app.color,
           logoUrl: app.logoUrl,
+          marketing: app.marketing,
           status: statusLabels[app.status] || app.status,
           responsesSaved: undefined,
         }))

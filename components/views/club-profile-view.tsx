@@ -121,6 +121,7 @@ export function ClubProfileView({
           name,
           logoText: club.logoText,
           logoUrl: club.logoUrl,
+          marketing: club.marketing,
           color: club.color,
           applicationId: result?.applicationId,
         })
@@ -132,6 +133,7 @@ export function ClubProfileView({
           name,
           logoText: club.logoText,
           logoUrl: club.logoUrl,
+          marketing: club.marketing,
           color: club.color,
           applicationId: actualApplication.id,
           applicationStatus:

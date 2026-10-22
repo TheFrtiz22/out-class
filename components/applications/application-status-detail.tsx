@@ -19,7 +19,7 @@ export function ApplicationStatusDetail({ application: app, notice, onBack, onRe
   return <>
     <Button variant="ghost" size="sm" className="-ml-3" onClick={onBack}><ArrowLeft size={16} />Status</Button>
     <header className="flex items-start gap-4">
-      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} text={app.club.name.slice(0, 2)} color={app.club.color || "#142d45"} />
+      <ClubLogo clubId={app.clubId} logoUrl={app.club.logoUrl} marketing={app.club.marketing} text={app.club.name.slice(0, 2)} color={app.club.color || "#142d45"} />
       <div className="min-w-0"><p className="oc-eyebrow">{decision ? "Decision received" : "Application progress"}</p><h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
         {app.submittedAt && <p className="mt-2 text-xs text-muted-foreground">Submitted {applicantDate(app.submittedAt)}</p>}</div>
     </header>

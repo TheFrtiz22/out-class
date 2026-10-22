@@ -1,16 +1,17 @@
 'use client';
 import { useCallback,useEffect,useRef,useState } from 'react';
 import Link from 'next/link';
+import { ClubLogo } from '@/components/club-logo';
 import { useSearchParams } from 'next/navigation';
 import { getDecisionLetter,respondToOffer,setDecisionNotificationsRead } from '@/lib/workspace-api';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import type { LetterContent } from '@/lib/decision-letters';
 import './decision-letter.css';
-export function LetterPaper({content,preview=false,logoSource}:{content:LetterContent;preview?:boolean;logoSource?:string}) {
+export function LetterPaper({content,preview=false,logoSource,marketing}:{content:LetterContent;preview?:boolean;logoSource?:string;marketing?:unknown}) {
  return <article className="decision-paper" aria-label={preview?'Sample decision letter preview':'Formal decision letter'} style={{borderTopColor:content.accent}}>
   {preview&&<p className="decision-preview">PREVIEW · SAMPLE STUDENT · NOT A PUBLISHED DECISION</p>}
-  <header className="decision-masthead">{logoSource&&<img src={logoSource} alt={`${content.clubName} logo`} width={72} height={72}/>}<div><p className="decision-eyebrow">{content.clubName}</p><p className="decision-subtitle">Recruitment correspondence</p></div></header>
+  <header className="decision-masthead">{logoSource&&<ClubLogo logoUrl={logoSource} marketing={marketing} text={content.clubName.slice(0,2)} color={content.accent} alt={`${content.clubName} logo`} size="lg" className="!size-[72px]"/>}<div><p className="decision-eyebrow">{content.clubName}</p><p className="decision-subtitle">Recruitment correspondence</p></div></header>
   <p className="decision-date">{content.date}</p><h1>{content.title}</h1><p>Dear {content.studentName},</p>
   <div className="decision-prose">{content.body.split(/\n\s*\n/).map((paragraph,i)=><p key={i}>{paragraph}</p>)}</div>
   <div className="decision-signature"><p>{content.closing}</p>{content.signer&&<p className="decision-signer">{content.signer}</p>}</div>
@@ -55,7 +56,7 @@ export function DecisionLetterView({applicationId}:{applicationId:string}) {
  const active=data.isCurrent&&data.currentStatus==='ACCEPTED'&&(!data.letter||data.letter.decision==='ACCEPTED')&&!data.suspended&&data.offer?.status==='PENDING'&&new Date(data.offer.expiresAt)>new Date();
  const offer=data.offer;
  return <main className="decision-layout"><nav className="decision-controls"><Link href="/?workspace=student&view=status&section=status">← Application Status</Link><Button variant="outline" disabled={!data.letter} onClick={()=>window.print()}>Print letter</Button></nav>
-  {data.letter ? <LetterPaper content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
+  {data.letter ? <LetterPaper marketing={data.marketing} content={data.letter.content} logoSource={data.letter.content.logoReference?`/api/decision-letter-assets?applicationId=${encodeURIComponent(applicationId)}&letterId=${encodeURIComponent(data.letter.id)}`:undefined}/> : <article className="decision-paper"><h1>Your decision</h1><p>Your application is {data.currentStatus.toLowerCase()}. A formal letter was not issued for this decision.</p></article>}
   {((!data.letter||data.letter.decision==='ACCEPTED')||!data.isCurrent||data.suspended||offer?.status==='ACCEPTED'||error)&&<section className="decision-controls decision-response" aria-label="Decision next steps">
    {!data.isCurrent&&<p>This is a historical letter. Your current decision is {data.currentStatus.toLowerCase()}. Offer controls reflect your current record.</p>}
    {data.suspended&&<p>This club is suspended. Offer responses are currently unavailable.</p>}

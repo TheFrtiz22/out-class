@@ -82,6 +82,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           clubName: app.club.name,
           logoText: app.club.name.slice(0, 2),
           logoUrl: app.club.logoUrl,
+          marketing: app.club.marketing,
           color: app.club.color || "#142d4e",
           status: trackerLabels[app.status],
           questionsCompleted: app.answers.filter((answer) => answer.response.trim()).length,
@@ -188,7 +189,7 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
   if (app && statusView) return <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-5 pb-6"><ApplicationStatusDetail application={app} notice={notice} onBack={() => { setActiveId(null); setNotice("") }} onResponses={() => openRelated("tracker")} onCalendar={() => onNavigate?.("calendar")} onRefresh={() => setRetry(value => value + 1)} onBookingChanged={bookingChanged} onMyClubs={() => onNavigate?.("my-clubs")} /></div>
   if (app)
     return (
-      <div ref={content} className="oc-application-detail mx-auto max-w-3xl space-y-7 pb-8">
+      <div ref={content} className={`oc-application-detail mx-auto pb-8 ${app.status === "DRAFTING" ? "oc-writing-workspace" : "max-w-3xl space-y-7"}`}>
         <Button
           variant="ghost"
           size="sm"
@@ -204,20 +205,20 @@ export function ApplicationTrackerView({ onNavigate, scope = "all" }: { onNaviga
           <ArrowLeft className="size-4" />
           Applications
         </Button>
-        <header className="flex items-start gap-4">
+        <header className="oc-writing-identity flex items-start gap-3">
           <ClubLogo
             clubId={app.clubId}
-            logoUrl={app.club.logoUrl}
+            logoUrl={app.club.logoUrl} marketing={app.club.marketing}
             color={app.club.color || "#142d4e"}
             text={app.club.name.slice(0, 2)}
-            size="lg"
+            size="md"
           />
           <div className="min-w-0 flex-1">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
+            <p className="text-xs font-medium text-muted-foreground">
               Your application
             </p>
             <h1 tabIndex={-1} className="oc-page-title break-words outline-none">{app.club.name}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
               <StatusBadge status={app.status} />
               <p className="text-xs text-muted-foreground">
                 {app.submittedAt

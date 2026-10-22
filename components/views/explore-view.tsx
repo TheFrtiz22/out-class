@@ -13,6 +13,7 @@ import { CorkboardButton } from "@/components/clubs/corkboard-button"
 import { DiscoveryCard } from "@/components/clubs/discovery-card"
 import { DirectoryLogo } from "@/components/clubs/directory-logo"
 import { discoverClubs } from "@/lib/data"
+import { searchPublicClubIds } from "@/actions/typesense-search"
 import { getClubDirectory } from "@/lib/workspace-api"
 import { filterDirectory, emptyDirectoryFilters, directoryFiltersFromParams, directoryFilterParams, type DirectoryClub } from "@/lib/club-directory"
 import { ClubProfileView } from "@/components/views/club-profile-view"
@@ -49,6 +50,7 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     const url = new URL(window.location.href)
     if (url.searchParams.has("aum")) { url.searchParams.delete("aum"); window.history.replaceState(null, "", url.pathname + url.search + url.hash) }
   }, [filterQuery])
+  const [searchMatches, setSearchMatches] = useState<{ query: string; ids: string[] } | null>(null)
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const timer = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(timer) }, [])
   const [selected, setSelected] = useState<DirectoryClub | null>(() => demoStore.active() ? demoDirectory().find(c => [c.id, c.slug].includes(new URLSearchParams(window.location.search).get("demoClub") || "")) || null : null)
@@ -89,7 +91,26 @@ export function ExploreView({ onNavigate, section = "explore" }: { onNavigate: (
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],
   )
-  const filtered = useMemo(() => filterDirectory(clubs, filters, now), [clubs, filters, now])
+  // Typesense is an optional relevance/typo index, never an authority on visibility.
+  // Cross-check every ID against the current public directory before rendering.
+  useEffect(() => {
+    const query = filters.query.trim()
+    if (query.length < 2 || isDemoEnabled) { setSearchMatches(null); return }
+    let live = true
+    const timer = window.setTimeout(() => {
+      searchPublicClubIds(query).then(ids => {
+        if (live) setSearchMatches(ids === null ? null : { query, ids })
+      }).catch(() => { if (live) setSearchMatches(null) })
+    }, 180)
+    return () => { live = false; window.clearTimeout(timer) }
+  }, [filters.query, isDemoEnabled])
+  const filtered = useMemo(() => {
+    const match = searchMatches?.query === filters.query.trim() ? searchMatches : null
+    if (!match) return filterDirectory(clubs, filters, now)
+    const visible = new Set(match.ids)
+    const matches = filterDirectory(clubs.filter(club => visible.has(club.id)), { ...filters, query: "" }, now)
+    return filters.sort === "name" ? matches.sort((a, b) => match.ids.indexOf(a.id) - match.ids.indexOf(b.id)) : matches
+  }, [clubs, filters, now, searchMatches])
   const active = Object.entries(filters).filter(
     ([key, value]) =>
       key !== "sort" && value !== emptyDirectoryFilters[key as keyof typeof filters],

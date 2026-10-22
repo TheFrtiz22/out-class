@@ -108,6 +108,7 @@ export async function getStudentApplications() {
           testRequirement: true,
           name: true,
           logoUrl: true,
+          marketing: true,
           color: true,
           pipelineRounds: { where: { archivedAt: null }, select: { id: true, name: true, order: true }, orderBy: { order: "asc" } },
           questions: {
@@ -137,7 +138,7 @@ prisma.application.findMany({
     omit: { anonymousReviewText: true },
     include: {
       club: {
-        select: { name: true, logoUrl: true, color: true, _count: { select: { questions: true } } },
+        select: { name: true, logoUrl: true, marketing: true, color: true, _count: { select: { questions: true } } },
       },
       round: {
         select: { name: true },

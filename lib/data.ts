@@ -10,6 +10,7 @@ export type Club = {
   name: string
   tagline: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   acceptanceRate: string
@@ -26,6 +27,7 @@ export type Application = {
   clubId: string
   clubName: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   stage: Stage
@@ -58,6 +60,7 @@ export type StudentMembership = {
   clubId: string
   clubName: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   role: "Member" | "Executive"
@@ -310,6 +313,7 @@ export type Notification = {
   club: string
   color: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   senderName: string
   senderTitle: string
@@ -336,6 +340,7 @@ export type DiscoverClub = {
   id: string
   name: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   category: string
@@ -357,6 +362,7 @@ export type TrackedApplication = {
   clubId: string
   clubName: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   status: TrackerStatus
@@ -373,6 +379,7 @@ export type EssayPrompt = {
   clubId: string
   clubName: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   promptGroup: string
@@ -387,6 +394,7 @@ export type DecisionRecord = {
   id: string
   clubName: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
   cycle: string

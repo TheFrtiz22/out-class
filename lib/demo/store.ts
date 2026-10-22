@@ -334,6 +334,8 @@ export function demoNotifications() {
       club: a.club.name,
       color: a.club.color,
       logoText: a.club.logoText,
+      logoUrl: a.club.logoUrl,
+      marketing: a.club.marketing,
       senderName: "Sample recruitment team",
       senderTitle: "Demo update",
       urgent: false,

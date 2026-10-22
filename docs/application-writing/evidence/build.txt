@@ -1,0 +1,13 @@
+Production build used by the authenticated integration suite.
+ ✓ Compiled successfully in 43s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/64) ...
+   Generating static pages (16/64)
+   Generating static pages (32/64)
+   Generating static pages (48/64)
+ ✓ Generating static pages (64/64)
+   Finalizing page optimization ...
+Route (app)                                    Size  First Load JS  Revalidate  Expire
++ First Load JS shared by all                105 kB
+ƒ Middleware                                95.1 kB

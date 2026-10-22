@@ -12,11 +12,11 @@ const helpers = load('lib/student-applications.ts')
 const clubId = '00000000-0000-4000-8000-000000000001'
 const questionId = '00000000-0000-4000-8000-000000000002'
 const question = { id: questionId, prompt: 'Why this club?', type: 'ESSAY', required: true, wordLimit: 3 }
-function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL', userId = 'student' } = {}) {
+function setup({ status = 'DRAFTING', profile = true, questions = [question], testRequirement = 'OPTIONAL', userId = 'student', applicationOpen = true, applicationDeadline = null } = {}) {
   const calls = []
   const tx = {
     $queryRaw: async()=>[],
-    club: { findUnique: async () => ({ testRequirement }) },
+    club: { findUnique: async () => ({ testRequirement, applicationOpen, applicationDeadline }) },
     studentProfile: { findUnique: async () => profile ? (typeof profile === 'object' ? profile : { id: 'profile' }) : null },
     applicationQuestion: { findMany: async args => { calls.push(['questions', args]); return questions } },
     pipelineRound: { findFirst: async () => ({ id: 'first-round' }) },
@@ -64,6 +64,16 @@ test('draft save and repeat submission cannot overwrite submitted answers', asyn
     const context = setup({ status: 'SUBMITTED' })
     await assert.rejects(context[method]({ clubId, answers: [{ questionId, response: 'My answer' }] }), /already been submitted/)
     assert.equal(context.calls.some(([name]) => name === 'delete'), false)
+  }
+})
+test('closed and past-deadline applications allow draft saves but reject submission before any answer writes', async () => {
+  const input={clubId,answers:[{questionId,response:'My answer'}]}
+  for(const configuration of [{applicationOpen:false},{applicationDeadline:new Date('2000-01-01')}]) {
+    const closed=setup(configuration)
+    await assert.rejects(closed.submitApplication(input),/closed/)
+    assert.equal(closed.calls.some(([name])=>['update','delete','answers'].includes(name)),false)
+    await closed.saveApplicationDraft(input)
+    assert.equal(closed.calls.find(([name])=>name==='update')[1].data.status,'DRAFTING')
   }
 })
 test('submission requires profile and validated responses before writing', async () => {
