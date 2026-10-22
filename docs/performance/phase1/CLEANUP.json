@@ -3,5 +3,11 @@
   "reservedSupabaseProjectStopped": true,
   "localCredentialFixtureFilesRemoved": true,
   "temporaryAuditReferenceRemoved": true,
-  "unrelatedStacksUntouched": true
+  "unrelatedStacksUntouched": true,
+  "nativeVerificationFollowup": {
+    "ownedContainersRemoved": true,
+    "temporaryAuditArchiveRemoved": true,
+    "externalEmailSent": false,
+    "unrelatedStacksUntouched": true
+  }
 }

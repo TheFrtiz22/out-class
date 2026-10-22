@@ -30,9 +30,18 @@
     "skipped": 0
   },
   "nativeSecurity": {
-    "passed": 2,
-    "failed": 1,
-    "auditReferenceSameFailure": true
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "auditReference": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "testFixtureCorrected": true,
+    "applicationSourcesChanged": false
   },
   "build": "passed",
   "typecheck": "passed",
@@ -45,5 +54,21 @@
     "migrations": 57,
     "tablesWithRls": 78
   },
-  "patchAppliesToAuditReference": true
+  "patchAppliesToAuditReference": true,
+  "initialNativeSecurity": {
+    "passed": 2,
+    "failed": 1,
+    "auditReferenceSameFailure": true
+  },
+  "onboardingInvitationUnitFollowup": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeFollowupLint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "followupNote": "Only tests and evidence changed after the measured implementation. Full application suite, build and navigation measurements were not repeated; previous results above remain historical."
 }

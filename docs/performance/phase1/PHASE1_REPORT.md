@@ -1,10 +1,10 @@
 # OutClass navigation performance — Phase 1
 
-October 22, 2026. Audit reference and initial HEAD: `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`. HEAD was not changed. The original audit, roadmap and benchmark JSON remain intact. Existing untracked notes were preserved. No merge, deployment, production configuration, database region, schema or index changes occurred.
+October 22, 2026. Audit reference and initial implementation HEAD: `3017e01d5b55bc8fb38d4f8fbec4906dd93bf619`. The continuation began at `31096ad70c5255372ed6a6c7dedd805743f3d779`, which already contained Phase 1; that commit and all subsequent application changes were preserved. The original audit, roadmap and benchmark JSON remain intact. No merge, deployment, production configuration, database region, schema or index changes occurred.
 
 ## Implementation
 
-[Implementation patch](IMPLEMENTATION.diff) · [machine-readable comparison](COMPARISON.json) · [native security result](NATIVE_SECURITY_RESULT.json).
+[Measured implementation patch](IMPLEMENTATION.diff) · [test-only continuation patch](NATIVE_SECURITY_FOLLOWUP.diff) · [machine-readable comparison](COMPARISON.json) · [native security result](NATIVE_SECURITY_RESULT.json).
 
 - `/api/workspace` now emits a server-generated random trace ID and bounded `Server-Timing` aggregates. Optional `OUTCLASS_PHASE_TRACE=1` emits one sanitized structured record containing only the trace ID, HTTP status, fixed phase labels, counts and numeric durations. It never records SQL, query parameters, cookies, tokens, identities, request URLs, response bodies or exception details.
 - Scheduling mounts on first selection. Its owner survives interview-tab and scheduling round/week URL changes; kit/access editors retain their round-specific keys. A retained scheduler performs a fresh live read before reappearing, keeping its existing editor mounted but concealed while validation is pending or denied. The leave guard exempts the retained scheduler while continuing to protect other editors.
@@ -96,7 +96,8 @@ These spans overlap and must not be summed. This instrumentation cannot separate
 | Full existing test run, serialized files | 1,339 tests: **1,304 passed, 0 failed, 35 environment-gated skips** |
 | Final affected Phase 1 regression run, after gzip | **23 passed, 0 failed, 0 skipped** |
 | Final real Next/Auth/PostgreSQL/browser run | **55 passed, 0 failed, 0 skipped**: onboarding, account data, captured-cookie revocation, signup privacy, student claims, settings and new Phase 1 GET/navigation checks |
-| Native PostgreSQL security suites | **2 passed, 1 failed**; identical failure on audit reference |
+| Native PostgreSQL security suites, corrected test fixture | **3 passed, 0 failed, 0 skipped** on current HEAD plus the test-only continuation, and **3 passed, 0 failed, 0 skipped** on the audit reference with the same test overlay |
+| Onboarding and invitation unit follow-up | **27 passed, 0 failed, 0 skipped**; changed test file also passes lint |
 | Authoritative migration regression check | Passed: all 57 migrations, fresh/legacy data, 78 tables with RLS/browser-role denial |
 | Local Next production build | Passed against reserved local service URLs |
 | TypeScript / lint / whitespace diff | Passed; lint has 0 errors and 26 warnings |
@@ -106,7 +107,7 @@ The final focused run covers negotiated compression, trace isolation/redaction, 
 
 The final scheduler/bookmark browser follow-up passed five tests, including restoring a round selected while the scheduler was concealed.
 
-The full broad run preceded the final gzip response helper and round-bookmark follow-up; the affected unit/transport/browser/HTTP runs and final production build were then repeated on the final source. No unrelated broad test failures were left unresolved. The native onboarding failure described below remains.
+The full broad run preceded the final gzip response helper and round-bookmark follow-up; the affected unit/transport/browser/HTTP runs and final production build were then repeated on the final application source. The continuation changes only the native onboarding test and evidence. Its targeted unit/native checks were rerun; application benchmarks and the production build were not repeated because application sources did not change.
 
 Commands (all data-bearing tests use guarded disposable local configurations):
 
@@ -129,18 +130,21 @@ node scripts/summarize-phase1-navigation.cjs
 The macOS-only native test relay preserves the existing server-loopback assertions, uses pinned test images, publishes only localhost, and cleans up its labeled disposable containers. Linux retains its existing host-network fixture. It does not alter a production service.
 
 
-The native onboarding failure is **pre-existing and unresolved**: `tests/onboarding-concurrency.test.cjs:28` expects one successful concurrent platform ownership claim, but two succeed. It reproduced in a fresh disposable database against an isolated archive of the exact audit reference, as well as the Phase 1 source. The two native interview concurrency suites pass, including independent drafts, simultaneous completion, conflicts, revocation, anonymous reopening and private collaboration. The failing onboarding test stops before its later assertions; those are not represented as passing.
+**Correction to the initial report:** the original failure at `tests/onboarding-concurrency.test.cjs:28` was two retries of the **same invitation**, not competing claims from different recipients. The application already intentionally accepts an authorized retry, and its existing unit test expects two successful responses with one membership write and one acceptance audit. The native test now checks that contract against PostgreSQL: two matching responses, one accepted invitation, one active owner membership and one acceptance audit. No authorization or locking behavior was changed.
+
+The now-reachable separate competing-invitation case verifies exactly one successful claim, a losing claim rejected because the organization already has an owner, one owner, one accepted invitation and one acceptance audit. A second stale fixture assumption surfaced afterward: the disposable runner explicitly disables email, while the test expected its mocked sender to run. The test now verifies that delivery pauses with all 50 entries untouched, then enables only its existing in-memory sender inside a restored environment scope and verifies unique delivery claims. No SMTP module or external sender is used.
+
+All three native suites now pass, including later duplicate-import, mail-delivery, simultaneous owner-disablement, ownership-transfer and interview concurrency checks that the original failure prevented from running. All three also pass with the same corrected test and macOS runner overlaid onto an otherwise unchanged archive of the audit reference. Historical failure details and the final current/reference results are retained in [native security evidence](NATIVE_SECURITY_RESULT.json) and the [sanitized test log](NATIVE_SECURITY_FOLLOWUP.log). Both disposable database runs and the temporary audit archive were cleaned up.
 
 The final broad run passed after updating isolated browser/React fixture mocks to the new read transports and observer, and removing a duplicate hidden error message exposed by the scheduler concealment guard. These were verified and corrected; failed development attempts are not presented as accepted benchmark data.
 
 ## Risks and next phase
 
-1. **Triage the reproduced ownership-claim race separately before a release decision.** This patch preserves its existing behavior and does not attempt an unrelated authorization/locking change. Do not treat a performance result as security approval.
-2. Obtain correlated traces for real slow navigation with active bookings/assignments and a production-like pool workload. Three requests per browser are bounded, but many browsers still share the server pool. Local acquisition measurements do not establish production capacity or remove cross-region latency.
-3. The next performance work supported by these results is authorized intent-based component/data loading and narrower pipeline/task/directory projections. Single-read tabs retain their cold dynamic-import/mount delay and showed little latency improvement from GET transport alone. Avoid adding a cache to mask live authorization or broad payloads.
-4. Retained scheduling state now has fresh reveal validation, but very long-lived sessions, multiple windows, support-session expiry, large active schedules and mobile CPU/network need a realistic acceptance cohort before deployment. Existing live checks remain the authority; no successful authorization is shared between HTTP requests.
-5. If a region experiment is later authorized, run an isolated, controlled preview comparison with the same database and security contract. No production infrastructure change is part of this deliverable.
+1. Obtain correlated traces for real slow navigation with active bookings/assignments and a production-like pool workload. Three requests per browser are bounded, but many browsers still share the server pool. Local acquisition measurements do not establish production capacity or remove cross-region latency.
+2. The next performance work supported by these results is authorized intent-based component/data loading and narrower pipeline/task/directory projections. Single-read tabs retain their cold dynamic-import/mount delay and showed little latency improvement from GET transport alone. Avoid adding a cache to mask live authorization or broad payloads.
+3. Retained scheduling state now has fresh reveal validation, but very long-lived sessions, multiple windows, support-session expiry, large active schedules and mobile CPU/network need a realistic acceptance cohort before deployment. Existing live checks remain the authority; no successful authorization is shared between HTTP requests.
+4. If a region experiment is later authorized, run an isolated, controlled preview comparison with the same database and security contract. No production infrastructure change is part of this deliverable.
 
-Recommendation: keep Phase 1 as a reviewable, undeployed patch. Its strongest measured benefit is fewer requests and a shorter three-read barrier in Interview Rooms. Resolve the pre-existing security concurrency result and validate realistic active/pool workloads before approving release; then address the remaining cold-load and projection costs.
+Recommendation: keep Phase 1 reviewable and undeployed. Its strongest measured benefit is fewer requests and a shorter three-read barrier in Interview Rooms. The earlier native concurrency concern was a test-contract mismatch and is resolved without an application security change. Validate realistic active/pool workloads before approving release; then address the remaining cold-load and projection costs. Passing these local suites does not establish production capacity.
 
 The reserved local app and Supabase project were stopped after verification. Disposable credential fixtures and the temporary audit-reference checkout were removed; unrelated local stacks were left intact. See [cleanup evidence](CLEANUP.json).
