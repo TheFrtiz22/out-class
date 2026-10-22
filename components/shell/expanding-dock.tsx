@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent } from "react"
 import { CheckCircle2, ChevronRight, Users2 } from "@/components/icons"
-import { OutClassLogo } from "@/components/outclass-logo"
+import { DockBrand } from "./dock-brand"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { navigationGroupLabels, type ProductNavItem } from "@/lib/product-navigation"
 
@@ -113,7 +113,7 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
     }}
     onKeyDownCapture={event => { if (event.key === "Escape" && !openGroup) { event.preventDefault(); event.stopPropagation(); cancelIntent(); cancelExit(); dockFocused.current = false; setExpanded(false); clearHighlight(); onDismiss() } }}>
     <div className="oc-context-sidebar oc-dock-rail">
-      <button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><span className="oc-dock-brand-mark"><OutClassLogo variant="mark" /></span><span className="oc-dock-brand-name" aria-hidden="true">Out<span>Class</span></span></button>
+      <button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><DockBrand /></button>
       <div className="oc-dock-navigation">
         <div ref={canvas} className="oc-dock-navigation-content"
           onPointerOver={event => {

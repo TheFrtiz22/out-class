@@ -38,7 +38,7 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, children,
         }} onClick={event => {
           if (current === option.id || !canLeaveWorkspace()) event.preventDefault()
           else if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) onSwitch?.()
-        }}>{option.label}</Link>}
+        }}><span>{option.label}</span>{current !== option.id && option.id !== "admin" && <span className="oc-workspace-hint" aria-hidden="true">{option.id === "personal" ? <>Explore/Apply/<wbr />My Clubs</> : <>Recruiting/<wbr />Club</>}</span>}</Link>}
       </div>)}
     </nav></div>
     {current === "leader" && access.clubs.length > 1 && clubSwitcher && <div className="oc-workspace-club-switch">{clubSwitcher}</div>}

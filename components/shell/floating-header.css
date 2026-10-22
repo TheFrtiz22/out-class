@@ -9,7 +9,7 @@
      The maximum overshoot is below .7%, with no runtime animation loop. */
   --oc-floating-spring: linear(0 0%, .1498 7.14%, .4134 14.29%, .6474 21.43%, .8127 28.57%, .9138 35.71%, .9685 42.86%, .9943 50%, 1.0041 57.14%, 1.0063 64.29%, 1.0054 71.43%, 1.0037 78.57%, 1.0023 85.71%, 1.0012 92.86%, 1 100%);
 }
-.oc-product-header { position: sticky; top: var(--support-banner-height, 0px); z-index: 40; min-height: var(--oc-shell-header-height); margin-left: var(--oc-shell-rail-width); padding: 16px 24px; background: transparent; border: 0; pointer-events: none; }
+.oc-product-header { position: sticky; top: var(--support-banner-height, 0px); z-index: 40; min-height: var(--oc-shell-header-height); margin-left: var(--oc-shell-rail-width); padding: 4px 24px 12px; background: transparent; border: 0; pointer-events: none; }
 .oc-product-header-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 48px; padding: 0; }
 .oc-product-header-row > * { pointer-events: auto; }
 .oc-product-modes { min-width: 0; flex-shrink: 0; }
@@ -52,24 +52,24 @@
 /* Fixed bar. Its selected workspace divides into modes without growing. */
 .oc-product-header-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px 24px; }
 .oc-product-workspaces { width: max-content; max-width: 100%; min-width: 0; }
-.oc-product-utilities { margin-left: 0; margin-top: 24px; align-self: start; }
-.oc-evolving-toggle { --workspace-selected-track: minmax(0,1fr); --workspace-ratio: 1; width: 202px; max-width: 100%; }
+.oc-product-utilities { margin-left: 0; margin-top: 19px; align-self: start; }
+.oc-evolving-toggle { --workspace-selected-track: minmax(0,1.65fr); --workspace-ratio: 1.65; width: 202px; max-width: 100%; }
 .oc-evolving-toggle[data-workspace-count="2"] { width: 346px; }
 .oc-evolving-toggle[data-workspace-count="3"] { width: 518px; }
-.oc-workspace-captions { display: grid; grid-template-columns: var(--workspace-columns); gap: 4px; height: 19px; padding-inline: 5px; color: var(--muted-foreground); font-size: 11px; font-weight: 500; line-height: 16px; text-align: center; transition: grid-template-columns 420ms var(--oc-floating-ease); }
-.oc-evolving-bar { overflow: hidden; height: 58px; padding: 4px; border: 1px solid var(--oc-floating-border, rgb(20 45 69 / 12%)); border-radius: 999px; background: var(--oc-floating-surface, #fffbf5); box-shadow: var(--oc-floating-shadow); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
-.oc-evolving-segments { --workspace-base: calc((100% - (var(--workspace-count) - 1) * 4px) / (var(--workspace-count) + var(--workspace-ratio) - 1)); position: relative; isolation: isolate; display: grid; grid-template-columns: var(--workspace-columns); align-items: stretch; gap: 4px; height: 48px; transition: grid-template-columns 420ms var(--oc-floating-ease); }
+.oc-workspace-captions { display: grid; grid-template-columns: var(--workspace-columns); gap: 4px; height: 17px; padding-inline: 5px; color: var(--muted-foreground); font-size: 11px; font-weight: 500; line-height: 16px; text-align: center; transition: grid-template-columns 420ms var(--oc-floating-ease); }
+.oc-evolving-bar { overflow: hidden; height: 54px; padding: 4px; border: 1px solid var(--oc-floating-border, rgb(20 45 69 / 12%)); border-radius: 999px; background: var(--oc-floating-surface, #fffbf5); box-shadow: var(--oc-floating-shadow); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
+.oc-evolving-segments { --workspace-base: calc((100% - (var(--workspace-count) - 1) * 4px) / (var(--workspace-count) + var(--workspace-ratio) - 1)); position: relative; isolation: isolate; display: grid; grid-template-columns: var(--workspace-columns); align-items: stretch; gap: 4px; height: 44px; transition: grid-template-columns 420ms var(--oc-floating-ease); }
 .oc-workspace-segment { display: flex; align-items: stretch; min-width: 0; color: var(--primary); }
 .oc-evolving-indicator { position: absolute; z-index: -1; inset: 0 auto 0 0; width: calc(var(--workspace-base) * var(--workspace-ratio)); border-radius: 999px; background: var(--primary); transform: translateX(calc(var(--workspace-index) * (100% / var(--workspace-ratio) + 4px))); transition: transform 420ms var(--oc-floating-ease), width 420ms var(--oc-floating-ease), opacity 180ms ease; }
 .oc-evolving-segments[data-has-active="false"] .oc-evolving-indicator { opacity: 0; }
-.oc-evolving-indicator::after { content: ""; position: absolute; bottom: 2px; left: calc(50% - 4px); width: 8px; height: 2px; border-radius: 2px; background: var(--brand-orange); }
-.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 4px 8px; border-radius: 999px; color: var(--primary); background: transparent; font-size: 13px; font-weight: 500; line-height: 18px; text-decoration: none; text-align: center; }
+
+.oc-evolving-toggle .oc-evolving-segments .oc-workspace-option { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 2px 4px; border-radius: 999px; color: var(--primary); background: transparent; font-size: 13px; font-weight: 500; line-height: 18px; text-decoration: none; text-align: center; }
 .oc-evolving-toggle .oc-evolving-segments .oc-workspace-option[aria-current="page"] { color: #fff7ec; }
 .oc-workspace-segment-content, .oc-product-context, .oc-product-modes { width: 100%; min-width: 0; }
 .oc-workspace-segment-content { overflow: hidden; animation: oc-workspace-divide 260ms var(--oc-floating-ease); }
-.oc-evolving-toggle .oc-floating-modes { width: 100%; height: 48px; padding: 2px; border: 0; border-radius: 999px; background: transparent; box-shadow: none; backdrop-filter: none; }
+.oc-evolving-toggle .oc-floating-modes { width: 100%; height: 44px; padding: 0; border: 0; border-radius: 999px; background: transparent; box-shadow: none; backdrop-filter: none; }
 .oc-evolving-toggle .oc-floating-modes .oc-floating-mode-link { min-height: 44px; padding: 4px; gap: 0; border-radius: 999px; color: #c5d5df; background: transparent; font-size: 12px; line-height: 16px; }
-.oc-evolving-toggle .oc-floating-mode-indicator { inset: 2px auto 2px 2px; width: calc((100% - 4px) / var(--mode-count)); border-radius: 999px; background: #fff7ec; box-shadow: none; }
+.oc-evolving-toggle .oc-floating-mode-indicator { inset: 0 auto 0 0; width: calc(100% / var(--mode-count)); border-radius: 999px; background: #fff7ec; box-shadow: none; }
 .oc-evolving-toggle .oc-floating-mode-indicator::after { display: none; }
 .oc-evolving-toggle .oc-floating-modes .oc-floating-mode-link[aria-current="page"] { color: var(--primary); }
 .oc-evolving-toggle .oc-evolving-segments :is(.oc-workspace-option,.oc-floating-mode-link)::before, .oc-evolving-toggle .oc-evolving-segments :is(.oc-workspace-option,.oc-floating-mode-link)::after { display: none; }
@@ -108,9 +108,12 @@ button.oc-header-club:hover { color: var(--primary); background: rgb(20 45 69 / 
   .oc-evolving-toggle .oc-floating-modes .oc-floating-mode-link { padding-inline: 2px; font-size: 11px; }
 }
 @media (max-width: 639px) {
-  .oc-product-header { padding: 10px 12px; }
+  .oc-product-header { padding: 4px 12px 10px; }
   .oc-product-utilities { gap: 6px; }
   .oc-product-header .oc-floating-circle, .oc-product-header .oc-floating-search { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-basis: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { .oc-evolving-toggle *, .oc-floating-mode-indicator, .oc-floating-search::before, .oc-product-header :is(a,button) { transition: none !important; animation: none !important; } }
 @media (forced-colors: active) { .oc-evolving-bar { border-color: CanvasText; } .oc-evolving-indicator, .oc-evolving-toggle .oc-floating-mode-indicator { background: Highlight; forced-color-adjust: none; } .oc-evolving-toggle .oc-floating-modes .oc-floating-mode-link[aria-current="page"] { color: HighlightText; forced-color-adjust: none; } }
+
+.oc-workspace-hint { display: block; max-width: 100%; color: var(--muted-foreground); font-size: 10px; line-height: 11px; font-weight: 400; text-wrap: balance; }
+@media (max-width: 759px) { .oc-workspace-hint { font-size: 9px; letter-spacing: -.15px; } }
