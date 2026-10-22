@@ -3,7 +3,7 @@ test('shell focuses content on primary mode or club changes even when the destin
  const slots=[],effects=[],calls=[]
  let index=0
  const react={useState(v){index++;return[v,()=>{}]},useRef(v){const i=index++;return slots[i]??={current:v}},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
- const mocks={react,'@/lib/profile-photo':{profilePhotoSource:()=>undefined,accountInitials:()=>"OC"},'next/navigation':{useRouter:()=>({push(){}})},'@/lib/workspace-api':{getTaskNotifications:async()=>[]},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})},'@/lib/views':{adminNav:[],studentNav:[]},'@/lib/utils':{cn:()=>''},'@/lib/permissions':{hasPermission:()=>false},'@/lib/product-navigation':{personalUniversalItems:[],canLeaveWorkspace:()=>true}}
+ const mocks={'@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})},react,'@/lib/profile-photo':{profilePhotoSource:()=>undefined,accountInitials:()=>"OC"},'next/navigation':{useRouter:()=>({push(){}})},'@/lib/workspace-api':{getTaskNotifications:async()=>[]},'@/contexts/auth-context':{useAuth:()=>({user:null})},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/contexts/organization-invitations-context':{useOrganizationInvitations:()=>({invitations:[]})},'@/lib/application-state':{useApplicationState:()=>({notifications:[]})},'@/lib/views':{adminNav:[],studentNav:[]},'@/lib/utils':{cn:()=>''},'@/lib/permissions':{hasPermission:()=>false},'@/lib/product-navigation':{personalUniversalItems:[],canLeaveWorkspace:()=>true}}
  const mod={exports:{}},code=ts.transpileModule(fs.readFileSync('components/shell/product-shell.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText
  new Function('require','module','exports','window','document',code)(name=>mocks[name]||(name.endsWith('.css')?{}:name.startsWith('@/')?new Proxy({},{get:(_,key)=>String(key)}):require(name)),mod,mod.exports,{scrollTo:()=>calls.push('scroll'),matchMedia:()=>({addEventListener(){},removeEventListener(){}}),addEventListener(){},removeEventListener(){}},{title:''})
  function render(mode,clubId='mii'){
@@ -23,6 +23,7 @@ test('pending invitations drive the notification bell and are reviewable in the 
  const {nodes}=require('./helpers/invitations-ui.cjs'),path=require('node:path');
  const state={invitations:[]},navigations=[];
  const mocks={
+  '@/components/shell/use-workspace-access':{useWorkspaceAccess:()=>({clubs:[],personal:true,admin:false,pending:false})},
   react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect(){},useMemo:fn=>fn()},
   'next/link':{default:'Link'},'next/navigation':{useRouter:()=>({}),useSearchParams:()=>new URLSearchParams()},
   '@/lib/workspace-api':{getTaskNotifications:async()=>[]},'@/contexts/auth-context':{useAuth:()=>({user:null})},

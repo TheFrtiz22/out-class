@@ -1,57 +1,36 @@
 "use client"
-import { useEffect, useState } from "react"
+
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Check, ChevronsUpDown, Shield } from "@/components/icons"
-import { AccountAvatar } from "@/components/account-avatar"
-import { useAuth } from "@/contexts/auth-context"
-import { canLeaveWorkspace } from "@/lib/product-navigation"
-import { hasWorkspace } from "@/lib/permissions"
+import { Check, ChevronsUpDown } from "@/components/icons"
 import { availableSettings } from "@/lib/club-settings"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
+import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { ClubLogo } from "@/components/club-logo"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { WorkspaceAccess } from "@/components/shell/use-workspace-access"
 
-export function ClubWorkspaceSwitcher({ clubId = "", managersOnly = false, adminActive = false }: { clubId?: string; managersOnly?: boolean; adminActive?: boolean }) {
-  const { user } = useAuth()
+/** Club selection is one level below workspace selection. Only managed clubs enter here. */
+export function ClubWorkspaceSwitcher({ clubId, access, onSwitch }: { clubId: string; access: WorkspaceAccess; onSwitch?: () => void }) {
   const router = useRouter(), pathname = usePathname(), params = useSearchParams()
-  const [eligible, setEligible] = useState(false)
-  const { isImpersonating } = useAuth()
-  const identityId = user?.id, impersonating = user?.impersonating
-  useEffect(() => {
-    let live = true
-    setEligible(false)
-    if (identityId && !impersonating) void fetch("/api/platform/eligibility", { cache: "no-store" }).then(r => r.json()).then(r => { if (live) setEligible(r.eligible === true) }).catch(() => {})
-    return () => { live = false }
-  }, [identityId, impersonating])
-  if (!user) return null
-  const memberships = user.memberships.filter(member => !managersOnly || hasWorkspace(member))
-  const current = memberships.find(member => member.clubId === clubId)
+  const current = access.clubs.find(member => member.clubId === clubId)
+  if (!current || access.clubs.length < 2) return null
+  const identity = <><ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0, 2)} /><span className="oc-header-club-name">{current.club.name}</span></>
   function switchTo(id: string) {
-    if (!canLeaveWorkspace()) return
+    if (id === clubId || !canLeaveWorkspace()) return
+    const next = access.clubs.find(member => member.clubId === id)
+    if (!next) return
     const inSettings = params.get("section") === "settings" || pathname.startsWith("/settings") && pathname !== "/settings/interviews"
-    if (inSettings && id) {
-      const next = memberships.find(member => member.clubId === id)
-      const sections = next ? availableSettings(next) : []
-      const section = sections.find(section => section.id === params.get("setting")) ?? sections[0]
-      if (section) { router.push(`/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}`); return }
-    }
-    router.push(id ? clubWorkspaceHref(id) : inSettings ? "/settings" : "/?workspace=student")
+    const sections = inSettings ? availableSettings(next) : []
+    const section = sections.find(section => section.id === params.get("setting")) ?? sections[0]
+    router.push(section ? `/club/${encodeURIComponent(id)}/workspace?section=settings&setting=${section.id}` : clubWorkspaceHref(id))
+    onSwitch?.()
   }
-  return <div className="oc-workspace-switcher">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild><button type="button" className="oc-workspace-switcher-trigger">
-        {adminActive ? <span className="oc-workspace-personal-icon"><Shield size={18} /></span> : current ? <ClubLogo clubId={clubId} logoUrl={current.club.logoUrl} color={current.club.color || "#142d45"} text={current.club.name.slice(0,2)} /> : <AccountAvatar user={user} className="size-9" />}
-        <span><span className="sr-only">Switch workspace: </span><strong>{adminActive ? "Admin" : current?.club.name || "Personal"}</strong><small>{adminActive ? "Platform administration" : current ? "Club workspace" : user.profile?.firstName || "Your campus"}</small></span><ChevronsUpDown size={14} aria-hidden="true" />
-      </button></DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="oc-workspace-menu w-72">
-        <DropdownMenuItem onSelect={() => switchTo("")}><AccountAvatar user={user} className="size-6" /><span className="flex-1">Personal workspace</span>{!clubId && !adminActive && <Check />}</DropdownMenuItem>
-        {memberships.length > 0 && <DropdownMenuSeparator />}
-        {memberships.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchTo(member.clubId)}>
-          <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} color={member.club.color || "#142d45"} text={member.club.name.slice(0,2)} />
-          <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{member.club.name}</strong><small className="text-xs text-muted-foreground">{hasWorkspace(member) ? "Leader workspace" : "Member workspace"}</small></span>{member.clubId === clubId && <Check />}
-        </DropdownMenuItem>)}
-        {eligible && !isImpersonating && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => { if (canLeaveWorkspace()) router.push("/platform") }}><Shield /><span className="flex-1">Admin</span>{adminActive && <Check />}</DropdownMenuItem></>}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
+  return <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="oc-header-club" aria-label={`Switch club: ${current.club.name}`}>{identity}<ChevronsUpDown size={14} aria-hidden="true" /></button></DropdownMenuTrigger>
+    <DropdownMenuContent align="start" sideOffset={8} collisionPadding={12} className="oc-header-club-menu w-80 max-w-[calc(100vw-24px)]">
+      {access.clubs.map(member => <DropdownMenuItem key={member.id} onSelect={() => switchTo(member.clubId)}>
+        <ClubLogo clubId={member.clubId} logoUrl={member.club.logoUrl} color={member.club.color || "#142d45"} text={member.club.name.slice(0, 2)} />
+        <span className="min-w-0 flex-1 whitespace-normal">{member.club.name}</span>{member.clubId === clubId && <Check aria-label="Current club" />}
+      </DropdownMenuItem>)}
+    </DropdownMenuContent>
+  </DropdownMenu>
 }
