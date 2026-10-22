@@ -29,6 +29,13 @@ test('central workspace selector: verified eligibility, revocation, route hierar
   delay=true;await page.goto(`${fixture.base}/platform?role=student`,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.querySelector('header'));await noRestricted();assert.equal(await dock.getByRole('link').count(),0);await expect(page.getByText('Workspace content',{exact:true})).toHaveCount(0)
   await expect.poll(()=>!!release).toBe(true);delay=false;release();await page.waitForURL('**/?workspace=student');await noRestricted()
   await go('owner','/club/fixture-mii/workspace?section=recruitment');await selected('Club Leader');assert.deepEqual(await workspaces.locator('.oc-workspace-segment').evaluateAll(items=>items.map(item=>item.dataset.workspaceLabel)),['Personal','Club Leader']);assert.equal(await dock.locator('.oc-workspace-switcher').count(),0);await shot('leader-desktop')
+  const bar=await header.locator('.oc-evolving-bar').boundingBox()
+  assert.equal(bar.height,54);assert.ok(bar.y<=22,'header sits close to the top')
+  await expect(choice('Personal').locator('.oc-workspace-hint')).toHaveText('Explore/Apply/My Clubs')
+  assert.equal(await workspaces.locator('[data-selected="true"] .oc-workspace-hint').count(),0)
+  const segmentWidths=await workspaces.locator('.oc-workspace-segment').evaluateAll(items=>items.map(el=>el.getBoundingClientRect().width))
+  assert.ok(segmentWidths[1]>segmentWidths[0]*1.5,'active workspace borrows space inside the fixed bar')
+  assert.equal(await workspaces.locator('.oc-evolving-indicator').evaluate(el=>getComputedStyle(el,'::after').content),'none')
   assert.equal(await header.locator('.oc-evolving-toggle').count(),1);assert.equal(await header.locator('.oc-evolving-toggle .oc-evolving-bar .oc-product-context .oc-product-modes').count(),1,'modes evolve inside the selected workspace segment');assert.equal(await header.locator('.oc-product-header-row > .oc-product-context').count(),0);assert.equal(await header.locator('.oc-evolving-toggle .oc-floating-modes').evaluate(el=>getComputedStyle(el).boxShadow),'none')
   // Real shell remains mounted and performs no access or membership reads across club/mode/workspace navigation.
   await page.locator('main').evaluate(el=>el.dataset.mountProbe='retained');const requests=calls
