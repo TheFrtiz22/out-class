@@ -3,7 +3,7 @@ import { DashboardPriorityQueue } from "@/components/product/dashboard-priority-
 import type { DashboardAction } from "@/lib/dashboard-actions"
 import "@/components/product/dashboard-priority-queue.css"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck, Megaphone } from "@/components/icons"
+import { ArrowRight, CalendarDays, MapPin, ListChecks } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { hasPermission } from "@/lib/permissions"
@@ -47,12 +47,6 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
         </Link></li>)}</ul> : <p className="oc-overview-empty">You have no outstanding assignments. Your submissions and feedback remain available in Tasks.</p>}
         {hasPermission(membership, "tasks.manage") && <Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`} className="oc-overview-team-link">View team tasks & projects <ArrowRight aria-hidden="true" size={15} /></Link>}
       </section>
-      {hasPermission(membership, "meetings.manage") ? <section className="oc-overview-panel oc-overview-updates" aria-labelledby="club-updates">
-        <header><h2 id="club-updates"><Megaphone aria-hidden="true" size={20} />Club updates</h2></header>
-        <p className="oc-overview-empty">Keep up with announcements shared with your club.</p>
-        <Link href={`/club/${club.id}/workspace?section=announcements`} className="oc-overview-team-link">Open announcements <ArrowRight aria-hidden="true" size={15} /></Link>
-      </section>
-      : <section className="oc-overview-panel oc-overview-updates" aria-label="Club resources"><header><h2><CalendarDays aria-hidden="true" size={20} />Club resources</h2></header><p className="oc-overview-empty">Find agendas, shared documents, and meeting recaps in Meetings.</p><Link href={clubWorkspaceHref(club.id, "meetings")} className="oc-overview-team-link">Browse meeting resources <ArrowRight aria-hidden="true" size={15} /></Link></section>}
       {showRecaps && <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>}
     </div>
   </div>
