@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent } from "react"
 import { CheckCircle2, ChevronRight, Users2 } from "@/components/icons"
-import { ClubWorkspaceSwitcher } from "@/components/club-workspace-switcher"
 import { OutClassLogo } from "@/components/outclass-logo"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { navigationGroupLabels, type ProductNavItem } from "@/lib/product-navigation"
@@ -13,12 +12,11 @@ type Section = { label: string; items: ProductNavItem[] }
 const EXIT_DELAY = 200
 
 /** Desktop presentation only. Routes, permission filtering, and leave guards stay in ProductShell. */
-export function ExpandingDock({ sections, active, contextKey, clubId, platform, renderItem, onHome, onDismiss }: {
-  sections: Section[]; active: string; contextKey: string; clubId: string; platform: boolean
+export function ExpandingDock({ sections, active, contextKey, renderItem, onHome, onDismiss }: {
+  sections: Section[]; active: string; contextKey: string
   renderItem: RenderItem; onHome: () => void; onDismiss: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
-  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
   const dismiss = useRef(onDismiss)
   useEffect(() => { dismiss.current = onDismiss }, [onDismiss])
   const [openGroup, setOpenGroup] = useState<Group | null>(null)
@@ -26,7 +24,7 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
   const rail = useRef<HTMLElement>(null), canvas = useRef<HTMLDivElement>(null), highlight = useRef<HTMLDivElement>(null)
   const hoveredItem = useRef<HTMLElement | null>(null)
   const dockFocused = useRef(false)
-  const railHovered = useRef(false), flyoutHovered = useRef(false), workspaceOpen = useRef(false)
+  const railHovered = useRef(false), flyoutHovered = useRef(false)
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const intentTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const focusInside = () => rail.current?.contains(document.activeElement) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(document.activeElement))
@@ -47,7 +45,7 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
   function scheduleExit() {
     cancelExit()
     exitTimer.current = setTimeout(() => {
-      if (railHovered.current || flyoutHovered.current || workspaceOpen.current || focusInside()) return
+      if (railHovered.current || flyoutHovered.current || focusInside()) return
       dockFocused.current = false; setOpenGroup(null); setExpanded(false); clearHighlight()
     }, EXIT_DELAY)
   }
@@ -92,8 +90,8 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
     const reset = () => {
       if (media.matches) return
       const focused = document.activeElement
-      if (dockFocused.current || rail.current?.contains(focused) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(focused)) || workspaceOpen.current) dismiss.current()
-      cancelExit(); cancelIntent(); setOpenGroup(null); setWorkspaceMenuOpen(false); workspaceOpen.current = false; setExpanded(false)
+      if (dockFocused.current || rail.current?.contains(focused) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(focused))) dismiss.current()
+      cancelExit(); cancelIntent(); setOpenGroup(null); setExpanded(false)
       dockFocused.current = false; railHovered.current = false; flyoutHovered.current = false; clearHighlight()
     }
     media.addEventListener("change", reset)
@@ -113,10 +111,9 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
       if (next && !rail.current?.contains(next) && !Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(next))) dockFocused.current = false
       scheduleExit()
     }}
-    onKeyDownCapture={event => { if (event.key === "Escape" && !openGroup && !workspaceOpen.current) { event.preventDefault(); event.stopPropagation(); cancelIntent(); cancelExit(); dockFocused.current = false; setExpanded(false); clearHighlight(); onDismiss() } }}>
+    onKeyDownCapture={event => { if (event.key === "Escape" && !openGroup) { event.preventDefault(); event.stopPropagation(); cancelIntent(); cancelExit(); dockFocused.current = false; setExpanded(false); clearHighlight(); onDismiss() } }}>
     <div className="oc-context-sidebar oc-dock-rail">
       <button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><span className="oc-dock-brand-mark"><OutClassLogo variant="mark" /></span><span className="oc-dock-brand-name" aria-hidden="true">Out<span>Class</span></span></button>
-      <ClubWorkspaceSwitcher open={workspaceMenuOpen} clubId={clubId} managersOnly={!platform} adminActive={platform} onOpenChange={open => { setWorkspaceMenuOpen(open); workspaceOpen.current = open; if (open) { cancelIntent(); cancelExit(); setOpenGroup(null); setExpanded(true) } else scheduleExit() }} />
       <div className="oc-dock-navigation">
         <div ref={canvas} className="oc-dock-navigation-content"
           onPointerOver={event => {
@@ -125,7 +122,7 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
             if (!item) return
             cancelExit(); setExpanded(true); emphasize(item)
             const group = item.dataset.dockGroup as Group | undefined
-            if (!workspaceOpen.current) hoverGroup(group ?? null)
+            hoverGroup(group ?? null)
           }}
           onFocusCapture={event => { const item = event.target.closest<HTMLElement>("[data-dock-item]"); if (item) emphasize(item) }}>
           <div ref={highlight} className="oc-dock-hover-highlight" aria-hidden="true" />

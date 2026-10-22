@@ -84,10 +84,10 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   await page.keyboard.press('Escape');await expect(page.locator('main')).toBeFocused();await expanded(false)
   await applicants.focus();await page.keyboard.press('Enter');await expect(flyout().getByRole('link').first()).toBeFocused();await page.keyboard.press('ArrowLeft');await expect(applicants).toBeFocused();await page.keyboard.press('Enter');await expect(flyout().getByRole('link').first()).toBeFocused();await page.keyboard.press('Enter');await page.waitForURL('**tool=applicants');await expect(page.locator('main')).toBeFocused()
   await applicants.focus();await page.keyboard.press('ArrowRight');await flyout().waitFor();await page.keyboard.press('Control+k');const search=page.getByRole('dialog',{name:'Search OutClass',exact:true});await search.waitFor();await expect(search.getByRole('combobox')).toBeFocused();await page.keyboard.press('Escape');
-  // Workspace dropdown is the existing Radix menu. Leaving the rail cannot collapse it.
-  await outside();const workspace=dock.getByRole('button',{name:/Switch workspace:/})
+  // Club selection is centralized in the header and independent of dock hover.
+  await outside();assert.equal(await dock.locator('.oc-workspace-switcher').count(),0);const workspace=page.locator('header').getByRole('button',{name:/Switch club:/})
   await workspace.click();await page.getByRole('menuitem',{name:/Virginia Volunteers/}).waitFor()
-  await page.mouse.move(900,650);await page.waitForTimeout(350);await expanded(true)
+  await page.mouse.move(900,650);await page.waitForTimeout(350);await expanded(false)
   await page.getByRole('menuitem',{name:/Virginia Volunteers/}).click();await page.waitForURL('**/club/fixture-volunteers/workspace*')
   await page.goto(route('owner'),{waitUntil:'networkidle'});await applicants.hover();await flyout().waitFor()
   assert.deepEqual(await flyout().getByRole('link').allTextContents(),['All Applicants','Rejected Applicants'],'owner does not imply sensitive interview offices')
@@ -101,11 +101,12 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
    assert.equal(await dock.getByRole('button',{name:'Home',exact:true}).count(),1)
    await dock.getByRole('button',{name:names[0],exact:true}).click();assert.equal(new URL(page.url()).searchParams.get('mode'),mode);await expect(dock.getByRole('button',{name:names[0],exact:true})).toHaveAttribute('aria-current','page')
   }
-  await page.goto(route('platform','overview'),{waitUntil:'networkidle'});await dock.hover();await expanded(true)
+  await page.route('**/api/platform/eligibility',route=>route.fulfill({json:{eligible:true}}));await page.goto(`${fixture.base}/platform?role=platform`,{waitUntil:'networkidle'});await dock.hover();await expanded(true)
   for(const name of ['Home','Platform','Operations','System'])await dock.getByRole('navigation',{name,exact:true}).waitFor()
   await page.mouse.move(900,650);await dock.getByRole('link',{name:'Audit Log',exact:true}).focus();await expect(dock.getByRole('link',{name:'Audit Log',exact:true})).toBeFocused()
   await page.waitForTimeout(350);assert.ok(Math.abs((await dock.locator('.oc-dock-hover-highlight').boundingBox()).y-(await dock.getByRole('link',{name:'Audit Log',exact:true}).boundingBox()).y)<1,'shared highlight accounts for internal scroll');
   await dock.getByRole('link',{name:'Audit Log',exact:true}).click();await page.waitForURL('**/platform/audit')
+  await page.unroute('**/api/platform/eligibility')
   // Desktop geometry at every requested width, plus a short viewport requiring internal scroll.
   await page.goto(route(),{waitUntil:'networkidle'})
   for(const width of [1024,1280,1440,1920]){

@@ -6,7 +6,7 @@ async function startDockFixture(){
  await build(root)
  const server=http.createServer(async(req,res)=>{
   const resource=new URL(req.url,'http://localhost').pathname
-  if(resource==='/api/platform/eligibility'){res.setHeader('Content-Type','application/json');return res.end('{"eligible":true}')}
+  if(resource==='/api/platform/eligibility'){res.setHeader('Content-Type','application/json');return res.end('{"eligible":false}')}
   if(resource==='/api/communications/stream'){res.writeHead(204);return res.end()}
   const file=['/bundle.js','/styles.css'].includes(resource)?path.join(root,resource.slice(1)):resource.startsWith('/assets/fonts/')?path.join(repo,'app/fonts',resource.slice(14)):path.join(repo,'public',resource)
   try{const data=await fs.readFile(file);res.setHeader('Content-Type',resource.endsWith('.js')?'text/javascript':resource.endsWith('.css')?'text/css':resource.endsWith('.svg')?'image/svg+xml':resource.endsWith('.woff2')?'font/woff2':'image/jpeg');res.end(data)}

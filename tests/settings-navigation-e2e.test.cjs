@@ -128,13 +128,13 @@ test('settings and authenticated navigation across roles, saves, history and res
     await leaderPage.getByText('Application settings saved. Students now see this configuration.', { exact: true }).waitFor();
     assert.equal((await db.club.findUniqueOrThrow({ where: { id: first.id } })).applicationOpen, false);
     assert.equal((await db.club.findUniqueOrThrow({ where: { id: second.id } })).applicationOpen, true);
-    await leaderPage.getByRole('button', { name: /^Switch workspace:/ }).click();
+    await leaderPage.getByRole('button', { name: /^Switch club:/ }).click();
     await leaderPage.getByRole('menuitem').filter({ hasText: second.name }).click();
     await leaderPage.waitForURL(`**/club/${second.id}/workspace?section=settings&setting=application`);
-    await leaderPage.waitForFunction(name => document.querySelector('.oc-workspace-switcher-trigger strong')?.textContent === name, second.name);
+    await leaderPage.waitForFunction(name => document.querySelector('header .oc-header-club-name')?.textContent === name, second.name);
     await openApplications.waitFor(); assert.equal(await openApplications.isChecked(), true);
     await leaderPage.reload(); await openApplications.waitFor();
-    assert.ok((await leaderPage.getByRole('button', { name: /^Switch workspace:/ }).textContent()).includes(second.name));
+    assert.ok((await leaderPage.getByRole('button', { name: /^Switch club:/ }).textContent()).includes(second.name));
     await noOverflow(leaderPage);
     await leaderPage.screenshot({ path: path.join(artifacts, 'desktop-organization.png'), fullPage: true });
     await open(leaderPage, `/club/${first.id}/workspace?section=recruitment&tool=cycles`);
