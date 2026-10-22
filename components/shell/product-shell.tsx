@@ -152,7 +152,9 @@ export function ProductShell({ children, mode, modes, items, active, title, club
   }
   function sidebar() { return <div className="oc-context-sidebar flex h-full flex-col overflow-y-auto px-4 py-6">
     <button type="button" className="oc-rail-brand" aria-label="OutClass home" onClick={() => navigate("student-dashboard")}><OutClassLogo variant="dark" /></button>
-    <div className="oc-mobile-workspace-controls"><WorkspaceSelector access={access} current={workspace} clubId={clubId} onSwitch={() => { moved.current = true; setMobile(false) }} />{manager && !platform && allowed && <ClubWorkspaceSwitcher clubId={clubId} access={access} onSwitch={() => { moved.current = true; setMobile(false) }} />}</div>
+    <div className="oc-mobile-workspace-controls"><WorkspaceSelector access={access} current={workspace} clubId={clubId} onSwitch={() => { moved.current = true; setMobile(false) }}>
+      {!platform && allowed && (manager || modes.length > 0) && <div className="oc-product-context">{manager && <ClubWorkspaceSwitcher clubId={clubId} access={access} onSwitch={() => { moved.current = true; setMobile(false) }} />}{modes.length > 0 && <div className="oc-product-modes"><FloatingModeNavigation aria-label="Product modes" modes={modes} mode={mode}>{modes.map(m => navLink(m, true))}</FloatingModeNavigation></div>}</div>}
+    </WorkspaceSelector></div>
     {!manager && clubId && clubName && <p className="mb-4 break-words px-3 text-sm font-semibold text-primary">{clubName}</p>}
     {personal && <nav aria-label="Universal navigation" className="mb-5 space-y-1">{personalUniversalItems.filter(item => item.id === "student-dashboard").map(item => navLink(item))}</nav>}
     {!allowed ? null : platform ? ["Home", "Platform", "Operations", "System"].map(group => <div key={group} className="mb-5"><p className="mb-2 px-3 text-[length:var(--oc-size-11)] text-muted-foreground">{group}</p><nav aria-label={group} className="space-y-1">{items.filter(i => (i as ProductNavItem & { group?: string }).group === group).map(i => navLink(i))}</nav></div>) : <nav aria-label="Context navigation" className="space-y-1"><WorkspaceNavigation items={items.filter(i => !i.quiet)} active={active} renderItem={item => navLink(item)} /></nav>}
@@ -168,11 +170,9 @@ export function ProductShell({ children, mode, modes, items, active, title, club
     <header className="oc-product-header" data-mode-count={modes.length}>
       <div className="oc-product-header-row">
         <Sheet open={mobile} onOpenChange={setMobile}><SheetTrigger asChild><IconButton aria-label="Open navigation" className="oc-floating-circle oc-floating-drawer"><Menu /></IconButton></SheetTrigger><SheetContent side="left" className="oc-navigation-sheet w-[min(88vw,300px)] p-0" onCloseAutoFocus={e => { if (moved.current) { e.preventDefault(); main.current?.focus(); moved.current = false; mobileOrigin.current = null } else if (mobileOrigin.current?.isConnected) { e.preventDefault(); mobileOrigin.current.focus(); mobileOrigin.current = null } }}><SheetTitle className="oc-modal-title sr-only">Workspace navigation</SheetTitle><SheetDescription className="sr-only">Choose a workspace or contextual destination.</SheetDescription>{sidebar()}</SheetContent></Sheet>
-        <div className="oc-product-workspaces"><WorkspaceSelector access={access} current={workspace} clubId={clubId} /></div>
-        <div className="oc-product-context">
-        {manager && !platform && allowed && <ClubWorkspaceSwitcher clubId={clubId} access={access} />}
-        {!platform && allowed && modes.length > 0 && <div className="oc-product-modes"><FloatingModeNavigation aria-label="Product modes" modes={modes} mode={mode}>{modes.map(m => navLink(m, true))}</FloatingModeNavigation></div>}
-        </div>
+        <div className="oc-product-workspaces"><WorkspaceSelector access={access} current={workspace} clubId={clubId}>
+          {!platform && allowed && (manager || modes.length > 0) && <div className="oc-product-context">{manager && <ClubWorkspaceSwitcher clubId={clubId} access={access} />}{modes.length > 0 && <div className="oc-product-modes"><FloatingModeNavigation aria-label="Product modes" modes={modes} mode={mode}>{modes.map(m => navLink(m, true))}</FloatingModeNavigation></div>}</div>}
+        </WorkspaceSelector></div>
         <div className="oc-product-utilities">
           <FloatingSearchTrigger open={search} onOpen={trigger => { searchOrigin.current = trigger; setSearch(true) }} />
           <NotificationCenter unread={unread} pendingInvitations={pendingInvitations} loadState={{ loading: !!userId && !demo.isDemoEnabled && (taskLoad.loading || durableLoad.loading), failed: !!userId && !demo.isDemoEnabled && (taskLoad.failed || durableLoad.failed) }} onRetry={() => {

@@ -151,7 +151,7 @@ async function check() {
     console.log('PASS six permission roles and ten desktop/tablet/mobile widths')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=settings`, { waitUntil: 'networkidle' })
     await header.locator('.oc-product-modes .oc-floating-mode-link').evaluate(el => { el.textContent = 'Local workspace preview' })
-    assert.equal(await header.evaluate(el => { const mode = el.querySelector('.oc-product-modes').getBoundingClientRect(), utilities = el.querySelector('.oc-product-utilities').getBoundingClientRect(); return (mode.right + 7 <= utilities.left || mode.top >= utilities.bottom) && utilities.right <= innerWidth && el.scrollWidth <= innerWidth }), true)
+    assert.equal(await header.evaluate(el => { const mode = el.querySelector('.oc-product-modes').getBoundingClientRect(), utilities = el.querySelector('.oc-product-utilities').getBoundingClientRect(); return (mode.right + 7 <= utilities.left || mode.left >= utilities.right + 7 || mode.top >= utilities.bottom || mode.bottom <= utilities.top) && utilities.right <= innerWidth && el.scrollWidth <= innerWidth }), true)
     console.log('PASS long single-mode labels wrap without crowding mobile utilities')
     await page.goto(`${base}/club/fixture-mii/workspace?section=overview&role=owner`, { waitUntil: 'networkidle' })
     await header.locator('[data-tour="profile"]').click()
