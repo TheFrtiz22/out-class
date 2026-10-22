@@ -1,6 +1,5 @@
 "use client"
 
-import { MetricStrip } from "@/components/product/metric-strip"
 import { DashboardPriorityQueue } from "@/components/product/dashboard-priority-queue"
 import type { DashboardAction } from "@/lib/dashboard-actions"
 import "@/components/product/dashboard-priority-queue.css"
@@ -33,12 +32,6 @@ export function RecruitingOverview({ data }: { data: Overview }) {
   ]
   return <div className="oc-recruiting-overview">
     {anonymousOnly && <p className="oc-recruiting-privacy"><ShieldCheck aria-hidden="true" size={17} />Your overview includes only anonymous rounds available to your review access.</p>}
-    {canRead && recruitment && <MetricStrip label="Recruitment status" items={[
-      { label: "to review", value: count("SUBMITTED", "IN_REVIEW"), href: navigation.find(item => item.id === "applicants")?.href, action: "Review applicants" },
-      { label: "interview stage", value: count("INTERVIEWING"), href: navigation.find(item => item.id === "interviews")?.href, action: "Open interviews" },
-      { label: "offers", value: count("ACCEPTED"), href: navigation.find(item => item.id === "decisions")?.href, action: "View recorded decisions" },
-      { label: "waitlisted", value: count("WAITLISTED"), href: navigation.find(item => item.id === "decisions")?.href, action: "Review waitlisted applications" },
-    ]} />}
     <DashboardPriorityQueue actions={actions} title="Recruitment priorities" empty="No applications, interview-stage candidates, or waitlisted cases currently need a follow-up." />
     {canRead && recruitment && <section className="oc-recruitment-pipeline" aria-label="Recruitment pipeline">
       <div className="oc-priority-heading"><h2>Where applicants stand</h2><span>Current statuses</span></div>
