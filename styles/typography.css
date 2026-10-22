@@ -14,7 +14,7 @@
 }
 @utility oc-page-title { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: var(--oc-weight-title); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-section-heading { font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
-@utility oc-card-heading { font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
+@utility oc-card-heading { font-family: var(--oc-font-display); font-size: var(--oc-text-card); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-modal-title { font-size: var(--oc-text-modal); font-weight: var(--oc-weight-semibold); line-height: var(--oc-leading-heading); letter-spacing: var(--oc-tracking-heading); }
 @utility oc-body { font-size: var(--oc-text-body); font-weight: var(--oc-weight-regular); line-height: var(--oc-leading-body); }
 @utility oc-body-small { font-size: var(--oc-text-small); font-weight: var(--oc-weight-regular); line-height: var(--oc-leading-body); }
@@ -23,3 +23,6 @@
 @utility oc-button { font-size: var(--oc-text-small); font-weight: var(--oc-weight-bold); line-height: var(--oc-leading-compact); }
 @utility oc-nav { font-size: var(--oc-text-small); font-weight: var(--oc-weight-medium); line-height: var(--oc-leading-compact); }
 @utility oc-table { font-size: var(--oc-text-small); line-height: var(--oc-leading-compact); }
+
+/* Content titles share the editorial voice; labels, controls and data stay in Source Sans. */
+.oc-announcement-title { font-family: var(--oc-font-display); font-weight: 500; font-size: 1.25rem; line-height: 1.35; letter-spacing: -.02em; }

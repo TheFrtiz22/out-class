@@ -10,10 +10,10 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
   const [data, setData] = useState<ApplicantDisplay | null>(null), [error, setError] = useState(""), [revision, setRevision] = useState(0);
   const slideRef=useRef<HTMLElement|null>(null)
   const previewKey=JSON.stringify(previewConfig)
-  const [body, setBody] = useState(""), [kind, setKind] = useState<"PRO" | "CON">("PRO"), [editing, setEditing] = useState<string | undefined>(), [busy, setBusy] = useState(false);
+  const [body, setBody] = useState(""), [kind, setKind] = useState<"PRO" | "CON">("PRO"), [editing, setEditing] = useState<string | undefined>(), [editorOpen, setEditorOpen] = useState(false), [busy, setBusy] = useState(false);
   useEffect(() => {
     let current = true;
-    setData(null); setError(""); setBody(""); setEditing(undefined);
+    setData(null); setError(""); setBody(""); setEditing(undefined); setEditorOpen(false);
     getApplicantDisplay({ clubId, applicationId, sessionId, previewConfig:previewKey?JSON.parse(previewKey):undefined }).then(v => { if (current) setData(v) }).catch(e => { if (current) setError(e instanceof Error ? e.message : "Review information unavailable.") });
     return () => { current = false };
   }, [clubId, applicationId, revision, refreshKey, sessionId, previewKey]);
@@ -42,24 +42,35 @@ export function ApplicantDisplayPanel({ clubId, applicationId, refreshKey = "", 
       <ApplicantSlide data={data}/>
     </>}
   </section>;
-  return <section aria-label={`${mode} applicant information`} className="space-y-5 rounded-lg border bg-card p-5">
-    <header><h3 className="font-semibold">{mode === "review" ? "Reviewer observations" : "Applicant information"}</h3><p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p></header>
+  return <section aria-label={`${mode} applicant information`} className={mode === "review" ? "oc-review-observations space-y-3 rounded-lg border bg-card p-4" : "space-y-5 rounded-lg border bg-card p-5"}>
+    <header><h3 className="oc-card-heading">{mode === "review" ? "Pros & cons" : "Applicant information"}</h3>{mode !== "review" && <p className="text-xs text-muted-foreground">Shared Interview and Voting display · filtered for your current review access.</p>}</header>
     {error && <p role="alert" className="text-sm text-destructive">{error} <Button type="button" variant="ghost" onClick={() => setRevision(v => v + 1)}>Reload</Button></p>}
     {!data && !error && <p role="status">Loading authorized review information…</p>}
     {data && <>
-      <p className="text-xs text-muted-foreground">{data.configured.length} configured fields · {data.visible.length} available.{data.anonymous && " Anonymous review withholds identifying fields and free text."}</p>
-      {!!data.withheld.length && <p className="text-xs text-muted-foreground">Withheld: {data.withheld.map(f => fieldLabels[f]).join(", ")}</p>}
+      {mode !== "review" && <p className="text-xs text-muted-foreground">{data.configured.length} configured fields · {data.visible.length} available.{data.anonymous && " Anonymous review withholds identifying fields and free text."}</p>}
+      {mode !== "review" && !!data.withheld.length && <p className="text-xs text-muted-foreground">Withheld: {data.withheld.map(f => fieldLabels[f]).join(", ")}</p>}
       {mode !== "review" && <div className="flex items-center gap-5">{!data.anonymous && data.visible.includes("photo") && <Avatar className="size-24 sm:size-28"><AvatarImage src={data.photo || undefined} alt="Applicant photo" /><AvatarFallback className="text-xl">{data.sections.find(s => s.field === "name")?.items[0]?.split(/\s+/).map(w => w[0]).slice(0,2).join("") || "?"}</AvatarFallback></Avatar>}{data.visible.includes("name") && <h3 className="min-w-0 break-words font-display text-2xl sm:text-3xl">{data.sections.find(s => s.field === "name")?.items[0]}</h3>}</div>}
       {mode !== "review" && !!data.links?.length && <nav aria-label="Applicant documents and profile" className="flex gap-4">{data.links.map(link => <a key={link.field} href={link.href} target="_blank" rel="noopener noreferrer" className="text-sm underline">{link.label}</a>)}</nav>}
-      {data.sections.filter(s => (mode !== "review" && s.field !== "name") || ["pros", "cons", "score", "feedback"].includes(s.field)).map(s => <section key={s.field} className={`space-y-2 border-t pt-4 ${s.field === "pros" ? "border-l-2 border-l-emerald-600 pl-3" : s.field === "cons" ? "border-l-2 border-l-amber-600 pl-3" : ""}`}><h4 className="text-sm font-medium">{s.label}</h4>{["pros", "cons"].includes(s.field) ? <>
-        {data.observations.filter(o => o.kind === (s.field === "pros" ? "PRO" : "CON")).map(o => <div key={o.id} className="space-y-1 text-sm"><p className="whitespace-pre-wrap break-words">{o.body}</p><p className="text-xs text-muted-foreground">{o.author} · {new Date(o.createdAt).toLocaleString()}{o.updatedAt !== o.createdAt && ` · Updated ${new Date(o.updatedAt).toLocaleString()}`}</p>{mode === "review" && o.own && <div className="flex gap-2"><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => { setEditing(o.id); setBody(o.body); setKind(o.kind as "PRO" | "CON") }}>Edit</Button><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void mutate(o.id)}>Delete</Button></div>}</div>)}
+      {mode === "review" ? <>
+        {data.anonymous ? <p className="text-sm text-muted-foreground">Observations are withheld during anonymous review.</p> : <div className="grid gap-4 sm:grid-cols-2">{(["PRO", "CON"] as const).map(type => {
+          const field = type === "PRO" ? "pros" : "cons", section = data.sections.find(item => item.field === field);
+          if (!section) return null;
+          const observations = data.observations.filter(observation => observation.kind === type);
+          return <section key={type} className="min-w-0" aria-label={type === "PRO" ? "Pros" : "Cons"}><h4 className="mb-2 text-sm font-semibold">{type === "PRO" ? "Pros" : "Cons"}</h4>{observations.length ? <ul className="max-h-48 space-y-2 overflow-y-auto text-sm">{observations.map(observation => <li key={observation.id} className="border-l-2 border-border pl-2"><p className="whitespace-pre-wrap break-words">{observation.body}</p><div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{observation.author}</span>{observation.own && <><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => { setEditing(observation.id); setBody(observation.body); setKind(type); setEditorOpen(true) }}>Edit</Button><Button type="button" size="sm" variant="ghost" disabled={busy} onClick={() => void mutate(observation.id)}>Delete</Button></>}</div></li>)}</ul> : <p className="text-xs text-muted-foreground">None yet.</p>}</section>
+        })}</div>}
+        {data.sections.some(section => ["score", "feedback"].includes(section.field)) && <details className="border-t pt-2"><summary className="min-h-11 cursor-pointer py-2 text-sm">Scores & feedback</summary><div className="space-y-3 pb-2">{data.sections.filter(section => ["score", "feedback"].includes(section.field)).map(section => <section key={section.field}><h4 className="text-sm font-medium">{section.label}</h4><p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{section.items.join("\n") || (section.withheld ? "Withheld by feedback access policy." : "Not provided.")}</p>{!!section.items.length && section.withheld && <p className="text-xs text-muted-foreground">Additional feedback is withheld.</p>}</section>)}</div></details>}
+      </> : <>
+      {data.sections.filter(s => s.field !== "name").map(s => <section key={s.field} className={`space-y-2 border-t pt-4 ${s.field === "pros" ? "border-l-2 border-l-emerald-600 pl-3" : s.field === "cons" ? "border-l-2 border-l-amber-600 pl-3" : ""}`}><h4 className="text-sm font-medium">{s.label}</h4>{["pros", "cons"].includes(s.field) ? <>
+        {data.observations.filter(o => o.kind === (s.field === "pros" ? "PRO" : "CON")).map(o => <div key={o.id} className="space-y-1 text-sm"><p className="whitespace-pre-wrap break-words">{o.body}</p><p className="text-xs text-muted-foreground">{o.author} · {new Date(o.createdAt).toLocaleString()}{o.updatedAt !== o.createdAt && ` · Updated ${new Date(o.updatedAt).toLocaleString()}`}</p></div>)}
         {!s.items.length && <p className="text-xs text-muted-foreground">No observations yet.</p>}
       </> : s.items.length ? <>{s.items.map((value, i) => <p key={i} className="whitespace-pre-wrap break-words text-sm">{value}</p>)}{s.withheld && <p className="text-xs text-muted-foreground">Additional feedback is withheld.</p>}</> : <p className="text-xs text-muted-foreground">{s.withheld ? "Withheld by feedback access policy." : "Not provided."}</p>}</section>)}
-      {mode === "review" && !data.anonymous && <form className="space-y-3 border-t pt-4" onSubmit={e => { e.preventDefault(); void mutate() }}>
+      </>}
+      {mode === "review" && !data.anonymous && !editorOpen && <div className="flex gap-2 border-t pt-2"><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("PRO"); setEditorOpen(true) }}>Add pro</Button><Button type="button" size="sm" variant="ghost" onClick={() => { setKind("CON"); setEditorOpen(true) }}>Add con</Button></div>}
+      {mode === "review" && !data.anonymous && editorOpen && <form className="space-y-3 border-t pt-4" onSubmit={e => { e.preventDefault(); void mutate() }}>
         <label className="block text-sm">Observation type<select className="ml-3 rounded border p-2" value={kind} disabled={busy} onChange={e => setKind(e.target.value as "PRO" | "CON")}><option value="PRO">Pro</option><option value="CON">Con</option></select></label>
         <label className="block text-sm">{editing ? "Edit your observation" : "Add a reviewer observation"}<Textarea value={body} required maxLength={3000} disabled={busy} onChange={e => setBody(e.target.value)} /></label>
         <p className="text-xs text-muted-foreground">Separate from application answers, private interview notes, and overall evaluation feedback.</p>
-        <Button disabled={busy || !body.trim()}>{editing ? "Save observation" : "Add observation"}</Button>{editing && <Button type="button" variant="ghost" onClick={() => { setEditing(undefined); setBody("") }}>Cancel edit</Button>}
+        <Button disabled={busy || !body.trim()}>{editing ? "Save observation" : "Add observation"}</Button><Button type="button" variant="ghost" disabled={busy} onClick={() => { setEditing(undefined); setBody(""); setEditorOpen(false) }}>{editing ? "Cancel edit" : "Cancel"}</Button>
       </form>}
     </>}
   </section>;

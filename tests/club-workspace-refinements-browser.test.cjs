@@ -3,14 +3,15 @@ const assert = require('node:assert/strict')
 const fs = require('node:fs'), http = require('node:http'), path = require('node:path'), os = require('node:os'), cp = require('node:child_process')
 const { chromium } = require('playwright')
 const { bundle } = require('./helpers/browser-bundle.cjs')
+const {planMemberGroups}=require('./helpers/communications-loader.cjs').loader({})('lib/member-groups.ts')
 
 async function fixture() {
-  const member = (id, firstName, year, role, groups = []) => ({ id, userId: id, clubId: 'club', status: 'ACTIVE', accessRole: role, isOwner: role === 'OWNER', permissions: role === 'OWNER' ? ['members.manage','leaders.manage','applications.review','applicants.identify','decisions.manage','meetings.manage','tasks.manage'] : [], interviewOffices: [], updatedAt: '2026-10-21T12:00:00Z', role: 'GENERAL_MEMBER', groups, cohort: null, user: { id, email: `${id}@example.invalid`, disabledAt: null, studentProfile: { firstName, lastName: 'Example', academicYear: year, major: 'Economics' } } })
+  const member = (id, firstName, year, role, groups = []) => ({ id, userId: id, clubId: 'club', status: 'ACTIVE', accessRole: role, isOwner: role === 'OWNER', permissions: role === 'OWNER' ? ['members.manage','leaders.manage','applications.review','applicants.identify','decisions.manage','meetings.manage','tasks.manage'] : [], interviewOffices: [], updatedAt: '2026-10-21T12:00:00Z', joinedAt: '2026-10-10T12:00:00Z', role: 'GENERAL_MEMBER', groups, cohort: null, user: { id, email: `${id}@example.invalid`, disabledAt: null, studentProfile: { firstName, lastName: 'Example', academicYear: year, major: 'Economics' } } })
   const owner = { ...member('owner', 'Owner', 'Fourth Year', 'OWNER'), club: { name: 'Sample Club' } }
   const app = (id, firstName, gpa, sat, score) => ({ id, studentId: id, roundId: 'round', recruitmentCycleId: null, status: 'IN_REVIEW', canEvaluate: false, publicationGuard: 'fixture', student: { email: `${id}@example.invalid`, studentProfile: { firstName, lastName: 'Example', academicYear: 'Second Year', major: 'Economics', gpa, satScore: sat, actScore: 33, resumeUrl: `12345678-1234-4123-8123-123456789abc/12345678-1234-4123-8123-123456789abc.pdf`, experiences: [] } }, evaluations: [], answers: [], bookings: [], roundScore: { average: score, submitted: 2, required: 2, provisional: false } })
   const initial = () => ({ pipeline: { rounds: [{ id: 'round', name: 'Interview round', order: 0, type: 'INTERVIEW', anonymousReview: false }], applications: [app('alpha', 'Alpha', 3.7, 1450, 8), app('beta', 'Beta', 3.9, 1550, 9)] }, directory: { actor: owner, members: [member('junior', 'Zoe', 'Third Year', 'MEMBER', ['Girls']), member('senior', 'Adam', 'Fourth Year', 'MEMBER', ['Boys']), member('freshman', 'Maya', 'First Year', 'MEMBER')], invitations: [], identifierTypes: [] }, writes: [] })
   let state = initial()
-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
   const empty = 'module.exports=new Proxy({},{get:()=>()=>null});'
   const mocks = {
     'next/link': `const React=require('react');module.exports=({href,children,...props})=>React.createElement('a',{...props,href},children);`,
@@ -24,16 +25,17 @@ async function fixture() {
     '@/actions/organization-members': api, '@/actions/recipient-groups': api, '@/actions/communications': api, '@/actions/organization-onboarding': api,
     '@/actions/club-access': empty, '@/actions/invitation-emails': empty,
   }
-  for (const name of ['recruitment-cycles','decision-schedules','applicant-intelligence','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
+  for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
   const overview = { club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }
   const entry = `import React,{useState}from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';import{OrganizationMemberManagement}from'@/components/organization-member-management';import{OrganizationSetupChecklist}from'@/components/organization-setup-checklist';import{ManagerOverview}from'@/components/manager-overview';import{AudienceEditor}from'@/components/recipient-audiences';import{MeetingGroupInvitation}from'@/components/meeting-group-invitation';
   const catalog={groups:[],rosterLabels:['Boys','Girls'],gradYears:[2027,2030],cohorts:[],cycles:[],rounds:[],events:[]};
   function App(){const[value,setValue]=useState({include:[{source:'MEMBERS',gradYears:[],accessRoles:[],cohorts:[],labels:[]}],exclude:[]});const tab=new URLSearchParams(location.search).get('tab');return <div data-product-shell className="p-6"><main id="workspace-content">{tab==='members'?<OrganizationMemberManagement clubId="club"/>:tab==='overview'?<><ManagerOverview data={${JSON.stringify(overview)}} showRecaps={false}/><OrganizationSetupChecklist clubId="club" compact/></>:tab==='audiences'?<><AudienceEditor catalog={catalog} value={value} onChange={setValue}/><output aria-label="Selected audience">{JSON.stringify(value)}</output><MeetingGroupInvitation meeting={{id:'meeting',clubId:'club',title:'Group meeting',date:'2026-10-25T12:00:00Z',location:'Room 1'}}/></>:<LiveLeaderWorkspace scoped/>}</main></div>};createRoot(document.getElementById('root')).render(<App/>);`
   const js = bundle(entry, mocks); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-workspace-ui-'))
   cp.execFileSync(process.execPath, [path.join(__dirname, 'helpers/interview-browser-css.cjs'), path.join(tmp, 'style.css')])
-  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/clubs/manager-overview.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + ':root{--oc-font-sans:Arial,sans-serif;--oc-font-display:Georgia,serif}body{font-family:Arial,sans-serif}'
+  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/clubs/manager-overview.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
   const server = http.createServer(async (req, res) => {
     try {
+      if(req.url==='/source-sans.woff2'||req.url==='/caslon.woff2'){res.setHeader('content-type','font/woff2');res.end(fs.readFileSync(req.url==='/source-sans.woff2'?'app/fonts/source-sans-3/source-sans-3-upright.woff2':'app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2'));return}
       if (req.url.startsWith('/api/recruiting-resumes?')) { res.setHeader('content-type','application/pdf');res.end(fs.readFileSync('public/demo/sample-resume.pdf'));return }
       if (req.url.startsWith('/api/')) {
         let raw = ''; for await (const chunk of req) raw += chunk
@@ -43,6 +45,9 @@ async function fixture() {
         else if (route === 'directory') result = state.directory
         else if (route === 'status') { const target = state.pipeline.applications.find(app=>app.id===input.applicationId); if(target.status!==input.expectedStatus)throw Error('stale');target.status=input.status;state.writes.push(input);result={success:true} }
         else if (route === 'groups') { for(const target of input.targets){const member=state.directory.members.find(m=>m.id===target.id);member.groups=[...new Set([...member.groups,input.group])]}state.writes.push(input);result={updated:input.targets.length} }
+        else if(route==='create-groups'){const plan=planMemberGroups(input.targets.map(t=>t.id),input.name,input.split);for(const target of input.targets){const member=state.directory.members.find(m=>m.id===target.id);member.groups=[...new Set([...member.groups,input.name,plan.find(g=>g.memberIds.includes(target.id)).name])]}state.writes.push(input);result={groups:plan,members:input.targets.length}}
+        else if(route==='display')result={configured:['pros','cons','score','feedback'],visible:['pros','cons','score'],withheld:['feedback'],anonymous:false,links:[],observations:[{id:'observation',kind:'PRO',body:'Clear, specific evidence.',author:'Club reviewer',own:true}],sections:[{field:'pros',label:'Pros',items:['Clear, specific evidence.']},{field:'cons',label:'Cons',items:[]},{field:'score',label:'Evaluation score',items:[]},{field:'feedback',label:'Overall feedback',items:[],withheld:true}]}
+        else if(route==='observation'){state.writes.push(input);result={success:true}}
         else if (route === 'catalog') result={groups:[],rosterLabels:['Boys','Girls'],gradYears:[2027,2030],cohorts:[],cycles:[],rounds:[],events:[]}
         else if (route === 'preview') result={count:1,recipients:[{id:'senior',email:'senior@example.invalid'}],evaluatedAt:new Date().toISOString()}
         else if (route === 'announcement') { state.writes.push(input);result={id:'sent'} }
@@ -72,6 +77,11 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.getByRole('dialog').waitFor()
   assert.ok((await page.getByRole('dialog').boundingBox()).width>=1440*.9)
   await page.getByTitle('Résumé for Beta Example').waitFor()
+  await page.getByRole('heading',{name:'Pros & cons',exact:true}).waitFor()
+  assert.ok((await page.locator('.oc-review-observations').boundingBox()).height<350)
+  assert.equal(await page.locator('.oc-review-observations textarea').count(),0)
+  const status=page.locator('[data-application-status]').first()
+  assert.deepEqual(await status.evaluate(element=>({background:getComputedStyle(element).backgroundColor,radius:getComputedStyle(element).borderRadius})),{background:'rgba(0, 0, 0, 0)',radius:'0px'})
   await resumeResponse
   await page.getByRole('dialog').evaluate(element=>Promise.all(element.getAnimations().map(animation=>animation.finished.catch(()=>{}))))
   assert.ok((await page.getByRole('dialog').boundingBox()).x<1440*.1)
@@ -83,6 +93,12 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   await page.waitForFunction(()=>!document.querySelector('[role="dialog"]'))
   assert.equal(f.state().writes.at(-1).status,'INTERVIEWING')
   await page.getByRole('button',{name:'Quick review',exact:true}).click()
+  const footer=page.getByRole('group',{name:'Quick review decisions'})
+  const footerBox=await footer.boundingBox(),scrollBox=await page.locator('.oc-applicant-drawer-scroll').boundingBox()
+  assert.ok(scrollBox.y+scrollBox.height<=footerBox.y+1)
+  assert.ok(Math.abs(footerBox.y+footerBox.height-1000)<2)
+  await page.locator('.oc-applicant-drawer-scroll').evaluate(element=>element.scrollTop=element.scrollHeight)
+  await page.screenshot({path:'/tmp/outclass-quick-review-footer.png',animations:'disabled'})
   await page.getByRole('button',{name:'Accept & next',exact:true}).click()
   await page.getByRole('heading',{name:'Alpha Example',exact:true}).waitFor()
   await page.getByRole('button',{name:'Deny & next',exact:true}).click()
@@ -91,13 +107,45 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   f.reset();await page.goto(f.base+'/?tab=members')
   await page.getByRole('button',{name:'Sort by Year',exact:true}).click()
   assert.match(await page.locator('tbody tr').first().innerText(),/Adam Example/)
-  await page.getByRole('combobox',{name:'Filter members by year'}).selectOption('First Year')
-  await page.getByRole('button',{name:'Select matching members',exact:true}).click()
-  await page.getByRole('button',{name:'Boys',exact:true}).click()
-  await page.getByRole('button',{name:'Add to group · 1',exact:true}).click()
-  await page.getByText('Added 1 members to Boys.',{exact:true}).waitFor()
+  assert.equal(await page.getByRole('region',{name:'Assign member groups'}).count(),0)
+  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  let creator=page.getByRole('dialog')
+  await creator.getByLabel('Group name',{exact:true}).fill('Welcome')
+  await creator.getByRole('button',{name:'Next',exact:true}).click()
+  await creator.getByRole('button',{name:'By year',exact:true}).click()
+  await creator.getByRole('checkbox',{name:'First Year',exact:true}).check()
+  await creator.getByRole('button',{name:'Next',exact:true}).click()
+  assert.equal(await creator.getByLabel('People per group',{exact:true}).count(),0)
+  await creator.getByRole('button',{name:'Create group',exact:true}).click()
+  await creator.waitFor({state:'hidden'})
   assert.deepEqual(f.state().writes.at(-1).targets.map(target=>target.id),['freshman'])
-  assert.ok(f.state().directory.members.find(member=>member.id==='freshman').groups.includes('Boys'))
+  assert.ok(f.state().directory.members.find(member=>member.id==='freshman').groups.includes('Welcome'))
+  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  creator=page.getByRole('dialog')
+  await creator.getByLabel('Group name',{exact:true}).fill('Teams')
+  await creator.getByRole('button',{name:'Next',exact:true}).click()
+  await creator.getByRole('button',{name:'All members',exact:true}).click()
+  await creator.getByRole('button',{name:'Next',exact:true}).click()
+  await creator.getByRole('checkbox',{name:'Divide into random groups'}).check()
+  await creator.getByLabel('Divide by',{exact:true}).selectOption('COUNT')
+  await creator.getByLabel('Number of groups',{exact:true}).fill('2')
+  await page.screenshot({path:'/tmp/outclass-group-builder-desktop.png',animations:'disabled'})
+  await creator.getByRole('button',{name:'Create 2 groups',exact:true}).click()
+  await creator.waitFor({state:'hidden'})
+  assert.ok(f.state().directory.members.every(member=>member.groups.includes('Teams')&&member.groups.some(g=>g.startsWith('Teams / '))))
+  await page.setViewportSize({width:390,height:844})
+  await page.getByRole('button',{name:'Create group(s)',exact:true}).click()
+  creator=page.getByRole('dialog')
+  await creator.getByLabel('Group name',{exact:true}).fill('Mobile team')
+  await creator.getByRole('button',{name:'Next',exact:true}).click()
+  await creator.getByRole('button',{name:'By year',exact:true}).click()
+  await creator.getByRole('checkbox',{name:'First Year',exact:true}).check()
+  assert.equal(await creator.evaluate(element=>element.scrollWidth<=element.clientWidth+1),true)
+  await page.screenshot({path:'/tmp/outclass-group-builder-mobile.png',animations:'disabled'})
+  page.once('dialog',dialog=>dialog.accept())
+  await creator.getByRole('button',{name:'Close',exact:true}).click()
+  await creator.waitFor({state:'hidden'})
+  await page.setViewportSize({width:1440,height:1000})
   await page.goto(f.base+'/?tab=audiences')
   await page.getByRole('button',{name:'By year',exact:true}).click()
   assert.match(await page.getByLabel('Selected audience').innerText(),/PEOPLE/)

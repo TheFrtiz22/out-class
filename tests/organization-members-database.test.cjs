@@ -50,6 +50,9 @@ test('member management uses real migrated constraints, atomic transfer, queued 
  assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>!m.groups.includes('Boys')));
  failAudit=true;await assert.rejects(api.assignOrganizationMemberGroups({clubId,targets:await groupTargets(),group:'Girls',operation:'ADD'}),/Audit failure/);failAudit=false;
  assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>!m.groups.includes('Girls')));
+ const created=await api.createOrganizationMemberGroups({clubId,name:'New class',targets:await groupTargets(),split:{mode:'COUNT',amount:2,seed:clubId}});assert.equal(created.groups.length,2);
+ const groupRows=(await db.query('SELECT id,groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows;assert.ok(groupRows.every(m=>m.groups.includes('New class')&&m.groups.includes(created.groups.find(g=>g.memberIds.includes(m.id)).name)));
+ const changed=await groupTargets();changed[1].updatedAt=new Date(0);await assert.rejects(api.createOrganizationMemberGroups({clubId,name:'Should roll back',targets:changed,split:null}),/changed/);assert.ok((await db.query('SELECT groups FROM "ClubMember" WHERE "clubId"=$1',[clubId])).rows.every(m=>!m.groups.includes('Should roll back')));
  const queued=await Promise.all([api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'}),api.manageOrganizationInvitation({clubId,invitationId:invitation,action:'RESEND'})]);
  assert.ok(queued.every(row=>row.queued||row.reused));assert.equal((await one('SELECT count(*)::int AS n FROM "InvitationDelivery"')).n,1);
  await api.changeOrganizationMemberRole({clubId,memberId:targetMember,role:'ADMIN'});

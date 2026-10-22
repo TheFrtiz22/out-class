@@ -23,7 +23,7 @@ async function fixture({fresh=false,baseline,pipeline=false}={}){
  }
  if(baseline){const ts=require('typescript'),cp=require('node:child_process');for(const name of ['room-manager','create-room-dialog','panel-preview-workspace','booking-publication']){const file='components/interviews/'+name+'.tsx',source=cp.execFileSync('git',['show',baseline+':'+file],{encoding:'utf8',windowsHide:true}).replaceAll('"./','"@/components/interviews/').replaceAll('"lucide-react"','"@/components/icons"');mocks['@/components/interviews/'+name]=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText}}
  const js=bundle(entry,mocks)
- const css=(await postcss([require('@tailwindcss/postcss')()]).process('@import "../app/globals.css";\n@import "../components/interviews/scheduling.css";\n@import "../components/clubs/interview-kit-editor.css";\n@import "../components/clubs/club-settings.css";',{from:path.resolve('tests/visual-fixture.css')})).css+'\n:root{--font-dm-sans:Arial;--font-libre-caslon-text:Georgia}'
+ const css=(await postcss([require('@tailwindcss/postcss')()]).process('@import "../app/globals.css";\n@import "../components/interviews/scheduling.css";\n@import "../components/clubs/interview-kit-editor.css";\n@import "../components/clubs/club-settings.css";',{from:path.resolve('tests/visual-fixture.css')})).css+'\n:root{--font-source-sans-3:Arial;--font-libre-caslon-text:Georgia}'
  const server=http.createServer(async(req,res)=>{
   const pathname=new URL(req.url,'http://localhost').pathname
   if(pathname==='/fixture.js'){res.setHeader('Content-Type','application/javascript');res.end(js);return}

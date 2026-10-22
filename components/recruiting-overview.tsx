@@ -21,7 +21,6 @@ export function RecruitingOverview({ data }: { data: Overview }) {
     { id: "interviews", icon: Video, label: "Open interviews", description: "Prepare interview kits and open your available interview tools.", value: count("INTERVIEWING"), context: "at interview stage", featured: false },
     { id: "decisions", icon: CheckCircle2, label: "Review decisions", description: "Review pending outcomes and record decisions with your club access.", value: count("ACCEPTED", "REJECTED"), context: "final outcomes recorded", featured: false },
   ]
-  const tools = navigation.filter(item => item.quiet)
   return <div className="oc-recruiting-overview">
     {anonymousOnly && <p className="oc-recruiting-privacy"><ShieldCheck aria-hidden="true" size={17} />Your overview includes only anonymous rounds available to your review access.</p>}
     {canRead && recruitment && <MetricStrip label="Recruitment status" items={[
@@ -45,11 +44,6 @@ export function RecruitingOverview({ data }: { data: Overview }) {
           <Link href={route.href}>{destination.label}<ArrowRight aria-hidden="true" size={17} /></Link>
         </section>
       })}
-      {tools.length > 0 && <section className="oc-recruiting-tools" aria-labelledby="recruiting-tools-title">
-        <div className="oc-recruiting-card-label"><ShieldCheck aria-hidden="true" size={21} /><h2 id="recruiting-tools-title">Review tools</h2></div>
-        <p>Keep review criteria and applicant privacy consistent across your rounds.</p>
-        <ul>{tools.map(tool => <li key={tool.id}><Link href={tool.href!}><span><strong>{tool.label}</strong><small>{tool.id === "rules" ? "Preview thresholds and explicitly flag applications. No automatic rejections." : "Manage round privacy and prepared anonymous review content."}</small></span><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul>
-      </section>}
     </div>
   </div>
 }

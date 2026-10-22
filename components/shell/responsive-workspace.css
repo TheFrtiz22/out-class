@@ -55,3 +55,8 @@
   .oc-applicant-resume { position: sticky; top: 0; }
 }
 @media (max-width: 639px) { .oc-workspace-drawer.oc-applicant-drawer { width: 100vw; max-width: 100vw; } }
+
+.oc-workspace-drawer.oc-applicant-drawer { overflow: hidden; padding: 0; gap: 0; }
+.oc-applicant-drawer > .oc-applicant-drawer-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 3.5rem 1.5rem 1.5rem; }
+.oc-applicant-review-footer { flex: 0 0 auto; position: relative; z-index: 1; isolation: isolate; background: var(--card); border-top: 1px solid var(--border); padding: 1rem 1.5rem max(1rem, env(safe-area-inset-bottom)); }
+@media (max-width: 639px) { .oc-applicant-drawer > .oc-applicant-drawer-scroll { padding-inline: 1rem; } .oc-applicant-review-footer { padding-inline: 1rem; } }
