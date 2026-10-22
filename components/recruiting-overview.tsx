@@ -14,7 +14,7 @@ import "@/components/clubs/recruiting-overview.css"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 
 export function RecruitingOverview({ data }: { data: Overview }) {
-  const { club, membership, recruitment } = data
+  const { club, membership, recruitment, upcomingInterviews, votingSessions } = data
   const navigation = managerNavigation(membership, club.id, "recruiting")
   const canRead = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
   const anonymousOnly = canRead && !hasPermission(membership, "applicants.identify")
@@ -28,6 +28,8 @@ export function RecruitingOverview({ data }: { data: Overview }) {
   const actions: DashboardAction[] = [
     ...(canRead && recruitment && route("applicants") ? [{ id: "applicants", title: "Review pending applications", description: `${count("SUBMITTED")} submitted · ${count("IN_REVIEW")} in review`, urgency: "critical" as const, count: count("SUBMITTED", "IN_REVIEW"), href: route("applicants")! }] : []),
     ...(canRead && recruitment && route("interviews") ? [{ id: "interviews", title: "Check applicants at interview stage", description: "Open the interview tools and confirm the next steps for these applicants.", urgency: "soon" as const, count: count("INTERVIEWING"), href: route("interviews")! }] : []),
+    ...(upcomingInterviews !== null && upcomingInterviews > 0 && route("interviews") ? [{ id: "booked-interviews", title: `${upcomingInterviews} upcoming interview booking${upcomingInterviews === 1 ? "" : "s"}`, description: "Scheduled within the next seven days. Open interview tools to prepare.", urgency: "soon" as const, count: upcomingInterviews, href: route("interviews")! }] : []),
+    ...(votingSessions?.length && route("decisions") ? [{ id: "voting", title: `${votingSessions.length} open voting session${votingSessions.length === 1 ? "" : "s"}`, description: "Continue an existing voting session in the decisions workspace.", urgency: "soon" as const, count: votingSessions.length, href: route("decisions")! }] : []),
     ...(canRead && recruitment && route("decisions") ? [{ id: "waitlist", title: "Review waitlisted candidates", description: "Inspect existing waitlist records before any decision changes.", urgency: "normal" as const, count: count("WAITLISTED"), href: route("decisions")! }] : []),
   ]
   return <div className="oc-recruiting-overview">
