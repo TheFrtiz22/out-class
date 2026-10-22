@@ -67,7 +67,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
               aria-label="Expand Rejected column"
             >
               <ChevronLeft className="size-3.5" />
-              <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold text-gray-500">
+              <span className="oc-status-label bg-gray-200 px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold text-gray-500">
                 {items.length}
               </span>
               <span className="text-[length:var(--oc-size-10)] font-medium tracking-wide" style={{ writingMode: "vertical-rl" }}>
@@ -101,7 +101,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                   </p>
                   <span
                     className={cn(
-                      "shrink-0 rounded-full px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
+                      "shrink-0 oc-status-label px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
                       isRejected ? "bg-gray-200 text-gray-500" : "bg-foreground/10 text-foreground",
                     )}
                   >
@@ -178,7 +178,7 @@ export function PipelineView({ columns, applicants, getScore, onMove, onViewProf
                         {score > 0 && (
                           <span
                             className={cn(
-                              "mt-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
+                              "mt-1.5 inline-flex items-center oc-status-label px-1.5 py-0.5 text-[length:var(--oc-size-10)] font-semibold",
                               isRejected ? "bg-gray-100 text-gray-400" : "bg-secondary text-muted-foreground",
                             )}
                           >

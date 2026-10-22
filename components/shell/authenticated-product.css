@@ -49,7 +49,6 @@
 .oc-navigation-sheet > button:last-child { color: var(--oc-rail-text); }
 
 .oc-context-sidebar > div:has(.oc-workspace-switcher-trigger) { margin-bottom: 1rem; }
-.oc-context-sidebar > div:has(> nav[aria-label="Review tools"]) { margin-top: 1.25rem; }
 
 /* Section headings share the rail background and require its light text token. */
 .oc-context-sidebar p.text-muted-foreground { color: var(--oc-rail-muted); }

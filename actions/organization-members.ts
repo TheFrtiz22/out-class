@@ -1,4 +1,5 @@
 "use server";
+import { memberGroupSplitSchema, planMemberGroups } from "@/lib/member-groups";
 import { revokeClubInvitations } from "@/utils/revoke-club-invitations";
 import { memberAcademicProfile } from "@/lib/recruitment-profile";
 
@@ -49,6 +50,30 @@ export async function assignOrganizationMemberGroups(input: unknown) {
     await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, action: "club.member.groups.bulk", targetId: data.clubId, details: { memberIds: members.map(member => member.id), group: data.group, operation: data.operation } } });
     return { updated: members.length };
   });
+}
+
+/** Save a previewed group or partition as roster labels, without changing access or other groups. */
+export async function createOrganizationMemberGroups(input: unknown) {
+  const data = z.object({ clubId: id, name: z.string().trim().min(1).max(64), targets: z.array(z.object({ id, updatedAt: z.coerce.date() }).strict()).min(1).max(500), split: memberGroupSplitSchema.nullable() }).strict().parse(input);
+  if (new Set(data.targets.map(target => target.id)).size !== data.targets.length) throw new Error("Duplicate members in selection.");
+  const plan = planMemberGroups(data.targets.map(target => target.id), data.name, data.split);
+  const { user } = await requireAuth();
+  return prisma.$transaction(async tx => {
+    const actor = await actorFor(tx, data.clubId, user.id);
+    if (!hasPermission(actor, "members.manage")) throw new Error("Member management access denied.");
+    const members = await tx.clubMember.findMany({ where: { clubId: data.clubId, id: { in: data.targets.map(target => target.id) }, status: "ACTIVE", user: { disabledAt: null } } });
+    if (members.length !== data.targets.length) throw new Error("Some members are unavailable. Refresh members before creating groups.");
+    for (const member of members) {
+      const expected = data.targets.find(target => target.id === member.id)!;
+      const subgroup = plan.find(group => group.memberIds.includes(member.id))!;
+      const groups = [...new Set([...member.groups, data.name, subgroup.name])];
+      if (groups.length > 20) throw new Error("A member can belong to up to 20 groups.");
+      const saved = await tx.clubMember.updateMany({ where: { id: member.id, clubId: data.clubId, updatedAt: expected.updatedAt }, data: { groups } });
+      if (saved.count !== 1) throw new Error("A member changed. Refresh members before creating groups.");
+    }
+    await tx.auditLog.create({ data: { actorId: user.id, clubId: data.clubId, targetId: data.clubId, action: "club.member.groups.create", details: { name: data.name, memberIds: members.map(member => member.id), groups: plan.map(group => ({ name: group.name, count: group.memberIds.length })) } } });
+    return { groups: plan, members: members.length };
+  }, { maxWait: 10000, timeout: 30000 });
 }
 
 /** Explicit attestation by an active owner, never inferred from an access-role template. */

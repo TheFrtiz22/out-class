@@ -1,5 +1,6 @@
 "use client";
 import { getOrganizationMemberManagement } from "@/lib/workspace-read";
+import { MemberGroupBuilder } from "@/components/member-group-builder";
 import { SortLabel } from "@/components/product/sort-label";
 import { compareAcademicYears } from "@/lib/recruitment-profile";
 import { InterviewerEligibilityControls } from "@/components/availability/interviewer-eligibility";
@@ -29,7 +30,6 @@ import {
   inviteOrganizationMember,
   manageOrganizationInvitation,
   bulkOrganizationMembers,
-  assignOrganizationMemberGroups,
   bulkOrganizationInvitations,
 } from "@/actions/organization-members";
 import {
@@ -85,7 +85,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
   const [invitesOpen, setInvitesOpen] = useState(false), [inviteTab, setInviteTab] = useState("pending");
   const [roleFilter, setRoleFilter] = useState(""), [yearFilter, setYearFilter] = useState("");
   const [sort, setSort] = useState("Member"), [descending, setDescending] = useState(false);
-  const [groupFilter, setGroupFilter] = useState(""), [groupLabel, setGroupLabel] = useState("");
+  const [groupFilter, setGroupFilter] = useState("");
   function sortBy(label: string) {
     if (sort === label) setDescending(value => !value);
     else { setSort(label); setDescending(label === "Year"); }
@@ -364,15 +364,7 @@ export function OrganizationMemberManagement({ clubId, initialData = null, onDat
                 Refresh members
               </Button>
             </div>
-            {!invitesOpen && caps.canManageMembers && <section aria-label="Assign member groups" className="space-y-3 rounded-xl border bg-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold">Groups</h3><p className="text-xs text-muted-foreground">Filter by year or role, select the matching members, then assign a group.</p></div><Button type="button" size="sm" variant="outline" disabled={busy || !rows.some(row => row.member && selectable(row))} onClick={() => setSelection(rows.filter(row => row.member && selectable(row)).map(row => row.id).slice(0, 100))}>Select matching members{rows.length > 100 ? " (first 100)" : ""}</Button></div>
-              <div className="flex flex-wrap items-center gap-2"><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select>
-                {["Boys", "Girls", ...new Set(data.members.flatMap(member => member.groups).filter(group => !["Boys", "Girls"].includes(group)))].map(group => <Button key={group} type="button" variant={groupLabel === group ? "secondary" : "outline"} size="sm" aria-pressed={groupLabel === group} disabled={busy} onClick={() => setGroupLabel(group)}>{group}</Button>)}
-                <Input aria-label="Custom group name" placeholder="Custom group…" maxLength={80} className="w-44" value={groupLabel} onChange={event => setGroupLabel(event.target.value)} />
-                <Button type="button" disabled={busy || !selectedMembers.length || !groupLabel.trim()} onClick={() => void run(() => assignOrganizationMemberGroups({ clubId, targets: selectedMembers.map(member => ({ id: member.id, updatedAt: member.updatedAt })), group: groupLabel.trim(), operation: "ADD" }), `Added ${selectedMembers.length} members to ${groupLabel.trim()}.`)}>Add to group{selectedMembers.length ? ` · ${selectedMembers.length}` : ""}</Button>
-                <Button type="button" variant="ghost" disabled={busy || !selectedMembers.length || !groupLabel.trim()} onClick={() => void run(() => assignOrganizationMemberGroups({ clubId, targets: selectedMembers.map(member => ({ id: member.id, updatedAt: member.updatedAt })), group: groupLabel.trim(), operation: "REMOVE" }), `Removed ${selectedMembers.length} members from ${groupLabel.trim()}.`)}>Remove from group</Button>
-              </div>
-            </section>}
+            {!invitesOpen && caps.canManageMembers && <div className="flex flex-wrap items-center gap-3"><MemberGroupBuilder clubId={clubId} members={data.members} onSaved={reload} /><select aria-label="Filter members by group" className="min-h-11 rounded-md border bg-card px-3 text-sm" value={groupFilter} onChange={event => { setGroupFilter(event.target.value); setPage(0); setSelection([]); }}><option value="">All groups</option>{[...new Set(data.members.flatMap(member => member.groups))].sort().map(group => <option key={group}>{group}</option>)}</select></div>}
             {selection.length > 0 && (
               <div
                 role="toolbar"

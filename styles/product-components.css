@@ -65,11 +65,11 @@
   [data-product-shell] .oc-club-identity { padding: 1.25rem; flex-direction: column; }
   [data-product-shell] .oc-club-banner { height: 6rem; }
 }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="ACCEPTED"] { background: var(--success-subtle); color: var(--success); }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="REJECTED"] { background: var(--error-subtle); color: var(--destructive); }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="WAITLISTED"] { background: var(--warning-subtle); color: var(--warning); }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="IN_REVIEW"] { background: var(--info-subtle); color: var(--info); }
-:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="INTERVIEWING"] { background: var(--interview-subtle); color: var(--interview); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="ACCEPTED"] { --badge-accent: var(--success); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="IN_REVIEW"] { --badge-accent: var(--info); }
+:root:has(:is([data-product-shell], [data-workspace-detail], [data-outclass-design])) [data-slot="badge"][data-status-code="INTERVIEWING"] { --badge-accent: var(--interview); }
 [data-product-shell] .oc-marketing-profile { border: 0; border-radius: var(--oc-radius-lg); box-shadow: none; background: transparent; }
 [data-product-shell] .oc-marketing-cover { border-radius: var(--oc-radius-lg); height: 7rem; }
 [data-product-shell] .oc-marketing-profile h1 { font-family: var(--oc-font-display); font-size: var(--oc-text-title); font-weight: 500; letter-spacing: var(--oc-tracking-heading); }
@@ -119,3 +119,10 @@
 .oc-segmented-control[data-sliding="true"][data-has-active="false"] .oc-segmented-indicator { opacity: 0; }
 @supports (transition-timing-function: linear(0, 1)) { .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { transition-timing-function: var(--oc-floating-spring, ease), ease; } }
 @media (prefers-reduced-motion: reduce) { .oc-segmented-control[data-sliding="true"] :is(button, .oc-segmented-indicator) { transition: none; } }
+
+/* Quiet status annotations: neutral text and a small semantic rule, without colored capsules. */
+[data-slot="badge"], .oc-status-label { display: inline-flex; align-items: center; gap: .375rem; border: 0 !important; border-inline-start: 2px solid var(--badge-accent, var(--border)) !important; border-radius: 0 !important; background: transparent !important; color: inherit !important; padding: .125rem .5rem; font-size: var(--oc-text-caption); font-weight: 500; line-height: 1.4; }
+[data-slot="badge"][data-variant="success"], [data-application-status="ACCEPTED"], [data-status-code="ACCEPTED"] { --badge-accent: var(--success); }
+[data-slot="badge"][data-variant="destructive"], [data-application-status="REJECTED"], [data-status-code="REJECTED"] { --badge-accent: var(--destructive); }
+[data-slot="badge"][data-variant="warning"], [data-application-status="WAITLISTED"], [data-status-code="WAITLISTED"] { --badge-accent: var(--warning); }
+[data-slot="badge"][data-variant="info"], [data-application-status="IN_REVIEW"], [data-status-code="IN_REVIEW"] { --badge-accent: var(--info); }

@@ -657,6 +657,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         >
           {active && (
             <>
+              <div className="oc-applicant-drawer-scroll">
               <SheetHeader className="px-0 pr-10">
                 <Avatar className="size-12">
                   <AvatarImage
@@ -911,7 +912,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                   <iframe key={active.id} title={`Résumé for ${name(active)}`} src={resolveRecruitingResumeUrl(active.student.studentProfile?.resumeUrl, membership.clubId, active.id)} referrerPolicy="no-referrer" className="h-[70dvh] min-h-96 w-full rounded-lg border bg-muted" />
                 </> : <p className="text-sm text-muted-foreground">No résumé provided.</p>}
               </aside></div>
-              {quickQueue && <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-3 border-t bg-card py-4" role="group" aria-label="Quick review decisions">
+              </div>
+              {quickQueue && <div className="oc-applicant-review-footer flex flex-wrap items-center justify-end gap-3" role="group" aria-label="Quick review decisions">
                 <Button variant="ghost" disabled={busy} onClick={() => { const remaining = quickQueue.filter(id => id !== active.id); const next = remaining.map(id => applicants.find(app => app.id === id)).find(app => app && pendingCandidate(app)); setQuickQueue(remaining); if (next) open(next); else open() }}>Skip</Button>
                 <Button variant="outline" disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("REJECTED")}>Deny & next</Button>
                 <Button disabled={busy || !canDecide || !pendingCandidate(active) || !draftSave.ready || draftSave.recovery != null} onClick={() => void quickDecision("ACCEPTED")}>{busy ? "Saving…" : "Accept & next"}</Button>

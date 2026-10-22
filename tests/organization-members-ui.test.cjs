@@ -66,7 +66,7 @@ test('member headings toggle alphabetical order and sort years from oldest to yo
  nodes(tree).find(n=>n.type==='SortLabel'&&n.props.label==='Year').props.onClick();tree=h.render();assert.match(names(tree)[0],/student/);nodes(tree).find(n=>n.type==='SortLabel'&&n.props.label==='Year').props.onClick();assert.match(names(h.render())[0],/owner/);
  }finally{restore()}
 });
-test('matching members can be assigned to a group in a single scoped bulk call',async()=>{
- const restore=setupWindow();try{const directory=fixture(),calls=[];const h=harness({getOrganizationMemberManagement:async()=>directory,assignOrganizationMemberGroups:async input=>{calls.push(input)}});h.render();await h.flush();button(h.render(),'Select matching members').props.onClick();nodes(h.render()).find(n=>n.type==='Input'&&n.props['aria-label']==='Custom group name').props.onChange({target:{value:'Finance'}});button(h.render(),'Add to group').props.onClick();await h.flush();assert.equal(calls.length,1);assert.deepEqual(calls[0].targets,directory.members.map(m=>({id:m.id,updatedAt:m.updatedAt})));assert.equal(calls[0].group,'Finance');assert.equal(calls[0].operation,'ADD');
+test('groups are behind a focused creation action rather than a permanent assignment panel',async()=>{
+ const restore=setupWindow();try{const directory=fixture();const h=harness({getOrganizationMemberManagement:async()=>directory});h.render();await h.flush();const tree=h.render(),builder=nodes(tree).find(n=>n.type==='MemberGroupBuilder');assert.ok(builder);assert.equal(builder.props.clubId,'club');assert.deepEqual(builder.props.members,directory.members);assert.equal(nodes(tree).some(n=>n.props?.['aria-label']==='Assign member groups'),false);assert.equal(button(tree,'Select matching members'),undefined);
  }finally{restore()}
 });

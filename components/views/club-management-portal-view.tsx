@@ -466,7 +466,7 @@ function MemberDirectoryPanel() {
               <p className="truncate text-xs text-gray-500">{m.email}</p>
             </div>
             <span
-              className="shrink-0 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
+              className="shrink-0 oc-status-label border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600"
             >
               {m.role}
             </span>
