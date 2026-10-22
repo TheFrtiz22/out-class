@@ -25,7 +25,7 @@ const clubs: DirectoryClub[] = [
 const overview: ComponentProps<typeof RecruitingOverview>["data"] = {
   club: { id: "design-studio", name: "Campus Design Studio", tagline: "Build something together." },
   membership: { id: "reference-member", isOwner: true, permissions: [], interviewOffices: [], status: "ACTIVE" },
-  meeting: null, work: [], awaitingReview: 3,
+  meeting: null, work: [], awaitingReview: 3, upcomingInterviews: 2, votingSessions: [{ id: "reference-session", state: "OPEN" }],
   recruitment: [{ status: "SUBMITTED", count: 24 }, { status: "IN_REVIEW", count: 12 }, { status: "INTERVIEWING", count: 8 }, { status: "ACCEPTED", count: 5 }, { status: "WAITLISTED", count: 3 }],
 }
 const managerOverview: ComponentProps<typeof ManagerOverview>["data"] = {
