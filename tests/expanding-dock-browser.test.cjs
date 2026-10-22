@@ -7,7 +7,7 @@ const screenshotDir=process.env.OUTCLASS_DOCK_SCREENSHOTS
 test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboard, workspace guards and responsive accessibility',async()=>{
  const fixture=await startDockFixture();let browser
  try{
-  browser=await engine.launch({headless:true,...(engine===chromium?{channel:'chrome'}:{})})
+  browser=await engine.launch({headless:true,...(engine===chromium&&!fs.existsSync(chromium.executablePath())?{channel:'chrome'}:{})})
   const context=await browser.newContext({viewport:{width:1440,height:900}}),page=await context.newPage(),errors=[],requests=[]
   page.setDefaultTimeout(8000);page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>requests.push(request.url()))
   const route=(role='president',section='recruitment')=>`${fixture.base}/club/fixture-mii/workspace?section=${section}&role=${role}`

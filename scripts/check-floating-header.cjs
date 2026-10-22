@@ -43,7 +43,7 @@ async function check() {
     })
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))
     const base = `http://127.0.0.1:${server.address().port}`
-    browser = await engine.launch({ headless: true, ...(engine === chromium ? { channel: 'chrome' } : {}) })
+    browser = await engine.launch({ headless: true, ...(engine === chromium && !require('node:fs').existsSync(chromium.executablePath()) ? { channel: 'chrome' } : {}) })
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
     const errors = []
     page.on('pageerror', error => errors.push(error.message))
