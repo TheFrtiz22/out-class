@@ -19,10 +19,11 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(await page.locator('.oc-smart-event-card').count(), 60);
     await page.waitForTimeout(200); assert.equal(reads(), before, 'changing only the layout must not refetch');
     await page.getByRole('button', { name: 'Save After Hours at the Art Museum', exact: true }).click();
-    await page.getByRole('button', { name: 'Unsave After Hours at the Art Museum', exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).getAttribute('aria-pressed'), 'true');
     assert.equal(await page.getByRole('dialog').count(), 0, 'Save must not open the parent card');
     const downloaded = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Add After Hours at the Art Museum to calendar', exact: true }).click();
+    await page.getByRole('button', { name: 'Add to Calendar: After Hours at the Art Museum', exact: true }).click();
     const download = await downloaded, calendar = fs.readFileSync(await download.path(), 'utf8').replace(/\r\n /g, '');
     const stamp = value => new Date(value).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     assert.ok(calendar.includes('DTSTART:' + stamp(fixture.events[0].date)));
@@ -36,7 +37,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     assert.equal(reads(), before);
     await page.getByRole('button', { name: 'View After Hours at the Art Museum, hosted by OutClass Events Test', exact: true }).click();
     const dialog = page.getByRole('dialog'); await dialog.waitFor();
-    await dialog.getByRole('button', { name: 'Unsave After Hours at the Art Museum', exact: true }).waitFor();
+    await dialog.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).waitFor();
     await dialog.getByRole('button', { name: 'RSVP', exact: true }).click();
     await dialog.getByText('You’re going', { exact: false }).waitFor();
     await dialog.getByText('1 / 20 capacity · 19 remaining', { exact: false }).waitFor();
@@ -59,7 +60,7 @@ test('Events: desktop/tablet/mobile views share filters, saves, RSVP, details an
     await page.getByText('1 approved event · Times shown in Eastern Time', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'List View', exact: true }).click();
     assert.equal(await page.locator('.oc-smart-event-card').count(), 1);
-    await page.getByRole('button', { name: 'Unsave After Hours at the Art Museum', exact: true }).click();
+    await page.getByRole('button', { name: 'Saved After Hours at the Art Museum', exact: true }).click();
     await page.getByRole('heading', { name: 'No saved events here yet.', exact: true }).waitFor();
     await page.getByRole('button', { name: 'Show all events', exact: true }).click();
     await page.getByText('65 approved events · Times shown in Eastern Time', { exact: true }).waitFor();
