@@ -68,7 +68,7 @@
 [data-product-shell] .oc-overview-follow-up p { margin-top: .25rem; }
 [data-product-shell] .oc-overview-team-link { margin-top: .25rem; }
 
-[data-product-shell] .oc-manager-overview-grid > .oc-overview-panel { min-height: 220px; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); display: flex; flex-direction: column; background: var(--oc-surface-blue); }
+[data-product-shell] .oc-manager-overview-grid > .oc-overview-panel { min-height: 0; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); display: flex; flex-direction: column; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-manager-overview-grid > .oc-overview-follow-up,
 [data-product-shell] .oc-manager-overview-grid > .oc-overview-updates { background: var(--oc-surface-warm); }
 .oc-manager-overview-grid > .oc-overview-panel > .oc-overview-team-link { margin-top: auto; padding-top: 12px; }

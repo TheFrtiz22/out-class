@@ -1,7 +1,9 @@
 "use client"
-import { MetricStrip } from "@/components/product/metric-strip"
+import { DashboardPriorityQueue } from "@/components/product/dashboard-priority-queue"
+import type { DashboardAction } from "@/lib/dashboard-actions"
+import "@/components/product/dashboard-priority-queue.css"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck, Megaphone } from "@/components/icons"
+import { ArrowRight, CalendarDays, MapPin, ListChecks } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { clubWorkspaceHref } from "@/lib/club-workspace"
 import { hasPermission } from "@/lib/permissions"
@@ -12,23 +14,22 @@ import "@/components/clubs/manager-overview.css"
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
 const linkStyle = "inline-flex min-h-11 items-center text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
 export function ManagerOverview({ data, showRecaps = true }: { data: Overview; showRecaps?: boolean }) {
-  const { club, meeting, work, membership, awaitingReview, recruitment } = data
+  const { club, meeting, work, membership, awaitingReview, recruitment, upcomingInterviews, votingSessions } = data
   const canReview = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
   const pending = canReview ? recruitment?.filter(row => ["SUBMITTED", "IN_REVIEW"].includes(row.status)).reduce((sum, row) => sum + row.count, 0) ?? 0 : 0
   const interviews = canReview ? recruitment?.find(row => row.status === "INTERVIEWING")?.count ?? 0 : 0
   const submissions = hasPermission(membership, "tasks.manage") ? awaitingReview ?? 0 : 0
-  const operations = [
-    ...(submissions > 0 ? [{ title: `${submissions} task submission${submissions === 1 ? "" : "s"} awaiting review`, detail: "Open team tasks to review submitted work and give feedback.", href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team` }] : []),
-    ...(pending > 0 ? [{ title: `${pending} application${pending === 1 ? "" : "s"} in submitted or review status`, detail: hasPermission(membership, "applicants.identify") ? "Open applicants to review the current queue." : "Anonymous rounds only, within your review access.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
-    ...(interviews > 0 ? [{ title: `${interviews} application${interviews === 1 ? "" : "s"} at interview stage`, detail: "Check recorded interview details and next steps in Applicants.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
+  const actions: DashboardAction[] = [
+    ...(submissions > 0 ? [{ id: "submitted-tasks", title: `Review ${submissions} task submission${submissions === 1 ? "" : "s"}`, description: "Assess submitted work and provide feedback.", urgency: "critical" as const, count: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team` }] : []),
+    ...(pending > 0 ? [{ id: "pending-applicants", title: `Review ${pending} pending application${pending === 1 ? "" : "s"}`, description: hasPermission(membership, "applicants.identify") ? "Open the current applicant review queue." : "Open only rounds available to your anonymous review access.", urgency: "soon" as const, count: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
+    ...(upcomingInterviews !== null && upcomingInterviews > 0 ? [{ id: "upcoming-interviews", title: `${upcomingInterviews} interview booking${upcomingInterviews === 1 ? "" : "s"} this week`, description: "Prepare for scheduled interviews.", urgency: "soon" as const, count: upcomingInterviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=interviews` }] : []),
+    ...(votingSessions?.length ? [{ id: "voting-sessions", title: `${votingSessions.length} open voting session${votingSessions.length === 1 ? "" : "s"}`, description: "Continue voting and confirm round outcomes.", urgency: "soon" as const, count: votingSessions.length, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=decisions` }] : []),
+    ...work.map(item => ({ id: `task-${item.id}`, title: item.task.title, description: item.task.kind === "PROJECT" ? "Your assigned project" : "Your assigned task", urgency: item.task.dueAt && +new Date(item.task.dueAt) < Date.now() ? "critical" as const : "normal" as const, dueAt: item.task.dueAt, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=mine` })),
+    ...(meeting ? [{ id: "meeting", title: `Upcoming: ${meeting.title}`, description: memberDate(meeting.date), urgency: "normal" as const, dueAt: meeting.date, href: `/meetings/${meeting.id}` }] : []),
   ]
   return <div className="oc-manager-overview">
-    {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
-      ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
-      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),
-    ]} />}
+    <DashboardPriorityQueue actions={actions} title="Your next actions" empty="You're caught up. New assignments, meetings, and submissions will appear here." />
     <div className="oc-manager-overview-grid">
-      <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul>{!operations.length && <p className="oc-overview-empty">You’re caught up. Applications and task submissions needing attention will appear here.</p>}</section>
       <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
         <header><h2 id="club-next-meeting"><CalendarDays aria-hidden="true" size={20} />Next meeting</h2><Link href={clubWorkspaceHref(club.id, "meetings")} className={linkStyle}>All meetings <ArrowRight aria-hidden="true" size={15} /></Link></header>
         {meeting ? <div className="oc-overview-meeting">
@@ -48,12 +49,6 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
         </Link></li>)}</ul> : <p className="oc-overview-empty">You have no outstanding assignments. Your submissions and feedback remain available in Tasks.</p>}
         {hasPermission(membership, "tasks.manage") && <Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`} className="oc-overview-team-link">View team tasks & projects <ArrowRight aria-hidden="true" size={15} /></Link>}
       </section>
-      {hasPermission(membership, "meetings.manage") ? <section className="oc-overview-panel oc-overview-updates" aria-labelledby="club-updates">
-        <header><h2 id="club-updates"><Megaphone aria-hidden="true" size={20} />Club updates</h2></header>
-        <p className="oc-overview-empty">Keep up with announcements shared with your club.</p>
-        <Link href={`/club/${club.id}/workspace?section=announcements`} className="oc-overview-team-link">Open announcements <ArrowRight aria-hidden="true" size={15} /></Link>
-      </section>
-      : <section className="oc-overview-panel oc-overview-updates" aria-label="Club resources"><header><h2><CalendarDays aria-hidden="true" size={20} />Club resources</h2></header><p className="oc-overview-empty">Find agendas, shared documents, and meeting recaps in Meetings.</p><Link href={clubWorkspaceHref(club.id, "meetings")} className="oc-overview-team-link">Browse meeting resources <ArrowRight aria-hidden="true" size={15} /></Link></section>}
       {showRecaps && <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>}
     </div>
   </div>
