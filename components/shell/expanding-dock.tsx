@@ -128,7 +128,7 @@ export function ExpandingDock({ sections, active, contextKey, renderItem, onHome
           <div ref={highlight} className="oc-dock-hover-highlight" aria-hidden="true" />
           {sections.filter(section => section.items.length).map(section => {
             const rendered = new Set<Group>()
-            return <section key={section.label} className="oc-dock-section"><h2 className="oc-dock-section-heading">{section.label}</h2><nav aria-label={section.label}>{section.items.map(item => {
+            return <section key={section.label} className="oc-dock-section"><nav aria-label={section.label}>{section.items.map(item => {
               if (!item.navGroup) return renderItem(item, "rail")
               if (rendered.has(item.navGroup)) return null
               const group = item.navGroup; rendered.add(group)
