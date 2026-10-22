@@ -1,5 +1,4 @@
 "use client"
-import { MetricStrip } from "@/components/product/metric-strip"
 import { DashboardPriorityQueue } from "@/components/product/dashboard-priority-queue"
 import type { DashboardAction } from "@/lib/dashboard-actions"
 import "@/components/product/dashboard-priority-queue.css"
@@ -27,10 +26,6 @@ export function ManagerOverview({ data, showRecaps = true }: { data: Overview; s
     ...(meeting ? [{ id: "meeting", title: `Upcoming: ${meeting.title}`, description: memberDate(meeting.date), urgency: "normal" as const, dueAt: meeting.date, href: `/meetings/${meeting.id}` }] : []),
   ]
   return <div className="oc-manager-overview">
-    {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
-      ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
-      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),
-    ]} />}
     <DashboardPriorityQueue actions={actions} title="Your next actions" empty="You're caught up. New assignments, meetings, and submissions will appear here." />
     <div className="oc-manager-overview-grid">
       <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
