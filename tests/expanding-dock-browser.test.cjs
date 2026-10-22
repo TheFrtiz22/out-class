@@ -42,6 +42,12 @@ test('browser: expanding dock, shared motion, safe flyouts, permissions, keyboar
   await page.mouse.move(menu.x-8,menu.y+35,{steps:4});await page.waitForTimeout(280)
   await expect(applicants).toHaveAttribute('aria-expanded','true')
   await page.mouse.move(menu.x+80,menu.y+75,{steps:4});await page.waitForTimeout(250);await expanded(true)
+  // Diagonal travel toward a lower child must not select the rows it crosses.
+  await applicants.hover();const start=await applicants.boundingBox(),lower=await flyout().getByRole('link').last().boundingBox()
+  const from={x:start.x+140,y:start.y+24},to={x:lower.x+110,y:lower.y+22}
+  await page.mouse.move(from.x,from.y)
+  for(let step=1;step<=20;step++){await page.mouse.move(from.x+(to.x-from.x)*step/20,from.y+(to.y-from.y)*step/20);await page.waitForTimeout(10)}
+  await page.waitForTimeout(250);await expect(applicants).toHaveAttribute('aria-expanded','true');await expect(flyout().getByRole('link').last()).toBeVisible()
   await decisions.hover();await page.getByRole('dialog',{name:'Decisions navigation'}).waitFor();await expect(flyout()).toHaveCount(0)
   await page.waitForTimeout(350)
   const afterHighlight=await dock.locator('.oc-dock-hover-highlight').boundingBox()

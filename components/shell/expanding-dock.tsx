@@ -28,8 +28,17 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
   const dockFocused = useRef(false)
   const railHovered = useRef(false), flyoutHovered = useRef(false), workspaceOpen = useRef(false)
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const intentTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const focusInside = () => rail.current?.contains(document.activeElement) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(document.activeElement))
   function cancelExit() { clearTimeout(exitTimer.current) }
+  function cancelIntent() { clearTimeout(intentTimer.current) }
+  function hoverGroup(group: Group | null) {
+    cancelIntent()
+    // Let diagonal travel cross another row on its way to the current flyout.
+    // Staying on the new row commits that intent; entering the flyout cancels it.
+    if (openGroup && openGroup !== group) intentTimer.current = setTimeout(() => setOpenGroup(group), EXIT_DELAY)
+    else setOpenGroup(group)
+  }
   function clearHighlight() {
     hoveredItem.current = null
     highlight.current?.style.setProperty("opacity", "0")
@@ -68,13 +77,13 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
     if (!content) return
     const observer = new ResizeObserver(() => { if (hoveredItem.current?.isConnected) positionHighlight(hoveredItem.current) })
     observer.observe(content)
-    return () => { observer.disconnect(); clearTimeout(exitTimer.current) }
+    return () => { observer.disconnect(); clearTimeout(exitTimer.current); clearTimeout(intentTimer.current) }
   }, [])
   useEffect(() => {
-    setOpenGroup(null); flyoutHovered.current = false
+    cancelIntent(); setOpenGroup(null); flyoutHovered.current = false
     // A route change may move focus to content. Collapse only after that focus settles.
     scheduleExit()
-    return cancelExit
+    return () => { cancelExit(); cancelIntent() }
     // Interaction refs intentionally contain the current hover/focus state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contextKey])
@@ -84,26 +93,30 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
       if (media.matches) return
       const focused = document.activeElement
       if (dockFocused.current || rail.current?.contains(focused) || Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(focused)) || workspaceOpen.current) dismiss.current()
-      cancelExit(); setOpenGroup(null); setWorkspaceMenuOpen(false); workspaceOpen.current = false; setExpanded(false)
+      cancelExit(); cancelIntent(); setOpenGroup(null); setWorkspaceMenuOpen(false); workspaceOpen.current = false; setExpanded(false)
       dockFocused.current = false; railHovered.current = false; flyoutHovered.current = false; clearHighlight()
     }
     media.addEventListener("change", reset)
     return () => media.removeEventListener("change", reset)
   }, [owner])
-  function enterFlyout() { flyoutHovered.current = true; cancelExit(); setExpanded(true) }
+  function enterFlyout() {
+    flyoutHovered.current = true; cancelExit(); cancelIntent(); setExpanded(true)
+    const parent = canvas.current?.querySelector<HTMLElement>(`[data-dock-group="${openGroup}"]`)
+    if (parent) emphasize(parent)
+  }
   function leaveFlyout() { flyoutHovered.current = false; scheduleExit() }
   return <aside ref={rail} className="oc-expanding-dock hidden lg:block" aria-label="Workspace dock" data-dock-expanded={expanded}
     onPointerEnter={event => { if (event.pointerType === "mouse" || event.pointerType === "pen") { railHovered.current = true; cancelExit(); setExpanded(true) } }}
-    onPointerLeave={() => { railHovered.current = false; scheduleExit() }}
-    onFocusCapture={() => { dockFocused.current = true; cancelExit(); setExpanded(true) }} onBlurCapture={event => {
+    onPointerLeave={() => { railHovered.current = false; cancelIntent(); scheduleExit() }}
+    onFocusCapture={() => { dockFocused.current = true; cancelIntent(); cancelExit(); setExpanded(true) }} onBlurCapture={event => {
       const next = event.relatedTarget as Node | null
       if (next && !rail.current?.contains(next) && !Array.from(document.querySelectorAll<HTMLElement>("[data-dock-flyout]")).some(node => node.dataset.dockFlyout === owner && node.contains(next))) dockFocused.current = false
       scheduleExit()
     }}
-    onKeyDownCapture={event => { if (event.key === "Escape" && !openGroup && !workspaceOpen.current) { event.preventDefault(); event.stopPropagation(); cancelExit(); dockFocused.current = false; setExpanded(false); clearHighlight(); onDismiss() } }}>
+    onKeyDownCapture={event => { if (event.key === "Escape" && !openGroup && !workspaceOpen.current) { event.preventDefault(); event.stopPropagation(); cancelIntent(); cancelExit(); dockFocused.current = false; setExpanded(false); clearHighlight(); onDismiss() } }}>
     <div className="oc-context-sidebar oc-dock-rail">
       <button type="button" className="oc-dock-brand" aria-label="OutClass home" onClick={onHome}><span className="oc-dock-brand-mark"><OutClassLogo variant="mark" /></span><span className="oc-dock-brand-name" aria-hidden="true">Out<span>Class</span></span></button>
-      <ClubWorkspaceSwitcher open={workspaceMenuOpen} clubId={clubId} managersOnly={!platform} adminActive={platform} onOpenChange={open => { setWorkspaceMenuOpen(open); workspaceOpen.current = open; if (open) { cancelExit(); setOpenGroup(null); setExpanded(true) } else scheduleExit() }} />
+      <ClubWorkspaceSwitcher open={workspaceMenuOpen} clubId={clubId} managersOnly={!platform} adminActive={platform} onOpenChange={open => { setWorkspaceMenuOpen(open); workspaceOpen.current = open; if (open) { cancelIntent(); cancelExit(); setOpenGroup(null); setExpanded(true) } else scheduleExit() }} />
       <div className="oc-dock-navigation">
         <div ref={canvas} className="oc-dock-navigation-content"
           onPointerOver={event => {
@@ -112,7 +125,7 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
             if (!item) return
             cancelExit(); setExpanded(true); emphasize(item)
             const group = item.dataset.dockGroup as Group | undefined
-            if (!workspaceOpen.current) setOpenGroup(group ?? null)
+            if (!workspaceOpen.current) hoverGroup(group ?? null)
           }}
           onFocusCapture={event => { const item = event.target.closest<HTMLElement>("[data-dock-item]"); if (item) emphasize(item) }}>
           <div ref={highlight} className="oc-dock-hover-highlight" aria-hidden="true" />
@@ -123,7 +136,7 @@ export function ExpandingDock({ sections, active, contextKey, clubId, platform, 
               if (rendered.has(item.navGroup)) return null
               const group = item.navGroup; rendered.add(group)
               return <DockGroup key={group} owner={owner} group={group} items={section.items.filter(child => child.navGroup === group)} active={active} open={openGroup === group} renderItem={renderItem}
-                onOpenChange={open => { cancelExit(); setOpenGroup(open ? group : null); if (open) setExpanded(true); else { flyoutHovered.current = false; scheduleExit() } }}
+                onOpenChange={open => { cancelIntent(); cancelExit(); setOpenGroup(open ? group : null); if (open) setExpanded(true); else { flyoutHovered.current = false; scheduleExit() } }}
                 onExit={onDismiss} onPointerEnter={enterFlyout} onPointerLeave={leaveFlyout} onFocus={() => { cancelExit(); setExpanded(true) }} onBlur={scheduleExit} />
             })}</nav></section>
           })}
