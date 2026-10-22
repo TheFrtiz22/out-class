@@ -24,7 +24,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from 
 import { useAuth } from "@/contexts/auth-context"
 import { useDemoMode } from "@/contexts/demo-context"
 import { getTaskNotifications } from "@/lib/workspace-api"
-import { getDurableNotifications } from "@/actions/communications"
+import { getDurableNotifications } from "@/lib/workspace-read"
 import { useApplicationState } from "@/lib/application-state"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
 import { createClient } from "@/utils/supabase/client"

@@ -1,0 +1,246 @@
+// Investigation only. Accepts only the reserved disposable local Supabase fixture.
+// No application .env is read; no cookies, headers, payloads or personal data are saved.
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
+const assert = require('node:assert/strict');
+const { randomUUID } = require('node:crypto');
+const { chromium } = require('playwright');
+const { PrismaClient } = require('@prisma/client');
+const { Actor, readConfig, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
+const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
+const fixtureFile = path.join(root, 'navigation-fixture.json');
+const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
+function distribution(values) {
+  const a = values.filter(Number.isFinite).sort((a,b)=>a-b);
+  const r = n => Math.round(n*100)/100;
+  return {samples:a.length,p50:a.length?r(a[Math.ceil(a.length*.5)-1]):null,p95:a.length?r(a[Math.ceil(a.length*.95)-1]):null,max:a.length?r(a.at(-1)):null};
+}
+function safeRoute(input) {
+  const u = new URL(input, 'http://127.0.0.1:3107');
+  if(u.pathname==='/api/workspace') return '/api/workspace?kind='+u.searchParams.get('kind');
+  return u.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[fixture-id]');
+}
+async function seed(config) {
+  if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
+  const actor = new Actor(config), tag='navaudit'+randomUUID().replaceAll('-','').slice(0,10);
+  const email=tag+'@virginia.edu', password='Local-audit-only!'+randomUUID();
+  const signup=await actor.client.auth.signUp({email,password});
+  if(signup.error) throw Error('Local signup failed: '+signup.error.code);
+  const message=await confirmationMessage(config,email), token=message.Text.match(/\b(\d{6})\b/)?.[1];
+  assert.ok(token,'Local verification email supplies OTP');
+  const verified=await actor.client.auth.verifyOtp({email,token,type:'email'});
+  assert.ok(!verified.error,'Local email verification succeeds');
+  const userId=verified.data.user.id, clubIds=[randomUUID(),randomUUID()];
+  const db=new PrismaClient({datasourceUrl:config.status.DB_URL});
+  try {
+    await db.user.upsert({where:{id:userId},create:{id:userId,email},update:{}});
+    await db.studentProfile.create({data:{userId,firstName:'Audit',lastName:'Owner',computingId:tag,major:'Economics',gradYear:2028}});
+    for(let c=0;c<2;c++) {
+      const clubId=clubIds[c];
+      await db.club.create({data:{id:clubId,slug:tag+'-'+c,name:'Navigation Audit Club '+(c+1),tagline:'Disposable local fixture',description:'Synthetic audit only',color:'#234567',category:'Academic',claimedAt:new Date()}});
+      const owner=await db.clubMember.create({data:{clubId,userId,isOwner:true,accessRole:'OWNER',interviewOffices:['PRESIDENT']}});
+      const applied=await db.pipelineRound.create({data:{clubId,name:'Applied',order:0,type:'APPLICATION_REVIEW'}});
+      await db.pipelineRound.create({data:{clubId,name:'Interview',order:1,type:'INTERVIEW'}});
+      for(let i=0;i<100;i++) {
+        const id=randomUUID();
+        await db.user.create({data:{id,email:tag+c+'s'+i+'@virginia.edu',studentProfile:{create:{firstName:'Audit',lastName:'Student '+String(i).padStart(3,'0'),computingId:tag+c+'s'+i,major:'Economics',gradYear:2028,experiences:{create:{title:'Synthetic experience',subtitle:'Audit fixture',period:'2025–2026'}}}}}});
+        await db.application.create({data:{clubId,studentId:id,roundId:applied.id,status:'SUBMITTED',submittedAt:new Date()}});
+        if(i<60) await db.clubMember.create({data:{clubId,userId:id}});
+      }
+      await db.meeting.create({data:{clubId,title:'Audit Weekly Meeting',date:new Date(Date.now()+86400000*7),location:'Synthetic room',audience:'MEMBERS',isPublic:false}});
+      const task=await db.clubTask.create({data:{clubId,title:'Audit Task',audience:{type:'ALL'},dueAt:new Date(Date.now()+86400000*7)}});
+      await db.taskAssignment.create({data:{taskId:task.id,memberId:owner.id,userId}});
+      await db.clubAnnouncement.create({data:{clubId,authorId:userId,title:'Audit Announcement',body:'Synthetic benchmark content.',audience:'MEMBERS'}});
+    }
+    const fixture={userId,email,password,clubIds,counts:{clubs:2,membersPerClub:61,applicantsPerClub:100,meetingsPerClub:1,tasksPerClub:1,announcementsPerClub:1}};
+    fs.writeFileSync(fixtureFile,JSON.stringify(fixture),{mode:0o600});
+    return fixture;
+  } finally {await db.$disconnect();}
+}
+function routes(f) {
+  const base='/club/'+f.clubIds[0]+'/workspace';
+  return {
+    overview:{href:base+'?section=overview',selector:'.oc-manager-overview, section[aria-label="Overview"]',text:'Audit Weekly Meeting',tour:'nav-overview'},
+    members:{href:base+'?section=members',selector:'section[aria-label="Members"]',text:'Audit Student 000',tour:'nav-members'},
+    meetings:{href:base+'?section=meetings',selector:'section[aria-label="Meetings"]',text:'Audit Weekly Meeting',tour:'nav-meetings'},
+    tasks:{href:base+'?section=tasks',selector:'section[aria-label="Tasks"]',text:'Audit Task',tour:'nav-tasks'},
+    announcements:{href:base+'?section=announcements',selector:'section[aria-label="Announcements"]',text:'Audit Announcement',tour:'nav-announcements'},
+    recruiting:{href:base+'?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 1',tour:'nav-overview'},
+    applicants:{href:base+'?section=recruitment&tool=applicants',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-applicants'},
+    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'No assigned interviews.',tour:'nav-interviews'},
+    decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
+    settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
+    club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},
+    personal:{href:'/?workspace=student',selector:'.oc-student-home:not([role="status"])',text:'Your next step'},
+    voting:{selector:'[role="dialog"]',text:'No voting session yet.'},
+    applicantDetail:{selector:'[data-slot="sheet-content"]',text:'configured fields'},
+    memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
+  };
+}
+function installBrowserObservers() {
+  window.__navAudit={longTasks:[],commits:[]};
+  new PerformanceObserver(list=>{for(const e of list.getEntries())window.__navAudit.longTasks.push({start:e.startTime,duration:e.duration});}).observe({entryTypes:['longtask']});
+  // Commit notifications only; standard production React omits profiler durations.
+  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(){window.__navAudit.commits.push(performance.now());},onCommitFiberUnmount(){}};
+  document.addEventListener('click',()=>{if(window.__navAudit.armed && !window.__navAudit.click)window.__navAudit.click=performance.now();},true);
+  for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
+}
+async function waitReady(page, desc) {
+  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+}
+async function main() {
+  const config=readConfig(path.join(root,'config.json'));
+  assert.equal(config.appUrl,'http://127.0.0.1:3107');
+  const fixture=await seed(config);
+  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify(fixture.counts));return;}
+  fs.mkdirSync(outDir,{recursive:true});
+  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
+  const cookies=[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'}));
+  const manifest=JSON.parse(fs.readFileSync(path.join(config.buildDir,'server/server-reference-manifest.json')));
+  const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
+  const browser=await chromium.launch({headless:true});
+  const descriptors=routes(fixture), allSamples=[], failures=[];
+  const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
+  assert.ok(sampleCount>0&&sampleCount<=100);
+  async function session() {
+    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies,origins:[]}});
+    await context.addInitScript(installBrowserObservers);
+    const page=await context.newPage(),cdp=await context.newCDPSession(page);
+    await cdp.send('Performance.enable');
+    const requests=[],pending=new Set();
+    page.on('request',req=>{
+      const action=req.headers()['next-action'];
+      const row={req,route:action?actionNames.get(action)||'server-action':safeRoute(req.url()),method:req.method(),type:req.resourceType(),start:Date.now(),status:null,end:null,bytes:null,timing:null};
+      requests.push(row);if(req.resourceType()!=='eventsource')pending.add(req);
+    });
+    page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
+    page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
+    page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
+    return {context,page,cdp,requests,pending};
+  }
+  async function settle(s) {
+    // SSE is ongoing. Wait for other requests to drain, with a finite bound.
+    const end=Date.now()+10000;
+    while(s.pending.size && Date.now()<end)await s.page.waitForTimeout(30);
+    await s.page.waitForTimeout(80);
+  }
+  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
+  if(process.argv.includes('--initial')){
+    const samples=[];
+    try{
+      for(const id of ['overview','personal'])for(let i=0;i<sampleCount;i++){
+        const s=await session();
+        try{
+          await s.context.addInitScript(d=>{
+            let scheduled=false;
+            const observer=new MutationObserver(()=>{if(scheduled)return;const root=[...document.querySelectorAll(d.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(d.text));if(root){scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__initialReady=performance.now();observer.disconnect();}));}});
+            observer.observe(document,{childList:true,subtree:true,attributes:true});
+          },descriptors[id]);
+          await open(s,id);await s.page.waitForFunction(()=>window.__initialReady>0);
+          const metrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
+          const marks=await s.page.evaluate(()=>({readyMs:window.__initialReady,longTasks:window.__navAudit.longTasks.filter(t=>t.start<window.__initialReady),navigation:performance.getEntriesByType('navigation').map(n=>({ttfbMs:n.responseStart,domContentLoadedMs:n.domContentLoadedEventEnd,transferSize:n.transferSize}))[0]}));
+          samples.push({route:id,index:i,meaningfulMs:marks.readyMs,scriptMs:metrics.ScriptDuration*1000,taskMs:metrics.TaskDuration*1000,longTasks:marks.longTasks,document:marks.navigation,requestCount:s.requests.length});
+          console.log('initial '+id+' '+(i+1)+'/'+sampleCount+': '+marks.readyMs.toFixed(1)+' ms');
+        }finally{await s.context.close();}
+      }
+      fs.writeFileSync(path.join(outDir,'initial-samples.json'),JSON.stringify({environment:'local production Next build; authenticated local fixture; cold browser context; warm server/DB',samples,summary:['overview','personal'].map(route=>({route,meaningfulMs:distribution(samples.filter(s=>s.route===route).map(s=>s.meaningfulMs)),scriptMs:distribution(samples.filter(s=>s.route===route).map(s=>s.scriptMs))}))},null,2));
+    }finally{await browser.close();}
+    return;
+  }
+  async function clickTarget(s,from,to) {
+    const {page}=s;
+    if(to==='applicantDetail')return page.locator('[data-applicant-id]').first().click();
+    if(to==='memberDetail')return page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).click();
+    if(from==='applicantDetail'||from==='memberDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
+    if(to==='voting')return page.getByRole('button',{name:'Start voting',exact:true}).click();
+    if(from==='voting'&&to==='applicants'){
+      const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
+      if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
+      return page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click();
+    }
+    if(to==='personal'||to==='club2'||from==='personal'||from==='club2'){
+      await page.getByRole('button',{name:/Switch workspace:/}).first().click();
+      return page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
+    }
+    if(from==='settings'&&to==='overview')return page.locator('[data-tour="nav-overview"]').first().click();
+    if((to==='recruiting'&&from==='overview')||(to==='overview'&&['recruiting','applicants'].includes(from)))return page.locator('[data-tour="mode-'+(to==='recruiting'?'recruiting':'club')+'"]').first().click();
+    const tour=descriptors[to].tour;
+    const item=page.locator('[data-tour="'+tour+'"]').first();
+    // Applicant/decision groups collapse when another group is selected.
+    if(!await item.isVisible()) {
+      const label=to==='decisions'?'Decisions':'Applicants';
+      await page.getByRole('button',{name:label,exact:true}).first().click();
+    }
+    return item.click();
+  }
+  async function sample(s,from,to,condition,index) {
+    // Open any switcher or grouped rail before timing the destination click.
+    const page=s.page;
+    if(from==='voting'){
+      const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
+      if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
+    }
+    if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('button',{name:/Switch workspace:/}).first().click();
+    else if(!['voting'].includes(from)&&to!=='voting'&&descriptors[to].tour){
+      const item=page.locator('[data-tour="'+descriptors[to].tour+'"]').first();
+      if(!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
+    }
+    const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
+    const startIndex=s.requests.length;
+    await page.evaluate(desc=>{
+      const a=window.__navAudit;a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
+      if(a.observer)a.observer.disconnect();
+      let scheduled=false;
+      const check=()=>{
+        if(!a.click||scheduled||a.ready)return;
+        if(desc.href&&location.pathname!==new URL(desc.href,location.origin).pathname)return;
+        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(desc.clubLabel)))return;
+        const root=[...document.querySelectorAll(desc.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(desc.text));
+        if(!root)return;
+        // Closing Voting reveals Applicants already mounted underneath.
+        if(desc.selector==='.oc-live-pipeline'&&document.querySelector('[data-slot="dialog-content"][data-state="open"]'))return;
+        scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{a.ready=performance.now();const control=[...root.querySelectorAll('button,input,select,a[href]')].find(el=>el.getClientRects().length&&!el.disabled);a.interactive=control?performance.now():null;}));
+      };
+      a.observer=new MutationObserver(check);a.observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});a.check=check;
+    },descriptors[to]);
+    if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
+    else await clickTarget(s,from,to);
+    await page.evaluate(()=>window.__navAudit.check());
+    await page.waitForFunction(()=>window.__navAudit.ready>0,null,{timeout:30000});
+    await settle(s);
+    const afterMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
+    const marks=await page.evaluate(()=>{const a=window.__navAudit;a.armed=false;a.observer.disconnect();return{click:a.click,origin:performance.timeOrigin,url:a.url,ready:a.ready,interactive:a.interactive,longTasks:a.longTasks.filter(t=>t.start>=a.click&&t.start<a.ready),commits:a.commits.filter(t=>t>=a.click&&t<=a.ready).length};});
+    const clickWall=marks.origin+marks.click;
+    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
+    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
+    allSamples.push(row);return row;
+  }
+  const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
+  const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
+  try {
+    for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
+      let shared;
+      try {
+        if(condition==='repeated') {shared=await session();await open(shared,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(shared,'applicants','voting');await waitReady(shared.page,descriptors.voting);await settle(shared);}}
+        for(let i=0;i<sampleCount;i++) {
+          const s=shared||await session();
+          try {
+            if(!shared){await open(s,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(s,'applicants','voting');await waitReady(s.page,descriptors.voting);await settle(s);}}
+            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+            const r=await sample(s,from,to,condition,i);console.log(`${r.path} ${condition} ${i+1}/${sampleCount}: ${r.meaningfulMs.toFixed(1)} ms, ${r.requestCount} requests`);
+            if(shared&&i<sampleCount-1){await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+          } finally {if(!shared)await s.context.close();}
+        }
+      } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}
+      finally {if(shared)await shared.context.close();}
+      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
+    }
+    const groups=[...new Set(allSamples.map(s=>s.path+'|'+s.condition))].map(key=>{const samples=allSamples.filter(s=>s.path+'|'+s.condition===key);return{path:samples[0].path,condition:samples[0].condition,meaningfulMs:distribution(samples.map(s=>s.meaningfulMs)),interactiveMs:distribution(samples.map(s=>s.interactiveMs)),clickToUrlMs:distribution(samples.map(s=>s.clickToUrlMs)),networkCompleteMs:distribution(samples.map(s=>s.networkCompleteMs)),scriptMs:distribution(samples.map(s=>s.scriptMs)),taskMs:distribution(samples.map(s=>s.taskMs)),requestCount:distribution(samples.map(s=>s.requestCount)),encodedBodyBytes:distribution(samples.map(s=>s.encodedBodyBytes))};});
+    fs.writeFileSync(path.join(outDir,outputStem+'-summary.json'),JSON.stringify({generatedAt:new Date().toISOString(),sampleCount,groups,failures},null,2));
+    if(failures.length)process.exitCode=1;
+  } finally {await browser.close();}
+}
+module.exports={distribution,safeRoute};
+if(require.main===module)main().catch(e=>{console.error(e.name, e.code || '', String(e.message).split('\n').filter(line=>/Invalid|constraint|argument|Unknown|verification|failed|Error/.test(line)).slice(-3).join('\n'));process.exitCode=1;});

@@ -1,0 +1,19 @@
+{
+  "suite": "native PostgreSQL security",
+  "current": {
+    "passed": [
+      "interview collaboration",
+      "interview transactions / immutable anonymous reopening"
+    ],
+    "failed": "onboarding concurrent ownership claims"
+  },
+  "auditReference": {
+    "commit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+    "sameFailure": true,
+    "expectedFulfilledClaims": 1,
+    "actualFulfilledClaims": 2,
+    "test": "tests/onboarding-concurrency.test.cjs:28"
+  },
+  "productionChanged": false,
+  "fixture": "dedicated disposable outclass_security_test database; real PostgreSQL 17; existing loopback assertions retained"
+}

@@ -1,0 +1,7 @@
+{
+  "reservedAppStopped": true,
+  "reservedSupabaseProjectStopped": true,
+  "localCredentialFixtureFilesRemoved": true,
+  "temporaryAuditReferenceRemoved": true,
+  "unrelatedStacksUntouched": true
+}

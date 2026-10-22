@@ -1,0 +1,21 @@
+// Sanitized comparisons only; original October 21 evidence is never overwritten.
+const fs=require('node:fs'),path=require('node:path');
+const {distribution}=require('./navigation-audit.cjs');
+const root=path.resolve('docs/performance/phase1');
+const stages=['baseline','tracing','lazy-scheduling','scoped-reads','get-transport','final','verified','verified-bookmarks'];
+const names={getAssignedInterviewRooms:'assignedRooms',getInterviewWorkspace:'interviewWorkspace',getInterviewRounds:'interviewRounds'};
+const kind=r=>r.route.includes('?kind=')?r.route.split('?kind=')[1]:names[r.route.split(':').at(-1)];
+const phases=r=>Object.fromEntries([...String(r.serverTiming||'').matchAll(/([a-z_]+);dur=([\d.]+)/g)].map(m=>[m[1],Number(m[2])]));
+const output={auditCommit:'3017e01d5b55bc8fb38d4f8fbec4906dd93bf619',environment:'local production Next build, real disposable Supabase Auth/PostgreSQL, Chromium 156, no network/CPU throttling',percentiles:'nearest rank, n=20 per path/condition',limitations:['Cold means fresh browser context; the server and database are warm.','Useful content is a DOM predicate plus two animation frames, not measured pixels.','Response-body bytes exclude headers. Server phase times overlap and are not additive.','Empty room assignments; no production speedup or active-room capacity claim.','final was a confirmation run; verification overlapped its last warm samples. verified is the preceding quiet performance cohort; verified-bookmarks is the final-source quiet cohort.'],stages:{}};
+for(const stage of stages){
+ const file=path.join(root,stage,'browser-samples.json');if(!fs.existsSync(file))continue;
+ const data=JSON.parse(fs.readFileSync(file));
+ const groups=[...new Set(data.samples.map(s=>s.path+'|'+s.condition))].map(key=>{
+  const samples=data.samples.filter(s=>s.path+'|'+s.condition===key),requests=samples.flatMap(s=>s.requests),critical=samples.map(s=>{const found=new Map();for(const r of s.requests){const k=kind(r);if(['assignedRooms','interviewWorkspace','interviewRounds'].includes(k)&&!found.has(k))found.set(k,r)}return [...found.values()]}),reads=critical.flat();
+  const phaseNames=[...new Set(reads.flatMap(r=>Object.keys(phases(r))))];
+  return {path:samples[0].path,condition:samples[0].condition,...Object.fromEntries(['meaningfulMs','interactiveMs','requestCount','encodedBodyBytes','networkCompleteMs','scriptMs','taskMs'].map(m=>[m,distribution(samples.map(s=>s[m]))])),completePayloadSamples:samples.filter(s=>s.requests.every(r=>r.type==="eventsource"||r.encodedBodyBytes!==null)).length,completePayloadBytes:distribution(samples.filter(s=>s.requests.every(r=>r.type==="eventsource"||r.encodedBodyBytes!==null)).map(s=>s.encodedBodyBytes)),httpErrors:requests.filter(r=>r.status>=400).length,transportFailures:requests.filter(r=>r.failed).length,post200TransportFailures:requests.filter(r=>r.failed&&r.status===200).length,statuses:Object.fromEntries([...new Set(requests.map(r=>String(r.status)))].map(status=>[status,requests.filter(r=>String(r.status)===status).length])),requestTtfbMs:distribution(requests.map(r=>r.ttfbMs)),requestTransferMs:distribution(requests.map(r=>r.transferMs)),roomsCriticalReadBarrierMs:distribution(critical.filter(rs=>rs.length===3).map(rs=>Math.max(...rs.map(r=>r.endMs))-Math.min(...rs.map(r=>r.startMs)))),roomsReadTtfbMs:distribution(reads.map(r=>r.ttfbMs)),responseServerPhasesMs:Object.fromEntries([...new Set(requests.flatMap(r=>Object.keys(phases(r))))].map(p=>[p,distribution(requests.map(r=>phases(r)[p]))])),serverPhasesMs:Object.fromEntries(phaseNames.map(p=>[p,distribution(reads.map(r=>phases(r)[p]))]))};
+ });
+ output.stages[stage]={acceptedForComparison:stage!=="final",primaryFinal:stage==="verified-bookmarks",samples:data.samples.length,failures:data.failures,groups};
+}
+fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(output,null,2)+'\n');
+for(const [stage,d]of Object.entries(output.stages))for(const g of d.groups.filter(g=>g.path==='applicants → interviews'&&g.condition!=='repeated'))console.log(`${stage}\t${g.condition}\t${g.meaningfulMs.p50}/${g.meaningfulMs.p95}\t${g.requestCount.p50}\t${g.encodedBodyBytes.p50}\t${g.networkCompleteMs.p50}/${g.networkCompleteMs.p95}\t${g.httpErrors} HTTP / ${g.transportFailures} transport`);

@@ -1,3 +1,4 @@
+import { traceDatabaseQuery, tracePrismaTransactions } from "@/lib/server-phase-trace"
 import { randomUUID } from "node:crypto"
 import { PrismaClient } from '@prisma/client'
 import { supportContext, supportInternal } from '@/utils/support-audit'
@@ -25,9 +26,10 @@ function createPrisma() {
     globalForPrisma.outclassPrismaBase = client
   }
 
-  return client.$extends({
+  return tracePrismaTransactions(client.$extends({
     name: 'support-actor-audit',
     query: {
+      $allOperations({ args, query }) { return traceDatabaseQuery(args, () => query(args)) },
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
           // Session lifecycle events already have an explicit real actor.
@@ -134,7 +136,7 @@ function createPrisma() {
         },
       },
     },
-  })
+  }))
 }
 
 type AppPrisma = ReturnType<typeof createPrisma>

@@ -1,0 +1,10 @@
+{
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "head": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "finalNextBuildId": "bGQzjiPPvBYNlOt-rJe0n",
+  "patchSha256": "777299d5638a33c80046d8335e2fd7c019c4e092345bd87446615711be27dae8",
+  "node": "v26.9.0",
+  "productionBuild": true,
+  "localOnly": true,
+  "stagesNote": "Intermediate source checkpoints were not committed; stage labels capture the incremental build order, not immutable intermediate patches. The final patch and build are identified here."
+}

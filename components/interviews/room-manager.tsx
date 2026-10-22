@@ -4,7 +4,7 @@ import { AvailabilityButton } from "@/components/availability/availability-butto
 import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
 import { LoadingState } from "@/components/ui/loading-state"
 import { NativeSelect } from "@/components/ui/native-select"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Copy, DoorOpen, MapPin, Plus, Video } from "@/components/icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,12 +24,21 @@ import { interviewRoundWeek } from "@/lib/interview-scheduling-context"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import "./scheduling.css"
 import Link from "next/link"
-import { getAssignedInterviewRooms } from "@/lib/workspace-api"
+import { useAssignedInterviewRooms } from "./interview-read-scope"
 import { interviewEntryHref, type InterviewRoomEntry } from "@/lib/interview-entry"
 
 
-export function RoomManager({ clubId }: { clubId: string }) {
+export function RoomManager({ clubId, active = true }: { clubId: string; active?: boolean }) {
   const demo = useDemoMode()
+  const assignedRooms = useAssignedInterviewRooms(clubId)
+  // A retained draft is never authority to reveal a workspace on re-entry.
+  // Advance synchronously so no frame exposes old content before the effect.
+  const activation = useRef({ active, authority: assignedRooms, version: 0 })
+  if (activation.current.active !== active || activation.current.authority !== assignedRooms) activation.current = { active, authority: assignedRooms, version: activation.current.version + 1 }
+  const activationVersion = activation.current.version
+  const [validatedVersion, setValidatedVersion] = useState(-1)
+  const validated = validatedVersion === activationVersion
+  const restoredActivation = useRef(-1)
   const [ownEntries, setOwnEntries] = useState<InterviewRoomEntry[]>([])
 
   const [data, setData] = useState<RoomWorkspace | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [refresh, setRefresh] = useState(0)
@@ -52,12 +61,12 @@ export function RoomManager({ clubId }: { clubId: string }) {
     window.history.pushState(null, "", url(section, round, date, week, sessionId))
   }
   useEffect(() => {
-    if (!demo.ready) return
-    let active = true
-    setLoading(true)
-    getRoomWorkspace(clubId).then(value => { if (active) { setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (active) setError("Could not load interview scheduling.") }).finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [clubId, refresh, demo.ready])
+    if (!demo.ready || !active) return
+    let current = true
+    setLoading(true); setError("")
+    getRoomWorkspace(clubId).then(value => { if (current) { setValidatedVersion(activationVersion); setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (current) { setValidatedVersion(-1); setError("Could not load interview scheduling. Check your current access and retry.") } }).finally(() => { if (current) setLoading(false) })
+    return () => { current = false }
+  }, [clubId, refresh, demo.ready, active, activationVersion])
   useEffect(() => {
     if (!data || round) return
     const params = new URLSearchParams(window.location.search)
@@ -70,12 +79,15 @@ export function RoomManager({ clubId }: { clubId: string }) {
   }, [data, round, week])
   useEffect(() => {
     const back = () => {
-      const params = new URLSearchParams(window.location.search), nextRound = data?.rounds.find(r => r.id === params.get("roundId"))?.id ?? data?.rounds[0]?.id ?? round
+      const params = new URLSearchParams(window.location.search)
+      if (!active || params.get("interviewTab") && !["schedule", "availability"].includes(params.get("interviewTab")!)) return
+      const nextRound = data?.rounds.find(r => r.id === params.get("roundId"))?.id ?? data?.rounds[0]?.id ?? round
       if (nextRound !== round && !canLeaveWorkspace()) { window.history.pushState(null, "", url(tab)); return }
       if (nextRound !== round) { setPanelVisited(false); setAutoStart(false) }
       setRound(nextRound); setDate(localDateSchema.safeParse(params.get("date")).success ? params.get("date")! : ""); setWeek(localDateSchema.safeParse(params.get("week")).success ? monday(params.get("week")!) : data ? interviewRoundWeek(data, nextRound) : week); setSelectedSession(params.get("sessionId") ?? "")
       const section = data ? schedulingEntry(data, nextRound, params.get("schedule")) : "rooms"; if (schedulingSections.includes(section as typeof schedulingSections[number])) { setTab(section); if (section === "fill" || section === "review") setPanelVisited(true) }
     }
+    if (active && validated && restoredActivation.current !== activationVersion) { restoredActivation.current = activationVersion; back() }
     const changed = () => setRefresh(v => v + 1)
     window.addEventListener("popstate", back); window.addEventListener("outclass:panels-changed", changed); window.addEventListener("outclass:availability-changed", changed)
     return () => { window.removeEventListener("popstate", back); window.removeEventListener("outclass:panels-changed", changed); window.removeEventListener("outclass:availability-changed", changed) }
@@ -83,9 +95,9 @@ export function RoomManager({ clubId }: { clubId: string }) {
   useEffect(() => {
     if (!demo.ready) return
     let current = true
-    getAssignedInterviewRooms(clubId).then(rows => { if (current) setOwnEntries(rows) }).catch(() => { if (current) setOwnEntries([]) })
+    assignedRooms().then(rows => { if (current) setOwnEntries(rows) }).catch(() => { if (current) setOwnEntries([]) })
     return () => { current = false }
-  }, [clubId, demo.ready, refresh])
+  }, [clubId, demo.ready, refresh, assignedRooms])
   const roundTimezone = SCHEDULING_TIMEZONE
   useEffect(() => {
     if (!round || !demo.ready || demo.isDemoEnabled) return
@@ -97,9 +109,11 @@ export function RoomManager({ clubId }: { clubId: string }) {
   const bookings = data?.bookings.filter(b => rooms.some(r => r.id === b.roomId) && (!date || dayKey(b.startTime, SCHEDULING_TIMEZONE) === date)) ?? []
   const shortageIds = useMemo(() => staffingShortageSessionIds(coverage?.slots ?? []), [coverage])
   const roundName = data?.rounds.find(r => r.id === round)?.name
-  return <div className="ir-manager space-y-4">
+  return <>
+    {active && !validated && (error ? <div role="alert">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div> : <LoadingState label="Loading interview scheduling…" rows={3} />)}
+    <div hidden={!active || !validated}><div className="ir-manager space-y-4">
     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Interview scheduling</h2><div className="flex flex-wrap gap-2">{coverage?.myEligible && <AvailabilityButton clubId={clubId} roundId={round} />}<Button variant="outline" onClick={() => navigateSection("availability")}>Team availability</Button><Button variant="outline" onClick={() => navigateSection("bookings")}>View bookings</Button><ActionWorkflow title="Schedule options" description="Preview applicant booking and configure publication settings." trigger="Schedule options">{done => <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { navigateSection("preview"); done() }}>Applicant preview</Button><Button variant="outline" onClick={() => { navigateSection("publish"); done() }}>Booking settings</Button></div>}</ActionWorkflow></div></header>
-    {error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}{notice && <p role="status" className="text-sm">{notice}</p>}
+    {validated && error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}{notice && <p role="status" className="text-sm">{notice}</p>}
     {!data && loading ? <LoadingState label="Loading interview scheduling…" rows={3} /> : data && <>
       <div className="flex flex-wrap items-end gap-3"><label className="ir-field">Interview round<NativeSelect aria-label="Recruitment round" value={round} onChange={e => { if (!canLeaveWorkspace()) return; const nextWeek = interviewRoundWeek(data, e.target.value); setWeek(nextWeek); setDate(""); setRound(e.target.value); setPanelVisited(false); setAutoStart(false); setCoverage(null); setSelectedSession(""); const nextSection = schedulingEntry(data,e.target.value); setTab(nextSection); if (nextSection === "review") setPanelVisited(true); window.history.pushState(null, "", url(nextSection, e.target.value, "", nextWeek, "")) }}>{data.rounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</NativeSelect></label><div className="flex items-end gap-2"><label className="ir-field">Interview date<Input aria-label="Filter interview date" type="date" value={date} onChange={e => { setDate(e.target.value); if (e.target.value) setWeek(monday(e.target.value)); window.history.pushState(null, "", url(tab, round, e.target.value, e.target.value ? monday(e.target.value) : week)) }} /></label>{date && <Button variant="ghost" onClick={() => { setDate(""); window.history.pushState(null, "", url(tab, round, "")) }}>All dates</Button>}</div></div>
       {tab !== "bookings" && <nav aria-label="Scheduling workflow" className="flex flex-wrap gap-1 border-y py-2">{[["availability", "Availability"], ["rooms", "Set interview times"], ["review", "Confirm interviewers"], ["publish", "Publish booking"]].map(([id,label],i) => <Button key={id} variant={tab === id || id === "review" && tab === "fill" ? "secondary" : "ghost"} aria-current={tab === id ? "step" : undefined} onClick={() => navigateSection(id)}><span className="text-xs text-muted-foreground">{i+1}</span>{label}</Button>)}</nav>}
@@ -116,7 +130,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
       </>}
       {create && <CreateRoomDialog clubId={clubId} workspace={{ ...data, rounds: data.rounds.filter(r => r.id === round) }} source={source} initialDate={date || undefined} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); setNotice("Interview times saved."); navigateSection("review"); setRefresh(v => v + 1); window.dispatchEvent(new Event("outclass:staffing-changed")) }} />}
     </>}
-  </div>
+  </div></div></>
 }
 function RoomOptions({room,workspace,date,coverage,shortageIds,selectedSession,busy,onCopy,onToggle,onAutoFill,onStaffing}:{room:InterviewRoom;workspace:RoomWorkspace;date:string;coverage:SessionCoverage[];shortageIds:Set<string>;selectedSession:string;busy:boolean;onCopy:()=>void;onToggle:()=>void;onAutoFill:()=>void;onStaffing:(needed:number|null,slotId?:string)=>void}){
   const [expanded,setExpanded]=useState(false)

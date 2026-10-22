@@ -1,0 +1,49 @@
+{
+  "full": {
+    "tests": 1339,
+    "passed": 1304,
+    "failed": 0,
+    "skipped": 35
+  },
+  "focusedFinal": {
+    "tests": 23,
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0
+  },
+  "realAuthHttpBrowser": {
+    "tests": 55,
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0
+  },
+  "getVotingFollowup": {
+    "tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "schedulerBookmarksFollowup": {
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeSecurity": {
+    "passed": 2,
+    "failed": 1,
+    "auditReferenceSameFailure": true
+  },
+  "build": "passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 26
+  },
+  "migrationRegression": {
+    "passed": true,
+    "migrations": 57,
+    "tablesWithRls": 78
+  },
+  "patchAppliesToAuditReference": true
+}

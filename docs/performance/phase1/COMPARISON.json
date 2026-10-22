@@ -1,0 +1,5354 @@
+{
+  "auditCommit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "environment": "local production Next build, real disposable Supabase Auth/PostgreSQL, Chromium 156, no network/CPU throttling",
+  "percentiles": "nearest rank, n=20 per path/condition",
+  "limitations": [
+    "Cold means fresh browser context; the server and database are warm.",
+    "Useful content is a DOM predicate plus two animation frames, not measured pixels.",
+    "Response-body bytes exclude headers. Server phase times overlap and are not additive.",
+    "Empty room assignments; no production speedup or active-room capacity claim.",
+    "final was a confirmation run; verification overlapped its last warm samples. verified is the preceding quiet performance cohort; verified-bookmarks is the final-source quiet cohort."
+  ],
+  "stages": {
+    "baseline": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 240,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 447.9,
+            "p95": 464.4,
+            "max": 531.1
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 448.2,
+            "p95": 464.6,
+            "max": 531.3
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 13,
+            "p95": 13,
+            "max": 13
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 94051,
+            "p95": 94051,
+            "max": 94051
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 525.2,
+            "p95": 557.6,
+            "max": 590.2
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 25.92,
+            "p95": 27.91,
+            "max": 28.15
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 79.05,
+            "p95": 90.47,
+            "max": 91.07
+          },
+          "completePayloadSamples": 13,
+          "completePayloadBytes": {
+            "samples": 13,
+            "p50": 94051,
+            "p95": 94051,
+            "max": 94051
+          },
+          "httpErrors": 0,
+          "transportFailures": 11,
+          "post200TransportFailures": 11,
+          "statuses": {
+            "200": 260
+          },
+          "requestTtfbMs": {
+            "samples": 249,
+            "p50": 27.23,
+            "p95": 52.4,
+            "max": 91.55
+          },
+          "requestTransferMs": {
+            "samples": 249,
+            "p50": 0.38,
+            "p95": 1.55,
+            "max": 2.87
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 109,
+            "p95": 128,
+            "max": 180
+          },
+          "roomsReadTtfbMs": {
+            "samples": 58,
+            "p50": 31.49,
+            "p95": 57.33,
+            "max": 91.55
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 114.5,
+            "p95": 131.1,
+            "max": 131.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 114.7,
+            "p95": 131.4,
+            "max": 131.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 54761,
+            "p95": 54761,
+            "max": 54761
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 183.5,
+            "p95": 226.9,
+            "max": 249.5
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 9.76,
+            "p95": 10.46,
+            "max": 11.74
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 28.36,
+            "p95": 35.08,
+            "max": 41.54
+          },
+          "completePayloadSamples": 11,
+          "completePayloadBytes": {
+            "samples": 11,
+            "p50": 54761,
+            "p95": 54761,
+            "max": 54761
+          },
+          "httpErrors": 0,
+          "transportFailures": 12,
+          "post200TransportFailures": 12,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 148,
+            "p50": 31.22,
+            "p95": 49.17,
+            "max": 74.77
+          },
+          "requestTransferMs": {
+            "samples": 148,
+            "p50": 0.3,
+            "p95": 0.43,
+            "max": 0.59
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 84,
+            "p95": 106,
+            "max": 108
+          },
+          "roomsReadTtfbMs": {
+            "samples": 59,
+            "p50": 27.32,
+            "p95": 37.05,
+            "max": 44.59
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "repeated",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 131.6,
+            "p95": 165.3,
+            "max": 480.1
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 131.8,
+            "p95": 165.4,
+            "max": 480.2
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 13
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 54761,
+            "p95": 54761,
+            "max": 94051
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 218.6,
+            "p95": 546.1,
+            "max": 553.7
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 8.81,
+            "p95": 12.11,
+            "max": 27.02
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 26.76,
+            "p95": 36.48,
+            "max": 84.8
+          },
+          "completePayloadSamples": 11,
+          "completePayloadBytes": {
+            "samples": 11,
+            "p50": 54761,
+            "p95": 94051,
+            "max": 94051
+          },
+          "httpErrors": 0,
+          "transportFailures": 11,
+          "post200TransportFailures": 11,
+          "statuses": {
+            "200": 165
+          },
+          "requestTtfbMs": {
+            "samples": 154,
+            "p50": 35.27,
+            "p95": 52.88,
+            "max": 289.11
+          },
+          "requestTransferMs": {
+            "samples": 154,
+            "p50": 0.3,
+            "p95": 0.51,
+            "max": 1.38
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 108,
+            "p95": 124,
+            "max": 126
+          },
+          "roomsReadTtfbMs": {
+            "samples": 58,
+            "p50": 32.61,
+            "p95": 46.16,
+            "max": 61.71
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.3,
+            "p95": 80.7,
+            "max": 80.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.4,
+            "p95": 80.9,
+            "max": 81.2
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 34.6,
+            "p95": 47.6,
+            "max": 61.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.64,
+            "p95": 6.37,
+            "max": 6.96
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 35.07,
+            "p95": 49.45,
+            "max": 51.95
+          },
+          "completePayloadSamples": 19,
+          "completePayloadBytes": {
+            "samples": 19,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "httpErrors": 0,
+          "transportFailures": 1,
+          "post200TransportFailures": 1,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 19,
+            "p50": 27.08,
+            "p95": 38.04,
+            "max": 38.04
+          },
+          "requestTransferMs": {
+            "samples": 19,
+            "p50": 0.31,
+            "p95": 0.42,
+            "max": 0.42
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.2,
+            "p95": 65.7,
+            "max": 80.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.5,
+            "p95": 66,
+            "max": 80.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 35.6,
+            "p95": 43.1,
+            "max": 51.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.3,
+            "p95": 4.57,
+            "max": 4.58
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 15.23,
+            "p95": 17.1,
+            "max": 17.36
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 30.62,
+            "p95": 37.83,
+            "max": 45.85
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.33,
+            "p95": 0.4,
+            "max": 0.63
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "repeated",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 65,
+            "p95": 80.5,
+            "max": 81.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 65.2,
+            "p95": 80.7,
+            "max": 81.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 41.7,
+            "p95": 58.1,
+            "max": 64.2
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 3.55,
+            "p95": 4.15,
+            "max": 5.36
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.31,
+            "p95": 25.48,
+            "max": 33.76
+          },
+          "completePayloadSamples": 17,
+          "completePayloadBytes": {
+            "samples": 17,
+            "p50": 337,
+            "p95": 337,
+            "max": 337
+          },
+          "httpErrors": 0,
+          "transportFailures": 3,
+          "post200TransportFailures": 3,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 17,
+            "p50": 37.56,
+            "p95": 59.26,
+            "max": 59.26
+          },
+          "requestTransferMs": {
+            "samples": 17,
+            "p50": 0.33,
+            "p95": 0.75,
+            "max": 0.75
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 397.4,
+            "p95": 399,
+            "max": 447.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 397.6,
+            "p95": 399.2,
+            "max": 447.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 25581,
+            "p95": 25581,
+            "max": 25581
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 371,
+            "p95": 379.3,
+            "max": 422.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 13.77,
+            "p95": 15.23,
+            "max": 15.79
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 55.48,
+            "p95": 58.67,
+            "max": 59.94
+          },
+          "completePayloadSamples": 12,
+          "completePayloadBytes": {
+            "samples": 12,
+            "p50": 25581,
+            "p95": 25581,
+            "max": 25581
+          },
+          "httpErrors": 0,
+          "transportFailures": 8,
+          "post200TransportFailures": 8,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 52,
+            "p50": 2.04,
+            "p95": 57.07,
+            "max": 109.63
+          },
+          "requestTransferMs": {
+            "samples": 52,
+            "p50": 0.77,
+            "p95": 1.01,
+            "max": 1.85
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 65.9,
+            "p95": 81.7,
+            "max": 81.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 66,
+            "p95": 81.9,
+            "max": 82
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 4094,
+            "p95": 4094,
+            "max": 4094
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 47.5,
+            "p95": 54.3,
+            "max": 58.5
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.52,
+            "p95": 4.92,
+            "max": 5.17
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.77,
+            "p95": 15.94,
+            "max": 16.17
+          },
+          "completePayloadSamples": 11,
+          "completePayloadBytes": {
+            "samples": 11,
+            "p50": 4094,
+            "p95": 4094,
+            "max": 4094
+          },
+          "httpErrors": 0,
+          "transportFailures": 9,
+          "post200TransportFailures": 9,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 11,
+            "p50": 44.03,
+            "p95": 48.02,
+            "max": 48.02
+          },
+          "requestTransferMs": {
+            "samples": 11,
+            "p50": 0.58,
+            "p95": 0.78,
+            "max": 0.78
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "repeated",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.1,
+            "p95": 82.5,
+            "max": 397.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.3,
+            "p95": 82.8,
+            "max": 398.1
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 4094,
+            "p95": 4094,
+            "max": 25581
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 44.8,
+            "p95": 54.2,
+            "max": 374.5
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 3.29,
+            "p95": 4.25,
+            "max": 13.12
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 13.76,
+            "p95": 16,
+            "max": 52.15
+          },
+          "completePayloadSamples": 12,
+          "completePayloadBytes": {
+            "samples": 12,
+            "p50": 4094,
+            "p95": 25581,
+            "max": 25581
+          },
+          "httpErrors": 0,
+          "transportFailures": 8,
+          "post200TransportFailures": 8,
+          "statuses": {
+            "200": 22
+          },
+          "requestTtfbMs": {
+            "samples": 14,
+            "p50": 39.21,
+            "p95": 55.71,
+            "max": 55.71
+          },
+          "requestTransferMs": {
+            "samples": 14,
+            "p50": 0.63,
+            "p95": 0.91,
+            "max": 0.91
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 381.1,
+            "p95": 397.4,
+            "max": 397.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 381.3,
+            "p95": 397.6,
+            "max": 397.8
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 2,
+            "p95": 2,
+            "max": 2
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 5068,
+            "p95": 5068,
+            "max": 5068
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 360.5,
+            "p95": 366.1,
+            "max": 367.3
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 13.05,
+            "p95": 14.36,
+            "max": 15.03
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 51.57,
+            "p95": 55.17,
+            "max": 56.64
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 5068,
+            "p95": 5068,
+            "max": 5068
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 40
+          },
+          "requestTtfbMs": {
+            "samples": 40,
+            "p50": 1.51,
+            "p95": 54.34,
+            "max": 54.45
+          },
+          "requestTransferMs": {
+            "samples": 40,
+            "p50": 0.51,
+            "p95": 0.79,
+            "max": 0.85
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.5,
+            "p95": 65.8,
+            "max": 81.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.7,
+            "p95": 65.9,
+            "max": 81.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 252,
+            "p95": 252,
+            "max": 252
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 39.5,
+            "p95": 45.7,
+            "max": 48.3
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.22,
+            "p95": 4.99,
+            "max": 5.05
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 13.71,
+            "p95": 16.82,
+            "max": 18.71
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 252,
+            "p95": 252,
+            "max": 252
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 35.07,
+            "p95": 41.36,
+            "max": 43.3
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.32,
+            "p95": 0.41,
+            "max": 0.41
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "repeated",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.2,
+            "p95": 81.2,
+            "max": 380.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.3,
+            "p95": 81.4,
+            "max": 381
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 2
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 252,
+            "p95": 252,
+            "max": 5068
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 40.6,
+            "p95": 47.9,
+            "max": 360
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 3.58,
+            "p95": 4.38,
+            "max": 13.23
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 13.94,
+            "p95": 17.63,
+            "max": 50.16
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 252,
+            "p95": 252,
+            "max": 5068
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 21
+          },
+          "requestTtfbMs": {
+            "samples": 21,
+            "p50": 37.02,
+            "p95": 43.48,
+            "max": 47.61
+          },
+          "requestTransferMs": {
+            "samples": 21,
+            "p50": 0.36,
+            "p95": 0.51,
+            "max": 0.53
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "tracing": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 40,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 463.8,
+            "p95": 480.1,
+            "max": 481.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 464.2,
+            "p95": 480.3,
+            "max": 481.3
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 13,
+            "p95": 13,
+            "max": 13
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 93965,
+            "p95": 94051,
+            "max": 94051
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 529.2,
+            "p95": 588.2,
+            "max": 605.1
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 27.45,
+            "p95": 28.38,
+            "max": 29.1
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 84.44,
+            "p95": 89.03,
+            "max": 90.87
+          },
+          "completePayloadSamples": 9,
+          "completePayloadBytes": {
+            "samples": 9,
+            "p50": 94051,
+            "p95": 94051,
+            "max": 94051
+          },
+          "httpErrors": 0,
+          "transportFailures": 13,
+          "post200TransportFailures": 13,
+          "statuses": {
+            "200": 260
+          },
+          "requestTtfbMs": {
+            "samples": 247,
+            "p50": 27.47,
+            "p95": 55.86,
+            "max": 78.64
+          },
+          "requestTransferMs": {
+            "samples": 247,
+            "p50": 0.39,
+            "p95": 1.58,
+            "max": 5.39
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 112,
+            "p95": 128,
+            "max": 144
+          },
+          "roomsReadTtfbMs": {
+            "samples": 59,
+            "p50": 30.81,
+            "p95": 65.82,
+            "max": 68.04
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 40,
+              "p50": 21.33,
+              "p95": 32.59,
+              "max": 45.47
+            },
+            "database": {
+              "samples": 40,
+              "p50": 20.33,
+              "p95": 35.9,
+              "max": 73.03
+            },
+            "live_session": {
+              "samples": 40,
+              "p50": 0.51,
+              "p95": 0.87,
+              "max": 0.99
+            },
+            "transaction_acquire": {
+              "samples": 40,
+              "p50": 0.27,
+              "p95": 0.51,
+              "max": 1.4
+            },
+            "lock_query": {
+              "samples": 40,
+              "p50": 1.2,
+              "p95": 2.18,
+              "max": 4.65
+            },
+            "transaction": {
+              "samples": 40,
+              "p50": 13.52,
+              "p95": 20.15,
+              "max": 42.8
+            },
+            "serialization": {
+              "samples": 40,
+              "p50": 0.13,
+              "p95": 0.45,
+              "max": 0.55
+            },
+            "total": {
+              "samples": 40,
+              "p50": 37.54,
+              "p95": 66.35,
+              "max": 76.78
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 114.3,
+            "p95": 130.4,
+            "max": 130.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 114.5,
+            "p95": 130.6,
+            "max": 130.8
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 54761,
+            "p95": 54761,
+            "max": 54761
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 175.7,
+            "p95": 203.2,
+            "max": 206.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 9.96,
+            "p95": 10.45,
+            "max": 11.1
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 29.25,
+            "p95": 36.03,
+            "max": 36.09
+          },
+          "completePayloadSamples": 14,
+          "completePayloadBytes": {
+            "samples": 14,
+            "p50": 54761,
+            "p95": 54761,
+            "max": 54761
+          },
+          "httpErrors": 0,
+          "transportFailures": 6,
+          "post200TransportFailures": 6,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 154,
+            "p50": 30,
+            "p95": 40.99,
+            "max": 50.59
+          },
+          "requestTransferMs": {
+            "samples": 154,
+            "p50": 0.3,
+            "p95": 0.42,
+            "max": 0.61
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 84,
+            "p95": 97,
+            "max": 102
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 25.91,
+            "p95": 38.03,
+            "max": 40.14
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 40,
+              "p50": 21.48,
+              "p95": 27.23,
+              "max": 29.34
+            },
+            "database": {
+              "samples": 40,
+              "p50": 16.59,
+              "p95": 28.2,
+              "max": 30.38
+            },
+            "live_session": {
+              "samples": 40,
+              "p50": 0.47,
+              "p95": 0.84,
+              "max": 1.5
+            },
+            "transaction_acquire": {
+              "samples": 40,
+              "p50": 0.28,
+              "p95": 0.42,
+              "max": 0.57
+            },
+            "lock_query": {
+              "samples": 40,
+              "p50": 0.96,
+              "p95": 1.84,
+              "max": 2.1
+            },
+            "transaction": {
+              "samples": 40,
+              "p50": 12.63,
+              "p95": 15.99,
+              "max": 19.95
+            },
+            "serialization": {
+              "samples": 40,
+              "p50": 0.08,
+              "p95": 0.35,
+              "max": 0.43
+            },
+            "total": {
+              "samples": 40,
+              "p50": 36.13,
+              "p95": 46.15,
+              "max": 48.63
+            }
+          },
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "lazy-scheduling": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 40,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 448,
+            "p95": 497,
+            "max": 498.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 448.2,
+            "p95": 497.1,
+            "max": 498.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 39725,
+            "p95": 39725,
+            "max": 39725
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 428.4,
+            "p95": 465,
+            "max": 466.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 18.9,
+            "p95": 20.22,
+            "max": 24.36
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 72.55,
+            "p95": 81.01,
+            "max": 82.31
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 39725,
+            "p95": 39725,
+            "max": 39725
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 160,
+            "p50": 2.16,
+            "p95": 54.35,
+            "max": 96.83
+          },
+          "requestTransferMs": {
+            "samples": 160,
+            "p50": 0.43,
+            "p95": 1.53,
+            "max": 2.94
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 108,
+            "p95": 144,
+            "max": 149
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 28.6,
+            "p95": 60.32,
+            "max": 96.83
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 114.3,
+            "p95": 131.8,
+            "max": 145.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 114.6,
+            "p95": 132.1,
+            "max": 145.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 377,
+            "p95": 377,
+            "max": 377
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 91.9,
+            "p95": 112.4,
+            "max": 113.7
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.48,
+            "p95": 5.89,
+            "max": 6.06
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 19.08,
+            "p95": 24.88,
+            "max": 27.26
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 377,
+            "p95": 377,
+            "max": 377
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 26.02,
+            "p95": 41.52,
+            "max": 51.18
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.27,
+            "p95": 0.36,
+            "max": 0.39
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 86,
+            "p95": 106,
+            "max": 108
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 26.02,
+            "p95": 41.52,
+            "max": 51.18
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "scoped-reads": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 40,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 447.9,
+            "p95": 464.2,
+            "max": 464.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 448.1,
+            "p95": 464.6,
+            "max": 464.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40222,
+            "p95": 40222,
+            "max": 40222
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 427.1,
+            "p95": 437.5,
+            "max": 438.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 18.23,
+            "p95": 20.61,
+            "max": 20.91
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 71.17,
+            "p95": 76.28,
+            "max": 76.79
+          },
+          "completePayloadSamples": 19,
+          "completePayloadBytes": {
+            "samples": 19,
+            "p50": 40222,
+            "p95": 40222,
+            "max": 40222
+          },
+          "httpErrors": 0,
+          "transportFailures": 2,
+          "post200TransportFailures": 2,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 158,
+            "p50": 2.22,
+            "p95": 49.06,
+            "max": 52.46
+          },
+          "requestTransferMs": {
+            "samples": 158,
+            "p50": 0.42,
+            "p95": 1.61,
+            "max": 2.58
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 106,
+            "p95": 126,
+            "max": 127
+          },
+          "roomsReadTtfbMs": {
+            "samples": 58,
+            "p50": 29.54,
+            "p95": 50.57,
+            "max": 52.46
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 114.6,
+            "p95": 181.1,
+            "max": 281.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 114.8,
+            "p95": 181.3,
+            "max": 281.2
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 376,
+            "p95": 376,
+            "max": 376
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 93.3,
+            "p95": 154.2,
+            "max": 262.7
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.41,
+            "p95": 5.98,
+            "max": 6.11
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 19.1,
+            "p95": 23.35,
+            "max": 29.59
+          },
+          "completePayloadSamples": 18,
+          "completePayloadBytes": {
+            "samples": 18,
+            "p50": 376,
+            "p95": 376,
+            "max": 376
+          },
+          "httpErrors": 0,
+          "transportFailures": 2,
+          "post200TransportFailures": 2,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 58,
+            "p50": 28.52,
+            "p95": 60.98,
+            "max": 82.1
+          },
+          "requestTransferMs": {
+            "samples": 58,
+            "p50": 0.29,
+            "p95": 0.38,
+            "max": 0.45
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 88,
+            "p95": 148,
+            "max": 257
+          },
+          "roomsReadTtfbMs": {
+            "samples": 58,
+            "p50": 28.52,
+            "p95": 60.98,
+            "max": 82.1
+          },
+          "responseServerPhasesMs": {},
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "get-transport": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 160,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 397.6,
+            "p95": 414.6,
+            "max": 459.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 398,
+            "p95": 415,
+            "max": 459.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40085,
+            "p95": 40085,
+            "max": 40085
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 377.3,
+            "p95": 388.7,
+            "max": 432.7
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 19.49,
+            "p95": 21.32,
+            "max": 22.7
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 70.83,
+            "p95": 74.07,
+            "max": 173.44
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 40085,
+            "p95": 40085,
+            "max": 40085
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 160,
+            "p50": 2.15,
+            "p95": 59.85,
+            "max": 117.99
+          },
+          "requestTransferMs": {
+            "samples": 160,
+            "p50": 0.51,
+            "p95": 1.76,
+            "max": 16.13
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 55,
+            "p95": 67,
+            "max": 118
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 52.46,
+            "p95": 67.25,
+            "max": 117.99
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.76,
+              "p95": 47.61,
+              "max": 94.96
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.51,
+              "p95": 11.83,
+              "max": 20.52
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.62,
+              "p95": 1.12,
+              "max": 3.38
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.44,
+              "p95": 0.69,
+              "max": 1.23
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.56,
+              "p95": 2.8,
+              "max": 4.58
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.57,
+              "p95": 12.85,
+              "max": 18.04
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.11,
+              "max": 0.23
+            },
+            "total": {
+              "samples": 60,
+              "p50": 46.29,
+              "p95": 61.08,
+              "max": 112.44
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.76,
+              "p95": 47.61,
+              "max": 94.96
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.51,
+              "p95": 11.83,
+              "max": 20.52
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.62,
+              "p95": 1.12,
+              "max": 3.38
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.44,
+              "p95": 0.69,
+              "max": 1.23
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.56,
+              "p95": 2.8,
+              "max": 4.58
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.57,
+              "p95": 12.85,
+              "max": 18.04
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.11,
+              "max": 0.23
+            },
+            "total": {
+              "samples": 60,
+              "p50": 46.29,
+              "p95": 61.08,
+              "max": 112.44
+            }
+          }
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 80.7,
+            "p95": 97.3,
+            "max": 98.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 81,
+            "p95": 97.6,
+            "max": 98.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 53.6,
+            "p95": 64.9,
+            "max": 73.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.63,
+            "p95": 5.75,
+            "max": 6.07
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 17.97,
+            "p95": 19.46,
+            "max": 19.67
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 44.35,
+            "p95": 58.92,
+            "max": 67.06
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.42,
+            "p95": 0.55,
+            "max": 0.79
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 47,
+            "p95": 59,
+            "max": 67
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 44.35,
+            "p95": 58.92,
+            "max": 67.06
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 34.65,
+              "p95": 48.42,
+              "max": 52.78
+            },
+            "database": {
+              "samples": 60,
+              "p50": 5.28,
+              "p95": 8.59,
+              "max": 11.09
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.59,
+              "p95": 1.07,
+              "max": 1.7
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.36,
+              "p95": 0.47,
+              "max": 0.58
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.2,
+              "p95": 2.81,
+              "max": 3.75
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 5.08,
+              "p95": 8.44,
+              "max": 11.03
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.04,
+              "p95": 0.08,
+              "max": 0.1
+            },
+            "total": {
+              "samples": 60,
+              "p50": 42.24,
+              "p95": 55.82,
+              "max": 63.78
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 34.65,
+              "p95": 48.42,
+              "max": 52.78
+            },
+            "database": {
+              "samples": 60,
+              "p50": 5.28,
+              "p95": 8.59,
+              "max": 11.09
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.59,
+              "p95": 1.07,
+              "max": 1.7
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.36,
+              "p95": 0.47,
+              "max": 0.58
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.2,
+              "p95": 2.81,
+              "max": 3.75
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 5.08,
+              "p95": 8.44,
+              "max": 11.03
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.04,
+              "p95": 0.08,
+              "max": 0.1
+            },
+            "total": {
+              "samples": 60,
+              "p50": 42.24,
+              "p95": 55.82,
+              "max": 63.78
+            }
+          }
+        },
+        {
+          "path": "members → meetings",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 63.9,
+            "p95": 65.1,
+            "max": 80.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.1,
+            "p95": 65.3,
+            "max": 80.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 33.9,
+            "p95": 42.5,
+            "max": 63.2
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.68,
+            "p95": 6.11,
+            "max": 6.21
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 35.17,
+            "p95": 38.35,
+            "max": 45.4
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 25.87,
+            "p95": 37.1,
+            "max": 56.65
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.28,
+            "p95": 0.37,
+            "max": 0.46
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 21.41,
+              "p95": 32.6,
+              "max": 47.64
+            },
+            "database": {
+              "samples": 20,
+              "p50": 2.39,
+              "p95": 4.8,
+              "max": 5.5
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.48,
+              "p95": 0.71,
+              "max": 3.27
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.1,
+              "max": 0.1
+            },
+            "total": {
+              "samples": 20,
+              "p50": 24.34,
+              "p95": 35.31,
+              "max": 54.16
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.6,
+            "p95": 65.5,
+            "max": 80.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.8,
+            "p95": 65.8,
+            "max": 80.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 41.7,
+            "p95": 47,
+            "max": 48.2
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.12,
+            "p95": 4.33,
+            "max": 4.88
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.41,
+            "p95": 15.49,
+            "max": 17.05
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 37.09,
+            "p95": 41.52,
+            "max": 42.26
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.31,
+            "p95": 0.4,
+            "max": 0.49
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 31.93,
+              "p95": 36.9,
+              "max": 37.68
+            },
+            "database": {
+              "samples": 20,
+              "p50": 2.32,
+              "p95": 2.91,
+              "max": 4.37
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.54,
+              "p95": 0.73,
+              "max": 0.93
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.06,
+              "p95": 0.09,
+              "max": 0.09
+            },
+            "total": {
+              "samples": 20,
+              "p50": 35.43,
+              "p95": 39.83,
+              "max": 40.72
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 397.1,
+            "p95": 398.7,
+            "max": 411.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 397.3,
+            "p95": 398.9,
+            "max": 411.8
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40465,
+            "p95": 40465,
+            "max": 40465
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 366.2,
+            "p95": 377.3,
+            "max": 383.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 13.55,
+            "p95": 14.79,
+            "max": 15.62
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 53.88,
+            "p95": 56.99,
+            "max": 61.87
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 40465,
+            "p95": 40465,
+            "max": 40465
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 1.92,
+            "p95": 57.55,
+            "max": 64.6
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.56,
+            "p95": 0.85,
+            "max": 1.16
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 38.94,
+              "p95": 46.04,
+              "max": 46.12
+            },
+            "database": {
+              "samples": 20,
+              "p50": 8.56,
+              "p95": 11.78,
+              "max": 16.11
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.76,
+              "p95": 1.03,
+              "max": 2.26
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.81,
+              "p95": 1.23,
+              "max": 1.32
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.2,
+              "p95": 0.28,
+              "max": 0.31
+            },
+            "total": {
+              "samples": 20,
+              "p50": 49.08,
+              "p95": 59.66,
+              "max": 59.78
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.8,
+            "p95": 81.3,
+            "max": 81.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.9,
+            "p95": 81.4,
+            "max": 81.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 18981,
+            "p95": 18981,
+            "max": 18981
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 45.7,
+            "p95": 57.1,
+            "max": 58.9
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.56,
+            "p95": 5.33,
+            "max": 5.43
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.52,
+            "p95": 17.56,
+            "max": 18.33
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 18981,
+            "p95": 18981,
+            "max": 18981
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 41.89,
+            "p95": 52.99,
+            "max": 55.99
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.36,
+            "p95": 0.47,
+            "max": 0.56
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 31.49,
+              "p95": 38.27,
+              "max": 46.62
+            },
+            "database": {
+              "samples": 20,
+              "p50": 7.21,
+              "p95": 10.54,
+              "max": 13.37
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.6,
+              "p95": 0.73,
+              "max": 2.08
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.78,
+              "p95": 1.01,
+              "max": 3.38
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.24,
+              "p95": 0.29,
+              "max": 0.38
+            },
+            "total": {
+              "samples": 20,
+              "p50": 40.08,
+              "p95": 51.1,
+              "max": 54.49
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 380.6,
+            "p95": 397.4,
+            "max": 398.1
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 380.8,
+            "p95": 397.6,
+            "max": 398.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 2,
+            "p95": 2,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 359.4,
+            "p95": 370.6,
+            "max": 373.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 11.9,
+            "p95": 13.1,
+            "max": 13.43
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 50.23,
+            "p95": 52.67,
+            "max": 56.04
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 41
+          },
+          "requestTtfbMs": {
+            "samples": 41,
+            "p50": 3.88,
+            "p95": 58.51,
+            "max": 61.37
+          },
+          "requestTransferMs": {
+            "samples": 41,
+            "p50": 0.48,
+            "p95": 0.66,
+            "max": 1.45
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 39.52,
+              "p95": 53.15,
+              "max": 54.38
+            },
+            "database": {
+              "samples": 20,
+              "p50": 3.96,
+              "p95": 6.02,
+              "max": 6.1
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.84,
+              "p95": 1.1,
+              "max": 1.13
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.74,
+              "p95": 0.97,
+              "max": 1.04
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.08,
+              "p95": 0.12,
+              "max": 0.14
+            },
+            "total": {
+              "samples": 20,
+              "p50": 45.27,
+              "p95": 57.87,
+              "max": 58.1
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.4,
+            "p95": 80.9,
+            "max": 81
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.7,
+            "p95": 81,
+            "max": 81.2
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 42.8,
+            "p95": 50.4,
+            "max": 61.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.35,
+            "p95": 4.72,
+            "max": 5.02
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.32,
+            "p95": 19.72,
+            "max": 20.23
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 38.74,
+            "p95": 46.13,
+            "max": 54.65
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.35,
+            "p95": 0.42,
+            "max": 2.42
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 32.82,
+              "p95": 39.63,
+              "max": 45.32
+            },
+            "database": {
+              "samples": 20,
+              "p50": 3.51,
+              "p95": 4.86,
+              "max": 5.58
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.6,
+              "p95": 1.01,
+              "max": 1.04
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.72,
+              "p95": 1.05,
+              "max": 1.28
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.09,
+              "max": 0.19
+            },
+            "total": {
+              "samples": 20,
+              "p50": 36.98,
+              "p95": 44.4,
+              "max": 51.01
+            }
+          },
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "final": {
+      "acceptedForComparison": false,
+      "primaryFinal": false,
+      "samples": 40,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 413.3,
+            "p95": 424.7,
+            "max": 564.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 413.6,
+            "p95": 425.3,
+            "max": 564.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40094,
+            "p95": 40094,
+            "max": 40094
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 381.5,
+            "p95": 395.5,
+            "max": 547.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 19.99,
+            "p95": 21.14,
+            "max": 23.01
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 73.51,
+            "p95": 83.49,
+            "max": 88.96
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 40094,
+            "p95": 40094,
+            "max": 40094
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 160,
+            "p50": 2.15,
+            "p95": 66.66,
+            "max": 224.68
+          },
+          "requestTransferMs": {
+            "samples": 160,
+            "p50": 0.55,
+            "p95": 1.66,
+            "max": 7.03
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 60,
+            "p95": 71,
+            "max": 223
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 56.72,
+            "p95": 71.27,
+            "max": 224.68
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 40.94,
+              "p95": 56.55,
+              "max": 195.29
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.28,
+              "p95": 10.69,
+              "max": 20.99
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.7,
+              "p95": 1.37,
+              "max": 1.68
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.41,
+              "p95": 0.6,
+              "max": 0.8
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.4,
+              "p95": 2.44,
+              "max": 2.92
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.07,
+              "p95": 11.18,
+              "max": 20.77
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.08,
+              "max": 0.13
+            },
+            "total": {
+              "samples": 60,
+              "p50": 49.59,
+              "p95": 64.34,
+              "max": 207.14
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 40.94,
+              "p95": 56.55,
+              "max": 195.29
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.28,
+              "p95": 10.69,
+              "max": 20.99
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.7,
+              "p95": 1.37,
+              "max": 1.68
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.41,
+              "p95": 0.6,
+              "max": 0.8
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.4,
+              "p95": 2.44,
+              "max": 2.92
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.07,
+              "p95": 11.18,
+              "max": 20.77
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.08,
+              "max": 0.13
+            },
+            "total": {
+              "samples": 60,
+              "p50": 49.59,
+              "p95": 64.34,
+              "max": 207.14
+            }
+          }
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 81.1,
+            "p95": 81.6,
+            "max": 81.7
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 81.4,
+            "p95": 81.9,
+            "max": 81.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 55.8,
+            "p95": 62.2,
+            "max": 62.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.5,
+            "p95": 6.14,
+            "max": 6.37
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 17.77,
+            "p95": 20.37,
+            "max": 20.97
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 48.26,
+            "p95": 54.11,
+            "max": 56.48
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.43,
+            "p95": 0.6,
+            "max": 0.8
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 50,
+            "p95": 57,
+            "max": 57
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 48.26,
+            "p95": 54.11,
+            "max": 56.48
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.87,
+              "p95": 42.08,
+              "max": 43.97
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.19,
+              "p95": 10.22,
+              "max": 11.23
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.58,
+              "p95": 1.06,
+              "max": 1.19
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 0.61,
+              "max": 0.75
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.34,
+              "p95": 2.6,
+              "max": 4.12
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6,
+              "p95": 9.86,
+              "max": 11.57
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.11,
+              "max": 0.15
+            },
+            "total": {
+              "samples": 60,
+              "p50": 45.2,
+              "p95": 51.13,
+              "max": 52.74
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.87,
+              "p95": 42.08,
+              "max": 43.97
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.19,
+              "p95": 10.22,
+              "max": 11.23
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.58,
+              "p95": 1.06,
+              "max": 1.19
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 0.61,
+              "max": 0.75
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.34,
+              "p95": 2.6,
+              "max": 4.12
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6,
+              "p95": 9.86,
+              "max": 11.57
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.11,
+              "max": 0.15
+            },
+            "total": {
+              "samples": 60,
+              "p50": 45.2,
+              "p95": 51.13,
+              "max": 52.74
+            }
+          }
+        }
+      ]
+    },
+    "verified": {
+      "acceptedForComparison": true,
+      "primaryFinal": false,
+      "samples": 160,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 397.5,
+            "p95": 414.5,
+            "max": 415.1
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 397.9,
+            "p95": 414.9,
+            "max": 415.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40262,
+            "p95": 40262,
+            "max": 40262
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 377.6,
+            "p95": 384.8,
+            "max": 386
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 19.12,
+            "p95": 20.34,
+            "max": 21.49
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 70.69,
+            "p95": 73.85,
+            "max": 75.08
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 40262,
+            "p95": 40262,
+            "max": 40262
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 160,
+            "p50": 1.99,
+            "p95": 58.35,
+            "max": 65.44
+          },
+          "requestTransferMs": {
+            "samples": 160,
+            "p50": 0.52,
+            "p95": 1.58,
+            "max": 1.97
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 57,
+            "p95": 65,
+            "max": 66
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 54.47,
+            "p95": 62.55,
+            "max": 65.44
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 38.68,
+              "p95": 44.51,
+              "max": 46.89
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.64,
+              "p95": 12.31,
+              "max": 16.13
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.61,
+              "p95": 1.25,
+              "max": 1.39
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.44,
+              "p95": 0.96,
+              "max": 1.23
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.51,
+              "p95": 2.5,
+              "max": 5.34
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.74,
+              "p95": 12.47,
+              "max": 16.71
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.1,
+              "max": 0.12
+            },
+            "total": {
+              "samples": 60,
+              "p50": 47.77,
+              "p95": 55.39,
+              "max": 59.65
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 38.68,
+              "p95": 44.51,
+              "max": 46.89
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.64,
+              "p95": 12.31,
+              "max": 16.13
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.61,
+              "p95": 1.25,
+              "max": 1.39
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.44,
+              "p95": 0.96,
+              "max": 1.23
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.51,
+              "p95": 2.5,
+              "max": 5.34
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.74,
+              "p95": 12.47,
+              "max": 16.71
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.05,
+              "p95": 0.1,
+              "max": 0.12
+            },
+            "total": {
+              "samples": 60,
+              "p50": 47.77,
+              "p95": 55.39,
+              "max": 59.65
+            }
+          }
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 81.1,
+            "p95": 82.2,
+            "max": 291.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 81.3,
+            "p95": 82.3,
+            "max": 291.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 53.9,
+            "p95": 61.2,
+            "max": 264.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.67,
+            "p95": 6.14,
+            "max": 12.87
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 18.05,
+            "p95": 19.73,
+            "max": 49.68
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 46.25,
+            "p95": 54.25,
+            "max": 246
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.41,
+            "p95": 0.67,
+            "max": 4.96
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 48,
+            "p95": 55,
+            "max": 238
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 46.25,
+            "p95": 54.25,
+            "max": 246
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.48,
+              "p95": 44.01,
+              "max": 168.54
+            },
+            "database": {
+              "samples": 60,
+              "p50": 5.55,
+              "p95": 9.35,
+              "max": 55.26
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.57,
+              "p95": 1.07,
+              "max": 17.74
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.36,
+              "p95": 0.69,
+              "max": 1.51
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.31,
+              "p95": 2.93,
+              "max": 18.93
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 5.33,
+              "p95": 9.37,
+              "max": 27.44
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.04,
+              "p95": 0.1,
+              "max": 0.11
+            },
+            "total": {
+              "samples": 60,
+              "p50": 43.35,
+              "p95": 50.61,
+              "max": 215.12
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.48,
+              "p95": 44.01,
+              "max": 168.54
+            },
+            "database": {
+              "samples": 60,
+              "p50": 5.55,
+              "p95": 9.35,
+              "max": 55.26
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.57,
+              "p95": 1.07,
+              "max": 17.74
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.36,
+              "p95": 0.69,
+              "max": 1.51
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.31,
+              "p95": 2.93,
+              "max": 18.93
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 5.33,
+              "p95": 9.37,
+              "max": 27.44
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.04,
+              "p95": 0.1,
+              "max": 0.11
+            },
+            "total": {
+              "samples": 60,
+              "p50": 43.35,
+              "p95": 50.61,
+              "max": 215.12
+            }
+          }
+        },
+        {
+          "path": "members → meetings",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.2,
+            "p95": 95.4,
+            "max": 197.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.5,
+            "p95": 95.7,
+            "max": 197.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 36.2,
+            "p95": 66.6,
+            "max": 167.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.64,
+            "p95": 7.81,
+            "max": 9.01
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 36.34,
+            "p95": 57.01,
+            "max": 59.74
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 28.22,
+            "p95": 58.03,
+            "max": 160.62
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.3,
+            "p95": 0.4,
+            "max": 0.44
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 22.77,
+              "p95": 46.32,
+              "max": 146.8
+            },
+            "database": {
+              "samples": 20,
+              "p50": 3.06,
+              "p95": 5.99,
+              "max": 10.5
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.6,
+              "p95": 0.88,
+              "max": 0.96
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.08,
+              "p95": 0.14,
+              "max": 0.2
+            },
+            "total": {
+              "samples": 20,
+              "p50": 26.36,
+              "p95": 54.09,
+              "max": 158.1
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.6,
+            "p95": 65.5,
+            "max": 65.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.8,
+            "p95": 65.8,
+            "max": 65.8
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 37.8,
+            "p95": 45.1,
+            "max": 45.2
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 3.52,
+            "p95": 3.81,
+            "max": 4.03
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 13.76,
+            "p95": 14.73,
+            "max": 15.05
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 34.2,
+            "p95": 40.78,
+            "max": 41.24
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.27,
+            "p95": 0.36,
+            "max": 0.38
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 28.94,
+              "p95": 35.48,
+              "max": 36.8
+            },
+            "database": {
+              "samples": 20,
+              "p50": 2.26,
+              "p95": 3.63,
+              "max": 4.14
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.6,
+              "p95": 0.76,
+              "max": 0.98
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.12,
+              "max": 0.14
+            },
+            "total": {
+              "samples": 20,
+              "p50": 32.58,
+              "p95": 38.78,
+              "max": 39.52
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 380.7,
+            "p95": 397.5,
+            "max": 397.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 380.9,
+            "p95": 397.7,
+            "max": 397.8
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 25812,
+            "p95": 25812,
+            "max": 25812
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 358.9,
+            "p95": 366,
+            "max": 370.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 13.22,
+            "p95": 14.33,
+            "max": 16.84
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 53.36,
+            "p95": 56.64,
+            "max": 57.18
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 25812,
+            "p95": 25812,
+            "max": 25812
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 2,
+            "p95": 52.22,
+            "max": 57.47
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.49,
+            "p95": 0.87,
+            "max": 1.17
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 34.06,
+              "p95": 39.63,
+              "max": 39.99
+            },
+            "database": {
+              "samples": 20,
+              "p50": 8.31,
+              "p95": 13.11,
+              "max": 13.51
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.64,
+              "p95": 1.16,
+              "max": 1.93
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.68,
+              "p95": 1.25,
+              "max": 5.67
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.23,
+              "p95": 0.28,
+              "max": 0.32
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.52,
+              "p95": 0.74,
+              "max": 0.8
+            },
+            "total": {
+              "samples": 20,
+              "p50": 44.93,
+              "p95": 50.21,
+              "max": 54.64
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.4,
+            "p95": 81.2,
+            "max": 81.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.6,
+            "p95": 81.4,
+            "max": 81.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 4328,
+            "p95": 4328,
+            "max": 4328
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 44.2,
+            "p95": 51.5,
+            "max": 56.9
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.59,
+            "p95": 4.93,
+            "max": 5.12
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.44,
+            "p95": 16.35,
+            "max": 16.78
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 4328,
+            "p95": 4328,
+            "max": 4328
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 40.56,
+            "p95": 47.59,
+            "max": 53.26
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.38,
+            "p95": 0.47,
+            "max": 0.49
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 30.23,
+              "p95": 36.97,
+              "max": 41.87
+            },
+            "database": {
+              "samples": 20,
+              "p50": 7.01,
+              "p95": 8.23,
+              "max": 11.12
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.61,
+              "p95": 0.7,
+              "max": 0.84
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.66,
+              "p95": 0.86,
+              "max": 5.18
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.22,
+              "p95": 0.28,
+              "max": 0.59
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.46,
+              "p95": 0.68,
+              "max": 0.86
+            },
+            "total": {
+              "samples": 20,
+              "p50": 38.72,
+              "p95": 45.9,
+              "max": 51.38
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 380.9,
+            "p95": 397.5,
+            "max": 446.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 381.1,
+            "p95": 397.7,
+            "max": 446.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 2,
+            "p95": 2,
+            "max": 2
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 358.4,
+            "p95": 369.2,
+            "max": 418.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 11.87,
+            "p95": 13.29,
+            "max": 13.9
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 49.86,
+            "p95": 58.95,
+            "max": 61.05
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 40
+          },
+          "requestTtfbMs": {
+            "samples": 40,
+            "p50": 5.79,
+            "p95": 54.48,
+            "max": 106.26
+          },
+          "requestTransferMs": {
+            "samples": 40,
+            "p50": 0.5,
+            "p95": 0.62,
+            "max": 0.74
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 38.64,
+              "p95": 52.35,
+              "max": 94.05
+            },
+            "database": {
+              "samples": 20,
+              "p50": 4.05,
+              "p95": 7.8,
+              "max": 8.3
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.84,
+              "p95": 1.11,
+              "max": 1.63
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.75,
+              "p95": 1.58,
+              "max": 2.47
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.08,
+              "p95": 0.15,
+              "max": 0.2
+            },
+            "total": {
+              "samples": 20,
+              "p50": 44.35,
+              "p95": 55.94,
+              "max": 103.24
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.3,
+            "p95": 79.1,
+            "max": 80.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.5,
+            "p95": 79.2,
+            "max": 80.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 42.4,
+            "p95": 49.9,
+            "max": 52.1
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.19,
+            "p95": 4.77,
+            "max": 6.49
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 14.47,
+            "p95": 16.62,
+            "max": 23.74
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 37.38,
+            "p95": 46.83,
+            "max": 46.92
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.35,
+            "p95": 0.59,
+            "max": 1.11
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 30.42,
+              "p95": 39.42,
+              "max": 39.9
+            },
+            "database": {
+              "samples": 20,
+              "p50": 3.15,
+              "p95": 3.57,
+              "max": 3.81
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.56,
+              "p95": 0.65,
+              "max": 0.89
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.66,
+              "p95": 0.84,
+              "max": 0.87
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.06,
+              "p95": 0.09,
+              "max": 0.09
+            },
+            "total": {
+              "samples": 20,
+              "p50": 34.44,
+              "p95": 44.13,
+              "max": 44.21
+            }
+          },
+          "serverPhasesMs": {}
+        }
+      ]
+    },
+    "verified-bookmarks": {
+      "acceptedForComparison": true,
+      "primaryFinal": true,
+      "samples": 160,
+      "failures": [],
+      "groups": [
+        {
+          "path": "applicants → interviews",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 413.6,
+            "p95": 447.1,
+            "max": 480.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 414.1,
+            "p95": 447.4,
+            "max": 480.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 40321,
+            "p95": 40321,
+            "max": 40321
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 380.9,
+            "p95": 418.6,
+            "max": 446.1
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 19.37,
+            "p95": 23.76,
+            "max": 24.84
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 75.01,
+            "p95": 92.99,
+            "max": 151.7
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 40321,
+            "p95": 40321,
+            "max": 40321
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 160
+          },
+          "requestTtfbMs": {
+            "samples": 160,
+            "p50": 2.41,
+            "p95": 85.1,
+            "max": 121.2
+          },
+          "requestTransferMs": {
+            "samples": 160,
+            "p50": 0.59,
+            "p95": 2.24,
+            "max": 3.34
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 59,
+            "p95": 97,
+            "max": 122
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 56.58,
+            "p95": 96.57,
+            "max": 121.2
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 40.51,
+              "p95": 70.44,
+              "max": 103.6
+            },
+            "database": {
+              "samples": 60,
+              "p50": 7.93,
+              "p95": 15.58,
+              "max": 23.71
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.81,
+              "p95": 1.35,
+              "max": 1.48
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.46,
+              "p95": 0.84,
+              "max": 2.11
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.64,
+              "p95": 2.95,
+              "max": 4.89
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 7.68,
+              "p95": 15.48,
+              "max": 25.28
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.07,
+              "p95": 0.12,
+              "max": 0.18
+            },
+            "total": {
+              "samples": 60,
+              "p50": 50.05,
+              "p95": 87.01,
+              "max": 114.06
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 40.51,
+              "p95": 70.44,
+              "max": 103.6
+            },
+            "database": {
+              "samples": 60,
+              "p50": 7.93,
+              "p95": 15.58,
+              "max": 23.71
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.81,
+              "p95": 1.35,
+              "max": 1.48
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.46,
+              "p95": 0.84,
+              "max": 2.11
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.64,
+              "p95": 2.95,
+              "max": 4.89
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 7.68,
+              "p95": 15.48,
+              "max": 25.28
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.07,
+              "p95": 0.12,
+              "max": 0.18
+            },
+            "total": {
+              "samples": 60,
+              "p50": 50.05,
+              "p95": 87.01,
+              "max": 114.06
+            }
+          }
+        },
+        {
+          "path": "applicants → interviews",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 81.6,
+            "p95": 125,
+            "max": 130.9
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 81.9,
+            "p95": 125.2,
+            "max": 131.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 58.1,
+            "p95": 105.6,
+            "max": 107.4
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 5.68,
+            "p95": 6.63,
+            "max": 6.73
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 19.04,
+            "p95": 21.82,
+            "max": 22.13
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 238,
+            "p95": 238,
+            "max": 238
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 50.13,
+            "p95": 95.99,
+            "max": 100.24
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.45,
+            "p95": 0.84,
+            "max": 1.61
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 20,
+            "p50": 52,
+            "p95": 90,
+            "max": 101
+          },
+          "roomsReadTtfbMs": {
+            "samples": 60,
+            "p50": 50.13,
+            "p95": 95.99,
+            "max": 100.24
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.74,
+              "p95": 61.69,
+              "max": 68.81
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.09,
+              "p95": 13.43,
+              "max": 40.15
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.66,
+              "p95": 1.42,
+              "max": 4.82
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 0.67,
+              "max": 1.24
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.3,
+              "p95": 2.92,
+              "max": 4.29
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.21,
+              "p95": 15.67,
+              "max": 40.01
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.06,
+              "p95": 0.12,
+              "max": 0.19
+            },
+            "total": {
+              "samples": 60,
+              "p50": 46.33,
+              "p95": 76.89,
+              "max": 97.09
+            }
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 36.74,
+              "p95": 61.69,
+              "max": 68.81
+            },
+            "database": {
+              "samples": 60,
+              "p50": 6.09,
+              "p95": 13.43,
+              "max": 40.15
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 0.66,
+              "p95": 1.42,
+              "max": 4.82
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 0.67,
+              "max": 1.24
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 1.3,
+              "p95": 2.92,
+              "max": 4.29
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 6.21,
+              "p95": 15.67,
+              "max": 40.01
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.06,
+              "p95": 0.12,
+              "max": 0.19
+            },
+            "total": {
+              "samples": 60,
+              "p50": 46.33,
+              "p95": 76.89,
+              "max": 97.09
+            }
+          }
+        },
+        {
+          "path": "members → meetings",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 63.9,
+            "p95": 64.8,
+            "max": 80.1
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.1,
+            "p95": 65,
+            "max": 80.3
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 36.4,
+            "p95": 43,
+            "max": 49.5
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 6.03,
+            "p95": 6.75,
+            "max": 7.64
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 39.02,
+            "p95": 47.93,
+            "max": 48.51
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 27.27,
+            "p95": 36.33,
+            "max": 42.75
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.28,
+            "p95": 0.44,
+            "max": 0.47
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 22.9,
+              "p95": 29.89,
+              "max": 36.6
+            },
+            "database": {
+              "samples": 20,
+              "p50": 2.44,
+              "p95": 3.7,
+              "max": 3.82
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.49,
+              "p95": 0.68,
+              "max": 1.02
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.12,
+              "max": 0.13
+            },
+            "total": {
+              "samples": 20,
+              "p50": 25.68,
+              "p95": 34.38,
+              "max": 40.76
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "members → meetings",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.6,
+            "p95": 81.1,
+            "max": 131
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.7,
+            "p95": 81.5,
+            "max": 131.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 41.1,
+            "p95": 51.5,
+            "max": 105.1
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.32,
+            "p95": 4.79,
+            "max": 5.09
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 15.74,
+            "p95": 18.21,
+            "max": 25.05
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 397,
+            "p95": 397,
+            "max": 397
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 35.69,
+            "p95": 46.78,
+            "max": 98.84
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.32,
+            "p95": 0.48,
+            "max": 0.49
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 30.75,
+              "p95": 38.74,
+              "max": 87.53
+            },
+            "database": {
+              "samples": 20,
+              "p50": 2.45,
+              "p95": 4.46,
+              "max": 7.91
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.59,
+              "p95": 1,
+              "max": 3.64
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.13,
+              "max": 0.14
+            },
+            "total": {
+              "samples": 20,
+              "p50": 33.84,
+              "p95": 43.79,
+              "max": 96.3
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 396.8,
+            "p95": 413.5,
+            "max": 446.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 397.1,
+            "p95": 413.7,
+            "max": 446.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 25812,
+            "p95": 25812,
+            "max": 25812
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 368.2,
+            "p95": 391.8,
+            "max": 425.1
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 12.8,
+            "p95": 14.09,
+            "max": 14.81
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 54.09,
+            "p95": 58.8,
+            "max": 66.54
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 25812,
+            "p95": 25812,
+            "max": 25812
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 60
+          },
+          "requestTtfbMs": {
+            "samples": 60,
+            "p50": 2.04,
+            "p95": 65.15,
+            "max": 111.67
+          },
+          "requestTransferMs": {
+            "samples": 60,
+            "p50": 0.55,
+            "p95": 1.03,
+            "max": 7.34
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 39.82,
+              "p95": 68.19,
+              "max": 83.34
+            },
+            "database": {
+              "samples": 20,
+              "p50": 9,
+              "p95": 12.29,
+              "max": 14.73
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.77,
+              "p95": 1.11,
+              "max": 1.12
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.71,
+              "p95": 1.05,
+              "max": 1.52
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.25,
+              "p95": 0.34,
+              "max": 0.35
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.5,
+              "p95": 0.8,
+              "max": 0.91
+            },
+            "total": {
+              "samples": 20,
+              "p50": 53.47,
+              "p95": 79.08,
+              "max": 101.1
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "meetings → tasks",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 80.1,
+            "p95": 94.2,
+            "max": 114.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 80.3,
+            "p95": 94.4,
+            "max": 114.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 4328,
+            "p95": 4328,
+            "max": 4328
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 48.9,
+            "p95": 61.8,
+            "max": 84.8
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.54,
+            "p95": 5.02,
+            "max": 5.36
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 15.18,
+            "p95": 19.2,
+            "max": 19.76
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 4328,
+            "p95": 4328,
+            "max": 4328
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 45.37,
+            "p95": 52.71,
+            "max": 81.34
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.41,
+            "p95": 0.61,
+            "max": 1.45
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 33.75,
+              "p95": 40.49,
+              "max": 65.28
+            },
+            "database": {
+              "samples": 20,
+              "p50": 7.08,
+              "p95": 8.31,
+              "max": 8.89
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.64,
+              "p95": 0.91,
+              "max": 0.91
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.63,
+              "p95": 0.86,
+              "max": 1.33
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.23,
+              "p95": 0.42,
+              "max": 2.12
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.49,
+              "p95": 0.91,
+              "max": 2.48
+            },
+            "total": {
+              "samples": 20,
+              "p50": 43.33,
+              "p95": 50.8,
+              "max": 76.27
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "cold",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 381.7,
+            "p95": 447,
+            "max": 529.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 381.9,
+            "p95": 447.2,
+            "max": 529.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 2,
+            "p95": 2,
+            "max": 2
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 362.2,
+            "p95": 426.8,
+            "max": 510.6
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 11.59,
+            "p95": 13.73,
+            "max": 17.91
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 52.52,
+            "p95": 82.57,
+            "max": 109.33
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 5032,
+            "p95": 5032,
+            "max": 5032
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 40
+          },
+          "requestTtfbMs": {
+            "samples": 40,
+            "p50": 3.43,
+            "p95": 115.35,
+            "max": 201.63
+          },
+          "requestTransferMs": {
+            "samples": 40,
+            "p50": 0.51,
+            "p95": 0.78,
+            "max": 2.23
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 42.7,
+              "p95": 101.21,
+              "max": 187.77
+            },
+            "database": {
+              "samples": 20,
+              "p50": 4.12,
+              "p95": 13.78,
+              "max": 14.77
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.82,
+              "p95": 2.06,
+              "max": 3.05
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.76,
+              "p95": 1.6,
+              "max": 1.9
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.1,
+              "p95": 0.39,
+              "max": 3.45
+            },
+            "total": {
+              "samples": 20,
+              "p50": 48.48,
+              "p95": 112.67,
+              "max": 197.08
+            }
+          },
+          "serverPhasesMs": {}
+        },
+        {
+          "path": "tasks → announcements",
+          "condition": "warm",
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 64.2,
+            "p95": 80,
+            "max": 81.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 64.4,
+            "p95": 80.2,
+            "max": 81.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 1,
+            "p95": 1,
+            "max": 1
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 40.9,
+            "p95": 48.4,
+            "max": 55.3
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 4.41,
+            "p95": 5.12,
+            "max": 6.43
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 15.41,
+            "p95": 19.2,
+            "max": 23.09
+          },
+          "completePayloadSamples": 20,
+          "completePayloadBytes": {
+            "samples": 20,
+            "p50": 255,
+            "p95": 255,
+            "max": 255
+          },
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "post200TransportFailures": 0,
+          "statuses": {
+            "200": 20
+          },
+          "requestTtfbMs": {
+            "samples": 20,
+            "p50": 35.95,
+            "p95": 43.78,
+            "max": 49.22
+          },
+          "requestTransferMs": {
+            "samples": 20,
+            "p50": 0.37,
+            "p95": 0.48,
+            "max": 0.6
+          },
+          "roomsCriticalReadBarrierMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "roomsReadTtfbMs": {
+            "samples": 0,
+            "p50": null,
+            "p95": null,
+            "max": null
+          },
+          "responseServerPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 29.81,
+              "p95": 37.63,
+              "max": 38.95
+            },
+            "database": {
+              "samples": 20,
+              "p50": 3.15,
+              "p95": 6.39,
+              "max": 6.99
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 0.61,
+              "p95": 1.56,
+              "max": 4.25
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 0.54,
+              "p95": 0.8,
+              "max": 1.23
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.07,
+              "p95": 0.09,
+              "max": 0.13
+            },
+            "total": {
+              "samples": 20,
+              "p50": 33.97,
+              "p95": 41.85,
+              "max": 46.54
+            }
+          },
+          "serverPhasesMs": {}
+        }
+      ]
+    }
+  }
+}
