@@ -48,7 +48,7 @@ export function OrganizationInvitationCard({ invitation, onChanged, allowDecline
   return <li className={compact ? "rounded-lg border border-brand-orange/20 bg-card px-4 py-3" : "rounded-xl border bg-card p-4 sm:p-5"} aria-busy={!!busy}>
     <article className="flex flex-col gap-4 lg:flex-row lg:items-center">
       <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
-        <ClubLogo clubId={invitation.club.id} logoUrl={invitation.club.logoUrl} color={invitation.club.color || "#142d4e"} text={invitation.club.name.slice(0, 2)} />
+        <ClubLogo clubId={invitation.club.id} logoUrl={invitation.club.logoUrl} marketing={invitation.club.marketing} color={invitation.club.color || "#142d4e"} text={invitation.club.name.slice(0, 2)} />
         <div className="min-w-0 space-y-1">
           <h3 className={compact ? "break-words text-sm font-semibold text-primary" : "oc-card-heading break-words"}>{compact ? owner ? `You’ve been invited to claim ${invitation.club.name}` : `You’ve been invited to join ${invitation.club.name}` : invitation.club.name}</h3>
           <p className="text-sm leading-6 text-muted-foreground">{owner ? `You’re the designated administrator for ${invitation.club.name}.`

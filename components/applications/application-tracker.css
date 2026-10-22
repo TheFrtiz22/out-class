@@ -39,9 +39,6 @@
   .oc-application-identity { flex-wrap: wrap; gap: .75rem; }
   .oc-application-status { margin-left: 3.75rem; }
 }
-@media (max-width: 639px) {
-  .oc-application-detail form > :last-child { position: sticky; bottom: calc(var(--oc-shell-mobile-height) + env(safe-area-inset-bottom)); background: var(--card); padding: 1rem; border-radius: var(--oc-radius-md); box-shadow: var(--oc-shadow-surface); }
-}
 @media (prefers-reduced-motion: reduce) { .oc-application-row:hover { transform: none; } }
 
 /* Forms and submissions stay separate from the post-application status journey. */
@@ -99,3 +96,30 @@
 
 [data-product-shell] .oc-applications .oc-segmented-control[data-sliding="true"] .oc-segmented-indicator { background: var(--primary); }
 [data-product-shell] .oc-applications .oc-segmented-control[data-sliding="true"] [aria-pressed="true"] { color: var(--primary-foreground); }
+
+/* A focused writing measure, with compact identity and readiness above the first field. */
+.oc-writing-workspace { width: 100%; max-width: 64rem; display: grid; gap: 1rem; }
+.oc-writing-workspace > button { justify-self: start; }
+.oc-writing-identity { align-items: center; }
+.oc-writing-workspace .oc-writing-identity h1 { font-size: clamp(1.25rem, 2vw, 1.65rem); line-height: 1.25; margin-top: .2rem; }
+.oc-writing-form { display: grid; gap: 1rem; min-width: 0; }
+.oc-writing-progress { display: grid; gap: .5rem; }
+.oc-writing-progress [data-slot="progress"] { height: 4px; }
+.oc-writing-questions { display: grid; gap: 1rem; min-width: 0; }
+.oc-writing-question { display: grid; gap: .75rem; min-width: 0; padding: 1.25rem 1.5rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-lg); }
+.oc-writing-question:focus-within { border-color: var(--ring); }
+.oc-writing-question label { overflow-wrap: anywhere; }
+.oc-writing-textarea { width: 100%; padding: 1rem; background: var(--background); }
+.oc-writing-navigation, .oc-writing-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; }
+.oc-writing-actions { border-top: 1px solid var(--border); padding-block: 1rem; }
+.oc-writing-profile { border-top: 1px solid var(--border); padding-top: 1rem; }
+.oc-writing-profile summary { width: fit-content; cursor: pointer; font-size: var(--oc-text-small); font-weight: var(--oc-weight-semibold); }
+.oc-writing-profile summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.oc-writing-profile-warning { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; border-left: 3px solid var(--warning); padding: .5rem .875rem; background: var(--warning-subtle); font-size: var(--oc-text-caption); }
+.oc-writing-profile-warning p { flex: 1 1 24rem; }
+@media (max-width: 639px) {
+  .oc-writing-workspace { gap: .75rem; }
+  .oc-writing-question { padding: 1rem; }
+  .oc-writing-textarea { padding: .75rem; }
+  .oc-writing-actions { position: static; }
+}

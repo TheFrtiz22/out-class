@@ -34,6 +34,7 @@ type ClubRef = {
   id: string
   name: string
   logoUrl?: string | null
+  marketing?: unknown
   logoText: string
   color: string
 }
@@ -97,6 +98,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
     clubName: app.club?.name || app.clubId,
     logoText: app.club?.logoText || "OC",
     logoUrl: app.club?.logoUrl,
+    marketing: app.club?.marketing,
     color: app.club?.color || "#051B3D",
     status: ({ DRAFTING: "Drafting", SUBMITTED: "Submitted", IN_REVIEW: "In Review", INTERVIEWING: "Interviewing", ACCEPTED: "Accepted", REJECTED: "Rejected", WAITLISTED: "Waitlisted" } as Record<string, string>)[app.status] || app.round?.name || "In Review",
     questionsCompleted: app.answers?.length || 0,
@@ -206,6 +208,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
           clubName: club.name,
           logoText: club.logoText,
           logoUrl: club.logoUrl,
+          marketing: club.marketing,
           color: club.color,
           status: club.applicationStatus ?? "Drafting",
           questionsCompleted: 0,
@@ -225,6 +228,7 @@ export function ApplicationStateProvider({ children, initialData, persistLocalSt
           color: club.color,
           logoText: club.logoText,
           logoUrl: club.logoUrl,
+          marketing: club.marketing,
           senderName: "Recruitment Team",
           senderTitle: `${club.name} — Recruitment`,
           title: `${club.name} application ${club.applicationId ? "ready" : "started"}`,

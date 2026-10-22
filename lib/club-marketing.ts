@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { logoBackgroundSchema } from "@/lib/club-logo-background"
 import { clubAssetReference } from "@/lib/club-assets"
 
 const text = (max: number) => z.string().trim().max(max)
@@ -12,6 +13,7 @@ export const marketingSchema = z.object({
   })).max(12).default([]),
   bannerPosition: z.object({ x: z.number().min(0).max(100).default(50), y: z.number().min(0).max(100).default(50) }).default({ x: 50, y: 50 }),
   logoOnBrand: z.boolean().default(false),
+  logoBackground: logoBackgroundSchema.optional(),
   acceptanceNote: text(180).default(""), acceptanceSource: publicUrl.default(""),
   acceptanceApproximate: z.boolean().default(false),
   outcomesNote: text(300).default(""),

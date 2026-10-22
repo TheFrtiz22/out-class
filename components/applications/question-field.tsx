@@ -28,8 +28,8 @@ export function QuestionField({
     return (
       <Textarea
         {...props}
-        rows={7}
-        className="min-h-44 text-base leading-7"
+        rows={9}
+        className="oc-writing-textarea min-h-56 resize-y text-base leading-7 sm:min-h-64"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Take your time. Write in your own voice."

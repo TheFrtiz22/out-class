@@ -494,6 +494,6 @@ export async function downloadTaskFile(fileId: string) {
 
 export async function getTaskNotifications() {
   const {user}=await requireAuth();
-  const records=await prisma.taskAssignment.findMany({where:{userId:user.id,member:{userId:user.id,status:"ACTIVE",user:{disabledAt:null}},task:{kind:"TASK",status:{not:"DRAFT"}}},select:{id:true,assignedAt:true,submittedAt:true,reviewedAt:true,revisionRequestedAt:true,feedback:true,task:{select:{id:true,clubId:true,title:true,kind:true,status:true,dueAt:true,club:{select:{name:true,color:true,logoUrl:true}}}}},orderBy:{assignedAt:"desc"},take:100});
+  const records=await prisma.taskAssignment.findMany({where:{userId:user.id,member:{userId:user.id,status:"ACTIVE",user:{disabledAt:null}},task:{kind:"TASK",status:{not:"DRAFT"}}},select:{id:true,assignedAt:true,submittedAt:true,reviewedAt:true,revisionRequestedAt:true,feedback:true,task:{select:{id:true,clubId:true,title:true,kind:true,status:true,dueAt:true,club:{select:{name:true,color:true,logoUrl:true,marketing:true}}}}},orderBy:{assignedAt:"desc"},take:100});
   return taskNotifications(records);
 }
