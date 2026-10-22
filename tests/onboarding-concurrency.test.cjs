@@ -7,6 +7,10 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  const url=new URL(databaseUrl);
  assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Only an isolated local outclass_security_test database is allowed');
  const {PrismaClient}=require('@prisma/client');const prisma=new PrismaClient({datasourceUrl:databaseUrl});t.after(()=>prisma.$disconnect());
+ // The disposable runner disables real email globally; this suite replaces the
+ // SMTP transport below and must exercise its mocked delivery path explicitly.
+ const savedEmailEnabled=process.env.COMMUNICATIONS_EMAIL_ENABLED;process.env.COMMUNICATIONS_EMAIL_ENABLED='true';
+ t.after(()=>{if(savedEmailEnabled===undefined)delete process.env.COMMUNICATIONS_EMAIL_ENABLED;else process.env.COMMUNICATIONS_EMAIL_ENABLED=savedEmailEnabled;});
  const saved=process.env.OUTCLASS_PLATFORM_ADMIN_IDS;const platform=randomUUID();process.env.OUTCLASS_PLATFORM_ADMIN_IDS=platform;
  t.after(()=>{if(saved===undefined)delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS;else process.env.OUTCLASS_PLATFORM_ADMIN_IDS=saved;});
  const createUser=async prefix=>prisma.user.create({data:{id:randomUUID(),email:`${prefix}${randomUUID().replaceAll('-','').slice(0,8)}@virginia.edu`}});
