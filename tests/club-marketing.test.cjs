@@ -70,7 +70,7 @@ test('shared public renderer displays marketing content and respects empty and h
   const { renderToStaticMarkup } = require('react-dom/server')
   const mod = { exports: {} }
   const code = ts.transpileModule(fs.readFileSync('components/clubs/marketing-profile.tsx', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText
-  new Function('require', 'module', 'exports', code)(n => n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
+  new Function('require', 'module', 'exports', code)(n => n === '@/components/club-logo' ? require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx') : n === '@/components/icons' ? require('./helpers/icons.cjs') : n.endsWith('.css') ? {} : n.startsWith('@/lib/') ? load(n.replace('@/', '') + '.ts') : require(n), mod, mod.exports)
   const profile = draft()
   const header = renderToStaticMarkup(React.createElement(mod.exports.MarketingProfile, { profile }))
   const sections = renderToStaticMarkup(React.createElement(mod.exports.MarketingSections, { profile }))
@@ -179,6 +179,54 @@ test('white logos can retain their original artwork on a brand-color background 
   const profile = profileDraft({ name: 'White logo club', marketing: { logoOnBrand: true } })
   assert.equal(clubProfileSchema.parse(profile).marketing.logoOnBrand, true)
   assert.equal(clubProfileSchema.safeParse({ ...profile, marketing: { logoOnBrand: 'yes' } }).success, false)
+})
+
+test('logo presentation choices persist through the existing authorized settings update and preserve artwork', async () => {
+  let profile = draft(), allowed = true, transactionAllowed = true, writes = 0
+  const actions = load('actions/club-workspace.ts', {
+    '@/lib/club-transaction-authorization': { authorizeClubTransaction: async (_tx, id, actor, permissions) => { assert.equal(id, clubId); assert.equal(actor, 'editor'); assert.deepEqual(permissions, ['club.settings']); if (!transactionAllowed) throw Error('Revoked') } },
+    '@/utils/club-asset-storage': { assertClubImageAssignment: async () => {} },
+    '@/utils/auth': { requireClubPermission: async () => { if (!allowed) throw Error('Denied'); return { user: { id: 'editor' } } } },
+    '@/utils/prisma': { prisma: { $transaction: async fn => fn({ club: { findUniqueOrThrow: async () => profile, update: async ({data}) => { writes++; profile = {...profile,...data} } }, auditLog: {create: async()=>{}} }) } },
+  })
+  const original = profile.logoUrl
+  for (const mode of ['auto','navy','ivory','transparent','custom']) {
+    const logoBackground = {mode,...(mode==='custom'?{color:'#3b6149'}:{})}
+    await actions.updateClubSettings({clubId,...profile,marketing:{...profile.marketing,logoBackground},expectedProfile:JSON.stringify(clubProfileSchema.parse(profile))})
+    assert.deepEqual(profileDraft(JSON.parse(JSON.stringify(profile))).marketing.logoBackground,logoBackground)
+    assert.equal(profile.logoUrl,original)
+  }
+  for (const color of ['red','transparent','#fff','#12345678','url(https://evil.test)','var(--primary)','</style><script>',';color:red']) {
+    await assert.rejects(actions.updateClubSettings({clubId,...profile,marketing:{...profile.marketing,logoBackground:{mode:'custom',color}}}))
+  }
+  const before = writes
+  allowed = false
+  await assert.rejects(actions.updateClubSettings({clubId,...profile}),/Denied/)
+  allowed = true; transactionAllowed = false
+  await assert.rejects(actions.updateClubSettings({clubId,...profile}),/Revoked/)
+  assert.equal(writes,before)
+})
+
+test('automatic background distinguishes transparent light/dark artwork from opaque images and respects manual overrides', async () => {
+  const sharp = require('sharp')
+  const {analyzeLogoPixels,logoBackgroundColor,LOGO_NAVY,LOGO_IVORY} = load('lib/club-logo-background.ts')
+  async function artwork(fill, background='none', format='png') {
+    const encoded=await sharp(Buffer.from(`<svg width="60" height="60"><rect width="60" height="60" fill="${background}"/><rect x="10" y="10" width="40" height="40" fill="${fill}"/></svg>`))[format]().toBuffer()
+    const bytes=await sharp(encoded).ensureAlpha().raw().toBuffer()
+    return analyzeLogoPixels(bytes)
+  }
+  const white = await artwork('white'), dark = await artwork('#142D45'), opaque = await artwork('white','white','jpeg')
+  assert.equal(white.transparent,true);assert.equal(logoBackgroundColor({},'#123456',white),LOGO_NAVY)
+  assert.equal(dark.transparent,true);assert.equal(logoBackgroundColor(null,'#123456',dark),LOGO_IVORY)
+  assert.equal(opaque.transparent,false);assert.equal(opaque.lowContrast,true);assert.equal(logoBackgroundColor({},'#123456',opaque),'transparent')
+  for (const analysis of [white,dark,opaque,null]) {
+    assert.equal(logoBackgroundColor({logoBackground:{mode:'transparent'}},'#123456',analysis),'transparent')
+    assert.equal(logoBackgroundColor({logoBackground:{mode:'custom',color:'#123456'}},'#ffffff',analysis),'#123456')
+    assert.equal(logoBackgroundColor({logoOnBrand:true},'#123456',analysis),'#123456')
+    assert.equal(logoBackgroundColor({logoOnBrand:true,logoBackground:{mode:'ivory'}},'#123456',analysis),LOGO_IVORY)
+  }
+  assert.equal(logoBackgroundColor({logoBackground:{mode:'custom',color:'url(evil)'}},'red',white),LOGO_NAVY)
+  assert.equal(analyzeLogoPixels([255,255,255,0]),null)
 })
 
 test('profile enrichment preserves an existing live intake and deadline rather than closing recruitment', async () => {

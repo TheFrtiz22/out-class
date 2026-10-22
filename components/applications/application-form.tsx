@@ -6,10 +6,10 @@ import { useDemoMode } from "@/contexts/demo-context"
 import { applicationAnswersKey } from "@/lib/student-applications"
 import { QuestionField } from "@/components/applications/question-field"
 import { applicationAvailability } from "@/lib/club-settings"
-import { testRequirementLabels } from "@/lib/test-scores"
+import { meetsTestRequirement, testRequirementLabels } from "@/lib/test-scores"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { Check, FileText } from "@/components/icons"
+import { Check } from "@/components/icons"
 import {
   saveApplicationDraft,
   submitApplication,
@@ -70,6 +70,8 @@ export function ApplicationForm({
       onSaved(false, savedAnswers)
     },
   })
+  const missingProfile = !user?.profile
+  const missingScores = !meetsTestRequirement(application.club.testRequirement, user?.profile ?? null)
   const dirty = autosave.dirty
   const required = questions.filter((question) => question.required)
   const progress = applicationResponseProgress(questions, answers)
@@ -160,26 +162,18 @@ export function ApplicationForm({
     } else setConfirm(true)
   }
   return (
-    <div data-autosave-editor="true" data-application-form data-unsaved={dirty} data-saving={busy || autosave.saving} onBlur={autosave.onBlur} className="space-y-7">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-border py-4 text-sm">
-        <p>
-          {required.length
-            ? `${completed} of ${required.length} required responses ready`
-            : "No required questions"}
-        </p>
-        <AutosaveStatus save={autosave} />
-      </div>
-      <div className="oc-draft-progress-summary"><Progress value={progress.percent} aria-label="Required application responses ready" />{progress.nextQuestionId && <Button type="button" variant="link" className="px-0" disabled={busy} onClick={() => { const field = document.getElementById(`answer-${progress.nextQuestionId}`); field?.scrollIntoView({ block: "center", behavior: "instant" }); field?.focus({ preventScroll: true }) }}>Continue to next response</Button>}</div>
-      <div className="flex items-start gap-3 text-sm leading-relaxed">
-        <FileText className="mt-1 size-4 shrink-0 text-muted-foreground" />
-        <div>
-          <p>Your shared profile gives the club your academic and experience details.</p>
-          <p>{testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Scores are taken from your profile; SAT and ACT are never converted.</p>
-          <Button variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>
-            Review your profile
-          </Button>
+    <div data-autosave-editor="true" data-application-form data-unsaved={dirty} data-saving={busy || autosave.saving} onBlur={autosave.onBlur} className="oc-writing-form">
+      <div className="oc-writing-progress">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <p>{required.length ? `${completed} of ${required.length} required responses ready` : "No required questions"}</p>
+          <AutosaveStatus save={autosave} />
         </div>
+        <Progress value={progress.percent} aria-label="Required application responses ready" />
       </div>
+      {(missingProfile || missingScores) && <div className="oc-writing-profile-warning" role="note" aria-label="Missing profile requirements">
+        <p>{missingProfile ? "Complete your shared profile before submitting." : `${testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Add the missing scores to your profile before submitting.`}</p>
+        <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>Update profile</Button>
+      </div>}
       {error && (
         <div
           role="alert"
@@ -189,18 +183,19 @@ export function ApplicationForm({
           {!!Object.keys(errors).length && <ul className="mt-2 list-disc pl-5">{questions.filter(question => errors[question.id]).map(question => <li key={question.id}><a className="underline" href={`#answer-${question.id}`} onClick={event => { event.preventDefault(); document.getElementById(`answer-${question.id}`)?.focus() }}>{question.prompt}: {errors[question.id]}</a></li>)}</ul>}
         </div>
       )}
-      <p role="status" aria-atomic="true" className="text-sm">{message}</p>
-      <form onSubmit={review} noValidate className="space-y-8">
+      <p role="status" aria-atomic="true" className={message ? "text-sm" : "sr-only"}>{message}</p>
+      <form onSubmit={review} noValidate className="oc-writing-questions">
         {closed && <p role="status" className="text-sm text-muted-foreground">Applications are closed. You can still save your draft.</p>}
-        <fieldset disabled={busy} className="min-w-0 space-y-9">
+        <fieldset disabled={busy} className="min-w-0 space-y-5">
           {questions.map((question, index) => (
-            <div key={question.id} className="space-y-3">
+            <section key={question.id} className="oc-writing-question" aria-label={`Question ${index + 1}`}>
               <div className="text-xs font-medium text-muted-foreground">
                 Question {index + 1}
                 <span aria-hidden="true"> · </span>
                 {question.required ? "Required" : "Optional"}
               </div>
               <Label
+                id={`prompt-${question.id}`}
                 htmlFor={`answer-${question.id}`}
                 className="block whitespace-pre-wrap text-base font-medium leading-7"
               >
@@ -240,7 +235,7 @@ export function ApplicationForm({
                   </p>
                 )}
               </div>
-            </div>
+            </section>
           ))}
           {!questions.length && (
             <p className="py-5 text-sm text-muted-foreground">
@@ -249,17 +244,33 @@ export function ApplicationForm({
             </p>
           )}
         </fieldset>
-        <div className="oc-application-actions flex flex-wrap items-center justify-between gap-4 border-t border-border bg-background py-5">
+        <div className="oc-writing-navigation">
+          <nav aria-label="Application questions" className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs text-muted-foreground">Questions</span>
+            {questions.map((question, index) => <Button key={question.id} type="button" size="icon" variant="outline" className="size-9" disabled={busy} aria-label={`Go to question ${index + 1}`} onClick={() => document.getElementById(`answer-${question.id}`)?.focus()}>{index + 1}</Button>)}
+          </nav>
+          {progress.nextQuestionId && <Button type="button" variant="link" className="px-0" disabled={busy} onClick={() => document.getElementById(`answer-${progress.nextQuestionId}`)?.focus()}>Continue to next response</Button>}
+        </div>
+        <div className="oc-application-actions oc-writing-actions">
           <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">
             Your draft saves automatically. Nothing is submitted until you confirm.
           </p>
           <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" disabled={busy} onClick={() => void persist(false)}>Save draft</Button>
             <Button type="submit" disabled={busy || closed}>
               Review & submit
             </Button>
           </div>
         </div>
       </form>
+      <details className="oc-writing-profile">
+        <summary>Shared profile & requirements</summary>
+        <div className="space-y-2 pt-3 text-sm leading-relaxed text-muted-foreground">
+          <p>Your shared profile gives the club your academic and experience details.</p>
+          <p>{testRequirementLabels[(application.club.testRequirement || "OPTIONAL") as keyof typeof testRequirementLabels]}. Scores are taken from your profile; SAT and ACT are never converted.</p>
+          <Button type="button" variant="link" className="h-auto px-0 py-1" disabled={busy} onClick={onProfile}>Review your profile</Button>
+        </div>
+      </details>
       <Dialog
         open={confirm}
         onOpenChange={(value) => {

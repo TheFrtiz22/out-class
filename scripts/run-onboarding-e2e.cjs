@@ -5,7 +5,9 @@ const {randomUUID}=require('node:crypto');
 const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
-const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e');
+const writing=process.argv.includes('--application-writing'),appPort=writing?3109:3107;
+const projectId=writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=writing?'573':'553';
+const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),projectId);
 const keep=process.argv.includes('--keep');let app,stackTouched=false;
 fs.mkdirSync(path.join(root,'supabase/templates'),{recursive:true});
 // Invoke package CLIs through Node: Windows .cmd shims cannot be launched by
@@ -48,14 +50,14 @@ async function ready(url,headers={}){
  if(command('docker',['info','--format','{{.OSType}}']).trim()!=='linux')throw Error('The isolated Supabase test requires a Linux-container Docker engine.');
  if(process.argv.includes('--check-prerequisites')){console.log('Node package CLIs, OpenSSL and Docker engine are available.');return;}
  // Reject an occupied app port before touching the reserved fixture.
- await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',()=>reject(Error('Reserved onboarding app port 3107 is occupied; no fixture was changed.')));server.listen(3107,'127.0.0.1',()=>server.close(resolve));});
- console.log('Provisioning reserved disposable Supabase project outclass-onboarding-e2e on ports 55321–55327.');
- let config=fs.readFileSync(path.join(repo,'supabase/config.toml'),'utf8').replace('project_id = "out-class"','project_id = "outclass-onboarding-e2e"');
- for(const [from,to] of [['54321','55321'],['54322','55322'],['54323','55323'],['54324','55324'],['54325','55325'],['54327','55327'],['54320','55320'],['54329','55329'],['http://127.0.0.1:3000','http://127.0.0.1:3107'],['https://127.0.0.1:3000','http://127.0.0.1:3107']])config=config.replaceAll(from,to);
- config=config.replace('# smtp_port = 55325','smtp_port = 55325');
+ await new Promise((resolve,reject)=>{const server=require('node:net').createServer();server.once('error',()=>reject(Error(`Reserved onboarding app port ${appPort} is occupied; no fixture was changed.`)));server.listen(appPort,'127.0.0.1',()=>server.close(resolve));});
+ console.log(`Provisioning reserved disposable Supabase project ${projectId} on ports ${portPrefix}21–${portPrefix}27.`);
+ let config=fs.readFileSync(path.join(repo,'supabase/config.toml'),'utf8').replace('project_id = "out-class"',`project_id = "${projectId}"`);
+ for(const [from,to] of [['54321',`${portPrefix}21`],['54322',`${portPrefix}22`],['54323',`${portPrefix}23`],['54324',`${portPrefix}24`],['54325',`${portPrefix}25`],['54327',`${portPrefix}27`],['54320',`${portPrefix}20`],['54329',`${portPrefix}29`],['http://127.0.0.1:3000',`http://127.0.0.1:${appPort}`],['https://127.0.0.1:3000',`http://127.0.0.1:${appPort}`]])config=config.replaceAll(from,to);
+ config=config.replace(`# smtp_port = ${portPrefix}25`,`smtp_port = ${portPrefix}25`);
  const start=config.indexOf('[auth.email]'),end=config.indexOf('[auth.sms]',start);config=config.slice(0,start)+config.slice(start,end).replace('enable_confirmations = false','enable_confirmations = true')+config.slice(end);
  const mfaStart=config.indexOf('[auth.mfa.totp]'),mfaEnd=config.indexOf('[auth.mfa.phone]',mfaStart);config=config.slice(0,mfaStart)+config.slice(mfaStart,mfaEnd).replace('enroll_enabled = false','enroll_enabled = true').replace('verify_enabled = false','verify_enabled = true')+config.slice(mfaEnd);
- if(!/^project_id = "outclass-onboarding-e2e"$/m.test(config))throw Error('Refusing to operate on a non-test Supabase project');
+ if(!config.split("\n").includes(`project_id = "${projectId}"`))throw Error('Refusing to operate on a non-test Supabase project');
  const recovery='[auth.email.template.recovery]\nsubject = \"Reset your OutClass password\"\ncontent_path = \"./supabase/templates/recovery.html\"\n';
  config=config.includes('[auth.email.template.recovery]')?config.replace(/\[auth\.email\.template\.recovery\][\s\S]*?(?=\n\[|$)/,recovery):config+'\n'+recovery;
  fs.writeFileSync(path.join(root,'supabase/templates/recovery.html'),'<h2>Reset your password</h2><a href="{{ .RedirectTo }}#token_hash={{ .TokenHash }}">Reset password</a>');
@@ -66,19 +68,19 @@ async function ready(url,headers={}){
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
  logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'],'supabase-start.log');
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
- const settings={projectId:'outclass-onboarding-e2e',appUrl:'http://127.0.0.1:3107',status,buildDir:path.join(repo,'.next-publish')};
+ const settings={projectId,appUrl:`http://127.0.0.1:${appPort}`,status,buildDir:path.join(repo,writing?'.next':'.next-publish'),suite:writing?'application-writing':undefined};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
- const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
+ const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:writing?'':'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'127.0.0.1',SMTP_PORT:`${portPrefix}25`,SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
  Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});
  logged('npm',['run','db:deploy'],'migrate.log',env);
  console.log('All Prisma migrations applied through the authoritative deployment command.');
  // Test-only trusted TLS for the same Mailpit provider used by local Supabase Auth.
- fs.writeFileSync(path.join(root,'certificate.conf'),'[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,DNS:supabase_inbucket_outclass-onboarding-e2e,IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n');
+ fs.writeFileSync(path.join(root,'certificate.conf'),`[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,DNS:supabase_inbucket_${projectId},IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n`);
  logged('openssl',['req','-x509','-nodes','-days','2','-newkey','rsa:2048','-keyout',path.join(root,'mailpit-key.pem'),'-out',path.join(root,'mailpit-cert.pem'),'-config',path.join(root,'certificate.conf')],'certificate.log');
- const mailContainer='supabase_inbucket_outclass-onboarding-e2e',authContainer='supabase_auth_outclass-onboarding-e2e';
+ const mailContainer=`supabase_inbucket_${projectId}`,authContainer=`supabase_auth_${projectId}`;
  const image=command('docker',['inspect',mailContainer,'--format','{{.Config.Image}}']).trim();assertImage(image);
  command('docker',['stop',mailContainer]);command('docker',['rm',mailContainer]);
- command('docker',['run','-d','--name',mailContainer,'--network','supabase_network_outclass-onboarding-e2e','-p','127.0.0.1:55324:8025','-p','127.0.0.1:55325:1025','-v',`${path.join(root,'mailpit-cert.pem')}:/tmp/mailpit-cert.pem:ro`,'-v',`${path.join(root,'mailpit-key.pem')}:/tmp/mailpit-key.pem:ro`,'--label','com.supabase.cli.project=outclass-onboarding-e2e',image,'--smtp-tls-cert','/tmp/mailpit-cert.pem','--smtp-tls-key','/tmp/mailpit-key.pem','--smtp-auth-accept-any','--smtp-auth-allow-insecure']);
+ command('docker',['run','-d','--name',mailContainer,'--network',`supabase_network_${projectId}`,'-p',`127.0.0.1:${portPrefix}24:8025`,'-p',`127.0.0.1:${portPrefix}25:1025`,'-v',`${path.join(root,'mailpit-cert.pem')}:/tmp/mailpit-cert.pem:ro`,'-v',`${path.join(root,'mailpit-key.pem')}:/tmp/mailpit-key.pem:ro`,'--label',`com.supabase.cli.project=${projectId}`,image,'--smtp-tls-cert','/tmp/mailpit-cert.pem','--smtp-tls-key','/tmp/mailpit-key.pem','--smtp-auth-accept-any','--smtp-auth-allow-insecure']);
  command('docker',['cp',path.join(root,'mailpit-cert.pem'),`${authContainer}:/usr/local/share/ca-certificates/outclass-e2e.crt`]);
  logged('docker',['exec','-u','root',authContainer,'update-ca-certificates'],'auth-ca.log');command('docker',['restart',authContainer]);
  await ready(status.API_URL+'/auth/v1/settings',{apikey:status.PUBLISHABLE_KEY});
@@ -94,14 +96,15 @@ async function ready(url,headers={}){
  env.OUTCLASS_PLATFORM_ADMIN_IDS=settings.admin.id;fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});
  console.log('Administrator bootstrapped through normal verified signup and actual TOTP MFA.');
  logged('npm',['run','build'],'build.log',env);
- const appLog=fs.openSync(path.join(root,'server.log'),'w');app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,stdio:['ignore',appLog,appLog]});
+ const appLog=fs.openSync(path.join(root,'server.log'),'w');app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p',String(appPort),'-H','127.0.0.1'],{cwd:repo,env,stdio:['ignore',appLog,appLog]});
  fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
  await ready(settings.appUrl);
  // --club-integration runs all tests gated by the reserved onboarding project,
  // including settings/navigation and real built PDF import (which needs the
  // ui-fixture.json written by onboarding). Keep files serialized.
  const onboardingTests=['tests/onboarding-e2e.test.cjs','tests/account-data-e2e.test.cjs','tests/session-revocation-e2e.test.cjs','tests/signup-privacy-e2e.test.cjs','tests/student-claim-e2e.test.cjs'];
- const testFiles=process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
+ const testFiles=process.argv.includes('--application-writing')?['tests/application-writing-e2e.test.cjs']:
+   process.argv.includes('--a11y')?['tests/accessibility/authenticated.test.cjs']:
    process.argv.includes('--club-integration')?[...onboardingTests,'tests/settings-navigation-e2e.test.cjs','tests/resume-import-runtime.test.cjs']:
    process.argv.includes('--settings')?['tests/settings-navigation-e2e.test.cjs',...onboardingTests]:onboardingTests;
  const result=spawnSync(process.execPath,['--test','--test-concurrency=1',...testFiles],{cwd:repo,env:{...env,OUTCLASS_ONBOARDING_E2E_CONFIG:configFile},stdio:'inherit'});

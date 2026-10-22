@@ -1,5 +1,16 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {actionSourceMatches,readStagingImportConfig,readConfig}=require('./helpers/onboarding-e2e.cjs');
+test('writing integration config is pinned to its own disposable local project and ports',()=>{
+ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+ const folder=fs.mkdtempSync(path.join(os.tmpdir(),'outclass-writing-guard-')),file=path.join(folder,'config.json');
+ const base={suite:'application-writing',projectId:'outclass-application-writing-e2e',appUrl:'http://127.0.0.1:3109',status:{API_URL:'http://127.0.0.1:57321',DB_URL:'postgresql://fixture@127.0.0.1:57322/postgres',MAILPIT_URL:'http://127.0.0.1:57324'}};
+ try{
+  fs.writeFileSync(file,JSON.stringify(base));assert.equal(readConfig(file).projectId,base.projectId);
+  for(const bad of [{...base,projectId:'out-class'},{...base,suite:undefined},{...base,appUrl:'https://www.out-class.net'},{...base,status:{...base.status,DB_URL:'postgresql://fixture@127.0.0.1:54322/postgres'}},{...base,status:{...base.status,API_URL:'https://example.test:57321'}}]){
+   fs.writeFileSync(file,JSON.stringify(bad));assert.throws(()=>readConfig(file));
+  }
+ }finally{fs.rmSync(folder,{recursive:true,force:true})}
+});
 test('built action lookup matches Windows and Unix source paths without matching a different action file',()=>{
  const file='actions/organization-members.ts';
  for(const source of [file,'../C:\\Users\\arden\\OutClass\\out-class\\actions\\organization-members.ts','/workspace/out-class/'+file])assert.equal(actionSourceMatches(source,file),true);
