@@ -120,3 +120,76 @@ test('platform notification expansion reaches the existing inbox while profile a
   for (const view of ['inbox', 'student-profile', 'student-dashboard']) shell.props.onNavigate(view)
   assert.deepEqual(destinations, ['/?workspace=student&view=inbox', '/?workspace=student&view=student-profile', '/?workspace=student'])
 })
+
+function notificationClickHarness({ read = false, result = true, allowed = true, sameClub = true } = {}) {
+  const slots = []; let cursor = 0; const events = []
+  const react = {
+    useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], next => { slots[i] = typeof next === 'function' ? next(slots[i]) : next }] },
+    useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial } }, useEffect() {},
+  }
+  const href = '/club/qa/workspace?section=recruitment&tool=interviews&interview=1&applicationId=app&roundId=round&roomId=room&slotId=slot&bookingId=booking'
+  const item = notification('assignment', { href, type: 'Interview Invite', read })
+  const { NotificationCenter } = load(process.env.OUTCLASS_NOTIFICATION_SOURCE || 'components/shell/notification-center.tsx', {
+    react, 'next/link': 'Link', 'next/navigation': { useRouter: () => ({ push: url => events.push(['router', url]) }) },
+    '@/lib/application-state': { useApplicationState: () => ({ notifications: [item], trackedApps: [], markNotificationRead: async id => { events.push(['read', id]); if (result instanceof Error) throw result; return result } }) },
+    '@/contexts/organization-invitations-context': { useOrganizationInvitations: () => ({ invitations: [] }) },
+    '@/lib/product-navigation': { canLeaveWorkspace: () => allowed },
+    '@/lib/workspace-navigation': { navigateWithinClub: url => { if (sameClub) events.push(['workspace', url]); return sameClub } },
+    '@/lib/notification-presentation': presentation,
+    '@/components/icons': new Proxy({}, { get: (_, key) => key }),
+    '@/components/ui/popover': { Popover: 'Popover', PopoverContent: 'PopoverContent', PopoverTrigger: 'PopoverTrigger' },
+    '@/components/ui/dropdown-menu': { DropdownMenu: 'Menu', DropdownMenuTrigger: 'MenuTrigger', DropdownMenuContent: 'MenuContent', DropdownMenuItem: 'MenuItem' },
+    '@/components/ui/icon-button': { IconButton: 'IconButton' },
+    '@/components/organization-invitation-card': { OrganizationInvitationCard: 'Invitation' },
+    './notification-center.css': {},
+  })
+  const render = () => { cursor = 0; return NotificationCenter({ unread: read ? 0 : 1, pendingInvitations: 0, loadState: {}, onRetry() {}, onNavigate() {} }) }
+  const nodes = node => !node || typeof node !== 'object' ? [] : [node, ...[node.props?.children].flat(Infinity).flatMap(nodes)]
+  const link = () => nodes(render()).find(n => n.type === 'Link')
+  const click = extra => { const event = { button: 0, defaultPrevented: false, preventDefault() { this.defaultPrevented = true }, ...extra }; link().props.onClick(event); return event }
+  return { events, href, click, nodes: () => nodes(render()) }
+}
+
+test('unread assignment commits its exact workspace destination before the read mutation instead of relying on a later Link dispatch', async () => {
+  const originalFrame = global.requestAnimationFrame; global.requestAnimationFrame = () => {}
+  try {
+    const h = notificationClickHarness()
+    assert.equal(h.click().defaultPrevented, true)
+    assert.deepEqual(h.events, [['workspace', h.href], ['read', 'durable-assignment']])
+    await new Promise(resolve => setImmediate(resolve))
+  } finally { global.requestAnimationFrame = originalFrame }
+})
+test('already-read assignment still navigates once without another notification write', () => {
+  const h = notificationClickHarness({ read: true })
+  h.click(); h.click()
+  assert.deepEqual(h.events, [['workspace', h.href]])
+})
+test('a failed or rejected read cannot swallow navigation and retains a visible retry', async () => {
+  const originalFrame = global.requestAnimationFrame; global.requestAnimationFrame = () => {}
+  try {
+    for (const result of [false, Error('Unavailable')]) {
+      const h = notificationClickHarness({ result })
+      h.click(); await new Promise(resolve => setImmediate(resolve))
+      assert.deepEqual(h.events, [['workspace', h.href], ['read', 'durable-assignment']])
+      assert.ok(h.nodes().some(n => n.props?.role === 'alert'))
+    }
+  } finally { global.requestAnimationFrame = originalFrame }
+})
+test('rapid repeated assignment activation cannot duplicate navigation or the pending mutation', async () => {
+  const originalFrame = global.requestAnimationFrame; global.requestAnimationFrame = () => {}
+  try {
+    const h = notificationClickHarness(); h.click(); h.click()
+    await new Promise(resolve => setImmediate(resolve)); h.click()
+    assert.deepEqual(h.events, [['workspace', h.href], ['read', 'durable-assignment']])
+  } finally { global.requestAnimationFrame = originalFrame }
+})
+test('cross-workspace destinations use the router once, with their complete saved context', () => {
+  const h = notificationClickHarness({ sameClub: false, read: true })
+  h.click(); assert.deepEqual(h.events, [['router', h.href]])
+})
+test('modified clicks retain native link behavior and denied draft navigation performs no read or navigation', () => {
+  const h = notificationClickHarness({ read: true })
+  assert.equal(h.click({ ctrlKey: true }).defaultPrevented, false); assert.deepEqual(h.events, [])
+  const denied = notificationClickHarness({ allowed: false })
+  assert.equal(denied.click().defaultPrevented, true); assert.deepEqual(denied.events, [])
+})

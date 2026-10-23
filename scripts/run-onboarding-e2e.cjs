@@ -79,7 +79,9 @@ async function ready(url,headers={}){
  fs.writeFileSync(path.join(root,'certificate.conf'),`[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,DNS:supabase_inbucket_${projectId},IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n`);
  logged('openssl',['req','-x509','-nodes','-days','2','-newkey','rsa:2048','-keyout',path.join(root,'mailpit-key.pem'),'-out',path.join(root,'mailpit-cert.pem'),'-config',path.join(root,'certificate.conf')],'certificate.log');
  const mailContainer=`supabase_inbucket_${projectId}`,authContainer=`supabase_auth_${projectId}`;
- const image=command('docker',['inspect',mailContainer,'--format','{{.Config.Image}}']).trim();assertImage(image);
+ const image=command('docker',['inspect',mailContainer,'--format','{{.Config.Image}}']).trim();
+ require('./disposable-smtp-image.cjs').assertDisposableSmtpImage(image);
+ console.log('Verified disposable SMTP image:',image);
  command('docker',['stop',mailContainer]);command('docker',['rm',mailContainer]);
  command('docker',['run','-d','--name',mailContainer,'--network',`supabase_network_${projectId}`,'-p',`127.0.0.1:${portPrefix}24:8025`,'-p',`127.0.0.1:${portPrefix}25:1025`,'-v',`${path.join(root,'mailpit-cert.pem')}:/tmp/mailpit-cert.pem:ro`,'-v',`${path.join(root,'mailpit-key.pem')}:/tmp/mailpit-key.pem:ro`,'--label',`com.supabase.cli.project=${projectId}`,image,'--smtp-tls-cert','/tmp/mailpit-cert.pem','--smtp-tls-key','/tmp/mailpit-key.pem','--smtp-auth-accept-any','--smtp-auth-allow-insecure']);
  command('docker',['cp',path.join(root,'mailpit-cert.pem'),`${authContainer}:/usr/local/share/ca-certificates/outclass-e2e.crt`]);
@@ -116,4 +118,3 @@ async function ready(url,headers={}){
   if(result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});
  }
 });
-function assertImage(image){if(!/^public\.ecr\.aws\/supabase\/mailpit:/.test(image))throw Error('Unexpected local SMTP image');}
