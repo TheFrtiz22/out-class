@@ -25,3 +25,10 @@ Completion reserves the existing save queue before awaiting outstanding writes. 
 Production reproduction is retained in the existing external OutClass-real-mode-QA-findings.md report. Do not reopen the completed first-applicant/round-2 review. After protected merge and deployment, verify one-click submission using a fresh authorized synthetic interview in hidden QA club 8b4c2f74-e4b4-4865-8cfa-ee44b59d010f, preserving old submitted records. Confirm latest text/9.5 score, one evaluation, immutable reload, and Next only after acknowledgement. Restore temporary synthetic round/assignment changes through existing protected actions. No real applicant writes.
 
 No migration is needed. Production verification and release are pending required checks; do not infer live status from local tests or a preview build.
+
+
+## Coordinated release integration - 2026-10-23
+
+Integrated #68 candidatea5b5820, which includes current main4f29429 and the original notification/accessibility fixes plus justified fixture corrections. The sole new test repair adds the supported marketing field to the exact communications settings projection. A fresh local native PostgreSQL17.11 run reproduces the original failure and passes all8 communications checks after that one-key correction; the later undefined-template failure was caused by the earlier assertion skipping template setup. Existing security/interview native3 and Events/browser5 checks pass. No application defect outside the two release fixes was reproduced by this focused pass.
+
+Merge order is #68, then this PR. Required CI must pass on these integrated candidates before either promotion. Production acceptance must still use existing synthetic accounts and a fresh hidden-club interview, preserving completed reviews. No database migration, password rotation, approval bypass, or real-applicant write is part of this release.
