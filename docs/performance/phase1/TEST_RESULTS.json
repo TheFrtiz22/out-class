@@ -188,5 +188,50 @@
       "all24Links": true
     },
     "evidence": "active-workload/hydration/EVIDENCE.json"
+  },
+  "crossoverFollowup": {
+    "broadUnit": {
+      "tests": 1362,
+      "passed": 1325,
+      "failed": 0,
+      "skipped": 37
+    },
+    "finalFocused": {
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "realAuthPerSetup": 38,
+    "setups": 2,
+    "setupSummaries": [
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 77826.970291"
+      ],
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 75503.984042"
+      ]
+    ],
+    "bothProductionVariantsBuiltInBothStudies": true,
+    "changedFileLint": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "scopeNote": "Two analyzer tests were added after the broad suite began and pass in the final focused run. Failure-only diagnostic refinements are covered by the focused checks and complete repeat. Application source is unchanged.",
+    "evidence": "active-workload/crossover-2026-10-23-repeat/EVIDENCE.json"
   }
 }

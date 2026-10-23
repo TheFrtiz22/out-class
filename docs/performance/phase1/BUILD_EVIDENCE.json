@@ -54,5 +54,20 @@
     "patchAppliesToCurrentHead": true,
     "originalPatchUnchanged": true,
     "evidence": "active-workload/hydration/EVIDENCE.json"
+  },
+  "crossoverFollowup": {
+    "sourceCommit": "97db164e133809ab2852d7ebcc946b2e92ef1d4f",
+    "applicationChanged": false,
+    "variants": {
+      "A": {
+        "buildId": "MpDONL-vcVvld22UG3Rid",
+        "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+      },
+      "B": {
+        "buildId": "In7QdSHO2E9nJwaIuJ-Q8",
+        "layoutSha256": "5811ce91b3e313df17b327d44f308f4745a2ef00d10e0e4c0a69afff0095dd3a"
+      }
+    },
+    "evidence": "active-workload/crossover-2026-10-23-repeat/EVIDENCE.json"
   }
 }

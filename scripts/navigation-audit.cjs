@@ -8,7 +8,8 @@ const { randomUUID } = require('node:crypto');
 const { chromium } = require('playwright');
 const { PrismaClient } = require('@prisma/client');
 const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
-const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--hydration-fixture'));
+assert.ok(!(process.argv.includes('--hydration-fixture') && process.argv.includes('--crossover-fixture')), 'Choose one disposable fixture');
+const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--crossover-fixture') ? 'crossover' : process.argv.includes('--hydration-fixture'));
 const root = profile.root;
 const fixtureFile = path.join(root, 'navigation-fixture.json');
 const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
@@ -287,7 +288,7 @@ async function main() {
           // Prepare users sequentially. Only measured destination clicks form the burst.
           const prepare=async participant=>{
             const s=await session(participant);sessions[participant]=s;s.stage='initial';await open(s,'applicants');s.stage='prepared';
-            if(condition==='warm'){if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);}
+            if(condition==='warm'){s.stage='warmup_interviews';if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);s.stage='warmup_applicants';await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);s.stage='prepared';}
           };
           if(process.argv.includes('--parallel-initial-loads')){
             assert.ok(process.argv.includes('--diagnose-hydration'),'Parallel initial loads are a separate diagnostic scenario');
@@ -305,7 +306,7 @@ async function main() {
             for(const result of outcomes)if(result.status==='rejected')throw result.reason;
           }finally{clearTimeout(barrierTimeout);stopped=true;await poll;}
           console.log('active rooms '+clients+' clients '+condition+' wave '+(wave+1)+'/'+sampleCount+' complete');
-        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099')})).catch(()=>null),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
+        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),roomSection:!!document.querySelector('section[aria-label="Interview rooms"]'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099'),emptyRooms:document.body.textContent.includes('No assigned interviews.'),accessChanged:document.body.textContent.includes('Your access changed'),tool:['applicants','interviews','decisions','overview'].find(v=>new URLSearchParams(location.search).get('tool')===v)||null})).catch(()=>null),requests:s.requests.slice(-16).map(r=>({route:r.route,status:r.status,failed:!!r.failed,pending:r.end===null,type:r.type})),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
         finally{await Promise.allSettled(sessions.filter(Boolean).map(s=>s.context.close()));checkpoint();}
         if(process.argv.includes('--stop-after-hydration')&&allSamples.some(s=>s.hydration?.length))break workloadWaves;
       }

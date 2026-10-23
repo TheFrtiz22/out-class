@@ -1,0 +1,55 @@
+{
+  "interpretation": "50 ms backend samples; per-client limit 8 is not a global cap; short waits may be missed.",
+  "blocks": {
+    "0": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "1": {
+      "variant": "B",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "2": {
+      "variant": "B",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "3": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "4": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "5": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "6": {
+      "variant": "B",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "7": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "8": {
+      "variant": "A",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    },
+    "9": {
+      "variant": "B",
+      "connectionMax": 8,
+      "lockWaitingMax": 0
+    }
+  }
+}

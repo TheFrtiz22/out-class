@@ -29,5 +29,23 @@
     "apiPort": 58321,
     "databasePort": 58322,
     "privateRuntimeLogsRemoved": true
+  },
+  "crossoverFollowup": {
+    "first": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "repeat": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "diagnosticWatcherStopped": true,
+    "listener3119Closed": true,
+    "reservedContainersRemaining": 0,
+    "privateRuntimeLogsRemoved": true
   }
 }

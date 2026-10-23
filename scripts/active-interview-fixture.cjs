@@ -8,7 +8,7 @@ const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.
 const { fixtureProfile } = require('./navigation-fixture-config.cjs');
 
 async function activeInterviewFixture(config, navigation) {
-  const profile = fixtureProfile(config.projectId === 'outclass-hydration-e2e');
+  const profile = fixtureProfile(config.projectId === 'outclass-navigation-crossover-e2e' ? 'crossover' : config.projectId === 'outclass-hydration-e2e');
   const filename = path.join(profile.root, 'active-interview-fixture.json');
   // Revalidate even when called from another harness.
   const guarded = profile.readConfig(path.join(path.dirname(filename), 'config.json'));
