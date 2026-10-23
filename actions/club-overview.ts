@@ -1,4 +1,5 @@
 "use server";
+import { dashboardSummary, dashboardReviewQueue } from "@/utils/dashboard-summary";
 import { z } from "zod";
 import { prisma } from "@/utils/prisma";
 import { requireClubMembership, requireClubPermission } from "@/utils/auth";
@@ -10,7 +11,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
     hasPermission(membership, "applicants.identify") ||
     hasPermission(membership, "applications.review");
   const now = new Date();
-  const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions] = await Promise.all([
+  const [club, meeting, work, awaitingReview, recruitment, upcomingInterviews, votingSessions, operations] = await Promise.all([
     prisma.club.findUniqueOrThrow({
       where: { id: clubId },
       select: { id: true, name: true, tagline: true },
@@ -30,8 +31,8 @@ export async function getClubWorkspaceOverview(clubId: string) {
       where: {
         memberId: membership.id,
         reviewedAt: null,
-        submittedAt: null,
-        task: { clubId, status: { not: "DONE" } },
+        OR: [{ submittedAt: null }, { revisionRequestedAt: { not: null } }],
+        task: { clubId, status: { notIn: ["DRAFT", "DONE"] } },
       },
       select: {
         id: true,
@@ -46,6 +47,7 @@ export async function getClubWorkspaceOverview(clubId: string) {
             task: { clubId },
             submittedAt: { not: null },
             reviewedAt: null,
+            revisionRequestedAt: null,
           },
         })
       : Promise.resolve(null),
@@ -68,8 +70,12 @@ export async function getClubWorkspaceOverview(clubId: string) {
     hasPermission(membership, "decisions.manage")
       ? prisma.votingSession.findMany({ where: { clubId, state: { in: ["OPEN", "ACTIVE"] } }, select: { id: true, state: true }, take: 10, orderBy: { createdAt: "desc" } })
       : Promise.resolve(null),
+    dashboardSummary(clubId, membership),
   ]);
+  const current = await requireClubMembership(clubId);
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw new Error("Workspace access changed. Refresh and try again.");
   return {
+    operations,
     club,
     membership: {
       id: membership.id,
@@ -98,4 +104,14 @@ export async function getWorkspaceRounds(clubId: string) {
     orderBy: { order: "asc" },
     select: { id: true, name: true, anonymousReview: true },
   });
+}
+
+export async function getDashboardReviewQueue(clubId: string, roundId: string) {
+  z.string().uuid().parse(clubId); z.string().uuid().parse(roundId);
+  const { membership } = await requireClubMembership(clubId);
+  if (!hasPermission(membership, "applications.review") && !hasPermission(membership, "applicants.identify")) throw new Error("Review access required.");
+  const rows = await dashboardReviewQueue(clubId, membership, roundId);
+  const current = await requireClubMembership(clubId);
+  if (JSON.stringify(current.membership) !== JSON.stringify(membership)) throw new Error("Review access changed.");
+  return rows;
 }

@@ -1,27 +1,14 @@
-const { test } = require("node:test")
-const assert = require("node:assert/strict")
-const fs = require("node:fs")
-const ts = require("typescript")
-const source = fs.readFileSync("lib/dashboard-actions.ts", "utf8")
-const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText
-const mod = { exports: {} }
-new Function("module", "exports", code)(mod, mod.exports)
-const { prioritizeDashboardActions } = mod.exports
-
-test("prioritizes only real actionable records", () => {
- const actions = [
-  { id: "future", title: "Meeting", description: "Tomorrow", href: "/meeting", urgency: "normal", dueAt: "2026-10-23" },
-  { id: "missing", title: "No work", description: "", href: "/tasks", urgency: "critical", count: 0 },
-  { id: "urgent", title: "Review", description: "Applicant", href: "/applications", urgency: "critical", count: 2 },
-  { id: "forbidden", title: "No route", description: "", href: "", urgency: "critical", count: 1 },
- ]
- assert.deepEqual(prioritizeDashboardActions(actions).map(x=>x.id), ["urgent", "future"])
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript')
+const mod={exports:{}};new Function('module','exports',ts.transpileModule(fs.readFileSync('lib/dashboard-actions.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(mod,mod.exports)
+const {dashboardDeadlineState:state}=mod.exports,now=Date.parse('2026-10-22T12:00:00Z')
+test('urgency requires a real deadline or missing prerequisite, never volume',()=>{
+ assert.equal(state(null,true,now),'information')
+ assert.equal(state('2026-10-22T11:59:00Z',true,now),'urgent')
+ assert.equal(state('2026-10-24T12:00:00Z',true,now),'soon')
+ assert.equal(state('2026-10-30',true,now),'information')
+ assert.equal(state('invalid',true,now),'information')
 })
-test("same-urgency records sort by due date with a deterministic tie break", () => {
- const actions = [
-  { id: "z", title: "Z", href: "/z", description: "", urgency: "normal" },
-  { id: "b", title: "B", href: "/b", description: "", urgency: "normal", dueAt: "2026-10-24" },
-  { id: "a", title: "A", href: "/a", description: "", urgency: "normal", dueAt: "2026-10-23" }
- ]
- assert.deepEqual(prioritizeDashboardActions(actions, 2).map(x=>x.id), ["a", "b"])
+test('unavailable does not become healthy or a zero backlog',()=>{
+ assert.equal(state(null,false,now,false),'unavailable')
+ assert.equal(state('2026-10-01',false,now),'healthy')
 })

@@ -22,7 +22,7 @@ import { revalidatePath } from "next/cache";
 import { interviewCapabilities } from "@/lib/interview-access";
 import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
-const pipelineFilter = z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
+const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
@@ -49,7 +49,7 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
       if (!selectedRound || !genderVisibility(selectedRound.applicantDisplay) || !hasPermission(membership, "applications.review")) throw new Error("Gender visibility must be explicitly enabled for this round.");
       if (!selectedRound.anonymousReview && !hasPermission(membership, "applicants.identify")) throw new Error("Applicant access denied.");
     }
-    const where = { clubId, status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
+    const where = { clubId, ...(filter.applicationId ? { id: filter.applicationId } : {}), status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
     phase = "applications";
     const applications = await tx.application.findMany({
       where: {

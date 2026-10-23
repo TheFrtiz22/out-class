@@ -4,7 +4,7 @@ import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
-import { getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
+import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
 import { getClubPipeline } from "@/actions/crm"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
@@ -43,9 +43,10 @@ export async function GET(request: Request) {
       case "availabilityOverview": data = await (await import("@/actions/availability")).getAvailabilityOverview(z.tuple([z.unknown()]).parse(args)[0]); break
       case "staffingCoverage": data = await (await import("@/actions/availability")).getRoundStaffingCoverage(z.tuple([z.unknown()]).parse(args)[0]); break
       case "panelWorkspace": data = await (await import("@/actions/panel-proposals")).getPanelProposalWorkspace(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
-      case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
+      case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break

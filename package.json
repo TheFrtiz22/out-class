@@ -18,6 +18,7 @@
     "db:deploy": "node scripts/check-migration-path.cjs && prisma migrate deploy",
     "db:check-path": "node scripts/check-migration-path.cjs",
     "db:check-release": "node scripts/check-release-database.cjs",
+    "test:dashboards:e2e": "node scripts/run-onboarding-e2e.cjs --dashboards",
     "test:application-writing:e2e": "node scripts/run-onboarding-e2e.cjs --application-writing",
     "test:settings:e2e": "node scripts/run-onboarding-e2e.cjs --settings",
     "test:onboarding:e2e": "node scripts/run-onboarding-e2e.cjs",

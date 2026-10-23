@@ -26,13 +26,13 @@ async function fixture() {
     '@/actions/club-access': empty, '@/actions/invitation-emails': empty,
   }
   for (const name of ['recruitment-cycles','decision-schedules','recruitment-attendance-summary','reveal-applicant','live-voting/board-decision-mode','demo-workspace','availability/interviewer-eligibility','invitation-schedules','invitation-email-controls','club-access-editor','roster-csv-importer']) mocks['@/components/'+name] = empty
-  const overview = { club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }
+  const overview = { operations:{offers:[],team:null,asOf:new Date(),intake:null,cycles:[],rounds:[],queue:[],meetings:[],announcements:[],tasks:{assigned:0,completed:0,overdue:0,awaitingReview:0},reviewWork:[],bookings:[],votes:[],scheduled:[]}, club: { id: 'club', name: 'Sample Club' }, membership: owner, meeting: null, work: [], awaitingReview: 0, recruitment: [{ status: 'IN_REVIEW', count: 2 }] }
   const entry = `import React,{useState}from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';import{OrganizationMemberManagement}from'@/components/organization-member-management';import{OrganizationSetupChecklist}from'@/components/organization-setup-checklist';import{ManagerOverview}from'@/components/manager-overview';import{AudienceEditor}from'@/components/recipient-audiences';import{MeetingGroupInvitation}from'@/components/meeting-group-invitation';
   const catalog={groups:[],rosterLabels:['Boys','Girls'],gradYears:[2027,2030],cohorts:[],cycles:[],rounds:[],events:[]};
   function App(){const[value,setValue]=useState({include:[{source:'MEMBERS',gradYears:[],accessRoles:[],cohorts:[],labels:[]}],exclude:[]});const tab=new URLSearchParams(location.search).get('tab');return <div data-product-shell className="p-6"><main id="workspace-content">{tab==='members'?<OrganizationMemberManagement clubId="club"/>:tab==='overview'?<><ManagerOverview data={${JSON.stringify(overview)}} showRecaps={false}/><OrganizationSetupChecklist clubId="club" compact/></>:tab==='audiences'?<><AudienceEditor catalog={catalog} value={value} onChange={setValue}/><output aria-label="Selected audience">{JSON.stringify(value)}</output><MeetingGroupInvitation meeting={{id:'meeting',clubId:'club',title:'Group meeting',date:'2026-10-25T12:00:00Z',location:'Room 1'}}/></>:<LiveLeaderWorkspace scoped/>}</main></div>};createRoot(document.getElementById('root')).render(<App/>);`
   const js = bundle(entry, mocks); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-workspace-ui-'))
   cp.execFileSync(process.execPath, [path.join(__dirname, 'helpers/interview-browser-css.cjs'), path.join(tmp, 'style.css')])
-  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/clubs/manager-overview.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
+  const css = fs.readFileSync(path.join(tmp, 'style.css'), 'utf8') + ['components/product/operational-dashboard.css','components/clubs/manager-overview.css','components/shell/authenticated-product.css','components/shell/responsive-workspace.css'].map(file=>fs.readFileSync(file,'utf8')).join('\n') + '@font-face{font-family:SourceSans;src:url(/source-sans.woff2);font-weight:200 900}@font-face{font-family:Caslon;src:url(/caslon.woff2);font-weight:400 700}:root{--font-source-sans-3:SourceSans;--font-libre-caslon-text:Caslon}body{font-family:SourceSans,sans-serif}'
   const server = http.createServer(async (req, res) => {
     try {
       if(req.url==='/source-sans.woff2'||req.url==='/caslon.woff2'){res.setHeader('content-type','font/woff2');res.end(fs.readFileSync(req.url==='/source-sans.woff2'?'app/fonts/source-sans-3/source-sans-3-upright.woff2':'app/fonts/libre-caslon-text/libre-caslon-text-variable.woff2'));return}
@@ -162,13 +162,13 @@ test('browser: sortable lists, wide applicant profile, drag/drop, quick decision
   assert.deepEqual(f.state().writes.at(-1).audienceSpec.include[0].labels,['Girls'])
   await page.goto(f.base+'/?tab=overview')
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).waitFor()
-  const panels=page.locator('.oc-manager-overview-grid > .oc-overview-panel')
-  assert.equal(await panels.count(),2)
-  await page.getByRole('heading',{name:'Your next actions',exact:true}).waitFor()
-  assert.equal(await page.locator('.oc-priority-queue').count(),1)
+  await page.getByRole('heading',{name:'Your work',exact:true}).waitFor()
+  await page.getByRole('heading',{name:'Meet this week',exact:true}).waitFor()
+  assert.equal(await page.locator('.oc-command-section').count(),2)
+  assert.equal(await page.getByText('No outstanding assignments. New work will appear here.',{exact:true}).count(),1)
   await page.screenshot({path:'/tmp/outclass-workspace-overview-desktop.png',fullPage:true})
   await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).click()
-  await page.reload();await page.getByRole('heading',{name:'Your next actions',exact:true}).waitFor()
+  await page.reload();await page.getByRole('heading',{name:'Your work',exact:true}).waitFor()
   assert.equal(await page.getByRole('button',{name:'Dismiss setup introduction',exact:true}).count(),0)
   await page.setViewportSize({width:390,height:844})
   await page.screenshot({path:'/tmp/outclass-workspace-overview-mobile.png',fullPage:true})

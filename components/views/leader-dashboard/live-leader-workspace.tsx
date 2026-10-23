@@ -120,7 +120,16 @@ export function LiveLeaderWorkspace({ scoped = false, decisionsOnly = false, rej
   )
 }
 
-function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData }: { membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+/** Dashboard entry loads one applicant through the same masked CRM projection and review form. */
+export function ApplicantReviewPreview({ clubId, applicationId, onClose, onChanged, onNext }: { clubId: string; applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }) {
+  const { user } = useAuth()
+  const membership = user?.memberships.find(m => m.clubId === clubId)
+  if (!membership) return <p role="alert">Applicant access unavailable.</p>
+  return <ClubWorkspace key={applicationId} membership={membership} preview={{ applicationId, onClose, onChanged, onNext }} />
+}
+
+function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false, initialData = null, onData, preview }: { preview?: { applicationId: string; onClose: () => void; onChanged: () => void; onNext?: () => void }; membership: ExtendedMembership; decisionsOnly?: boolean; rejectedOnly?: boolean; initialData?: Pipeline | null; onData?: (data: Pipeline | null) => void }) {
+  const previewId = preview?.applicationId
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
   const [data, setData] = useState<Pipeline | null>(initialData)
@@ -168,7 +177,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     setLoading(!retained.current)
     setError("")
     
-    getClubPipeline(membership.clubId, { ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+    getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
       .then((result) => {
         if (current) setData(result)
       })
@@ -181,7 +190,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     return () => {
       current = false
     }
-  }, [membership.clubId, revision, round, gender, showGenderCounts])
+  }, [membership.clubId, revision, round, gender, showGenderCounts, previewId])
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       const element = event.target as HTMLElement
@@ -245,6 +254,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       membership.id,
     ],
   )
+  const previewOpened = useRef(false), previewOpen = useRef<(app: Candidate) => void>(() => {})
+  useEffect(() => {
+    if (!previewId || !data || loading || previewOpened.current) return
+    const target = data.applications.find(app => app.id === previewId)
+    if (target) { previewOpened.current = true; previewOpen.current(target) }
+  }, [previewId, data, loading])
   const active = applicants.find((app) => app.id === activeId)
   const canEvaluate = active?.canEvaluate === true
   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
@@ -267,7 +282,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (busy) return
     const apply = () => {
     setActiveId(app?.id || null)
-    if (!app) setQuickQueue(null)
+    if (!app) { setQuickQueue(null); preview?.onClose() }
     setMessage("")
     setDecision("")
     if (app) {
@@ -289,9 +304,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           ?.focus()
       })
     }
-    if (active?.canEvaluate) void draftSave.flush().then(apply).catch(() => {})
+    if (active?.canEvaluate && (draftSave.dirty || draftSave.saving)) void draftSave.flush().then(apply).catch(() => {})
     else apply()
   }
+  previewOpen.current = open
   async function mutate(kind: "review" | "round" | "decision") {
     if (!active || mutating.current) return
     if (kind === "review" && (!score || Number(score) < 1 || Number(score) > 10)) {
@@ -299,8 +315,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       return
     }
     mutating.current = true
-    const previous = data
-    if (kind === "decision") setData(current => current ? { ...current, applications: current.applications.map(app => app.id === active.id ? { ...app, status: decision as "ACCEPTED" } : app) } : current)
     setBusy(true)
     setMessage("")
     try {
@@ -353,6 +367,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         setNotes(mine?.notes || "")
         setBaseline(JSON.stringify([mine ? String(mine.score) : "", mine?.notes || ""]))
         setMessage("Round updated. Moving out of an interview round returns interview applicants to review.")
+        preview?.onClose()
       } else {
         await setApplicationStatus({
           clubId: membership.clubId,
@@ -360,13 +375,15 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
           status: decision as "ACCEPTED",
           expectedStatus: active.status === "DRAFTING" ? undefined : active.status,
         })
-        // Only the status field is optimistic; identity and privacy projections stay server-owned.
+        // Apply the acknowledged status only after the server confirms publication.
+        setData(current => current ? { ...current, applications: current.applications.map(app => app.id === active.id ? { ...app, status: decision as "ACCEPTED" } : app) } : current)
+        // The following read refreshes canonical offer and privacy state.
         setDecision("")
         setRevision(v => v + 1)
         setMessage("Application status updated.")
       }
+      preview?.onChanged()
     } catch {
-      if (kind === "decision") setData(previous)
       setMessage(
         "This change could not be saved. The applicant may have changed or your access may have changed. Your entries are still here; save or copy your review, then reload before retrying.",
       )
@@ -384,7 +401,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
     try {
-      const refreshed = await getClubPipeline(membership.clubId, { ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+      const refreshed = await getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
       setData(refreshed)
       return refreshed
     } catch (error) {
@@ -441,6 +458,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     )
   return (
     <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
+      <div hidden={!!preview}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
         <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
@@ -643,6 +661,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
       {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      </div>
+      {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
       <Sheet
         open={!!active}
         onOpenChange={(value) => {
@@ -651,12 +671,14 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       >
         <SheetContent
           className="oc-workspace-drawer oc-applicant-drawer w-full overflow-y-auto p-6 sm:max-w-[96vw]"
+          onCloseAutoFocus={event => { if (previewId) { event.preventDefault(); requestAnimationFrame(() => (document.querySelector<HTMLElement>(`[data-applicant-id="${CSS.escape(previewId)}"]`) ?? document.getElementById("dashboard-reviews"))?.focus({ preventScroll: true })) } }}
           onInteractOutside={(event) => {
             if (dirty || busy) event.preventDefault()
           }}
         >
           {active && (
             <>
+              {preview?.onNext && <Button variant="outline" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}
               <div className="oc-applicant-drawer-scroll">
               <SheetHeader className="px-0 pr-10">
                 <Avatar className="size-12">
@@ -880,7 +902,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 </p>
       {rejectedOnly&&active&&hasPermission(membership,"decisions.manage")&&hasPermission(membership,"applicants.identify")&&<div className="space-y-2"><label>Reason for reconsideration (at least 10 characters)<textarea className="block w-full border rounded p-2" maxLength={1000} value={reconsiderReason} onChange={e=>setReconsiderReason(e.target.value)}/></label><Button disabled={busy||reconsiderReason.trim().length<10} onClick={async()=>{setBusy(true);try{await reconsiderRejectedApplication({clubId:membership.clubId,applicationId:active.id,expectedGuard:active.publicationGuard,reason:reconsiderReason});setReconsiderReason("");setActiveId(null);setRevision(v=>v+1);setMessage("Application returned to review. Historical decisions are preserved.")}catch{setMessage("Reconsideration failed. Refresh and check access.")}finally{setBusy(false)}}}>Reconsider selected application</Button></div>}
                 {active.recruitmentOffer?.status === "ACCEPTED" && <p className="text-xs text-muted-foreground">This offer was accepted. Decision changes preserve membership; use member management for access changes.</p>}
-                {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Only pending offers can be rescinded. Accepted memberships must be managed through member management.</p><Button variant="outline" disabled={busy || dirty} onClick={async()=>{setBusy(true);try{await revokeRecruitmentOffer(membership.clubId,active.id);setRevision(v => v + 1);setMessage("Pending offer rescinded.")}catch{setMessage("Only pending offers can be rescinded. Manage existing members through member management.")}finally{setBusy(false)}}}>Rescind pending offer</Button></div>}
+                {active.status === "ACCEPTED" && active.recruitmentOffer?.status === "PENDING" && hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Only pending offers can be rescinded. Accepted memberships must be managed through member management.</p><Button variant="outline" disabled={busy || dirty} onClick={async()=>{setBusy(true);try{await revokeRecruitmentOffer(membership.clubId,active.id);setRevision(v => v + 1);setMessage("Pending offer rescinded.");preview?.onChanged()}catch{setMessage("Only pending offers can be rescinded. Manage existing members through member management.")}finally{setBusy(false)}}}>Rescind pending offer</Button></div>}
                 {hasPermission(membership, "decisions.manage") && hasPermission(membership, "applicants.identify") ? (
                   <div className="flex flex-wrap gap-2">
                     {(["IN_REVIEW", "INTERVIEWING", "WAITLISTED", "ACCEPTED", "REJECTED"] as const)

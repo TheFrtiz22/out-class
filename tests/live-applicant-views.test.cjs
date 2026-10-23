@@ -168,3 +168,10 @@ test('board drops require an explicit outcome and preserve expected status',asyn
  assert.equal(props.canMove(props.applicants[0],'closed'),true);assert.equal(props.canMove(props.applicants[0],'interview'),false);
  props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
 });
+
+test('decision status stays unchanged until the server acknowledges publication',async()=>{
+ const h=harness();h.render();await flush();let tree=h.render();view(tree).props.open(view(tree).props.applicants[0]);tree=h.render();button(tree,'Accepted').props.onClick();tree=h.render()
+ const write=h.api.setApplicationStatus;let release;h.api.setApplicationStatus=async input=>{await new Promise(resolve=>{release=resolve});return write(input)}
+ button(tree,'Send now').props.onClick();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'IN_REVIEW');assert.equal(h.calls.some(c=>c[0]==='status'),false)
+ release();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
+})

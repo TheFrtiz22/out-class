@@ -232,6 +232,11 @@ test("saved demo seasons upgrade tasks without resetting recruiting state",()=>{
 test("club workspace overview uses persisted demo activity and excludes unrelated clubs without server calls",async()=>{
  const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const s=demoStore.get(),id=s.clubs[0].id;
  const overview=await api.getClubWorkspaceOverview(id);assert.equal(overview.club.name,'MII');assert.equal(overview.membership.isOwner,true);assert.ok(overview.work.length);assert.ok(overview.awaitingReview>0);assert.ok(overview.recruitment.length);
+ for(const key of ['cycles','rounds','queue','meetings','announcements','reviewWork','bookings','votes','offers','scheduled'])assert.ok(Array.isArray(overview.operations[key]),key+' retains its live dashboard DTO contract');
+ assert.ok(overview.operations.asOf instanceof Date);for(const key of ['assigned','completed','overdue'])assert.equal(typeof overview.operations.tasks[key],'number');
+ assert.equal(overview.operations.team.assigned,s.tasks.filter(t=>t.clubId===id&&t.kind==='TASK'&&t.status!=='DRAFT').reduce((n,t)=>n+t.assignments.length,0));
+ assert.ok(overview.operations.offers.length);
+ for(const round of overview.operations.rounds){const queue=await api.getDashboardReviewQueue(id,round.id);assert.equal(queue.length,Math.min(12,round.pending));assert.ok(queue.every(a=>a.roundId===round.id));}
  await assert.rejects(api.getClubWorkspaceOverview(s.clubs[1].id),/unavailable/);await assert.rejects(api.getWorkspaceRounds(s.clubs[1].id),/limited to MII/);
  const task=s.tasks.find(t=>t.kind==='TASK'&&t.assignments.some(a=>a.memberId===overview.membership.id&&!a.submittedAt)),assignment=task.assignments.find(a=>a.memberId===overview.membership.id);
  await api.submitTask({assignmentId:assignment.id,revision:assignment.revision,text:'Fictional finished work',link:'',fileIds:[]});const after=await api.getClubWorkspaceOverview(id);assert.ok(!after.work.some(w=>w.id===assignment.id));assert.equal(after.awaitingReview,overview.awaitingReview+1);assert.equal(h.calls(),0)
