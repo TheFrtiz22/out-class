@@ -7,7 +7,7 @@
 .oc-overview-panel > header h2 { display: flex; align-items: center; gap: 10px; color: var(--primary); font-size: var(--oc-text-section); font-weight: var(--oc-weight-semibold); }
 .oc-overview-panel > header svg { flex-shrink: 0; }
 .oc-overview-panel > header a { gap: 7px; color: #a63e10; font-size: var(--oc-size-12); text-decoration: none; }
-.oc-overview-audience { display: inline-block; padding: 5px 10px; font-size: var(--oc-size-11); border-radius: 14px; color: #345781; background: #eef3f9; }
+.oc-overview-audience { display: inline-block; padding: 5px 10px; font-size: var(--oc-size-11); border-radius: 0; border-left: 2px solid var(--border); color: var(--foreground); background: transparent; }
 .oc-overview-meeting h3 { margin: 12px 0; color: var(--primary); font-weight: var(--oc-weight-semibold); font-size: var(--oc-text-card); line-height: var(--oc-leading-heading); font-family: var(--oc-font-sans); overflow-wrap: anywhere; }
 .oc-overview-meeting-fact { display: flex; align-items: start; gap: 10px; margin-top: 12px; font-size: var(--oc-text-small); line-height: var(--oc-leading-body); color: #425670; overflow-wrap: anywhere; }
 .oc-overview-meeting-fact svg { margin-top: 2px; flex-shrink: 0; }
@@ -68,7 +68,7 @@
 [data-product-shell] .oc-overview-follow-up p { margin-top: .25rem; }
 [data-product-shell] .oc-overview-team-link { margin-top: .25rem; }
 
-[data-product-shell] .oc-manager-overview-grid > .oc-overview-panel { min-height: 220px; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); display: flex; flex-direction: column; background: var(--oc-surface-blue); }
+[data-product-shell] .oc-manager-overview-grid > .oc-overview-panel { min-height: 0; padding: var(--oc-density-inset); border-radius: var(--oc-radius-xl); display: flex; flex-direction: column; background: var(--oc-surface-blue); }
 [data-product-shell] .oc-manager-overview-grid > .oc-overview-follow-up,
 [data-product-shell] .oc-manager-overview-grid > .oc-overview-updates { background: var(--oc-surface-warm); }
 .oc-manager-overview-grid > .oc-overview-panel > .oc-overview-team-link { margin-top: auto; padding-top: 12px; }

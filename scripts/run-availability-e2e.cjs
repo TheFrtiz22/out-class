@@ -4,7 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), os = require('node:o
 const { spawn, spawnSync } = require('node:child_process'), { randomUUID } = require('node:crypto')
 const { PrismaClient } = require('@prisma/client'), { createClient } = require('@supabase/supabase-js')
 const repo = path.resolve(__dirname, '..'), root = path.join(os.tmpdir(), 'outclass-availability-e2e'), project = 'outclass-availability-e2e'
-const audit = process.argv.includes('--audit'); const buildOnly = process.argv.includes('--build-only'); const resume = process.argv.includes('--resume'); const ux = process.argv.includes('--ux'); const publication = process.argv.includes('--publication'); const panels = process.argv.includes('--panels')||publication||ux; const keep = process.argv.includes('--keep'); let server, touched = false
+const audit = process.argv.includes('--audit'); const buildOnly = process.argv.includes('--build-only'); const resume = process.argv.includes('--resume'); const ux = process.argv.includes('--ux'); const publicationNavigation = process.argv.includes('--publication-navigation'); const publication = process.argv.includes('--publication')||publicationNavigation; const panels = process.argv.includes('--panels')||publication||ux; const keep = process.argv.includes('--keep'); let server, touched = false
 const supabase = path.join(repo, 'node_modules/supabase/dist/supabase.js')
 function run(args, log, env, cwd = repo) {
   const fd = fs.openSync(path.join(root, log + '.log'), 'w')
@@ -100,7 +100,7 @@ async function main() {
     await new Promise(resolve => setTimeout(resolve, 100))
   }
   if (!ready) throw Error('Reserved scheduling server did not become ready; inspect server.log.')
-  await require(audit?'../tests/scheduling-quality-browser.cjs':ux?'../tests/availability-scheduling-browser.cjs':publication?'../tests/panel-publication-browser.cjs':panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
+  await require(publicationNavigation?'../tests/published-navigation-browser.cjs':audit?'../tests/scheduling-quality-browser.cjs':ux?'../tests/availability-scheduling-browser.cjs':publication?'../tests/panel-publication-browser.cjs':panels ? '../tests/panel-proposals-browser.cjs' : '../tests/availability-browser.cjs').verify(settings, root)
   console.log('Browser → actual server actions → local Prisma/Postgres: PASS')
   if (keep) { server.unref(); fs.writeFileSync(path.join(root, 'server.pid'), String(server.pid)); console.log('Local fixture retained at ' + settings.appUrl) }
 }

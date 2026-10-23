@@ -39,6 +39,7 @@ import * as roomApi from "@/actions/interview-rooms"
 import * as demoRoomApi from "@/lib/demo/interview-rooms"
 import * as recruitingRules from "@/actions/recruiting-rules"
 import * as demoRecruitingRules from "@/lib/demo/recruiting-rules"
+import { demoDashboardSummary } from "@/lib/demo/dashboard-summary"
 import * as clubOverview from "@/actions/club-overview"
 import * as tasksApi from "@/actions/tasks"
 import * as demoTasks from "@/lib/demo/tasks"
@@ -123,12 +124,12 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
   const rounds = s.clubs.find(c => c.id === clubId)!.rounds;
   const selectedRound = rounds.find(r => r.id === filter.roundId);
   if ((filter.gender || filter.genderCounts) && (!selectedRound || !genderVisibility(s.applicantDisplay[selectedRound.id]?.config))) throw Error("Gender visibility must be explicitly enabled for this round.");
-  const scoped = s.applications.filter(a => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId));
+  const scoped = s.applications.filter(a => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.applicationId || a.id === filter.applicationId) && (!filter.roundId || a.roundId === filter.roundId));
   return {
     genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: scoped.filter(a => s.students.find(u => u.id === a.studentId)?.profile.gender === gender).length })) : null,
     rounds: rounds.map(r => ({ ...r, type: /interview/i.test(r.name) ? "INTERVIEW" : "CUSTOM", genderVisible: genderVisibility(s.applicantDisplay[r.id]?.config) })),
     applications: s.applications
-      .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
+      .filter((a) => a.clubId === clubId && a.status !== "DRAFTING" && (!filter.applicationId || a.id === filter.applicationId) && (!filter.roundId || a.roundId === filter.roundId) && (!filter.gender || s.students.find(u => u.id === a.studentId)?.profile.gender === filter.gender))
       .map((a) => { const app = joinedApplication(a.id); const projected = s.clubs.find(c => c.id === clubId)?.rounds.find(r => r.id === a.roundId)?.anonymousReview ? anonymousApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)) : identifiedApplication(app as unknown as ReviewApplication, genderVisibility(s.applicantDisplay[a.roundId]?.config)); const ownSubmitted = a.evaluations.some(e=>e.interviewerId===demoMember().id&&e.roundId===a.roundId&&e.submittedAt); const assigned=s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===a.roundId&&g.memberId===demoMember().id&&!g.revokedAt);const caps=interviewCapabilities(demoMember());const self=a.studentId===demoMember().userId;const allowed=!self&&((caps.readClosing&&!assigned)||caps.participate&&assigned&&ownSubmitted); const roundScore=allowed?demoInterviews.getInterviewRoundScore({clubId,applicationId:a.id,roundId:a.roundId}):null;return { ...projected, evaluations: projected.evaluations.filter(e=>!self&&e.submittedAt&&(caps.participate&&e.interviewerId===demoMember().id&&s.interviewFoundation.assignments.some(g=>g.applicationId===a.id&&g.roundId===e.roundId&&g.memberId===demoMember().id&&!g.revokedAt)||allowed&&e.roundId===a.roundId)), roundScore, canEvaluate: !self && !ownSubmitted && (s.clubs.find(c=>c.id===clubId)?.rounds.find(r=>r.id===a.roundId)?.anonymousReview ? caps.participate : caps.participate && assigned), recruitmentOffer: s.recruitmentOffers.find(o=>o.applicationId===a.id) ?? null } }),
   }
 })
@@ -412,13 +413,16 @@ export const getClubWorkspaceOverview = adapt((...args: Parameters<typeof clubOv
  if(!membership||!club)throw new Error("Club workspace access unavailable.")
  const manage=clubId===s.clubs[0].id,now=new Date()
  return {
+  operations:demoDashboardSummary(clubId,membership.id),
+  upcomingInterviews:null,votingSessions:null,
   club:{id:club.id,name:club.name,tagline:""},membership:{id:membership.id,isOwner:membership.isOwner,permissions:membership.permissions,interviewOffices:membership.interviewOffices,status:membership.status},
   meeting:s.meetings.filter(m=>m.clubId===clubId&&m.date>=now).sort((a,b)=>+a.date-+b.date).map(m=>({id:m.id,title:m.title,date:m.date,location:m.location,audience:m.audience}))[0]??null,
-  work:s.tasks.filter(t=>t.clubId===clubId&&t.status!=="DONE").flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&!a.submittedAt&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
+  work:s.tasks.filter(t=>t.clubId===clubId&&!["DRAFT","DONE"].includes(t.status)).flatMap(t=>t.assignments.filter(a=>a.memberId===membership.id&&(!a.submittedAt||a.revisionRequestedAt)&&!a.reviewedAt).map(a=>({id:a.id,task:{id:t.id,title:t.title,dueAt:t.dueAt,kind:t.kind}}))).sort((a,b)=>(a.task.dueAt?+a.task.dueAt:Infinity)-(b.task.dueAt?+b.task.dueAt:Infinity)).slice(0,5),
   awaitingReview:manage?s.tasks.filter(t=>t.clubId===clubId).flatMap(t=>t.assignments).filter(a=>a.submittedAt&&!a.reviewedAt).length:null,
   recruitment:manage?[...new Set(s.applications.filter(a=>a.clubId===clubId&&a.status!=="DRAFTING").map(a=>a.status))].map(status=>({status,count:s.applications.filter(a=>a.clubId===clubId&&a.status===status).length})):null,
  }
 })
+export const getDashboardReviewQueue = adapt((...args: Parameters<typeof clubOverview.getDashboardReviewQueue>) => readWorkspace<Awaited<ReturnType<typeof clubOverview.getDashboardReviewQueue>>>("dashboardReviews", args), async (clubId, roundId) => { const data = await getClubWorkspaceOverview(clubId); return demoDashboardSummary(clubId, data.membership.id, roundId).queue })
 export const getWorkspaceRounds = adapt((...args: Parameters<typeof clubOverview.getWorkspaceRounds>) => readWorkspace<Awaited<ReturnType<typeof clubOverview.getWorkspaceRounds>>>("rounds", args), clubId=>{
  const s=demoStore.get();if(clubId!==s.clubs[0].id)throw new Error("Demo management is limited to MII.")
  return s.clubs[0].rounds.map(r=>({id:r.id,name:r.name,anonymousReview:r.anonymousReview}))

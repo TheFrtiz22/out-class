@@ -313,7 +313,7 @@ function LocalLeaderDashboardView() {
             <Button variant="outline" size="sm" className="h-8 text-xs">
               Major / Year
               {(majors.size > 0 || years.size > 0) && (
-                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
+                <span className="ml-1 oc-status-label bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
                   {majors.size + years.size}
                 </span>
               )}
@@ -353,7 +353,7 @@ function LocalLeaderDashboardView() {
             <Button variant="outline" size="sm" className="h-8 text-xs">
               <SlidersHorizontal className="size-3.5" /> Advanced Filters
               {(appliedMinSat !== null || appliedMinGpa !== null) && (
-                <span className="ml-1 rounded-full bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
+                <span className="ml-1 oc-status-label bg-secondary px-1.5 text-[length:var(--oc-size-10)] font-medium text-secondary-foreground">
                   {(appliedMinSat !== null ? 1 : 0) + (appliedMinGpa !== null ? 1 : 0)}
                 </span>
               )}
@@ -522,7 +522,7 @@ function LocalLeaderDashboardView() {
       {/* Floating bulk action bar */}
       {selected.size > 0 && (
         <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-          <div className="flex items-center gap-3 rounded-full bg-foreground px-4 py-2 shadow-none">
+          <div className="flex items-center gap-3 rounded-lg bg-foreground px-4 py-2 shadow-none">
             <span className="whitespace-nowrap text-xs font-medium text-white">
               {selected.size} candidate{selected.size === 1 ? "" : "s"} selected
             </span>
@@ -672,7 +672,7 @@ function LocalLeaderDashboardView() {
                 <TabsContent value="rubric" className="flex-1 space-y-6 overflow-y-auto p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="oc-card-heading ">Screening rubric</h3>
-                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                    <span className="oc-status-label bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                       {averageScore(active.id, active.score).toFixed(1)} avg
                     </span>
                   </div>
@@ -766,7 +766,7 @@ function LocalLeaderDashboardView() {
                                       <p className="text-xs text-muted-foreground">{stage.subtitle}</p>
                                     </div>
                                     {stage.score !== null && (
-                                      <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                                      <span className="shrink-0 oc-status-label bg-secondary px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                                         {stage.score.toFixed(1)}
                                         {stage.scoreLabel}
                                       </span>

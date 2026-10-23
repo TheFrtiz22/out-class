@@ -5,7 +5,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { bundle } = require('./browser-bundle.cjs')
 
-async function startFixture({ baseline = false } = {}) {
+async function startFixture({ baseline = false, baselineRef = 'aca0c8e6520a880b67113d720465a14a15361ea2' } = {}) {
   let answers = [{ questionId: 'essay', response: 'I enjoy bringing curious people together.' }], submitted = false
   const writes = []
   const entry = `
@@ -16,7 +16,7 @@ import {personalItems,personalModes} from '@/lib/product-navigation';
 const navigate=()=>{};
 createRoot(document.getElementById('root')).render(<ProductShell mode="apply" modes={personalModes} items={personalItems('apply')} active="applications" title="Applications" onSelect={navigate} onNavigate={navigate}><ApplicationTrackerView onNavigate={view=>{window.profileOpened=view}}/></ProductShell>);`
   const baselineFiles = ['components/views/application-tracker-view.tsx','components/applications/application-form.tsx','components/applications/question-field.tsx','components/club-logo.tsx']
-  const baselineMocks = baseline ? Object.fromEntries(baselineFiles.map(file => [ '@/'+file.replace(/\.tsx$/, ''), require('typescript').transpileModule(require('node:child_process').execFileSync('git',['show','HEAD:'+file],{encoding:'utf8'}), {compilerOptions:{module:require('typescript').ModuleKind.CommonJS,jsx:require('typescript').JsxEmit.ReactJSX,esModuleInterop:true,target:require('typescript').ScriptTarget.ES2022}}).outputText ])) : {}
+  const baselineMocks = baseline ? Object.fromEntries(baselineFiles.map(file => [ '@/'+file.replace(/\.tsx$/, ''), require('typescript').transpileModule(require('node:child_process').execFileSync('git',['show',baselineRef+':'+file],{encoding:'utf8'}), {compilerOptions:{module:require('typescript').ModuleKind.CommonJS,jsx:require('typescript').JsxEmit.ReactJSX,esModuleInterop:true,target:require('typescript').ScriptTarget.ES2022}}).outputText ])) : {}
   const script = bundle(entry, {
     ...baselineMocks,
     '@/contexts/auth-context': `exports.useAuth=()=>({user:{id:'writing-student',email:'alex@example.test',profile:new URLSearchParams(location.search).has('missing')?null:{firstName:'Alex',lastName:'Student',satScore:new URLSearchParams(location.search).has('missingScores')?null:1500},memberships:[]},loading:false,refreshUser:async()=>{}});`,
@@ -24,7 +24,8 @@ createRoot(document.getElementById('root')).render(<ProductShell mode="apply" mo
     '@/contexts/organization-invitations-context': `exports.useOrganizationInvitations=()=>({invitations:[],loading:false});`,
     '@/lib/application-state': `const noop=()=>{};const state={notifications:[],durableUnread:0,syncApplications:noop,clearApplicationFocus:noop,focusApplication:noop,syncApplicationBookings:noop,syncTaskNotifications:noop,syncDurableNotifications:noop};exports.useApplicationState=()=>state;`,
     '@/lib/workspace-api': `const call=async(path,input)=>{const r=await fetch(path,input?{method:'POST',body:JSON.stringify(input)}:undefined);const data=await r.json();if(!r.ok)throw Error(data.error);return data};exports.getStudentApplications=()=>call('/applications');exports.saveApplicationDraft=input=>call('/save',input);exports.submitApplication=input=>call('/submit',input);exports.getTaskNotifications=async()=>[];exports.uploadProfileFile=async()=>({reference:'https://example.test/document.pdf'});`,
-    '@/lib/workspace-read': `exports.getDurableNotifications=async()=>[];`,
+    '@/lib/workspace-read': `exports.getDurableNotifications=async()=>({items:[],unread:0});`,
+    '@/actions/communications': `exports.getDurableNotifications=async()=>({items:[],unread:0});`,
     '@/utils/supabase/client': `exports.createClient=()=>({auth:{signOut:async()=>{}}});`,
     '@/components/tutorial-walkthrough': `exports.TutorialWalkthrough=()=>null;`,
     '@/components/demo-controls': `exports.DemoMenuItems=()=>null;`,
@@ -34,7 +35,7 @@ createRoot(document.getElementById('root')).render(<ProductShell mode="apply" mo
     'next/link': `exports.__esModule=true;exports.default=({children,prefetch,...p})=>require('react').createElement('a',p,children);`,
     'next/image': `exports.__esModule=true;exports.default=({fill,priority,unoptimized,...p})=>require('react').createElement('img',p);`,
   })
-  const css = (await require('postcss')([require('@tailwindcss/postcss')()]).process('@import "../../app/globals.css"; @source inline("min-h-44");', { from: path.resolve('tests/helpers/fixture.css') })).css + ['components/applications/application-tracker.css','components/shell/responsive-workspace.css','components/shell/authenticated-product.css','components/shell/floating-header.css'].map(f => baseline && f.includes('application-tracker') ? require('node:child_process').execFileSync('git',['show','HEAD:'+f],{encoding:'utf8'}) : fs.readFileSync(f, 'utf8')).join('\n')
+  const css = (await require('postcss')([require('@tailwindcss/postcss')()]).process('@import "../../app/globals.css"; @source inline("min-h-44");', { from: path.resolve('tests/helpers/fixture.css') })).css + ['components/applications/application-tracker.css','components/shell/responsive-workspace.css','components/shell/authenticated-product.css','components/shell/floating-header.css','components/shell/floating-dock.css'].map(f => baseline && f.includes('application-tracker') ? require('node:child_process').execFileSync('git',['show',baselineRef+':'+f],{encoding:'utf8'}) : fs.readFileSync(f, 'utf8')).join('\n')
   const server = http.createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/json')
     if (req.url.startsWith('/brand/')) { const file=path.join(process.cwd(),'public',req.url);if(fs.existsSync(file)){res.setHeader('Content-Type','image/svg+xml');return res.end(fs.readFileSync(file))} }
@@ -49,7 +50,7 @@ createRoot(document.getElementById('root')).render(<ProductShell mode="apply" mo
     if (req.url === '/fixture.js') { res.setHeader('Content-Type','text/javascript'); return res.end(script) }
     if (req.url === '/fixture-logo.svg') {res.setHeader('Content-Type','image/svg+xml');return res.end('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><path fill="white" d="M20 20h60v15H35v30h45v15H20z"/></svg>')}
     res.setHeader('Content-Type','text/html; charset=utf-8')
-    res.end(`<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>OutClass application writing fixture</title><style>${css}:root{--font-dm-sans:Arial;--font-libre-caslon-text:Georgia}</style></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>`)
+    res.end(`<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>OutClass application writing fixture</title><style>${css}:root{--font-dm-sans:Arial;--font-source-sans-3:Arial;--font-libre-caslon-text:Georgia}</style></head><body><div id="root"></div><script src="/fixture.js"></script></body></html>`)
   })
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve))
   return {url:`http://127.0.0.1:${server.address().port}/?applicationId=writing-application`,writes,answers:()=>answers,close:()=>new Promise(resolve=>server.close(resolve))}

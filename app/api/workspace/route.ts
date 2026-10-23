@@ -6,7 +6,7 @@ import { genderValues } from "@/lib/student-profile"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
-import { getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
+import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
 import { getClubPipeline } from "@/actions/crm"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
@@ -55,9 +55,10 @@ export async function GET(request: Request) {
       case "meetings": data = await (await import("@/actions/meetings")).listMeetings(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
       case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
+      case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
-      case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
+      case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break

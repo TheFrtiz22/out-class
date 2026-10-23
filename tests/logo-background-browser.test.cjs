@@ -32,7 +32,7 @@ createRoot(document.getElementById('root')).render(<main><h1>Club logo settings<
   })
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser
   try {
-    browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:1440,height:1000}});const page=await context.newPage(),errors=[]
+    browser=await chromium.launch({headless:true});const context=await browser.newContext({viewport:{width:1440,height:1000},reducedMotion:'reduce'});const page=await context.newPage(),errors=[]
     page.on('pageerror',e=>errors.push(e.message));const url=`http://127.0.0.1:${server.address().port}`
     await page.goto(url)
     const background=id=>page.locator(`[data-logo-case="${id}"] img`).first()

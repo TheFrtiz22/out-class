@@ -1,0 +1,102 @@
+/* Keep one compact reservation. The wider surface and Radix flyouts overlay content. */
+@media (min-width: 1024px) {
+  [data-product-shell] { --oc-shell-rail-width: 108px; }
+  [data-product-shell] > div > aside.oc-expanding-dock {
+    left: 14px;
+    top: calc(var(--support-banner-height, 0px) + 16px);
+    width: 80px;
+    height: calc(100dvh - var(--support-banner-height, 0px) - 32px);
+    overflow: visible;
+    z-index: 30;
+    transition: width 300ms var(--oc-floating-ease);
+  }
+  [data-product-shell] > div > aside.oc-expanding-dock[data-dock-expanded="true"] { width: 272px; }
+  .oc-dock-rail {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 12px 9px;
+    background: color-mix(in srgb, var(--oc-rail) 97%, transparent);
+    color: var(--oc-rail-text);
+    border: 1px solid rgb(255 255 255 / 14%);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgb(20 45 69 / 14%), inset 0 1px 0 rgb(255 255 255 / 10%);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .oc-dock-brand { display: flex; align-items: center; min-height: 52px; flex-shrink: 0; margin-bottom: 10px; border-radius: 12px; text-align: left; }
+  .oc-dock-brand-art { display: block; width: 220px; height: 52px; flex: 0 0 220px; pointer-events: none; }
+  .oc-dock-brand-art svg { display: block; width: 220px; height: 52px; overflow: visible; }
+  .oc-dock-brand-art path { fill: #fff9f1; }
+  .oc-dock-brand-art .oc-dock-letter-c { fill: #f26522; transform: translate(-153px,20px); transition: transform 300ms var(--oc-floating-ease); }
+  .oc-dock-letter-out, .oc-dock-letter-class { opacity: 0; transform: translateX(-12px); transition: opacity 120ms ease, transform 260ms var(--oc-floating-ease); }
+  .oc-dock-brand-art .oc-dock-letter-class { fill: #f26522; }
+  [data-dock-expanded="true"] .oc-dock-letter-c { transform: translate(0,0); }
+  [data-dock-expanded="true"] :is(.oc-dock-letter-out,.oc-dock-letter-class) { opacity: 1; transform: translateX(0); transition-delay: 80ms; }
+  .oc-dock-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .oc-dock-navigation::-webkit-scrollbar { display: none; }
+  .oc-dock-navigation-content { position: relative; isolation: isolate; padding-block: 2px; }
+  .oc-dock-section { border-top: 1px solid rgb(255 255 255 / 13%); margin-top: 8px; padding-top: 6px; }
+  .oc-dock-section-heading { display: flex; align-items: center; height: 25px; margin: 0; padding-left: 19px; color: var(--oc-rail-muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+  .oc-dock-section nav { display: flex; flex-direction: column; gap: 4px; }
+  .oc-dock-rail nav :is(a,button) {
+    display: flex; position: relative; align-items: center; gap: 0; flex-shrink: 0;
+    width: 100%; min-width: 60px; height: 48px; min-height: 48px; padding: 0; margin: 0;
+    border-radius: 13px; color: var(--oc-rail-muted); background: transparent;
+    text-align: left; font-size: 14px; font-weight: 500; white-space: nowrap;
+    transition: color 160ms ease;
+  }
+  .oc-dock-rail nav :is(a,button):is(:hover,[aria-current="page"],[data-active="true"]) { color: var(--oc-rail-text); background: transparent; }
+  .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
+  .oc-dock-rail nav [aria-current="page"]::after { display: none; }
+  .oc-dock-icon { display: grid; place-items: center; width: 60px; flex: 0 0 60px; transform: scale(1); transform-origin: center; transition: transform 280ms var(--oc-floating-ease); }
+  .oc-dock-icon > :is(svg,[data-slot="avatar"]) { width: 22px; height: 22px; }
+  .oc-dock-rail nav :is([aria-current="page"],[data-active="true"]) .oc-dock-icon > svg { color: var(--brand-orange); }
+  .oc-dock-item-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .oc-dock-preview { margin-inline: auto 10px; }
+  .oc-dock-chevron { margin-left: auto; margin-right: 14px; flex-shrink: 0; transition: transform 220ms var(--oc-floating-ease); }
+  .oc-dock-group-trigger[aria-expanded="true"] .oc-dock-chevron { transform: translateX(3px); color: var(--oc-rail-text); }
+  .oc-dock-hover-highlight { position: absolute; z-index: -1; inset: 0 0 auto; height: 48px; opacity: 0; border-radius: 13px; background: var(--oc-rail-selected); pointer-events: none; transform: translateY(var(--dock-hover-y, 0px)); transition: transform 300ms var(--oc-floating-ease), height 240ms var(--oc-floating-ease), opacity 140ms ease; }
+  .oc-dock-section-heading, .oc-dock-rail .oc-dock-item-label, .oc-dock-preview, .oc-dock-chevron {
+    opacity: 0; transform: translateX(-7px); transition: opacity 160ms ease, transform 260ms var(--oc-floating-ease);
+  }
+  [data-dock-expanded="true"] :is(.oc-dock-section-heading,.oc-dock-item-label,.oc-dock-preview,.oc-dock-chevron) { opacity: 1; transform: translateX(0); transition-delay: 65ms; }
+  /* Opacity preserves names for assistive technology; clipping keeps the compact surface clean. */
+  .oc-expanding-dock :is(a,button):focus-visible { outline: 2px solid var(--brand-orange); outline-offset: -2px; }
+  @media (hover: hover) and (pointer: fine) {
+    .oc-dock-rail [data-magnify="current"] .oc-dock-icon { transform: scale(1.17); }
+    .oc-dock-rail [data-magnify="neighbor"] .oc-dock-icon { transform: scale(1.065); }
+  }
+  @supports (transition-timing-function: linear(0, 1)) {
+    [data-product-shell] > div > aside.oc-expanding-dock, .oc-dock-hover-highlight, .oc-dock-icon { transition-timing-function: var(--oc-floating-spring); }
+  }
+}
+/* Portaled above the header, below dialogs. No dependency on a scroll container or shell ancestry. */
+.oc-dock-flyout {
+  z-index: 45; width: 256px; max-width: calc(100vw - 24px); max-height: var(--radix-popover-content-available-height);
+  overflow: visible; padding: 8px; color: var(--oc-rail-text); background: var(--oc-rail); border: 1px solid rgb(255 255 255 / 16%); border-radius: 18px;
+  box-shadow: 0 10px 30px rgb(20 45 69 / 17%), inset 0 1px 0 rgb(255 255 255 / 7%);
+  animation: oc-dock-flyout-in 160ms cubic-bezier(.22,1,.36,1);
+}
+.oc-dock-flyout[data-state="closed"] { animation: none; pointer-events: none; }
+.oc-dock-flyout::before { content: ""; position: absolute; top: -8px; bottom: -8px; left: -22px; width: 24px; }
+.oc-dock-flyout[data-side="left"]::before { left: auto; right: -22px; }
+.oc-dock-flyout-heading { padding: 7px 12px 10px; color: var(--oc-rail-muted); font-size: 12px; }
+.oc-dock-flyout nav { display: flex; flex-direction: column; gap: 3px; max-height: calc(var(--radix-popover-content-available-height) - 65px); overflow-y: auto; }
+.oc-dock-flyout nav :is(a,button) { position: relative; display: flex; align-items: center; width: 100%; min-height: 44px; padding: 10px 12px; gap: 10px; border-radius: 10px; color: var(--oc-rail-text); background: transparent; font-size: 14px; text-align: left; text-decoration: none; }
+.oc-dock-flyout nav :is(a,button):is(:hover,:focus-visible) { background: var(--oc-rail-selected); outline: 2px solid transparent; outline-offset: -2px; }
+.oc-dock-flyout nav [aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 15px; bottom: 15px; width: 3px; border-radius: 3px; background: var(--brand-orange); }
+.oc-dock-flyout nav :is(a,button):focus-visible { outline-color: var(--brand-orange); }
+@keyframes oc-dock-flyout-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  [data-product-shell] > div > aside.oc-expanding-dock, .oc-expanding-dock *, .oc-dock-flyout, .oc-dock-flyout * { transition: none !important; animation: none !important; }
+  .oc-dock-icon { transform: none !important; }
+}
+@media (forced-colors: active) {
+  .oc-dock-rail, .oc-dock-flyout { border: 1px solid CanvasText; }
+  .oc-dock-hover-highlight { background: transparent; border: 1px solid Highlight; forced-color-adjust: none; }
+  .oc-dock-rail nav :is([aria-current="page"],[data-active="true"])::before, .oc-dock-flyout nav [aria-current="page"]::before { background: Highlight; forced-color-adjust: none; }
+  .oc-expanding-dock :is(a,button):focus-visible, .oc-dock-flyout nav :is(a,button):focus-visible { outline-color: Highlight; }
+}

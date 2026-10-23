@@ -1,60 +1,40 @@
 "use client"
-import { MetricStrip } from "@/components/product/metric-strip"
+import { ArrowRight } from "@/components/icons"
+import { useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ArrowRight, CalendarDays, MapPin, ListChecks, ClipboardCheck, Megaphone } from "@/components/icons"
 import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
-import { clubWorkspaceHref } from "@/lib/club-workspace"
+import { dashboardDeadlineState } from "@/lib/dashboard-actions"
 import { hasPermission } from "@/lib/permissions"
-import { memberDate, RecentRecaps } from "@/components/member-overview"
-
-import "@/components/clubs/manager-overview.css"
-
+import { clubWorkspaceHref } from "@/lib/club-workspace"
+import { memberDate } from "@/components/member-overview"
+import { DashboardDate, DashboardLoading } from "@/components/product/dashboard-presentation"
+import { DashboardDrawer } from "@/components/product/dashboard-drawer"
+import { Button } from "@/components/ui/button"
+import "@/components/product/operational-dashboard.css"
+const Task = dynamic(() => import("@/components/tasks/dashboard-task").then(m => m.DashboardTask), { loading: () => <DashboardLoading mode="club" label="Loading assignment…" /> })
+const Meeting = dynamic(() => import("@/components/events/dashboard-meeting").then(m => m.DashboardMeeting), { loading: () => <DashboardLoading mode="club" label="Loading meeting…" /> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
-const linkStyle = "inline-flex min-h-11 items-center text-sm underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
-export function ManagerOverview({ data, showRecaps = true }: { data: Overview; showRecaps?: boolean }) {
-  const { club, meeting, work, membership, awaitingReview, recruitment } = data
-  const canReview = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
-  const pending = canReview ? recruitment?.filter(row => ["SUBMITTED", "IN_REVIEW"].includes(row.status)).reduce((sum, row) => sum + row.count, 0) ?? 0 : 0
-  const interviews = canReview ? recruitment?.find(row => row.status === "INTERVIEWING")?.count ?? 0 : 0
-  const submissions = hasPermission(membership, "tasks.manage") ? awaitingReview ?? 0 : 0
-  const operations = [
-    ...(submissions > 0 ? [{ title: `${submissions} task submission${submissions === 1 ? "" : "s"} awaiting review`, detail: "Open team tasks to review submitted work and give feedback.", href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team` }] : []),
-    ...(pending > 0 ? [{ title: `${pending} application${pending === 1 ? "" : "s"} in submitted or review status`, detail: hasPermission(membership, "applicants.identify") ? "Open applicants to review the current queue." : "Anonymous rounds only, within your review access.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
-    ...(interviews > 0 ? [{ title: `${interviews} application${interviews === 1 ? "" : "s"} at interview stage`, detail: "Check recorded interview details and next steps in Applicants.", href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants` }] : []),
-  ]
-  return <div className="oc-manager-overview">
-    {(canReview || hasPermission(membership, "tasks.manage")) && <MetricStrip label="Work needing attention" items={[
-      ...(canReview ? [{ label: "to review", value: pending, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "Review applicants" }, { label: "interview stage", value: interviews, href: `${clubWorkspaceHref(club.id, "recruitment")}&tool=applicants`, action: "View interview-stage applications" }] : []),
-      ...(hasPermission(membership, "tasks.manage") ? [{ label: "task submissions", value: submissions, href: `${clubWorkspaceHref(club.id, "tasks")}&taskView=team`, action: "Review task submissions" }] : []),
-    ]} />}
-    <div className="oc-manager-overview-grid">
-      <section aria-labelledby="club-follow-up" className="oc-overview-panel oc-overview-follow-up"><header><h2 id="club-follow-up"><ClipboardCheck aria-hidden="true" size={20} />Ready for follow-up</h2></header><ul>{operations.map(item => <li key={item.href + item.title}><Link href={item.href}><div><h3>{item.title}</h3><p>{item.detail}</p></div><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul>{!operations.length && <p className="oc-overview-empty">You’re caught up. Applications and task submissions needing attention will appear here.</p>}</section>
-      <section className="oc-overview-panel" aria-labelledby="club-next-meeting">
-        <header><h2 id="club-next-meeting"><CalendarDays aria-hidden="true" size={20} />Next meeting</h2><Link href={clubWorkspaceHref(club.id, "meetings")} className={linkStyle}>All meetings <ArrowRight aria-hidden="true" size={15} /></Link></header>
-        {meeting ? <div className="oc-overview-meeting">
-          <span className="oc-overview-audience">{meeting.audience === "MEMBERS" ? "Member meeting" : "Recruitment / Interest"}</span>
-          <h3>{meeting.title}</h3>
-          <p className="oc-overview-meeting-fact"><CalendarDays aria-hidden="true" size={18} /><time dateTime={new Date(meeting.date).toISOString()}>{memberDate(meeting.date)}</time></p>
-          {meeting.location && <p className="oc-overview-meeting-fact"><MapPin aria-hidden="true" size={18} />{meeting.location}</p>}
-          <p className="oc-overview-meeting-note">Open the meeting for its agenda, resources, and attendance.</p>
-          <Link href={`/meetings/${meeting.id}`} className="oc-overview-meeting-action">View meeting details <ArrowRight aria-hidden="true" size={16} /></Link>
-        </div> : <p className="oc-overview-empty">No upcoming meeting is posted. Past meetings and resources remain available in Meetings.</p>}
+type Preview = { kind: "task"; id: string; assignmentId?: string; title: string; review?: boolean } | { kind: "meeting" | "announcement"; id: string; title: string }
+export function ManagerOverview({ data, refreshing = false, onChanged = () => {}, showRecaps: _showRecaps = true }: { data: Overview; refreshing?: boolean; onChanged?: () => void; showRecaps?: boolean }) {
+  const [preview, setPreview] = useState<Preview | null>(null), [filter, setFilter] = useState("all")
+  const { operations: op, work, club, membership } = data
+  const manage = hasPermission(membership, "tasks.manage")
+  const now = +new Date(op.asOf), overdue = (due: Date | string | null) => dashboardDeadlineState(due, true, now) === "urgent"
+  const filtered = work.filter(item => filter !== "overdue" || overdue(item.task.dueAt))
+  const announcement = op.announcements.find(a => a.id === preview?.id)
+  return <div className="oc-command-center oc-command-club" aria-busy={refreshing}>
+    <div className="oc-command-context"><div><p className="oc-command-eyebrow">Your club, in focus</p><h2>{op.tasks.overdue ? `${op.tasks.overdue} assignment${op.tasks.overdue === 1 ? " is" : "s are"} overdue` : work.length ? "Your next obligations" : "Your work is up to date"}</h2><div className="oc-command-context-meta"><span>{op.tasks.completed} of {op.tasks.assigned} personal task assignments reviewed</span><span>{manage ? "Personal work & officer responsibilities" : "Your assignments and club updates"}</span></div></div><Button className="oc-command-refresh" variant="outline" disabled={refreshing} onClick={onChanged}>{refreshing ? "Refreshing…" : "Refresh overview"}</Button></div>
+    <div className="oc-command-columns oc-club-grid">
+      <section className="oc-command-section oc-personal-work" aria-labelledby="dashboard-work"><header><h2 id="dashboard-work">Your work <span className="oc-section-count" aria-hidden="true">{work.length}</span></h2><div className="oc-work-filters" role="group" aria-label="Filter your work"><Button size="sm" variant={filter === "all" ? "secondary" : "ghost"} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>Upcoming</Button><Button size="sm" variant={filter === "overdue" ? "secondary" : "ghost"} aria-pressed={filter === "overdue"} onClick={() => setFilter("overdue")}>Overdue</Button></div></header>
+        {filtered.length ? <ul className="oc-command-list">{filtered.map(({ id, task }) => <li key={id}><button className="oc-command-row oc-task-record" data-urgent={overdue(task.dueAt)} onClick={() => setPreview({ kind: "task", id: task.id, assignmentId: id, title: task.title })}><span className="oc-task-marker" aria-hidden="true" /><span className="oc-record-copy"><strong>{task.title}</strong><small>{task.kind === "PROJECT" ? "Project · view instructions" : "Your response is needed · open to submit"}</small></span><span className="oc-command-date" data-urgent={overdue(task.dueAt)}>{task.dueAt ? `${overdue(task.dueAt) ? "Overdue · " : "Due "}${memberDate(task.dueAt)}` : "No deadline"}</span></button></li>)}</ul> : <p className="oc-command-empty">{filter === "overdue" ? "No overdue assignments in this preview." : "No outstanding assignments. New work will appear here."}</p>}
+        <Link className="oc-command-link" href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=mine`}>All your work & feedback <ArrowRight aria-hidden="true" size={14} /></Link>
       </section>
-      <section className="oc-overview-panel" aria-labelledby="club-your-work">
-        <header><h2 id="club-your-work"><ListChecks aria-hidden="true" size={20} />Your outstanding work</h2><Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=mine`} className={linkStyle}>Your tasks <ArrowRight aria-hidden="true" size={15} /></Link></header>
-        {work.length > 0 ? <ul className="oc-overview-work">{work.map(item => <li key={item.id}><Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=mine`}>
-          <div><h3>{item.task.title}</h3><p>{item.task.kind === "PROJECT" ? "Semester project" : "Task"} · Assigned to you</p></div>
-          <span className="oc-overview-due" data-overdue={!!item.task.dueAt && +new Date(item.task.dueAt) < Date.now()}>{item.task.dueAt ? `${+new Date(item.task.dueAt) < Date.now() ? "Overdue · " : "Due "}${memberDate(item.task.dueAt)}` : "No due date"}</span>
-        </Link></li>)}</ul> : <p className="oc-overview-empty">You have no outstanding assignments. Your submissions and feedback remain available in Tasks.</p>}
-        {hasPermission(membership, "tasks.manage") && <Link href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`} className="oc-overview-team-link">View team tasks & projects <ArrowRight aria-hidden="true" size={15} /></Link>}
-      </section>
-      {hasPermission(membership, "meetings.manage") ? <section className="oc-overview-panel oc-overview-updates" aria-labelledby="club-updates">
-        <header><h2 id="club-updates"><Megaphone aria-hidden="true" size={20} />Club updates</h2></header>
-        <p className="oc-overview-empty">Keep up with announcements shared with your club.</p>
-        <Link href={`/club/${club.id}/workspace?section=announcements`} className="oc-overview-team-link">Open announcements <ArrowRight aria-hidden="true" size={15} /></Link>
-      </section>
-      : <section className="oc-overview-panel oc-overview-updates" aria-label="Club resources"><header><h2><CalendarDays aria-hidden="true" size={20} />Club resources</h2></header><p className="oc-overview-empty">Find agendas, shared documents, and meeting recaps in Meetings.</p><Link href={clubWorkspaceHref(club.id, "meetings")} className="oc-overview-team-link">Browse meeting resources <ArrowRight aria-hidden="true" size={15} /></Link></section>}
-      {showRecaps && <div className="oc-overview-recaps"><RecentRecaps clubId={club.id} /></div>}
+      <section className="oc-command-section oc-club-calendar" aria-labelledby="dashboard-meetings"><header><h2 id="dashboard-meetings">Meet this week</h2></header>{op.meetings.length ? <ul className="oc-command-list">{op.meetings.map(m => <li key={m.id}><button className="oc-command-row oc-calendar-record" onClick={() => setPreview({ kind: "meeting", id: m.id, title: m.title })}><DashboardDate value={m.date} /><span className="oc-calendar-copy"><time dateTime={new Date(m.date).toISOString()}>{memberDate(m.date)}</time><strong>{m.title}</strong><small>{m.location}</small>{m.agenda && <span className="oc-command-excerpt">{m.agenda}</span>}<span className="oc-calendar-action">{m.canRsvp ? "Details & RSVP" : "Agenda & resources"} <ArrowRight aria-hidden="true" size={14} /></span></span></button></li>)}</ul> : <p className="oc-command-empty">No meetings scheduled in the next seven days.</p>}<Link className="oc-command-link" href={clubWorkspaceHref(club.id, "meetings")}>All meetings <ArrowRight aria-hidden="true" size={14} /></Link><p className="oc-command-footnote">Completion counts reviewed assignments. Submitted work awaits feedback; projects are tracked separately.</p></section>
+      {manage && op.reviewWork.length > 0 && <section className="oc-command-section oc-officer-work" aria-labelledby="dashboard-review"><header><div><p className="oc-command-eyebrow">Officer desk</p><h2 id="dashboard-review">Submissions to review</h2></div><span>{op.tasks.awaitingReview} awaiting feedback</span></header><ul className="oc-command-list">{op.reviewWork.map(item => <li key={item.id}><button className="oc-command-row" onClick={() => setPreview({ kind: "task", id: item.task.id, assignmentId: item.id, title: item.task.title, review: true })}><span><strong>{item.task.title}</strong><small>Submitted {memberDate(item.submittedAt!)} · feedback & approval</small></span><span>Review <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul></section>}
+      {op.announcements.length > 0 && <section className="oc-command-section oc-club-activity" aria-labelledby="dashboard-updates"><header><h2 id="dashboard-updates">Club updates</h2></header><ul className="oc-command-list oc-activity-stream">{op.announcements.map(a => <li key={a.id}><button className="oc-command-row" onClick={() => setPreview({ kind: "announcement", id: a.id, title: a.title })}><span><small>{memberDate(a.publishedAt)}</small><strong>{a.title}</strong><span className="oc-command-excerpt">{a.body}</span></span><span>Read <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul></section>}
+      {manage && op.team && op.team.assigned > 0 && <section className="oc-command-section oc-team-pulse" aria-labelledby="dashboard-team"><header><h2 id="dashboard-team">Team work</h2><Link className="oc-command-link" href={`${clubWorkspaceHref(club.id, "tasks")}&taskView=team`}>Manage assignments <ArrowRight aria-hidden="true" size={14} /></Link></header><dl className="oc-team-metrics"><div><dt>Overdue assignments</dt><dd data-urgent={op.team.overdue > 0}>{op.team.overdue}</dd></div><div><dt>Assignments reviewed</dt><dd>{op.team.reviewed}<small> / {op.team.assigned}</small></dd></div><div><dt>Submissions this week</dt><dd>{op.team.recentSubmissions}</dd></div></dl><p className="oc-command-footnote">All non-draft task assignments in this club. Projects are excluded. No individual rankings.</p></section>}
     </div>
+    {preview && <DashboardDrawer title={preview.title} description={preview.kind === "task" ? preview.review ? "Review the submitted work and save feedback." : "Instructions and your saved submission." : preview.kind === "meeting" ? "Meeting agenda, resources and available actions." : "Announcement delivered to you."} onClose={() => setPreview(null)}>{preview.kind === "task" ? <Task key={preview.assignmentId ?? preview.id} clubId={club.id} taskId={preview.id} assignmentId={preview.assignmentId} review={preview.review} onChanged={onChanged} onClose={() => setPreview(null)} /> : preview.kind === "meeting" ? <Meeting id={preview.id} canRsvp={op.meetings.find(m => m.id === preview.id)?.canRsvp ?? false} onUpdated={onChanged} /> : announcement && <article className="oc-announcement-detail space-y-4 py-5"><p>{memberDate(announcement.publishedAt)}</p><p className="whitespace-pre-wrap break-words leading-7">{announcement.body}</p></article>}</DashboardDrawer>}
   </div>
 }

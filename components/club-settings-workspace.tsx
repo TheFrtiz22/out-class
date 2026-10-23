@@ -120,7 +120,7 @@ export function ClubSettingsWorkspace({
           </Link>
         ))}
       </nav>
-      <Link href="/settings" className="mt-5 inline-flex min-h-11 items-center px-3 text-sm text-muted-foreground underline underline-offset-4" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Personal settings</Link>
+      <Link href="/settings" className="mt-6 flex min-h-14 w-full items-center justify-between gap-2 rounded-lg border border-primary/20 bg-card px-3 py-3 text-sm font-semibold text-primary hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Switch to Personal settings <ArrowUpRight aria-hidden="true" size={18} /></Link>
       </aside>
       <div className="min-w-0" data-saving={busy}>
         {error && (
@@ -160,6 +160,7 @@ export function ClubSettingsWorkspace({
         {visible("application") && (
           <div hidden={active !== "application"}>
             {hasPermission(member, "recruitment.manage") && <div className="mb-5 flex flex-wrap gap-4 border-b pb-4 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=pipeline`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Configure recruitment rounds</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=settings&setting=cycles`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Manage application cycles</Link></div>}
+            {hasPermission(member, "recruitment.manage") && <details className="mb-5 border-b pb-3"><summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">Review settings</summary><div className="flex flex-wrap gap-4 py-2 text-sm"><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rounds`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Anonymous review</Link><Link className="underline underline-offset-4" href={`/club/${clubId}/workspace?section=recruitment&tool=rules`} onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Screening rules</Link></div></details>}
             <ApplicationBuilder clubId={clubId} />
           </div>
         )}

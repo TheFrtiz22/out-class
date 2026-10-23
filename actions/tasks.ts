@@ -105,24 +105,32 @@ async function ownedAssignment(assignmentId: string) {
     throw new Error("Assignment unavailable.");
   return { user, assignment };
 }
-export async function getTaskWorkspace(clubId: string) {
+export async function getTaskWorkspace(clubId: string, focus?: { taskId: string; assignmentId?: string }) {
   uuid.parse(clubId);
+  if (focus) { uuid.parse(focus.taskId); if (focus.assignmentId) uuid.parse(focus.assignmentId); }
   const { membership } = await requireClubMembership(clubId);
   const manage = hasPermission(membership, "tasks.manage");
-  const tasks = await prisma.clubTask.findMany({
+  const taskQuery = {
     where: {
       clubId,
+      ...(focus ? { OR: [{ id: focus.taskId }, { projectId: focus.taskId }] } : {}),
       ...(manage ? {} : { assignments: { some: { memberId: membership.id } } }),
     },
     include: {
       project: { select: { id: true, title: true, clubId: true } },
       assignments: {
-        where: manage ? {} : { memberId: membership.id },
+        where: { ...(manage ? {} : { memberId: membership.id }), ...(focus?.assignmentId ? { OR: [{ id: focus.assignmentId }, { task: { projectId: focus.taskId }, memberId: membership.id }] } : {}) },
         include: assignmentInclude,
       },
     },
     orderBy: [{ dueAt: "asc" }, { createdAt: "desc" }],
-  });
+    ...(focus ? { take: 25 } : {}),
+  } satisfies import("@prisma/client").Prisma.ClubTaskFindManyArgs;
+  const tasks = await prisma.clubTask.findMany(taskQuery);
+  if (focus && !tasks.some(task => task.id === focus.taskId)) {
+    const parent = await prisma.clubTask.findMany({ ...taskQuery, where: { ...taskQuery.where, id: focus.taskId }, take: 1 });
+    tasks.unshift(...parent);
+  }
   return {
     clubId,
     manage,
@@ -142,7 +150,7 @@ export async function getTaskWorkspace(clubId: string) {
         }),
       })),
     })),
-    members: manage
+    members: manage && !focus
       ? (await prisma.clubMember.findMany({
           where: { clubId, status: "ACTIVE", user: { disabledAt: null } },
           select: memberSelect,

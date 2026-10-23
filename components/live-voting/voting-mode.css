@@ -20,3 +20,13 @@
 }
 .oc-voting-stage:has(.oc-voting-projector) { padding:0; gap:0; overflow:visible; }
 .oc-voting-stage:has(.oc-voting-projector) > [data-slot="dialog-title"] { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+
+/* Same operational vocabulary as the Recruiting overview; projector fit rules stay intact. */
+.oc-voting-console { font-size: .9375rem; line-height: 1.6; }
+.oc-voting-session-picker { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; font-size: .8125rem; color: var(--muted-foreground); }
+.oc-voting-session-picker select { color: var(--foreground); min-height: 44px; }
+.oc-voting-session-summary { padding: 1.25rem; border: 1px solid var(--border); border-top: 3px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--card); }
+.oc-voting-session-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .75rem; padding-top: 1rem; margin-top: .75rem; border-top: 1px solid var(--border); }
+.oc-voting-session-metrics dt { color: var(--muted-foreground); font-size: .75rem; }
+.oc-voting-session-metrics dd { margin-top: .3rem; font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) { .oc-voting-session-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); } .oc-voting-session-summary { padding: 1rem; } }

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/auth"
+import { searchPublicClubIds } from "@/actions/typesense-search"
 
 export type WorkspaceSearchResult = {
   id: string
@@ -25,11 +26,14 @@ export async function searchWorkspace(
     : []
   const clubIds = memberships.map((item) => item.clubId)
   const contains = { contains: text, mode: "insensitive" as const }
+  const typesenseClubIds = await searchPublicClubIds(text)
   const [clubs, applications, applicants, rounds] = await Promise.all([
     prisma.club.findMany({
-      where: { OR: [{ name: contains }, { category: contains }] },
+      where: typesenseClubIds === null
+        ? { isDiscoverable: true, suspendedAt: null, OR: [{ name: contains }, { category: contains }] }
+        : { isDiscoverable: true, suspendedAt: null, id: { in: typesenseClubIds.slice(0, 250) } },
       select: { id: true, name: true, category: true },
-      take: 6,
+      take: typesenseClubIds === null ? 6 : 250,
       orderBy: { name: "asc" },
     }),
     prisma.application.findMany({
@@ -84,8 +88,9 @@ export async function searchWorkspace(
         })
       : [],
   ])
+  const rankedClubs = typesenseClubIds === null ? clubs : [...clubs].sort((a, b) => typesenseClubIds.indexOf(a.id) - typesenseClubIds.indexOf(b.id)).slice(0, 6)
   return [
-    ...clubs.map((club) => ({
+    ...rankedClubs.map((club) => ({
       id: club.id,
       kind: "club" as const,
       title: club.name,

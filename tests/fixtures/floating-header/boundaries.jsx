@@ -7,16 +7,20 @@ export const clubs = [{ id: 'fixture-mii', name: 'McIntire Investment Institute'
 export function FixtureBoundary({ children }) {
   const params = useSearchParams(), pathname = usePathname()
   const [role] = useState(() => params.get('role') || 'owner')
+  const [oneClub] = useState(() => params.has('oneClub'))
+  const [revoked, setRevoked] = useState(false)
+  useEffect(() => { const update = () => setRevoked(true); window.addEventListener('fixture:revoke-leader', update); return () => window.removeEventListener('fixture:revoke-leader', update) }, [])
   const [photo] = useState(() => params.has('avatar'))
   const [counts, setCounts] = useState({ unread: 2, invitations: 1 })
   useEffect(() => { const update = event => setCounts(event.detail); window.addEventListener('fixture:counts', update); return () => window.removeEventListener('fixture:counts', update) }, [])
   const value = useMemo(() => {
-    const permissions = role === 'settings' ? ['club.settings'] : role === 'reviewer' ? ['applications.review'] : role === 'member' || role === 'student' ? [] : clubPermissions
-    return { role, pathname, counts, setCounts, user: { id: 'fixture-user', email: 'fixture@virginia.edu', profile: { firstName: 'Avery', lastName: 'Morgan', headshotUrl: photo ? '/images/landing/jordan-avery.jpg' : null }, memberships: clubs.map(club => ({ id: `member-${club.id}`, clubId: club.id, club, status: 'ACTIVE', isOwner: role === 'owner', permissions })) } }
-  }, [role, pathname, photo, counts])
-  return <Context.Provider value={value}>{children}</Context.Provider>
+    const permissions = revoked ? [] : role === 'settings' ? ['club.settings'] : role === 'reviewer' ? ['applications.review'] : role === 'member' || role === 'student' ? [] : clubPermissions
+    return { role, pathname, counts, setCounts, user: { id: 'fixture-user', email: 'fixture@virginia.edu', profile: { firstName: 'Avery', lastName: 'Morgan', headshotUrl: photo ? '/images/landing/jordan-avery.jpg' : null }, memberships: clubs.map((club, index) => ({ id: `member-${club.id}`, clubId: club.id, club, status: 'ACTIVE', interviewOffices: !revoked && role === 'president' && (!oneClub || index === 0) ? ['PRESIDENT'] : [], isOwner: !revoked && role === 'owner' && (!oneClub || index === 0), permissions: oneClub && index > 0 ? [] : permissions })).concat([{ id: 'ordinary-member', clubId: 'ordinary-club', club: { id: 'ordinary-club', name: 'Campus Arts Society', color: '#142d45' }, status: 'ACTIVE', isOwner: false, permissions: [], interviewOffices: [] }]) } }
+  }, [role, pathname, photo, counts, revoked, oneClub])
+  const stableUser = useMemo(() => value.user, [role, photo, revoked, oneClub])
+  return <Context.Provider value={{ ...value, user: stableUser }}>{children}</Context.Provider>
 }
-export function useAuth() { const value = useContext(Context); return { user: value.user, role: value.role, loading: false, isImpersonating: false } }
+export function useAuth() { const value = useContext(Context); return { user: value.user, role: value.role, loading: false, isImpersonating: false, activeClubId: clubs[0].id, refreshUser: async () => { window.fixtureIdentityRefreshes = (window.fixtureIdentityRefreshes || 0) + 1 } } }
 export function useDemoMode() { return { isDemoEnabled: false, allowed: false } }
 export function useOrganizationInvitations() {
   const { counts, setCounts } = useContext(Context)

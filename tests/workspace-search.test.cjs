@@ -5,6 +5,7 @@ const ts = require('typescript')
 function setup(memberships=[]) {
  const calls=[];const mocks={
  '@/utils/auth':{requireAuth:async()=>({user:{id:'student'}})},
+ '@/actions/typesense-search':{searchPublicClubIds:async()=>null},
  '@/utils/prisma':{prisma:{
  clubMember:{findMany:async args=>{calls.push(['memberships',args]);return memberships}},
  club:{findMany:async args=>{calls.push(['clubs',args]);return []}},

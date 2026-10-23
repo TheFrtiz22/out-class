@@ -12,7 +12,7 @@ Discover, public profiles, applications/submissions/status, student dashboards, 
 
 ## Before and after
 
-Comparable screenshots use the real application tracker, form, and navigation shell with fictional data and HTTP-backed action fixtures. Arial/Georgia provide deterministic font fallbacks in these comparison fixtures. Baseline source: cffb63cff78c9694b89ed7e26a82d21edb5421e5. The baseline includes its original minimum textarea height. Authenticated screenshots additionally show the production build with actual local Auth and PostgreSQL and the application fonts.
+Comparable screenshots use the real application tracker, form, and navigation shell with fictional data and HTTP-backed action fixtures. Arial/Georgia provide deterministic font fallbacks in these comparison fixtures. Baseline source: aca0c8e6520a880b67113d720465a14a15361ea2. The baseline includes its original minimum textarea height. Authenticated screenshots additionally show the production build with actual local Auth and PostgreSQL and the application fonts.
 
 | Width | Before | After | Authenticated after |
 | --- | --- | --- | --- |
@@ -21,7 +21,7 @@ Comparable screenshots use the real application tracker, form, and navigation sh
 | 768 | [Before](evidence/before-768.png) | [After](evidence/after-768.png) | [Authenticated](evidence/authenticated-768.png) |
 | 390 | [Before](evidence/before-390.png) | [After](evidence/after-390.png) | [Authenticated](evidence/authenticated-390.png) |
 
-At 1440px, the first response moves from y=618 to y=383, grows from 768 to 974 pixels wide, and has a 256-pixel minimum height. At 390px, its top moves from y=778 to y=445, with a 224-pixel minimum height. No editor controls float over the mobile writing area.
+At 1440px, the first response moves from y=623 to y=389, grows from 768 to 974 pixels wide, and has a 256-pixel minimum height. At 390px, its top moves from y=780 to y=447, with a 224-pixel minimum height. No editor controls float over the mobile writing area.
 
 [Logo background controls and preview](evidence/logo-background-preview.png). [Published settings in the authenticated leader workspace](evidence/authenticated-logo-settings.png).
 
@@ -34,10 +34,10 @@ At 1440px, the first response moves from y=618 to y=383, grows from 768 to 974 p
 - Accessibility suite: 27 passed. The editor also passed axe checks at 1440, 1024, 768, and 390px, with zero WCAG A/AA violations in its content area. Logo settings passed axe and mobile reflow checks.
 - Real integration: passed using verified local accounts, production Next actions, PostgreSQL, browser editing, publication/reload, role denials, malicious-color rejection, shared applicant/leader presentation, closed drafts, and submitted-answer immutability.
 - Migration regression checks: all 57 existing migrations applied on fresh and legacy databases; all 78 tables enforce RLS and deny browser-role CRUD.
-- Full suite: 1354 tests; 1316 passed, 37 skipped, 1 pre-existing failure. The unchanged workspace-reliability test expects Vary: Cookie, while the unchanged response helper returns Vary: Cookie, Accept-Encoding. This failure was reproduced independently and is not hidden or changed by this feature.
+- Full suite on the clean branch: 1346 tests; 1311 passed, 35 skipped, zero failures, using node --test --test-concurrency=4 tests/*.test.cjs. Skipped tests require other explicitly configured integration stacks; the dedicated writing/branding integration was run separately and passed.
 
-The initial real-browser resize assertion ran before the shell finished adapting from desktop to tablet. Taking a stable screenshot before measuring resolved that transient test timing; no navigation-shell CSS was changed. An initial standalone TypeScript invocation overlapped a build regenerating .next/types; it was rerun after the build and passed.
+Responsive measurements wait for the browser to finish adapting after viewport changes. No navigation-shell CSS is changed by this feature. Initial broad runs encountered a résumé-text timeout while a fresh build prepared generated assets, and a settings contrast snapshot during a button-opacity transition. The settings fixture now uses reduced motion, and the complete suite passed with bounded concurrency after assets were generated.
 
 Run focused UI/action checks with node --test --test-concurrency=1 tests/application-writing-browser.test.cjs tests/logo-background-browser.test.cjs tests/club-marketing.test.cjs tests/student-applications.test.cjs tests/decision-letters.test.cjs tests/launch-clubs.test.cjs. Run the real isolated integration with npm run test:application-writing:e2e. That mode uses its own disposable project, loopback app port 3109, and service ports 57321–57327, with the existing local-only configuration guard. It never targets the application database. Default onboarding test behavior and ports remain unchanged.
 
-The PR remains a draft because the repository-wide baseline failure is still open. Do not merge without reviewing that failure and completing the normal PR checks.
+The feature branch is based on the latest remote main, preserving its current floating dock and workspace selector. Earlier unpublished local commits and unrelated working-tree edits are retained in the original checkout and are excluded from this PR. The PR remains a draft for review and is not merged.

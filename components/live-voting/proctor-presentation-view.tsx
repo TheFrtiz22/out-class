@@ -128,7 +128,7 @@ export function ProctorPresentationView({
                 <span className="text-neutral-500">
                   Applicant {session.activeIndex + 1} / {session.applicants.length}
                 </span>
-                <span className="rounded-full border border-neutral-200 px-3 py-1 text-xs">
+                <span className="oc-status-label border border-neutral-200 px-3 py-1 text-xs">
                   {ended ? "Final session results" : stateLabel}
                 </span>
               </div>

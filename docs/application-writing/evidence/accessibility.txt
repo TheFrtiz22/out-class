@@ -1,4 +1,4 @@
-✔ homepage: keyboard skip link, mobile navigation Escape and reduced motion (1223.21325ms)
+✔ homepage: keyboard skip link, mobile navigation Escape and reduced motion (1354.276792ms)
 ℹ tests 27
 ℹ suites 0
 ℹ pass 27
@@ -6,4 +6,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 57123.584458
+ℹ duration_ms 109718.546375

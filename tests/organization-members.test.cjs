@@ -172,3 +172,14 @@ test('group assignment enforces authority, club scope, active accounts and stric
  for(const role of ['MEMBER','INTERVIEWER','RECRUITING_ADMIN']){const h=harness(role);await assert.rejects(h.api.assignOrganizationMemberGroups(input(h)),/denied/);}
  for(const kind of ['foreign','disabled','inactive','duplicate','injected']){const h=harness(),value=input(h);if(kind==='foreign')h.state.members[1].clubId=otherClub;if(kind==='disabled')h.state.members[1].user.disabledAt=new Date();if(kind==='inactive')h.state.members[1].status='LEFT';if(kind==='duplicate')value.targets.push(value.targets[0]);if(kind==='injected')value.permissions=['leaders.manage'];await assert.rejects(h.api.assignOrganizationMemberGroups(value));assert.equal(h.state.audits.length,0);}
 });
+
+test('group creation saves the previewed partition and parent label while preserving roles and unrelated groups',async()=>{
+ const h=harness();for(const m of h.state.members)m.groups=['Existing'];const plan=load('lib/member-groups.ts').planMemberGroups;const split={mode:'COUNT',amount:2,seed:clubId},targets=groupTargets(h),expected=plan(targets.map(t=>t.id),'Welcome',split);
+ const result=await h.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets,split});assert.deepEqual(result.groups,expected);assert.equal(result.members,2);
+ for(const m of h.state.members){assert.ok(m.groups.includes('Existing'));assert.ok(m.groups.includes('Welcome'));assert.ok(m.groups.includes(expected.find(g=>g.memberIds.includes(m.id)).name));}assert.equal(h.state.members[0].isOwner,true);assert.equal(h.state.members[1].accessRole,'MEMBER');assert.equal(h.state.audits.at(-1).action,'club.member.groups.create');
+});
+test('group creation is atomic on stale versions and audit failures, and rejects unauthorized or oversized partitions',async()=>{
+ for(const cause of ['stale','audit','scope']){const h=harness(),targets=groupTargets(h);if(cause==='stale')targets[1].updatedAt=new Date(0);if(cause==='audit')h.state.failAudit=true;if(cause==='scope')h.state.members[1].clubId=otherClub;const before=structuredClone(h.state.members);await assert.rejects(h.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets,split:null}));assert.deepEqual(h.state.members,before);assert.equal(h.state.audits.length,0);}
+ const denied=harness('MEMBER');await assert.rejects(denied.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets:groupTargets(denied),split:null}),/denied/);
+ const h=harness();await assert.rejects(h.api.createOrganizationMemberGroups({clubId,name:'Welcome',targets:groupTargets(h),split:{mode:'COUNT',amount:3,seed:clubId}}),/at least one member/);assert.equal(h.state.audits.length,0);
+});

@@ -1,55 +1,54 @@
 "use client"
-
-import { MetricStrip } from "@/components/product/metric-strip"
+import { ArrowRight } from "@/components/icons"
+import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
-import { ArrowRight, Users2, Video, CheckCircle2, ShieldCheck } from "@/components/icons"
-import type { getClubWorkspaceOverview } from "@/lib/workspace-api"
-import { managerNavigation } from "@/lib/product-navigation"
+import { getDashboardReviewQueue, type getClubWorkspaceOverview } from "@/lib/workspace-api"
 import { hasPermission } from "@/lib/permissions"
-import "@/components/clubs/recruiting-overview.css"
-
+import { memberDate } from "@/components/member-overview"
+import { Button } from "@/components/ui/button"
+import { DashboardDate, DashboardLoading } from "@/components/product/dashboard-presentation"
+import { DashboardDrawer } from "@/components/product/dashboard-drawer"
+import "@/components/product/operational-dashboard.css"
+const Review = dynamic(() => import("@/components/views/leader-dashboard/live-leader-workspace").then(m => m.ApplicantReviewPreview), { loading: () => <DashboardLoading mode="recruiting" label="Loading authorized review…" /> })
+const Preparation = dynamic(() => import("@/components/interviews/dashboard-preparation").then(m => m.DashboardPreparation), { loading: () => <p role="status">Checking current panel…</p> })
 type Overview = Awaited<ReturnType<typeof getClubWorkspaceOverview>>
-
-export function RecruitingOverview({ data }: { data: Overview }) {
-  const { club, membership, recruitment } = data
-  const navigation = managerNavigation(membership, club.id, "recruiting")
-  const canRead = hasPermission(membership, "applications.review") || hasPermission(membership, "applicants.identify")
-  const anonymousOnly = canRead && !hasPermission(membership, "applicants.identify")
-  const count = (...statuses: string[]) => recruitment?.filter(row => statuses.includes(row.status)).reduce((total, row) => total + row.count, 0) ?? 0
-  const destinations = [
-    { id: "applicants", icon: Users2, label: "Review applicants", description: "Read submissions, compare evaluations, and advance your rounds.", value: count("SUBMITTED", "IN_REVIEW"), context: "to review", featured: true },
-    { id: "interviews", icon: Video, label: "Open interviews", description: "Prepare interview kits and open your available interview tools.", value: count("INTERVIEWING"), context: "at interview stage", featured: false },
-    { id: "decisions", icon: CheckCircle2, label: "Review decisions", description: "Review pending outcomes and record decisions with your club access.", value: count("ACCEPTED", "REJECTED"), context: "final outcomes recorded", featured: false },
-  ]
-  const tools = navigation.filter(item => item.quiet)
-  return <div className="oc-recruiting-overview">
-    {anonymousOnly && <p className="oc-recruiting-privacy"><ShieldCheck aria-hidden="true" size={17} />Your overview includes only anonymous rounds available to your review access.</p>}
-    {canRead && recruitment && <MetricStrip label="Recruitment status" items={[
-      { label: "to review", value: count("SUBMITTED", "IN_REVIEW"), href: navigation.find(item => item.id === "applicants")?.href, action: "Review applicants" },
-      { label: "interview stage", value: count("INTERVIEWING"), href: navigation.find(item => item.id === "interviews")?.href, action: "Open interviews" },
-      { label: "offers", value: count("ACCEPTED"), href: navigation.find(item => item.id === "decisions")?.href, action: "View recorded decisions" },
-      { label: "waitlisted", value: count("WAITLISTED"), href: navigation.find(item => item.id === "decisions")?.href, action: "Review waitlisted applications" },
-    ]} />}
-    <div className="oc-recruiting-overview-grid">
-      {destinations.map(destination => {
-        const route = navigation.find(item => item.id === destination.id)
-        if (!route?.href) return null
-        const Icon = destination.icon
-        return <section key={destination.id} className="oc-recruiting-card" data-featured={destination.featured} aria-labelledby={`recruiting-${destination.id}`}>
-          <div className="oc-recruiting-card-label"><Icon aria-hidden="true" size={19} /><h2 id={`recruiting-${destination.id}`}>{route.label}</h2></div>
-          {canRead && recruitment && <p className="oc-recruiting-context"><strong>{destination.value}</strong> {destination.context}</p>}
-          {destination.id === "applicants" && canRead && recruitment && <dl className="oc-recruiting-stage-summary"><div><dt>Submitted</dt><dd>{count("SUBMITTED")}</dd></div><div><dt>In review</dt><dd>{count("IN_REVIEW")}</dd></div></dl>}
-          {destination.id === "interviews" && canRead && recruitment && <p className="oc-recruiting-note">Application status count · see interview tools for bookings.</p>}
-          {destination.id === "decisions" && canRead && recruitment && <p className="oc-recruiting-note">{count("WAITLISTED")} waitlisted · {count("ACCEPTED")} offers</p>}
-          <p className="oc-recruiting-description">{destination.description}</p>
-          <Link href={route.href}>{destination.label}<ArrowRight aria-hidden="true" size={17} /></Link>
-        </section>
-      })}
-      {tools.length > 0 && <section className="oc-recruiting-tools" aria-labelledby="recruiting-tools-title">
-        <div className="oc-recruiting-card-label"><ShieldCheck aria-hidden="true" size={21} /><h2 id="recruiting-tools-title">Review tools</h2></div>
-        <p>Keep review criteria and applicant privacy consistent across your rounds.</p>
-        <ul>{tools.map(tool => <li key={tool.id}><Link href={tool.href!}><span><strong>{tool.label}</strong><small>{tool.id === "rules" ? "Preview thresholds and explicitly flag applications. No automatic rejections." : "Manage round privacy and prepared anonymous review content."}</small></span><ArrowRight aria-hidden="true" size={16} /></Link></li>)}</ul>
-      </section>}
-    </div>
+export function RecruitingOverview({ data, refreshing = false, onChanged = () => {} }: { data: Overview; refreshing?: boolean; onChanged?: () => void }) {
+  const { club, membership, operations: op } = data
+  const [round, setRound] = useState(""), [applicant, setApplicant] = useState<string | null>(null), [booking, setBooking] = useState<Overview["operations"]["bookings"][number] | null>(null)
+  const [reviewContext, setReviewContext] = useState(false)
+  const [filteredQueue, setFilteredQueue] = useState<{ key: string; rows: Overview["operations"]["queue"]; error?: string } | null>(null), [retry, setRetry] = useState(0)
+  const queueKey = `${round}:${+new Date(op.asOf)}:${retry}`
+  useEffect(() => {
+    if (!round) return
+    let current = true
+    getDashboardReviewQueue(club.id, round).then(rows => { if (current) setFilteredQueue({ key: queueKey, rows }) }).catch(() => { if (current) setFilteredQueue({ key: queueKey, rows: [], error: "This round’s review queue could not load." }) })
+    return () => { current = false }
+  }, [club.id, round, queueKey])
+  const queue = round ? filteredQueue?.key === queueKey ? filteredQueue.rows : [] : op.queue, pending = op.rounds.reduce((n, r) => n + r.pending, 0), eligible = op.rounds.reduce((n, r) => n + r.eligible, 0)
+  const base = `/club/${encodeURIComponent(club.id)}/workspace?section=recruitment`
+  const now = +new Date(op.asOf), deadline = op.intake?.applicationDeadline, closed = !op.intake?.applicationOpen || !!deadline && +new Date(deadline) <= now
+  const outcomes = data.recruitment?.filter(r => ["ACCEPTED", "REJECTED", "WAITLISTED"].includes(r.status)) ?? []
+  const hasOutcomes = outcomes.some(r => r.count > 0)
+  const milestones = [
+    ...(deadline && +new Date(deadline) > now && +new Date(deadline) <= now + 7 * 86400000 ? [{ id: "intake", title: "Applications close", at: deadline }] : []),
+    ...op.scheduled.map(s => ({ id: s.id, title: s.kind === "DECISION" ? "Decision publication scheduled" : "Communication scheduled", at: s.scheduledAt })),
+  ].sort((a, b) => +new Date(a.at) - +new Date(b.at))
+  return <div className="oc-command-center oc-command-recruiting" aria-busy={refreshing}>
+    <div className="oc-command-context"><div><p className="oc-command-eyebrow">{op.cycles.length ? op.cycles.map(c => c.name).join(" · ") : "No active cycle recorded"}</p><h2>{!op.intake ? "Recruitment access is limited" : pending ? `${pending} review${pending === 1 ? " is" : "s are"} ready for you` : "Your review queue is clear"}</h2><div className="oc-command-context-meta">{op.intake ? <><span className="oc-command-status" data-state={closed ? "closed" : "open"}>Intake {closed ? "closed" : "open"}</span><span>{deadline ? `Deadline ${memberDate(deadline)}` : "No deadline set"}</span></> : <span>Applicant summaries are unavailable with your access</span>}</div></div><Button className="oc-command-refresh" variant="outline" disabled={refreshing} onClick={onChanged}>{refreshing ? "Refreshing…" : "Refresh overview"}</Button></div>
+    {!hasPermission(membership, "applicants.identify") && hasPermission(membership, "applications.review") && <p className="oc-command-footnote">Anonymous rounds only. Identity, files and unapproved free text remain withheld.</p>}
+    {op.rounds.length > 0 ? <section className="oc-command-section oc-pipeline-section" aria-labelledby="dashboard-pipeline"><header><h2 id="dashboard-pipeline">Current pipeline</h2><span>Configured rounds · active applicants</span></header><div className="oc-command-pipeline" role="group" aria-label="Filter review queue by round"><button aria-pressed={!round} onClick={() => setRound("")}><span className="oc-pipeline-step">Overview</span><span className="oc-pipeline-label">All rounds</span><strong>{op.rounds.reduce((n, r) => n + r.count, 0)}<small>applicants</small></strong><span className="oc-pipeline-pending">{pending} reviews remaining for you</span></button>{op.rounds.map((r, i) => <button key={r.id} aria-pressed={round === r.id} onClick={() => setRound(round === r.id ? "" : r.id)}><span className="oc-pipeline-step">{String(i + 1).padStart(2, "0")}<ArrowRight size={13} aria-hidden="true" /></span><span className="oc-pipeline-label">{r.name}</span><strong>{r.count}<small>applicants</small></strong><span className="oc-pipeline-pending" data-pending={r.pending > 0}>{r.pending ? `${r.pending} reviews for you` : "No reviews waiting for you"}</span></button>)}</div></section> : <p className="oc-command-empty">{hasPermission(membership, "recruitment.manage") ? <>No recruiting rounds configured. <Link className="underline" href={`${base}&tool=interviews`}>Set up recruitment <ArrowRight aria-hidden="true" size={14} /></Link></> : "No rounds are available with your current review access."}</p>}
+    <div className="oc-command-columns"><div>
+      <section className="oc-command-section oc-review-console" aria-labelledby="dashboard-reviews"><header><h2 id="dashboard-reviews" tabIndex={-1}>Your review queue <span className="oc-section-count" aria-hidden="true">{round ? op.rounds.find(r => r.id === round)?.pending ?? 0 : pending}</span></h2><span>{round ? op.rounds.find(r => r.id === round)?.name : "All accessible rounds"}</span></header><p className="oc-command-footnote">Eligible applicants awaiting your finalized evaluation.</p>{round && filteredQueue?.key !== queueKey ? <DashboardLoading mode="recruiting" label="Loading this round’s reviews…" /> : round && filteredQueue?.error ? <p role="alert">{filteredQueue.error} <Button variant="outline" onClick={() => setRetry(n => n + 1)}>Retry reviews</Button></p> : queue.length ? <ul className="oc-command-list oc-review-records">{queue.map((a, index) => <li key={a.id}><button data-applicant-id={a.id} className="oc-command-row" onClick={() => { setReviewContext(true); setApplicant(a.id) }}><span className="oc-record-number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span className="oc-record-copy"><strong>{a.label}</strong><small>{a.round} · {a.anonymous ? "Anonymous review" : "Current panel assignment"}</small></span><span className="oc-record-action">Review <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul> : <p className="oc-command-empty">{"No outstanding reviews available for you in this selection."}</p>}{!round && pending > op.queue.length && <p className="oc-command-footnote">Showing the oldest {op.queue.length} of {pending} reviews. Saving a review brings the next candidate into this preview.</p>}<Link className="oc-command-link" href={`${base}&tool=applicants`}>All applicants <ArrowRight aria-hidden="true" size={14} /></Link></section>
+      {hasPermission(membership, "interviews.manage") && op.rounds.some(r => r.needsBooking > 0) && <section className="oc-command-section" data-attention="true" aria-labelledby="dashboard-booking-followup"><header><h2 id="dashboard-booking-followup">Booking follow-up</h2></header><ul className="oc-command-list">{op.rounds.filter(r => r.needsBooking > 0).map(r => <li key={r.id}><div className="oc-command-row"><span><strong>{r.needsBooking} awaiting booking · {r.name}</strong><small>{r.bookingPaused ? "Booking is paused. Review the panel before resuming." : r.bookingPublishedAt ? "Booking is published. These active applicants do not have a reservation for this round." : "Booking has not been published. Complete the official panel checks before publication."}</small></span><Link href={`${base}&tool=interviews&interviewTab=schedule&roundId=${r.id}`}>Review setup <ArrowRight aria-hidden="true" size={14} /></Link></div></li>)}</ul></section>}
+      {(op.votes.length > 0 || hasOutcomes) && <section className="oc-command-section oc-decision-summary" aria-labelledby="dashboard-voting"><header><h2 id="dashboard-voting">Voting & decisions</h2></header>{hasOutcomes && <p className="oc-command-footnote">Recorded outcomes · {outcomes.map(r => `${r.count} ${r.status === "ACCEPTED" ? "accepted" : r.status === "WAITLISTED" ? "waitlisted" : "not accepted"}`).join(" · ")}. These application outcomes are already visible to applicants; voting remains separate until explicitly published.</p>}<ul className="oc-command-list">{op.votes.map(v => <li key={v.id}><div className="oc-command-row"><span><strong>{v.round.name}</strong><small>{v.state === "COMPLETE" || v.state === "COMPLETED" ? "Voting complete · publication remains a separate confirmed action" : `${v.state.toLowerCase().replaceAll("_", " ")} session · continue in the voting workspace`}</small></span><Link href={!v.participants.length && !hasPermission(membership, "decisions.view") && !hasPermission(membership, "decisions.manage") ? `/voting/${v.id}/join` : `${base}&tool=applicants&voting=1&sessionId=${v.id}`}>{!v.participants.length && v.joinOpenedAt && !hasPermission(membership, "decisions.manage") ? "Join session" : "Continue"} <ArrowRight aria-hidden="true" size={14} /></Link></div></li>)}</ul></section>}
+      {op.offers.length > 0 && <section className="oc-command-section" aria-labelledby="dashboard-offers"><header><h2 id="dashboard-offers">Offers awaiting response</h2><span>Next offers by expiry</span></header><ul className="oc-command-list">{op.offers.map(o => <li key={o.id}><button data-applicant-id={o.applicationId} className="oc-command-row" onClick={() => { setReviewContext(false); setApplicant(o.applicationId) }}><span><strong>{o.label}</strong><small>Pending membership offer · expires {memberDate(o.expiresAt)}</small></span><span>View offer <ArrowRight aria-hidden="true" size={14} /></span></button></li>)}</ul></section>}
+    </div><aside>
+      <section className="oc-command-section oc-interview-agenda" aria-labelledby="dashboard-interviews"><header><h2 id="dashboard-interviews">Interviews this week</h2></header>{op.bookings.length ? <ul className="oc-command-list">{op.bookings.map(b => <li key={b.id}><button className="oc-command-row oc-calendar-record" onClick={() => setBooking(b)}><DashboardDate value={b.slot.startTime} /><span className="oc-calendar-copy"><time dateTime={new Date(b.slot.startTime).toISOString()}>{memberDate(b.slot.startTime)}</time><strong>{b.candidate}</strong><small>{b.round?.name ?? "Interview"} · {b.slot.location}</small><span>Check panel & prepare <ArrowRight aria-hidden="true" size={14} /></span></span></button></li>)}</ul> : <p className="oc-command-empty">{hasPermission(membership, "interviews.manage") ? "No accessible bookings in the next seven days." : "Booking management requires interview access. Assigned interview rooms remain in Interviews."}</p>}{hasPermission(membership, "interviews.manage") && <Link className="oc-command-link" href={`${base}&tool=interviews&interviewTab=schedule`}>Scheduling & panel checks <ArrowRight aria-hidden="true" size={14} /></Link>}</section>
+      {milestones.length > 0 && <section className="oc-command-section oc-milestone-agenda" aria-labelledby="dashboard-milestones"><header><h2 id="dashboard-milestones">Next seven days</h2></header><ul className="oc-command-list">{milestones.map(m => <li key={m.id} className="oc-command-row oc-command-stacked"><strong>{m.title}</strong><time dateTime={new Date(m.at).toISOString()}>{memberDate(m.at)}</time></li>)}</ul></section>}
+      {eligible > 0 && <section className="oc-command-section oc-coverage-panel" aria-labelledby="dashboard-coverage"><header><h2 id="dashboard-coverage">Your review coverage</h2></header><p className="oc-command-coverage"><strong>{eligible - pending} / {eligible}</strong> finalized</p><progress value={eligible - pending} max={eligible} aria-label="Your finalized eligible reviews"/><p className="oc-command-footnote">Your eligible active applicants, excluding your own application and final outcomes. Personal coverage, not team completion.</p></section>}
+    </aside></div>
+    {applicant && <Review key={applicant} clubId={club.id} applicationId={applicant} onClose={() => setApplicant(null)} onChanged={onChanged} onNext={reviewContext && queue.some(a => a.id !== applicant) ? () => setApplicant(queue.find(a => a.id !== applicant)!.id) : undefined} />}
+    {booking && <DashboardDrawer title="Prepare for interview" description="Current official panel validation and your authorized interview entry." onClose={() => setBooking(null)}><Preparation clubId={club.id} booking={booking} member={membership} /></DashboardDrawer>}
   </div>
 }

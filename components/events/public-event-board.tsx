@@ -488,7 +488,7 @@ export function PublicEventBoard() {
     </section>
   );
 }
-function RsvpControls({
+export function RsvpControls({
   event,
   identity,
   onChanged,
@@ -562,7 +562,7 @@ function RsvpControls({
       </Button>
     );
   return (
-    <div className="space-y-2" aria-busy={busy || loading}>
+    <div className="space-y-2" aria-busy={busy || loading} data-saving={busy}>
       {going ? (
         <>
           <p role="status" className="oc-youre-going">
