@@ -5,16 +5,37 @@ import { kitSchema } from "@/lib/interview-kits";
 import type { Prisma } from "@prisma/client";
 
 type PanelBooking = Prisma.InterviewBookingGetPayload<{ include: { slot: { include: { room: true; panelScheduleVersion: true } } } }>;
-/** Reuse the official scheduling authority: published slot panels supersede
- * legacy room attestations, while the approving owner must still be active. */
-export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
+function bookingPanelApproval(scope: InterviewScope, booking: PanelBooking) {
   const { slot } = booking, room = slot.room;
   if (!room || !room.isOpen || booking.applicationId !== scope.applicationId || booking.roundId !== scope.roundId || room.clubId !== scope.clubId || room.roundId !== scope.roundId) return null;
   const version = slot.panelScheduleVersion;
   if (slot.panelScheduleVersionId && (!version || version.id !== slot.panelScheduleVersionId || version.clubId !== scope.clubId || version.roundId !== scope.roundId)) return null;
   const approvedBy = slot.panelScheduleVersionId ? version!.publishedBy : room.panelApprovedBy;
-  if (!approvedBy || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
-  return slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id));
+  return approvedBy ? { approvedBy, panel: slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) } : null;
+}
+/** Reuse the official scheduling authority: published slot panels supersede
+ * legacy room attestations, while the approving owner must still be active. */
+export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
+  const approval = bookingPanelApproval(scope, booking);
+  if (!approval || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approval.approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
+  return approval.panel;
+}
+
+/** Transaction-local bulk projection. Never retains successful approval across requests. */
+export async function approvedBookingPanels(tx: AppTransactionClient, entries: { scope: InterviewScope; booking: PanelBooking }[]) {
+  const panels = new Map<string, string[]>();
+  for (let offset = 0; offset < entries.length; offset += 128) {
+    const approvals = entries.slice(offset, offset + 128).flatMap(({ scope, booking }) => {
+      const approval = bookingPanelApproval(scope, booking);
+      return approval ? [{ ...approval, clubId: scope.clubId, bookingId: booking.id }] : [];
+    });
+    if (!approvals.length) continue;
+    const ownerScopes = new Map(approvals.map(a => [`${a.clubId}:${a.approvedBy}`, { clubId: a.clubId, userId: a.approvedBy }]));
+    const owners = await tx.clubMember.findMany({ where: { isOwner: true, status: "ACTIVE", user: { disabledAt: null }, OR: [...ownerScopes.values()] }, select: { clubId: true, userId: true } });
+    const active = new Set(owners.map(owner => `${owner.clubId}:${owner.userId}`));
+    for (const approval of approvals) if (active.has(`${approval.clubId}:${approval.approvedBy}`)) panels.set(approval.bookingId, approval.panel);
+  }
+  return panels;
 }
 
 export function collaborationScope(session: { clubId: string; applicationId: string; roundId: string }): InterviewScope {

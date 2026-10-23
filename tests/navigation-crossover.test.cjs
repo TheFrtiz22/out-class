@@ -14,6 +14,8 @@ test('crossover fixes balanced AB/BA pairs and a same-build control before obser
     for (const pair of pairs) assert.equal(blocks.filter(b => b.pair === pair.pair).length, 2);
   }
   assert.throws(() => protocol('unbounded/arbitrary'), /match/);
+  assert.equal(protocol('0'.repeat(32), 'assigned-room-batch').filter(b => b.comparison === 'assigned-room-batch').length, 8);
+  assert.throws(() => protocol('0'.repeat(32), 'arbitrary'));
 });
 test('the control changes only the route wrapper and retains every server authorization statement', () => {
   const source = fs.readFileSync('app/layout.tsx', 'utf8'), control = controlLayout(source);

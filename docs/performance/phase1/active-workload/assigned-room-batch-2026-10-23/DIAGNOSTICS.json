@@ -1,0 +1,66 @@
+{
+  "fixedCodeCountsOnly": true,
+  "noRawLogOrPayloadRetained": true,
+  "records": {
+    "server-0.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-1.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-2.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-3.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-4.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-5.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-6.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-7.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-8.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    },
+    "server-9.log": {
+      "P2024": 0,
+      "P2028": 0,
+      "ETIMEDOUT": 0,
+      "Minified React error #418": 0
+    }
+  }
+}

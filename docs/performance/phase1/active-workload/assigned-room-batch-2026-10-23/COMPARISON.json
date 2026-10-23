@@ -1,0 +1,5296 @@
+{
+  "sourceCommit": "a3c36e0e8a3c50ab6be02a0080e66e0a9c597904",
+  "variants": {
+    "A": "Current HEAD plus the two allowlisted assigned-room batching source files",
+    "B": "Unmodified current HEAD; hydration wrapper present in both builds"
+  },
+  "method": {
+    "registeredBeforeCollection": true,
+    "createdAt": "2026-10-23T15:13:15.598Z",
+    "analysisSourceSha256": "ef2850dd7d9e868fbe6a4973e2b83248b374cc2cdc221fd600fe572256a30dc1",
+    "primary": "AB/BA blocks only; A minus B; negative latency delta favors A (assigned-room-batch)",
+    "control": "Middle AA pair reported separately, never pooled into AB inference",
+    "uncertainty": "10000 deterministic hierarchical paired bootstrap draws: resample four AB/BA pairs, then matched wave indices within each pair; retain all four participants in each sampled wave",
+    "interval": "Percentile 2.5/97.5; descriptive and limited by four pairs on one shared host",
+    "metrics": [
+      "click-to-useful-content p50/p95",
+      "network completion",
+      "requests",
+      "body bytes",
+      "server phase timing",
+      "all errors and missing links"
+    ],
+    "exclusions": "Only the predeclared one-wave warmup per condition per block is excluded from primary timing; all raw observations and failures retained. No load-based exclusions or outlier trimming.",
+    "limits": "No production SLO or equivalence threshold is asserted; intervals cannot prove absence of a small regression."
+  },
+  "groups": [
+    {
+      "condition": "cold",
+      "variant": "A",
+      "observations": 80,
+      "meaningfulMs": {
+        "samples": 80,
+        "p50": 513.5,
+        "p95": 631.2,
+        "max": 649.7
+      },
+      "interactiveMs": {
+        "samples": 80,
+        "p50": 513.6,
+        "p95": 631.5,
+        "max": 650
+      },
+      "networkCompleteMs": {
+        "samples": 80,
+        "p50": 490.9,
+        "p95": 605.9,
+        "max": 626.6
+      },
+      "requestCount": {
+        "samples": 80,
+        "p50": 8,
+        "p95": 8,
+        "max": 9
+      },
+      "encodedBodyBytes": {
+        "samples": 80,
+        "p50": 44021,
+        "p95": 44022,
+        "max": 44022
+      },
+      "scriptMs": {
+        "samples": 80,
+        "p50": 27.69,
+        "p95": 31.5,
+        "max": 34.92
+      },
+      "taskMs": {
+        "samples": 80,
+        "p50": 100.29,
+        "p95": 120.21,
+        "max": 129.69
+      },
+      "completePayloadObservations": 80,
+      "httpErrors": 0,
+      "transportFailures": 0,
+      "browserErrors": 0,
+      "hydrationPhases": [],
+      "all24Links": true,
+      "visibleGetTtfbMs": {
+        "samples": 240,
+        "p50": 149.78,
+        "p95": 283.73,
+        "max": 314.22
+      },
+      "serverPhasesMs": {
+        "identity": {
+          "samples": 240,
+          "p50": 100.31,
+          "p95": 208.58,
+          "max": 278.09
+        },
+        "database": {
+          "samples": 240,
+          "p50": 26.21,
+          "p95": 68.79,
+          "max": 112.98
+        },
+        "live_session": {
+          "samples": 240,
+          "p50": 2.07,
+          "p95": 10.67,
+          "max": 34.44
+        },
+        "transaction_acquire": {
+          "samples": 240,
+          "p50": 1.45,
+          "p95": 8.59,
+          "max": 34.26
+        },
+        "lock_query": {
+          "samples": 240,
+          "p50": 4.56,
+          "p95": 14.51,
+          "max": 28.2
+        },
+        "transaction": {
+          "samples": 240,
+          "p50": 25.71,
+          "p95": 68.79,
+          "max": 101.77
+        },
+        "compression": {
+          "samples": 160,
+          "p50": 0.26,
+          "p95": 1.09,
+          "max": 2.86
+        },
+        "serialization": {
+          "samples": 240,
+          "p50": 0.33,
+          "p95": 1.21,
+          "max": 3.56
+        },
+        "total": {
+          "samples": 240,
+          "p50": 132.57,
+          "p95": 266.88,
+          "max": 300.88
+        }
+      },
+      "assignedRoomPhasesMs": {
+        "identity": {
+          "samples": 80,
+          "p50": 100.31,
+          "p95": 197.98,
+          "max": 254.61
+        },
+        "database": {
+          "samples": 80,
+          "p50": 43.37,
+          "p95": 76.69,
+          "max": 112.98
+        },
+        "live_session": {
+          "samples": 80,
+          "p50": 1.88,
+          "p95": 8.75,
+          "max": 34.44
+        },
+        "transaction_acquire": {
+          "samples": 80,
+          "p50": 1.43,
+          "p95": 7.28,
+          "max": 25.21
+        },
+        "lock_query": {
+          "samples": 80,
+          "p50": 4.4,
+          "p95": 10.04,
+          "max": 19.74
+        },
+        "transaction": {
+          "samples": 80,
+          "p50": 43.04,
+          "p95": 74.96,
+          "max": 101.77
+        },
+        "compression": {
+          "samples": 80,
+          "p50": 0.26,
+          "p95": 0.74,
+          "max": 1.41
+        },
+        "serialization": {
+          "samples": 80,
+          "p50": 0.5,
+          "p95": 1.21,
+          "max": 3.56
+        },
+        "total": {
+          "samples": 80,
+          "p50": 155.27,
+          "p95": 270.74,
+          "max": 300.88
+        }
+      }
+    },
+    {
+      "condition": "cold",
+      "variant": "B",
+      "observations": 80,
+      "meaningfulMs": {
+        "samples": 80,
+        "p50": 593.5,
+        "p95": 713.2,
+        "max": 746.9
+      },
+      "interactiveMs": {
+        "samples": 80,
+        "p50": 593.5,
+        "p95": 713.5,
+        "max": 747
+      },
+      "networkCompleteMs": {
+        "samples": 80,
+        "p50": 566.1,
+        "p95": 693,
+        "max": 724.1
+      },
+      "requestCount": {
+        "samples": 80,
+        "p50": 8,
+        "p95": 8,
+        "max": 9
+      },
+      "encodedBodyBytes": {
+        "samples": 80,
+        "p50": 44027,
+        "p95": 44028,
+        "max": 44028
+      },
+      "scriptMs": {
+        "samples": 80,
+        "p50": 30.45,
+        "p95": 36.32,
+        "max": 39.66
+      },
+      "taskMs": {
+        "samples": 80,
+        "p50": 107.59,
+        "p95": 134.39,
+        "max": 145.12
+      },
+      "completePayloadObservations": 80,
+      "httpErrors": 0,
+      "transportFailures": 0,
+      "browserErrors": 0,
+      "hydrationPhases": [],
+      "all24Links": true,
+      "visibleGetTtfbMs": {
+        "samples": 240,
+        "p50": 174.83,
+        "p95": 322.17,
+        "max": 402.08
+      },
+      "serverPhasesMs": {
+        "identity": {
+          "samples": 240,
+          "p50": 105.24,
+          "p95": 170.09,
+          "max": 193.41
+        },
+        "database": {
+          "samples": 240,
+          "p50": 26.15,
+          "p95": 143.72,
+          "max": 204.43
+        },
+        "live_session": {
+          "samples": 240,
+          "p50": 2.46,
+          "p95": 9.35,
+          "max": 18.85
+        },
+        "transaction_acquire": {
+          "samples": 240,
+          "p50": 1.51,
+          "p95": 5.09,
+          "max": 16.9
+        },
+        "lock_query": {
+          "samples": 240,
+          "p50": 4.38,
+          "p95": 11.27,
+          "max": 18.93
+        },
+        "transaction": {
+          "samples": 240,
+          "p50": 23.51,
+          "p95": 141.03,
+          "max": 211.15
+        },
+        "compression": {
+          "samples": 160,
+          "p50": 0.23,
+          "p95": 1.21,
+          "max": 2.55
+        },
+        "serialization": {
+          "samples": 240,
+          "p50": 0.3,
+          "p95": 1.02,
+          "max": 2.75
+        },
+        "total": {
+          "samples": 240,
+          "p50": 152.75,
+          "p95": 292.37,
+          "max": 360.69
+        }
+      },
+      "assignedRoomPhasesMs": {
+        "identity": {
+          "samples": 80,
+          "p50": 104.97,
+          "p95": 164.32,
+          "max": 193.41
+        },
+        "database": {
+          "samples": 80,
+          "p50": 110.11,
+          "p95": 174.44,
+          "max": 204.43
+        },
+        "live_session": {
+          "samples": 80,
+          "p50": 2.59,
+          "p95": 9.35,
+          "max": 10.76
+        },
+        "transaction_acquire": {
+          "samples": 80,
+          "p50": 1.73,
+          "p95": 4.65,
+          "max": 12.24
+        },
+        "lock_query": {
+          "samples": 80,
+          "p50": 4.29,
+          "p95": 11.27,
+          "max": 15.72
+        },
+        "transaction": {
+          "samples": 80,
+          "p50": 112.01,
+          "p95": 178.83,
+          "max": 211.15
+        },
+        "compression": {
+          "samples": 80,
+          "p50": 0.23,
+          "p95": 0.68,
+          "max": 2.49
+        },
+        "serialization": {
+          "samples": 80,
+          "p50": 0.43,
+          "p95": 1.19,
+          "max": 2.75
+        },
+        "total": {
+          "samples": 80,
+          "p50": 229.87,
+          "p95": 321.65,
+          "max": 360.69
+        }
+      }
+    },
+    {
+      "condition": "warm",
+      "variant": "A",
+      "observations": 80,
+      "meaningfulMs": {
+        "samples": 80,
+        "p50": 175.9,
+        "p95": 584.2,
+        "max": 645.2
+      },
+      "interactiveMs": {
+        "samples": 80,
+        "p50": 176.1,
+        "p95": 584.3,
+        "max": 645.3
+      },
+      "networkCompleteMs": {
+        "samples": 80,
+        "p50": 149.1,
+        "p95": 559.7,
+        "max": 616.2
+      },
+      "requestCount": {
+        "samples": 80,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 80,
+        "p50": 3960,
+        "p95": 3961,
+        "max": 3961
+      },
+      "scriptMs": {
+        "samples": 80,
+        "p50": 13.53,
+        "p95": 22.83,
+        "max": 26.35
+      },
+      "taskMs": {
+        "samples": 80,
+        "p50": 31.01,
+        "p95": 52.85,
+        "max": 59.16
+      },
+      "completePayloadObservations": 80,
+      "httpErrors": 0,
+      "transportFailures": 0,
+      "browserErrors": 0,
+      "hydrationPhases": [],
+      "all24Links": true,
+      "visibleGetTtfbMs": {
+        "samples": 240,
+        "p50": 123.78,
+        "p95": 463.26,
+        "max": 590.4
+      },
+      "serverPhasesMs": {
+        "identity": {
+          "samples": 240,
+          "p50": 82.55,
+          "p95": 318.51,
+          "max": 403.05
+        },
+        "database": {
+          "samples": 240,
+          "p50": 22.78,
+          "p95": 101.12,
+          "max": 211.51
+        },
+        "live_session": {
+          "samples": 240,
+          "p50": 1.96,
+          "p95": 8.65,
+          "max": 75.47
+        },
+        "transaction_acquire": {
+          "samples": 240,
+          "p50": 1.3,
+          "p95": 8.34,
+          "max": 28.8
+        },
+        "lock_query": {
+          "samples": 240,
+          "p50": 3.9,
+          "p95": 15.21,
+          "max": 89.33
+        },
+        "transaction": {
+          "samples": 240,
+          "p50": 22.16,
+          "p95": 95.67,
+          "max": 194.15
+        },
+        "compression": {
+          "samples": 160,
+          "p50": 0.24,
+          "p95": 0.78,
+          "max": 2.39
+        },
+        "serialization": {
+          "samples": 240,
+          "p50": 0.3,
+          "p95": 0.91,
+          "max": 3.76
+        },
+        "total": {
+          "samples": 240,
+          "p50": 112.27,
+          "p95": 416.56,
+          "max": 541.25
+        }
+      },
+      "assignedRoomPhasesMs": {
+        "identity": {
+          "samples": 80,
+          "p50": 82.7,
+          "p95": 318.51,
+          "max": 360.72
+        },
+        "database": {
+          "samples": 80,
+          "p50": 35.95,
+          "p95": 165.65,
+          "max": 211.51
+        },
+        "live_session": {
+          "samples": 80,
+          "p50": 1.86,
+          "p95": 7.8,
+          "max": 34.15
+        },
+        "transaction_acquire": {
+          "samples": 80,
+          "p50": 1.3,
+          "p95": 9.14,
+          "max": 18.14
+        },
+        "lock_query": {
+          "samples": 80,
+          "p50": 3.49,
+          "p95": 14.53,
+          "max": 32.49
+        },
+        "transaction": {
+          "samples": 80,
+          "p50": 35.28,
+          "p95": 135.51,
+          "max": 194.15
+        },
+        "compression": {
+          "samples": 80,
+          "p50": 0.24,
+          "p95": 0.66,
+          "max": 2.39
+        },
+        "serialization": {
+          "samples": 80,
+          "p50": 0.48,
+          "p95": 0.93,
+          "max": 3.76
+        },
+        "total": {
+          "samples": 80,
+          "p50": 127.44,
+          "p95": 482.33,
+          "max": 541.25
+        }
+      }
+    },
+    {
+      "condition": "warm",
+      "variant": "B",
+      "observations": 80,
+      "meaningfulMs": {
+        "samples": 80,
+        "p50": 283.8,
+        "p95": 973.5,
+        "max": 1254.7
+      },
+      "interactiveMs": {
+        "samples": 80,
+        "p50": 283.9,
+        "p95": 973.6,
+        "max": 1254.8
+      },
+      "networkCompleteMs": {
+        "samples": 80,
+        "p50": 262.5,
+        "p95": 940.7,
+        "max": 1224.7
+      },
+      "requestCount": {
+        "samples": 80,
+        "p50": 3,
+        "p95": 3,
+        "max": 3
+      },
+      "encodedBodyBytes": {
+        "samples": 80,
+        "p50": 3960,
+        "p95": 3961,
+        "max": 3961
+      },
+      "scriptMs": {
+        "samples": 80,
+        "p50": 14.32,
+        "p95": 28.41,
+        "max": 34.14
+      },
+      "taskMs": {
+        "samples": 80,
+        "p50": 33.42,
+        "p95": 67.82,
+        "max": 102.9
+      },
+      "completePayloadObservations": 80,
+      "httpErrors": 0,
+      "transportFailures": 0,
+      "browserErrors": 0,
+      "hydrationPhases": [],
+      "all24Links": true,
+      "visibleGetTtfbMs": {
+        "samples": 240,
+        "p50": 167.75,
+        "p95": 666.1,
+        "max": 1208.48
+      },
+      "serverPhasesMs": {
+        "identity": {
+          "samples": 240,
+          "p50": 84.99,
+          "p95": 270.53,
+          "max": 397.75
+        },
+        "database": {
+          "samples": 240,
+          "p50": 26.56,
+          "p95": 173.99,
+          "max": 1013.66
+        },
+        "live_session": {
+          "samples": 240,
+          "p50": 2.23,
+          "p95": 10.5,
+          "max": 37.17
+        },
+        "transaction_acquire": {
+          "samples": 240,
+          "p50": 1.2,
+          "p95": 8.84,
+          "max": 46.6
+        },
+        "lock_query": {
+          "samples": 240,
+          "p50": 4.05,
+          "p95": 15.01,
+          "max": 42.88
+        },
+        "transaction": {
+          "samples": 240,
+          "p50": 25.48,
+          "p95": 176.57,
+          "max": 994.12
+        },
+        "compression": {
+          "samples": 160,
+          "p50": 0.24,
+          "p95": 1.58,
+          "max": 7.75
+        },
+        "serialization": {
+          "samples": 240,
+          "p50": 0.33,
+          "p95": 1.55,
+          "max": 8.52
+        },
+        "total": {
+          "samples": 240,
+          "p50": 155.73,
+          "p95": 470.09,
+          "max": 1190.21
+        }
+      },
+      "assignedRoomPhasesMs": {
+        "identity": {
+          "samples": 80,
+          "p50": 83.08,
+          "p95": 262.14,
+          "max": 341
+        },
+        "database": {
+          "samples": 80,
+          "p50": 122.53,
+          "p95": 282.79,
+          "max": 1013.66
+        },
+        "live_session": {
+          "samples": 80,
+          "p50": 2.23,
+          "p95": 6.31,
+          "max": 37.17
+        },
+        "transaction_acquire": {
+          "samples": 80,
+          "p50": 1.28,
+          "p95": 8.06,
+          "max": 46.6
+        },
+        "lock_query": {
+          "samples": 80,
+          "p50": 3.97,
+          "p95": 13.92,
+          "max": 30.4
+        },
+        "transaction": {
+          "samples": 80,
+          "p50": 122.15,
+          "p95": 291.35,
+          "max": 994.12
+        },
+        "compression": {
+          "samples": 80,
+          "p50": 0.24,
+          "p95": 1.49,
+          "max": 7.75
+        },
+        "serialization": {
+          "samples": 80,
+          "p50": 0.44,
+          "p95": 1.61,
+          "max": 8.52
+        },
+        "total": {
+          "samples": 80,
+          "p50": 240.79,
+          "p95": 633.95,
+          "max": 1190.21
+        }
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "condition": "cold",
+      "individual": [
+        {
+          "pair": 0,
+          "order": "AB",
+          "A": {
+            "samples": 20,
+            "p50": 476.1,
+            "p95": 546.2,
+            "max": 546.6
+          },
+          "B": {
+            "samples": 20,
+            "p50": 596.3,
+            "p95": 614.4,
+            "max": 631
+          }
+        },
+        {
+          "pair": 1,
+          "order": "BA",
+          "A": {
+            "samples": 20,
+            "p50": 506.7,
+            "p95": 562,
+            "max": 572.9
+          },
+          "B": {
+            "samples": 20,
+            "p50": 662.5,
+            "p95": 687.1,
+            "max": 695.9
+          }
+        },
+        {
+          "pair": 3,
+          "order": "AB",
+          "A": {
+            "samples": 20,
+            "p50": 494.6,
+            "p95": 610.5,
+            "max": 612.4
+          },
+          "B": {
+            "samples": 20,
+            "p50": 629.8,
+            "p95": 740.9,
+            "max": 746.9
+          }
+        },
+        {
+          "pair": 4,
+          "order": "BA",
+          "A": {
+            "samples": 20,
+            "p50": 578.3,
+            "p95": 647,
+            "max": 649.7
+          },
+          "B": {
+            "samples": 20,
+            "p50": 551.4,
+            "p95": 598.4,
+            "max": 613.3
+          }
+        }
+      ],
+      "hierarchicalPaired95Interval": {
+        "p50DeltaMs": {
+          "low": -154.9,
+          "high": 8.9
+        },
+        "p95DeltaMs": {
+          "low": -166.6,
+          "high": 33
+        },
+        "p50DeltaPercent": {
+          "low": -23.63,
+          "high": 1.58
+        },
+        "p95DeltaPercent": {
+          "low": -22.57,
+          "high": 5.38
+        }
+      }
+    },
+    {
+      "condition": "warm",
+      "individual": [
+        {
+          "pair": 0,
+          "order": "AB",
+          "A": {
+            "samples": 20,
+            "p50": 132.3,
+            "p95": 151.1,
+            "max": 155
+          },
+          "B": {
+            "samples": 20,
+            "p50": 331.5,
+            "p95": 1250,
+            "max": 1254.7
+          }
+        },
+        {
+          "pair": 1,
+          "order": "BA",
+          "A": {
+            "samples": 20,
+            "p50": 216.9,
+            "p95": 603.7,
+            "max": 625.4
+          },
+          "B": {
+            "samples": 20,
+            "p50": 281,
+            "p95": 546.8,
+            "max": 563.9
+          }
+        },
+        {
+          "pair": 3,
+          "order": "AB",
+          "A": {
+            "samples": 20,
+            "p50": 165.2,
+            "p95": 621.5,
+            "max": 645.2
+          },
+          "B": {
+            "samples": 20,
+            "p50": 283.8,
+            "p95": 943.7,
+            "max": 973.5
+          }
+        },
+        {
+          "pair": 4,
+          "order": "BA",
+          "A": {
+            "samples": 20,
+            "p50": 198.4,
+            "p95": 327.7,
+            "max": 333.8
+          },
+          "B": {
+            "samples": 20,
+            "p50": 200.1,
+            "p95": 234.6,
+            "max": 236.8
+          }
+        }
+      ],
+      "hierarchicalPaired95Interval": {
+        "p50DeltaMs": {
+          "low": -209.8,
+          "high": -1
+        },
+        "p95DeltaMs": {
+          "low": -1048.5,
+          "high": 228.6
+        },
+        "p50DeltaPercent": {
+          "low": -59.8,
+          "high": -0.5
+        },
+        "p95DeltaPercent": {
+          "low": -83.85,
+          "high": 62.42
+        }
+      }
+    }
+  ],
+  "sameBuildControl": [
+    {
+      "condition": "cold",
+      "first": {
+        "observations": 20,
+        "meaningfulMs": {
+          "samples": 20,
+          "p50": 530.6,
+          "p95": 678.8,
+          "max": 690
+        },
+        "interactiveMs": {
+          "samples": 20,
+          "p50": 530.7,
+          "p95": 678.9,
+          "max": 690.2
+        },
+        "networkCompleteMs": {
+          "samples": 20,
+          "p50": 508.9,
+          "p95": 652.2,
+          "max": 664.1
+        },
+        "requestCount": {
+          "samples": 20,
+          "p50": 8,
+          "p95": 8,
+          "max": 8
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 44021,
+          "p95": 44022,
+          "max": 44022
+        },
+        "scriptMs": {
+          "samples": 20,
+          "p50": 29.19,
+          "p95": 40.67,
+          "max": 40.87
+        },
+        "taskMs": {
+          "samples": 20,
+          "p50": 101.44,
+          "p95": 144.36,
+          "max": 153.85
+        },
+        "completePayloadObservations": 20,
+        "httpErrors": 0,
+        "transportFailures": 0,
+        "browserErrors": 0,
+        "hydrationPhases": [],
+        "all24Links": true,
+        "visibleGetTtfbMs": {
+          "samples": 60,
+          "p50": 173.68,
+          "p95": 327.32,
+          "max": 338.56
+        },
+        "serverPhasesMs": {
+          "identity": {
+            "samples": 60,
+            "p50": 104.26,
+            "p95": 276.22,
+            "max": 291.77
+          },
+          "database": {
+            "samples": 60,
+            "p50": 36.58,
+            "p95": 84.71,
+            "max": 89.6
+          },
+          "live_session": {
+            "samples": 60,
+            "p50": 2.83,
+            "p95": 11.63,
+            "max": 45.35
+          },
+          "transaction_acquire": {
+            "samples": 60,
+            "p50": 2.64,
+            "p95": 13.05,
+            "max": 44.79
+          },
+          "lock_query": {
+            "samples": 60,
+            "p50": 6.73,
+            "p95": 16.1,
+            "max": 27.09
+          },
+          "transaction": {
+            "samples": 60,
+            "p50": 35.78,
+            "p95": 81.18,
+            "max": 99.24
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.33,
+            "p95": 1.89,
+            "max": 2.58
+          },
+          "serialization": {
+            "samples": 60,
+            "p50": 0.35,
+            "p95": 1.93,
+            "max": 3.08
+          },
+          "total": {
+            "samples": 60,
+            "p50": 160.11,
+            "p95": 311.54,
+            "max": 323.18
+          }
+        },
+        "assignedRoomPhasesMs": {
+          "identity": {
+            "samples": 20,
+            "p50": 103.27,
+            "p95": 270.64,
+            "max": 276.22
+          },
+          "database": {
+            "samples": 20,
+            "p50": 54.58,
+            "p95": 87.74,
+            "max": 89.6
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 2.65,
+            "p95": 9.38,
+            "max": 45.35
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 2.33,
+            "p95": 8.33,
+            "max": 44.79
+          },
+          "lock_query": {
+            "samples": 20,
+            "p50": 5.75,
+            "p95": 10.67,
+            "max": 12.82
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 52.28,
+            "p95": 91.71,
+            "max": 99.24
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.37,
+            "p95": 1.56,
+            "max": 1.89
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.75,
+            "p95": 1.93,
+            "max": 2.31
+          },
+          "total": {
+            "samples": 20,
+            "p50": 178.01,
+            "p95": 320.38,
+            "max": 323.18
+          }
+        }
+      },
+      "second": {
+        "observations": 20,
+        "meaningfulMs": {
+          "samples": 20,
+          "p50": 498.9,
+          "p95": 581.9,
+          "max": 596.5
+        },
+        "interactiveMs": {
+          "samples": 20,
+          "p50": 499,
+          "p95": 582.2,
+          "max": 596.6
+        },
+        "networkCompleteMs": {
+          "samples": 20,
+          "p50": 475.1,
+          "p95": 555.7,
+          "max": 567.6
+        },
+        "requestCount": {
+          "samples": 20,
+          "p50": 8,
+          "p95": 8,
+          "max": 8
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 44021,
+          "p95": 44022,
+          "max": 44022
+        },
+        "scriptMs": {
+          "samples": 20,
+          "p50": 27.63,
+          "p95": 29.65,
+          "max": 31.12
+        },
+        "taskMs": {
+          "samples": 20,
+          "p50": 97.8,
+          "p95": 134.32,
+          "max": 140.87
+        },
+        "completePayloadObservations": 20,
+        "httpErrors": 0,
+        "transportFailures": 0,
+        "browserErrors": 0,
+        "hydrationPhases": [],
+        "all24Links": true,
+        "visibleGetTtfbMs": {
+          "samples": 60,
+          "p50": 136.69,
+          "p95": 233.19,
+          "max": 249.16
+        },
+        "serverPhasesMs": {
+          "identity": {
+            "samples": 60,
+            "p50": 93.25,
+            "p95": 144.27,
+            "max": 163.39
+          },
+          "database": {
+            "samples": 60,
+            "p50": 28.63,
+            "p95": 76.17,
+            "max": 120.56
+          },
+          "live_session": {
+            "samples": 60,
+            "p50": 1.92,
+            "p95": 15.86,
+            "max": 18.71
+          },
+          "transaction_acquire": {
+            "samples": 60,
+            "p50": 1.27,
+            "p95": 11.71,
+            "max": 19.01
+          },
+          "lock_query": {
+            "samples": 60,
+            "p50": 4.33,
+            "p95": 22.14,
+            "max": 27.13
+          },
+          "transaction": {
+            "samples": 60,
+            "p50": 24.04,
+            "p95": 69.43,
+            "max": 99.96
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.35,
+            "p95": 2.12,
+            "max": 2.22
+          },
+          "serialization": {
+            "samples": 60,
+            "p50": 0.39,
+            "p95": 2,
+            "max": 2.49
+          },
+          "total": {
+            "samples": 60,
+            "p50": 125.72,
+            "p95": 217.97,
+            "max": 234.84
+          }
+        },
+        "assignedRoomPhasesMs": {
+          "identity": {
+            "samples": 20,
+            "p50": 85.48,
+            "p95": 134.17,
+            "max": 144.27
+          },
+          "database": {
+            "samples": 20,
+            "p50": 48.17,
+            "p95": 92.56,
+            "max": 120.56
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 3.2,
+            "p95": 16.47,
+            "max": 18.71
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 1.03,
+            "p95": 6.04,
+            "max": 10.6
+          },
+          "lock_query": {
+            "samples": 20,
+            "p50": 4.33,
+            "p95": 22.14,
+            "max": 26.46
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 48.37,
+            "p95": 72.14,
+            "max": 99.96
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.33,
+            "p95": 2.12,
+            "max": 2.22
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.54,
+            "p95": 2.36,
+            "max": 2.36
+          },
+          "total": {
+            "samples": 20,
+            "p50": 139.92,
+            "p95": 227.57,
+            "max": 234.84
+          }
+        }
+      }
+    },
+    {
+      "condition": "warm",
+      "first": {
+        "observations": 20,
+        "meaningfulMs": {
+          "samples": 20,
+          "p50": 181.9,
+          "p95": 297.1,
+          "max": 309.8
+        },
+        "interactiveMs": {
+          "samples": 20,
+          "p50": 182.1,
+          "p95": 297.3,
+          "max": 310
+        },
+        "networkCompleteMs": {
+          "samples": 20,
+          "p50": 154.6,
+          "p95": 275.3,
+          "max": 292.6
+        },
+        "requestCount": {
+          "samples": 20,
+          "p50": 3,
+          "p95": 3,
+          "max": 3
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 3960,
+          "p95": 3961,
+          "max": 3961
+        },
+        "scriptMs": {
+          "samples": 20,
+          "p50": 15.41,
+          "p95": 22.65,
+          "max": 24.52
+        },
+        "taskMs": {
+          "samples": 20,
+          "p50": 35.41,
+          "p95": 49.07,
+          "max": 57.81
+        },
+        "completePayloadObservations": 20,
+        "httpErrors": 0,
+        "transportFailures": 0,
+        "browserErrors": 0,
+        "hydrationPhases": [],
+        "all24Links": true,
+        "visibleGetTtfbMs": {
+          "samples": 60,
+          "p50": 126.66,
+          "p95": 257.45,
+          "max": 272.29
+        },
+        "serverPhasesMs": {
+          "identity": {
+            "samples": 60,
+            "p50": 83.53,
+            "p95": 155.51,
+            "max": 167.52
+          },
+          "database": {
+            "samples": 60,
+            "p50": 28.88,
+            "p95": 83.43,
+            "max": 115.54
+          },
+          "live_session": {
+            "samples": 60,
+            "p50": 2.41,
+            "p95": 8.95,
+            "max": 41.29
+          },
+          "transaction_acquire": {
+            "samples": 60,
+            "p50": 1.39,
+            "p95": 8.03,
+            "max": 15.72
+          },
+          "lock_query": {
+            "samples": 60,
+            "p50": 4.62,
+            "p95": 12.81,
+            "max": 14.9
+          },
+          "transaction": {
+            "samples": 60,
+            "p50": 28.18,
+            "p95": 72.34,
+            "max": 92.92
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.21,
+            "p95": 0.78,
+            "max": 0.87
+          },
+          "serialization": {
+            "samples": 60,
+            "p50": 0.28,
+            "p95": 1.01,
+            "max": 2.25
+          },
+          "total": {
+            "samples": 60,
+            "p50": 119.19,
+            "p95": 231.45,
+            "max": 244.55
+          }
+        },
+        "assignedRoomPhasesMs": {
+          "identity": {
+            "samples": 20,
+            "p50": 83.06,
+            "p95": 152.9,
+            "max": 155.51
+          },
+          "database": {
+            "samples": 20,
+            "p50": 41.37,
+            "p95": 73.32,
+            "max": 115.54
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 2.41,
+            "p95": 8.95,
+            "max": 41.29
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 1.39,
+            "p95": 10.84,
+            "max": 15.72
+          },
+          "lock_query": {
+            "samples": 20,
+            "p50": 3.85,
+            "p95": 12.81,
+            "max": 14.57
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 42.07,
+            "p95": 73.49,
+            "max": 74.77
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.2,
+            "p95": 0.49,
+            "max": 0.55
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.39,
+            "p95": 0.79,
+            "max": 2.25
+          },
+          "total": {
+            "samples": 20,
+            "p50": 133.46,
+            "p95": 235.81,
+            "max": 244.55
+          }
+        }
+      },
+      "second": {
+        "observations": 20,
+        "meaningfulMs": {
+          "samples": 20,
+          "p50": 136.5,
+          "p95": 162.3,
+          "max": 172.3
+        },
+        "interactiveMs": {
+          "samples": 20,
+          "p50": 136.7,
+          "p95": 162.6,
+          "max": 172.5
+        },
+        "networkCompleteMs": {
+          "samples": 20,
+          "p50": 113.7,
+          "p95": 141.3,
+          "max": 141.4
+        },
+        "requestCount": {
+          "samples": 20,
+          "p50": 3,
+          "p95": 3,
+          "max": 3
+        },
+        "encodedBodyBytes": {
+          "samples": 20,
+          "p50": 3960,
+          "p95": 3961,
+          "max": 3961
+        },
+        "scriptMs": {
+          "samples": 20,
+          "p50": 11.99,
+          "p95": 14.06,
+          "max": 16.41
+        },
+        "taskMs": {
+          "samples": 20,
+          "p50": 28.36,
+          "p95": 32.27,
+          "max": 34.15
+        },
+        "completePayloadObservations": 20,
+        "httpErrors": 0,
+        "transportFailures": 0,
+        "browserErrors": 0,
+        "hydrationPhases": [],
+        "all24Links": true,
+        "visibleGetTtfbMs": {
+          "samples": 60,
+          "p50": 96.3,
+          "p95": 123.44,
+          "max": 134.22
+        },
+        "serverPhasesMs": {
+          "identity": {
+            "samples": 60,
+            "p50": 69.01,
+            "p95": 88.46,
+            "max": 93.61
+          },
+          "database": {
+            "samples": 60,
+            "p50": 13.82,
+            "p95": 32.11,
+            "max": 34.99
+          },
+          "live_session": {
+            "samples": 60,
+            "p50": 1.25,
+            "p95": 2.38,
+            "max": 4.97
+          },
+          "transaction_acquire": {
+            "samples": 60,
+            "p50": 0.83,
+            "p95": 3.28,
+            "max": 4.91
+          },
+          "lock_query": {
+            "samples": 60,
+            "p50": 2.89,
+            "p95": 5.68,
+            "max": 5.75
+          },
+          "transaction": {
+            "samples": 60,
+            "p50": 14.43,
+            "p95": 30.47,
+            "max": 35.72
+          },
+          "compression": {
+            "samples": 40,
+            "p50": 0.16,
+            "p95": 0.62,
+            "max": 0.92
+          },
+          "serialization": {
+            "samples": 60,
+            "p50": 0.22,
+            "p95": 0.63,
+            "max": 1
+          },
+          "total": {
+            "samples": 60,
+            "p50": 91.05,
+            "p95": 114.27,
+            "max": 125.23
+          }
+        },
+        "assignedRoomPhasesMs": {
+          "identity": {
+            "samples": 20,
+            "p50": 68.39,
+            "p95": 93.24,
+            "max": 93.61
+          },
+          "database": {
+            "samples": 20,
+            "p50": 26.62,
+            "p95": 33.37,
+            "max": 34.99
+          },
+          "live_session": {
+            "samples": 20,
+            "p50": 1.4,
+            "p95": 4.21,
+            "max": 4.97
+          },
+          "transaction_acquire": {
+            "samples": 20,
+            "p50": 0.83,
+            "p95": 1.58,
+            "max": 2.02
+          },
+          "lock_query": {
+            "samples": 20,
+            "p50": 2.51,
+            "p95": 4.42,
+            "max": 5.33
+          },
+          "transaction": {
+            "samples": 20,
+            "p50": 25.94,
+            "p95": 33.93,
+            "max": 35.72
+          },
+          "compression": {
+            "samples": 20,
+            "p50": 0.19,
+            "p95": 0.41,
+            "max": 0.79
+          },
+          "serialization": {
+            "samples": 20,
+            "p50": 0.37,
+            "p95": 0.63,
+            "max": 0.88
+          },
+          "total": {
+            "samples": 20,
+            "p50": 97.38,
+            "p95": 121.18,
+            "max": 125.23
+          }
+        }
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "index": 0,
+      "variant": "A",
+      "pair": 0,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "3d35fdcffbf237b7e2e90895e283e21baff578faeb5b7b1aca621c19e2876c0d",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 476.1,
+            "p95": 546.2,
+            "max": 546.6
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 476.6,
+            "p95": 546.3,
+            "max": 546.6
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 441.1,
+            "p95": 522.5,
+            "max": 524.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 9
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 27.92,
+            "p95": 31.5,
+            "max": 31.78
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 93.86,
+            "p95": 118.26,
+            "max": 129.69
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 116.88,
+            "p95": 192.7,
+            "max": 208.98
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 72.5,
+              "p95": 121.33,
+              "max": 136.69
+            },
+            "database": {
+              "samples": 60,
+              "p50": 20.22,
+              "p95": 50.32,
+              "max": 72.15
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.47,
+              "p95": 5.55,
+              "max": 7.73
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.21,
+              "p95": 4.4,
+              "max": 6.41
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.39,
+              "p95": 7.58,
+              "max": 8.26
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 19.41,
+              "p95": 50.58,
+              "max": 79.17
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.24,
+              "p95": 0.95,
+              "max": 2.86
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.3,
+              "p95": 1.07,
+              "max": 2.92
+            },
+            "total": {
+              "samples": 60,
+              "p50": 103.66,
+              "p95": 179.04,
+              "max": 191.56
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 68.06,
+              "p95": 135.96,
+              "max": 136.69
+            },
+            "database": {
+              "samples": 20,
+              "p50": 41.85,
+              "p95": 56,
+              "max": 72.15
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.17,
+              "p95": 3.15,
+              "max": 3.34
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 0.99,
+              "p95": 4.4,
+              "max": 5.39
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.48,
+              "p95": 7.58,
+              "max": 8.14
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 40.92,
+              "p95": 57.4,
+              "max": 79.17
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.24,
+              "p95": 0.42,
+              "max": 0.6
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.51,
+              "p95": 0.84,
+              "max": 1.75
+            },
+            "total": {
+              "samples": 20,
+              "p50": 110.52,
+              "p95": 190.58,
+              "max": 191.56
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 132.3,
+            "p95": 151.1,
+            "max": 155
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 132.6,
+            "p95": 151.3,
+            "max": 155.2
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 110.9,
+            "p95": 119.3,
+            "max": 121
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 11.96,
+            "p95": 15.36,
+            "max": 16.76
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 28.02,
+            "p95": 33.97,
+            "max": 35.42
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 90.35,
+            "p95": 111.16,
+            "max": 112.44
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 63.98,
+              "p95": 74.08,
+              "max": 76.07
+            },
+            "database": {
+              "samples": 60,
+              "p50": 16.15,
+              "p95": 34.16,
+              "max": 40.02
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.03,
+              "p95": 2.97,
+              "max": 4.99
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.89,
+              "p95": 2.55,
+              "max": 3.35
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 2.71,
+              "p95": 6.64,
+              "max": 8.83
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 15.78,
+              "p95": 33.07,
+              "max": 40.35
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.18,
+              "p95": 0.6,
+              "max": 0.72
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.23,
+              "p95": 0.73,
+              "max": 0.93
+            },
+            "total": {
+              "samples": 60,
+              "p50": 86.1,
+              "p95": 101.09,
+              "max": 104.26
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 62.22,
+              "p95": 72.94,
+              "max": 74.08
+            },
+            "database": {
+              "samples": 20,
+              "p50": 28.46,
+              "p95": 37.84,
+              "max": 40.02
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.36,
+              "p95": 2.23,
+              "max": 2.97
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 0.84,
+              "p95": 2.64,
+              "max": 2.85
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 2.3,
+              "p95": 6.64,
+              "max": 6.7
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 27.19,
+              "p95": 37.17,
+              "max": 40.35
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.18,
+              "p95": 0.58,
+              "max": 0.71
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.3,
+              "p95": 0.78,
+              "max": 0.93
+            },
+            "total": {
+              "samples": 20,
+              "p50": 97.13,
+              "p95": 102.02,
+              "max": 104.26
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "variant": "B",
+      "pair": 0,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "5accd8b7200718c8a01225f64cfc0c781b6cbad2b0fe62689c8e408e74a25fe1",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 596.3,
+            "p95": 614.4,
+            "max": 631
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 596.4,
+            "p95": 614.5,
+            "max": 631.1
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 566.4,
+            "p95": 590.6,
+            "max": 603.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 9
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44027,
+            "p95": 44028,
+            "max": 44028
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 30.82,
+            "p95": 36.1,
+            "max": 36.32
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 107.59,
+            "p95": 127.67,
+            "max": 139.07
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 165.22,
+            "p95": 261.79,
+            "max": 282
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 111.42,
+              "p95": 131.95,
+              "max": 142.37
+            },
+            "database": {
+              "samples": 60,
+              "p50": 23.92,
+              "p95": 112.35,
+              "max": 136.72
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.21,
+              "p95": 10.54,
+              "max": 11.23
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.34,
+              "p95": 3.64,
+              "max": 5.86
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 3.96,
+              "p95": 7,
+              "max": 10.64
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 21.15,
+              "p95": 112.4,
+              "max": 136.39
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.22,
+              "p95": 1.05,
+              "max": 2.49
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.3,
+              "p95": 1.19,
+              "max": 2.75
+            },
+            "total": {
+              "samples": 60,
+              "p50": 150.2,
+              "p95": 238.32,
+              "max": 259.33
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 109.2,
+              "p95": 120.66,
+              "max": 137.84
+            },
+            "database": {
+              "samples": 20,
+              "p50": 102.89,
+              "p95": 122.12,
+              "max": 136.72
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.37,
+              "p95": 9.95,
+              "max": 10.52
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.56,
+              "p95": 2.34,
+              "max": 5.86
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.72,
+              "p95": 6.36,
+              "max": 7
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 104.17,
+              "p95": 122.07,
+              "max": 136.39
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.22,
+              "p95": 1.05,
+              "max": 2.49
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.36,
+              "p95": 1.41,
+              "max": 2.75
+            },
+            "total": {
+              "samples": 20,
+              "p50": 226.18,
+              "p95": 253.31,
+              "max": 259.33
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 331.5,
+            "p95": 1250,
+            "max": 1254.7
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 331.5,
+            "p95": 1250,
+            "max": 1254.8
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 299.5,
+            "p95": 1220.1,
+            "max": 1224.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 16.92,
+            "p95": 26.16,
+            "max": 30.53
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 37.81,
+            "p95": 59.81,
+            "max": 67.82
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 236.01,
+            "p95": 1187.42,
+            "max": 1208.48
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 147.32,
+              "p95": 211.98,
+              "max": 238.36
+            },
+            "database": {
+              "samples": 60,
+              "p50": 37.48,
+              "p95": 945.35,
+              "max": 1013.66
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.48,
+              "p95": 12.35,
+              "max": 37.17
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.59,
+              "p95": 9.69,
+              "max": 20.93
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 5.74,
+              "p95": 15.55,
+              "max": 26.96
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 33.2,
+              "p95": 984.1,
+              "max": 994.12
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.31,
+              "p95": 2.46,
+              "max": 7.75
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.34,
+              "p95": 2.03,
+              "max": 8.52
+            },
+            "total": {
+              "samples": 60,
+              "p50": 209.96,
+              "p95": 1132.52,
+              "max": 1190.21
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 147.32,
+              "p95": 189.15,
+              "max": 211.98
+            },
+            "database": {
+              "samples": 20,
+              "p50": 155.34,
+              "p95": 964.38,
+              "max": 1013.66
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.51,
+              "p95": 6.15,
+              "max": 37.17
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.52,
+              "p95": 4.5,
+              "max": 20.93
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 5.8,
+              "p95": 13.92,
+              "max": 14
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 159.14,
+              "p95": 985.26,
+              "max": 994.12
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.3,
+              "p95": 2.46,
+              "max": 7.75
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.54,
+              "p95": 2.69,
+              "max": 8.52
+            },
+            "total": {
+              "samples": 20,
+              "p50": 281.3,
+              "p95": 1169.91,
+              "max": 1190.21
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "variant": "B",
+      "pair": 1,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "1e1cd223e51a475d15bb93648076d6e542d5a46a671bfabfa3fe7e61b74dd023",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 662.5,
+            "p95": 687.1,
+            "max": 695.9
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 662.7,
+            "p95": 687.5,
+            "max": 696.1
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 632.2,
+            "p95": 653.6,
+            "max": 676.5
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44027,
+            "p95": 44028,
+            "max": 44028
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 30.67,
+            "p95": 34.45,
+            "max": 36.8
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 115.16,
+            "p95": 134.39,
+            "max": 135.81
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 202.38,
+            "p95": 329.27,
+            "max": 360.33
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 113.94,
+              "p95": 178.34,
+              "max": 193.41
+            },
+            "database": {
+              "samples": 60,
+              "p50": 28.05,
+              "p95": 146.57,
+              "max": 174.44
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.86,
+              "p95": 9.02,
+              "max": 18.85
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.52,
+              "p95": 7.95,
+              "max": 16.9
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 5.44,
+              "p95": 14.97,
+              "max": 18.93
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 27.35,
+              "p95": 146.11,
+              "max": 178.83
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.21,
+              "p95": 0.6,
+              "max": 0.71
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.29,
+              "p95": 0.72,
+              "max": 0.89
+            },
+            "total": {
+              "samples": 60,
+              "p50": 173.89,
+              "p95": 299.61,
+              "max": 321.65
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 105.85,
+              "p95": 174.54,
+              "max": 193.41
+            },
+            "database": {
+              "samples": 20,
+              "p50": 116.42,
+              "p95": 152.84,
+              "max": 174.44
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 3.18,
+              "p95": 10.53,
+              "max": 10.76
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 2.11,
+              "p95": 7.76,
+              "max": 12.24
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 5.16,
+              "p95": 14.97,
+              "max": 15.72
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 116.22,
+              "p95": 168.79,
+              "max": 178.83
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.21,
+              "p95": 0.33,
+              "max": 0.55
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.42,
+              "p95": 0.68,
+              "max": 0.72
+            },
+            "total": {
+              "samples": 20,
+              "p50": 251.66,
+              "p95": 314.24,
+              "max": 321.65
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 281,
+            "p95": 546.8,
+            "max": 563.9
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 281,
+            "p95": 547.1,
+            "max": 564
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 262.5,
+            "p95": 509.4,
+            "max": 544.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 15.1,
+            "p95": 24.3,
+            "max": 27.75
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 35.05,
+            "p95": 52.3,
+            "max": 56.45
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 172.52,
+            "p95": 459.55,
+            "max": 537.35
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 83.56,
+              "p95": 261.14,
+              "max": 270.53
+            },
+            "database": {
+              "samples": 60,
+              "p50": 25.04,
+              "p95": 190.71,
+              "max": 251.09
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.95,
+              "p95": 9.7,
+              "max": 11.71
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.16,
+              "p95": 6.71,
+              "max": 13.29
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.03,
+              "p95": 11.96,
+              "max": 42.88
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 23.29,
+              "p95": 197.91,
+              "max": 263.54
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.22,
+              "p95": 0.67,
+              "max": 2.14
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.31,
+              "p95": 0.9,
+              "max": 2.41
+            },
+            "total": {
+              "samples": 60,
+              "p50": 159.85,
+              "p95": 447.24,
+              "max": 513.17
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 80.94,
+              "p95": 257.11,
+              "max": 262.14
+            },
+            "database": {
+              "samples": 20,
+              "p50": 139.68,
+              "p95": 217.21,
+              "max": 251.09
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.46,
+              "p95": 4.85,
+              "max": 10.46
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 0.71,
+              "p95": 8.06,
+              "max": 8.37
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.02,
+              "p95": 7.89,
+              "max": 10.68
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 140.53,
+              "p95": 243.37,
+              "max": 263.54
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.21,
+              "p95": 0.61,
+              "max": 1.01
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.43,
+              "p95": 1.04,
+              "max": 1.27
+            },
+            "total": {
+              "samples": 20,
+              "p50": 232.93,
+              "p95": 477.13,
+              "max": 513.17
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "variant": "A",
+      "pair": 1,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "82661472c14ffa99f559568fcd61bcf1e1c8331cf1424cc45411e3d876106a5e",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 506.7,
+            "p95": 562,
+            "max": 572.9
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 506.8,
+            "p95": 562,
+            "max": 573
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 479.3,
+            "p95": 531.6,
+            "max": 533.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 27.35,
+            "p95": 31.45,
+            "max": 32.37
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 92.57,
+            "p95": 105.41,
+            "max": 111.57
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 138.73,
+            "p95": 203.31,
+            "max": 218.55
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 95.2,
+              "p95": 141.53,
+              "max": 169.43
+            },
+            "database": {
+              "samples": 60,
+              "p50": 18.99,
+              "p95": 48.64,
+              "max": 64.22
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.68,
+              "p95": 7.4,
+              "max": 12.74
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.21,
+              "p95": 3.71,
+              "max": 8.59
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 3.14,
+              "p95": 8.34,
+              "max": 15.51
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 20.33,
+              "p95": 48.24,
+              "max": 68.79
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.27,
+              "p95": 1.49,
+              "max": 2.18
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.3,
+              "p95": 1.08,
+              "max": 2.3
+            },
+            "total": {
+              "samples": 60,
+              "p50": 114.41,
+              "p95": 185.57,
+              "max": 196.9
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 91.45,
+              "p95": 141.35,
+              "max": 141.53
+            },
+            "database": {
+              "samples": 20,
+              "p50": 36.86,
+              "p95": 49.52,
+              "max": 64.22
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.93,
+              "p95": 4.88,
+              "max": 7.89
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.14,
+              "p95": 3.71,
+              "max": 7.28
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.83,
+              "p95": 7.62,
+              "max": 7.99
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 37.1,
+              "p95": 49.04,
+              "max": 68.79
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.28,
+              "p95": 0.74,
+              "max": 0.83
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.49,
+              "p95": 0.92,
+              "max": 1.08
+            },
+            "total": {
+              "samples": 20,
+              "p50": 129.04,
+              "p95": 192.5,
+              "max": 196.9
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 216.9,
+            "p95": 603.7,
+            "max": 625.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 217,
+            "p95": 603.9,
+            "max": 625.6
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 182.6,
+            "p95": 582.7,
+            "max": 596.9
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 14.96,
+            "p95": 22.83,
+            "max": 25.87
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 34.72,
+            "p95": 54.36,
+            "max": 55.54
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 158.69,
+            "p95": 505.76,
+            "max": 579.36
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 109.41,
+              "p95": 332.6,
+              "max": 403.05
+            },
+            "database": {
+              "samples": 60,
+              "p50": 27.05,
+              "p95": 90.25,
+              "max": 165.65
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.39,
+              "p95": 8.78,
+              "max": 34.15
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.55,
+              "p95": 9.14,
+              "max": 15.04
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 3.76,
+              "p95": 18.29,
+              "max": 23.47
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 25.15,
+              "p95": 95.67,
+              "max": 135.51
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.24,
+              "p95": 0.68,
+              "max": 1.23
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.32,
+              "p95": 0.87,
+              "max": 1.4
+            },
+            "total": {
+              "samples": 60,
+              "p50": 143.71,
+              "p95": 466.68,
+              "max": 492.69
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 108.85,
+              "p95": 322.6,
+              "max": 360.72
+            },
+            "database": {
+              "samples": 20,
+              "p50": 39.27,
+              "p95": 150.91,
+              "max": 165.65
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.91,
+              "p95": 28.87,
+              "max": 34.15
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.76,
+              "p95": 12.72,
+              "max": 15.04
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.12,
+              "p95": 13.66,
+              "max": 18.28
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 40.57,
+              "p95": 123.96,
+              "max": 135.51
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.22,
+              "p95": 0.54,
+              "max": 0.68
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.48,
+              "p95": 0.94,
+              "max": 0.96
+            },
+            "total": {
+              "samples": 20,
+              "p50": 152.81,
+              "p95": 482.33,
+              "max": 492.69
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "variant": "A",
+      "pair": 2,
+      "comparison": "same-build-control",
+      "rawSha256": "0b302934a709c71504eb0d794dd723d7d67ce6f0b4d2f669760a839fa44c4004",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 530.6,
+            "p95": 678.8,
+            "max": 690
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 530.7,
+            "p95": 678.9,
+            "max": 690.2
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 508.9,
+            "p95": 652.2,
+            "max": 664.1
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 29.19,
+            "p95": 40.67,
+            "max": 40.87
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 101.44,
+            "p95": 144.36,
+            "max": 153.85
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 173.68,
+            "p95": 327.32,
+            "max": 338.56
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 104.26,
+              "p95": 276.22,
+              "max": 291.77
+            },
+            "database": {
+              "samples": 60,
+              "p50": 36.58,
+              "p95": 84.71,
+              "max": 89.6
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.83,
+              "p95": 11.63,
+              "max": 45.35
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 2.64,
+              "p95": 13.05,
+              "max": 44.79
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 6.73,
+              "p95": 16.1,
+              "max": 27.09
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 35.78,
+              "p95": 81.18,
+              "max": 99.24
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.33,
+              "p95": 1.89,
+              "max": 2.58
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.35,
+              "p95": 1.93,
+              "max": 3.08
+            },
+            "total": {
+              "samples": 60,
+              "p50": 160.11,
+              "p95": 311.54,
+              "max": 323.18
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 103.27,
+              "p95": 270.64,
+              "max": 276.22
+            },
+            "database": {
+              "samples": 20,
+              "p50": 54.58,
+              "p95": 87.74,
+              "max": 89.6
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.65,
+              "p95": 9.38,
+              "max": 45.35
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 2.33,
+              "p95": 8.33,
+              "max": 44.79
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 5.75,
+              "p95": 10.67,
+              "max": 12.82
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 52.28,
+              "p95": 91.71,
+              "max": 99.24
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.37,
+              "p95": 1.56,
+              "max": 1.89
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.75,
+              "p95": 1.93,
+              "max": 2.31
+            },
+            "total": {
+              "samples": 20,
+              "p50": 178.01,
+              "p95": 320.38,
+              "max": 323.18
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 181.9,
+            "p95": 297.1,
+            "max": 309.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 182.1,
+            "p95": 297.3,
+            "max": 310
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 154.6,
+            "p95": 275.3,
+            "max": 292.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 15.41,
+            "p95": 22.65,
+            "max": 24.52
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 35.41,
+            "p95": 49.07,
+            "max": 57.81
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 126.66,
+            "p95": 257.45,
+            "max": 272.29
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 83.53,
+              "p95": 155.51,
+              "max": 167.52
+            },
+            "database": {
+              "samples": 60,
+              "p50": 28.88,
+              "p95": 83.43,
+              "max": 115.54
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.41,
+              "p95": 8.95,
+              "max": 41.29
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.39,
+              "p95": 8.03,
+              "max": 15.72
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.62,
+              "p95": 12.81,
+              "max": 14.9
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 28.18,
+              "p95": 72.34,
+              "max": 92.92
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.21,
+              "p95": 0.78,
+              "max": 0.87
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.28,
+              "p95": 1.01,
+              "max": 2.25
+            },
+            "total": {
+              "samples": 60,
+              "p50": 119.19,
+              "p95": 231.45,
+              "max": 244.55
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 83.06,
+              "p95": 152.9,
+              "max": 155.51
+            },
+            "database": {
+              "samples": 20,
+              "p50": 41.37,
+              "p95": 73.32,
+              "max": 115.54
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.41,
+              "p95": 8.95,
+              "max": 41.29
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.39,
+              "p95": 10.84,
+              "max": 15.72
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.85,
+              "p95": 12.81,
+              "max": 14.57
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 42.07,
+              "p95": 73.49,
+              "max": 74.77
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.2,
+              "p95": 0.49,
+              "max": 0.55
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.39,
+              "p95": 0.79,
+              "max": 2.25
+            },
+            "total": {
+              "samples": 20,
+              "p50": 133.46,
+              "p95": 235.81,
+              "max": 244.55
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "variant": "A",
+      "pair": 2,
+      "comparison": "same-build-control",
+      "rawSha256": "20e882b31717b3194e136a6d9a48f59e4f2fa6c55334da6d330bd7b34b363bec",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 498.9,
+            "p95": 581.9,
+            "max": 596.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 499,
+            "p95": 582.2,
+            "max": 596.6
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 475.1,
+            "p95": 555.7,
+            "max": 567.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 27.63,
+            "p95": 29.65,
+            "max": 31.12
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 97.8,
+            "p95": 134.32,
+            "max": 140.87
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 136.69,
+            "p95": 233.19,
+            "max": 249.16
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 93.25,
+              "p95": 144.27,
+              "max": 163.39
+            },
+            "database": {
+              "samples": 60,
+              "p50": 28.63,
+              "p95": 76.17,
+              "max": 120.56
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.92,
+              "p95": 15.86,
+              "max": 18.71
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.27,
+              "p95": 11.71,
+              "max": 19.01
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.33,
+              "p95": 22.14,
+              "max": 27.13
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 24.04,
+              "p95": 69.43,
+              "max": 99.96
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.35,
+              "p95": 2.12,
+              "max": 2.22
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 2,
+              "max": 2.49
+            },
+            "total": {
+              "samples": 60,
+              "p50": 125.72,
+              "p95": 217.97,
+              "max": 234.84
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 85.48,
+              "p95": 134.17,
+              "max": 144.27
+            },
+            "database": {
+              "samples": 20,
+              "p50": 48.17,
+              "p95": 92.56,
+              "max": 120.56
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 3.2,
+              "p95": 16.47,
+              "max": 18.71
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.03,
+              "p95": 6.04,
+              "max": 10.6
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.33,
+              "p95": 22.14,
+              "max": 26.46
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 48.37,
+              "p95": 72.14,
+              "max": 99.96
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.33,
+              "p95": 2.12,
+              "max": 2.22
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.54,
+              "p95": 2.36,
+              "max": 2.36
+            },
+            "total": {
+              "samples": 20,
+              "p50": 139.92,
+              "p95": 227.57,
+              "max": 234.84
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 136.5,
+            "p95": 162.3,
+            "max": 172.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 136.7,
+            "p95": 162.6,
+            "max": 172.5
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 113.7,
+            "p95": 141.3,
+            "max": 141.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 11.99,
+            "p95": 14.06,
+            "max": 16.41
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 28.36,
+            "p95": 32.27,
+            "max": 34.15
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 96.3,
+            "p95": 123.44,
+            "max": 134.22
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 69.01,
+              "p95": 88.46,
+              "max": 93.61
+            },
+            "database": {
+              "samples": 60,
+              "p50": 13.82,
+              "p95": 32.11,
+              "max": 34.99
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.25,
+              "p95": 2.38,
+              "max": 4.97
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.83,
+              "p95": 3.28,
+              "max": 4.91
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 2.89,
+              "p95": 5.68,
+              "max": 5.75
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 14.43,
+              "p95": 30.47,
+              "max": 35.72
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.16,
+              "p95": 0.62,
+              "max": 0.92
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.22,
+              "p95": 0.63,
+              "max": 1
+            },
+            "total": {
+              "samples": 60,
+              "p50": 91.05,
+              "p95": 114.27,
+              "max": 125.23
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 68.39,
+              "p95": 93.24,
+              "max": 93.61
+            },
+            "database": {
+              "samples": 20,
+              "p50": 26.62,
+              "p95": 33.37,
+              "max": 34.99
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.4,
+              "p95": 4.21,
+              "max": 4.97
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 0.83,
+              "p95": 1.58,
+              "max": 2.02
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 2.51,
+              "p95": 4.42,
+              "max": 5.33
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 25.94,
+              "p95": 33.93,
+              "max": 35.72
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.19,
+              "p95": 0.41,
+              "max": 0.79
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.37,
+              "p95": 0.63,
+              "max": 0.88
+            },
+            "total": {
+              "samples": 20,
+              "p50": 97.38,
+              "p95": 121.18,
+              "max": 125.23
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "variant": "A",
+      "pair": 3,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "150e0c891c9a56366105883708a26863b39fcda5c41f92a84e41c2da9f9df415",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 494.6,
+            "p95": 610.5,
+            "max": 612.4
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 494.7,
+            "p95": 610.6,
+            "max": 612.5
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 470.4,
+            "p95": 581.2,
+            "max": 593.4
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 27.35,
+            "p95": 29.48,
+            "max": 30.74
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 100.84,
+            "p95": 115.41,
+            "max": 124.01
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 148.44,
+            "p95": 234.57,
+            "max": 280.63
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 95.86,
+              "p95": 155.77,
+              "max": 171.28
+            },
+            "database": {
+              "samples": 60,
+              "p50": 32.35,
+              "p95": 76.46,
+              "max": 112.98
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.97,
+              "p95": 14.58,
+              "max": 34.44
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.97,
+              "p95": 18.19,
+              "max": 34.26
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.91,
+              "p95": 19.74,
+              "max": 28.2
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 32.61,
+              "p95": 74.96,
+              "max": 101.77
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.33,
+              "p95": 1.41,
+              "max": 2.17
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.34,
+              "p95": 1.23,
+              "max": 3.56
+            },
+            "total": {
+              "samples": 60,
+              "p50": 133.35,
+              "p95": 227.9,
+              "max": 263.42
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 93.46,
+              "p95": 145.45,
+              "max": 148.24
+            },
+            "database": {
+              "samples": 20,
+              "p50": 44.46,
+              "p95": 90.38,
+              "max": 112.98
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.83,
+              "p95": 22.65,
+              "max": 34.44
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.64,
+              "p95": 7.79,
+              "max": 25.21
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.05,
+              "p95": 16.51,
+              "max": 19.74
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 41.64,
+              "p95": 92.06,
+              "max": 101.77
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.28,
+              "p95": 1.09,
+              "max": 1.41
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.58,
+              "p95": 1.21,
+              "max": 3.56
+            },
+            "total": {
+              "samples": 20,
+              "p50": 138.92,
+              "p95": 247.26,
+              "max": 263.42
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 165.2,
+            "p95": 621.5,
+            "max": 645.2
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 165.4,
+            "p95": 621.6,
+            "max": 645.3
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 139.6,
+            "p95": 589.9,
+            "max": 616.2
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 12.63,
+            "p95": 23.61,
+            "max": 26.35
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 30.22,
+            "p95": 52.59,
+            "max": 59.16
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 116.62,
+            "p95": 540.54,
+            "max": 590.4
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 81.79,
+              "p95": 320.99,
+              "max": 371.47
+            },
+            "database": {
+              "samples": 60,
+              "p50": 24.48,
+              "p95": 173.42,
+              "max": 211.51
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.99,
+              "p95": 15.42,
+              "max": 75.47
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.41,
+              "p95": 15.83,
+              "max": 28.8
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.08,
+              "p95": 26.11,
+              "max": 89.33
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 26.86,
+              "p95": 160.46,
+              "max": 194.15
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.29,
+              "p95": 0.94,
+              "max": 2.39
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.31,
+              "p95": 1,
+              "max": 3.76
+            },
+            "total": {
+              "samples": 60,
+              "p50": 108.26,
+              "p95": 514.22,
+              "max": 541.25
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 79.35,
+              "p95": 323.85,
+              "max": 353.09
+            },
+            "database": {
+              "samples": 20,
+              "p50": 32.2,
+              "p95": 191.04,
+              "max": 211.51
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.79,
+              "p95": 9.64,
+              "max": 12.54
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.41,
+              "p95": 7.85,
+              "max": 18.14
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.13,
+              "p95": 14.89,
+              "max": 32.49
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 32.4,
+              "p95": 187.13,
+              "max": 194.15
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.29,
+              "p95": 0.78,
+              "max": 2.39
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.55,
+              "p95": 1,
+              "max": 3.76
+            },
+            "total": {
+              "samples": 20,
+              "p50": 119.83,
+              "p95": 516.09,
+              "max": 541.25
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "variant": "B",
+      "pair": 3,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "46a57823ec868d61b3b84a3a16e539ef53f5f9223aa5c545fed062e0a61677d2",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 629.8,
+            "p95": 740.9,
+            "max": 746.9
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 630,
+            "p95": 740.9,
+            "max": 747
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 592.3,
+            "p95": 715.7,
+            "max": 724.1
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 9
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44027,
+            "p95": 44028,
+            "max": 44028
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 32.15,
+            "p95": 36.88,
+            "max": 39.66
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 113.92,
+            "p95": 136.49,
+            "max": 145.12
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 203.6,
+            "p95": 378.85,
+            "max": 402.08
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 121.41,
+              "p95": 170.09,
+              "max": 179.71
+            },
+            "database": {
+              "samples": 60,
+              "p50": 26.3,
+              "p95": 192.64,
+              "max": 204.43
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.37,
+              "p95": 6.76,
+              "max": 8.29
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.46,
+              "p95": 4.86,
+              "max": 7.57
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.44,
+              "p95": 10.76,
+              "max": 12.03
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 23.75,
+              "p95": 192.37,
+              "max": 211.15
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.24,
+              "p95": 2.22,
+              "max": 2.55
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.29,
+              "p95": 2.11,
+              "max": 2.73
+            },
+            "total": {
+              "samples": 60,
+              "p50": 182.08,
+              "p95": 331.88,
+              "max": 360.69
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 127.01,
+              "p95": 163.65,
+              "max": 176.62
+            },
+            "database": {
+              "samples": 20,
+              "p50": 125.09,
+              "p95": 198.44,
+              "max": 204.43
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.37,
+              "p95": 6.97,
+              "max": 7.38
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.52,
+              "p95": 3.02,
+              "max": 3.65
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.29,
+              "p95": 11.23,
+              "max": 11.27
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 126.03,
+              "p95": 202.16,
+              "max": 211.15
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.24,
+              "p95": 2.22,
+              "max": 2.44
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.49,
+              "p95": 2.44,
+              "max": 2.66
+            },
+            "total": {
+              "samples": 20,
+              "p50": 253.64,
+              "p95": 344.45,
+              "max": 360.69
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 283.8,
+            "p95": 943.7,
+            "max": 973.5
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 283.9,
+            "p95": 943.9,
+            "max": 973.6
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 261.6,
+            "p95": 919.6,
+            "max": 940.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 14.09,
+            "p95": 33.45,
+            "max": 34.14
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 33.47,
+            "p95": 70.36,
+            "max": 102.9
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 171.69,
+            "p95": 748.55,
+            "max": 896.28
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 92.1,
+              "p95": 341.53,
+              "max": 397.75
+            },
+            "database": {
+              "samples": 60,
+              "p50": 32.74,
+              "p95": 231.53,
+              "max": 282.79
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.73,
+              "p95": 14.08,
+              "max": 17.14
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.08,
+              "p95": 22.89,
+              "max": 46.6
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.96,
+              "p95": 26.11,
+              "max": 40.01
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 36.1,
+              "p95": 270.12,
+              "max": 291.35
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.26,
+              "p95": 1.56,
+              "max": 3.07
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.37,
+              "p95": 1.62,
+              "max": 3.8
+            },
+            "total": {
+              "samples": 60,
+              "p50": 158.54,
+              "p95": 615.88,
+              "max": 633.95
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 83.08,
+              "p95": 327.53,
+              "max": 341
+            },
+            "database": {
+              "samples": 20,
+              "p50": 136.43,
+              "p95": 276.3,
+              "max": 282.79
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.69,
+              "p95": 10.04,
+              "max": 11.4
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.28,
+              "p95": 45.33,
+              "max": 46.6
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.58,
+              "p95": 26.28,
+              "max": 30.4
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 140.03,
+              "p95": 285.93,
+              "max": 291.35
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.27,
+              "p95": 1.1,
+              "max": 1.58
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.5,
+              "p95": 1.55,
+              "max": 2.14
+            },
+            "total": {
+              "samples": 20,
+              "p50": 246.7,
+              "p95": 628.69,
+              "max": 633.95
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "variant": "B",
+      "pair": 4,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "b9da7b2635efbeca357e94e7c43555baa4f43113af6deaa91a980612f53c6f71",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 551.4,
+            "p95": 598.4,
+            "max": 613.3
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 551.5,
+            "p95": 598.5,
+            "max": 613.3
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 524,
+            "p95": 566.2,
+            "max": 584
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44027,
+            "p95": 44028,
+            "max": 44028
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 26.96,
+            "p95": 31.65,
+            "max": 31.99
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 97.86,
+            "p95": 120.6,
+            "max": 120.86
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 131.55,
+            "p95": 246.28,
+            "max": 272.21
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 86.65,
+              "p95": 101.68,
+              "max": 105.74
+            },
+            "database": {
+              "samples": 60,
+              "p50": 21.72,
+              "p95": 129.86,
+              "max": 157.86
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.37,
+              "p95": 6.04,
+              "max": 12.89
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.57,
+              "p95": 3.58,
+              "max": 4.78
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 3.76,
+              "p95": 8.7,
+              "max": 12.91
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 18.43,
+              "p95": 129.97,
+              "max": 163.26
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.25,
+              "p95": 0.89,
+              "max": 2.29
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.31,
+              "p95": 1.01,
+              "max": 2.44
+            },
+            "total": {
+              "samples": 60,
+              "p50": 120.65,
+              "p95": 221.34,
+              "max": 262.41
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 82.41,
+              "p95": 93.58,
+              "max": 101.68
+            },
+            "database": {
+              "samples": 20,
+              "p50": 103.84,
+              "p95": 150.83,
+              "max": 157.86
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.62,
+              "p95": 5.99,
+              "max": 6.04
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.82,
+              "p95": 4.04,
+              "max": 4.65
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 3.47,
+              "p95": 10.6,
+              "max": 12.57
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 105.46,
+              "p95": 142.77,
+              "max": 163.26
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.25,
+              "p95": 0.53,
+              "max": 0.68
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.4,
+              "p95": 0.87,
+              "max": 1.13
+            },
+            "total": {
+              "samples": 20,
+              "p50": 194.37,
+              "p95": 244.86,
+              "max": 262.41
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 200.1,
+            "p95": 234.6,
+            "max": 236.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 200.1,
+            "p95": 234.7,
+            "max": 237
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 170.5,
+            "p95": 208.7,
+            "max": 209.7
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 12.58,
+            "p95": 15.17,
+            "max": 15.81
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 29.12,
+            "p95": 34.94,
+            "max": 36.4
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 97.73,
+            "p95": 182.68,
+            "max": 202.68
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 67.29,
+              "p95": 83.35,
+              "max": 93.51
+            },
+            "database": {
+              "samples": 60,
+              "p50": 16.52,
+              "p95": 95.13,
+              "max": 113.59
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 1.45,
+              "p95": 4.5,
+              "max": 4.73
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 0.76,
+              "p95": 2.75,
+              "max": 5.74
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 3.05,
+              "p95": 6.82,
+              "max": 7.25
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 16.4,
+              "p95": 97.96,
+              "max": 115.28
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.2,
+              "p95": 0.59,
+              "max": 1.49
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.28,
+              "p95": 0.68,
+              "max": 1.61
+            },
+            "total": {
+              "samples": 60,
+              "p50": 91.69,
+              "p95": 174.67,
+              "max": 193.88
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 67.29,
+              "p95": 81.03,
+              "max": 83.35
+            },
+            "database": {
+              "samples": 20,
+              "p50": 84.96,
+              "p95": 103.74,
+              "max": 113.59
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 1.44,
+              "p95": 3.64,
+              "max": 4.73
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 0.71,
+              "p95": 2.87,
+              "max": 3.72
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 2.54,
+              "p95": 6.9,
+              "max": 7.25
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 87.19,
+              "p95": 106.44,
+              "max": 115.28
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.2,
+              "p95": 0.53,
+              "max": 1.49
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.36,
+              "p95": 0.65,
+              "max": 1.61
+            },
+            "total": {
+              "samples": 20,
+              "p50": 155.73,
+              "p95": 193.14,
+              "max": 193.88
+            }
+          }
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "variant": "A",
+      "pair": 4,
+      "comparison": "assigned-room-batch",
+      "rawSha256": "e64cf9300f20b55349e025d85894288563cf9b492f5010bb481361b961901714",
+      "errors": [],
+      "groups": [
+        {
+          "condition": "cold",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 578.3,
+            "p95": 647,
+            "max": 649.7
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 578.3,
+            "p95": 647.2,
+            "max": 650
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 559.9,
+            "p95": 625,
+            "max": 626.6
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 8,
+            "p95": 8,
+            "max": 8
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 44021,
+            "p95": 44022,
+            "max": 44022
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 28.46,
+            "p95": 33.05,
+            "max": 34.92
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 104.07,
+            "p95": 122.67,
+            "max": 129.42
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 209.73,
+            "p95": 306.52,
+            "max": 314.22
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 144.78,
+              "p95": 255.25,
+              "max": 278.09
+            },
+            "database": {
+              "samples": 60,
+              "p50": 31.98,
+              "p95": 72.11,
+              "max": 99.07
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.78,
+              "p95": 13.92,
+              "max": 18.55
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.31,
+              "p95": 11.27,
+              "max": 16.82
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 5.18,
+              "p95": 14.51,
+              "max": 21.22
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 27.03,
+              "p95": 71.1,
+              "max": 88.77
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.21,
+              "p95": 0.7,
+              "max": 0.95
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.33,
+              "p95": 0.9,
+              "max": 1.24
+            },
+            "total": {
+              "samples": 60,
+              "p50": 196.57,
+              "p95": 295.92,
+              "max": 300.88
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 142.03,
+              "p95": 249.3,
+              "max": 254.61
+            },
+            "database": {
+              "samples": 20,
+              "p50": 48.06,
+              "p95": 88.64,
+              "max": 99.07
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.56,
+              "p95": 8.75,
+              "max": 18.55
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.31,
+              "p95": 11.44,
+              "max": 16.82
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.88,
+              "p95": 8.76,
+              "max": 17.31
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 49.53,
+              "p95": 71.94,
+              "max": 74.31
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.23,
+              "p95": 0.55,
+              "max": 0.95
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.48,
+              "p95": 1.24,
+              "max": 1.24
+            },
+            "total": {
+              "samples": 20,
+              "p50": 221,
+              "p95": 297.68,
+              "max": 300.88
+            }
+          }
+        },
+        {
+          "condition": "warm",
+          "observations": 20,
+          "meaningfulMs": {
+            "samples": 20,
+            "p50": 198.4,
+            "p95": 327.7,
+            "max": 333.8
+          },
+          "interactiveMs": {
+            "samples": 20,
+            "p50": 198.5,
+            "p95": 327.8,
+            "max": 333.8
+          },
+          "networkCompleteMs": {
+            "samples": 20,
+            "p50": 165.3,
+            "p95": 300.6,
+            "max": 310
+          },
+          "requestCount": {
+            "samples": 20,
+            "p50": 3,
+            "p95": 3,
+            "max": 3
+          },
+          "encodedBodyBytes": {
+            "samples": 20,
+            "p50": 3960,
+            "p95": 3961,
+            "max": 3961
+          },
+          "scriptMs": {
+            "samples": 20,
+            "p50": 14.39,
+            "p95": 18.81,
+            "max": 19.51
+          },
+          "taskMs": {
+            "samples": 20,
+            "p50": 34.49,
+            "p95": 43.64,
+            "max": 44.06
+          },
+          "completePayloadObservations": 20,
+          "httpErrors": 0,
+          "transportFailures": 0,
+          "browserErrors": 0,
+          "hydrationPhases": [],
+          "all24Links": true,
+          "visibleGetTtfbMs": {
+            "samples": 60,
+            "p50": 139.76,
+            "p95": 268.42,
+            "max": 296.03
+          },
+          "serverPhasesMs": {
+            "identity": {
+              "samples": 60,
+              "p50": 91.58,
+              "p95": 200.12,
+              "max": 212.77
+            },
+            "database": {
+              "samples": 60,
+              "p50": 29.18,
+              "p95": 55.11,
+              "max": 80.97
+            },
+            "live_session": {
+              "samples": 60,
+              "p50": 2.24,
+              "p95": 6.5,
+              "max": 8.12
+            },
+            "transaction_acquire": {
+              "samples": 60,
+              "p50": 1.35,
+              "p95": 4.96,
+              "max": 13.42
+            },
+            "lock_query": {
+              "samples": 60,
+              "p50": 4.83,
+              "p95": 14.53,
+              "max": 18.1
+            },
+            "transaction": {
+              "samples": 60,
+              "p50": 23.73,
+              "p95": 54.1,
+              "max": 89.25
+            },
+            "compression": {
+              "samples": 40,
+              "p50": 0.25,
+              "p95": 0.79,
+              "max": 1.94
+            },
+            "serialization": {
+              "samples": 60,
+              "p50": 0.39,
+              "p95": 0.91,
+              "max": 2.03
+            },
+            "total": {
+              "samples": 60,
+              "p50": 131.46,
+              "p95": 234.31,
+              "max": 261.11
+            }
+          },
+          "assignedRoomPhasesMs": {
+            "identity": {
+              "samples": 20,
+              "p50": 91.58,
+              "p95": 200.12,
+              "max": 203.59
+            },
+            "database": {
+              "samples": 20,
+              "p50": 48.39,
+              "p95": 63.76,
+              "max": 80.97
+            },
+            "live_session": {
+              "samples": 20,
+              "p50": 2.24,
+              "p95": 4.44,
+              "max": 6.27
+            },
+            "transaction_acquire": {
+              "samples": 20,
+              "p50": 1.29,
+              "p95": 8.34,
+              "max": 13.42
+            },
+            "lock_query": {
+              "samples": 20,
+              "p50": 4.3,
+              "p95": 14.53,
+              "max": 16.84
+            },
+            "transaction": {
+              "samples": 20,
+              "p50": 46.95,
+              "p95": 64.97,
+              "max": 89.25
+            },
+            "compression": {
+              "samples": 20,
+              "p50": 0.24,
+              "p95": 0.51,
+              "max": 0.66
+            },
+            "serialization": {
+              "samples": 20,
+              "p50": 0.48,
+              "p95": 0.81,
+              "max": 0.91
+            },
+            "total": {
+              "samples": 20,
+              "p50": 143.93,
+              "p95": 260.79,
+              "max": 261.11
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "system": [
+    {
+      "block": 0,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 36,
+        "p50": 35.88,
+        "p95": 63.76,
+        "max": 66.63
+      },
+      "freeMemoryMiB": {
+        "samples": 36,
+        "p50": 88,
+        "p95": 454,
+        "max": 461
+      },
+      "loadAverage1": {
+        "samples": 36,
+        "p50": 7.8,
+        "p95": 8.88,
+        "max": 8.88
+      }
+    },
+    {
+      "block": 1,
+      "variant": "B",
+      "cpuBusyPercent": {
+        "samples": 44,
+        "p50": 51.06,
+        "p95": 87.3,
+        "max": 98.9
+      },
+      "freeMemoryMiB": {
+        "samples": 44,
+        "p50": 93,
+        "p95": 314,
+        "max": 675
+      },
+      "loadAverage1": {
+        "samples": 44,
+        "p50": 6.88,
+        "p95": 7.92,
+        "max": 7.92
+      }
+    },
+    {
+      "block": 2,
+      "variant": "B",
+      "cpuBusyPercent": {
+        "samples": 42,
+        "p50": 48.23,
+        "p95": 75.73,
+        "max": 77.33
+      },
+      "freeMemoryMiB": {
+        "samples": 42,
+        "p50": 135,
+        "p95": 479,
+        "max": 528
+      },
+      "loadAverage1": {
+        "samples": 42,
+        "p50": 6.37,
+        "p95": 6.81,
+        "max": 7.42
+      }
+    },
+    {
+      "block": 3,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 41,
+        "p50": 59.45,
+        "p95": 97.9,
+        "max": 99.8
+      },
+      "freeMemoryMiB": {
+        "samples": 41,
+        "p50": 266,
+        "p95": 837,
+        "max": 904
+      },
+      "loadAverage1": {
+        "samples": 41,
+        "p50": 8.91,
+        "p95": 11.76,
+        "max": 12.42
+      }
+    },
+    {
+      "block": 4,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 40,
+        "p50": 52.02,
+        "p95": 74.05,
+        "max": 90.28
+      },
+      "freeMemoryMiB": {
+        "samples": 40,
+        "p50": 153,
+        "p95": 417,
+        "max": 631
+      },
+      "loadAverage1": {
+        "samples": 40,
+        "p50": 10.44,
+        "p95": 11.35,
+        "max": 11.35
+      }
+    },
+    {
+      "block": 5,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 37,
+        "p50": 39.11,
+        "p95": 61.41,
+        "max": 64.73
+      },
+      "freeMemoryMiB": {
+        "samples": 37,
+        "p50": 104,
+        "p95": 650,
+        "max": 785
+      },
+      "loadAverage1": {
+        "samples": 37,
+        "p50": 7.41,
+        "p95": 8.98,
+        "max": 8.98
+      }
+    },
+    {
+      "block": 6,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 42,
+        "p50": 46.73,
+        "p95": 93.51,
+        "max": 100
+      },
+      "freeMemoryMiB": {
+        "samples": 42,
+        "p50": 111,
+        "p95": 575,
+        "max": 781
+      },
+      "loadAverage1": {
+        "samples": 42,
+        "p50": 5.99,
+        "p95": 9.21,
+        "max": 9.21
+      }
+    },
+    {
+      "block": 7,
+      "variant": "B",
+      "cpuBusyPercent": {
+        "samples": 43,
+        "p50": 55.54,
+        "p95": 81.38,
+        "max": 89.13
+      },
+      "freeMemoryMiB": {
+        "samples": 43,
+        "p50": 131,
+        "p95": 291,
+        "max": 581
+      },
+      "loadAverage1": {
+        "samples": 43,
+        "p50": 13.92,
+        "p95": 15.25,
+        "max": 15.25
+      }
+    },
+    {
+      "block": 8,
+      "variant": "B",
+      "cpuBusyPercent": {
+        "samples": 38,
+        "p50": 40.14,
+        "p95": 61.57,
+        "max": 72.39
+      },
+      "freeMemoryMiB": {
+        "samples": 38,
+        "p50": 88,
+        "p95": 484,
+        "max": 511
+      },
+      "loadAverage1": {
+        "samples": 38,
+        "p50": 10.18,
+        "p95": 11.33,
+        "max": 11.33
+      }
+    },
+    {
+      "block": 9,
+      "variant": "A",
+      "cpuBusyPercent": {
+        "samples": 42,
+        "p50": 65.15,
+        "p95": 94.89,
+        "max": 96.12
+      },
+      "freeMemoryMiB": {
+        "samples": 42,
+        "p50": 90,
+        "p95": 437,
+        "max": 976
+      },
+      "loadAverage1": {
+        "samples": 42,
+        "p50": 7.68,
+        "p95": 8.74,
+        "max": 8.74
+      }
+    }
+  ]
+}

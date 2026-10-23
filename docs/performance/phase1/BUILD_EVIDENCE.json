@@ -69,5 +69,42 @@
       }
     },
     "evidence": "active-workload/crossover-2026-10-23-repeat/EVIDENCE.json"
+  },
+  "assignedRoomBatchFollowup": {
+    "report": "active-workload/assigned-room-batch-2026-10-23/ASSIGNED_ROOM_BATCH_REPORT.md",
+    "sourceCommit": "a3c36e0e8a3c50ab6be02a0080e66e0a9c597904",
+    "productionBuilds": {
+      "A": {
+        "buildId": "tgG74wyMmaN0lwO3AEW0f",
+        "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+      },
+      "B": {
+        "buildId": "W8H3d5IHJkj7Abt9foxXH",
+        "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+      }
+    },
+    "queryStatements": {
+      "before": 170,
+      "after": 32
+    },
+    "ordinaryPassed": 1332,
+    "ordinaryGatedSkips": 37,
+    "realAuthBrowserPassedPerSetup": 58,
+    "nativeSuitesPassed": 3,
+    "finalFocusedPassed": 11,
+    "navigationObservations": 480,
+    "navigationErrors": 0,
+    "navigationCleanup": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "queryCorrectionCleanup": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    }
   }
 }
