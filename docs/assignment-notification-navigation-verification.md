@@ -44,3 +44,12 @@ The Members browser check now waits for its existing eligibility control to fini
 A focused real-ProductShell browser fixture reproduces the five authenticated Admin accessibility failures: the empty decorative caption has `aria-label="Current workspace: Admin"`, producing `aria-prohibited-attr`. Only captions that actually render text now receive that label. The Admin link retains its accessible name and `aria-current="page"`; no access checks or navigation behavior change. The regression scans the unchanged Axe rule at desktop and 320px and checks the current Admin link. The original source fails the regression.
 
 Reviewed all prior harness changes against current main: actual content-ref lookup retains focus/scroll assertions; idempotent invitation retries require the same club plus one membership and one audit; email activation is confined to the mocked transport and restored afterward; Events selectors retain save/unsave, download, RSVP and detail assertions; the Members wait targets saved/clean state instead of a delay; the official versioned Mailpit allowlist retains loopback, TLS and project boundaries and rejects arbitrary images. All are retained as justified corrections; no assertions are disabled.
+
+
+## Coordinated #68 / #77 release verification - 2026-10-23
+
+Merged current main4f29429 into this branch without conflicts, retaining the newer operational dashboards and their isolated test runner. Reused the existing idempotent-invitation, event-label, bounded SMTP-image and Admin-caption corrections.
+
+A fresh, reserved localhost PostgreSQL17.11 cluster reproduced the communications-native failure: the exact settings projection omitted the already-supported marketing field. Correcting that one expected key makes all8 communications tests pass; the later undefined-template error was cascading setup failure, not a reproduced application defect. No communications runtime or concurrency/immutability/authorization assertions were weakened.
+
+Focused local checks after integration: security/interview native3 passed; native Events plus real-browser5 passed; communications8 passed; notification/SMTP/Admin-caption checks22 passed. Original communications negative control retained privately. These tests used synthetic identities on isolated local databases, not hosted applicant records. CI and live acceptance remain release gates. Merge #68 first, then #77, whose integrated tree must retain these corrections. No migration or environment change.
