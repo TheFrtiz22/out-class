@@ -6,7 +6,8 @@ const {createClient}=require('@supabase/supabase-js');
 const {PrismaClient}=require('@prisma/client');
 const {totp,confirmationMessage,readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
 const dashboards=process.argv.includes('--dashboards'),writing=process.argv.includes('--application-writing')||dashboards,appPort=dashboards?3115:writing?3109:3107;
-const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?'593':writing?'573':'553';
+const projectId=dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e',portPrefix=dashboards?(process.env.OUTCLASS_DASHBOARD_E2E_PORT_PREFIX||'593'):writing?'573':'553';
+if(!/^[1-5]\d{2}$|^6[0-4]\d$/.test(portPrefix))throw Error('A disposable port prefix must reserve a valid three-digit local range.');
 const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),projectId);
 const keep=process.argv.includes('--keep');let app,stackTouched=false;
 fs.mkdirSync(path.join(root,'supabase/templates'),{recursive:true});
@@ -68,7 +69,7 @@ async function ready(url,headers={}){
  logged('supabase',['stop','--workdir',root],'supabase-stop.log');
  logged('supabase',['start','--workdir',root,'-x','studio,edge-runtime,logflare,vector,imgproxy'],'supabase-start.log');
  const status=JSON.parse(command('supabase',['status','--workdir',root,'-o','json']));
- const settings={projectId,appUrl:`http://127.0.0.1:${appPort}`,status,buildDir:path.join(repo,writing?'.next':'.next-publish'),suite:dashboards?'dashboards':writing?'application-writing':undefined};
+ const settings={projectId,portPrefix,appUrl:`http://127.0.0.1:${appPort}`,status,buildDir:path.join(repo,writing?'.next':'.next-publish'),suite:dashboards?'dashboards':writing?'application-writing':undefined};
  const configFile=path.join(root,'config.json');fs.writeFileSync(configFile,JSON.stringify(settings),{mode:0o600});readConfig(configFile);
  const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:status.DB_URL,POSTGRES_PRISMA_URL:status.DB_URL,POSTGRES_URL:status.DB_URL,POSTGRES_URL_NON_POOLING:status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:status.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:status.ANON_KEY,SUPABASE_SECRET_KEY:status.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:status.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:writing?'':'1',OUTCLASS_SITE_URL:settings.appUrl,SMTP_HOST:'127.0.0.1',SMTP_PORT:`${portPrefix}25`,SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem')};
  Object.assign(env,{COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''});

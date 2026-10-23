@@ -1,4 +1,5 @@
 "use client"
+import "@/components/product/operational-dashboard.css"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
@@ -812,7 +813,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                 )}
               </section>
               {hasPermission(membership, "applications.review") && <ApplicantDisplayPanel key={active.id} clubId={membership.clubId} applicationId={active.id} refreshKey={JSON.stringify(active.evaluations)} />}
-              <section className="space-y-4 border-b border-border pb-6">
+              </div><div className="oc-applicant-assessment min-w-0 space-y-6"><section className="space-y-4 border-b border-border pb-6">
                 <h3 className="oc-card-heading">Evaluations · score and overall feedback</h3>
                 {active.evaluations.map((item) => (
                   <div key={item.id} className="border-l-2 border-border pl-3">
