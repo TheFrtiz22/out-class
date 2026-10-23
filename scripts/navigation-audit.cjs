@@ -7,8 +7,9 @@ const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { chromium } = require('playwright');
 const { PrismaClient } = require('@prisma/client');
-const { Actor, readConfig, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
-const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
+const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
+const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--hydration-fixture'));
+const root = profile.root;
 const fixtureFile = path.join(root, 'navigation-fixture.json');
 const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
 function distribution(values) {
@@ -20,6 +21,13 @@ function safeRoute(input) {
   const u = new URL(input, 'http://127.0.0.1:3107');
   if(u.pathname==='/api/workspace') return '/api/workspace?kind='+u.searchParams.get('kind');
   return u.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[fixture-id]');
+}
+function validateActiveOutput(explicitOutput) {
+  assert.ok(explicitOutput,'Active workloads require an explicit new output directory');
+  const allowed=path.resolve(__dirname,'../docs/performance/phase1/active-workload');
+  const relative=path.relative(allowed,path.resolve(explicitOutput));
+  assert.ok(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative),'Keep active workload evidence in a new active-workload subdirectory');
+  assert.ok(!fs.existsSync(path.join(explicitOutput,'browser-samples.json')),'Existing benchmark evidence must not be overwritten');
 }
 async function seed(config) {
   if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
@@ -78,11 +86,34 @@ function routes(f) {
     memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
   };
 }
-function installBrowserObservers() {
-  window.__navAudit={longTasks:[],commits:[]};
+function installBrowserObservers(options) {
+  window.__navAudit={longTasks:[],commits:[],hydration:[],domMismatches:[],phase:'initial'};
+  if(options?.diagnoseHydration)window.__captureHydrationDom=(fiber,node)=>{
+    const describe=n=>!n?null:{nodeType:n.nodeType,tag:n.nodeType===1?n.tagName.toLowerCase():n.nodeType===8?'comment':'text',classes:n.nodeType===1?[...n.classList].filter(c=>c.startsWith('oc-')):[],suspense:n.nodeType===8&&/^[/$?!~&]{1,6}$/.test(n.data)?n.data:null};
+    const parents=[];for(let p=fiber.return;p&&parents.length<5;p=p.return)if(typeof p.type==='string')parents.push({tag:p.type,node:describe(p.stateNode)});
+    window.__navAudit.domMismatches.push({phase:window.__navAudit.phase,atMs:performance.now(),readyState:document.readyState,expectedTag:typeof fiber.type==='string'?fiber.type:'component',expectedClasses:String(fiber.pendingProps?.className||'').split(/\s+/).filter(c=>c.startsWith('oc-')),actual:describe(node),previous:describe(node?.previousSibling),next:describe(node?.nextSibling),parent:describe(node?.parentNode),siblings:[...(node?.parentNode?.childNodes||[])].slice(0,12).map(describe),parents,routeWrapperCount:document.querySelectorAll('.oc-route-content').length});
+  };
   new PerformanceObserver(list=>{for(const e of list.getEntries())window.__navAudit.longTasks.push({start:e.startTime,duration:e.duration});}).observe({entryTypes:['longtask']});
   // Commit notifications only; standard production React omits profiler durations.
-  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(){window.__navAudit.commits.push(performance.now());},onCommitFiberUnmount(){}};
+  const wrapped=new WeakSet();
+  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(_id,root){
+    window.__navAudit.commits.push(performance.now());
+    if(options?.diagnoseHydration&&root&&!wrapped.has(root)){
+      wrapped.add(root);const original=root.onRecoverableError;
+      root.onRecoverableError=(error,info)=>{
+        const message=String(error.message||''),match=/Minified React error #(\d+)/.exec(message),development=/Hydration failed because|server rendered HTML didn't match/.test(message);
+        if(match||development){
+          const redact=text=>text.replace(/https?:\/\/[^\s)]+/g,value=>{try{return '[origin]'+new URL(value).pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]')}catch{return '[source]'}});
+          const stack=redact(String(info?.componentStack||'')),errorFrames=String(error.stack||'').split('\n').slice(1,6).map(redact);
+          const names=new Set([...stack.matchAll(/at ([\w$]+)/g)].map(m=>m[1])),components=[];
+          const visit=f=>{if(!f)return;const type=typeof f.type==='function'?f.type:f.type?.render;if(typeof type==='function'&&names.has(type.name)&&components.length<30){components.push({name:type.displayName||type.name,classes:[...new Set(String(type).match(/oc-[a-zA-Z0-9_-]+/g)||[])].slice(0,20)})}visit(f.child);visit(f.sibling)};visit(root.current);
+          const markupDiff=message.split('\n').filter(line=>/^[+-]\s+/.test(line)).map(line=>({sign:line[0],tags:[...line.matchAll(/<\/?([\w-]+)/g)].map(m=>m[1]),classes:[...line.matchAll(/className="([\w -]+)"/g)].map(m=>m[1])})).filter(row=>row.tags.length||row.classes.length);
+          window.__navAudit.hydration.push({code:match?Number(match[1]):418,phase:window.__navAudit.phase,atMs:performance.now(),stack,errorFrames,components,markupDiff});
+        }
+        return original(error,info);
+      };
+    }
+  },onCommitFiberUnmount(){}};
   document.addEventListener('click',()=>{if(window.__navAudit.armed && !window.__navAudit.click)window.__navAudit.click=performance.now();},true);
   for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
 }
@@ -90,25 +121,49 @@ async function waitReady(page, desc) {
   await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
 }
 async function main() {
-  const config=readConfig(path.join(root,'config.json'));
-  assert.equal(config.appUrl,'http://127.0.0.1:3107');
+  const config=profile.readConfig(path.join(root,'config.json'));
+  assert.equal(config.appUrl,profile.appUrl);
+  if(process.argv.includes('--active-rooms')&&!process.argv.includes('--seed'))validateActiveOutput(process.argv.find(a=>a.startsWith('--out='))?.slice(6));
   const fixture=await seed(config);
-  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify(fixture.counts));return;}
+  const active = process.argv.includes('--active-rooms') ? await require('./active-interview-fixture.cjs').activeInterviewFixture(config,fixture) : null;
+  const clients=Number(process.argv.find(a=>a.startsWith('--clients='))?.slice(10)||1);
+  assert.ok(Number.isInteger(clients)&&clients>=1&&clients<=4,'Workload is bounded to at most four clients');
+  assert.ok(clients===1||active,'Multiple clients require the distinct active-room fixture accounts');
+  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify({...fixture.counts,...active?.counts}));return;}
   fs.mkdirSync(outDir,{recursive:true});
-  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
-  const cookies=[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'}));
-  const manifest=JSON.parse(fs.readFileSync(path.join(config.buildDir,'server/server-reference-manifest.json')));
+  const cookieSets=[];
+  for(const credential of (active?.credentials||[{email:fixture.email,password:fixture.password}]).slice(0,clients)){
+    const actor=new Actor(config);await actor.signIn(credential.email,credential.password);
+    cookieSets.push([...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})));
+  }
+  const manifestFile=path.join(config.buildDir,'server/server-reference-manifest.json');
+  const manifest=process.argv.includes('--diagnose-hydration')&&!fs.existsSync(manifestFile)?{node:{}}:JSON.parse(fs.readFileSync(manifestFile));
   const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
+  if(active)descriptors.interviews.text=active.readyText;
   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
   assert.ok(sampleCount>0&&sampleCount<=100);
-  async function session() {
-    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies,origins:[]}});
-    await context.addInitScript(installBrowserObservers);
+  async function session(participant=0) {
+    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:cookieSets[participant],origins:[]}});
+    await context.addInitScript(installBrowserObservers,{diagnoseHydration:process.argv.includes('--diagnose-hydration')});
     const page=await context.newPage(),cdp=await context.newCDPSession(page);
+    if(process.argv.includes('--probe-hydration-dom')){
+      assert.ok(process.argv.includes('--diagnose-hydration'),'DOM probing is diagnostic only');
+      await page.route('**/_next/static/chunks/fbbc4d8e-*.js',async route=>{
+        const response=await route.fetch(),body=await response.text();
+        assert.ok(body.includes('var rP=null,rN=null,rL=!1')&&body.includes('function rD(e){var n=Error(i(418,'),'React diagnostic probe does not match this build');
+        const patched=body.replace('function rD(e){','function rD(e){try{globalThis.__captureHydrationDom?.(e,rN)}catch{}');
+        const headers={...response.headers()};delete headers['content-encoding'];delete headers['content-length'];
+        await route.fulfill({response,headers,body:patched});
+      });
+    }
     await cdp.send('Performance.enable');
-    const requests=[],pending=new Set();
+    const requests=[],pending=new Set(),pageErrors=[];
+    page.on('pageerror',error=>{
+      const react=/Minified React error #(\d+)/.exec(error.message||'');
+      pageErrors.push(react?'react_'+react[1]:/ResizeObserver loop/.test(error.message||'')?'resize_observer_loop':['TypeError','ReferenceError','RangeError','SyntaxError'].includes(error.name)?error.name:'page_error');
+    });
     page.on('request',req=>{
       const action=req.headers()['next-action'];
       const row={req,route:action?actionNames.get(action)||'server-action':safeRoute(req.url()),method:req.method(),type:req.resourceType(),start:Date.now(),status:null,end:null,bytes:null,timing:null};
@@ -117,7 +172,7 @@ async function main() {
     page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
     page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
     page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
-    return {context,page,cdp,requests,pending};
+    return {context,page,cdp,requests,pending,pageErrors,participant};
   }
   async function settle(s) {
     // SSE is ongoing. Wait for other requests to drain, with a finite bound.
@@ -174,7 +229,7 @@ async function main() {
     }
     return item.click();
   }
-  async function sample(s,from,to,condition,index) {
+  async function sample(s,from,to,condition,index,gate) {
     // Open any switcher or grouped rail before timing the destination click.
     const page=s.page;
     if(from==='voting'){
@@ -189,7 +244,7 @@ async function main() {
     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const startIndex=s.requests.length;
     await page.evaluate(desc=>{
-      const a=window.__navAudit;a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
+      const a=window.__navAudit;a.phase='navigation';a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
       if(a.observer)a.observer.disconnect();
       let scheduled=false;
       const check=()=>{
@@ -204,6 +259,7 @@ async function main() {
       };
       a.observer=new MutationObserver(check);a.observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});a.check=check;
     },descriptors[to]);
+    if(gate)await gate(); // Synchronize real clicks; outside the measured interval.
     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
     else await clickTarget(s,from,to);
     await page.evaluate(()=>window.__navAudit.check());
@@ -214,7 +270,47 @@ async function main() {
     const clickWall=marks.origin+marks.click;
     const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
     const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
-    allSamples.push(row);return row;
+    if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
+    if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
+    allSamples.push(row);
+    if(active){assert.equal(row.pageErrorCount,0,'browser_script_error');if(row.hydration)assert.equal(row.hydration.length,0,'hydration_recovery');assert.equal(row.renderedRooms,24,'room_count');assert.equal(row.openInterviewLinks,24,'open_link_count');}
+    return row;
+  }
+  if(active){
+    const poolUrl=new URL(config.status.DB_URL);poolUrl.searchParams.set('connection_limit','1');
+    const monitor=new PrismaClient({datasourceUrl:poolUrl.href}),poolSamples=[];
+    const checkpoint=()=>fs.writeFileSync(path.join(outDir,'browser-samples.json'),JSON.stringify({environment:'local production Next + real disposable Auth/PostgreSQL; active owner-attested rooms',build:config.activeWorkload||null,fixture:{...fixture.counts,...active.counts},clients,wavesPerCondition:sampleCount,metricsNotes:{cold:'fresh browser contexts; warm server/database',synchronization:'Client clicks released together before click timestamps; no synthetic application delay',pool:'50 ms sampled aggregates for same-role database backends, excluding the monitor; no SQL text or identities retained',observationUnit:'participant navigation; concurrent observations share a wave'},samples:allSamples,poolSamples,failures},null,2));
+    try{
+      workloadWaves:for(const condition of ['cold','warm'])for(let wave=0;wave<sampleCount;wave++){
+        const sessions=[];
+        try{
+          // Prepare users sequentially. Only measured destination clicks form the burst.
+          const prepare=async participant=>{
+            const s=await session(participant);sessions[participant]=s;s.stage='initial';await open(s,'applicants');s.stage='prepared';
+            if(condition==='warm'){if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);}
+          };
+          if(process.argv.includes('--parallel-initial-loads')){
+            assert.ok(process.argv.includes('--diagnose-hydration'),'Parallel initial loads are a separate diagnostic scenario');
+            const prepared=await Promise.allSettled(Array.from({length:clients},(_,participant)=>prepare(participant)));
+            for(const result of prepared)if(result.status==='rejected')throw result.reason;
+          }else{
+            for(let participant=0;participant<clients;participant++)await prepare(participant);
+          }
+          let arrived=0,release,rejectBarrier;const ready=new Promise((resolve,reject)=>{release=resolve;rejectBarrier=reject});
+          const barrierTimeout=setTimeout(()=>rejectBarrier(Error('Click synchronization timed out')),10000);void ready.catch(()=>{});
+          const gate=()=>{if(++arrived===clients)release();return ready;};
+          let stopped=false;const origin=Date.now(),poll=(async()=>{while(!stopped){const [counts]=await monitor.$queryRaw`SELECT count(*)::int AS connections, count(*) FILTER (WHERE state='active')::int AS active, count(*) FILTER (WHERE state='idle in transaction')::int AS idle_in_transaction, count(*) FILTER (WHERE wait_event_type='Lock')::int AS lock_waiting FROM pg_stat_activity WHERE datname=current_database() AND usename=current_user AND backend_type='client backend' AND pid<>pg_backend_pid()`;poolSamples.push({condition,wave,offsetMs:Date.now()-origin,...counts});await new Promise(r=>setTimeout(r,50));}})();
+          try{
+            const outcomes=await Promise.allSettled(sessions.map(async(s,participant)=>{const row=await sample(s,'applicants','interviews',condition,wave,gate);row.participant=participant;row.wave=wave;return row}));
+            for(const result of outcomes)if(result.status==='rejected')throw result.reason;
+          }finally{clearTimeout(barrierTimeout);stopped=true;await poll;}
+          console.log('active rooms '+clients+' clients '+condition+' wave '+(wave+1)+'/'+sampleCount+' complete');
+        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099')})).catch(()=>null),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
+        finally{await Promise.allSettled(sessions.filter(Boolean).map(s=>s.context.close()));checkpoint();}
+        if(process.argv.includes('--stop-after-hydration')&&allSamples.some(s=>s.hydration?.length))break workloadWaves;
+      }
+    }finally{checkpoint();await monitor.$disconnect();await browser.close();}
+    return;
   }
   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
   const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
@@ -242,5 +338,5 @@ async function main() {
     if(failures.length)process.exitCode=1;
   } finally {await browser.close();}
 }
-module.exports={distribution,safeRoute};
+module.exports={distribution,safeRoute,validateActiveOutput,installBrowserObservers};
 if(require.main===module)main().catch(e=>{console.error(e.name, e.code || '', String(e.message).split('\n').filter(line=>/Invalid|constraint|argument|Unknown|verification|failed|Error/.test(line)).slice(-3).join('\n'));process.exitCode=1;});

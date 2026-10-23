@@ -1,0 +1,30 @@
+Current HEAD unit tests
+ℹ {"QUERY PLAN":[{"Plan":{"Node Type":"Index Scan","Parallel Aware":false,"Async Capable":false,"Scan Direction":"Forward","Index Name":"User_email_lower_idx","Relation Name":"User","Alias":"User","Startup Cost":0.29,"Total Cost":8.3,"Plan Rows":1,"Plan Width":45,"Actual Startup Time":0.053,"Actual Total Time":0.056,"Actual Rows":1,"Actual Loops":1,"Index Cond":"(lower(email) = ANY ('{perf7000@virginia.edu}'::text[]))","Rows Removed by Index Recheck":0,"Shared Hit Blocks":3,"Shared Read Blocks":0,"Shared Dirtied Blocks":0,"Shared Written Blocks":0,"Local Hit Blocks":0,"Local Read Blocks":0,"Local Dirtied Blocks":0,"Local Written Blocks":0,"Temp Read Blocks":0,"Temp Written Blocks":0},"Planning":{"Shared Hit Blocks":39,"Shared Read Blocks":0,"Shared Dirtied Blocks":0,"Shared Written Blocks":0,"Local Hit Blocks":0,"Local Read Blocks":0,"Local Dirtied Blocks":0,"Local Written Blocks":0,"Temp Read Blocks":0,"Temp Written Blocks":0},"Planning Time":0.145,"Triggers":[],"Execution Time":0.125}]}
+ℹ tests 1358
+ℹ suites 0
+ℹ pass 1321
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 37
+ℹ todo 0
+ℹ duration_ms 93220.584792
+
+Current HEAD production Auth/browser checks
+ℹ tests 58
+ℹ suites 0
+ℹ pass 58
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 123001.081333
+
+Focused regressions
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1790.675

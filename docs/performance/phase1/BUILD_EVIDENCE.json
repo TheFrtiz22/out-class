@@ -15,5 +15,44 @@
     "patchSha256": "947322c664854ce78bcf7b0865781fd7b0ab9ba57bffa6170c787d5b9e46651e",
     "testSha256": "7763a45ec6c072e75184b3f11ecb1ab932193a3c6882fb0cc6762483b63ae8c3",
     "node": "v26.9.0"
+  },
+  "activeWorkloadFollowup": {
+    "currentHead": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+    "applicationSourcesChanged": false,
+    "builds": [
+      {
+        "target": "reference",
+        "sourceCommit": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "ALfL67MjErRtJGZev6Tr7"
+      },
+      {
+        "target": "current",
+        "sourceCommit": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+        "applicationSourcesModified": false,
+        "poolLimitPerPrismaClient": 8,
+        "buildId": "aCNbtS7NHHYDWN3odwjah"
+      }
+    ],
+    "toolingPatchSha256": "76c10c55f2567a37fd11892bbdd756425aacf551c21f9b6dc1bbbfbcd4f0ed4d",
+    "evidence": "active-workload/EVIDENCE.json",
+    "newerWorkspaceApplicationEditsCovered": false
+  },
+  "hydrationFollowup": {
+    "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+    "measuredBase": "cffb63cff78c9694b89ed7e26a82d21edb5421e5",
+    "currentHead": "43bb46429c817a2a0110a85475268cdf917b5e65",
+    "verifiedHeadBuild": {
+      "target": "hydration-current-head-verification",
+      "sourceCommit": "43bb46429c817a2a0110a85475268cdf917b5e65",
+      "applicationSourcesModified": true,
+      "poolLimitPerPrismaClient": 8,
+      "buildId": "31VS4LckOwX7L6b5jpbZI"
+    },
+    "patchSha256": "5d601715492efc7031e2b5965db2bfae1b06c79860fea2cb4b525d100e1b613c",
+    "patchAppliesToCurrentHead": true,
+    "originalPatchUnchanged": true,
+    "evidence": "active-workload/hydration/EVIDENCE.json"
   }
 }

@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-22",
+  "currentHead": "43bb46429c817a2a0110a85475268cdf917b5e65",
+  "workspaceUnit": {
+    "tests": 1358,
+    "passed": 1321,
+    "failed": 0,
+    "skipped": 37,
+    "durationMs": 93220.584792
+  },
+  "currentHeadProductionAuthBrowser": {
+    "tests": 58,
+    "passed": 58,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 123001.081333
+  },
+  "frozenBaseProductionAuthHttp": {
+    "tests": 41,
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 82396.066875
+  },
+  "frozenBasePhase1HttpBrowser": {
+    "tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 3242.712667
+  },
+  "focusedRegressions": {
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 1790.675
+  },
+  "productionBuild": {
+    "passed": true,
+    "target": "hydration-current-head-verification",
+    "sourceCommit": "43bb46429c817a2a0110a85475268cdf917b5e65",
+    "applicationSourcesModified": true,
+    "poolLimitPerPrismaClient": 8,
+    "buildId": "31VS4LckOwX7L6b5jpbZI",
+    "existingLintWarnings": 22
+  },
+  "workspaceTypecheck": {
+    "passed": true
+  },
+  "changedFileLint": {
+    "passed": true,
+    "errors": 0,
+    "warnings": 0
+  },
+  "nativeTestOverrides": [
+    "Dedicated loopback hydration profile and local TLS mail only.",
+    "The existing empty-room Phase 1 suite targets the second fixture club; active-room checks target the first.",
+    "No authorization mocks or application security changes."
+  ],
+  "initialFailures": {
+    "unit": {
+      "tests": 1358,
+      "passed": 1320,
+      "failed": 1,
+      "skipped": 37,
+      "durationMs": 97735.673916,
+      "cause": "Existing test required exactly Cookie in Vary; corrected to require Cookie and Accept-Encoding."
+    },
+    "frozenAuth": {
+      "tests": 39,
+      "passed": 31,
+      "failed": 8,
+      "skipped": 0,
+      "durationMs": 78209.613625,
+      "cause": "Restart omitted isolated local SMTP settings; restored only the local mail fixture settings, then all checks passed."
+    }
+  },
+  "securityNativeHistory": "Three native security/concurrency suites passed on Phase 1 and the audit reference in NATIVE_SECURITY_RESULT.json. Those database-only suites were not repeated for this layout-only application change."
+}

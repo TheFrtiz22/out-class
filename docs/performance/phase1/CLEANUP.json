@@ -9,5 +9,25 @@
     "temporaryAuditArchiveRemoved": true,
     "externalEmailSent": false,
     "unrelatedStacksUntouched": true
+  },
+  "activeWorkloadFollowup": {
+    "reservedAppStopped": true,
+    "reservedSupabaseStopped": true,
+    "credentialsRemoved": true,
+    "auditArchiveRemoved": true,
+    "unrelatedStacksUntouched": true
+  },
+  "hydrationFollowup": {
+    "reservedAppStopped": true,
+    "reservedSupabaseStopped": true,
+    "reservedContainersRemaining": 0,
+    "credentialsRemoved": true,
+    "privateSourceArchiveRemoved": true,
+    "unrelatedStacksUntouched": true,
+    "project": "outclass-hydration-e2e",
+    "appPort": 3117,
+    "apiPort": 58321,
+    "databasePort": 58322,
+    "privateRuntimeLogsRemoved": true
   }
 }
