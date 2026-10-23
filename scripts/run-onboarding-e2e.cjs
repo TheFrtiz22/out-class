@@ -116,4 +116,4 @@ async function ready(url,headers={}){
   if(result.status===0)for(const name of ['config.json','server.pid','mailpit-key.pem','mailpit-cert.pem'])fs.rmSync(path.join(root,name),{force:true});
  }
 });
-function assertImage(image){if(!/^public\.ecr\.aws\/supabase\/mailpit:/.test(image))throw Error('Unexpected local SMTP image');}
+function assertImage(image){require('../tests/helpers/local-mailpit-image.cjs').assertMailpitImage(image);}

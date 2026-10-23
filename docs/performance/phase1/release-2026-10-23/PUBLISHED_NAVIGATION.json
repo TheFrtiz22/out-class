@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "explicitBrowserApproval": true,
+  "reviewAloneDoesNotPublish": true,
+  "realAuthAndLiveSession": true,
+  "publishedVersionAuthority": true,
+  "legacyApprovalRemovalSurvives": true,
+  "mobileRoomLink": true,
+  "immediateGrantRevocation": true,
+  "exactOpeningDeniedAfterRevocation": true,
+  "browserErrors": 0
+}

@@ -27,7 +27,10 @@ const suites = {
     ],
   },
 };
-if (process.platform !== "linux") throw Error("Native fixture uses Linux Docker host networking to enforce loopback-only SQL.");
+if (!["linux", "darwin"].includes(process.platform)) throw Error("Disposable native fixture supports Linux and macOS.");
+// Docker Desktop port publishing needs a loopback relay inside the container's
+// network namespace, so SQL still sees inet_server_addr() = 127.0.0.1.
+const desktop = process.platform === "darwin";
 const suite = suites[process.argv[2]];
 if (!suite || process.argv.length !== 3) {
   console.error("Usage: node scripts/run-disposable-postgres.cjs security|events");
@@ -63,8 +66,12 @@ const env = { ...process.env, DATABASE_URL: url, POSTGRES_PRISMA_URL: url,
   SMTP_HOST: "", SMTP_USER: "", SMTP_PASSWORD: "", COMMUNICATIONS_EMAIL_ENABLED: "false",
   OUTCLASS_SITE_URL: "http://127.0.0.1:3107", VERCEL: "", VERCEL_ENV: "" };
 env[suite.gate] = url;
-let created = false;
+let created = false, proxyCreated = false;
 function cleanup() {
+  if (proxyCreated) {
+    const proxyLabel = spawnSync("docker", ["inspect", suite.container + "-loopback", "--format", '{{index .Config.Labels "outclass.integration-suite"}}'], { encoding: "utf8" });
+    if (proxyLabel.status === 0 && proxyLabel.stdout.trim() === process.argv[2]) spawnSync("docker", ["rm", "-f", suite.container + "-loopback"], { stdio: "ignore" });
+  }
   if (!created) return;
   // Never remove an unrelated container, even if the fixture's name was reused.
   const label = spawnSync("docker", ["inspect", suite.container,
@@ -84,7 +91,7 @@ try {
   ].join("\n");
   command("docker", ["run", "-d", "--name", suite.container,
     "--label", "outclass.integration-suite=" + process.argv[2],
-    "--network", "host", // Required: native tests verify inet_server_addr() is loopback.
+    ...(desktop ? ["-p", "127.0.0.1:" + suite.port + ":5432"] : ["--network", "host"]),
     "--entrypoint", "bash", image, "-ec", init]);
   created = true;
   let ready = false;
@@ -94,6 +101,11 @@ try {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
   }
   if (!ready) throw Error("Disposable PostgreSQL did not become ready");
+  if (desktop) {
+    command("docker", ["run", "-d", "--name", suite.container + "-loopback", "--label", "outclass.integration-suite=" + process.argv[2], "--network", "container:" + suite.container,
+      "alpine/socat@sha256:22d77becaeeea8ef56b8c4bb2312323acafe85354be6a85714ff5050e3537842", "TCP-LISTEN:5432,fork,reuseaddr", "TCP:127.0.0.1:" + suite.port]);
+    proxyCreated = true;
+  }
   if (suite.database !== "postgres")
     command("docker", ["exec", suite.container, "createdb", "-p", String(suite.port), "-U", "fixture_superuser", suite.database]);
   command("docker", ["exec", "-i", suite.container, "psql", "-p", String(suite.port), "-U", "fixture_superuser",

@@ -1,0 +1,341 @@
+diff --git a/scripts/active-interview-fixture.cjs b/scripts/active-interview-fixture.cjs
+index f6d6f49..28657bf 100644
+--- a/scripts/active-interview-fixture.cjs
++++ b/scripts/active-interview-fixture.cjs
+@@ -8,7 +8,7 @@ const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.
+ const { fixtureProfile } = require('./navigation-fixture-config.cjs');
+ 
+ async function activeInterviewFixture(config, navigation) {
+-  const profile = fixtureProfile(config.projectId === 'outclass-hydration-e2e');
++  const profile = fixtureProfile(config.projectId === 'outclass-navigation-crossover-e2e' ? 'crossover' : config.projectId === 'outclass-hydration-e2e');
+   const filename = path.join(profile.root, 'active-interview-fixture.json');
+   // Revalidate even when called from another harness.
+   const guarded = profile.readConfig(path.join(path.dirname(filename), 'config.json'));
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 1bb6edb..4cb01e9 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -8,7 +8,8 @@ const { randomUUID } = require('node:crypto');
+ const { chromium } = require('playwright');
+ const { PrismaClient } = require('@prisma/client');
+ const { Actor, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
+-const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--hydration-fixture'));
++assert.ok(!(process.argv.includes('--hydration-fixture') && process.argv.includes('--crossover-fixture')), 'Choose one disposable fixture');
++const profile = require('./navigation-fixture-config.cjs').fixtureProfile(process.argv.includes('--crossover-fixture') ? 'crossover' : process.argv.includes('--hydration-fixture'));
+ const root = profile.root;
+ const fixtureFile = path.join(root, 'navigation-fixture.json');
+ const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
+@@ -287,7 +288,7 @@ async function main() {
+           // Prepare users sequentially. Only measured destination clicks form the burst.
+           const prepare=async participant=>{
+             const s=await session(participant);sessions[participant]=s;s.stage='initial';await open(s,'applicants');s.stage='prepared';
+-            if(condition==='warm'){if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);}
++            if(condition==='warm'){s.stage='warmup_interviews';if(process.argv.includes('--diagnose-hydration'))await s.page.evaluate(()=>{window.__navAudit.phase='warmup'});await clickTarget(s,'applicants','interviews');await waitReady(s.page,descriptors.interviews);await settle(s);s.stage='warmup_applicants';await clickTarget(s,'interviews','applicants');await waitReady(s.page,descriptors.applicants);await settle(s);s.stage='prepared';}
+           };
+           if(process.argv.includes('--parallel-initial-loads')){
+             assert.ok(process.argv.includes('--diagnose-hydration'),'Parallel initial loads are a separate diagnostic scenario');
+@@ -305,7 +306,7 @@ async function main() {
+             for(const result of outcomes)if(result.status==='rejected')throw result.reason;
+           }finally{clearTimeout(barrierTimeout);stopped=true;await poll;}
+           console.log('active rooms '+clients+' clients '+condition+' wave '+(wave+1)+'/'+sampleCount+' complete');
+-        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099')})).catch(()=>null),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
++        }catch(error){const assertion=String(error.message||'').split('\n')[0];const readiness=await Promise.all(sessions.filter(Boolean).map(async s=>({participant:s.participant,stage:s.stage,dom:await s.page.evaluate(()=>({pipeline:!!document.querySelector('.oc-live-pipeline'),roomSection:!!document.querySelector('section[aria-label="Interview rooms"]'),rooms:document.querySelectorAll('section[aria-label="Interview rooms"] li').length,loading:!!document.querySelector('.oc-loading-screen'),hasApplicant:!!document.querySelector('.oc-live-pipeline')?.textContent.includes('Audit Student 000'),hasBookedApplicant:!!document.querySelector('section[aria-label="Interview rooms"]')?.textContent.includes('Audit Student 099'),emptyRooms:document.body.textContent.includes('No assigned interviews.'),accessChanged:document.body.textContent.includes('Your access changed'),tool:['applicants','interviews','decisions','overview'].find(v=>new URLSearchParams(location.search).get('tool')===v)||null})).catch(()=>null),requests:s.requests.slice(-16).map(r=>({route:r.route,status:r.status,failed:!!r.failed,pending:r.end===null,type:r.type})),pageErrors:s.pageErrors})));failures.push({condition,wave,error:error.name||'WorkloadFailure',assertion:['browser_script_error','room_count','open_link_count'].includes(assertion)?assertion:null,actual:typeof error.actual==='number'?error.actual:null,expected:typeof error.expected==='number'?error.expected:null,readiness});process.exitCode=1;console.log('Workload failure recorded for '+condition+' wave '+(wave+1));}
+         finally{await Promise.allSettled(sessions.filter(Boolean).map(s=>s.context.close()));checkpoint();}
+         if(process.argv.includes('--stop-after-hydration')&&allSamples.some(s=>s.hydration?.length))break workloadWaves;
+       }
+diff --git a/scripts/navigation-fixture-config.cjs b/scripts/navigation-fixture-config.cjs
+index c72f4fe..91be197 100644
+--- a/scripts/navigation-fixture-config.cjs
++++ b/scripts/navigation-fixture-config.cjs
+@@ -5,12 +5,16 @@ const { readConfig } = require('../tests/helpers/onboarding-e2e.cjs');
+ 
+ function fixtureProfile(hydration = false) {
+   if (!hydration) return { root: path.join(os.tmpdir(), 'outclass-onboarding-e2e'), projectId: 'outclass-onboarding-e2e', appUrl: 'http://127.0.0.1:3107', readConfig };
++  assert.ok(hydration === true || hydration === 'crossover', 'Unknown disposable fixture profile');
++  const crossover = hydration === 'crossover';
++  const projectId = crossover ? 'outclass-navigation-crossover-e2e' : 'outclass-hydration-e2e';
++  const appPort = crossover ? '3119' : '3117', prefix = crossover ? '593' : '583';
+   return {
+-    root: path.join(os.tmpdir(), 'outclass-hydration-e2e'), projectId: 'outclass-hydration-e2e', appUrl: 'http://127.0.0.1:3117',
++    root: path.join(os.tmpdir(), projectId), projectId, appUrl: 'http://127.0.0.1:' + appPort,
+     readConfig(filename) {
+       const config = JSON.parse(fs.readFileSync(filename));
+-      assert.equal(config.projectId, 'outclass-hydration-e2e');
+-      for (const [value, port] of [[config.appUrl, '3117'], [config.status.API_URL, '58321'], [config.status.DB_URL, '58322'], [config.status.MAILPIT_URL, '58324']]) {
++      assert.equal(config.projectId, projectId);
++      for (const [value, port] of [[config.appUrl, appPort], [config.status.API_URL, prefix + '21'], [config.status.DB_URL, prefix + '22'], [config.status.MAILPIT_URL, prefix + '24']]) {
+         const url = new URL(value);
+         assert.ok(['localhost', '127.0.0.1'].includes(url.hostname), 'Hydration checks require loopback services');
+         assert.equal(url.port, port, 'Hydration checks require their dedicated ports');
+diff --git a/scripts/navigation-crossover.cjs b/scripts/navigation-crossover.cjs
+new file mode 100644
+index 0000000..e554391
+--- /dev/null
++++ b/scripts/navigation-crossover.cjs
+@@ -0,0 +1,138 @@
++// Local diagnostic study only. Never reads application .env or hosted credentials.
++const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
++const assert = require('node:assert/strict');
++const { createHash, randomBytes } = require('node:crypto');
++const { spawn, spawnSync, execFileSync } = require('node:child_process');
++const { fixtureProfile } = require('./navigation-fixture-config.cjs');
++const profile = fixtureProfile('crossover'), repo = path.resolve(__dirname, '..');
++const sha = body => createHash('sha256').update(body).digest('hex');
++
++function protocol(seed) {
++  assert.match(seed, /^[a-f0-9]{32}$/);
++  const orders = ['AB', 'AB', 'BA', 'BA'].map((order, i) => ({ order, sort: sha(seed + ':' + i) })).sort((a, b) => a.sort.localeCompare(b.sort));
++  orders.splice(2, 0, { order: 'AA' });
++  return orders.flatMap(({ order }, pair) => [...order].map((variant, position) => ({ pair, position, variant, comparison: order === 'AA' ? 'same-build-control' : 'hydration-wrapper', order })));
++}
++function controlLayout(source) {
++  const imported = 'import { RouteContent } from "@/components/route-content"\n';
++  const wrapped = '<RouteContent style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</RouteContent>';
++  assert.equal(source.split(imported).length, 2, 'Expected exactly one route wrapper import');
++  assert.equal(source.split(wrapped).length, 2, 'Expected exactly one route wrapper');
++  return source.replace(imported, '').replace(wrapped, '<div className="oc-route-content" style={cookieStore.has(PLATFORM_VIEW_COOKIE) ? { paddingTop: "var(--support-banner-height, 120px)" } : undefined}>{children}</div>');
++}
++function validateCohort(data, waves) {
++  assert.equal(data.samples.length, waves * 8, 'Every predetermined participant navigation must be retained');
++  for (const row of data.samples) {
++    assert.equal(row.renderedRooms, 24); assert.equal(row.openInterviewLinks, 24);
++    assert.ok(row.requests.every(r => Number.isInteger(r.status) && r.status >= 200 && r.status < 400 && !r.failed), 'Request failure invalidates the study block');
++  }
++  assert.ok(data.failures.every(f => ['browser_script_error', 'hydration_recovery'].includes(f.assertion)), 'Only recorded browser recoveries may continue the comparison');
++}
++function cpu() { return os.cpus().reduce((sum, core) => ({ idle: sum.idle + core.times.idle, total: sum.total + Object.values(core.times).reduce((a, b) => a + b, 0) }), { idle: 0, total: 0 }); }
++async function portFree(port) {
++  await new Promise((resolve, reject) => { const server = require('node:net').createServer(); server.once('error', () => reject(Error('Reserved crossover port is occupied: ' + port))); server.listen(port, '127.0.0.1', () => server.close(resolve)); });
++}
++async function main() {
++  const output = process.argv.find(a => a.startsWith('--out='))?.slice(6);
++  assert.ok(output, 'An explicit new output directory is required');
++  const out = path.resolve(output), allowed = path.join(repo, 'docs/performance/phase1/active-workload');
++  assert.ok(out.startsWith(allowed + path.sep) && !fs.existsSync(out), 'Use a new active-workload evidence directory');
++  assert.ok(!fs.existsSync(profile.root), 'Reserved crossover fixture already exists; refusing to replace it');
++  for (const port of [3119, 59320, 59321, 59322, 59323, 59324, 59325, 59327, 59329]) await portFree(port);
++  assert.equal(execFileSync('docker', ['ps', '-a', '--filter', 'label=com.supabase.cli.project=' + profile.projectId, '--format', '{{.Names}}'], { encoding: 'utf8' }).trim(), '', 'Reserved crossover project already exists');
++  const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
++  const seed = process.argv.find(a => a.startsWith('--seed='))?.slice(7) || randomBytes(16).toString('hex'), blocks = protocol(seed), buildRoots = { A: path.join(profile.root, 'build-a'), B: path.join(profile.root, 'build-b') };
++  fs.mkdirSync(profile.root, { mode: 0o700 }); fs.mkdirSync(out, { recursive: true });
++  fs.writeFileSync(path.join(profile.root, '.crossover-owner'), head, { mode: 0o600 });
++  const study = { sourceCommit: head, seed, blocks, variants: { A: 'Current HEAD including hydration wrapper', B: 'Same HEAD with only the root layout wrapper removed' }, clients: 4, wavesPerConditionPerBlock: 5, warmupWavesPerCondition: 1, conditions: ['cold', 'warm'], poolLimitPerPrismaClient: 8, notes: ['Same accounts, bookings, grants, database, URL and pool across every block.', 'Both builds completed before collection. No other tests or builds launched by this study during collection.', 'No busy-host samples dropped, no synthetic application delays.', 'Four AB/BA pairs are primary; the middle AA pair measures ordinary same-build variation.', 'Cold browser with warm server/database; initial page errors and incomplete blocks retained.', 'System telemetry contains aggregate CPU, load and memory only.'], completed: [] };
++  const save = () => fs.writeFileSync(path.join(out, 'PROTOCOL.json'), JSON.stringify(study, null, 2) + '\n'); save();
++  study.warmupFailurePolicy = 'One fixed warmup wave per condition, with no retries. Preserve all warmup failures and missing rows; do not silently force clean warmups. Every measured block must still be complete before accepted latency analysis.'; save();
++  let running, appPid, stackTouched = false, sampler, abortRequested = false, phase = 'setup', blockIndex = -1;
++  const run = async (args, log, cwd = repo, env = process.env) => {
++    assert.ok(!abortRequested, 'Study interrupted');
++    const fd = fs.openSync(path.join(profile.root, log), 'w');
++    const child = spawn(process.execPath, args, { cwd, env, stdio: ['ignore', fd, fd] }); running = child;
++    const status = await new Promise((resolve, reject) => { child.once('error', reject); child.once('close', resolve); });
++    fs.closeSync(fd); running = null; assert.ok(!abortRequested, 'Study interrupted'); return status;
++  };
++  const stop = async () => {
++    if (!fs.existsSync(path.join(profile.root, 'server.pid'))) return;
++    const pid = Number(fs.readFileSync(path.join(profile.root, 'server.pid'), 'utf8'));
++    const listener = spawnSync('lsof', ['-tiTCP:3119', '-sTCP:LISTEN'], { encoding: 'utf8' }).stdout.trim();
++    if (!listener) { appPid = null; return; }
++    assert.equal(Number(listener), pid, 'Only the registered crossover listener can stop');
++    const cwd = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], { encoding: 'utf8' }).split('\n').find(x => x.startsWith('n'))?.slice(1);
++    assert.ok(Object.values(buildRoots).map(p => fs.realpathSync(p)).includes(fs.realpathSync(cwd)), 'Crossover app checkout does not match');
++    process.kill(pid, 'SIGTERM');
++    for (let i = 0; i < 100; i++) { if (!spawnSync('lsof', ['-tiTCP:3119', '-sTCP:LISTEN'], { encoding: 'utf8' }).stdout.trim()) { appPid = null; return; } await new Promise(r => setTimeout(r, 50)); }
++    throw Error('Crossover application did not stop');
++  };
++  const abort = () => { abortRequested = true; if (running) running.kill('SIGTERM'); process.exitCode = 1; };
++  process.once('SIGINT', abort); process.once('SIGTERM', abort);
++  try {
++    const registered = spawnSync(process.execPath, [path.join(repo, 'scripts/summarize-navigation-crossover.cjs'), '--plan', '--out=' + out], { cwd: repo, stdio: 'pipe' });
++    assert.equal(registered.status, 0, 'Analysis registration must finish before building or collecting');
++    const tar = path.join(profile.root, 'source.tar'); execFileSync('git', ['archive', '--format=tar', '-o', tar, head], { cwd: repo });
++    for (const source of Object.values(buildRoots)) { fs.mkdirSync(source); execFileSync('tar', ['-xf', tar, '-C', source]); fs.symlinkSync(path.join(repo, 'node_modules'), path.join(source, 'node_modules'), 'dir'); }
++    fs.rmSync(tar);
++    const layout = fs.readFileSync(path.join(buildRoots.A, 'app/layout.tsx'), 'utf8'); fs.writeFileSync(path.join(buildRoots.B, 'app/layout.tsx'), controlLayout(layout));
++    for (const file of ['scripts/run-onboarding-e2e.cjs', 'tests/helpers/onboarding-e2e.cjs']) {
++      const full = path.join(buildRoots.A, file); let text = fs.readFileSync(full, 'utf8').replaceAll('outclass-onboarding-e2e', profile.projectId).replaceAll('553', '593').replaceAll('3107', '3119');
++      if (file.startsWith('scripts/')) { assert.ok(text.includes('if(keep){console.log')); text = text.replace('if(keep){console.log', 'if(keep){app.unref();console.log'); }
++      fs.writeFileSync(full, text);
++    }
++    console.log('Preparing private current-HEAD build, real Auth and disposable database.'); stackTouched = true;
++    assert.equal(await run(['scripts/run-onboarding-e2e.cjs', '--keep'], 'setup.log', buildRoots.A), 0, 'Private setup/security suite failed; inspect reserved setup log');
++    await stop();
++    const configFile = path.join(profile.root, 'config.json'), config = profile.readConfig(configFile), s = config.status;
++    const setupLog = fs.readFileSync(path.join(profile.root, 'setup.log'), 'utf8'); study.setupTestSummary = setupLog.split('\n').filter(l => l.startsWith('ℹ '));
++    const pool = new URL(s.DB_URL); pool.searchParams.set('connection_limit', '8');
++    const env = { ...process.env, NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'false', DATABASE_URL: pool.href, POSTGRES_PRISMA_URL: pool.href, POSTGRES_URL: pool.href, POSTGRES_URL_NON_POOLING: pool.href, NEXT_PUBLIC_SUPABASE_URL: s.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: s.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: s.ANON_KEY, SUPABASE_SECRET_KEY: s.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: s.SERVICE_ROLE_KEY, OUTCLASS_PUBLISH_BUILD: '1', OUTCLASS_SITE_URL: config.appUrl, OUTCLASS_PLATFORM_ADMIN_IDS: config.admin.id, COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', RESEND_FROM_EMAIL: '', NODE_EXTRA_CA_CERTS: path.join(profile.root, 'mailpit-cert.pem') };
++    console.log('Building control with identical infrastructure and unchanged protected loaders.');
++    assert.equal(await run(['scripts/copy-pdfjs-assets.cjs'], 'control-assets.log', buildRoots.B, env), 0, 'Control public assets failed');
++    assert.equal(await run([path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], 'control-build.log', buildRoots.B, env), 0, 'Control build failed');
++    study.builds = Object.fromEntries(Object.entries(buildRoots).map(([v, p]) => [v, { buildId: fs.readFileSync(path.join(p, '.next-publish/BUILD_ID'), 'utf8').trim(), layoutSha256: sha(fs.readFileSync(path.join(p, 'app/layout.tsx'))) }])); save();
++    assert.equal(await run(['scripts/navigation-audit.cjs', '--crossover-fixture', '--active-rooms', '--seed'], 'seed.log'), 0, 'Fresh active fixture failed');
++    const telemetry = []; let last = cpu(); phase = 'starting';
++    sampler = setInterval(() => { const next = cpu(), total = next.total - last.total; telemetry.push({ at: new Date().toISOString(), block: blockIndex, phase, cpuBusyPercent: total ? Math.round(10000 * (1 - (next.idle - last.idle) / total)) / 100 : null, loadAverage: os.loadavg(), freeMemoryMiB: Math.round(os.freemem() / 1048576) }); last = next; }, 1000);
++    for (let i = 0; i < blocks.length; i++) {
++      assert.ok(!abortRequested, 'Study interrupted');
++      blockIndex = i; const block = blocks[i], source = buildRoots[block.variant]; phase = 'starting'; await stop();
++      const fd = fs.openSync(path.join(profile.root, 'server-' + i + '.log'), 'w');
++      const app = spawn(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'start', '-p', '3119', '-H', '127.0.0.1'], { cwd: source, env, detached: true, stdio: ['ignore', fd, fd] }); fs.closeSync(fd); app.unref(); appPid = app.pid;
++      fs.writeFileSync(path.join(profile.root, 'server.pid'), String(appPid));
++      config.buildDir = path.join(source, '.next-publish'); config.activeWorkload = { target: block.variant, sourceCommit: head, applicationSourcesModified: block.variant === 'B', poolLimitPerPrismaClient: 8, buildId: study.builds[block.variant].buildId, block: i };
++      fs.writeFileSync(configFile, JSON.stringify(config), { mode: 0o600 });
++      let ready = false;
++      for (let n = 0; n < 100; n++) { try { if ((await fetch(profile.appUrl, { signal: AbortSignal.timeout(1000) })).ok) { ready = true; break; } } catch {} await new Promise(r => setTimeout(r, 200)); }
++      assert.ok(ready, 'Registered crossover application did not start');
++      for (const [name, waves] of [['warmup', 1], ['measure', 5]]) {
++        phase = name; const destination = path.join(out, 'block-' + String(i + 1).padStart(2, '0') + '-' + block.variant + '-' + name);
++        const exit = await run(['scripts/navigation-audit.cjs', '--crossover-fixture', '--diagnose-hydration', '--active-rooms', '--clients=4', '--samples=' + waves, '--out=' + destination], 'benchmark-' + i + '-' + name + '.log');
++        const data = JSON.parse(fs.readFileSync(path.join(destination, 'browser-samples.json')));
++        if (name === 'measure') validateCohort(data, waves);
++        assert.ok(exit === 0 || data.failures.length, 'Unexpected benchmark exit');
++        study.completed.push({ block: i, phase: name, variant: block.variant, observations: data.samples.length, plannedObservations: waves * 8, browserErrors: data.samples.reduce((n, r) => n + r.pageErrorCount, 0), failures: data.failures.length, exit }); save();
++        fs.writeFileSync(path.join(out, 'SYSTEM.json'), JSON.stringify(telemetry, null, 2) + '\n');
++      }
++      console.log('Crossover block ' + (i + 1) + '/' + blocks.length + ' ' + block.variant + ' complete; all rows and errors retained.');
++    }
++    study.collectionComplete = true; save();
++  } catch (error) {
++    study.failure = { stage: phase, block: blockIndex, kind: error.name }; save(); throw error;
++  } finally {
++    if (sampler) clearInterval(sampler);
++    if (running) running.kill('SIGTERM');
++    await stop();
++    if (stackTouched) {
++      const fd = fs.openSync(path.join(profile.root, 'cleanup.log'), 'w'); const result = spawnSync(process.execPath, [path.join(repo, 'node_modules/supabase/dist/supabase.js'), 'stop', '--workdir', profile.root, '--no-backup'], { stdio: ['ignore', fd, fd] }); fs.closeSync(fd); assert.equal(result.status, 0, 'Reserved crossover stack did not stop');
++    }
++    assert.equal(execFileSync('docker', ['ps', '-a', '--filter', 'label=com.supabase.cli.project=' + profile.projectId, '--format', '{{.Names}}'], { encoding: 'utf8' }).trim(), '');
++    assert.equal(fs.readFileSync(path.join(profile.root, '.crossover-owner'), 'utf8'), head);
++    fs.rmSync(profile.root, { recursive: true, force: true });
++    study.cleanup = { appStopped: !appPid, ownContainersRemoved: true, credentialsAndPrivateArchivesRemoved: true, unrelatedStacksUntouched: true }; save();
++    process.removeListener('SIGINT', abort); process.removeListener('SIGTERM', abort);
++  }
++}
++module.exports = { protocol, controlLayout, validateCohort };
++if (require.main === module) main().catch(error => { console.error(error.name + ': ' + String(error.message).split('\n')[0]); process.exitCode = 1; });
+diff --git a/scripts/summarize-navigation-crossover.cjs b/scripts/summarize-navigation-crossover.cjs
+new file mode 100644
+index 0000000..d671450
+--- /dev/null
++++ b/scripts/summarize-navigation-crossover.cjs
+@@ -0,0 +1,54 @@
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
++const { createHash } = require('node:crypto');
++const { distribution } = require('./navigation-audit.cjs');
++const digest = body => createHash('sha256').update(body).digest('hex');
++function random(seed) { let state = parseInt(digest(seed).slice(0, 8), 16); return () => { state += 0x6d2b79f5; let t = state; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
++const percentile = (a, p) => [...a].sort((a, b) => a - b)[Math.ceil(a.length * p) - 1];
++function pairedBootstrap(pairs, seed, iterations = 10000) {
++  assert.ok(pairs.length && pairs.every(p => p.A.length === p.B.length && p.A.length));
++  const rng = random(seed), values = { p50DeltaMs: [], p95DeltaMs: [], p50DeltaPercent: [], p95DeltaPercent: [] };
++  for (let i = 0; i < iterations; i++) {
++    const a = [], b = [];
++    for (let p = 0; p < pairs.length; p++) {
++      const pair = pairs[Math.floor(rng() * pairs.length)];
++      for (let w = 0; w < pair.A.length; w++) { const index = Math.floor(rng() * pair.A.length); a.push(...pair.A[index]); b.push(...pair.B[index]); }
++    }
++    for (const [name, rank] of [['p50', .5], ['p95', .95]]) { const av = percentile(a, rank), bv = percentile(b, rank); values[name + 'DeltaMs'].push(av - bv); values[name + 'DeltaPercent'].push(100 * (av / bv - 1)); }
++  }
++  return Object.fromEntries(Object.entries(values).map(([key, a]) => [key, { low: Math.round(percentile(a, .025) * 100) / 100, high: Math.round(percentile(a, .975) * 100) / 100 } ]));
++}
++function summarize(rows) {
++  const requests = rows.flatMap(r => r.requests), visible = requests.filter(r => ['interviewWorkspace', 'interviewRounds', 'assignedRooms'].some(k => r.route === '/api/workspace?kind=' + k));
++  const phases = r => Object.fromEntries([...String(r.serverTiming || '').matchAll(/([a-z_]+);dur=([\d.]+)/g)].map(m => [m[1], +m[2]]));
++  const names = [...new Set(visible.flatMap(r => Object.keys(phases(r))))];
++  return { observations: rows.length, ...Object.fromEntries(['meaningfulMs', 'interactiveMs', 'networkCompleteMs', 'requestCount', 'encodedBodyBytes', 'scriptMs', 'taskMs'].map(k => [k, distribution(rows.map(r => r[k]))])), completePayloadObservations: rows.filter(r => r.requests.every(q => q.encodedBodyBytes !== null)).length, httpErrors: requests.filter(r => r.status >= 400).length, transportFailures: requests.filter(r => r.failed).length, browserErrors: rows.reduce((n, r) => n + r.pageErrorCount, 0), hydrationPhases: rows.flatMap(r => r.hydration || []).map(h => h.phase), all24Links: rows.every(r => r.renderedRooms === 24 && r.openInterviewLinks === 24), visibleGetTtfbMs: distribution(visible.map(r => r.ttfbMs)), serverPhasesMs: Object.fromEntries(names.map(k => [k, distribution(visible.map(r => phases(r)[k]))])), assignedRoomPhasesMs: Object.fromEntries(names.map(k => [k, distribution(visible.filter(r => r.route.endsWith('=assignedRooms')).map(r => phases(r)[k]))])) };
++}
++function main() {
++  const out = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || '');
++  assert.ok(out.startsWith(path.resolve(__dirname, '../docs/performance/phase1/active-workload') + path.sep));
++  const protocol = JSON.parse(fs.readFileSync(path.join(out, 'PROTOCOL.json')));
++  if (process.argv.includes('--plan')) {
++    assert.equal(protocol.completed.length, 0); assert.ok(!fs.readdirSync(out).some(n => n.startsWith('block-')));
++    const file = path.join(out, 'ANALYSIS_PLAN.json'); assert.ok(!fs.existsSync(file));
++    fs.writeFileSync(file, JSON.stringify({ registeredBeforeCollection: true, createdAt: new Date().toISOString(), analysisSourceSha256: digest(fs.readFileSync(__filename)), primary: 'AB/BA blocks only; A minus B; negative latency delta favors the current hydration fix', control: 'Middle AA pair reported separately, never pooled into AB inference', uncertainty: '10000 deterministic hierarchical paired bootstrap draws: resample four AB/BA pairs, then matched wave indices within each pair; retain all four participants in each sampled wave', interval: 'Percentile 2.5/97.5; descriptive and limited by four pairs on one shared host', metrics: ['click-to-useful-content p50/p95', 'network completion', 'requests', 'body bytes', 'server phase timing', 'all errors and missing links'], exclusions: 'Only the predeclared one-wave warmup per condition per block is excluded from primary timing; all raw observations and failures retained. No load-based exclusions or outlier trimming.', limits: 'No production SLO or equivalence threshold is asserted; intervals cannot prove absence of a small regression.' }, null, 2) + '\n'); return;
++  }
++  assert.equal(protocol.collectionComplete, true, 'Do not summarize an incomplete study as accepted');
++  const blocks = protocol.blocks.map((block, i) => { const file = path.join(out, 'block-' + String(i + 1).padStart(2, '0') + '-' + block.variant + '-measure/browser-samples.json'), bytes = fs.readFileSync(file); return { ...block, index: i, rawSha256: digest(bytes), ...JSON.parse(bytes) }; });
++  const primary = blocks.filter(b => b.comparison === 'hydration-wrapper');
++  const results = { sourceCommit: protocol.sourceCommit, variants: protocol.variants, method: JSON.parse(fs.readFileSync(path.join(out, 'ANALYSIS_PLAN.json'))), groups: [], pairs: [], sameBuildControl: [], blocks: blocks.map(b => ({ index: b.index, variant: b.variant, pair: b.pair, comparison: b.comparison, rawSha256: b.rawSha256, errors: b.failures, groups: ['cold', 'warm'].map(condition => ({ condition, ...summarize(b.samples.filter(r => r.condition === condition)) })) })) };
++  for (const condition of ['cold', 'warm']) {
++    for (const variant of ['A', 'B']) results.groups.push({ condition, variant, ...summarize(primary.filter(b => b.variant === variant).flatMap(b => b.samples.filter(r => r.condition === condition))) });
++    const pairs = [...new Set(primary.map(b => b.pair))].map(id => {
++      const pair = primary.filter(b => b.pair === id), rows = variant => pair.find(b => b.variant === variant).samples.filter(r => r.condition === condition), waves = variant => [...new Set(rows(variant).map(r => r.wave))].sort((a, b) => a - b).map(w => rows(variant).filter(r => r.wave === w).map(r => r.meaningfulMs));
++      return { id, order: pair[0].order, A: waves('A'), B: waves('B') };
++    });
++    results.pairs.push({ condition, individual: pairs.map(p => ({ pair: p.id, order: p.order, A: distribution(p.A.flat()), B: distribution(p.B.flat()) })), hierarchicalPaired95Interval: pairedBootstrap(pairs, protocol.seed + ':' + condition) });
++    const control = blocks.filter(b => b.comparison === 'same-build-control'); results.sameBuildControl.push({ condition, first: summarize(control[0].samples.filter(r => r.condition === condition)), second: summarize(control[1].samples.filter(r => r.condition === condition)) });
++  }
++  const system = JSON.parse(fs.readFileSync(path.join(out, 'SYSTEM.json')));
++  results.system = protocol.blocks.map((b, i) => ({ block: i, variant: b.variant, ...Object.fromEntries(['cpuBusyPercent', 'freeMemoryMiB'].map(k => [k, distribution(system.filter(s => s.block === i && s.phase === 'measure').map(s => s[k]))])), loadAverage1: distribution(system.filter(s => s.block === i && s.phase === 'measure').map(s => s.loadAverage[0])) }));
++  fs.writeFileSync(path.join(out, 'COMPARISON.json'), JSON.stringify(results, null, 2) + '\n');
++  console.log(JSON.stringify(results.groups.map(g => ({ variant: g.variant, condition: g.condition, timing: g.meaningfulMs, errors: g.browserErrors }))));
++}
++module.exports = { pairedBootstrap, summarize };
++if (require.main === module) main();
+diff --git a/tests/navigation-crossover.test.cjs b/tests/navigation-crossover.test.cjs
+new file mode 100644
+index 0000000..a18313c
+--- /dev/null
++++ b/tests/navigation-crossover.test.cjs
+@@ -0,0 +1,40 @@
++const { test } = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
++const { protocol, controlLayout, validateCohort } = require('../scripts/navigation-crossover.cjs');
++const { fixtureProfile } = require('../scripts/navigation-fixture-config.cjs');
++
++test('crossover fixes balanced AB/BA pairs and a same-build control before observing results', () => {
++  for (const seed of ['0'.repeat(32), '1'.repeat(32), 'abcd'.repeat(8)]) {
++    const blocks = protocol(seed), pairs = blocks.filter(b => b.position === 0);
++    assert.deepEqual(blocks, protocol(seed)); assert.equal(blocks.length, 10);
++    assert.equal(pairs.filter(b => b.order === 'AB').length, 2);
++    assert.equal(pairs.filter(b => b.order === 'BA').length, 2);
++    assert.equal(pairs[2].comparison, 'same-build-control'); assert.equal(pairs[2].order, 'AA');
++    for (const pair of pairs) assert.equal(blocks.filter(b => b.pair === pair.pair).length, 2);
++  }
++  assert.throws(() => protocol('unbounded/arbitrary'), /match/);
++});
++test('the control changes only the route wrapper and retains every server authorization statement', () => {
++  const source = fs.readFileSync('app/layout.tsx', 'utf8'), control = controlLayout(source);
++  const security = text => text.split('\n').filter(line => !line.includes('RouteContent') && !line.includes('<div className="oc-route-content"'));
++  assert.deepEqual(security(control), security(source));
++  assert.ok(control.includes('>{children}</div>'));
++  assert.throws(() => controlLayout(source.replace('>{children}</RouteContent>', '>other</RouteContent>')), /exactly one/);
++});
++test('crossover retains recoveries but rejects lost observations, access changes and failed requests', () => {
++  const row = { renderedRooms: 24, openInterviewLinks: 24, requests: [{ status: 200, failed: false }] };
++  const data = { samples: Array.from({ length: 8 }, () => structuredClone(row)), failures: [{ assertion: 'browser_script_error' }] };
++  validateCohort(data, 1); assert.equal(data.failures.length, 1);
++  for (const mutate of [d => d.samples.pop(), d => d.samples[0].openInterviewLinks = 23, d => d.samples[0].requests[0].status = 403, d => d.samples[0].requests[0].status = null, d => d.failures.push({ assertion: 'room_count' })]) {
++    const invalid = structuredClone(data); mutate(invalid); assert.throws(() => validateCohort(invalid, 1));
++  }
++});
++test('crossover credentials cannot select a hosted service, another project or another fixture port', t => {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'outclass-crossover-guard-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
++  const file = path.join(dir, 'config.json'), profile = fixtureProfile('crossover');
++  const config = { projectId: 'outclass-navigation-crossover-e2e', appUrl: 'http://127.0.0.1:3119', status: { API_URL: 'http://127.0.0.1:59321', DB_URL: 'postgresql://fixture@127.0.0.1:59322/postgres', MAILPIT_URL: 'http://127.0.0.1:59324' } };
++  fs.writeFileSync(file, JSON.stringify(config)); assert.equal(profile.readConfig(file).projectId, config.projectId);
++  for (const changed of [{ ...config, projectId: 'out-class' }, { ...config, appUrl: 'https://example.test:3119' }, { ...config, status: { ...config.status, DB_URL: 'postgresql://fixture@db.example.test:59322/postgres' } }, { ...config, status: { ...config.status, API_URL: 'http://127.0.0.1:58321' } }]) { fs.writeFileSync(file, JSON.stringify(changed)); assert.throws(() => profile.readConfig(file)); }
++  assert.throws(() => fixtureProfile('arbitrary'), /Unknown/);
++});
+diff --git a/tests/navigation-crossover-analysis.test.cjs b/tests/navigation-crossover-analysis.test.cjs
+new file mode 100644
+index 0000000..6d11df5
+--- /dev/null
++++ b/tests/navigation-crossover-analysis.test.cjs
+@@ -0,0 +1,16 @@
++const { test } = require('node:test'), assert = require('node:assert/strict');
++const { pairedBootstrap, summarize } = require('../scripts/summarize-navigation-crossover.cjs');
++test('paired uncertainty retains participant clusters and the direction of a known constant effect', () => {
++  const pairs = Array.from({ length: 4 }, (_, pair) => ({ A: [[21 + pair, 22 + pair, 23 + pair, 24 + pair], [31 + pair, 32 + pair, 33 + pair, 34 + pair]], B: [[11 + pair, 12 + pair, 13 + pair, 14 + pair], [21 + pair, 22 + pair, 23 + pair, 24 + pair]] }));
++  const interval = pairedBootstrap(pairs, 'fixture', 500);
++  assert.deepEqual(interval.p50DeltaMs, { low: 10, high: 10 });
++  assert.deepEqual(interval.p95DeltaMs, { low: 10, high: 10 });
++  assert.deepEqual(pairedBootstrap(pairs.map(p => ({ A: p.B, B: p.A })), 'fixture', 500).p95DeltaMs, { low: -10, high: -10 });
++  assert.deepEqual(pairedBootstrap(pairs.map(p => ({ A: p.A, B: p.A })), 'fixture', 500).p50DeltaMs, { low: 0, high: 0 });
++});
++test('comparison summaries retain errors and incomplete payloads without trimming latency observations', () => {
++  const rows = [1, 2, 3, 1000].map((meaningfulMs, index) => ({ meaningfulMs, pageErrorCount: index === 3 ? 1 : 0, renderedRooms: 24, openInterviewLinks: 24, requests: [{ route: '/api/workspace?kind=assignedRooms', status: index === 3 ? 503 : 200, failed: index === 3, encodedBodyBytes: index === 3 ? null : 10, serverTiming: 'identity;dur=3, database;dur=4, total;dur=8', ttfbMs: 9 }] }));
++  const result = summarize(rows); assert.equal(result.meaningfulMs.samples, 4); assert.equal(result.meaningfulMs.p95, 1000);
++  assert.equal(result.browserErrors, 1); assert.equal(result.httpErrors, 1); assert.equal(result.transportFailures, 1); assert.equal(result.completePayloadObservations, 3);
++  assert.equal(result.assignedRoomPhasesMs.total.p50, 8);
++});

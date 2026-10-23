@@ -18,6 +18,7 @@ test('browser: Demo interview entry, direct links and redundant club selection r
   // Actual providers and interview queue; Auth/database and the child writing
   // surface are isolated fixtures. No production login or endpoint is involved.
   const mocks = {
+    '@/utils/supabase/client': "exports.createClient=()=>{throw Error('Live Auth forbidden in Demo fixture')}",
     '@/components/outclass-loading-screen': "const React=require('react');exports.OutClassLoadingScreen=()=>React.createElement('p',null,'Loading Demo');",
     '@/components/workspace-loading': "const React=require('react');exports.WorkspaceLoading=()=>React.createElement('p',null,'Loading candidates');",
     '@/components/product/page-header': "const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);",

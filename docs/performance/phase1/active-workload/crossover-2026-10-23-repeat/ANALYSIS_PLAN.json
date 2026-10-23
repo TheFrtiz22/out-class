@@ -1,0 +1,22 @@
+{
+  "registeredBeforeCollection": true,
+  "createdAt": "2026-10-23T09:03:26.492Z",
+  "analysisSourceSha256": "9022295f3dd053656e86f79c18010b57149a5f0756f6e09687408d7c891529aa",
+  "primary": "AB/BA blocks only; A minus B; negative latency delta favors the current hydration fix",
+  "control": "Middle AA pair reported separately, never pooled into AB inference",
+  "uncertainty": "10000 deterministic hierarchical paired bootstrap draws: resample four AB/BA pairs, then matched wave indices within each pair; retain all four participants in each sampled wave",
+  "interval": "Percentile 2.5/97.5; descriptive and limited by four pairs on one shared host",
+  "metrics": [
+    "click-to-useful-content p50/p95",
+    "network completion",
+    "requests",
+    "body bytes",
+    "server phase timing",
+    "all errors and missing links"
+  ],
+  "exclusions": "Only the predeclared one-wave warmup per condition per block is excluded from primary timing; all raw observations and failures retained. No load-based exclusions or outlier trimming.",
+  "limits": "No production SLO or equivalence threshold is asserted; intervals cannot prove absence of a small regression.",
+  "repeatOf": "../crossover-2026-10-23/PROTOCOL.json",
+  "repeatReason": "First study aborted during block-seven warmup after an unclassified page-readiness timeout. All original observations remain preserved.",
+  "warmupFailurePolicy": "Preserve any fixed warmup failure without retrying it. Warmup failures do not automatically invalidate later measured blocks. Every primary measured observation must still be present, with no request failures or missing links, before accepting the predefined latency comparison."
+}

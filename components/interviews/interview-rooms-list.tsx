@@ -1,8 +1,10 @@
 "use client";
+import { useAssignedInterviewRooms } from "./interview-read-scope";
+import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useDemoMode } from "@/contexts/demo-context";
-import { getAssignedInterviewRooms, getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
+import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
 import { interviewEntryHref, interviewEntryStatus, type InterviewRoomEntry } from "@/lib/interview-entry";
 import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,7 @@ import "./interview-rooms-list.css";
 
 export function InterviewRoomsList({ clubId }: { clubId: string }) {
   const demo = useDemoMode();
+  const assignedRooms = useAssignedInterviewRooms(clubId);
   const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [secondary, setSecondary] = useState(false);
   const [date, setDate] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("interviewDate") || "");
   const [expanded, setExpanded] = useState<string[] | null>(() => typeof window === "undefined" ? null : readExpandedInterviewDates(window.location.search));
@@ -28,21 +31,20 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
   }, [expanded, loading, error, groups.length, defaultDay, rememberDays]);
   useEffect(() => {
     if (!demo.ready) return;
-    let current = true, pending = false;
     setRows([]); setSecondary(false); setLoading(true);
-    const refresh = async () => {
-      if (pending) return; pending = true;
-      try {
-        const [result, workspace, available] = await Promise.all([getAssignedInterviewRooms(clubId), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]);
-        if (current) { setRows(result); setRounds(available.rounds); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); }
-      } catch { if (current) { setRows([]); setSecondary(false); setError("Couldn’t load assigned interviews. Check your current interview access and retry."); } }
-      finally { pending = false; if (current) setLoading(false); }
-    };
-    const visible = () => { if (!document.hidden) void refresh(); };
-    void refresh(); const timer = setInterval(visible, 15000);
-    window.addEventListener("outclass:interview-rounds-changed", visible); window.addEventListener("focus", visible); window.addEventListener("outclass:panels-changed", visible); window.addEventListener("outclass:demo-change", visible);
-    return () => { window.removeEventListener("outclass:interview-rounds-changed", visible); current = false; clearInterval(timer); window.removeEventListener("focus", visible); window.removeEventListener("outclass:panels-changed", visible); window.removeEventListener("outclass:demo-change", visible); };
-  }, [clubId, retry, demo.ready]);
+    const reader = serializedWorkspaceRead(
+      () => Promise.all([assignedRooms(), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]),
+      ([result, workspace, available]) => { setRows(result); setRounds(available.rounds); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); setLoading(false); },
+      () => { setRows([]); setSecondary(false); setError("Couldn’t load assigned interviews. Check your current interview access and retry."); setLoading(false); },
+    );
+    const visible = () => { if (!document.hidden) void reader.poll(); };
+    const changed = () => { void reader.refresh(); };
+    void reader.poll(); const timer = setInterval(visible, 15000);
+    window.addEventListener("focus", visible);
+    const changes = ["outclass:interview-rounds-changed", "outclass:panels-changed", "outclass:demo-change"];
+    changes.forEach(name => window.addEventListener(name, changed));
+    return () => { reader.dispose(); clearInterval(timer); window.removeEventListener("focus", visible); changes.forEach(name => window.removeEventListener(name, changed)); };
+  }, [clubId, retry, demo.ready, assignedRooms]);
   const shown = groups.filter(group => !date || group.day === date);
   return <section aria-label="Interview rooms" className="space-y-4 pb-20 md:pb-6">
     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Your interview rooms</h2><label className="flex items-center gap-2 text-sm">Round<select className="ir-select" aria-label="Filter interview rooms by round" value={roundId} onChange={e => { setRoundId(e.target.value); const url = new URL(window.location.href); if(e.target.value)url.searchParams.set("roundId",e.target.value);else url.searchParams.delete("roundId");window.history.replaceState(null,"",url.pathname+url.search); }}><option value="">All rounds</option>{rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><label className="flex items-center gap-2 text-sm">Date<input aria-label="Filter assigned interview date" type="date" className="rounded-md border bg-card px-2 py-1.5" value={date} onChange={e => { const selected = e.target.value; setDate(selected); const url = new URL(window.location.href); if (selected) url.searchParams.set("interviewDate", selected); else url.searchParams.delete("interviewDate"); window.history.replaceState(null, "", url.pathname + url.search); if (selected) rememberDays([...new Set([...openDays, selected])]); }} /></label></header>

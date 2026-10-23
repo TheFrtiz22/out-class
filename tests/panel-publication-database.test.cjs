@@ -71,6 +71,17 @@ test('published session access survives legacy room-attestation edits but actual
  assert.equal(await h.load('utils/official-panel-schedule.ts').currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
 })
 
+test('assigned-room bulk reads use published slot authority and live grants after legacy approvals change',async t=>{
+ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));
+ const grant=(await h.snapshot()).InterviewPanelAssignment.find(g=>!g.revokedAt),member=await h.prisma.clubMember.findUnique({where:{id:grant.memberId}});h.as(member.userId);
+ const entries=h.load('actions/interview-entry.ts'),read=()=>entries.getAssignedInterviewRooms(h.ids.club);
+ assert.ok((await read()).some(row=>row.applicationId===h.ids.app&&row.canOpen));
+ await h.db.query('UPDATE "InterviewRoom" SET "approvedPanelMemberIds"=\'{}\',"panelApprovedBy"=NULL WHERE id=$1',[h.roomIds[0]]);
+ assert.ok((await read()).some(row=>row.applicationId===h.ids.app&&row.canOpen));
+ await h.db.query('UPDATE "InterviewPanelAssignment" SET "revokedAt"=now() WHERE id=$1',[grant.id]);
+ assert.ok(!(await read()).some(row=>row.applicationId===h.ids.app));
+})
+
 test('availability rechecks preserve assignments and never waive concurrent confirmation/publication guards',async t=>{
  const h=await fixture(t);let draft=(await h.generate()).proposal;const assignments=structuredClone(draft.document.assignments),official=await h.snapshot();
  ok(await h.publish.revalidatePanelDraft(h.input(draft)));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(draft.stale,false);assert.deepEqual(draft.document.assignments,assignments);assert.deepEqual(await h.snapshot(),official);

@@ -1,0 +1,1114 @@
+{
+  "capturedDate": "2026-10-21",
+  "project": "OutClass",
+  "region": "us-west-2",
+  "statistics": [
+    {
+      "queryid": "1918662762133061436",
+      "calls": 30312,
+      "total_ms": "7820195.78",
+      "mean_ms": "257.99",
+      "stddev_ms": "227.08",
+      "min_ms": "0.01",
+      "max_ms": "938.06",
+      "rows": 30312,
+      "shared_blks_hit": 0,
+      "shared_blks_read": 0,
+      "category": "advisory_lock",
+      "query_shape": "SELECT pg_advisory_xact_lock($1)::text"
+    },
+    {
+      "queryid": "-2147535516778611401",
+      "calls": 321,
+      "total_ms": "380080.71",
+      "mean_ms": "1184.05",
+      "stddev_ms": "1232.46",
+      "min_ms": "0.24",
+      "max_ms": "4577.69",
+      "rows": 9970,
+      "shared_blks_hit": 55537839,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "with page as (\n      select\n        c.oid,\n        c.relname,\n        c.relrowsecurity,\n        c.relforcerowsecurity,\n        c.relreplident,\n        nc.nspname as schema,\n        -- Computed once here so the final select can reference it for both the\n        -- raw byte count and pg_size_pretty without re-walking heap+toast+indexes.\n        pg_total_relation_size(c.oid) as bytes_raw\n      from pg_namespace nc\n      join pg_class c on nc.oid = c.relnamespace\n      where c.relkind in ($1, $2)\n        and not pg_is_other_temp_schema(nc.oid)\n        and c.oid > $3\n        and (\n          pg_has_role(c.relowner, $4)\n          or has_table_privilege(\n            c.oid,\n            $5\n          )\n          or has_any_column_privilege(c.oid, $6)\n        )\n        and nc.nspname IN ($7)\n        \n      order by c.oid\n      limit $8\n    ),\n    page_primary_keys as (\n      select\n        c.oid::int8 as table_id,\n        jsonb_agg(\n          jsonb_build_object(\n            $9, c.oid::int8,\n      "
+    },
+    {
+      "queryid": "-8614051923781968731",
+      "calls": 720,
+      "total_ms": "291961.17",
+      "mean_ms": "405.50",
+      "stddev_ms": "1186.00",
+      "min_ms": "0.02",
+      "max_ms": "8260.74",
+      "rows": 720,
+      "shared_blks_hit": 1738,
+      "shared_blks_read": 0,
+      "category": "row_lock",
+      "query_shape": "SELECT id FROM \"Club\" WHERE id = $1 FOR UPDATE"
+    },
+    {
+      "queryid": "-2647655532108368607",
+      "calls": 645,
+      "total_ms": "257628.68",
+      "mean_ms": "399.42",
+      "stddev_ms": "253.23",
+      "min_ms": "131.43",
+      "max_ms": "1190.25",
+      "rows": 50310,
+      "shared_blks_hit": 6803,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT\n  e.name,\n  n.nspname AS schema,\n  e.default_version,\n  x.extversion AS installed_version,\n  e.comment,\n  ev.schema AS default_version_schema\nFROM\n  pg_available_extensions e\n  LEFT JOIN pg_extension x ON e.name = x.extname\n  LEFT JOIN pg_namespace n ON x.extnamespace = n.oid\n  LEFT JOIN pg_available_extension_versions ev\n    ON ev.name = e.name AND ev.version = e.default_version"
+    },
+    {
+      "queryid": "3055962001150132623",
+      "calls": 12514,
+      "total_ms": "248808.94",
+      "mean_ms": "19.88",
+      "stddev_ms": "314.60",
+      "min_ms": "0.02",
+      "max_ms": "19092.88",
+      "rows": 12514,
+      "shared_blks_hit": 29274,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT id FROM \"Club\" WHERE id=$1 FOR SHARE"
+    },
+    {
+      "queryid": "3393632725691790249",
+      "calls": 118774,
+      "total_ms": "95002.49",
+      "mean_ms": "0.80",
+      "stddev_ms": "4.42",
+      "min_ms": "0.05",
+      "max_ms": "424.83",
+      "rows": 118774,
+      "shared_blks_hit": 239798,
+      "shared_blks_read": 6,
+      "category": "other",
+      "query_shape": "SELECT * FROM pgbouncer.get_auth($1)"
+    },
+    {
+      "queryid": "-8335566644447710645",
+      "calls": 1917,
+      "total_ms": "83767.92",
+      "mean_ms": "43.70",
+      "stddev_ms": "174.06",
+      "min_ms": "0.02",
+      "max_ms": "3066.69",
+      "rows": 1917,
+      "shared_blks_hit": 5751,
+      "shared_blks_read": 0,
+      "category": "row_lock",
+      "query_shape": "SELECT id FROM \"SchoolIdentity\" WHERE id = $1 FOR UPDATE"
+    },
+    {
+      "queryid": "-3076875962393720596",
+      "calls": 124,
+      "total_ms": "40094.41",
+      "mean_ms": "323.34",
+      "stddev_ms": "95.07",
+      "min_ms": "193.85",
+      "max_ms": "652.73",
+      "rows": 13262,
+      "shared_blks_hit": 72284,
+      "shared_blks_read": 9,
+      "category": "other",
+      "query_shape": "with f as (\n      \n-- CTE with sane arg_modes, arg_names, and arg_types.\n-- All three are always of the same length.\n-- All three include all args, including OUT and TABLE args.\nwith functions as (\n  select\n    *,\n    -- proargmodes is null when all arg modes are IN\n    coalesce(\n      p.proargmodes,\n      array_fill($1::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])\n    ) as arg_modes,\n    -- proargnames is null when all args are unnamed\n    coalesce(\n      p.proargnames,\n      array_fill($2::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])\n    ) as arg_names,\n    -- proallargtypes is null when all arg modes are IN\n    coalesce(p.proallargtypes, p.proargtypes) as arg_types,\n    array_cat(\n      array_fill($3, array[pronargs - pronargdefaults]),\n      array_fill($4, array[pronargdefaults])) as arg_has_defaults\n  from\n    pg_proc as p\n  where\n    p.prokind in ($5, $6)\n)\nselect\n  f.oid as id,\n  n.nspname as schema,\n  f.proname as name,\n  l.lannam"
+    },
+    {
+      "queryid": "3049338839653113212",
+      "calls": 3307,
+      "total_ms": "36073.69",
+      "mean_ms": "10.91",
+      "stddev_ms": "293.97",
+      "min_ms": "0.06",
+      "max_ms": "10057.84",
+      "rows": 3307,
+      "shared_blks_hit": 27459,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "INSERT INTO \"public\".\"User\" (\"id\",\"email\",\"role\",\"createdAt\") VALUES ($1,$2,CAST($3::text AS \"public\".\"AppRole\"),$4) ON CONFLICT (\"id\") DO UPDATE SET \"email\" = $5 WHERE (\"public\".\"User\".\"id\" = $6 AND $7=$8) RETURNING \"public\".\"User\".\"id\", \"public\".\"User\".\"disabledAt\", \"public\".\"User\".\"email\", \"public\".\"User\".\"role\"::text, \"public\".\"User\".\"createdAt\""
+    },
+    {
+      "queryid": "-7726440967385220442",
+      "calls": 101,
+      "total_ms": "34081.73",
+      "mean_ms": "337.44",
+      "stddev_ms": "271.71",
+      "min_ms": "71.67",
+      "max_ms": "1126.66",
+      "rows": 120796,
+      "shared_blks_hit": 0,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT name FROM pg_timezone_names"
+    },
+    {
+      "queryid": "8929488959168471965",
+      "calls": 213,
+      "total_ms": "28587.32",
+      "mean_ms": "134.21",
+      "stddev_ms": "726.39",
+      "min_ms": "0.02",
+      "max_ms": "7259.63",
+      "rows": 213,
+      "shared_blks_hit": 426,
+      "shared_blks_read": 0,
+      "category": "row_lock",
+      "query_shape": "SELECT id FROM \"Application\" WHERE id = $1 FOR UPDATE"
+    },
+    {
+      "queryid": "-8335566644447710645",
+      "calls": 383,
+      "total_ms": "23251.66",
+      "mean_ms": "60.71",
+      "stddev_ms": "177.66",
+      "min_ms": "0.03",
+      "max_ms": "1382.77",
+      "rows": 383,
+      "shared_blks_hit": 1149,
+      "shared_blks_read": 0,
+      "category": "row_lock",
+      "query_shape": "SELECT id FROM \"SchoolIdentity\" WHERE id = $1 FOR UPDATE"
+    },
+    {
+      "queryid": "4641178386044046622",
+      "calls": 290084,
+      "total_ms": "17711.34",
+      "mean_ms": "0.06",
+      "stddev_ms": "0.38",
+      "min_ms": "0.02",
+      "max_ms": "186.60",
+      "rows": 290084,
+      "shared_blks_hit": 10037703,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT MAX(c.\"updatedAt\") AS \"updatedAt\", COUNT(*) AS count FROM \"ClubConversation\" c\n      JOIN \"Club\" club ON club.id=c.\"clubId\" JOIN \"User\" student ON student.id=c.\"studentId\"\n      WHERE club.\"suspendedAt\" IS NULL AND student.\"disabledAt\" IS NULL\n        AND (EXISTS(SELECT $3 FROM \"ClubMember\" s WHERE s.\"clubId\"=c.\"clubId\" AND s.\"userId\"=c.\"studentId\" AND s.status=$4)\n          OR EXISTS(SELECT $5 FROM \"Application\" a JOIN \"PipelineRound\" r ON r.id=a.\"roundId\" WHERE a.\"clubId\"=c.\"clubId\" AND a.\"studentId\"=c.\"studentId\" AND a.\"submittedAt\" IS NOT NULL AND a.status<>$6 AND r.\"anonymousReview\"=$7 AND r.\"archivedAt\" IS NULL))\n        AND (c.\"studentId\"=$1 OR EXISTS(SELECT $8 FROM \"ClubMember\" m WHERE m.\"clubId\"=c.\"clubId\" AND m.\"userId\"=$2 AND m.status=$9\n          AND (m.\"isOwner\" OR $10=ANY(m.permissions))\n          AND (m.\"isOwner\" OR ($11=ANY(m.permissions) AND $12=ANY(m.permissions))\n            OR EXISTS(SELECT $13 FROM \"ClubMember\" s WHERE s.\"clubId\"=c.\"clubId\" AND s.\"userId\"=c."
+    },
+    {
+      "queryid": "8074250554804319433",
+      "calls": 146188,
+      "total_ms": "15575.44",
+      "mean_ms": "0.11",
+      "stddev_ms": "0.76",
+      "min_ms": "0.02",
+      "max_ms": "116.77",
+      "rows": 146076,
+      "shared_blks_hit": 277468,
+      "shared_blks_read": 1,
+      "category": "other",
+      "query_shape": "SELECT users.aud, users.banned_until, users.confirmation_sent_at, users.confirmation_token, users.confirmed_at, users.created_at, users.deleted_at, users.email, users.email_change, users.email_change_confirm_status, users.email_change_sent_at, users.email_change_token_current, users.email_change_token_new, users.email_confirmed_at, users.encrypted_password, users.id, users.instance_id, users.invited_at, users.is_anonymous, users.is_sso_user, users.last_sign_in_at, users.phone, users.phone_change, users.phone_change_sent_at, users.phone_change_token, users.phone_confirmed_at, users.raw_app_meta_data, users.raw_user_meta_data, users.reauthentication_sent_at, users.reauthentication_token, users.recovery_sent_at, users.recovery_token, users.role, users.updated_at FROM users AS users WHERE instance_id = $1 and id = $2 LIMIT $3"
+    },
+    {
+      "queryid": "-2073166519428774482",
+      "calls": 494,
+      "total_ms": "14433.84",
+      "mean_ms": "29.22",
+      "stddev_ms": "34.16",
+      "min_ms": "0.02",
+      "max_ms": "332.96",
+      "rows": 0,
+      "shared_blks_hit": 0,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "DISCARD ALL"
+    },
+    {
+      "queryid": "-345908313092019944",
+      "calls": 1434,
+      "total_ms": "13694.64",
+      "mean_ms": "9.55",
+      "stddev_ms": "207.43",
+      "min_ms": "0.02",
+      "max_ms": "6269.42",
+      "rows": 1434,
+      "shared_blks_hit": 2868,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT id FROM \"Application\" WHERE id = $1 FOR SHARE"
+    },
+    {
+      "queryid": "-5015395177739500386",
+      "calls": 274510,
+      "total_ms": "13168.33",
+      "mean_ms": "0.05",
+      "stddev_ms": "0.36",
+      "min_ms": "0.01",
+      "max_ms": "87.62",
+      "rows": 274510,
+      "shared_blks_hit": 681036,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT COUNT(*) AS \"_count$_all\" FROM (SELECT \"public\".\"UserNotification\".\"id\" FROM \"public\".\"UserNotification\" WHERE (\"public\".\"UserNotification\".\"userId\" = $1 AND \"public\".\"UserNotification\".\"archivedAt\" IS NULL AND \"public\".\"UserNotification\".\"readAt\" IS NULL) OFFSET $2) AS \"sub\""
+    },
+    {
+      "queryid": "-5809707244063863639",
+      "calls": 245693,
+      "total_ms": "12494.36",
+      "mean_ms": "0.05",
+      "stddev_ms": "0.45",
+      "min_ms": "0.01",
+      "max_ms": "125.43",
+      "rows": 245693,
+      "shared_blks_hit": 590787,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT COUNT(\"id\") AS \"_count$id\", MAX(\"updatedAt\") AS \"_max$updatedAt\" FROM (SELECT \"public\".\"UserNotification\".\"id\", \"public\".\"UserNotification\".\"updatedAt\" FROM \"public\".\"UserNotification\" WHERE \"public\".\"UserNotification\".\"userId\" = $1 OFFSET $2) AS \"sub\""
+    },
+    {
+      "queryid": "8580411586163530256",
+      "calls": 374,
+      "total_ms": "9507.82",
+      "mean_ms": "25.42",
+      "stddev_ms": "28.09",
+      "min_ms": "5.94",
+      "max_ms": "98.47",
+      "rows": 87528,
+      "shared_blks_hit": 991367,
+      "shared_blks_read": 15,
+      "category": "other",
+      "query_shape": "SELECT t.oid, t.typname, t.typsend, t.typreceive, t.typoutput, t.typinput,\n       coalesce(d.typelem, t.typelem), coalesce(r.rngsubtype, $1), ARRAY (\n  SELECT a.atttypid\n  FROM pg_attribute AS a\n  WHERE a.attrelid = t.typrelid AND a.attnum > $2 AND NOT a.attisdropped\n  ORDER BY a.attnum\n)\n\nFROM pg_type AS t\nLEFT JOIN pg_type AS d ON t.typbasetype = d.oid\nLEFT JOIN pg_range AS r ON r.rngtypid = t.oid OR r.rngmultitypid = t.oid OR (t.typbasetype <> $3 AND r.rngtypid = t.typbasetype)\nWHERE (t.typrelid = $4)\nAND (t.typelem = $5 OR NOT EXISTS (SELECT $6 FROM pg_catalog.pg_type s WHERE s.typrelid != $7 AND s.oid = t.typelem))"
+    },
+    {
+      "queryid": "8379974453916687502",
+      "calls": 32880,
+      "total_ms": "9220.19",
+      "mean_ms": "0.28",
+      "stddev_ms": "1.39",
+      "min_ms": "0.01",
+      "max_ms": "193.64",
+      "rows": 32880,
+      "shared_blks_hit": 0,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT set_config($1, $2, $3), set_config($4, $5, $6)"
+    },
+    {
+      "queryid": "-8574690467402633178",
+      "calls": 31,
+      "total_ms": "9046.10",
+      "mean_ms": "291.81",
+      "stddev_ms": "198.57",
+      "min_ms": "143.68",
+      "max_ms": "657.82",
+      "rows": 31,
+      "shared_blks_hit": 4018,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "INSERT INTO \"public\".\"UserAvailability\" (\"userId\",\"schedule\",\"revision\",\"updatedAt\") VALUES ($1,$2,$3,$4) ON CONFLICT (\"userId\") DO UPDATE SET \"schedule\" = $5, \"revision\" = (\"public\".\"UserAvailability\".\"revision\" + $6), \"updatedAt\" = $7 WHERE (\"public\".\"UserAvailability\".\"userId\" = $8 AND $9=$10) RETURNING \"public\".\"UserAvailability\".\"userId\", \"public\".\"UserAvailability\".\"schedule\", \"public\".\"UserAvailability\".\"revision\", \"public\".\"UserAvailability\".\"updatedAt\""
+    },
+    {
+      "queryid": "3963509879429659759",
+      "calls": 146598,
+      "total_ms": "8936.22",
+      "mean_ms": "0.06",
+      "stddev_ms": "0.62",
+      "min_ms": "0.01",
+      "max_ms": "129.97",
+      "rows": 133311,
+      "shared_blks_hit": 266222,
+      "shared_blks_read": 1,
+      "category": "other",
+      "query_shape": "SELECT mfa_factors.created_at, mfa_factors.factor_type, mfa_factors.friendly_name, mfa_factors.id, mfa_factors.last_challenged_at, mfa_factors.last_webauthn_challenge_data, mfa_factors.phone, mfa_factors.secret, mfa_factors.status, mfa_factors.updated_at, mfa_factors.user_id, mfa_factors.web_authn_aaguid, mfa_factors.web_authn_credential FROM mfa_factors AS mfa_factors WHERE user_id = $1"
+    },
+    {
+      "queryid": "-6324624604000189562",
+      "calls": 147295,
+      "total_ms": "7615.47",
+      "mean_ms": "0.05",
+      "stddev_ms": "0.63",
+      "min_ms": "0.01",
+      "max_ms": "173.27",
+      "rows": 147280,
+      "shared_blks_hit": 294635,
+      "shared_blks_read": 3,
+      "category": "other",
+      "query_shape": "SELECT sessions.aal, sessions.created_at, sessions.factor_id, sessions.id, sessions.ip, sessions.not_after, sessions.oauth_client_id, sessions.refresh_token_counter, sessions.refresh_token_hmac_key, sessions.refreshed_at, sessions.scopes, sessions.tag, sessions.updated_at, sessions.user_agent, sessions.user_id FROM sessions AS sessions WHERE id = $1 LIMIT $2"
+    },
+    {
+      "queryid": "4868794970434878014",
+      "calls": 32,
+      "total_ms": "7522.39",
+      "mean_ms": "235.07",
+      "stddev_ms": "99.29",
+      "min_ms": "41.74",
+      "max_ms": "428.22",
+      "rows": 32,
+      "shared_blks_hit": 0,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT case when pg_is_in_recovery() then $2 else (pg_walfile_name_offset(lsn)).file_name end, lsn::text, pg_is_in_recovery() FROM pg_backup_start($1, $3) lsn"
+    },
+    {
+      "queryid": "427033481802320170",
+      "calls": 251188,
+      "total_ms": "7469.63",
+      "mean_ms": "0.03",
+      "stddev_ms": "0.26",
+      "min_ms": "0.01",
+      "max_ms": "61.27",
+      "rows": 251188,
+      "shared_blks_hit": 251295,
+      "shared_blks_read": 0,
+      "category": "other",
+      "query_shape": "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"disabledAt\" FROM \"public\".\"User\" WHERE (\"public\".\"User\".\"id\" = $1 AND $4=$5) LIMIT $2 OFFSET $3"
+    }
+  ],
+  "readStatistics": [
+    {
+      "queryid": "427033481802320170",
+      "calls": 251193,
+      "mean_ms": "0.030",
+      "stddev_ms": "0.262",
+      "max_ms": "61.266",
+      "total_ms": "7469.75",
+      "query_shape": "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"disabledAt\" FROM \"public\".\"User\" WHERE (\"public\".\"User\".\"id\" = $1 AND $4=$5) LIMIT $2 OFFSET $3"
+    },
+    {
+      "queryid": "230215718170511731",
+      "calls": 78748,
+      "mean_ms": "0.087",
+      "stddev_ms": "1.068",
+      "max_ms": "199.004",
+      "total_ms": "6880.21",
+      "query_shape": "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"disabledAt\", \"public\".\"User\".\"email\", \"public\".\"User\".\"role\"::text, \"public\".\"User\".\"createdAt\" FROM \"public\".\"User\" WHERE (\"public\".\"User\".\"id\" = $1 AND $4=$5) LIMIT $2 OFFS"
+    },
+    {
+      "queryid": "-8115371799559961851",
+      "calls": 10074,
+      "mean_ms": "0.178",
+      "stddev_ms": "0.648",
+      "max_ms": "32.453",
+      "total_ms": "1795.73",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"interviewerEligible\", \"public\".\"ClubMember\".\"interviewOffices\", \"public\".\"ClubMember\".\"accessRole\"::text, \"public\".\"ClubMember\".\"status\"::text, \"public\".\"ClubMemb"
+    },
+    {
+      "queryid": "8630075329278713491",
+      "calls": 8011,
+      "mean_ms": "0.145",
+      "stddev_ms": "1.958",
+      "max_ms": "165.830",
+      "total_ms": "1159.11",
+      "query_shape": "SELECT \"public\".\"PipelineRound\".\"id\", \"public\".\"PipelineRound\".\"bookingPublishedAt\", \"public\".\"PipelineRound\".\"bookingPaused\", \"public\".\"PipelineRound\".\"bookingRevision\", \"public\".\"PipelineRound\".\"bookingSlots\", \"public\""
+    },
+    {
+      "queryid": "6809070595621109524",
+      "calls": 8111,
+      "mean_ms": "0.089",
+      "stddev_ms": "0.595",
+      "max_ms": "32.541",
+      "total_ms": "724.04",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"interviewerEligible\", \"public\".\"ClubMember\".\"interviewOffices\", \"public\".\"ClubMember\".\"accessRole\"::text, \"public\".\"ClubMember\".\"status\"::text, \"public\".\"ClubMemb"
+    },
+    {
+      "queryid": "248550036255007849",
+      "calls": 6327,
+      "mean_ms": "0.105",
+      "stddev_ms": "0.439",
+      "max_ms": "28.521",
+      "total_ms": "661.91",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"interviewerEligible\", \"public\".\"ClubMember\".\"interviewOffices\", \"public\".\"ClubMember\".\"accessRole\"::text, \"public\".\"ClubMember\".\"status\"::text, \"public\".\"ClubMemb"
+    },
+    {
+      "queryid": "-2195187447863865403",
+      "calls": 232,
+      "mean_ms": "2.751",
+      "stddev_ms": "16.850",
+      "max_ms": "256.143",
+      "total_ms": "638.31",
+      "query_shape": "SELECT \"public\".\"Club\".\"id\", \"public\".\"Club\".\"name\", \"public\".\"Club\".\"slug\", \"public\".\"Club\".\"logoUrl\", \"public\".\"Club\".\"category\", \"public\".\"Club\".\"tagline\", \"public\".\"Club\".\"isDiscoverable\", \"public\".\"Club\".\"suspendedA"
+    },
+    {
+      "queryid": "-6314203043219605927",
+      "calls": 5437,
+      "mean_ms": "0.109",
+      "stddev_ms": "0.446",
+      "max_ms": "22.148",
+      "total_ms": "590.75",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"userId\", \"public\".\"ClubMember\".\"clubId\" FROM \"public\".\"ClubMember\" LEFT JOIN \"public\".\"User\" AS \"j0\" ON (\"j0\".\"id\") = (\"public\".\"ClubMember\".\"userId\") WHERE (\"pub"
+    },
+    {
+      "queryid": "3915954361622495503",
+      "calls": 1340,
+      "mean_ms": "0.384",
+      "stddev_ms": "1.029",
+      "max_ms": "20.377",
+      "total_ms": "514.70",
+      "query_shape": "SELECT \"public\".\"Application\".\"id\", \"public\".\"Application\".\"decisionStateRevision\", \"public\".\"Application\".\"recruitmentCycleId\", \"public\".\"Application\".\"decisionVersion\", \"public\".\"Application\".\"studentId\", \"public\".\"App"
+    },
+    {
+      "queryid": "7188990046880402574",
+      "calls": 10123,
+      "mean_ms": "0.042",
+      "stddev_ms": "0.102",
+      "max_ms": "6.389",
+      "total_ms": "420.35",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"interviewerEligible\", \"public\".\"ClubMember\".\"interviewOffices\", \"public\".\"ClubMember\".\"accessRole\"::text, \"public\".\"ClubMember\".\"status\"::text, \"public\".\"ClubMemb"
+    },
+    {
+      "queryid": "-7281674708871639081",
+      "calls": 10672,
+      "mean_ms": "0.026",
+      "stddev_ms": "0.009",
+      "max_ms": "0.365",
+      "total_ms": "280.16",
+      "query_shape": "SELECT EXISTS(SELECT $3 FROM auth.sessions WHERE id=$1::uuid\n      AND user_id=$2::uuid\n      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live"
+    },
+    {
+      "queryid": "-9048593525754964133",
+      "calls": 559,
+      "mean_ms": "0.459",
+      "stddev_ms": "1.408",
+      "max_ms": "23.168",
+      "total_ms": "256.50",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\", \"public\".\"ClubMember\".\"interviewerEligible\", \"public\".\"ClubMember\".\"interviewOffices\", \"public\".\"ClubMember\".\"accessRole\"::text, \"public\".\"ClubMember\".\"status\"::text, \"public\".\"ClubMemb"
+    },
+    {
+      "queryid": "-7275398528760067353",
+      "calls": 6511,
+      "mean_ms": "0.038",
+      "stddev_ms": "0.241",
+      "max_ms": "15.275",
+      "total_ms": "250.43",
+      "query_shape": "SELECT \"public\".\"PipelineRound\".\"id\", \"public\".\"PipelineRound\".\"name\" FROM \"public\".\"PipelineRound\" WHERE \"public\".\"PipelineRound\".\"id\" IN ($1) OFFSET $2"
+    },
+    {
+      "queryid": "230215718170511731",
+      "calls": 4054,
+      "mean_ms": "0.059",
+      "stddev_ms": "0.202",
+      "max_ms": "6.492",
+      "total_ms": "240.82",
+      "query_shape": "SELECT \"public\".\"User\".\"id\", \"public\".\"User\".\"disabledAt\", \"public\".\"User\".\"email\", \"public\".\"User\".\"role\"::text, \"public\".\"User\".\"createdAt\" FROM \"public\".\"User\" WHERE (\"public\".\"User\".\"id\" = $1 AND $4=$5) LIMIT $2 OFFS"
+    },
+    {
+      "queryid": "-6965537617194026297",
+      "calls": 5657,
+      "mean_ms": "0.041",
+      "stddev_ms": "0.016",
+      "max_ms": "0.716",
+      "total_ms": "230.21",
+      "query_shape": "SELECT \"public\".\"ClubMember\".\"id\" FROM \"public\".\"ClubMember\" LEFT JOIN \"public\".\"User\" AS \"j0\" ON (\"j0\".\"id\") = (\"public\".\"ClubMember\".\"userId\") WHERE (\"public\".\"ClubMember\".\"clubId\" = $1 AND \"public\".\"ClubMember\".\"userI"
+    }
+  ],
+  "diagnostics": [
+    {
+      "diagnostics": {
+        "captured_at": "2026-10-21T21:00:49.117925+00:00",
+        "stats_reset": "2026-09-21T09:20:34.046801+00:00",
+        "postmaster_start": "2026-10-19T16:43:42.345797+00:00",
+        "max_connections": "60",
+        "track_io_timing": "off",
+        "connections": [
+          {
+            "usename": null,
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "ArchiverMain",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "supabase_admin",
+            "application_name": "pg_cron scheduler",
+            "state": null,
+            "wait_event_type": "Extension",
+            "wait_event": "Extension",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "pgbouncer",
+            "application_name": "Supavisor (auth_query)",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": null,
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "WalWriterMain",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": null,
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "BgwriterHibernate",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "supabase_admin",
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "LogicalLauncherMain",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "supabase_admin",
+            "application_name": "",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "postgres",
+            "application_name": "pg_net 0.20.4",
+            "state": "idle",
+            "wait_event_type": "Extension",
+            "wait_event": "Extension",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "postgres",
+            "application_name": "Supavisor",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 10,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": null,
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "AutovacuumMain",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "supabase_admin",
+            "application_name": "postgres_exporter",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "supabase_auth_admin",
+            "application_name": "",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": null,
+            "application_name": "",
+            "state": null,
+            "wait_event_type": "Activity",
+            "wait_event": "CheckpointerMain",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "authenticator",
+            "application_name": "PostgREST 14.5",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          },
+          {
+            "usename": "pgbouncer",
+            "application_name": "",
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 1,
+            "max_xact_seconds": null
+          }
+        ],
+        "blocked_sessions": 0,
+        "indexes": [
+          {
+            "tablename": "Application",
+            "indexname": "Application_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"Application_pkey\" ON public.\"Application\" USING btree (id)"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_studentId_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"Application_studentId_clubId_key\" ON public.\"Application\" USING btree (\"studentId\", \"clubId\")"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_clubId_idx",
+            "indexdef": "CREATE INDEX \"Application_clubId_idx\" ON public.\"Application\" USING btree (\"clubId\")"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_roundId_idx",
+            "indexdef": "CREATE INDEX \"Application_roundId_idx\" ON public.\"Application\" USING btree (\"roundId\")"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_studentId_idx",
+            "indexdef": "CREATE INDEX \"Application_studentId_idx\" ON public.\"Application\" USING btree (\"studentId\")"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_clubId_status_roundId_idx",
+            "indexdef": "CREATE INDEX \"Application_clubId_status_roundId_idx\" ON public.\"Application\" USING btree (\"clubId\", status, \"roundId\")"
+          },
+          {
+            "tablename": "Application",
+            "indexname": "Application_id_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"Application_id_clubId_key\" ON public.\"Application\" USING btree (id, \"clubId\")"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pkey\" ON public.\"ClubInvitation\" USING btree (id)"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_email_clubId_idx",
+            "indexdef": "CREATE INDEX \"ClubInvitation_email_clubId_idx\" ON public.\"ClubInvitation\" USING btree (email, \"clubId\")"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_schoolIdentityId_status_idx",
+            "indexdef": "CREATE INDEX \"ClubInvitation_schoolIdentityId_status_idx\" ON public.\"ClubInvitation\" USING btree (\"schoolIdentityId\", status)"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_id_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_id_clubId_key\" ON public.\"ClubInvitation\" USING btree (id, \"clubId\")"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_pending_identity_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_pending_identity_key\" ON public.\"ClubInvitation\" USING btree (\"clubId\", \"schoolIdentityId\") WHERE ((status = 'PENDING'::\"InvitationStatus\") AND (\"schoolIdentityId\" IS NOT NULL))"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_clubId_status_createdAt_idx",
+            "indexdef": "CREATE INDEX \"ClubInvitation_clubId_status_createdAt_idx\" ON public.\"ClubInvitation\" USING btree (\"clubId\", status, \"createdAt\")"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_applicationId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_applicationId_key\" ON public.\"ClubInvitation\" USING btree (\"applicationId\")"
+          },
+          {
+            "tablename": "ClubInvitation",
+            "indexname": "ClubInvitation_applicationId_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubInvitation_applicationId_clubId_key\" ON public.\"ClubInvitation\" USING btree (\"applicationId\", \"clubId\")"
+          },
+          {
+            "tablename": "ClubMember",
+            "indexname": "ClubMember_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubMember_pkey\" ON public.\"ClubMember\" USING btree (id)"
+          },
+          {
+            "tablename": "ClubMember",
+            "indexname": "ClubMember_userId_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubMember_userId_clubId_key\" ON public.\"ClubMember\" USING btree (\"userId\", \"clubId\")"
+          },
+          {
+            "tablename": "ClubMember",
+            "indexname": "ClubMember_clubId_idx",
+            "indexdef": "CREATE INDEX \"ClubMember_clubId_idx\" ON public.\"ClubMember\" USING btree (\"clubId\")"
+          },
+          {
+            "tablename": "ClubMember",
+            "indexname": "ClubMember_clubId_status_joinedAt_idx",
+            "indexdef": "CREATE INDEX \"ClubMember_clubId_status_joinedAt_idx\" ON public.\"ClubMember\" USING btree (\"clubId\", status, \"joinedAt\")"
+          },
+          {
+            "tablename": "ClubMember",
+            "indexname": "ClubMember_id_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubMember_id_clubId_key\" ON public.\"ClubMember\" USING btree (id, \"clubId\")"
+          },
+          {
+            "tablename": "ClubTask",
+            "indexname": "ClubTask_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"ClubTask_pkey\" ON public.\"ClubTask\" USING btree (id)"
+          },
+          {
+            "tablename": "ClubTask",
+            "indexname": "ClubTask_clubId_status_idx",
+            "indexdef": "CREATE INDEX \"ClubTask_clubId_status_idx\" ON public.\"ClubTask\" USING btree (\"clubId\", status)"
+          },
+          {
+            "tablename": "Event",
+            "indexname": "Event_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"Event_pkey\" ON public.\"Event\" USING btree (id)"
+          },
+          {
+            "tablename": "Event",
+            "indexname": "Event_clubId_idx",
+            "indexdef": "CREATE INDEX \"Event_clubId_idx\" ON public.\"Event\" USING btree (\"clubId\")"
+          },
+          {
+            "tablename": "Event",
+            "indexname": "Event_public_date_endDate_idx",
+            "indexdef": "CREATE INDEX \"Event_public_date_endDate_idx\" ON public.\"Event\" USING btree (\"isPublic\", date, \"endDate\")"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_pkey\" ON public.\"InvitationDelivery\" USING btree (id)"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_idempotencyKey_key",
+            "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_idempotencyKey_key\" ON public.\"InvitationDelivery\" USING btree (\"idempotencyKey\")"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_providerMessageId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_providerMessageId_key\" ON public.\"InvitationDelivery\" USING btree (\"providerMessageId\")"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_status_nextAttemptAt_idx",
+            "indexdef": "CREATE INDEX \"InvitationDelivery_status_nextAttemptAt_idx\" ON public.\"InvitationDelivery\" USING btree (status, \"nextAttemptAt\")"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_invitationId_createdAt_idx",
+            "indexdef": "CREATE INDEX \"InvitationDelivery_invitationId_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\", \"createdAt\")"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_one_active_invitation",
+            "indexdef": "CREATE UNIQUE INDEX \"InvitationDelivery_one_active_invitation\" ON public.\"InvitationDelivery\" USING btree (\"invitationId\") WHERE (status = ANY (ARRAY['QUEUED'::\"InvitationDeliveryStatus\", 'SENDING'::\"InvitationDeliveryStatus\"]))"
+          },
+          {
+            "tablename": "InvitationDelivery",
+            "indexname": "InvitationDelivery_requestedById_createdAt_idx",
+            "indexdef": "CREATE INDEX \"InvitationDelivery_requestedById_createdAt_idx\" ON public.\"InvitationDelivery\" USING btree (\"requestedById\", \"createdAt\")"
+          },
+          {
+            "tablename": "PipelineRound",
+            "indexname": "PipelineRound_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"PipelineRound_pkey\" ON public.\"PipelineRound\" USING btree (id)"
+          },
+          {
+            "tablename": "PipelineRound",
+            "indexname": "PipelineRound_clubId_idx",
+            "indexdef": "CREATE INDEX \"PipelineRound_clubId_idx\" ON public.\"PipelineRound\" USING btree (\"clubId\")"
+          },
+          {
+            "tablename": "PipelineRound",
+            "indexname": "PipelineRound_clubId_archivedAt_order_idx",
+            "indexdef": "CREATE INDEX \"PipelineRound_clubId_archivedAt_order_idx\" ON public.\"PipelineRound\" USING btree (\"clubId\", \"archivedAt\", \"order\")"
+          },
+          {
+            "tablename": "PipelineRound",
+            "indexname": "PipelineRound_id_clubId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"PipelineRound_id_clubId_key\" ON public.\"PipelineRound\" USING btree (id, \"clubId\")"
+          },
+          {
+            "tablename": "TaskAssignment",
+            "indexname": "TaskAssignment_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"TaskAssignment_pkey\" ON public.\"TaskAssignment\" USING btree (id)"
+          },
+          {
+            "tablename": "TaskAssignment",
+            "indexname": "TaskAssignment_memberId_idx",
+            "indexdef": "CREATE INDEX \"TaskAssignment_memberId_idx\" ON public.\"TaskAssignment\" USING btree (\"memberId\")"
+          },
+          {
+            "tablename": "TaskAssignment",
+            "indexname": "TaskAssignment_taskId_memberId_key",
+            "indexdef": "CREATE UNIQUE INDEX \"TaskAssignment_taskId_memberId_key\" ON public.\"TaskAssignment\" USING btree (\"taskId\", \"memberId\")"
+          },
+          {
+            "tablename": "TaskAssignment",
+            "indexname": "TaskAssignment_review_queue_idx",
+            "indexdef": "CREATE INDEX \"TaskAssignment_review_queue_idx\" ON public.\"TaskAssignment\" USING btree (\"taskId\", \"submittedAt\", \"reviewedAt\")"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_pkey",
+            "indexdef": "CREATE UNIQUE INDEX \"UserNotification_pkey\" ON public.\"UserNotification\" USING btree (id)"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_userId_eventKey_key",
+            "indexdef": "CREATE UNIQUE INDEX \"UserNotification_userId_eventKey_key\" ON public.\"UserNotification\" USING btree (\"userId\", \"eventKey\")"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_userId_createdAt_idx",
+            "indexdef": "CREATE INDEX \"UserNotification_userId_createdAt_idx\" ON public.\"UserNotification\" USING btree (\"userId\", \"createdAt\")"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_userId_readAt_idx",
+            "indexdef": "CREATE INDEX \"UserNotification_userId_readAt_idx\" ON public.\"UserNotification\" USING btree (\"userId\", \"readAt\")"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_announcementId_idx",
+            "indexdef": "CREATE INDEX \"UserNotification_announcementId_idx\" ON public.\"UserNotification\" USING btree (\"announcementId\")"
+          },
+          {
+            "tablename": "UserNotification",
+            "indexname": "UserNotification_userId_updatedAt_idx",
+            "indexdef": "CREATE INDEX \"UserNotification_userId_updatedAt_idx\" ON public.\"UserNotification\" USING btree (\"userId\", \"updatedAt\")"
+          }
+        ]
+      }
+    }
+  ],
+  "tableEstimates": [
+    {
+      "relname": "Application",
+      "n_live_tup": 24,
+      "n_dead_tup": 29,
+      "seq_scan": 8940,
+      "idx_scan": 2682,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-21 04:32:28.295818+00"
+    },
+    {
+      "relname": "Club",
+      "n_live_tup": 45,
+      "n_dead_tup": 24,
+      "seq_scan": 265244,
+      "idx_scan": 39459,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-17 22:05:22.321442+00"
+    },
+    {
+      "relname": "ClubInvitation",
+      "n_live_tup": 28,
+      "n_dead_tup": 25,
+      "seq_scan": 18419,
+      "idx_scan": 2305,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-20 16:50:15.389717+00"
+    },
+    {
+      "relname": "ClubMember",
+      "n_live_tup": 34,
+      "n_dead_tup": 3,
+      "seq_scan": 83780,
+      "idx_scan": 9343,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-21 04:31:28.249126+00"
+    },
+    {
+      "relname": "ClubTask",
+      "n_live_tup": 0,
+      "n_dead_tup": 0,
+      "seq_scan": 50,
+      "idx_scan": 327,
+      "last_analyze": null,
+      "last_autoanalyze": null
+    },
+    {
+      "relname": "Event",
+      "n_live_tup": 0,
+      "n_dead_tup": 0,
+      "seq_scan": 1353,
+      "idx_scan": 1825,
+      "last_analyze": null,
+      "last_autoanalyze": null
+    },
+    {
+      "relname": "InterviewBooking",
+      "n_live_tup": 4,
+      "n_dead_tup": 3,
+      "seq_scan": 312,
+      "idx_scan": 7791,
+      "last_analyze": null,
+      "last_autoanalyze": null
+    },
+    {
+      "relname": "PipelineRound",
+      "n_live_tup": 15,
+      "n_dead_tup": 11,
+      "seq_scan": 154473,
+      "idx_scan": 4729,
+      "last_analyze": null,
+      "last_autoanalyze": null
+    },
+    {
+      "relname": "TaskAssignment",
+      "n_live_tup": 0,
+      "n_dead_tup": 0,
+      "seq_scan": 51,
+      "idx_scan": 16540,
+      "last_analyze": null,
+      "last_autoanalyze": null
+    },
+    {
+      "relname": "User",
+      "n_live_tup": 53,
+      "n_dead_tup": 4,
+      "seq_scan": 536923,
+      "idx_scan": 5831,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-06 19:21:27.538654+00"
+    },
+    {
+      "relname": "UserNotification",
+      "n_live_tup": 77,
+      "n_dead_tup": 34,
+      "seq_scan": 100116,
+      "idx_scan": 495607,
+      "last_analyze": null,
+      "last_autoanalyze": "2026-10-14 19:48:51.734832+00"
+    }
+  ],
+  "laterActivity": [
+    {
+      "diagnostics": {
+        "captured_at": "2026-10-21T21:04:43.439698+00:00",
+        "traffic_provenance": "Unclassified cumulative database statistics; application/test/system traffic cannot be separated by these aggregates",
+        "candidate_plans": [
+          {
+            "relname": "User",
+            "n_live_tup": 53,
+            "n_dead_tup": 4
+          },
+          {
+            "relname": "Club",
+            "n_live_tup": 45,
+            "n_dead_tup": 24
+          },
+          {
+            "relname": "ClubMember",
+            "n_live_tup": 34,
+            "n_dead_tup": 3
+          },
+          {
+            "relname": "PipelineRound",
+            "n_live_tup": 15,
+            "n_dead_tup": 11
+          },
+          {
+            "relname": "Application",
+            "n_live_tup": 24,
+            "n_dead_tup": 31
+          },
+          {
+            "relname": "UserNotification",
+            "n_live_tup": 79,
+            "n_dead_tup": 34
+          }
+        ],
+        "activity": [
+          {
+            "state": "idle",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 7
+          },
+          {
+            "state": "idle",
+            "wait_event_type": "Extension",
+            "wait_event": "Extension",
+            "connections": 1
+          },
+          {
+            "state": "idle in transaction",
+            "wait_event_type": "Client",
+            "wait_event": "ClientRead",
+            "connections": 4
+          }
+        ]
+      }
+    }
+  ],
+  "plans": {
+    "membership": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Index Scan",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "ClubMember_clubId_status_joinedAt_idx",
+              "Relation Name": "ClubMember",
+              "Alias": "ClubMember",
+              "Startup Cost": 0.14,
+              "Total Cost": 2.36,
+              "Plan Rows": 1,
+              "Plan Width": 37,
+              "Index Cond": "(\"clubId\" = '00000000-0000-4000-8000-000000000000'::text)",
+              "Filter": "(\"userId\" = '00000000-0000-4000-8000-000000000000'::text)"
+            }
+          }
+        ]
+      }
+    ],
+    "application": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Limit",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 1.37,
+              "Total Cost": 1.37,
+              "Plan Rows": 1,
+              "Plan Width": 37,
+              "Plans": [
+                {
+                  "Node Type": "Sort",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 1.37,
+                  "Total Cost": 1.37,
+                  "Plan Rows": 1,
+                  "Plan Width": 37,
+                  "Sort Key": [
+                    "id"
+                  ],
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "Application",
+                      "Alias": "Application",
+                      "Startup Cost": 0,
+                      "Total Cost": 1.36,
+                      "Plan Rows": 1,
+                      "Plan Width": 37,
+                      "Filter": "((status <> 'DRAFTING'::\"AppStatus\") AND (\"clubId\" = '00000000-0000-4000-8000-000000000000'::text))"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Read-only snapshots; no statistics reset, schema change, production write or session termination.",
+    "Statement history since September 21 mixes application, tests and platform traffic. No navigation request correlation.",
+    "Means/stddev/max available; percentiles cannot be recovered from pg_stat_statements.",
+    "EXPLAIN used an absent synthetic UUID; no production EXPLAIN ANALYZE or actual bound user identifiers."
+  ]
+}

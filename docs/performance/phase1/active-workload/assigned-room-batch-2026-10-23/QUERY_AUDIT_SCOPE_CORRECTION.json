@@ -1,0 +1,7 @@
+{
+  "originalAuditRetainedUnmodified": true,
+  "scope": "Original query event counts cover the room loader transaction client. The relative Prisma import used by real Auth was not observed by that event listener.",
+  "liveChecksStillRan": true,
+  "correction": "A separate fresh query-only run will observe both imports through one real Prisma client. No original timing samples will be replaced.",
+  "navigationStudy": "An extra audit client remains idle throughout the original crossover; same-role pool sampling includes it in every build. This is not a global pool cap."
+}

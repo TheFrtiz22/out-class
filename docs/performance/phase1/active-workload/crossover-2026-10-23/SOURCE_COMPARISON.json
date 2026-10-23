@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "97db164e133809ab2852d7ebcc946b2e92ef1d4f",
+  "comparedTrackedApplicationFiles": 888,
+  "changedFiles": [
+    "app/layout.tsx"
+  ],
+  "applicationTreeSha256": {
+    "A": "fa0b916984c2712bcfe1377491cdc9f416dfb1c8162bc876d4660c87928b977c",
+    "B": "28dc5bf7d65eced82f2719714a7883101c9dcdb0b90f9e042f6b8252a6fdee79"
+  },
+  "unchangedProtectedLoaders": true,
+  "layoutSha256": {
+    "A": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb",
+    "B": "5811ce91b3e313df17b327d44f308f4745a2ef00d10e0e4c0a69afff0095dd3a"
+  },
+  "excludes": "Test-only runner/helper profile overlays, generated build/assets files and reports are not application-source changes."
+}

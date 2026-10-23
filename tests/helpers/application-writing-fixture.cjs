@@ -24,6 +24,7 @@ createRoot(document.getElementById('root')).render(<ProductShell mode="apply" mo
     '@/contexts/organization-invitations-context': `exports.useOrganizationInvitations=()=>({invitations:[],loading:false});`,
     '@/lib/application-state': `const noop=()=>{};const state={notifications:[],durableUnread:0,syncApplications:noop,clearApplicationFocus:noop,focusApplication:noop,syncApplicationBookings:noop,syncTaskNotifications:noop,syncDurableNotifications:noop};exports.useApplicationState=()=>state;`,
     '@/lib/workspace-api': `const call=async(path,input)=>{const r=await fetch(path,input?{method:'POST',body:JSON.stringify(input)}:undefined);const data=await r.json();if(!r.ok)throw Error(data.error);return data};exports.getStudentApplications=()=>call('/applications');exports.saveApplicationDraft=input=>call('/save',input);exports.submitApplication=input=>call('/submit',input);exports.getTaskNotifications=async()=>[];exports.uploadProfileFile=async()=>({reference:'https://example.test/document.pdf'});`,
+    '@/lib/workspace-read': `exports.getDurableNotifications=async()=>({items:[],unread:0});`,
     '@/actions/communications': `exports.getDurableNotifications=async()=>({items:[],unread:0});`,
     '@/utils/supabase/client': `exports.createClient=()=>({auth:{signOut:async()=>{}}});`,
     '@/components/tutorial-walkthrough': `exports.TutorialWalkthrough=()=>null;`,

@@ -1,3 +1,4 @@
+import { serverPhase } from "@/lib/server-phase-trace";
 import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
 import { assertClubOperational } from "@/lib/club-suspension";
 import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
@@ -22,16 +23,16 @@ export const getSessionUser = cache(async () => {
   const session = await supabase.auth.getSession();
   if (session.error || !session.data.session) return { data: { user: null }, error: session.error };
   const token = session.data.session.access_token;
-  const identity = await supabase.auth.getUser(token);
+  const identity = await serverPhase("identity", () => supabase.auth.getUser(token));
   if (identity.error || !identity.data.user) return identity;
   const sessionId = sessionIdFromVerifiedToken(token, identity.data.user.id);
   if (!sessionId) return { data: { user: null }, error: null };
   // Auth can accept an unexpired JWT beyond the session's not_after boundary.
   // Request caching coalesces this indexed check, never across requests/users.
-  const [row] = await prisma.$queryRaw<{ live: boolean }[]>`
+  const [row] = await serverPhase("live_session", () => prisma.$queryRaw<{ live: boolean }[]>`
     SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${sessionId}::uuid
       AND user_id=${identity.data.user.id}::uuid
-      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
+      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`);
   return row?.live ? identity : { data: { user: null }, error: null };
 });
 
@@ -42,7 +43,7 @@ export const getSessionUser = cache(async () => {
 export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean; adminDiagnostics?: boolean } = {}) {
   const cookieStore = await cookies();
   if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) {
-    const session = await platformViewSession();
+    const session = await serverPhase("identity", () => platformViewSession());
     if (!session) throw new Error("Impersonation expired or unavailable. Exit impersonation to continue.");
     const effective = await prisma.user.findUnique({ where: { id: session.targetUserId } });
     if (!effective || effective.disabledAt) throw new Error("This account is unavailable.");
@@ -52,7 +53,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
       const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!secret) throw new Error("Target email verification is unavailable.");
       const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, { auth: { persistSession: false, autoRefreshToken: false } });
-      const { data, error } = await admin.auth.admin.getUserById(effective.id);
+      const { data, error } = await serverPhase("identity", () => admin.auth.admin.getUserById(effective.id));
       if (error || !data.user || data.user.id !== effective.id || data.user.email?.toLowerCase() !== effective.email.toLowerCase()) throw new Error("Target email verification is unavailable.");
       const supabaseUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "confirmation_sent_at" | "app_metadata" | "identities"> = { id: effective.id, email: effective.email, email_confirmed_at: data.user.email_confirmed_at, confirmation_sent_at: data.user.confirmation_sent_at, app_metadata: data.user.app_metadata, identities: data.user.identities };
       return { user: effective, supabaseUser, impersonation: session };

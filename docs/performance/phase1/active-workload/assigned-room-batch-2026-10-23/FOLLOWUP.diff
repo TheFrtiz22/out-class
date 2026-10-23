@@ -1,0 +1,508 @@
+diff --git a/actions/interview-entry.ts b/actions/interview-entry.ts
+index 6bfe0da..b151482 100644
+--- a/actions/interview-entry.ts
++++ b/actions/interview-entry.ts
+@@ -4,7 +4,7 @@ import { prisma } from "@/utils/prisma";
+ import { requireAuth } from "@/utils/auth";
+ import { interviewActor, authorizeInterview, interviewTransactionOptions } from "@/utils/interview-access";
+ import { ownPanelAssignments } from "@/utils/official-panel-schedule";
+-import { approvedBookingPanel } from "@/utils/interview-collaboration";
++import { approvedBookingPanel, approvedBookingPanels } from "@/utils/interview-collaboration";
+ import { anonymousApplicantLabel } from "@/lib/anonymous-review";
+ import { sortInterviewEntries, type InterviewRoomEntry } from "@/lib/interview-entry";
+ 
+@@ -17,6 +17,32 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
+     const official = (await ownPanelAssignments(tx, user.id, true)).filter(r => r.clubId === clubId);
+     const records = await tx.interviewRecord.findMany({ where: { interviewerId: member.id, application: { clubId }, completedAt: { not: null } }, select: { applicationId: true, roundId: true } });
+     const slots = await tx.interviewSlot.findMany({ where: { clubId, room: { clubId }, OR: [{ id: { in: official.map(r => r.id) } }, { bookings: { some: { OR: records.map(r => ({ applicationId: r.applicationId, roundId: r.roundId })) } } }, { room: { isOpen: false }, OR: [{ publishedPanelMemberIds: { has: member.id } }, { panelScheduleVersionId: null, room: { approvedPanelMemberIds: { has: member.id } } }] }] }, include: { room: { include: { round: true } }, panelScheduleVersion: true, bookings: { include: { application: { include: { round: true, student: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } } } } }, orderBy: [{ startTime: "asc" }, { id: "asc" }] });
++    const candidates = slots.flatMap(slot => slot.room!.isOpen ? slot.bookings.filter(booking => booking.roundId === slot.room!.roundId && booking.application.clubId === clubId && booking.application.studentId !== user.id && booking.application.status !== "DRAFTING").map(booking => ({ booking, slot, scope: { clubId, applicationId: booking.applicationId, roundId: slot.room!.roundId } })) : []);
++    const access = new Map<string, { anonymous: boolean; reviewId?: string; canOpen: boolean; completed: boolean; started: boolean; interviewers: string[] }>();
++    const scopeKey = (value: { applicationId: string; roundId: string }) => `${value.applicationId}:${value.roundId}`;
++    // Sequential bounded batches use this transaction's single connection. All
++    // grants, approving owners and enabled colleagues are re-read on every request.
++    for (let offset = 0; offset < candidates.length; offset += 128) {
++      const batch = candidates.slice(offset, offset + 128);
++      const grants = await tx.interviewPanelAssignment.findMany({ where: { memberId: member.id, revokedAt: null, application: { clubId }, OR: batch.map(c => ({ applicationId: c.scope.applicationId, roundId: c.scope.roundId })) }, select: { applicationId: true, roundId: true } });
++      const granted = new Set(grants.map(scopeKey));
++      const eligible = batch.filter(c => granted.has(scopeKey(c.scope)));
++      const panels = await approvedBookingPanels(tx, eligible.map(c => ({ scope: c.scope, booking: { ...c.booking, slot: c.slot } })));
++      const approved = eligible.filter(c => panels.get(c.booking.id)?.includes(member.id));
++      if (!approved.length) continue;
++      const ownRecords = await tx.interviewRecord.findMany({ where: { interviewerId: member.id, application: { clubId }, OR: approved.map(c => ({ applicationId: c.scope.applicationId, roundId: c.scope.roundId })) }, select: { id: true, applicationId: true, roundId: true, completedAt: true, anonymousReview: true } });
++      const byScope = new Map(ownRecords.map(record => [scopeKey(record), record]));
++      const projected = approved.map(c => {
++        const record = byScope.get(scopeKey(c.scope)), room = c.slot.room!;
++        const anonymous = room.round.anonymousReview || c.booking.application.round.anonymousReview || !!record?.anonymousReview;
++        const reviewId = anonymous && record?.completedAt && caps.readClosing ? record.id : undefined;
++        const canOpen = !!reviewId || !anonymous && (!!record?.completedAt || !room.round.archivedAt && c.booking.application.roundId === room.roundId);
++        return { ...c, anonymous, reviewId, canOpen, completed: !!record?.completedAt, started: !!record && !record.completedAt };
++      });
++      const colleagueIds = [...new Set(projected.flatMap(c => c.canOpen && !c.anonymous ? panels.get(c.booking.id)! : []))];
++      const colleagues = colleagueIds.length ? await tx.clubMember.findMany({ where: { id: { in: colleagueIds }, clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
++      for (const c of projected) access.set(c.booking.id, { anonymous: c.anonymous, reviewId: c.reviewId, canOpen: c.canOpen, completed: c.completed, started: c.started, interviewers: c.canOpen && !c.anonymous ? colleagues.filter(m => m.id !== member.id && panels.get(c.booking.id)!.includes(m.id)).map(m => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : "Interviewer") : [] });
++    }
+     const rows: InterviewRoomEntry[] = [];
+     for (const slot of slots) {
+       const room = slot.room!;
+@@ -25,19 +51,11 @@ export async function getAssignedInterviewRooms(clubId: string): Promise<Intervi
+       if (cancelled) { rows.push({ ...base, id: slot.id, bookingId: null, applicationId: null, candidate: null, interviewers: [], completed: false, started: false, cancelled: true, canOpen: false }); continue; }
+       if (!slot.bookings.length && official.some(r => r.id === slot.id)) rows.push({ ...base, id: slot.id, bookingId: null, applicationId: null, candidate: null, interviewers: [], completed: false, started: false, cancelled: false, canOpen: false });
+       for (const booking of slot.bookings) {
+-        if (booking.roundId !== room.roundId || booking.application.clubId !== clubId || booking.application.studentId === user.id || booking.application.status === "DRAFTING") continue;
+-        const scope = { clubId, applicationId: booking.applicationId, roundId: room.roundId };
+-        const assignment = await tx.interviewPanelAssignment.findUnique({ where: { applicationId_roundId_memberId: { applicationId: scope.applicationId, roundId: scope.roundId, memberId: member.id } } });
+-        if (!assignment || assignment.revokedAt) continue;
+-        const panel = await approvedBookingPanel(tx, scope, { ...booking, slot });
+-        if (!panel?.includes(member.id)) continue;
+-        const record = await tx.interviewRecord.findUnique({ where: { applicationId_interviewerId_roundId: { applicationId: booking.applicationId, interviewerId: member.id, roundId: room.roundId } } });
+-        const anonymous = room.round.anonymousReview || booking.application.round.anonymousReview || !!record?.anonymousReview;
+-        const reviewId = anonymous && record?.completedAt && caps.readClosing ? record.id : undefined;
+-        const canOpen = !!reviewId || !anonymous && (!!record?.completedAt || !room.round.archivedAt && booking.application.roundId === room.roundId);
+-        const colleagues = canOpen && !anonymous ? await tx.clubMember.findMany({ where: { id: { in: panel }, clubId, status: "ACTIVE", user: { disabledAt: null } }, select: { id: true, user: { select: { studentProfile: { select: { firstName: true, lastName: true } } } } } }) : [];
++        const projection = access.get(booking.id);
++        if (!projection) continue;
++        const { anonymous, reviewId, canOpen, interviewers, completed, started } = projection;
+         const p = booking.application.student.studentProfile;
+-        rows.push({ ...base, ...(reviewId ? { reviewId } : {}), id: booking.id, bookingId: booking.id, applicationId: canOpen ? booking.applicationId : null, candidate: anonymous ? anonymousApplicantLabel(booking.applicationId) : p ? `${p.firstName} ${p.lastName}` : "Applicant", interviewers: colleagues.filter(m => m.id !== member.id).map(m => m.user.studentProfile ? `${m.user.studentProfile.firstName} ${m.user.studentProfile.lastName}` : "Interviewer"), completed: !!record?.completedAt, started: !!record && !record.completedAt, cancelled: false, canOpen });
++        rows.push({ ...base, ...(reviewId ? { reviewId } : {}), id: booking.id, bookingId: booking.id, applicationId: canOpen ? booking.applicationId : null, candidate: anonymous ? anonymousApplicantLabel(booking.applicationId) : p ? `${p.firstName} ${p.lastName}` : "Applicant", interviewers, completed, started, cancelled: false, canOpen });
+       }
+     }
+     return sortInterviewEntries(rows);
+diff --git a/scripts/navigation-crossover.cjs b/scripts/navigation-crossover.cjs
+index e554391..2b1a1f6 100644
+--- a/scripts/navigation-crossover.cjs
++++ b/scripts/navigation-crossover.cjs
+@@ -7,11 +7,12 @@ const { fixtureProfile } = require('./navigation-fixture-config.cjs');
+ const profile = fixtureProfile('crossover'), repo = path.resolve(__dirname, '..');
+ const sha = body => createHash('sha256').update(body).digest('hex');
+ 
+-function protocol(seed) {
++function protocol(seed, comparison = 'hydration-wrapper') {
+   assert.match(seed, /^[a-f0-9]{32}$/);
++  assert.ok(['hydration-wrapper', 'assigned-room-batch'].includes(comparison));
+   const orders = ['AB', 'AB', 'BA', 'BA'].map((order, i) => ({ order, sort: sha(seed + ':' + i) })).sort((a, b) => a.sort.localeCompare(b.sort));
+   orders.splice(2, 0, { order: 'AA' });
+-  return orders.flatMap(({ order }, pair) => [...order].map((variant, position) => ({ pair, position, variant, comparison: order === 'AA' ? 'same-build-control' : 'hydration-wrapper', order })));
++  return orders.flatMap(({ order }, pair) => [...order].map((variant, position) => ({ pair, position, variant, comparison: order === 'AA' ? 'same-build-control' : comparison, order })));
+ }
+ function controlLayout(source) {
+   const imported = 'import { RouteContent } from "@/components/route-content"\n';
+@@ -41,10 +42,17 @@ async function main() {
+   for (const port of [3119, 59320, 59321, 59322, 59323, 59324, 59325, 59327, 59329]) await portFree(port);
+   assert.equal(execFileSync('docker', ['ps', '-a', '--filter', 'label=com.supabase.cli.project=' + profile.projectId, '--format', '{{.Names}}'], { encoding: 'utf8' }).trim(), '', 'Reserved crossover project already exists');
+   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+-  const seed = process.argv.find(a => a.startsWith('--seed='))?.slice(7) || randomBytes(16).toString('hex'), blocks = protocol(seed), buildRoots = { A: path.join(profile.root, 'build-a'), B: path.join(profile.root, 'build-b') };
++  const batching = process.argv.includes('--assigned-room-batch');
++  const queryOnly = process.argv.includes('--query-audit-only');
++  assert.ok(!queryOnly || batching, 'Query-only mode requires the assigned-room comparison');
++  const comparison = batching ? 'assigned-room-batch' : 'hydration-wrapper';
++  const seed = process.argv.find(a => a.startsWith('--seed='))?.slice(7) || randomBytes(16).toString('hex'), blocks = protocol(seed, comparison), buildRoots = { A: path.join(profile.root, 'build-a'), B: path.join(profile.root, 'build-b') };
+   fs.mkdirSync(profile.root, { mode: 0o700 }); fs.mkdirSync(out, { recursive: true });
+   fs.writeFileSync(path.join(profile.root, '.crossover-owner'), head, { mode: 0o600 });
+   const study = { sourceCommit: head, seed, blocks, variants: { A: 'Current HEAD including hydration wrapper', B: 'Same HEAD with only the root layout wrapper removed' }, clients: 4, wavesPerConditionPerBlock: 5, warmupWavesPerCondition: 1, conditions: ['cold', 'warm'], poolLimitPerPrismaClient: 8, notes: ['Same accounts, bookings, grants, database, URL and pool across every block.', 'Both builds completed before collection. No other tests or builds launched by this study during collection.', 'No busy-host samples dropped, no synthetic application delays.', 'Four AB/BA pairs are primary; the middle AA pair measures ordinary same-build variation.', 'Cold browser with warm server/database; initial page errors and incomplete blocks retained.', 'System telemetry contains aggregate CPU, load and memory only.'], completed: [] };
++  study.comparison = comparison;
++  study.queryAuditOnly = queryOnly;
++  if (batching) study.variants = { A: 'Current HEAD plus the two allowlisted assigned-room batching source files', B: 'Unmodified current HEAD; hydration wrapper present in both builds' };
+   const save = () => fs.writeFileSync(path.join(out, 'PROTOCOL.json'), JSON.stringify(study, null, 2) + '\n'); save();
+   study.warmupFailurePolicy = 'One fixed warmup wave per condition, with no retries. Preserve all warmup failures and missing rows; do not silently force clean warmups. Every measured block must still be complete before accepted latency analysis.'; save();
+   let running, appPid, stackTouched = false, sampler, abortRequested = false, phase = 'setup', blockIndex = -1;
+@@ -75,7 +83,23 @@ async function main() {
+     const tar = path.join(profile.root, 'source.tar'); execFileSync('git', ['archive', '--format=tar', '-o', tar, head], { cwd: repo });
+     for (const source of Object.values(buildRoots)) { fs.mkdirSync(source); execFileSync('tar', ['-xf', tar, '-C', source]); fs.symlinkSync(path.join(repo, 'node_modules'), path.join(source, 'node_modules'), 'dir'); }
+     fs.rmSync(tar);
+-    const layout = fs.readFileSync(path.join(buildRoots.A, 'app/layout.tsx'), 'utf8'); fs.writeFileSync(path.join(buildRoots.B, 'app/layout.tsx'), controlLayout(layout));
++    if (batching) {
++      study.applicationOverlays = ['actions/interview-entry.ts', 'utils/interview-collaboration.ts'].map(file => {
++        const body = fs.readFileSync(path.join(repo, file)), baseline = fs.readFileSync(path.join(buildRoots.B, file));
++        assert.notEqual(sha(body), sha(baseline), 'Both allowlisted batching files must differ from HEAD');
++        fs.writeFileSync(path.join(buildRoots.A, file), body);
++        return { file, A: sha(body), B: sha(baseline) };
++      });
++      // Test overlays do not enter the production application bundle.
++      for (const file of ['tests/interview-entry-batch.test.cjs', 'tests/panel-publication-database.test.cjs', 'tests/helpers/interview-harness.cjs', 'tests/helpers/interview-sql-harness.cjs']) fs.copyFileSync(path.join(repo, file), path.join(buildRoots.A, file));
++      const applicationFiles = execFileSync('git', ['ls-tree', '-r', '--name-only', head], { cwd: repo, encoding: 'utf8' }).trim().split('\n').filter(file => /^(app|actions|components|hooks|lib|utils|prisma|supabase|public)\//.test(file) || /^(package(-lock)?\.json|pnpm-lock\.yaml|next\.config\.|tsconfig\.json)/.test(file));
++      const differences = applicationFiles.filter(file => sha(fs.readFileSync(path.join(buildRoots.A, file))) !== sha(fs.readFileSync(path.join(buildRoots.B, file))));
++      assert.deepEqual(differences.sort(), study.applicationOverlays.map(o => o.file).sort());
++      study.applicationSourceVerification = { checkedFiles: applicationFiles.length, differences, hydrationLayoutIdentical: true };
++      save();
++    } else {
++      const layout = fs.readFileSync(path.join(buildRoots.A, 'app/layout.tsx'), 'utf8'); fs.writeFileSync(path.join(buildRoots.B, 'app/layout.tsx'), controlLayout(layout));
++    }
+     for (const file of ['scripts/run-onboarding-e2e.cjs', 'tests/helpers/onboarding-e2e.cjs']) {
+       const full = path.join(buildRoots.A, file); let text = fs.readFileSync(full, 'utf8').replaceAll('outclass-onboarding-e2e', profile.projectId).replaceAll('553', '593').replaceAll('3107', '3119');
+       if (file.startsWith('scripts/')) { assert.ok(text.includes('if(keep){console.log')); text = text.replace('if(keep){console.log', 'if(keep){app.unref();console.log'); }
+@@ -83,16 +107,30 @@ async function main() {
+     }
+     console.log('Preparing private current-HEAD build, real Auth and disposable database.'); stackTouched = true;
+     assert.equal(await run(['scripts/run-onboarding-e2e.cjs', '--keep'], 'setup.log', buildRoots.A), 0, 'Private setup/security suite failed; inspect reserved setup log');
++    if (batching) {
++      assert.equal(await run(['scripts/navigation-audit.cjs', '--crossover-fixture', '--seed'], 'empty-seed.log'), 0, 'Empty navigation fixture failed');
++      const testEnv = { ...process.env, OUTCLASS_ONBOARDING_E2E_CONFIG: path.join(profile.root, 'config.json') };
++      assert.equal(await run(['--test', '--test-concurrency=1', 'tests/navigation-phase1-e2e.test.cjs', 'tests/settings-navigation-e2e.test.cjs'], 'navigation-security.log', buildRoots.A, testEnv), 0, 'Real GET/browser regression suite failed');
++      study.navigationSecurityTestSummary = fs.readFileSync(path.join(profile.root, 'navigation-security.log'), 'utf8').split('\n').filter(l => l.startsWith('ℹ ')); save();
++      assert.equal(await run(['scripts/navigation-audit.cjs', '--crossover-fixture', '--active-rooms', '--seed'], 'active-seed.log'), 0, 'Active navigation fixture failed');
++      assert.equal(await run(['--test', '--test-concurrency=1', 'tests/active-interview-navigation-e2e.test.cjs'], 'active-security.log', buildRoots.A, testEnv), 0, 'Active reviewer/revocation checks failed');
++      study.activeSecurityTestSummary = fs.readFileSync(path.join(profile.root, 'active-security.log'), 'utf8').split('\n').filter(l => l.startsWith('ℹ ')); save();
++    }
+     await stop();
+     const configFile = path.join(profile.root, 'config.json'), config = profile.readConfig(configFile), s = config.status;
+     const setupLog = fs.readFileSync(path.join(profile.root, 'setup.log'), 'utf8'); study.setupTestSummary = setupLog.split('\n').filter(l => l.startsWith('ℹ '));
+     const pool = new URL(s.DB_URL); pool.searchParams.set('connection_limit', '8');
+     const env = { ...process.env, NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH: 'false', DATABASE_URL: pool.href, POSTGRES_PRISMA_URL: pool.href, POSTGRES_URL: pool.href, POSTGRES_URL_NON_POOLING: pool.href, NEXT_PUBLIC_SUPABASE_URL: s.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: s.PUBLISHABLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY: s.ANON_KEY, SUPABASE_SECRET_KEY: s.SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY: s.SERVICE_ROLE_KEY, OUTCLASS_PUBLISH_BUILD: '1', OUTCLASS_SITE_URL: config.appUrl, OUTCLASS_PLATFORM_ADMIN_IDS: config.admin.id, COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', RESEND_FROM_EMAIL: '', NODE_EXTRA_CA_CERTS: path.join(profile.root, 'mailpit-cert.pem') };
+-    console.log('Building control with identical infrastructure and unchanged protected loaders.');
++    if (queryOnly) {
++      await require('./assigned-room-query-audit.cjs').assignedRoomQueryAudit(buildRoots, out);
++      study.queryAuditComplete = true; save(); return;
++    }
++    console.log('Building control with identical infrastructure.');
+     assert.equal(await run(['scripts/copy-pdfjs-assets.cjs'], 'control-assets.log', buildRoots.B, env), 0, 'Control public assets failed');
+     assert.equal(await run([path.join(repo, 'node_modules/next/dist/bin/next'), 'build'], 'control-build.log', buildRoots.B, env), 0, 'Control build failed');
+     study.builds = Object.fromEntries(Object.entries(buildRoots).map(([v, p]) => [v, { buildId: fs.readFileSync(path.join(p, '.next-publish/BUILD_ID'), 'utf8').trim(), layoutSha256: sha(fs.readFileSync(path.join(p, 'app/layout.tsx'))) }])); save();
+     assert.equal(await run(['scripts/navigation-audit.cjs', '--crossover-fixture', '--active-rooms', '--seed'], 'seed.log'), 0, 'Fresh active fixture failed');
++    if (batching) await require('./assigned-room-query-audit.cjs').assignedRoomQueryAudit(buildRoots, out);
+     const telemetry = []; let last = cpu(); phase = 'starting';
+     sampler = setInterval(() => { const next = cpu(), total = next.total - last.total; telemetry.push({ at: new Date().toISOString(), block: blockIndex, phase, cpuBusyPercent: total ? Math.round(10000 * (1 - (next.idle - last.idle) / total)) / 100 : null, loadAverage: os.loadavg(), freeMemoryMiB: Math.round(os.freemem() / 1048576) }); last = next; }, 1000);
+     for (let i = 0; i < blocks.length; i++) {
+@@ -101,7 +139,7 @@ async function main() {
+       const fd = fs.openSync(path.join(profile.root, 'server-' + i + '.log'), 'w');
+       const app = spawn(process.execPath, [path.join(repo, 'node_modules/next/dist/bin/next'), 'start', '-p', '3119', '-H', '127.0.0.1'], { cwd: source, env, detached: true, stdio: ['ignore', fd, fd] }); fs.closeSync(fd); app.unref(); appPid = app.pid;
+       fs.writeFileSync(path.join(profile.root, 'server.pid'), String(appPid));
+-      config.buildDir = path.join(source, '.next-publish'); config.activeWorkload = { target: block.variant, sourceCommit: head, applicationSourcesModified: block.variant === 'B', poolLimitPerPrismaClient: 8, buildId: study.builds[block.variant].buildId, block: i };
++      config.buildDir = path.join(source, '.next-publish'); config.activeWorkload = { target: block.variant, sourceCommit: head, applicationSourcesModified: batching ? block.variant === 'A' : block.variant === 'B', poolLimitPerPrismaClient: 8, buildId: study.builds[block.variant].buildId, block: i };
+       fs.writeFileSync(configFile, JSON.stringify(config), { mode: 0o600 });
+       let ready = false;
+       for (let n = 0; n < 100; n++) { try { if ((await fetch(profile.appUrl, { signal: AbortSignal.timeout(1000) })).ok) { ready = true; break; } } catch {} await new Promise(r => setTimeout(r, 200)); }
+diff --git a/scripts/summarize-navigation-crossover.cjs b/scripts/summarize-navigation-crossover.cjs
+index d671450..9312973 100644
+--- a/scripts/summarize-navigation-crossover.cjs
++++ b/scripts/summarize-navigation-crossover.cjs
+@@ -30,11 +30,11 @@ function main() {
+   if (process.argv.includes('--plan')) {
+     assert.equal(protocol.completed.length, 0); assert.ok(!fs.readdirSync(out).some(n => n.startsWith('block-')));
+     const file = path.join(out, 'ANALYSIS_PLAN.json'); assert.ok(!fs.existsSync(file));
+-    fs.writeFileSync(file, JSON.stringify({ registeredBeforeCollection: true, createdAt: new Date().toISOString(), analysisSourceSha256: digest(fs.readFileSync(__filename)), primary: 'AB/BA blocks only; A minus B; negative latency delta favors the current hydration fix', control: 'Middle AA pair reported separately, never pooled into AB inference', uncertainty: '10000 deterministic hierarchical paired bootstrap draws: resample four AB/BA pairs, then matched wave indices within each pair; retain all four participants in each sampled wave', interval: 'Percentile 2.5/97.5; descriptive and limited by four pairs on one shared host', metrics: ['click-to-useful-content p50/p95', 'network completion', 'requests', 'body bytes', 'server phase timing', 'all errors and missing links'], exclusions: 'Only the predeclared one-wave warmup per condition per block is excluded from primary timing; all raw observations and failures retained. No load-based exclusions or outlier trimming.', limits: 'No production SLO or equivalence threshold is asserted; intervals cannot prove absence of a small regression.' }, null, 2) + '\n'); return;
++    fs.writeFileSync(file, JSON.stringify({ registeredBeforeCollection: true, createdAt: new Date().toISOString(), analysisSourceSha256: digest(fs.readFileSync(__filename)), primary: 'AB/BA blocks only; A minus B; negative latency delta favors A (' + (protocol.comparison || 'hydration-wrapper') + ')', control: 'Middle AA pair reported separately, never pooled into AB inference', uncertainty: '10000 deterministic hierarchical paired bootstrap draws: resample four AB/BA pairs, then matched wave indices within each pair; retain all four participants in each sampled wave', interval: 'Percentile 2.5/97.5; descriptive and limited by four pairs on one shared host', metrics: ['click-to-useful-content p50/p95', 'network completion', 'requests', 'body bytes', 'server phase timing', 'all errors and missing links'], exclusions: 'Only the predeclared one-wave warmup per condition per block is excluded from primary timing; all raw observations and failures retained. No load-based exclusions or outlier trimming.', limits: 'No production SLO or equivalence threshold is asserted; intervals cannot prove absence of a small regression.' }, null, 2) + '\n'); return;
+   }
+   assert.equal(protocol.collectionComplete, true, 'Do not summarize an incomplete study as accepted');
+   const blocks = protocol.blocks.map((block, i) => { const file = path.join(out, 'block-' + String(i + 1).padStart(2, '0') + '-' + block.variant + '-measure/browser-samples.json'), bytes = fs.readFileSync(file); return { ...block, index: i, rawSha256: digest(bytes), ...JSON.parse(bytes) }; });
+-  const primary = blocks.filter(b => b.comparison === 'hydration-wrapper');
++  const primary = blocks.filter(b => b.comparison === (protocol.comparison || 'hydration-wrapper'));
+   const results = { sourceCommit: protocol.sourceCommit, variants: protocol.variants, method: JSON.parse(fs.readFileSync(path.join(out, 'ANALYSIS_PLAN.json'))), groups: [], pairs: [], sameBuildControl: [], blocks: blocks.map(b => ({ index: b.index, variant: b.variant, pair: b.pair, comparison: b.comparison, rawSha256: b.rawSha256, errors: b.failures, groups: ['cold', 'warm'].map(condition => ({ condition, ...summarize(b.samples.filter(r => r.condition === condition)) })) })) };
+   for (const condition of ['cold', 'warm']) {
+     for (const variant of ['A', 'B']) results.groups.push({ condition, variant, ...summarize(primary.filter(b => b.variant === variant).flatMap(b => b.samples.filter(r => r.condition === condition))) });
+diff --git a/tests/helpers/interview-harness.cjs b/tests/helpers/interview-harness.cjs
+index cd7e487..bc32e2d 100644
+--- a/tests/helpers/interview-harness.cjs
++++ b/tests/helpers/interview-harness.cjs
+@@ -14,7 +14,7 @@ function harness(){
+   clubMember:{findUniqueOrThrow:async({where})=>members.find(m=>m.id===where.id),findUnique:async({where})=>denied?null:members.find(m=>m.userId===where.userId_clubId.userId&&m.clubId===where.userId_clubId.clubId),findFirst:async({where})=>members.find(m=>m.id===where.id&&m.clubId===where.clubId),update:async({where,data})=>Object.assign(members.find(m=>m.id===where.id),data)},
+   application:{findFirst:async({where})=>where.id===app.id&&where.clubId===app.clubId&&app.status!=='DRAFTING'?app:null},
+   pipelineRound:{findUniqueOrThrow:async()=>app.round,findFirst:async({where})=>where.clubId===round.clubId?(where.id===round.id?round:where.id===app.roundId?app.round:null):null,updateMany:async({where,data})=>{if(where.kitVersion!==round.kitVersion)return{count:0};round.interviewKit=data.interviewKit;round.kitVersion++;return{count:1}}},
+-  interviewPanelAssignment:{findUnique:async({where})=>assignments.find(a=>matches(a,where.applicationId_roundId_memberId)),findFirst:async({where})=>assignments.find(a=>a.memberId===where.memberId&&a.roundId===where.roundId&&!a.revokedAt),upsert:async({where,create,update})=>{const a=assignments.find(a=>matches(a,where.applicationId_roundId_memberId));if(a)Object.assign(a,update);else assignments.push(create)},updateMany:async({where,data})=>{assignments.filter(a=>matches(a,where)).forEach(a=>Object.assign(a,data));return{count:1}}},
++  interviewPanelAssignment:{findMany:async({where})=>assignments.filter(a=>a.memberId===where.memberId&&!a.revokedAt&&where.OR.some(scope=>matches(a,scope))),findUnique:async({where})=>assignments.find(a=>matches(a,where.applicationId_roundId_memberId)),findFirst:async({where})=>assignments.find(a=>a.memberId===where.memberId&&a.roundId===where.roundId&&!a.revokedAt),upsert:async({where,create,update})=>{const a=assignments.find(a=>matches(a,where.applicationId_roundId_memberId));if(a)Object.assign(a,update);else assignments.push(create)},updateMany:async({where,data})=>{assignments.filter(a=>matches(a,where)).forEach(a=>Object.assign(a,data));return{count:1}}},
+   interviewRecord:{findUnique:async({where,include})=>{const r=state.records.find(r=>where.id?r.id===where.id:matches(r,where.applicationId_interviewerId_roundId));return r&&include?.evaluation?{...r,evaluation:state.evaluations.find(e=>e.id===r.evaluationId)}:r},findUniqueOrThrow:async args=>{const r=await tx.interviewRecord.findUnique(args);if(!r)throw Error('not found');return r},create:async({data})=>{const r={...data,id:id(100+state.records.length),revision:0,completedAt:null,evaluationId:null};state.records.push(r);return r},updateMany:async({where,data})=>{const r=state.records.find(r=>matches(r,where));if(!r)return{count:0};Object.assign(r,{...data,revision:r.revision+1});return{count:1}},findMany:async args=>{historyQuery=args;return[]}},
+   evaluation:{findUnique:async({where})=>state.evaluations.find(e=>where.id?e.id===where.id:matches(e,where.applicationId_interviewerId_roundId)),findFirst:async({where})=>state.evaluations.find(e=>matches(e,where)),upsert:async({where,create,update})=>{const old=state.evaluations.find(e=>matches(e,where.applicationId_interviewerId_roundId));if(old?.submittedAt)throw Error('Submitted evaluation is immutable');if(old){Object.assign(old,update);return old}const e={id:id(200+state.evaluations.length),createdAt:new Date(),...create};state.evaluations.push(e);return e},findMany:async()=>[]},
+   studentProfile:{findUnique:async()=>({resumeUrl:`${app.studentId}/cv.pdf`,firstName:'Applicant',lastName:'One',scholarStatus:null})},
+diff --git a/tests/helpers/interview-sql-harness.cjs b/tests/helpers/interview-sql-harness.cjs
+index 104242c..0f4a041 100644
+--- a/tests/helpers/interview-sql-harness.cjs
++++ b/tests/helpers/interview-sql-harness.cjs
+@@ -13,6 +13,7 @@ async function harness(options={}){
+  relations.InterviewSlot.panelScheduleVersion=['InterviewPanelScheduleVersion','panelScheduleVersionId','id'];relations.InterviewPanelScheduleVersion={publisher:['User','publishedBy','id'],round:['PipelineRound','roundId','id']};relations.NotificationEmailOutbox={notification:['UserNotification','notificationId','id'],delivery:['NotificationEmailDelivery','deliveryId','id']};relations.Application.interviewAssignments=['InterviewPanelAssignment','id','applicationId'];
+  relations.Application.club=['Club','clubId','id'];relations.PipelineRound={bookingCycle:['RecruitmentCycle','bookingCycleId','id']};
+  relations.Application.bookings=['InterviewBooking','id','applicationId'];
++ relations.InterviewRecord.application=['Application','applicationId','id'];
+  relations.User.memberships=['ClubMember','id','userId'];relations.UserNotification={club:['Club','clubId','id']};
+  relations.Club={pipelineRounds:['PipelineRound','id','clubId'],members:['ClubMember','id','clubId']};
+  relations.ClubMember.club=['Club','clubId','id'];relations.ClubMember.interviewParticipation=['InterviewRoundParticipation','id','memberId'];
+@@ -21,11 +22,11 @@ async function harness(options={}){
+  function orm(client){
+   let counter=0;
+   const filter=(table,w,alias,values)=>Object.entries(w||{}).map(([key,v])=>{
+-   if(['OR','AND'].includes(key))return '('+v.map(item=>filter(table,item,alias,values)).join(key==='OR'?' OR ':' AND ')+')';
++   if(['OR','AND'].includes(key))return v.length?'('+v.map(item=>filter(table,item,alias,values)).join(key==='OR'?' OR ':' AND ')+')':key==='OR'?'FALSE':'TRUE';
+    if(key.includes('_')&&v&&typeof v==='object')return filter(table,v,alias,values);
+    const rel=relations[table]?.[key];if(rel){const[r,local,foreign]=rel,a='r'+(++counter);return `EXISTS(SELECT 1 FROM "${r}" ${a} WHERE ${a}."${foreign}"=${alias}."${local}" AND ${filter(r,v.some||v,a,values)})`;}
+    const column=`${alias}."${key}"`;if(v===null)return `${column} IS NULL`;
+-   if(v&&typeof v==='object'&&!(v instanceof Date)){return Object.entries(v).map(([op,value])=>{if(op==='not'&&value===null)return `${column} IS NOT NULL`;if(op==='startsWith'){values.push(value+'%');return `${column} LIKE $${values.length}`;}if(op==='hasSome'){values.push(value);return `${column} && $${values.length}::text[]`;}if(op==='in'){values.push(value);return `${column}=ANY($${values.length}::text[])`;}values.push(value);return `${column} ${({not:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='})[op]} $${values.length}`;}).join(' AND ');}
++   if(v&&typeof v==='object'&&!(v instanceof Date)){return Object.entries(v).map(([op,value])=>{if(op==='not'&&value===null)return `${column} IS NOT NULL`;if(op==='startsWith'){values.push(value+'%');return `${column} LIKE $${values.length}`;}if(op==='has'){values.push(value);return `$${values.length}=ANY(${column})`;}if(op==='hasSome'){values.push(value);return `${column} && $${values.length}::text[]`;}if(op==='in'){values.push(value);return `${column}=ANY($${values.length}::text[])`;}values.push(value);return `${column} ${({not:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='})[op]} $${values.length}`;}).join(' AND ');}
+    values.push(v);return `${column}=$${values.length}`;
+   }).join(' AND ')||'TRUE';
+   const all=async(table,w={},orderBy)=>{const values=[],where=filter(table,w,'t',values);return(await client.query(`SELECT t.* FROM "${table}" t WHERE ${where}${orderBy?' ORDER BY '+(Array.isArray(orderBy)?orderBy:[orderBy]).flatMap(o=>Object.entries(o).filter(([k,d])=>typeof d==='string').map(([k,d])=>`"${k}" ${d==='desc'?'DESC':'ASC'}`)).join(','):''}`,values)).rows;};
+diff --git a/tests/interview-native-concurrency.test.cjs b/tests/interview-native-concurrency.test.cjs
+index f161114..0d28017 100644
+--- a/tests/interview-native-concurrency.test.cjs
++++ b/tests/interview-native-concurrency.test.cjs
+@@ -13,7 +13,7 @@ function actions(prisma,userId){
+   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
+   return mod.exports;
+  }
+- return {kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
++ return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
+ }
+ test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
+  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
+@@ -35,6 +35,11 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
+  await own.members.setMemberInterviewOffices({clubId:club.id,memberId:ownerMember.id,offices:['PRESIDENT']});
+  await own.members.setMemberInterviewOffices({clubId:club.id,memberId:leaderMember.id,offices:['BOARD']});
+  for(const member of [oneMember,twoMember])await own.members.setInterviewPanelAssignment({...scope,memberId:member.id,assigned:true});
++ const room=await prisma.interviewRoom.create({data:{clubId:club.id,roundId:round.id,name:'Native assigned room',location:'Synthetic',kind:'IN_PERSON',timezone:'UTC',duration:20,isOpen:true,panelApprovedBy:owner.id,panelMemberIds:[oneMember.id,twoMember.id],approvedPanelMemberIds:[oneMember.id,twoMember.id]}});
++ const slot=await prisma.interviewSlot.create({data:{clubId:club.id,roomId:room.id,location:room.location,startTime:new Date('2099-10-20T17:00:00Z'),endTime:new Date('2099-10-20T17:20:00Z')}});
++ await prisma.interviewBooking.create({data:{applicationId:app.id,roundId:round.id,slotId:slot.id}});
++ assert.equal((await a.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
++ assert.equal((await b.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
+  await assert.rejects(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
+  for(const user of [applicant,outsider])await assert.rejects(actions(prisma,user.id).kits.openInterviewSession(scope));
+  await assert.rejects(a.kits.openInterviewSession({...scope,clubId:randomUUID()}));
+@@ -107,7 +112,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
+  // must recheck after commit, rather than use an authorization captured beforehand.
+  let release,locked;const ready=new Promise(resolve=>locked=resolve),hold=new Promise(resolve=>release=resolve);
+  const revoke=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;locked();await hold;await tx.interviewPanelAssignment.update({where:{applicationId_roundId_memberId:{applicationId:app.id,roundId:round.id,memberId:oneMember.id}},data:{revokedAt:new Date()}});});
+- await ready;const pending=a.kits.openInterviewSession(scope);release();await revoke;await assert.rejects(pending,/panel/);
++ await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);assert.deepEqual(await pendingList,[]);
+  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
+  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
+ });
+diff --git a/tests/navigation-crossover.test.cjs b/tests/navigation-crossover.test.cjs
+index a18313c..5ccafec 100644
+--- a/tests/navigation-crossover.test.cjs
++++ b/tests/navigation-crossover.test.cjs
+@@ -14,6 +14,8 @@ test('crossover fixes balanced AB/BA pairs and a same-build control before obser
+     for (const pair of pairs) assert.equal(blocks.filter(b => b.pair === pair.pair).length, 2);
+   }
+   assert.throws(() => protocol('unbounded/arbitrary'), /match/);
++  assert.equal(protocol('0'.repeat(32), 'assigned-room-batch').filter(b => b.comparison === 'assigned-room-batch').length, 8);
++  assert.throws(() => protocol('0'.repeat(32), 'arbitrary'));
+ });
+ test('the control changes only the route wrapper and retains every server authorization statement', () => {
+   const source = fs.readFileSync('app/layout.tsx', 'utf8'), control = controlLayout(source);
+diff --git a/tests/panel-publication-database.test.cjs b/tests/panel-publication-database.test.cjs
+index 65b22b3..c428f72 100644
+--- a/tests/panel-publication-database.test.cjs
++++ b/tests/panel-publication-database.test.cjs
+@@ -71,6 +71,17 @@ test('published session access survives legacy room-attestation edits but actual
+  assert.equal(await h.load('utils/official-panel-schedule.ts').currentPanelScheduleNotification(h.prisma,notice,h.ids.panel),null)
+ })
+ 
++test('assigned-room bulk reads use published slot authority and live grants after legacy approvals change',async t=>{
++ const h=await fixture(t);await h.generate();ok(await h.confirm(ok(await h.review())));
++ const grant=(await h.snapshot()).InterviewPanelAssignment.find(g=>!g.revokedAt),member=await h.prisma.clubMember.findUnique({where:{id:grant.memberId}});h.as(member.userId);
++ const entries=h.load('actions/interview-entry.ts'),read=()=>entries.getAssignedInterviewRooms(h.ids.club);
++ assert.ok((await read()).some(row=>row.applicationId===h.ids.app&&row.canOpen));
++ await h.db.query('UPDATE "InterviewRoom" SET "approvedPanelMemberIds"=\'{}\',"panelApprovedBy"=NULL WHERE id=$1',[h.roomIds[0]]);
++ assert.ok((await read()).some(row=>row.applicationId===h.ids.app&&row.canOpen));
++ await h.db.query('UPDATE "InterviewPanelAssignment" SET "revokedAt"=now() WHERE id=$1',[grant.id]);
++ assert.ok(!(await read()).some(row=>row.applicationId===h.ids.app));
++})
++
+ test('availability rechecks preserve assignments and never waive concurrent confirmation/publication guards',async t=>{
+  const h=await fixture(t);let draft=(await h.generate()).proposal;const assignments=structuredClone(draft.document.assignments),official=await h.snapshot();
+  ok(await h.publish.revalidatePanelDraft(h.input(draft)));draft=(await h.api.getPanelProposalWorkspace(h.scope)).proposal;assert.equal(draft.stale,false);assert.deepEqual(draft.document.assignments,assignments);assert.deepEqual(await h.snapshot(),official);
+diff --git a/utils/interview-collaboration.ts b/utils/interview-collaboration.ts
+index df1f775..80d9c62 100644
+--- a/utils/interview-collaboration.ts
++++ b/utils/interview-collaboration.ts
+@@ -5,16 +5,37 @@ import { kitSchema } from "@/lib/interview-kits";
+ import type { Prisma } from "@prisma/client";
+ 
+ type PanelBooking = Prisma.InterviewBookingGetPayload<{ include: { slot: { include: { room: true; panelScheduleVersion: true } } } }>;
+-/** Reuse the official scheduling authority: published slot panels supersede
+- * legacy room attestations, while the approving owner must still be active. */
+-export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
++function bookingPanelApproval(scope: InterviewScope, booking: PanelBooking) {
+   const { slot } = booking, room = slot.room;
+   if (!room || !room.isOpen || booking.applicationId !== scope.applicationId || booking.roundId !== scope.roundId || room.clubId !== scope.clubId || room.roundId !== scope.roundId) return null;
+   const version = slot.panelScheduleVersion;
+   if (slot.panelScheduleVersionId && (!version || version.id !== slot.panelScheduleVersionId || version.clubId !== scope.clubId || version.roundId !== scope.roundId)) return null;
+   const approvedBy = slot.panelScheduleVersionId ? version!.publishedBy : room.panelApprovedBy;
+-  if (!approvedBy || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
+-  return slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id));
++  return approvedBy ? { approvedBy, panel: slot.panelScheduleVersionId ? slot.publishedPanelMemberIds : room.approvedPanelMemberIds.filter(id => room.panelMemberIds.includes(id)) } : null;
++}
++/** Reuse the official scheduling authority: published slot panels supersede
++ * legacy room attestations, while the approving owner must still be active. */
++export async function approvedBookingPanel(tx: AppTransactionClient, scope: InterviewScope, booking: PanelBooking): Promise<string[] | null> {
++  const approval = bookingPanelApproval(scope, booking);
++  if (!approval || !await tx.clubMember.findFirst({ where: { clubId: scope.clubId, userId: approval.approvedBy, isOwner: true, status: "ACTIVE", user: { disabledAt: null } } })) return null;
++  return approval.panel;
++}
++
++/** Transaction-local bulk projection. Never retains successful approval across requests. */
++export async function approvedBookingPanels(tx: AppTransactionClient, entries: { scope: InterviewScope; booking: PanelBooking }[]) {
++  const panels = new Map<string, string[]>();
++  for (let offset = 0; offset < entries.length; offset += 128) {
++    const approvals = entries.slice(offset, offset + 128).flatMap(({ scope, booking }) => {
++      const approval = bookingPanelApproval(scope, booking);
++      return approval ? [{ ...approval, clubId: scope.clubId, bookingId: booking.id }] : [];
++    });
++    if (!approvals.length) continue;
++    const ownerScopes = new Map(approvals.map(a => [`${a.clubId}:${a.approvedBy}`, { clubId: a.clubId, userId: a.approvedBy }]));
++    const owners = await tx.clubMember.findMany({ where: { isOwner: true, status: "ACTIVE", user: { disabledAt: null }, OR: [...ownerScopes.values()] }, select: { clubId: true, userId: true } });
++    const active = new Set(owners.map(owner => `${owner.clubId}:${owner.userId}`));
++    for (const approval of approvals) if (active.has(`${approval.clubId}:${approval.approvedBy}`)) panels.set(approval.bookingId, approval.panel);
++  }
++  return panels;
+ }
+ 
+ export function collaborationScope(session: { clubId: string; applicationId: string; roundId: string }): InterviewScope {
+diff --git a/scripts/assigned-room-query-audit.cjs b/scripts/assigned-room-query-audit.cjs
+new file mode 100644
+index 0000000..958a841
+--- /dev/null
++++ b/scripts/assigned-room-query-audit.cjs
+@@ -0,0 +1,63 @@
++// Real local Auth/session/Prisma reads outside Next. Never exports SQL, parameters or rows.
++const fs = require('node:fs'), path = require('node:path'), assert = require('node:assert/strict');
++const ts = require('typescript'), { createHash } = require('node:crypto'), { performance } = require('node:perf_hooks');
++const { PrismaClient } = require('@prisma/client');
++const { Actor } = require('../tests/helpers/onboarding-e2e.cjs');
++const { fixtureProfile } = require('./navigation-fixture-config.cjs');
++const { distribution } = require('./navigation-audit.cjs');
++
++async function assignedRoomQueryAudit(buildRoots, outputDirectory) {
++  const profile = fixtureProfile('crossover'), config = profile.readConfig(path.join(profile.root, 'config.json'));
++  for (const [variant, root] of Object.entries(buildRoots)) assert.equal(root, path.join(profile.root, variant === 'A' ? 'build-a' : 'build-b'));
++  const fixture = JSON.parse(fs.readFileSync(path.join(profile.root, 'active-interview-fixture.json')));
++  const pool = new URL(config.status.DB_URL); pool.searchParams.set('connection_limit', '8');
++  Object.assign(process.env, { DATABASE_URL: pool.href, POSTGRES_PRISMA_URL: pool.href, NEXT_PUBLIC_SUPABASE_URL: config.status.API_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: config.status.PUBLISHABLE_KEY, SUPABASE_SECRET_KEY: '', SUPABASE_SERVICE_ROLE_KEY: '', COMMUNICATIONS_EMAIL_ENABLED: 'false', RESEND_API_KEY: '', SMTP_HOST: '' });
++  const actor = new Actor(config); await actor.signIn(fixture.credentials[0].email, fixture.credentials[0].password);
++  const jar = { getAll: () => [...actor.cookies].map(([name, value]) => ({ name, value })), get: name => actor.cookies.has(name) ? { value: actor.cookies.get(name) } : undefined, has: name => actor.cookies.has(name), set: (name, value) => actor.cookies.set(name, value) };
++  const originalFetch = global.fetch, results = []; let queries = [], auth = [], expectedDigest;
++  global.fetch = async (input, init) => {
++    const url = new URL(typeof input === 'string' ? input : input.url || String(input)); assert.equal(url.origin, config.status.API_URL);
++    const start = performance.now(), response = await originalFetch(input, init);
++    if (url.pathname.startsWith('/auth/')) auth.push({ path: url.pathname, durationMs: performance.now() - start, status: response.status });
++    return response;
++  };
++  try {
++    for (const variant of ['B', 'A']) {
++      const db = new PrismaClient({ datasourceUrl: pool.href, log: [{ emit: 'event', level: 'query' }] });
++      db.$on('query', event => queries.push({ operation: event.query.trim().split(/\s+/)[0], table: event.query.match(/(?:FROM|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1] || null, durationMs: event.duration }));
++      const cache = {}, mocks = { '@/utils/prisma': { prisma: db }, '@/utils/platform-view-as': { platformViewSession: async () => null }, 'next/headers': { cookies: async () => jar }, 'next/cache': { revalidatePath() {}, revalidateTag() {}, unstable_cache: fn => fn }, 'next/navigation': { redirect() { throw Error('Fixture authorization denied'); } }, 'next/server': { after() { throw Error('Read unexpectedly scheduled a write'); } } };
++      function load(file) {
++        file = path.resolve(file);
++        // requireAuth uses ./prisma; the action uses @/utils/prisma. Observe both
++        // through the same real client, including live-session and account reads.
++        if (file === path.join(buildRoots[variant], 'utils/prisma.ts')) return mocks['@/utils/prisma'];
++        if (cache[file]) return cache[file].exports;
++        const mod = { exports: {} }; cache[file] = mod;
++        const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
++        new Function('require', 'module', 'exports', code)(name => {
++          if (Object.hasOwn(mocks, name)) return mocks[name]; if (name === 'server-only') return {};
++          if (name.startsWith('@/') || name.startsWith('.')) {
++            const target = name.startsWith('@/') ? path.join(buildRoots[variant], name.slice(2)) : path.resolve(path.dirname(file), name);
++            for (const suffix of ['', '.ts', '.tsx', '/index.ts']) if (fs.existsSync(target + suffix) && fs.statSync(target + suffix).isFile()) return load(target + suffix);
++            throw Error('Missing local loader dependency');
++          }
++          return require(name);
++        }, mod, mod.exports); return mod.exports;
++      }
++      try {
++        const api = load(path.join(buildRoots[variant], 'actions/interview-entry.ts')), samples = [];
++        for (let i = 0; i < 22; i++) {
++          queries = []; auth = []; const start = performance.now(), value = await api.getAssignedInterviewRooms(fixture.clubId), elapsedMs = performance.now() - start;
++          assert.equal(value.length, 24); assert.ok(value.every(row => row.canOpen));
++          assert.ok(queries.every(q => ['SELECT', 'BEGIN', 'COMMIT'].includes(q.operation)), 'Loader must remain read-only');
++          assert.equal(auth.filter(a => a.path.endsWith('/user') && a.status === 200).length, 1, 'Each read must remotely verify identity');
++          const digest = createHash('sha256').update(JSON.stringify(value)).digest('hex'); expectedDigest ||= digest; assert.equal(digest, expectedDigest, 'Before and after must return identical room projections');
++          if (i >= 2) samples.push({ elapsedMs, queries: [...queries], auth: [...auth], jsonBytes: Buffer.byteLength(JSON.stringify(value)), projectionSha256: digest });
++        }
++        results.push({ variant, samples, elapsedMs: distribution(samples.map(s => s.elapsedMs)), queryCount: distribution(samples.map(s => s.queries.length)), jsonBytes: distribution(samples.map(s => s.jsonBytes)) });
++      } finally { await db.$disconnect(); }
++    }
++  } finally { global.fetch = originalFetch; }
++  fs.writeFileSync(path.join(outputDirectory, 'QUERY_AUDIT.json'), JSON.stringify({ realLocalAuthAndSessionChecks: true, includesRelativeAuthPrismaImports: true, identicalProjection: true, limitations: ['Outside Next HTTP; cookie context and absent support-session context adapted.', 'Two warmups and twenty measured calls per build; B then A is query-count evidence, not an independent latency study.', 'Only SQL operation/table/duration is retained; no SQL, parameters, credentials or protected payloads.'], results }, null, 2) + '\n');
++}
++module.exports = { assignedRoomQueryAudit };
+diff --git a/tests/interview-entry-batch.test.cjs b/tests/interview-entry-batch.test.cjs
+new file mode 100644
+index 0000000..53da80d
+--- /dev/null
++++ b/tests/interview-entry-batch.test.cjs
+@@ -0,0 +1,86 @@
++const { test } = require('node:test'), assert = require('node:assert/strict');
++const { harness, id } = require('./helpers/interview-harness.cjs');
++
++function fixture(count = 24) {
++  const h = harness(), reads = [], member = h.members[0];
++  for (const m of h.members) { m.club = { name: 'Synthetic', suspendedAt: null }; m.user.studentProfile = { firstName: 'Reviewer', lastName: m.id }; }
++  const room = { id: id(6), clubId: h.scope.clubId, roundId: h.round.id, round: h.round, name: 'Room', location: 'Room', timezone: 'UTC', isOpen: true, panelApprovedBy: member.userId, panelMemberIds: h.members.map(m => m.id), approvedPanelMemberIds: h.members.map(m => m.id) };
++  const slots = Array.from({ length: count }, (_, n) => {
++    const app = { ...h.app, id: id(1000 + n), student: { studentProfile: { firstName: 'Candidate', lastName: String(n) } } };
++    return { id: id(2000 + n), clubId: room.clubId, roomId: room.id, room, panelScheduleVersionId: null, panelScheduleVersion: null, startTime: new Date(1800000000000 + n * 1800000), endTime: new Date(1800001200000 + n * 1800000), bookings: [{ id: id(3000 + n), applicationId: app.id, roundId: h.round.id, application: app }] };
++  });
++  h.assignments.splice(0, h.assignments.length, ...slots.map(s => ({ applicationId: s.bookings[0].applicationId, roundId: h.round.id, memberId: member.id, revokedAt: null })));
++  const matches = (value, where) => Object.entries(where).every(([key, expected]) => {
++    if (key === 'OR') return expected.some(w => matches(value, w));
++    if (expected && typeof expected === 'object') { if ('in' in expected) return expected.in.includes(value[key]); if ('not' in expected) return value[key] !== expected.not; return matches(value[key] || {}, expected); }
++    return value[key] === expected;
++  });
++  h.tx.interviewSlot = { findMany: async ({ where }) => where.room.isOpen ? slots.filter(s => s.room.isOpen) : slots };
++  h.tx.clubMember.findMany = async ({ where }) => h.members.filter(m => matches(m, where));
++  h.tx.interviewPanelAssignment.findMany = async ({ where }) => h.assignments.filter(a => matches({ ...a, application: { clubId: h.scope.clubId } }, where));
++  h.tx.interviewRecord.findMany = async ({ where }) => h.state.records.filter(r => matches({ ...r, application: { clubId: h.scope.clubId } }, where));
++  for (const model of ['clubMember', 'interviewPanelAssignment', 'interviewRecord']) for (const method of ['findMany', 'findUnique', 'findFirst']) {
++    if (!h.tx[model][method]) continue;
++    const original = h.tx[model][method]; h.tx[model][method] = async args => { reads.push({ model, method, args }); return original(args); };
++  }
++  return { ...h, slots, room, reads, read: () => h.load('actions/interview-entry.ts').getAssignedInterviewRooms(h.scope.clubId) };
++}
++test('assigned room database reads grow by bounded batches, with exact grant/record scopes and no private drafts', async () => {
++  for (const count of [1, 24, 129]) {
++    const h = fixture(count), rows = await h.read(); assert.equal(rows.length, count); assert.ok(rows.every(r => r.canOpen && r.interviewers.length === 2));
++    const grants = h.reads.filter(r => r.model === 'interviewPanelAssignment');
++    assert.equal(grants.length, Math.ceil(count / 128));
++    for (const query of grants) { assert.equal(query.method, 'findMany'); assert.equal(query.args.where.memberId, h.members[0].id); assert.equal(query.args.where.revokedAt, null); assert.deepEqual(query.args.where.application, { clubId: h.scope.clubId }); assert.ok(query.args.where.OR.length <= 128); }
++    const records = h.reads.filter(r => r.model === 'interviewRecord'); assert.equal(records.length, 1 + Math.ceil(count / 128));
++    assert.ok(records.every(r => r.method === 'findMany')); assert.ok(records.every(r => !r.args.select.draft && !r.args.select.questions));
++    assert.equal(h.reads.filter(r => r.model === 'clubMember').length, 3 + 2 * Math.ceil(count / 128));
++  }
++});
++test('mixed privacy, retained completion, round changes, own applications, cancellation and empty slots preserve projections', async () => {
++  const h = fixture(8), bookings = h.slots.map(s => s.bookings[0]), member = h.members[0];
++  const record = n => ({ id: id(4000 + n), interviewerId: member.id, applicationId: bookings[n].applicationId, roundId: h.round.id, completedAt: new Date(), anonymousReview: false });
++  h.state.records.push(record(1), { ...record(2), completedAt: null }, { ...record(3), anonymousReview: true });
++  h.slots[0].room = { ...h.room, round: { ...h.round, anonymousReview: true } };
++  bookings[1].application = { ...bookings[1].application, roundId: id(90) };
++  bookings[2].application = { ...bookings[2].application, roundId: id(90) };
++  bookings[4].application.studentId = member.userId;
++  bookings[5].application.status = 'DRAFTING';
++  h.slots[6].room = { ...h.room, isOpen: false };
++  h.slots[7].bookings = [];
++  const rows = await h.read(), byId = new Map(rows.map(r => [r.id, r]));
++  for (const n of [0, 3]) { const row = byId.get(bookings[n].id); assert.equal(row.applicationId, n === 3 ? bookings[n].applicationId : null); assert.notEqual(row.candidate, 'Candidate ' + n); assert.deepEqual(row.interviewers, []); }
++  assert.equal(byId.get(bookings[3].id).reviewId, id(4003)); // owner closing-review authority
++  assert.equal(byId.get(bookings[1].id).canOpen, true); assert.equal(byId.get(bookings[1].id).completed, true);
++  assert.equal(byId.get(bookings[2].id).canOpen, false); assert.equal(byId.get(bookings[2].id).started, true); assert.deepEqual(byId.get(bookings[2].id).interviewers, []);
++  assert.ok(!byId.has(bookings[4].id) && !byId.has(bookings[5].id));
++  assert.equal(byId.get(h.slots[6].id).cancelled, true); assert.equal(byId.get(h.slots[6].id).candidate, null);
++  assert.equal(byId.get(h.slots[7].id).bookingId, null);
++});
++test('every later request rechecks grants, owner status, account status and panel-specific enabled colleagues', async () => {
++  const h = fixture(2); h.slots[1].room = { ...h.room, panelMemberIds: [h.members[0].id, h.members[2].id], approvedPanelMemberIds: [h.members[0].id, h.members[2].id] };
++  assert.deepEqual((await h.read()).map(r => r.interviewers.length), [2, 1]);
++  h.members[1].user.disabledAt = new Date(); assert.deepEqual((await h.read()).map(r => r.interviewers.length), [1, 1]);
++  h.assignments[0].revokedAt = new Date(); assert.equal((await h.read()).length, 1);
++  h.members[0].isOwner = false; assert.deepEqual(await h.read(), []);
++  h.members[0].isOwner = true; h.members[0].user.disabledAt = new Date(); await assert.rejects(h.read(), /unavailable/);
++});
++test('anonymous completed records require live closing-review authority and never disclose colleague names', async () => {
++  const h = fixture(2), member = h.members[1]; h.as(11);
++  for (const grant of h.assignments) grant.memberId = member.id;
++  h.state.records.push({ id: id(4000), interviewerId: member.id, applicationId: h.slots[0].bookings[0].applicationId, roundId: h.round.id, completedAt: new Date(), anonymousReview: true });
++  const rows = await h.read(), anonymous = rows.find(r => r.id === h.slots[0].bookings[0].id);
++  assert.equal(anonymous.canOpen, false); assert.equal(anonymous.applicationId, null); assert.equal(anonymous.reviewId, undefined); assert.deepEqual(anonymous.interviewers, []); assert.notEqual(anonymous.candidate, 'Candidate 0');
++  assert.equal(rows.find(r => r.id === h.slots[1].bookings[0].id).canOpen, true);
++});
++test('bulk published approval matches single-booking authority and never falls back to legacy approval', async () => {
++  const h = fixture(1), { approvedBookingPanel, approvedBookingPanels } = h.load('utils/interview-collaboration.ts');
++  const slot = h.slots[0], booking = slot.bookings[0], scope = { ...h.scope, applicationId: booking.applicationId };
++  slot.panelScheduleVersionId = id(70); slot.publishedPanelMemberIds = [h.members[0].id];
++  slot.panelScheduleVersion = { id: id(70), clubId: scope.clubId, roundId: scope.roundId, publishedBy: h.members[0].userId };
++  h.tx.clubMember.findFirst = async ({ where }) => h.members.find(m => m.clubId === where.clubId && m.userId === where.userId && m.isOwner && m.status === 'ACTIVE' && !m.user.disabledAt);
++  const compare = async () => { const payload = { ...booking, slot }, single = await approvedBookingPanel(h.tx, scope, payload), bulk = (await approvedBookingPanels(h.tx, [{ scope, booking: payload }])).get(booking.id) || null; assert.deepEqual(bulk, single); return single; };
++  assert.deepEqual(await compare(), [h.members[0].id]);
++  for (const change of [{ id: id(71) }, { clubId: id(71) }, { roundId: id(71) }, { publishedBy: h.members[1].userId }]) { const original = slot.panelScheduleVersion; slot.panelScheduleVersion = { ...original, ...change }; assert.equal(await compare(), null); slot.panelScheduleVersion = original; }
++  slot.panelScheduleVersion = null; assert.equal(await compare(), null);
++  slot.panelScheduleVersionId = null; assert.equal((await compare()).length, 3);
++});

@@ -24,8 +24,13 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
   return prisma.clubInvitation.create({data:{clubId,schoolId:'school-uva',schoolIdentityId:identity.id,email:person.email,invitedBy:platform,authoritySource:'PLATFORM_ADMIN',requestedRole:role,purpose:role==='OWNER'?'OWNER_DESIGNATION':'MEMBERSHIP',permissions:[],expiresAt:new Date(Date.now()+86400000)}});
  }
  const ownerInvite=await invitation(account,club.id);
+ // Retrying the same invitation is idempotent, including concurrent retries.
  const accepted=await Promise.allSettled([api.acceptIdentityClubInvitation(ownerInvite.id),api.acceptIdentityClubInvitation(ownerInvite.id)]);
- assert.equal(accepted.filter(x=>x.status==='fulfilled').length,1);assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id}}),1);
+ assert.deepEqual(accepted,[{status:'fulfilled',value:{clubId:club.id}},{status:'fulfilled',value:{clubId:club.id}}]);
+ const acceptedInvitation=await prisma.clubInvitation.findUniqueOrThrow({where:{id:ownerInvite.id}});
+ assert.equal(acceptedInvitation.status,'ACCEPTED');assert.equal(acceptedInvitation.claimedUserId,account.id);assert.ok(acceptedInvitation.acceptedAt);
+ assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id,isOwner:true,status:'ACTIVE'}}),1);
+ assert.equal(await prisma.auditLog.count({where:{clubId:club.id,targetId:ownerInvite.id,actorId:account.id,action:'club.invite.accept'}}),1);
  const outsider=await createUser('outsider');const ownAccount=account;account=outsider;
  await assert.rejects(api.acceptIdentityClubInvitation(ownerInvite.id));await assert.rejects(roster.previewRosterImport({clubId:club.id,requestId:randomUUID(),filename:'roster.csv',csv:'name,computing_id\nJohn,jms8xy'}),/Denied/);account=ownAccount;
  // Different owner invitations, same unclaimed organization: only one platform claim succeeds.
@@ -34,7 +39,11 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  const helper=load('utils/club-onboarding.ts');
  const makeAccount=p=>({user:p,supabaseUser:{id:p.id,email:p.email,confirmation_sent_at: '2026-09-01', email_confirmed_at:'2026-10-02'}});
  const claims=await Promise.allSettled([prisma.$transaction(tx=>helper.acceptIdentityInvitationInTransaction(tx,one.id,makeAccount(account))),prisma.$transaction(tx=>helper.acceptIdentityInvitationInTransaction(tx,two.id,makeAccount(outsider)))]);
- assert.equal(claims.filter(x=>x.status==='fulfilled').length,1);assert.equal(await prisma.clubMember.count({where:{clubId:unclaimed.id,isOwner:true}}),1);
+ assert.deepEqual(claims.filter(x=>x.status==='fulfilled'),[{status:'fulfilled',value:{clubId:unclaimed.id}}]);
+ const deniedClaim=claims.filter(x=>x.status==='rejected');assert.equal(deniedClaim.length,1);assert.match(deniedClaim[0].reason.message,/already has an owner/);
+ assert.equal(await prisma.clubMember.count({where:{clubId:unclaimed.id,isOwner:true}}),1);
+ assert.equal(await prisma.clubInvitation.count({where:{clubId:unclaimed.id,status:'ACCEPTED'}}),1);
+ assert.equal(await prisma.auditLog.count({where:{clubId:unclaimed.id,action:'club.invite.accept'}}),1);
  // Direct server action invocation cannot mass-assign recipient, grant, or state.
  const forgedBase={clubId:club.id,identifierTypeId:'school-uva-computing-id',identifier:'victimabc',requestedRole:'MEMBER'};
  for(const extra of [{userId:outsider.id},{organizationId:unclaimed.id},{status:'ACCEPTED'},{permissions:['leaders.manage']}])await assert.rejects(api.createClubIdentityInvitation({...forgedBase,...extra}));
@@ -53,8 +62,21 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  assert.equal(await prisma.clubInvitation.count({where:{clubId:club.id,status:'PENDING',requestedRole:'MEMBER'}}),50);
  const createdImport=previews[imports.findIndex(x=>x.created===50)];
  const batches=await Promise.all([mail.sendRosterInvitations(createdImport.id),mail.sendRosterInvitations(createdImport.id)]);assert.equal(batches.reduce((n,x)=>n+x.queued,0),50);
- await Promise.all([mail.deliverOrganizationInvitations(club.id),mail.deliverOrganizationInvitations(club.id)]);
- assert.ok(smtp.length>0);assert.equal(new Set(smtp.map(x=>x.deliveryId)).size,smtp.length);
+ const emailEnabled=process.env.COMMUNICATIONS_EMAIL_ENABLED;
+ try {
+  process.env.COMMUNICATIONS_EMAIL_ENABLED='false';
+  assert.deepEqual(await mail.deliverOrganizationInvitations(club.id),{sent:0,failed:0,cancelled:0,uncertain:0,remaining:50,paused:true});
+  assert.equal(smtp.length,0);assert.equal(await prisma.invitationDelivery.count({where:{invitation:{clubId:club.id},status:'QUEUED',attemptCount:0}}),50);
+  // Only the in-memory sender above is enabled; no real SMTP module is loaded.
+  process.env.COMMUNICATIONS_EMAIL_ENABLED='true';
+  const deliveries=await Promise.all([mail.deliverOrganizationInvitations(club.id),mail.deliverOrganizationInvitations(club.id)]);
+  assert.ok(smtp.length>0);assert.equal(deliveries.reduce((n,x)=>n+x.sent,0),smtp.length);
+  assert.equal(deliveries.reduce((n,x)=>n+x.failed+x.cancelled+x.uncertain,0),0);
+  assert.equal(new Set(smtp.map(x=>x.deliveryId)).size,smtp.length);
+  assert.equal(await prisma.invitationDelivery.count({where:{invitation:{clubId:club.id},status:'SENT',attemptCount:1}}),smtp.length);
+ } finally {
+  if(emailEnabled===undefined)delete process.env.COMMUNICATIONS_EMAIL_ENABLED;else process.env.COMMUNICATIONS_EMAIL_ENABLED=emailEnabled;
+ }
  // A legacy invitation cannot restore a removed member's retained access/history.
  const member=await createUser('removed');await prisma.clubMember.create({data:{userId:member.id,clubId:club.id,status:'LEFT'}});
  const legacy=await prisma.clubInvitation.create({data:{clubId:club.id,email:member.email,invitedBy:account.id,permissions:[],expiresAt:new Date(Date.now()+86400000)}});

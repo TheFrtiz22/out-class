@@ -1,8 +1,12 @@
 "use client"
+import { workspaceReadQueue } from "@/lib/workspace-read-queue"
+import type * as communications from "@/actions/communications"
 import { decodeWorkspaceData, type WorkspaceWire } from "@/lib/workspace-wire"
 import type * as members from "@/actions/organization-members"
 import type * as onboarding from "@/actions/club-onboarding"
 import type * as settings from "@/actions/club-settings"
+
+const dispatch = workspaceReadQueue(3, 24)
 
 export async function readWorkspace<T>(kind: string, args: unknown[] = []): Promise<T> {
   const query = new URLSearchParams({ kind, args: JSON.stringify(args) })
@@ -10,7 +14,7 @@ export async function readWorkspace<T>(kind: string, args: unknown[] = []): Prom
   // Reads are safe to retry explicitly; never leave a disconnected view pending indefinitely.
   const deadline = setTimeout(() => controller.abort(), 30_000)
   try {
-    const response = await fetch(`/api/workspace?${query}`, { cache: "no-store", credentials: "same-origin", signal: controller.signal })
+    const response = await dispatch(() => fetch(`/api/workspace?${query}`, { cache: "no-store", credentials: "same-origin", signal: controller.signal }), controller.signal)
     if (!response.ok) {
       if (kind === "invitations") {
         const body = await response.json().catch(() => null) as { error?: string } | null
@@ -31,3 +35,6 @@ export const getOrganizationMemberManagement = (clubId: string) => readWorkspace
 export const getOrganizationInvitations = (includeDismissed = false) => readWorkspace<Awaited<ReturnType<typeof onboarding.getOrganizationInvitations>>>("invitations", [includeDismissed])
 export const getApplicationSettings = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof settings.getApplicationSettings>>>("applicationSettings", [clubId])
 export const getPipelineSettings = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof settings.getPipelineSettings>>>("pipelineSettings", [clubId])
+
+export const getClubAnnouncements = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof communications.getClubAnnouncements>>>("announcements", [clubId])
+export const getDurableNotifications = (cursor?: string) => readWorkspace<Awaited<ReturnType<typeof communications.getDurableNotifications>>>("notifications", [cursor])

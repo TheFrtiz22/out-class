@@ -1,0 +1,1420 @@
+diff --git a/app/api/workspace/route.ts b/app/api/workspace/route.ts
+index 5fc07a5..16bf94f 100644
+--- a/app/api/workspace/route.ts
++++ b/app/api/workspace/route.ts
+@@ -1,3 +1,5 @@
++import { workspaceJsonResponse } from "@/lib/workspace-response"
++import { serverPhase, traceWorkspaceRequest } from "@/lib/server-phase-trace"
+ import { UniversityVerificationError } from "@/utils/verified-email-policy"
+ import { getVotingWorkspace, getVotingJoinInfo } from "@/actions/voting"
+ import { genderValues } from "@/lib/student-profile"
+@@ -29,6 +31,7 @@ const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1
+ // An explicit read allowlist. Each private loader still runs its original live
+ // authentication/authorization; no client identity or arbitrary action dispatch.
+ export async function GET(request: Request) {
++  return traceWorkspaceRequest(async () => {
+   try {
+     // Invitation discovery can bind a verified school identity. Keep all live
+     // readers disabled in demo even when middleware is bypassed or a stale
+@@ -43,6 +46,15 @@ export async function GET(request: Request) {
+       case "availabilityOverview": data = await (await import("@/actions/availability")).getAvailabilityOverview(z.tuple([z.unknown()]).parse(args)[0]); break
+       case "staffingCoverage": data = await (await import("@/actions/availability")).getRoundStaffingCoverage(z.tuple([z.unknown()]).parse(args)[0]); break
+       case "panelWorkspace": data = await (await import("@/actions/panel-proposals")).getPanelProposalWorkspace(z.tuple([z.unknown()]).parse(args)[0]); break
++      case "assignedRooms": data = await (await import("@/actions/interview-entry")).getAssignedInterviewRooms(...clubArgs.parse(args)); break
++      case "interviewWorkspace": data = await (await import("@/actions/interview-kits")).getInterviewWorkspace(...clubArgs.parse(args)); break
++      case "interviewRounds": data = await (await import("@/actions/interview-kits")).getInterviewRounds(...clubArgs.parse(args)); break
++      case "roomWorkspace": data = await (await import("@/actions/interview-rooms")).getRoomWorkspace(...clubArgs.parse(args)); break
++      case "bookingPublication": data = await (await import("@/actions/interview-booking-publication")).getInterviewBookingPublication(...z.tuple([z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }).strict()]).parse(args)); break
++      case "tasks": data = await (await import("@/actions/tasks")).getTaskWorkspace(...clubArgs.parse(args)); break
++      case "meetings": data = await (await import("@/actions/meetings")).listMeetings(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
++      case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
++      case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
+       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
+       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
+       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
+@@ -62,11 +74,12 @@ export async function GET(request: Request) {
+       case "attendance": data = await recruitmentAttendanceSummary(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
+       default: return Response.json({ error: "Unknown workspace read" }, { status: 400, headers })
+     }
+-    return Response.json(encodeWorkspaceData(data), { headers })
++    return await serverPhase("serialization", () => workspaceJsonResponse(encodeWorkspaceData(data), request, headers))
+   } catch (error) {
+     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
+     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
+     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
+     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
+   }
++  })
+ }
+diff --git a/components/club-announcements.tsx b/components/club-announcements.tsx
+index b091880..1040e2e 100644
+--- a/components/club-announcements.tsx
++++ b/components/club-announcements.tsx
+@@ -12,7 +12,8 @@ import { Input } from "@/components/ui/input";
+ import { Textarea } from "@/components/ui/textarea";
+ import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
+-import { getClubAnnouncements, publishClubAnnouncement } from "@/actions/communications";
++import { publishClubAnnouncement } from "@/actions/communications";
++import { getClubAnnouncements } from "@/lib/workspace-read";
+ import { RecipientGroups, AudienceEditor, AudiencePreview } from "@/components/recipient-audiences";
+ import { getRecipientGroups, previewRecipientAudience } from "@/actions/recipient-groups";
+ import { recipientAudienceSchema } from "@/lib/recipient-audience";
+diff --git a/components/club-workspace.tsx b/components/club-workspace.tsx
+index b0d0a13..5cc56a8 100644
+--- a/components/club-workspace.tsx
++++ b/components/club-workspace.tsx
+@@ -244,7 +244,6 @@ function RecruitmentWorkspace({
+   // Scheduling owns round/week navigation; resetting its parent during a round
+   // change discards that state before the next interaction. Other tools keep
+   // their existing round-scoped editor reset behavior.
+-  const interviewScope = interviewTab === "schedule" || interviewTab === "availability" ? "" : interviewRoundId ?? "";
+   const tools = recruitmentTools(member),
+     [tool, setTool] = useState(initialTool ?? tools[0]?.id ?? "applicants");
+   const active = tools.find((t) => t.id === tool)?.id ?? tools[0]?.id;
+@@ -281,7 +280,7 @@ function RecruitmentWorkspace({
+       </div>
+       {active === "applicants" && <LiveLeaderWorkspace scoped />}
+       {active === "rounds" && <RoundSettings clubId={clubId} />}
+-      {active === "kits" && <InterviewManagementTabs key={`${clubId}:${interviewTab}:${interviewScope}`} clubId={clubId} initialTab={interviewTab} initialRoundId={interviewRoundId} />}
++      {active === "kits" && <InterviewManagementTabs key={clubId} clubId={clubId} initialTab={interviewTab} initialRoundId={interviewRoundId} />}
+     </div>
+   );
+ }
+diff --git a/components/interview-management-tabs.tsx b/components/interview-management-tabs.tsx
+index 062e9b1..b20ffce 100644
+--- a/components/interview-management-tabs.tsx
++++ b/components/interview-management-tabs.tsx
+@@ -1,7 +1,8 @@
+ "use client"
+ 
++import { InterviewReadScope } from "@/components/interviews/interview-read-scope"
+ import Link from "next/link"
+-import { useState } from "react"
++import { useEffect, useRef, useState } from "react"
+ import { useAuth } from "@/contexts/auth-context"
+ import { hasPermission } from "@/lib/permissions"
+ import { CalendarDays, ListChecks } from "@/components/icons"
+@@ -25,10 +26,18 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
+   const canOpenOperations = canSchedule || hasPermission(member, "applications.review") || capabilities.editKit
+   const allowedTabs = [...(canEnter && !settingsOnly ? ["rooms"] : []), "kits", ...(canSchedule && !settingsOnly ? ["schedule"] : []), ...(canManageGrants ? ["access"] : [])]
+   const requested = initialTab === "availability" ? "schedule" : initialTab
+-  const [tab, setTab] = useState(requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits")
+-  return <div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
+-    if (value !== tab && canLeaveWorkspace()) {
++  const nextTab = requested && allowedTabs.includes(requested) ? requested : canEnter && !settingsOnly ? "rooms" : canSchedule && !settingsOnly ? "schedule" : "kits"
++  const [tab, setTab] = useState(nextTab)
++  const scheduler = useRef<HTMLDivElement>(null)
++  const [scheduleVisited, setScheduleVisited] = useState(tab === "schedule")
++  useEffect(() => {
++    setTab(nextTab)
++    if (nextTab === "schedule") setScheduleVisited(true)
++  }, [nextTab])
++  return <InterviewReadScope clubId={clubId}><div className="space-y-3">{settingsOnly && canOpenOperations && <Link href={interviewSetupHref(clubId, initialRoundId, "schedule")} className="inline-flex min-h-11 items-center text-sm underline" onClick={event => { if (!canLeaveWorkspace()) event.preventDefault() }}>Open Interview Scheduling</Link>}{!canSchedule && <Link href={`/settings/availability?clubId=${encodeURIComponent(clubId)}`} className="inline-flex min-h-11 items-center text-sm underline">Set My Availability</Link>}<Tabs className="oc-interview-management" value={allowedTabs.includes(tab) ? tab : "kits"} onValueChange={value => {
++    if (value !== tab && canLeaveWorkspace(scheduler.current)) {
+       setTab(value)
++      if (value === "schedule") setScheduleVisited(true)
+       if (window.location && window.history) {
+         const url = new URL(window.location.href); url.searchParams.set("interviewTab", value)
+         window.history.replaceState(null, "", url.pathname + url.search)
+@@ -37,8 +46,8 @@ export function InterviewManagementTabs({ clubId, initialTab, initialRoundId, se
+   }} activationMode="manual">
+     <TabsList aria-label="Interview management">{canEnter && !settingsOnly && <TabsTrigger value="rooms">Interview rooms</TabsTrigger>}<TabsTrigger value="kits"><ListChecks aria-hidden="true" />Interview master kit</TabsTrigger>{canSchedule && !settingsOnly && <><TabsTrigger value="schedule"><CalendarDays aria-hidden="true" />Scheduling</TabsTrigger></>}{canManageGrants && <TabsTrigger value="access">Interview access setup</TabsTrigger>}</TabsList>
+     {canEnter && !settingsOnly && <TabsContent value="rooms"><InterviewRoomsList clubId={clubId} /></TabsContent>}
+-    <TabsContent value="kits"><ClubInterviewKitSettings clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
+-    {canSchedule && !settingsOnly && <TabsContent value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} /></TabsContent>}
+-    {canManageGrants && <TabsContent value="access"><InterviewAccessSetup clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>}
+-  </Tabs></div>
++    <TabsContent value="kits"><ClubInterviewKitSettings key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>
++    {canSchedule && !settingsOnly && (scheduleVisited || tab === "schedule") && <TabsContent ref={scheduler} value="schedule" forceMount hidden={tab !== "schedule"}><RoomManager clubId={clubId} active={tab === "schedule"} /></TabsContent>}
++    {canManageGrants && <TabsContent value="access"><InterviewAccessSetup key={`${clubId}:${initialRoundId ?? ""}`} clubId={clubId} initialRoundId={initialRoundId} /></TabsContent>}
++  </Tabs></div></InterviewReadScope>
+ }
+diff --git a/components/interviews/interview-rooms-list.tsx b/components/interviews/interview-rooms-list.tsx
+index 61813ec..ef2c238 100644
+--- a/components/interviews/interview-rooms-list.tsx
++++ b/components/interviews/interview-rooms-list.tsx
+@@ -1,8 +1,10 @@
+ "use client";
++import { useAssignedInterviewRooms } from "./interview-read-scope";
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read";
+ import { useCallback, useEffect, useState } from "react";
+ import Link from "next/link";
+ import { useDemoMode } from "@/contexts/demo-context";
+-import { getAssignedInterviewRooms, getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
++import { getInterviewWorkspace, getInterviewRounds } from "@/lib/workspace-api";
+ import { interviewEntryHref, interviewEntryStatus, type InterviewRoomEntry } from "@/lib/interview-entry";
+ import { defaultInterviewDate, groupInterviewDates, readExpandedInterviewDates } from "@/lib/interview-room-dates";
+ import { Button } from "@/components/ui/button";
+@@ -12,6 +14,7 @@ import "./interview-rooms-list.css";
+ 
+ export function InterviewRoomsList({ clubId }: { clubId: string }) {
+   const demo = useDemoMode();
++  const assignedRooms = useAssignedInterviewRooms(clubId);
+   const [rows, setRows] = useState<InterviewRoomEntry[]>([]), [error, setError] = useState(""), [loading, setLoading] = useState(true), [retry, setRetry] = useState(0), [secondary, setSecondary] = useState(false);
+   const [date, setDate] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("interviewDate") || "");
+   const [expanded, setExpanded] = useState<string[] | null>(() => typeof window === "undefined" ? null : readExpandedInterviewDates(window.location.search));
+@@ -28,21 +31,20 @@ export function InterviewRoomsList({ clubId }: { clubId: string }) {
+   }, [expanded, loading, error, groups.length, defaultDay, rememberDays]);
+   useEffect(() => {
+     if (!demo.ready) return;
+-    let current = true, pending = false;
+     setRows([]); setSecondary(false); setLoading(true);
+-    const refresh = async () => {
+-      if (pending) return; pending = true;
+-      try {
+-        const [result, workspace, available] = await Promise.all([getAssignedInterviewRooms(clubId), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]);
+-        if (current) { setRows(result); setRounds(available.rounds); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); }
+-      } catch { if (current) { setRows([]); setSecondary(false); setError("Couldn’t load assigned interviews. Check your current interview access and retry."); } }
+-      finally { pending = false; if (current) setLoading(false); }
+-    };
+-    const visible = () => { if (!document.hidden) void refresh(); };
+-    void refresh(); const timer = setInterval(visible, 15000);
+-    window.addEventListener("outclass:interview-rounds-changed", visible); window.addEventListener("focus", visible); window.addEventListener("outclass:panels-changed", visible); window.addEventListener("outclass:demo-change", visible);
+-    return () => { window.removeEventListener("outclass:interview-rounds-changed", visible); current = false; clearInterval(timer); window.removeEventListener("focus", visible); window.removeEventListener("outclass:panels-changed", visible); window.removeEventListener("outclass:demo-change", visible); };
+-  }, [clubId, retry, demo.ready]);
++    const reader = serializedWorkspaceRead(
++      () => Promise.all([assignedRooms(), getInterviewWorkspace(clubId), getInterviewRounds(clubId)]),
++      ([result, workspace, available]) => { setRows(result); setRounds(available.rounds); setSecondary(workspace.applications.some(a => a.assignedRoundIds.some(r => !result.some(row => row.applicationId === a.id && row.roundId === r)))); setError(""); setLoading(false); },
++      () => { setRows([]); setSecondary(false); setError("Couldn’t load assigned interviews. Check your current interview access and retry."); setLoading(false); },
++    );
++    const visible = () => { if (!document.hidden) void reader.poll(); };
++    const changed = () => { void reader.refresh(); };
++    void reader.poll(); const timer = setInterval(visible, 15000);
++    window.addEventListener("focus", visible);
++    const changes = ["outclass:interview-rounds-changed", "outclass:panels-changed", "outclass:demo-change"];
++    changes.forEach(name => window.addEventListener(name, changed));
++    return () => { reader.dispose(); clearInterval(timer); window.removeEventListener("focus", visible); changes.forEach(name => window.removeEventListener(name, changed)); };
++  }, [clubId, retry, demo.ready, assignedRooms]);
+   const shown = groups.filter(group => !date || group.day === date);
+   return <section aria-label="Interview rooms" className="space-y-4 pb-20 md:pb-6">
+     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Your interview rooms</h2><label className="flex items-center gap-2 text-sm">Round<select className="ir-select" aria-label="Filter interview rooms by round" value={roundId} onChange={e => { setRoundId(e.target.value); const url = new URL(window.location.href); if(e.target.value)url.searchParams.set("roundId",e.target.value);else url.searchParams.delete("roundId");window.history.replaceState(null,"",url.pathname+url.search); }}><option value="">All rounds</option>{rounds.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><label className="flex items-center gap-2 text-sm">Date<input aria-label="Filter assigned interview date" type="date" className="rounded-md border bg-card px-2 py-1.5" value={date} onChange={e => { const selected = e.target.value; setDate(selected); const url = new URL(window.location.href); if (selected) url.searchParams.set("interviewDate", selected); else url.searchParams.delete("interviewDate"); window.history.replaceState(null, "", url.pathname + url.search); if (selected) rememberDays([...new Set([...openDays, selected])]); }} /></label></header>
+diff --git a/components/interviews/room-manager.tsx b/components/interviews/room-manager.tsx
+index fe2962b..bf624bb 100644
+--- a/components/interviews/room-manager.tsx
++++ b/components/interviews/room-manager.tsx
+@@ -4,7 +4,7 @@ import { AvailabilityButton } from "@/components/availability/availability-butto
+ import { SCHEDULING_TIMEZONE, SCHEDULING_TIMEZONE_LABEL } from "@/lib/scheduling-config"
+ import { LoadingState } from "@/components/ui/loading-state"
+ import { NativeSelect } from "@/components/ui/native-select"
+-import { useCallback, useEffect, useMemo, useState } from "react"
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+ import { Copy, DoorOpen, MapPin, Plus, Video } from "@/components/icons"
+ import { Button } from "@/components/ui/button"
+ import { Input } from "@/components/ui/input"
+@@ -24,12 +24,21 @@ import { interviewRoundWeek } from "@/lib/interview-scheduling-context"
+ import { canLeaveWorkspace } from "@/lib/product-navigation"
+ import "./scheduling.css"
+ import Link from "next/link"
+-import { getAssignedInterviewRooms } from "@/lib/workspace-api"
++import { useAssignedInterviewRooms } from "./interview-read-scope"
+ import { interviewEntryHref, type InterviewRoomEntry } from "@/lib/interview-entry"
+ 
+ 
+-export function RoomManager({ clubId }: { clubId: string }) {
++export function RoomManager({ clubId, active = true }: { clubId: string; active?: boolean }) {
+   const demo = useDemoMode()
++  const assignedRooms = useAssignedInterviewRooms(clubId)
++  // A retained draft is never authority to reveal a workspace on re-entry.
++  // Advance synchronously so no frame exposes old content before the effect.
++  const activation = useRef({ active, authority: assignedRooms, version: 0 })
++  if (activation.current.active !== active || activation.current.authority !== assignedRooms) activation.current = { active, authority: assignedRooms, version: activation.current.version + 1 }
++  const activationVersion = activation.current.version
++  const [validatedVersion, setValidatedVersion] = useState(-1)
++  const validated = validatedVersion === activationVersion
++  const restoredActivation = useRef(-1)
+   const [ownEntries, setOwnEntries] = useState<InterviewRoomEntry[]>([])
+ 
+   const [data, setData] = useState<RoomWorkspace | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [refresh, setRefresh] = useState(0)
+@@ -52,12 +61,12 @@ export function RoomManager({ clubId }: { clubId: string }) {
+     window.history.pushState(null, "", url(section, round, date, week, sessionId))
+   }
+   useEffect(() => {
+-    if (!demo.ready) return
+-    let active = true
+-    setLoading(true)
+-    getRoomWorkspace(clubId).then(value => { if (active) { setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (active) setError("Could not load interview scheduling.") }).finally(() => { if (active) setLoading(false) })
+-    return () => { active = false }
+-  }, [clubId, refresh, demo.ready])
++    if (!demo.ready || !active) return
++    let current = true
++    setLoading(true); setError("")
++    getRoomWorkspace(clubId).then(value => { if (current) { setValidatedVersion(activationVersion); setData({ ...value, rounds: value.rounds.filter(r => r.type === "INTERVIEW" || r.type === "GROUP_INTERVIEW" || value.rooms.some(room => room.roundId === r.id)) }); setError("") } }).catch(() => { if (current) { setValidatedVersion(-1); setError("Could not load interview scheduling. Check your current access and retry.") } }).finally(() => { if (current) setLoading(false) })
++    return () => { current = false }
++  }, [clubId, refresh, demo.ready, active, activationVersion])
+   useEffect(() => {
+     if (!data || round) return
+     const params = new URLSearchParams(window.location.search)
+@@ -70,12 +79,15 @@ export function RoomManager({ clubId }: { clubId: string }) {
+   }, [data, round, week])
+   useEffect(() => {
+     const back = () => {
+-      const params = new URLSearchParams(window.location.search), nextRound = data?.rounds.find(r => r.id === params.get("roundId"))?.id ?? data?.rounds[0]?.id ?? round
++      const params = new URLSearchParams(window.location.search)
++      if (!active || params.get("interviewTab") && !["schedule", "availability"].includes(params.get("interviewTab")!)) return
++      const nextRound = data?.rounds.find(r => r.id === params.get("roundId"))?.id ?? data?.rounds[0]?.id ?? round
+       if (nextRound !== round && !canLeaveWorkspace()) { window.history.pushState(null, "", url(tab)); return }
+       if (nextRound !== round) { setPanelVisited(false); setAutoStart(false) }
+       setRound(nextRound); setDate(localDateSchema.safeParse(params.get("date")).success ? params.get("date")! : ""); setWeek(localDateSchema.safeParse(params.get("week")).success ? monday(params.get("week")!) : data ? interviewRoundWeek(data, nextRound) : week); setSelectedSession(params.get("sessionId") ?? "")
+       const section = data ? schedulingEntry(data, nextRound, params.get("schedule")) : "rooms"; if (schedulingSections.includes(section as typeof schedulingSections[number])) { setTab(section); if (section === "fill" || section === "review") setPanelVisited(true) }
+     }
++    if (active && validated && restoredActivation.current !== activationVersion) { restoredActivation.current = activationVersion; back() }
+     const changed = () => setRefresh(v => v + 1)
+     window.addEventListener("popstate", back); window.addEventListener("outclass:panels-changed", changed); window.addEventListener("outclass:availability-changed", changed)
+     return () => { window.removeEventListener("popstate", back); window.removeEventListener("outclass:panels-changed", changed); window.removeEventListener("outclass:availability-changed", changed) }
+@@ -83,9 +95,9 @@ export function RoomManager({ clubId }: { clubId: string }) {
+   useEffect(() => {
+     if (!demo.ready) return
+     let current = true
+-    getAssignedInterviewRooms(clubId).then(rows => { if (current) setOwnEntries(rows) }).catch(() => { if (current) setOwnEntries([]) })
++    assignedRooms().then(rows => { if (current) setOwnEntries(rows) }).catch(() => { if (current) setOwnEntries([]) })
+     return () => { current = false }
+-  }, [clubId, demo.ready, refresh])
++  }, [clubId, demo.ready, refresh, assignedRooms])
+   const roundTimezone = SCHEDULING_TIMEZONE
+   useEffect(() => {
+     if (!round || !demo.ready || demo.isDemoEnabled) return
+@@ -97,9 +109,11 @@ export function RoomManager({ clubId }: { clubId: string }) {
+   const bookings = data?.bookings.filter(b => rooms.some(r => r.id === b.roomId) && (!date || dayKey(b.startTime, SCHEDULING_TIMEZONE) === date)) ?? []
+   const shortageIds = useMemo(() => staffingShortageSessionIds(coverage?.slots ?? []), [coverage])
+   const roundName = data?.rounds.find(r => r.id === round)?.name
+-  return <div className="ir-manager space-y-4">
++  return <>
++    {active && !validated && (error ? <div role="alert">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div> : <LoadingState label="Loading interview scheduling…" rows={3} />)}
++    <div hidden={!active || !validated}><div className="ir-manager space-y-4">
+     <header className="flex flex-wrap items-center justify-between gap-3"><h2 className="oc-section-heading">Interview scheduling</h2><div className="flex flex-wrap gap-2">{coverage?.myEligible && <AvailabilityButton clubId={clubId} roundId={round} />}<Button variant="outline" onClick={() => navigateSection("availability")}>Team availability</Button><Button variant="outline" onClick={() => navigateSection("bookings")}>View bookings</Button><ActionWorkflow title="Schedule options" description="Preview applicant booking and configure publication settings." trigger="Schedule options">{done => <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { navigateSection("preview"); done() }}>Applicant preview</Button><Button variant="outline" onClick={() => { navigateSection("publish"); done() }}>Booking settings</Button></div>}</ActionWorkflow></div></header>
+-    {error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}{notice && <p role="status" className="text-sm">{notice}</p>}
++    {validated && error && <div role="alert" className="text-sm text-destructive">{error} <Button variant="outline" onClick={() => setRefresh(v => v + 1)}>Retry</Button></div>}{notice && <p role="status" className="text-sm">{notice}</p>}
+     {!data && loading ? <LoadingState label="Loading interview scheduling…" rows={3} /> : data && <>
+       <div className="flex flex-wrap items-end gap-3"><label className="ir-field">Interview round<NativeSelect aria-label="Recruitment round" value={round} onChange={e => { if (!canLeaveWorkspace()) return; const nextWeek = interviewRoundWeek(data, e.target.value); setWeek(nextWeek); setDate(""); setRound(e.target.value); setPanelVisited(false); setAutoStart(false); setCoverage(null); setSelectedSession(""); const nextSection = schedulingEntry(data,e.target.value); setTab(nextSection); if (nextSection === "review") setPanelVisited(true); window.history.pushState(null, "", url(nextSection, e.target.value, "", nextWeek, "")) }}>{data.rounds.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</NativeSelect></label><div className="flex items-end gap-2"><label className="ir-field">Interview date<Input aria-label="Filter interview date" type="date" value={date} onChange={e => { setDate(e.target.value); if (e.target.value) setWeek(monday(e.target.value)); window.history.pushState(null, "", url(tab, round, e.target.value, e.target.value ? monday(e.target.value) : week)) }} /></label>{date && <Button variant="ghost" onClick={() => { setDate(""); window.history.pushState(null, "", url(tab, round, "")) }}>All dates</Button>}</div></div>
+       {tab !== "bookings" && <nav aria-label="Scheduling workflow" className="flex flex-wrap gap-1 border-y py-2">{[["availability", "Availability"], ["rooms", "Set interview times"], ["review", "Confirm interviewers"], ["publish", "Publish booking"]].map(([id,label],i) => <Button key={id} variant={tab === id || id === "review" && tab === "fill" ? "secondary" : "ghost"} aria-current={tab === id ? "step" : undefined} onClick={() => navigateSection(id)}><span className="text-xs text-muted-foreground">{i+1}</span>{label}</Button>)}</nav>}
+@@ -116,7 +130,7 @@ export function RoomManager({ clubId }: { clubId: string }) {
+       </>}
+       {create && <CreateRoomDialog clubId={clubId} workspace={{ ...data, rounds: data.rounds.filter(r => r.id === round) }} source={source} initialDate={date || undefined} onClose={() => setCreate(false)} onCreated={() => { setCreate(false); setNotice("Interview times saved."); navigateSection("review"); setRefresh(v => v + 1); window.dispatchEvent(new Event("outclass:staffing-changed")) }} />}
+     </>}
+-  </div>
++  </div></div></>
+ }
+ function RoomOptions({room,workspace,date,coverage,shortageIds,selectedSession,busy,onCopy,onToggle,onAutoFill,onStaffing}:{room:InterviewRoom;workspace:RoomWorkspace;date:string;coverage:SessionCoverage[];shortageIds:Set<string>;selectedSession:string;busy:boolean;onCopy:()=>void;onToggle:()=>void;onAutoFill:()=>void;onStaffing:(needed:number|null,slotId?:string)=>void}){
+   const [expanded,setExpanded]=useState(false)
+diff --git a/components/shell/product-shell.tsx b/components/shell/product-shell.tsx
+index c89c35a..d1df0f4 100644
+--- a/components/shell/product-shell.tsx
++++ b/components/shell/product-shell.tsx
+@@ -24,7 +24,7 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from
+ import { useAuth } from "@/contexts/auth-context"
+ import { useDemoMode } from "@/contexts/demo-context"
+ import { getTaskNotifications } from "@/lib/workspace-api"
+-import { getDurableNotifications } from "@/actions/communications"
++import { getDurableNotifications } from "@/lib/workspace-read"
+ import { useApplicationState } from "@/lib/application-state"
+ import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
+ import { createClient } from "@/utils/supabase/client"
+diff --git a/contexts/auth-context.tsx b/contexts/auth-context.tsx
+index b2d6b60..48c3514 100644
+--- a/contexts/auth-context.tsx
++++ b/contexts/auth-context.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import { createClient } from "@/utils/supabase/client";
+ import { hasWorkspace } from "@/lib/permissions";
+ import React, { createContext, useContext, useEffect, useState } from 'react';
+ import type { User, StudentProfile, Application, ClubMember } from '@prisma/client';
+@@ -18,6 +19,8 @@ export type PopulatedUser = User & {
+ 
+ interface AuthContextType {
+   isImpersonating: boolean;
++  /** Opaque browser session epoch; a scope hint, never an authorization result. */
++  readAuthority?: object;
+   user: PopulatedUser | null;
+   loading: boolean;
+   /** Known server session awaiting its initial /api/users/me identity. */
+@@ -37,6 +40,17 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+   const [user, setUser] = useState<PopulatedUser | null>(initialUser);
+   const [loading, setLoading] = useState(!initialUser && hasSession);
+   const { isDemoEnabled, state, viewAs } = useDemoMode();
++  const [readAuthority, setReadAuthority] = useState<object>({});
++  useEffect(() => {
++    if (isDemoEnabled || !hasSession) return;
++    let token: string | undefined;
++    const { data: { subscription } } = createClient().auth.onAuthStateChange((event, session) => {
++      const next = session?.access_token ?? "";
++      if (token !== undefined ? next !== token : event !== "INITIAL_SESSION") setReadAuthority({});
++      token = next;
++    });
++    return () => subscription.unsubscribe();
++  }, [isDemoEnabled, hasSession]);
+   const [selectedClubId, setSelectedClubId] = useState("");
+   const generation = React.useRef(0), bootstrap = React.useRef({ user: initialUser, demo: isDemoEnabled });
+   const pending = React.useRef<{ generation: number; promise: Promise<void> } | null>(null);
+@@ -87,7 +101,7 @@ export function AuthProvider({ children, initialUser = null, isImpersonating = f
+     else setSelectedClubId(clubId);
+   };
+   return (
+-    <AuthContext.Provider value={{ isImpersonating, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
++    <AuthContext.Provider value={{ isImpersonating, readAuthority, user: identity, activeClubId, selectClub, loading: isDemoEnabled ? !state : bootstrapChanged ? !initialUser && hasSession : loading, sessionPending: hasSession && !isDemoEnabled && loading && !identity, mutateUser, refreshUser: isDemoEnabled ? async () => {} : fetchUser }}>
+       {children}
+     </AuthContext.Provider>
+   );
+diff --git a/lib/product-navigation.ts b/lib/product-navigation.ts
+index dac4414..19593d8 100644
+--- a/lib/product-navigation.ts
++++ b/lib/product-navigation.ts
+@@ -54,7 +54,12 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
+     ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
+ }
+ /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */
+-export function canLeaveWorkspace() {
++export function canLeaveWorkspace(retained?: HTMLElement | null) {
++  // A retained editor is not leaving the page. Continue guarding other forms.
++  if (retained) {
++    if ([...document.querySelectorAll('[data-saving="true"]')].some(node => !retained.contains(node))) return false
++    return ![...document.querySelectorAll('[data-unsaved="true"]')].some(node => !retained.contains(node)) || window.confirm("Leave this page? Your unsaved changes will be lost.")
++  }
+   if (document.querySelector('[data-saving="true"]')) return false
+   return !document.querySelector('[data-unsaved="true"]') || window.confirm("Leave this page? Your unsaved changes will be lost.")
+ }
+diff --git a/lib/workspace-api.ts b/lib/workspace-api.ts
+index 737d6ac..82126f4 100644
+--- a/lib/workspace-api.ts
++++ b/lib/workspace-api.ts
+@@ -94,7 +94,7 @@ export const reviewPanelPublication = adapt(publicationApi.reviewPanelPublicatio
+ export const publishPanelSchedule = adapt(publicationApi.publishPanelSchedule, (scope) => demoBookingApi.publishPanelSchedule(scope as Parameters<typeof demoBookingApi.publishPanelSchedule>[0]))
+ export const assignPanelAvailabilityOverride = adapt(availabilityOverrideApi.assignPanelAvailabilityOverride, (scope) => demoBookingApi.assignPanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.assignPanelAvailabilityOverride>[0]))
+ export const revokePanelAvailabilityOverride = adapt(availabilityOverrideApi.revokePanelAvailabilityOverride, (scope) => demoBookingApi.revokePanelAvailabilityOverride(scope as Parameters<typeof demoBookingApi.revokePanelAvailabilityOverride>[0]))
+-export const getInterviewBookingPublication = adapt(bookingPublicationApi.getInterviewBookingPublication, (scope) => demoBookingApi.getInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.getInterviewBookingPublication>[0]))
++export const getInterviewBookingPublication = adapt((...args: Parameters<typeof bookingPublicationApi.getInterviewBookingPublication>) => readWorkspace<Awaited<ReturnType<typeof bookingPublicationApi.getInterviewBookingPublication>>>("bookingPublication", args), (scope) => demoBookingApi.getInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.getInterviewBookingPublication>[0]))
+ export const setInterviewBookingPublication = adapt(bookingPublicationApi.setInterviewBookingPublication, (scope) => demoBookingApi.setInterviewBookingPublication(scope as Parameters<typeof demoBookingApi.setInterviewBookingPublication>[0]))
+ function scopedApplication(clubId: string, id: string) {
+   const s = demoStore.get()
+@@ -308,8 +308,8 @@ export const saveAnonymousReviewContent = adapt(crm.saveAnonymousReviewContent,
+ })
+ 
+ export const getInterviewKit = adapt(interviewKits.getInterviewKit, demoInterviews.getInterviewKit)
+-export const getInterviewWorkspace = adapt(interviewKits.getInterviewWorkspace, demoInterviews.getInterviewWorkspace)
+-export const getAssignedInterviewRooms = adapt(interviewEntry.getAssignedInterviewRooms, demoInterviewEntry.getAssignedInterviewRooms)
++export const getInterviewWorkspace = adapt((...args: Parameters<typeof interviewKits.getInterviewWorkspace>) => readWorkspace<Awaited<ReturnType<typeof interviewKits.getInterviewWorkspace>>>("interviewWorkspace", args), demoInterviews.getInterviewWorkspace)
++export const getAssignedInterviewRooms = adapt((...args: Parameters<typeof interviewEntry.getAssignedInterviewRooms>) => readWorkspace<Awaited<ReturnType<typeof interviewEntry.getAssignedInterviewRooms>>>("assignedRooms", args), demoInterviewEntry.getAssignedInterviewRooms)
+ export const resolveInterviewRoomEntry = adapt(interviewEntry.resolveInterviewRoomEntry, demoInterviewEntry.resolveInterviewRoomEntry)
+ export const getEarlierInterviewReviews = adapt(interviewKits.getEarlierInterviewReviews, demoInterviews.getEarlierInterviewReviews)
+ export const getInterviewRoundScore = adapt(interviewKits.getInterviewRoundScore, demoInterviews.getInterviewRoundScore)
+@@ -334,7 +334,7 @@ export const deleteInterviewResumeAnnotation = adapt(interviewResumes.deleteInte
+ export const getInterviewAnnotationHistory = adapt(interviewResumes.getInterviewAnnotationHistory, demoInterviews.getInterviewAnnotationHistory)
+ export const setMemberInterviewOffices = adapt(interviewGrants.setMemberInterviewOffices, demoInterviews.setMemberInterviewOffices)
+ export const setInterviewPanelAssignment = adapt(interviewGrants.setInterviewPanelAssignment, demoInterviews.setInterviewPanelAssignment)
+-export const getInterviewRounds = adapt(interviewKits.getInterviewRounds, demoInterviews.getInterviewRounds)
++export const getInterviewRounds = adapt((...args: Parameters<typeof interviewKits.getInterviewRounds>) => readWorkspace<Awaited<ReturnType<typeof interviewKits.getInterviewRounds>>>("interviewRounds", args), demoInterviews.getInterviewRounds)
+ 
+ function demoMeetingAccess(id: string) {
+   const s=demoStore.get(), meeting=s.meetings.find(m=>m.id===id), membership=s.memberships.find(m=>m.clubId===meeting?.clubId&&m.userId===demoUser().id)
+@@ -342,7 +342,7 @@ function demoMeetingAccess(id: string) {
+   return presentDemoMeeting(meeting)
+ }
+ function demoMeetingManager(clubId:string){demoMember();if(clubId!==demoStore.get().clubs[0].id)throw new Error("Access denied.")}
+-export const listMeetings = adapt(meetingsApi.listMeetings, clubId => {
++export const listMeetings = adapt((...args: Parameters<typeof meetingsApi.listMeetings>) => readWorkspace<Awaited<ReturnType<typeof meetingsApi.listMeetings>>>("meetings", args), clubId => {
+   const s=demoStore.get(),user=demoUser()
+   return s.meetings.filter(m=>(!clubId||m.clubId===clubId)&&canReadMeeting(m,s.memberships.some(member=>member.clubId===m.clubId&&member.userId===user.id)?{}:null)).sort((a,b)=>b.date.getTime()-a.date.getTime()).map(presentDemoMeeting)
+ })
+@@ -387,7 +387,7 @@ export const recruitmentAttendanceSummary=adapt((...args: Parameters<typeof meet
+ 
+ // Semester work follows the same isolated demo boundary as recruitment.
+ export const getTaskNotifications = adapt((...args: Parameters<typeof tasksApi.getTaskNotifications>) => readWorkspace<Awaited<ReturnType<typeof tasksApi.getTaskNotifications>>>("taskNotifications", args), () => demoNotifications().filter(notification => "taskHref" in notification && notification.taskHref))
+-export const getTaskWorkspace = adapt(tasksApi.getTaskWorkspace, demoTasks.getTaskWorkspace)
++export const getTaskWorkspace = adapt((...args: Parameters<typeof tasksApi.getTaskWorkspace>) => readWorkspace<Awaited<ReturnType<typeof tasksApi.getTaskWorkspace>>>("tasks", args), demoTasks.getTaskWorkspace)
+ export const saveTask = adapt(tasksApi.saveTask, demoTasks.saveTask)
+ export const previewTaskAudience = adapt(tasksApi.previewTaskAudience, demoTasks.previewTaskAudience)
+ export const bulkUpdateTasks = adapt(tasksApi.bulkUpdateTasks, demoTasks.bulkUpdateTasks)
+@@ -431,7 +431,7 @@ export const applyRecruitingRuleFlags = adapt(recruitingRules.applyRecruitingRul
+ export const getRecruitingRuleFlags = adapt(recruitingRules.getRecruitingRuleFlags, demoRecruitingRules.getRecruitingRuleFlags)
+ export const clearRecruitingRuleFlags = adapt(recruitingRules.clearRecruitingRuleFlags, demoRecruitingRules.clearRecruitingRuleFlags)
+ 
+-export const getRoomWorkspace = adapt(roomApi.getRoomWorkspace, demoRoomApi.getRoomWorkspace)
++export const getRoomWorkspace = adapt((...args: Parameters<typeof roomApi.getRoomWorkspace>) => readWorkspace<Awaited<ReturnType<typeof roomApi.getRoomWorkspace>>>("roomWorkspace", args), demoRoomApi.getRoomWorkspace)
+ export const createInterviewRoom = adapt(roomApi.createInterviewRoom, demoRoomApi.createInterviewRoom)
+ export const setInterviewStaffingRequirement = adapt(roomApi.setInterviewStaffingRequirement, raw=>demoRoomApi.setInterviewStaffingRequirement(raw as Parameters<typeof demoRoomApi.setInterviewStaffingRequirement>[0]))
+ export const setInterviewRoomOpen = adapt(roomApi.setInterviewRoomOpen, demoRoomApi.setInterviewRoomOpen)
+diff --git a/lib/workspace-read.ts b/lib/workspace-read.ts
+index fc3c663..4712763 100644
+--- a/lib/workspace-read.ts
++++ b/lib/workspace-read.ts
+@@ -1,16 +1,20 @@
+ "use client"
++import { workspaceReadQueue } from "@/lib/workspace-read-queue"
++import type * as communications from "@/actions/communications"
+ import { decodeWorkspaceData, type WorkspaceWire } from "@/lib/workspace-wire"
+ import type * as members from "@/actions/organization-members"
+ import type * as onboarding from "@/actions/club-onboarding"
+ import type * as settings from "@/actions/club-settings"
+ 
++const dispatch = workspaceReadQueue(3, 24)
++
+ export async function readWorkspace<T>(kind: string, args: unknown[] = []): Promise<T> {
+   const query = new URLSearchParams({ kind, args: JSON.stringify(args) })
+   const controller = new AbortController()
+   // Reads are safe to retry explicitly; never leave a disconnected view pending indefinitely.
+   const deadline = setTimeout(() => controller.abort(), 30_000)
+   try {
+-    const response = await fetch(`/api/workspace?${query}`, { cache: "no-store", credentials: "same-origin", signal: controller.signal })
++    const response = await dispatch(() => fetch(`/api/workspace?${query}`, { cache: "no-store", credentials: "same-origin", signal: controller.signal }), controller.signal)
+     if (!response.ok) {
+       if (kind === "invitations") {
+         const body = await response.json().catch(() => null) as { error?: string } | null
+@@ -31,3 +35,6 @@ export const getOrganizationMemberManagement = (clubId: string) => readWorkspace
+ export const getOrganizationInvitations = (includeDismissed = false) => readWorkspace<Awaited<ReturnType<typeof onboarding.getOrganizationInvitations>>>("invitations", [includeDismissed])
+ export const getApplicationSettings = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof settings.getApplicationSettings>>>("applicationSettings", [clubId])
+ export const getPipelineSettings = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof settings.getPipelineSettings>>>("pipelineSettings", [clubId])
++
++export const getClubAnnouncements = (clubId: string) => readWorkspace<Awaited<ReturnType<typeof communications.getClubAnnouncements>>>("announcements", [clubId])
++export const getDurableNotifications = (cursor?: string) => readWorkspace<Awaited<ReturnType<typeof communications.getDurableNotifications>>>("notifications", [cursor])
+diff --git a/scripts/run-disposable-postgres.cjs b/scripts/run-disposable-postgres.cjs
+index 2c7e475..89fb862 100644
+--- a/scripts/run-disposable-postgres.cjs
++++ b/scripts/run-disposable-postgres.cjs
+@@ -27,7 +27,10 @@ const suites = {
+     ],
+   },
+ };
+-if (process.platform !== "linux") throw Error("Native fixture uses Linux Docker host networking to enforce loopback-only SQL.");
++if (!["linux", "darwin"].includes(process.platform)) throw Error("Disposable native fixture supports Linux and macOS.");
++// Docker Desktop port publishing needs a loopback relay inside the container's
++// network namespace, so SQL still sees inet_server_addr() = 127.0.0.1.
++const desktop = process.platform === "darwin";
+ const suite = suites[process.argv[2]];
+ if (!suite || process.argv.length !== 3) {
+   console.error("Usage: node scripts/run-disposable-postgres.cjs security|events");
+@@ -63,8 +66,12 @@ const env = { ...process.env, DATABASE_URL: url, POSTGRES_PRISMA_URL: url,
+   SMTP_HOST: "", SMTP_USER: "", SMTP_PASSWORD: "", COMMUNICATIONS_EMAIL_ENABLED: "false",
+   OUTCLASS_SITE_URL: "http://127.0.0.1:3107", VERCEL: "", VERCEL_ENV: "" };
+ env[suite.gate] = url;
+-let created = false;
++let created = false, proxyCreated = false;
+ function cleanup() {
++  if (proxyCreated) {
++    const proxyLabel = spawnSync("docker", ["inspect", suite.container + "-loopback", "--format", '{{index .Config.Labels "outclass.integration-suite"}}'], { encoding: "utf8" });
++    if (proxyLabel.status === 0 && proxyLabel.stdout.trim() === process.argv[2]) spawnSync("docker", ["rm", "-f", suite.container + "-loopback"], { stdio: "ignore" });
++  }
+   if (!created) return;
+   // Never remove an unrelated container, even if the fixture's name was reused.
+   const label = spawnSync("docker", ["inspect", suite.container,
+@@ -84,7 +91,7 @@ try {
+   ].join("\n");
+   command("docker", ["run", "-d", "--name", suite.container,
+     "--label", "outclass.integration-suite=" + process.argv[2],
+-    "--network", "host", // Required: native tests verify inet_server_addr() is loopback.
++    ...(desktop ? ["-p", "127.0.0.1:" + suite.port + ":5432"] : ["--network", "host"]),
+     "--entrypoint", "bash", image, "-ec", init]);
+   created = true;
+   let ready = false;
+@@ -94,6 +101,11 @@ try {
+     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 250);
+   }
+   if (!ready) throw Error("Disposable PostgreSQL did not become ready");
++  if (desktop) {
++    command("docker", ["run", "-d", "--name", suite.container + "-loopback", "--label", "outclass.integration-suite=" + process.argv[2], "--network", "container:" + suite.container,
++      "alpine/socat@sha256:22d77becaeeea8ef56b8c4bb2312323acafe85354be6a85714ff5050e3537842", "TCP-LISTEN:5432,fork,reuseaddr", "TCP:127.0.0.1:" + suite.port]);
++    proxyCreated = true;
++  }
+   if (suite.database !== "postgres")
+     command("docker", ["exec", suite.container, "createdb", "-p", String(suite.port), "-U", "fixture_superuser", suite.database]);
+   command("docker", ["exec", "-i", suite.container, "psql", "-p", String(suite.port), "-U", "fixture_superuser",
+diff --git a/tests/demo-interview-navigation-browser.test.cjs b/tests/demo-interview-navigation-browser.test.cjs
+index c4fe736..4048c6c 100644
+--- a/tests/demo-interview-navigation-browser.test.cjs
++++ b/tests/demo-interview-navigation-browser.test.cjs
+@@ -18,6 +18,7 @@ test('browser: Demo interview entry, direct links and redundant club selection r
+   // Actual providers and interview queue; Auth/database and the child writing
+   // surface are isolated fixtures. No production login or endpoint is involved.
+   const mocks = {
++    '@/utils/supabase/client': "exports.createClient=()=>{throw Error('Live Auth forbidden in Demo fixture')}",
+     '@/components/outclass-loading-screen': "const React=require('react');exports.OutClassLoadingScreen=()=>React.createElement('p',null,'Loading Demo');",
+     '@/components/workspace-loading': "const React=require('react');exports.WorkspaceLoading=()=>React.createElement('p',null,'Loading candidates');",
+     '@/components/product/page-header': "const React=require('react');exports.PageHeader=({title})=>React.createElement('h1',null,title);",
+diff --git a/tests/helpers/club-actions-browser-fixture.cjs b/tests/helpers/club-actions-browser-fixture.cjs
+index 0d4ac21..3e761c2 100644
+--- a/tests/helpers/club-actions-browser-fixture.cjs
++++ b/tests/helpers/club-actions-browser-fixture.cjs
+@@ -35,14 +35,14 @@ async function fixture(){
+   }
+  }
+  const groups={
+-  '@/lib/workspace-read':['getOrganizationMemberManagement'],
++  '@/lib/workspace-read':['getOrganizationMemberManagement','getClubAnnouncements'],
+   '@/actions/club-access':['addClubMember','getClubAccess','inviteClubManager','updateClubAccess','revokeClubInvitation'],
+   '@/actions/organization-members':['inviteOrganizationMember','changeOrganizationMemberRole','removeOrganizationMember','transferOrganizationOwnership','manageOrganizationInvitation','bulkOrganizationMembers','bulkOrganizationInvitations'],
+   '@/actions/invitation-emails':['sendRosterInvitations','requestInvitationDelivery'],
+   '@/actions/roster-import':['previewRosterImport','confirmRosterImport'],
+   '@/actions/availability':['getInterviewerEligibility','setInterviewerEligibility'],
+   '@/actions/recipient-groups':['getRecipientGroups','previewRecipientAudience','saveRecipientGroup','deleteRecipientGroup'],
+-  '@/actions/communications':['getClubAnnouncements','publishClubAnnouncement'],
++  '@/actions/communications':['publishClubAnnouncement'],
+   '@/actions/communication-schedules':['getCommunicationSchedules','saveCommunicationSchedule','cancelCommunicationSchedule'],
+   '@/actions/editor-drafts':['getEditorDraft','saveEditorDraft'],
+   '@/lib/workspace-api':['listMeetings','saveMeeting','getMeeting','issueMeetingCheckIn','closeMeetingCheckIn','meetingAttendance','updateTaskMember','previewInvitationSchedule','saveInvitationSchedule','getInvitationSchedules','cancelInvitationSchedule','scheduleDecisionPublication','getDecisionSchedules','cancelDecisionSchedule','getVotingWorkspace','createVotingSession','submitVotingBallot','commandVotingSession','seedVotingDemo']
+diff --git a/tests/loading-experience.test.cjs b/tests/loading-experience.test.cjs
+index 7bb699a..bf8ee4f 100644
+--- a/tests/loading-experience.test.cjs
++++ b/tests/loading-experience.test.cjs
+@@ -38,6 +38,7 @@ function provider({ hasSession = true, isImpersonating = false, demo = { isDemoE
+   const demoIdentity = { id: "demo-user", memberships: [{ clubId: "demo-club", isOwner: true }] }
+   const { AuthProvider } = load("contexts/auth-context.tsx", {
+     react,
++    "@/utils/supabase/client": { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) },
+     "@/lib/permissions": { hasWorkspace: member => member.isOwner === true },
+     "@/contexts/demo-context": { useDemoMode: () => demo },
+     "@/lib/demo/store": { demoUser: () => demoIdentity },
+diff --git a/tests/performance-regressions.test.cjs b/tests/performance-regressions.test.cjs
+index a70deb7..213db76 100644
+--- a/tests/performance-regressions.test.cjs
++++ b/tests/performance-regressions.test.cjs
+@@ -72,7 +72,7 @@ test('read API preserves dates and user JSON, validates scope, and never caches
+   const response = await GET(request('members', [clubId]));
+   assert.equal(response.status, 200);
+   assert.equal(response.headers.get('cache-control'), 'private, no-store');
+-  assert.equal(response.headers.get('vary'), 'Cookie');
++  assert.match(response.headers.get('vary'), /(?:^|,\s*)Cookie(?:,|$)/);
+   assert.deepEqual(wire.decodeWorkspaceData(await response.json()), dates);
+   assert.equal((await GET(request('members', ['00000000-0000-4000-8000-000000000002']))).status, 403);
+   assert.equal((await GET(request('members', [clubId, { userId: 'forged-owner' }]))).status, 400);
+@@ -98,7 +98,7 @@ test('ordinary read fetches overlap rather than enter the Server Action queue',
+ 
+ test('root bootstrap starts authenticated content without an identity HTTP waterfall', async () => {
+   const h = hooks(), identity = { id: 'user', memberships: [{ clubId, isOwner: true }] }; let calls = 0;
+-  const { AuthProvider } = loader({ react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: m => m.isOwner } }, { fetch: () => { calls++; throw Error('Unexpected bootstrap request'); } })('contexts/auth-context.tsx');
++  const { AuthProvider } = loader({ '@/utils/supabase/client': { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) }, react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: m => m.isOwner } }, { fetch: () => { calls++; throw Error('Unexpected bootstrap request'); } })('contexts/auth-context.tsx');
+   const render = () => h.render(() => AuthProvider({ children: 'children', hasSession: true, initialUser: identity }).props.value);
+   assert.equal(render().user, identity); assert.equal(render().sessionPending, false);
+   await h.flush(); assert.equal(calls, 0); assert.equal(render().loading, false);
+@@ -124,7 +124,7 @@ test('verified Supabase identity is reused only inside the same React request; m
+ test('duplicate identity refreshes coalesce and a late old-account response cannot replace the new bootstrap', async () => {
+   const h = hooks(), requests = [];
+   let identity = { id: 'user-a', memberships: [] };
+-  const { AuthProvider } = loader({ react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: () => false } }, { fetch: () => new Promise(resolve => requests.push(resolve)) })('contexts/auth-context.tsx');
++  const { AuthProvider } = loader({ '@/utils/supabase/client': { createClient: () => ({ auth: { onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }) } }) }, react: h.react, '@/contexts/demo-context': { useDemoMode: () => ({ isDemoEnabled: false }) }, '@/lib/demo/store': {}, '@/lib/permissions': { hasWorkspace: () => false } }, { fetch: () => new Promise(resolve => requests.push(resolve)) })('contexts/auth-context.tsx');
+   const render = () => h.render(() => AuthProvider({ children: null, hasSession: true, initialUser: identity }).props.value);
+   render(); await h.flush();
+   const first = render().refreshUser(), duplicate = render().refreshUser();
+@@ -211,3 +211,12 @@ test('a stalled workspace read times out, aborts its request and releases the de
+   assert.equal(typeof deadline, 'function', 'A stalled read must have a finite deadline')
+   deadline(); await assert.rejects(read, /took too long.*try again/i); assert.equal(cleared, 1)
+ })
++
++test('a changed browser Auth token rotates pending-read authority without treating the token as authorization',async()=>{
++ const h=hooks(),identity={id:'user',memberships:[]};let observe;
++ const {AuthProvider}=loader({react:h.react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/demo/store':{},'@/lib/permissions':{hasWorkspace:()=>false},'@/utils/supabase/client':{createClient:()=>({auth:{onAuthStateChange:fn=>{observe=fn;return{data:{subscription:{unsubscribe(){}}}}}}})}})('contexts/auth-context.tsx');
++ const render=()=>h.render(()=>AuthProvider({initialUser:identity,children:null}).props.value);
++ const initial=render().readAuthority;await h.flush();observe('INITIAL_SESSION',{access_token:'opaque-A'});assert.equal(render().readAuthority,initial);
++ observe('TOKEN_REFRESHED',{access_token:'opaque-B'});const rotated=render().readAuthority;assert.notEqual(rotated,initial);assert.equal(render().user,identity);
++ observe('SIGNED_IN',{access_token:'opaque-B'});assert.equal(render().readAuthority,rotated);observe('SIGNED_OUT',null);assert.notEqual(render().readAuthority,rotated);
++});
+diff --git a/tests/resume-viewer-ui.test.cjs b/tests/resume-viewer-ui.test.cjs
+index 29592ba..2416f4e 100644
+--- a/tests/resume-viewer-ui.test.cjs
++++ b/tests/resume-viewer-ui.test.cjs
+@@ -79,7 +79,7 @@ test('single-page toolbar has zoom/download but no pagination or routine access
+ test('Applicants shows moderation only for active explicit presidents/VPs; Interviews never duplicates review destinations', () => {
+   const h=harness(), code=ts.transpileModule(fs.readFileSync('components/interview-management-tabs.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,target:ts.ScriptTarget.ES2022}}).outputText;
+   let offices=[],status='ACTIVE'; const m={exports:{}};
+-  const mocks={'@/components/interviews/interview-rooms-list':{InterviewRoomsList:'InterviewRoomsList'},'@/components/availability/admin-overview':{AdminAvailabilityOverview:'Availability'},'@/components/interview-access-setup':{InterviewAccessSetup:'AccessSetup'},'@/components/interview-submitted-reviews':{InterviewSubmittedReviews:'Reviews'},react:{useState:v=>[v,()=>{}]},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices}]}})},'@/lib/product-navigation':{canLeaveWorkspace:()=>true},'@/components/interview-kit-editor':{ClubInterviewKitSettings:'Kit'},'@/components/interview-resume-moderation':{InterviewResumeModeration:'Moderation'},'@/components/interviews/room-manager':{RoomManager:'Rooms'}};
++  const mocks={'@/components/interviews/interview-read-scope':{InterviewReadScope:'InterviewReadScope'},'@/components/interviews/interview-rooms-list':{InterviewRoomsList:'InterviewRoomsList'},'@/components/availability/admin-overview':{AdminAvailabilityOverview:'Availability'},'@/components/interview-access-setup':{InterviewAccessSetup:'AccessSetup'},'@/components/interview-submitted-reviews':{InterviewSubmittedReviews:'Reviews'},react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useEffect(){}},'@/contexts/auth-context':{useAuth:()=>({user:{memberships:[{clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices}]}})},'@/lib/product-navigation':{canLeaveWorkspace:()=>true},'@/components/interview-kit-editor':{ClubInterviewKitSettings:'Kit'},'@/components/interview-resume-moderation':{InterviewResumeModeration:'Moderation'},'@/components/interviews/room-manager':{RoomManager:'Rooms'}};
+   new Function('require','module','exports',code)(n=>n in mocks?mocks[n]:n==='@/components/icons'?require('./helpers/icons.cjs'):n.endsWith('.css')?{}:n.startsWith('@/components/ui/')?new Proxy({},{get:(_,key)=>key}):n.startsWith('@/lib/')?h.load(n.slice(2)+'.ts'):require(n),m,m.exports);
+   const render=()=>m.exports.InterviewManagementTabs({clubId:'c',onInterview(){}});
+   const menu=()=>h.load('lib/product-navigation.ts').managerNavigation({clubId:'c',status,isOwner:true,permissions:['interviews.manage'],interviewOffices:offices},'c','recruiting').map(i=>i.label).join(' ');
+diff --git a/utils/auth.ts b/utils/auth.ts
+index dfd80eb..8edef6c 100644
+--- a/utils/auth.ts
++++ b/utils/auth.ts
+@@ -1,3 +1,4 @@
++import { serverPhase } from "@/lib/server-phase-trace";
+ import { AdminAccessError, providerAuthFailure } from "@/lib/admin-failure";
+ import { assertClubOperational } from "@/lib/club-suspension";
+ import { createClient as createAdminClient, type User as AuthUser } from "@supabase/supabase-js";
+@@ -22,16 +23,16 @@ export const getSessionUser = cache(async () => {
+   const session = await supabase.auth.getSession();
+   if (session.error || !session.data.session) return { data: { user: null }, error: session.error };
+   const token = session.data.session.access_token;
+-  const identity = await supabase.auth.getUser(token);
++  const identity = await serverPhase("identity", () => supabase.auth.getUser(token));
+   if (identity.error || !identity.data.user) return identity;
+   const sessionId = sessionIdFromVerifiedToken(token, identity.data.user.id);
+   if (!sessionId) return { data: { user: null }, error: null };
+   // Auth can accept an unexpired JWT beyond the session's not_after boundary.
+   // Request caching coalesces this indexed check, never across requests/users.
+-  const [row] = await prisma.$queryRaw<{ live: boolean }[]>`
++  const [row] = await serverPhase("live_session", () => prisma.$queryRaw<{ live: boolean }[]>`
+     SELECT EXISTS(SELECT 1 FROM auth.sessions WHERE id=${sessionId}::uuid
+       AND user_id=${identity.data.user.id}::uuid
+-      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`;
++      AND (not_after IS NULL OR not_after>clock_timestamp())) AS live`);
+   return row?.live ? identity : { data: { user: null }, error: null };
+ });
+ 
+@@ -42,7 +43,7 @@ export const getSessionUser = cache(async () => {
+ export async function requireAuth(options: { allowPlatformView?: boolean; verifyEmail?: boolean; adminDiagnostics?: boolean } = {}) {
+   const cookieStore = await cookies();
+   if (cookieStore.has(PLATFORM_VIEW_COOKIE) && !options.allowPlatformView) {
+-    const session = await platformViewSession();
++    const session = await serverPhase("identity", () => platformViewSession());
+     if (!session) throw new Error("Impersonation expired or unavailable. Exit impersonation to continue.");
+     const effective = await prisma.user.findUnique({ where: { id: session.targetUserId } });
+     if (!effective || effective.disabledAt) throw new Error("This account is unavailable.");
+@@ -52,7 +53,7 @@ export async function requireAuth(options: { allowPlatformView?: boolean; verify
+       const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+       if (!secret) throw new Error("Target email verification is unavailable.");
+       const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, { auth: { persistSession: false, autoRefreshToken: false } });
+-      const { data, error } = await admin.auth.admin.getUserById(effective.id);
++      const { data, error } = await serverPhase("identity", () => admin.auth.admin.getUserById(effective.id));
+       if (error || !data.user || data.user.id !== effective.id || data.user.email?.toLowerCase() !== effective.email.toLowerCase()) throw new Error("Target email verification is unavailable.");
+       const supabaseUser: Pick<AuthUser, "id" | "email" | "email_confirmed_at" | "confirmation_sent_at" | "app_metadata" | "identities"> = { id: effective.id, email: effective.email, email_confirmed_at: data.user.email_confirmed_at, confirmation_sent_at: data.user.confirmation_sent_at, app_metadata: data.user.app_metadata, identities: data.user.identities };
+       return { user: effective, supabaseUser, impersonation: session };
+diff --git a/utils/prisma.ts b/utils/prisma.ts
+index 66ba583..3107785 100644
+--- a/utils/prisma.ts
++++ b/utils/prisma.ts
+@@ -1,3 +1,4 @@
++import { traceDatabaseQuery, tracePrismaTransactions } from "@/lib/server-phase-trace"
+ import { randomUUID } from "node:crypto"
+ import { PrismaClient } from '@prisma/client'
+ import { supportContext, supportInternal } from '@/utils/support-audit'
+@@ -25,9 +26,10 @@ function createPrisma() {
+     globalForPrisma.outclassPrismaBase = client
+   }
+ 
+-  return client.$extends({
++  return tracePrismaTransactions(client.$extends({
+     name: 'support-actor-audit',
+     query: {
++      $allOperations({ args, query }) { return traceDatabaseQuery(args, () => query(args)) },
+       $allModels: {
+         async $allOperations({ model, operation, args, query }) {
+           // Session lifecycle events already have an explicit real actor.
+@@ -134,7 +136,7 @@ function createPrisma() {
+         },
+       },
+     },
+-  })
++  }))
+ }
+ 
+ type AppPrisma = ReturnType<typeof createPrisma>
+diff --git a/components/interviews/interview-read-scope.tsx b/components/interviews/interview-read-scope.tsx
+new file mode 100644
+index 0000000..065a1da
+--- /dev/null
++++ b/components/interviews/interview-read-scope.tsx
+@@ -0,0 +1,27 @@
++"use client"
++import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react"
++import { useAuth } from "@/contexts/auth-context"
++import { useDemoMode } from "@/contexts/demo-context"
++import { inFlightWorkspaceReads } from "@/lib/in-flight-workspace-reads"
++import { getAssignedInterviewRooms } from "@/lib/workspace-api"
++
++const Context = createContext<ReturnType<typeof inFlightWorkspaceReads> | null>(null)
++const changes = ["outclass:panels-changed", "outclass:interview-rounds-changed", "outclass:demo-change"]
++export function InterviewReadScope({ clubId, children }: { clubId: string; children: ReactNode }) {
++  const { user, isImpersonating, readAuthority } = useAuth(), demo = useDemoMode()
++  // The whole identity snapshot includes membership/capabilities, interview grants,
++  // suspension and privacy versions. Support entry/exit refreshes that snapshot.
++  // Auth token changes rotate the opaque epoch. This owner never outlives the UI.
++  const reads = useMemo(inFlightWorkspaceReads, [user, isImpersonating, readAuthority, clubId, demo.isDemoEnabled])
++  useEffect(() => {
++    const invalidate = () => reads.invalidate()
++    // Fence pre-command snapshots before child refresh listeners dispatch.
++    changes.forEach(name => window.addEventListener(name, invalidate, true))
++    return () => { reads.invalidate(); changes.forEach(name => window.removeEventListener(name, invalidate, true)) }
++  }, [reads])
++  return <Context.Provider value={reads}>{children}</Context.Provider>
++}
++export function useAssignedInterviewRooms(clubId: string) {
++  const reads = useContext(Context)
++  return useCallback(() => reads ? reads.read(`assigned:${clubId}`, () => getAssignedInterviewRooms(clubId)) : getAssignedInterviewRooms(clubId), [reads, clubId])
++}
+diff --git a/lib/in-flight-workspace-reads.ts b/lib/in-flight-workspace-reads.ts
+new file mode 100644
+index 0000000..6c964df
+--- /dev/null
++++ b/lib/in-flight-workspace-reads.ts
+@@ -0,0 +1,21 @@
++/** One owner per mounted authority scope. Only pending reads are shared.
++ * Invalidation fences pre-command results; successes/errors are never cached.
++ */
++export function inFlightWorkspaceReads() {
++  const pending = new Map<string, Promise<unknown>>()
++  let generation = 0
++  return {
++    invalidate() { generation++; pending.clear() },
++    read<T>(key: string, load: () => Promise<T>): Promise<T> {
++      const previous = pending.get(key)
++      if (previous) return previous as Promise<T>
++      const owner = generation
++      const promise = Promise.resolve().then(load).then(value => {
++        if (generation !== owner) throw new Error("Workspace access changed. Retry the read.")
++        return value
++      }).finally(() => { if (pending.get(key) === promise) pending.delete(key) })
++      pending.set(key, promise)
++      return promise
++    },
++  }
++}
+diff --git a/lib/server-phase-trace.ts b/lib/server-phase-trace.ts
+new file mode 100644
+index 0000000..ad3e332
+--- /dev/null
++++ b/lib/server-phase-trace.ts
+@@ -0,0 +1,61 @@
++import { AsyncLocalStorage } from "node:async_hooks"
++import { randomUUID } from "node:crypto"
++
++// Fixed labels only. Never retain SQL, parameters, URLs, cookies, users or errors.
++type Phase = "identity" | "live_session" | "database" | "transaction_acquire" | "transaction" | "lock_query" | "serialization" | "compression"
++type Span = { count: number; duration: number }
++type Trace = { id: string; phases: Partial<Record<Phase, Span>> }
++const context = new AsyncLocalStorage<Trace>()
++export function recordServerPhase(phase: Phase, started: number) {
++  const trace = context.getStore()
++  if (!trace) return
++  const span = trace.phases[phase] ??= { count: 0, duration: 0 }
++  span.count++; span.duration += performance.now() - started
++}
++export async function serverPhase<T>(phase: Phase, run: () => PromiseLike<T> | T): Promise<T> {
++  if (!context.getStore()) return run()
++  const started = performance.now()
++  try { return await run() } finally { recordServerPhase(phase, started) }
++}
++
++export async function traceWorkspaceRequest(run: () => Promise<Response>) {
++  const trace: Trace = { id: randomUUID(), phases: {} }, started = performance.now()
++  return context.run(trace, async () => {
++    const response = await run()
++    const total = performance.now() - started
++    response.headers.set("X-Outclass-Trace-Id", trace.id)
++    response.headers.set("Server-Timing", [...Object.entries(trace.phases).map(([name, span]) => `${name};dur=${span.duration.toFixed(2)}`), `total;dur=${total.toFixed(2)}`].join(", "))
++    // Opt-in structured diagnostics. Even failures contain only status and timings.
++    if (process.env.OUTCLASS_PHASE_TRACE === "1") console.info(JSON.stringify({ event: "workspace.phases", traceId: trace.id, status: response.status, totalMs: +total.toFixed(2), phases: Object.fromEntries(Object.entries(trace.phases).map(([name, span]) => [name, { count: span.count, ms: +span.duration.toFixed(2) }])) }))
++    return response
++  })
++}
++
++// Preserve Prisma's lazy query promises, overloads, transaction options and tx client.
++// Callback entry measures acquisition + BEGIN/transport, not pool-only wait.
++export function tracePrismaTransactions<T extends object>(client: T): T {
++  return new Proxy(client, {
++    get(target, property, receiver) {
++      const value = Reflect.get(target, property, receiver)
++      if (property !== "$transaction" || typeof value !== "function") return value
++      return (...args: unknown[]) => {
++        if (!context.getStore()) return Reflect.apply(value, target, args)
++        const started = performance.now(), operation = args[0]
++        if (typeof operation === "function") args[0] = (tx: unknown) => {
++          recordServerPhase("transaction_acquire", started)
++          return operation(tx)
++        }
++        return serverPhase("transaction", () => Reflect.apply(value, target, args))
++      }
++    },
++  })
++}
++
++export async function traceDatabaseQuery<T>(args: unknown, query: () => PromiseLike<T>): Promise<T> {
++  // Inspect only static SQL template text to classify wait-bearing statements;
++  // never interpolate, retain or emit query text/values.
++  const raw = args as { strings?: readonly string[] } | readonly unknown[] | undefined
++  const strings = raw && "strings" in raw ? raw.strings : Array.isArray(raw) && Array.isArray(raw[0]) ? raw[0] : Array.isArray(raw) && Array.isArray(raw[0]?.strings) ? raw[0].strings : []
++  const lock = strings?.some((part: string) => /FOR\s+(?:UPDATE|SHARE)|pg_advisory/i.test(part))
++  return serverPhase("database", () => lock ? serverPhase("lock_query", query) : query())
++}
+diff --git a/lib/workspace-read-queue.ts b/lib/workspace-read-queue.ts
+new file mode 100644
+index 0000000..dde8d82
+--- /dev/null
++++ b/lib/workspace-read-queue.ts
+@@ -0,0 +1,24 @@
++// Browser-local backpressure only; no responses, identities or grants are cached.
++export function workspaceReadQueue(limit = 3, capacity = 24) {
++  let active = 0
++  const waiting: (() => void)[] = []
++  return function schedule<T>(run: () => Promise<T>, signal: AbortSignal): Promise<T> {
++    if (signal.aborted) return Promise.reject(new Error("Workspace read cancelled"))
++    if (active >= limit && waiting.length >= capacity) return Promise.reject(new Error("Too many workspace reads. Please retry."))
++    return new Promise<T>((resolve, reject) => {
++      const aborted = () => {
++        const index = waiting.indexOf(start)
++        if (index >= 0) waiting.splice(index, 1)
++        reject(new Error("Workspace read cancelled"))
++      }
++      const start = () => {
++        signal.removeEventListener("abort", aborted)
++        if (signal.aborted) { aborted(); return }
++        active++
++        void Promise.resolve().then(() => { if (signal.aborted) throw new Error("Workspace read cancelled"); return run() }).then(resolve, reject).finally(() => { active--; waiting.shift()?.() })
++      }
++      if (active < limit) start()
++      else { waiting.push(start); signal.addEventListener("abort", aborted, { once: true }) }
++    })
++  }
++}
+diff --git a/lib/workspace-response.ts b/lib/workspace-response.ts
+new file mode 100644
+index 0000000..b7d3b56
+--- /dev/null
++++ b/lib/workspace-response.ts
+@@ -0,0 +1,26 @@
++import { gzip, constants } from "node:zlib"
++import { promisify } from "node:util"
++import { serverPhase } from "@/lib/server-phase-trace"
++const compress = promisify(gzip)
++function acceptsGzip(value: string | null) {
++  const entries = (value ?? "").toLowerCase().split(",").map(entry => {
++    const [name, ...parameters] = entry.trim().split(";")
++    const quality = parameters.find(parameter => parameter.trim().startsWith("q="))?.trim().slice(2)
++    return { name, quality: quality === undefined ? 1 : Number(quality) }
++  })
++  const selected = entries.find(entry => entry.name === "gzip") ?? entries.find(entry => entry.name === "*")
++  return !!selected && selected.quality > 0 && selected.quality <= 1
++}
++/** Next compresses RSC action replies locally, but not these JSON Responses.
++ * Keep large GET reads competitive without changing CDN or cache behavior.
++ */
++export async function workspaceJsonResponse(data: unknown, request: Request, initialHeaders: HeadersInit) {
++  const headers = new Headers(initialHeaders)
++  headers.set("Content-Type", "application/json")
++  headers.append("Vary", "Accept-Encoding")
++  const bytes = Buffer.from(JSON.stringify(data))
++  if (bytes.length < 1024 || !acceptsGzip(request.headers.get("Accept-Encoding"))) return new Response(bytes, { headers })
++  const compressed = await serverPhase("compression", () => compress(bytes, { level: constants.Z_BEST_SPEED }))
++  headers.set("Content-Encoding", "gzip")
++  return new Response(new Uint8Array(compressed), { headers })
++}
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+new file mode 100644
+index 0000000..492a359
+--- /dev/null
++++ b/scripts/navigation-audit.cjs
+@@ -0,0 +1,246 @@
++// Investigation only. Accepts only the reserved disposable local Supabase fixture.
++// No application .env is read; no cookies, headers, payloads or personal data are saved.
++const fs = require('node:fs');
++const path = require('node:path');
++const os = require('node:os');
++const assert = require('node:assert/strict');
++const { randomUUID } = require('node:crypto');
++const { chromium } = require('playwright');
++const { PrismaClient } = require('@prisma/client');
++const { Actor, readConfig, confirmationMessage } = require('../tests/helpers/onboarding-e2e.cjs');
++const root = path.join(os.tmpdir(), 'outclass-onboarding-e2e');
++const fixtureFile = path.join(root, 'navigation-fixture.json');
++const outDir = path.resolve(process.argv.find(a => a.startsWith('--out='))?.slice(6) || 'docs/performance/evidence');
++function distribution(values) {
++  const a = values.filter(Number.isFinite).sort((a,b)=>a-b);
++  const r = n => Math.round(n*100)/100;
++  return {samples:a.length,p50:a.length?r(a[Math.ceil(a.length*.5)-1]):null,p95:a.length?r(a[Math.ceil(a.length*.95)-1]):null,max:a.length?r(a.at(-1)):null};
++}
++function safeRoute(input) {
++  const u = new URL(input, 'http://127.0.0.1:3107');
++  if(u.pathname==='/api/workspace') return '/api/workspace?kind='+u.searchParams.get('kind');
++  return u.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, '[fixture-id]');
++}
++async function seed(config) {
++  if(fs.existsSync(fixtureFile)) return JSON.parse(fs.readFileSync(fixtureFile));
++  const actor = new Actor(config), tag='navaudit'+randomUUID().replaceAll('-','').slice(0,10);
++  const email=tag+'@virginia.edu', password='Local-audit-only!'+randomUUID();
++  const signup=await actor.client.auth.signUp({email,password});
++  if(signup.error) throw Error('Local signup failed: '+signup.error.code);
++  const message=await confirmationMessage(config,email), token=message.Text.match(/\b(\d{6})\b/)?.[1];
++  assert.ok(token,'Local verification email supplies OTP');
++  const verified=await actor.client.auth.verifyOtp({email,token,type:'email'});
++  assert.ok(!verified.error,'Local email verification succeeds');
++  const userId=verified.data.user.id, clubIds=[randomUUID(),randomUUID()];
++  const db=new PrismaClient({datasourceUrl:config.status.DB_URL});
++  try {
++    await db.user.upsert({where:{id:userId},create:{id:userId,email},update:{}});
++    await db.studentProfile.create({data:{userId,firstName:'Audit',lastName:'Owner',computingId:tag,major:'Economics',gradYear:2028}});
++    for(let c=0;c<2;c++) {
++      const clubId=clubIds[c];
++      await db.club.create({data:{id:clubId,slug:tag+'-'+c,name:'Navigation Audit Club '+(c+1),tagline:'Disposable local fixture',description:'Synthetic audit only',color:'#234567',category:'Academic',claimedAt:new Date()}});
++      const owner=await db.clubMember.create({data:{clubId,userId,isOwner:true,accessRole:'OWNER',interviewOffices:['PRESIDENT']}});
++      const applied=await db.pipelineRound.create({data:{clubId,name:'Applied',order:0,type:'APPLICATION_REVIEW'}});
++      await db.pipelineRound.create({data:{clubId,name:'Interview',order:1,type:'INTERVIEW'}});
++      for(let i=0;i<100;i++) {
++        const id=randomUUID();
++        await db.user.create({data:{id,email:tag+c+'s'+i+'@virginia.edu',studentProfile:{create:{firstName:'Audit',lastName:'Student '+String(i).padStart(3,'0'),computingId:tag+c+'s'+i,major:'Economics',gradYear:2028,experiences:{create:{title:'Synthetic experience',subtitle:'Audit fixture',period:'2025–2026'}}}}}});
++        await db.application.create({data:{clubId,studentId:id,roundId:applied.id,status:'SUBMITTED',submittedAt:new Date()}});
++        if(i<60) await db.clubMember.create({data:{clubId,userId:id}});
++      }
++      await db.meeting.create({data:{clubId,title:'Audit Weekly Meeting',date:new Date(Date.now()+86400000*7),location:'Synthetic room',audience:'MEMBERS',isPublic:false}});
++      const task=await db.clubTask.create({data:{clubId,title:'Audit Task',audience:{type:'ALL'},dueAt:new Date(Date.now()+86400000*7)}});
++      await db.taskAssignment.create({data:{taskId:task.id,memberId:owner.id,userId}});
++      await db.clubAnnouncement.create({data:{clubId,authorId:userId,title:'Audit Announcement',body:'Synthetic benchmark content.',audience:'MEMBERS'}});
++    }
++    const fixture={userId,email,password,clubIds,counts:{clubs:2,membersPerClub:61,applicantsPerClub:100,meetingsPerClub:1,tasksPerClub:1,announcementsPerClub:1}};
++    fs.writeFileSync(fixtureFile,JSON.stringify(fixture),{mode:0o600});
++    return fixture;
++  } finally {await db.$disconnect();}
++}
++function routes(f) {
++  const base='/club/'+f.clubIds[0]+'/workspace';
++  return {
++    overview:{href:base+'?section=overview',selector:'.oc-manager-overview, section[aria-label="Overview"]',text:'Audit Weekly Meeting',tour:'nav-overview'},
++    members:{href:base+'?section=members',selector:'section[aria-label="Members"]',text:'Audit Student 000',tour:'nav-members'},
++    meetings:{href:base+'?section=meetings',selector:'section[aria-label="Meetings"]',text:'Audit Weekly Meeting',tour:'nav-meetings'},
++    tasks:{href:base+'?section=tasks',selector:'section[aria-label="Tasks"]',text:'Audit Task',tour:'nav-tasks'},
++    announcements:{href:base+'?section=announcements',selector:'section[aria-label="Announcements"]',text:'Audit Announcement',tour:'nav-announcements'},
++    recruiting:{href:base+'?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 1',tour:'nav-overview'},
++    applicants:{href:base+'?section=recruitment&tool=applicants',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-applicants'},
++    interviews:{href:base+'?section=recruitment&tool=interviews',selector:'section[aria-label="Interview rooms"]',text:'No assigned interviews.',tour:'nav-interviews'},
++    decisions:{href:base+'?section=recruitment&tool=decisions',selector:'.oc-live-pipeline',text:'Audit Student 000',tour:'nav-decisions'},
++    settings:{href:base+'?section=settings',selector:'.oc-settings-workspace',text:'Organization settings',tour:'nav-settings'},
++    club2:{href:'/club/'+f.clubIds[1]+'/workspace?section=recruitment&tool=overview',selector:'.oc-recruiting-overview',text:'Submitted',clubLabel:'Navigation Audit Club 2'},
++    personal:{href:'/?workspace=student',selector:'.oc-student-home:not([role="status"])',text:'Your next step'},
++    voting:{selector:'[role="dialog"]',text:'No voting session yet.'},
++    applicantDetail:{selector:'[data-slot="sheet-content"]',text:'configured fields'},
++    memberDetail:{selector:'[data-slot="sheet-content"]',text:'Audit Student 000'},
++  };
++}
++function installBrowserObservers() {
++  window.__navAudit={longTasks:[],commits:[]};
++  new PerformanceObserver(list=>{for(const e of list.getEntries())window.__navAudit.longTasks.push({start:e.startTime,duration:e.duration});}).observe({entryTypes:['longtask']});
++  // Commit notifications only; standard production React omits profiler durations.
++  window.__REACT_DEVTOOLS_GLOBAL_HOOK__={supportsFiber:true,renderers:new Map(),inject(r){const id=this.renderers.size+1;this.renderers.set(id,r);return id;},onCommitFiberRoot(){window.__navAudit.commits.push(performance.now());},onCommitFiberUnmount(){}};
++  document.addEventListener('click',()=>{if(window.__navAudit.armed && !window.__navAudit.click)window.__navAudit.click=performance.now();},true);
++  for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
++}
++async function waitReady(page, desc) {
++  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
++}
++async function main() {
++  const config=readConfig(path.join(root,'config.json'));
++  assert.equal(config.appUrl,'http://127.0.0.1:3107');
++  const fixture=await seed(config);
++  if(process.argv.includes('--seed')){console.log('Created/reused disposable local audit fixtures: '+JSON.stringify(fixture.counts));return;}
++  fs.mkdirSync(outDir,{recursive:true});
++  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
++  const cookies=[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'}));
++  const manifest=JSON.parse(fs.readFileSync(path.join(config.buildDir,'server/server-reference-manifest.json')));
++  const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
++  const browser=await chromium.launch({headless:true});
++  const descriptors=routes(fixture), allSamples=[], failures=[];
++  const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
++  assert.ok(sampleCount>0&&sampleCount<=100);
++  async function session() {
++    const context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies,origins:[]}});
++    await context.addInitScript(installBrowserObservers);
++    const page=await context.newPage(),cdp=await context.newCDPSession(page);
++    await cdp.send('Performance.enable');
++    const requests=[],pending=new Set();
++    page.on('request',req=>{
++      const action=req.headers()['next-action'];
++      const row={req,route:action?actionNames.get(action)||'server-action':safeRoute(req.url()),method:req.method(),type:req.resourceType(),start:Date.now(),status:null,end:null,bytes:null,timing:null};
++      requests.push(row);if(req.resourceType()!=='eventsource')pending.add(req);
++    });
++    page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
++    page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
++    page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
++    return {context,page,cdp,requests,pending};
++  }
++  async function settle(s) {
++    // SSE is ongoing. Wait for other requests to drain, with a finite bound.
++    const end=Date.now()+10000;
++    while(s.pending.size && Date.now()<end)await s.page.waitForTimeout(30);
++    await s.page.waitForTimeout(80);
++  }
++  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
++  if(process.argv.includes('--initial')){
++    const samples=[];
++    try{
++      for(const id of ['overview','personal'])for(let i=0;i<sampleCount;i++){
++        const s=await session();
++        try{
++          await s.context.addInitScript(d=>{
++            let scheduled=false;
++            const observer=new MutationObserver(()=>{if(scheduled)return;const root=[...document.querySelectorAll(d.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(d.text));if(root){scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{window.__initialReady=performance.now();observer.disconnect();}));}});
++            observer.observe(document,{childList:true,subtree:true,attributes:true});
++          },descriptors[id]);
++          await open(s,id);await s.page.waitForFunction(()=>window.__initialReady>0);
++          const metrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
++          const marks=await s.page.evaluate(()=>({readyMs:window.__initialReady,longTasks:window.__navAudit.longTasks.filter(t=>t.start<window.__initialReady),navigation:performance.getEntriesByType('navigation').map(n=>({ttfbMs:n.responseStart,domContentLoadedMs:n.domContentLoadedEventEnd,transferSize:n.transferSize}))[0]}));
++          samples.push({route:id,index:i,meaningfulMs:marks.readyMs,scriptMs:metrics.ScriptDuration*1000,taskMs:metrics.TaskDuration*1000,longTasks:marks.longTasks,document:marks.navigation,requestCount:s.requests.length});
++          console.log('initial '+id+' '+(i+1)+'/'+sampleCount+': '+marks.readyMs.toFixed(1)+' ms');
++        }finally{await s.context.close();}
++      }
++      fs.writeFileSync(path.join(outDir,'initial-samples.json'),JSON.stringify({environment:'local production Next build; authenticated local fixture; cold browser context; warm server/DB',samples,summary:['overview','personal'].map(route=>({route,meaningfulMs:distribution(samples.filter(s=>s.route===route).map(s=>s.meaningfulMs)),scriptMs:distribution(samples.filter(s=>s.route===route).map(s=>s.scriptMs))}))},null,2));
++    }finally{await browser.close();}
++    return;
++  }
++  async function clickTarget(s,from,to) {
++    const {page}=s;
++    if(to==='applicantDetail')return page.locator('[data-applicant-id]').first().click();
++    if(to==='memberDetail')return page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).click();
++    if(from==='applicantDetail'||from==='memberDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
++    if(to==='voting')return page.getByRole('button',{name:'Start voting',exact:true}).click();
++    if(from==='voting'&&to==='applicants'){
++      const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
++      if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
++      return page.locator('.oc-voting-stage').getByRole('button',{name:'Close',exact:true}).click();
++    }
++    if(to==='personal'||to==='club2'||from==='personal'||from==='club2'){
++      await page.getByRole('button',{name:/Switch workspace:/}).first().click();
++      return page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
++    }
++    if(from==='settings'&&to==='overview')return page.locator('[data-tour="nav-overview"]').first().click();
++    if((to==='recruiting'&&from==='overview')||(to==='overview'&&['recruiting','applicants'].includes(from)))return page.locator('[data-tour="mode-'+(to==='recruiting'?'recruiting':'club')+'"]').first().click();
++    const tour=descriptors[to].tour;
++    const item=page.locator('[data-tour="'+tour+'"]').first();
++    // Applicant/decision groups collapse when another group is selected.
++    if(!await item.isVisible()) {
++      const label=to==='decisions'?'Decisions':'Applicants';
++      await page.getByRole('button',{name:label,exact:true}).first().click();
++    }
++    return item.click();
++  }
++  async function sample(s,from,to,condition,index) {
++    // Open any switcher or grouped rail before timing the destination click.
++    const page=s.page;
++    if(from==='voting'){
++      const setup=page.getByRole('dialog',{name:'New voting session',exact:true});
++      if(await setup.isVisible()){await setup.getByRole('button',{name:'Close',exact:true}).click();await setup.waitFor({state:'hidden'});}
++    }
++    if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('button',{name:/Switch workspace:/}).first().click();
++    else if(!['voting'].includes(from)&&to!=='voting'&&descriptors[to].tour){
++      const item=page.locator('[data-tour="'+descriptors[to].tour+'"]').first();
++      if(!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
++    }
++    const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
++    const startIndex=s.requests.length;
++    await page.evaluate(desc=>{
++      const a=window.__navAudit;a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
++      if(a.observer)a.observer.disconnect();
++      let scheduled=false;
++      const check=()=>{
++        if(!a.click||scheduled||a.ready)return;
++        if(desc.href&&location.pathname!==new URL(desc.href,location.origin).pathname)return;
++        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(desc.clubLabel)))return;
++        const root=[...document.querySelectorAll(desc.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(desc.text));
++        if(!root)return;
++        // Closing Voting reveals Applicants already mounted underneath.
++        if(desc.selector==='.oc-live-pipeline'&&document.querySelector('[data-slot="dialog-content"][data-state="open"]'))return;
++        scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{a.ready=performance.now();const control=[...root.querySelectorAll('button,input,select,a[href]')].find(el=>el.getClientRects().length&&!el.disabled);a.interactive=control?performance.now():null;}));
++      };
++      a.observer=new MutationObserver(check);a.observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});a.check=check;
++    },descriptors[to]);
++    if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('menuitem',{name:to==='personal'?'Personal workspace':to==='club2'?/Navigation Audit Club 2/:/Navigation Audit Club 1/}).click();
++    else await clickTarget(s,from,to);
++    await page.evaluate(()=>window.__navAudit.check());
++    await page.waitForFunction(()=>window.__navAudit.ready>0,null,{timeout:30000});
++    await settle(s);
++    const afterMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
++    const marks=await page.evaluate(()=>{const a=window.__navAudit;a.armed=false;a.observer.disconnect();return{click:a.click,origin:performance.timeOrigin,url:a.url,ready:a.ready,interactive:a.interactive,longTasks:a.longTasks.filter(t=>t.start>=a.click&&t.start<a.ready),commits:a.commits.filter(t=>t>=a.click&&t<=a.ready).length};});
++    const clickWall=marks.origin+marks.click;
++    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
++    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
++    allSamples.push(row);return row;
++  }
++  const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
++  const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
++  const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
++  try {
++    for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
++      let shared;
++      try {
++        if(condition==='repeated') {shared=await session();await open(shared,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(shared,'applicants','voting');await waitReady(shared.page,descriptors.voting);await settle(shared);}}
++        for(let i=0;i<sampleCount;i++) {
++          const s=shared||await session();
++          try {
++            if(!shared){await open(s,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(s,'applicants','voting');await waitReady(s.page,descriptors.voting);await settle(s);}}
++            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++            const r=await sample(s,from,to,condition,i);console.log(`${r.path} ${condition} ${i+1}/${sampleCount}: ${r.meaningfulMs.toFixed(1)} ms, ${r.requestCount} requests`);
++            if(shared&&i<sampleCount-1){await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++          } finally {if(!shared)await s.context.close();}
++        }
++      } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}
++      finally {if(shared)await shared.context.close();}
++      fs.writeFileSync(path.join(outDir,outputStem+'-samples.json'),JSON.stringify({environment:'local Next production build + disposable local Supabase',fixture:fixture.counts,sampleCount,metricsNotes:{meaningfulMs:'DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing',interactiveMs:'first enabled visible control after content predicate; no mutation is invoked',requestOffsets:'relative to captured DOM click timestamp',networkCompleteMs:'observed non-SSE requests drained after useful content; includes background traffic',cpu:'CDP delta through settle, so includes post-content background work',react:'production commit notifications only; profiler render durations unavailable'},samples:allSamples,failures},null,2));
++    }
++    const groups=[...new Set(allSamples.map(s=>s.path+'|'+s.condition))].map(key=>{const samples=allSamples.filter(s=>s.path+'|'+s.condition===key);return{path:samples[0].path,condition:samples[0].condition,meaningfulMs:distribution(samples.map(s=>s.meaningfulMs)),interactiveMs:distribution(samples.map(s=>s.interactiveMs)),clickToUrlMs:distribution(samples.map(s=>s.clickToUrlMs)),networkCompleteMs:distribution(samples.map(s=>s.networkCompleteMs)),scriptMs:distribution(samples.map(s=>s.scriptMs)),taskMs:distribution(samples.map(s=>s.taskMs)),requestCount:distribution(samples.map(s=>s.requestCount)),encodedBodyBytes:distribution(samples.map(s=>s.encodedBodyBytes))};});
++    fs.writeFileSync(path.join(outDir,outputStem+'-summary.json'),JSON.stringify({generatedAt:new Date().toISOString(),sampleCount,groups,failures},null,2));
++    if(failures.length)process.exitCode=1;
++  } finally {await browser.close();}
++}
++module.exports={distribution,safeRoute};
++if(require.main===module)main().catch(e=>{console.error(e.name, e.code || '', String(e.message).split('\n').filter(line=>/Invalid|constraint|argument|Unknown|verification|failed|Error/.test(line)).slice(-3).join('\n'));process.exitCode=1;});
+diff --git a/scripts/phase1-local-build.cjs b/scripts/phase1-local-build.cjs
+new file mode 100644
+index 0000000..9dca470
+--- /dev/null
++++ b/scripts/phase1-local-build.cjs
+@@ -0,0 +1,19 @@
++// Rebuild/restart ONLY the reserved, validated local navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
++const {spawn,spawnSync,execFileSync}=require('node:child_process');
++const {readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
++const root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),repo=path.resolve(__dirname,'..');
++const config=readConfig(path.join(root,'config.json')),s=config.status;
++assert.equal(config.appUrl,'http://127.0.0.1:3107');assert.equal(config.buildDir,path.join(repo,'.next-publish'));
++const pid=Number(fs.readFileSync(path.join(root,'server.pid'),'utf8'));
++const listener=execFileSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).trim();assert.equal(listener,String(pid));
++assert.ok(execFileSync('lsof',['-a','-p',String(pid),'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));
++process.kill(pid,'SIGTERM');
++const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:s.DB_URL,POSTGRES_PRISMA_URL:s.DB_URL,POSTGRES_URL:s.DB_URL,POSTGRES_URL_NON_POOLING:s.DB_URL,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:config.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:config.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:require('node:crypto').randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''};
++const fd=fs.openSync(path.join(root,'phase1-build.log'),'w');
++const built=spawnSync(process.execPath,['node_modules/next/dist/bin/next','build'],{cwd:repo,env,stdio:['ignore',fd,fd]});fs.closeSync(fd);
++if(built.status!==0)throw Error('Local build failed; inspect reserved phase1-build.log');
++const log=fs.openSync(path.join(root,'server.log'),'a');
++const app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,detached:true,stdio:['ignore',log,log]});
++fs.closeSync(log);fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));app.unref();
++(async()=>{for(let n=0;n<100;n++){try{if((await fetch(config.appUrl)).ok){console.log('Reserved local production build ready.');return}}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Reserved local app failed to start')})().catch(e=>{console.error(e.message);process.exitCode=1});
+diff --git a/scripts/summarize-phase1-navigation.cjs b/scripts/summarize-phase1-navigation.cjs
+new file mode 100644
+index 0000000..80d2141
+--- /dev/null
++++ b/scripts/summarize-phase1-navigation.cjs
+@@ -0,0 +1,21 @@
++// Sanitized comparisons only; original October 21 evidence is never overwritten.
++const fs=require('node:fs'),path=require('node:path');
++const {distribution}=require('./navigation-audit.cjs');
++const root=path.resolve('docs/performance/phase1');
++const stages=['baseline','tracing','lazy-scheduling','scoped-reads','get-transport','final','verified','verified-bookmarks'];
++const names={getAssignedInterviewRooms:'assignedRooms',getInterviewWorkspace:'interviewWorkspace',getInterviewRounds:'interviewRounds'};
++const kind=r=>r.route.includes('?kind=')?r.route.split('?kind=')[1]:names[r.route.split(':').at(-1)];
++const phases=r=>Object.fromEntries([...String(r.serverTiming||'').matchAll(/([a-z_]+);dur=([\d.]+)/g)].map(m=>[m[1],Number(m[2])]));
++const output={auditCommit:'3017e01d5b55bc8fb38d4f8fbec4906dd93bf619',environment:'local production Next build, real disposable Supabase Auth/PostgreSQL, Chromium 156, no network/CPU throttling',percentiles:'nearest rank, n=20 per path/condition',limitations:['Cold means fresh browser context; the server and database are warm.','Useful content is a DOM predicate plus two animation frames, not measured pixels.','Response-body bytes exclude headers. Server phase times overlap and are not additive.','Empty room assignments; no production speedup or active-room capacity claim.','final was a confirmation run; verification overlapped its last warm samples. verified is the preceding quiet performance cohort; verified-bookmarks is the final-source quiet cohort.'],stages:{}};
++for(const stage of stages){
++ const file=path.join(root,stage,'browser-samples.json');if(!fs.existsSync(file))continue;
++ const data=JSON.parse(fs.readFileSync(file));
++ const groups=[...new Set(data.samples.map(s=>s.path+'|'+s.condition))].map(key=>{
++  const samples=data.samples.filter(s=>s.path+'|'+s.condition===key),requests=samples.flatMap(s=>s.requests),critical=samples.map(s=>{const found=new Map();for(const r of s.requests){const k=kind(r);if(['assignedRooms','interviewWorkspace','interviewRounds'].includes(k)&&!found.has(k))found.set(k,r)}return [...found.values()]}),reads=critical.flat();
++  const phaseNames=[...new Set(reads.flatMap(r=>Object.keys(phases(r))))];
++  return {path:samples[0].path,condition:samples[0].condition,...Object.fromEntries(['meaningfulMs','interactiveMs','requestCount','encodedBodyBytes','networkCompleteMs','scriptMs','taskMs'].map(m=>[m,distribution(samples.map(s=>s[m]))])),completePayloadSamples:samples.filter(s=>s.requests.every(r=>r.type==="eventsource"||r.encodedBodyBytes!==null)).length,completePayloadBytes:distribution(samples.filter(s=>s.requests.every(r=>r.type==="eventsource"||r.encodedBodyBytes!==null)).map(s=>s.encodedBodyBytes)),httpErrors:requests.filter(r=>r.status>=400).length,transportFailures:requests.filter(r=>r.failed).length,post200TransportFailures:requests.filter(r=>r.failed&&r.status===200).length,statuses:Object.fromEntries([...new Set(requests.map(r=>String(r.status)))].map(status=>[status,requests.filter(r=>String(r.status)===status).length])),requestTtfbMs:distribution(requests.map(r=>r.ttfbMs)),requestTransferMs:distribution(requests.map(r=>r.transferMs)),roomsCriticalReadBarrierMs:distribution(critical.filter(rs=>rs.length===3).map(rs=>Math.max(...rs.map(r=>r.endMs))-Math.min(...rs.map(r=>r.startMs)))),roomsReadTtfbMs:distribution(reads.map(r=>r.ttfbMs)),responseServerPhasesMs:Object.fromEntries([...new Set(requests.flatMap(r=>Object.keys(phases(r))))].map(p=>[p,distribution(requests.map(r=>phases(r)[p]))])),serverPhasesMs:Object.fromEntries(phaseNames.map(p=>[p,distribution(reads.map(r=>phases(r)[p]))]))};
++ });
++ output.stages[stage]={acceptedForComparison:stage!=="final",primaryFinal:stage==="verified-bookmarks",samples:data.samples.length,failures:data.failures,groups};
++}
++fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(output,null,2)+'\n');
++for(const [stage,d]of Object.entries(output.stages))for(const g of d.groups.filter(g=>g.path==='applicants → interviews'&&g.condition!=='repeated'))console.log(`${stage}\t${g.condition}\t${g.meaningfulMs.p50}/${g.meaningfulMs.p95}\t${g.requestCount.p50}\t${g.encodedBodyBytes.p50}\t${g.networkCompleteMs.p50}/${g.networkCompleteMs.p95}\t${g.httpErrors} HTTP / ${g.transportFailures} transport`);
+diff --git a/tests/in-flight-workspace-reads.test.cjs b/tests/in-flight-workspace-reads.test.cjs
+new file mode 100644
+index 0000000..0770603
+--- /dev/null
++++ b/tests/in-flight-workspace-reads.test.cjs
+@@ -0,0 +1,27 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load}=require('./helpers/voting-harness.cjs');
++const {inFlightWorkspaceReads}=load('lib/in-flight-workspace-reads.ts');
++const {workspaceReadQueue}=load('lib/workspace-read-queue.ts');
++const tick=()=>new Promise(r=>setImmediate(r));
++test('identical pending resources share only within their owner; success/error always revalidate',async()=>{
++ const a=inFlightWorkspaceReads(),b=inFlightWorkspaceReads();let calls=0,finish;
++ const run=()=>{calls++;return new Promise(r=>finish=r)};
++ const first=a.read('club:rooms',run),same=a.read('club:rooms',run);assert.equal(first,same);await tick();assert.equal(calls,1);finish('rooms');await first;
++ await b.read('club:rooms',async()=>++calls);await a.read('club:rooms',async()=>++calls);assert.equal(calls,3);
++ await assert.rejects(a.read('club:rooms',async()=>{throw Error('denied')}),/denied/);assert.equal(await a.read('club:rooms',async()=>4),4);
++});
++test('invalidating a pending scope fences old results and old cleanup cannot delete a newer read',async()=>{
++ const a=inFlightWorkspaceReads();let finish,finishNew;
++ const old=a.read('resource',()=>new Promise(r=>finish=r));await tick();a.invalidate();
++ const fresh=a.read('resource',()=>new Promise(r=>finishNew=r));await tick();finish('stale private value');await assert.rejects(old,/access changed/);
++ assert.equal(a.read('resource',async()=>{throw Error('duplicate')}),fresh);finishNew('current');assert.equal(await fresh,'current');
++});
++test('read queue permits three independent dispatches and bounds rapid switching; aborted queued reads never dispatch',async()=>{
++ const schedule=workspaceReadQueue(3,2),signal=new AbortController().signal,finish=[];let active=0,max=0;
++ const run=()=>{active++;max=Math.max(max,active);return new Promise(r=>finish.push(()=>{active--;r('ok')}))};
++ const jobs=[schedule(run,signal),schedule(run,signal),schedule(run,signal)];await tick();assert.equal(active,3);
++ const cancelled=new AbortController(),queued=schedule(run,cancelled.signal);cancelled.abort();await assert.rejects(queued,/cancelled/);
++ jobs.push(schedule(run,signal),schedule(run,signal));await assert.rejects(schedule(run,signal),/Too many/);
++ while(finish.length){finish.shift()();await tick()}await Promise.all(jobs);assert.equal(max,3);assert.equal(active,0);
++ await assert.rejects(schedule(async()=>{throw Error('failure')},signal),/failure/);assert.equal(await schedule(async()=>true,signal),true);
++});
+diff --git a/tests/interview-tab-retention-browser.test.cjs b/tests/interview-tab-retention-browser.test.cjs
+new file mode 100644
+index 0000000..ff1f97c
+--- /dev/null
++++ b/tests/interview-tab-retention-browser.test.cjs
+@@ -0,0 +1,41 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),http=require('node:http');
++const {chromium}=require('playwright'),{bundle}=require('./helpers/browser-bundle.cjs');
++test('interview tabs lazily mount Scheduling, retain a dirty editor across rapid switches and follow URL tab changes',async()=>{
++ const code=bundle(`const replace=history.replaceState;history.replaceState=function(...args){replace.apply(this,args);dispatchEvent(new PopStateEvent('popstate'))};import React,{useEffect,useState}from'react';import{createRoot}from'react-dom/client';import{InterviewManagementTabs}from'@/components/interview-management-tabs';function App(){const[tab,setTab]=useState('rooms');useEffect(()=>{const changed=()=>setTab(new URLSearchParams(location.search).get('interviewTab')||'rooms');window.addEventListener('popstate',changed);return()=>window.removeEventListener('popstate',changed)},[]);return <InterviewManagementTabs clubId="club" initialTab={tab}/>};createRoot(document.getElementById('root')).render(<App/>);`,{
++  'next/link':"module.exports=()=>null",
++  '@/contexts/auth-context':"exports.useAuth=()=>({user:{id:'owner',memberships:[{clubId:'club',isOwner:true,status:'ACTIVE',permissions:[],interviewOffices:[]}]}})",
++  '@/contexts/demo-context':"exports.useDemoMode=()=>({ready:true,isDemoEnabled:true})",
++  '@/lib/workspace-api':"exports.getAssignedInterviewRooms=async()=>[]",
++  '@/components/interview-kit-editor':"exports.ClubInterviewKitSettings=()=>null",
++  '@/components/interview-access-setup':"exports.InterviewAccessSetup=()=>null",
++  '@/components/interviews/interview-rooms-list':"exports.InterviewRoomsList=()=>require('react').createElement('p',null,'Assigned rooms')",
++  '@/components/interviews/room-manager':`const React=require('react');exports.RoomManager=()=>{const[value,setValue]=React.useState('');React.useEffect(()=>{window.schedulerMounts=(window.schedulerMounts||0)+1;return()=>window.schedulerUnmounts=(window.schedulerUnmounts||0)+1},[]);return React.createElement('section',{'data-unsaved':value?'true':'false'},React.createElement('input',{'aria-label':'Scheduler draft',value,onChange:e=>setValue(e.target.value)}))}`,
++ });
++ const server=http.createServer((req,res)=>{res.setHeader('Content-Type',req.url==='/fixture.js'?'application/javascript':'text/html');res.end(req.url==='/fixture.js'?code:'<div id="root"></div><script src="/fixture.js"></script>')});
++ await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true});
++ try{const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));const dialogs=[];page.on('dialog',async d=>{dialogs.push(d.message());await d.dismiss()});
++  await page.goto('http://127.0.0.1:'+server.address().port);await page.getByText('Assigned rooms').waitFor();assert.equal(await page.getByLabel('Scheduler draft').count(),0);
++  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Interview rooms',exact:true});
++  await schedule.click();await page.getByLabel('Scheduler draft').fill('Unsaved panel work');
++  for(let i=0;i<6;i++){await rooms.click();await schedule.click();assert.equal(await page.getByLabel('Scheduler draft').inputValue(),'Unsaved panel work')}
++  await page.evaluate(()=>{history.replaceState(null,'','?interviewTab=rooms');dispatchEvent(new PopStateEvent('popstate'))});await rooms.waitFor();await page.waitForFunction(()=>document.querySelector('[role="tab"][data-state="active"]').textContent==='Interview rooms');
++  await page.evaluate(()=>{history.replaceState(null,'','?interviewTab=schedule');dispatchEvent(new PopStateEvent('popstate'))});await page.getByLabel('Scheduler draft').waitFor();assert.equal(await page.getByLabel('Scheduler draft').inputValue(),'Unsaved panel work');
++  assert.deepEqual(await page.evaluate(()=>[window.schedulerMounts,window.schedulerUnmounts||0]),[1,0]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
++ }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r))}
++});
++
++test('retained real scheduler revalidates before reveal, keeps editor state, and conceals old data on denial',async()=>{
++ const {fixture}=require('./helpers/scheduling-ui-fixture.cjs'),f=await fixture({pipeline:true}),browser=await chromium.launch({headless:true});
++ const secondRound=require('node:crypto').randomUUID();f.mutate(s=>{const club=s.clubs.find(c=>c.id===f.scope.clubId),round=club.rounds.find(r=>r.id===f.scope.roundId);club.rounds.push({...round,id:secondRound,name:'Second retained round',order:round.order+1})});
++ try{const page=await browser.newPage();page.setDefaultTimeout(10000);const calls=[];page.on('request',r=>{if(r.url().endsWith('/action'))calls.push(JSON.parse(r.postData()).name)});
++  await page.goto(f.url+'?interviewTab=rooms&roundId='+f.scope.roundId);await page.getByRole('heading',{name:'Your interview rooms',exact:true}).waitFor();assert.equal(calls.includes('getRoomWorkspace'),false);
++  const schedule=page.getByRole('tab',{name:'Scheduling',exact:true}),rooms=page.getByRole('tab',{name:'Interview rooms',exact:true});
++  await schedule.click();await page.locator('.ir-manager').waitFor();await page.getByLabel('Filter interview date',{exact:true}).fill('2099-09-07');await rooms.click();
++  let release,held;const barrier=new Promise(r=>release=r),arrived=new Promise(r=>held=r);
++  await page.route('**/action',async route=>{if(JSON.parse(route.request().postData()).name==='getRoomWorkspace'){held();await barrier}await route.continue()});
++  await schedule.click();await arrived;assert.equal(await page.locator('.ir-manager').isVisible(),false);release();await page.locator('.ir-manager').waitFor();assert.equal(await page.getByLabel('Filter interview date',{exact:true}).inputValue(),'2099-09-07');
++  await page.unroute('**/action');await rooms.click();await page.evaluate(id=>{const url=new URL(location.href);url.searchParams.set('roundId',id);history.replaceState(null,'',url)},secondRound);await schedule.click();await page.waitForFunction(id=>document.querySelector('[aria-label="Recruitment round"]')?.value===id,secondRound);
++  await rooms.click();await page.route('**/action',route=>JSON.parse(route.request().postData()).name==='getRoomWorkspace'?route.fulfill({status:403,contentType:'application/json',body:JSON.stringify({error:'Access revoked'})}):route.continue());
++  await schedule.click();await page.getByRole('alert').filter({hasText:'Check your current access'}).waitFor();assert.equal(await page.locator('.ir-manager').isVisible(),false);assert.equal(f.liveCalls(),0);
++ }finally{await browser.close();await f.close()}
++});
+diff --git a/tests/navigation-phase1-e2e.test.cjs b/tests/navigation-phase1-e2e.test.cjs
+new file mode 100644
+index 0000000..e3ea27b
+--- /dev/null
++++ b/tests/navigation-phase1-e2e.test.cjs
+@@ -0,0 +1,54 @@
++// Real Next + Auth + native PostgreSQL, reserved disposable project only.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright');
++const {Actor,readConfig}=require('./helpers/onboarding-e2e.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++test('Phase 1 GET reads preserve live authority, no-store, Demo isolation and concurrent browser navigation',{skip:!configFile,timeout:120000},async t=>{
++ const config=readConfig(configFile),fixture=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),clubId=fixture.clubIds[0];
++ const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL});
++ const backups=[];
++ for(const id of fixture.clubIds){const member=await db.clubMember.findFirstOrThrow({where:{clubId:id,userId:{not:fixture.userId},status:'ACTIVE'}});backups.push(member);await db.clubMember.update({where:{id:member.id},data:{isOwner:true,accessRole:'OWNER'}})}
++ t.after(async()=>{for(const member of backups)await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole}});await db.$disconnect()});
++ const read=(kind,args=[clubId])=>actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)}));
++ const kinds=['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements','voting'];
++ await t.test('each migrated club read validates live authority and private response handling',async()=>{
++  for(const kind of kinds){const r=await read(kind);assert.equal(r.status,200,kind);assert.equal(r.headers.get('cache-control'),'private, no-store');assert.match(r.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.match(r.headers.get('server-timing'),/identity;dur=.*live_session;dur=.*total;dur=/);await r.arrayBuffer()}
++  assert.equal((await read('notifications',[])).status,200);
++  assert.equal((await read('assignedRooms',[clubId,{userId:fixture.userId}])).status,400);
++  // Verify the actual Demo cookie name rather than assuming the UI transport.
++  const demoCookie=require('./helpers/voting-harness.cjs').load('lib/demo/access.ts').DEMO_COOKIE;
++  const demo=await actor.request('/api/workspace?kind=assignedRooms&args='+encodeURIComponent(JSON.stringify([clubId])),{headers:{cookie:actor.cookieHeader()+'; '+demoCookie+'=1'}});assert.equal(demo.status,403);
++ });
++ await t.test('three independent Interview Rooms requests overlap, exclude the scheduler and tolerate rapid navigation',async()=>{
++  const browser=await chromium.launch({headless:true});try{
++   const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.addCookies([...actor.cookies].map(([name,value])=>({name,value,url:config.appUrl})));
++   const page=await context.newPage(),errors=[],reads=[];let active=0,max=0,record=false;
++   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(record&&r.url().includes('/api/workspace?')){const kind=new URL(r.url()).searchParams.get('kind');if(['assignedRooms','interviewWorkspace','interviewRounds'].includes(kind)){reads.push({r,kind,start:Date.now(),end:null});active++;max=Math.max(max,active)}}});
++   const finish=r=>{const item=reads.find(x=>x.r===r);if(item&&!item.end){item.end=Date.now();active--}};page.on('requestfinished',finish);page.on('requestfailed',finish);
++   await page.goto(config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:false}).first().waitFor();
++   record=true;await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click();await page.getByText('No assigned interviews.',{exact:true}).waitFor();
++   assert.equal(reads.length,3);assert.equal(max,3);assert.ok(Math.max(...reads.map(r=>r.start))<Math.min(...reads.map(r=>r.end??Infinity)));assert.equal(await page.getByRole('heading',{name:'Interview scheduling',exact:true}).count(),0);
++   record=false;
++   for(let i=0;i<5;i++){await page.locator('[data-tour="nav-applicants"]').filter({visible:true}).first().click();await page.locator('[data-tour="nav-interviews"]').filter({visible:true}).first().click()}
++   await page.getByText('No assigned interviews.',{exact:true}).waitFor();assert.deepEqual(errors,[]);await context.close();
++  }finally{await browser.close()}
++ });
++ await t.test('GET preserves anonymous-round assignment projection and cross-club membership boundaries',async()=>{
++  const round=await db.pipelineRound.findFirstOrThrow({where:{clubId,type:'INTERVIEW'}}),app=await db.application.findFirstOrThrow({where:{clubId,studentId:{not:fixture.userId}}}),member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:fixture.userId,clubId}}});
++  const assignment=await db.interviewPanelAssignment.create({data:{applicationId:app.id,roundId:round.id,memberId:member.id,grantedBy:fixture.userId}});
++  const decode=require('./helpers/voting-harness.cjs').load('lib/workspace-wire.ts').decodeWorkspaceData;
++  try{assert.ok(decode(await (await read('interviewWorkspace')).json()).applications.some(row=>row.id===app.id));await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});assert.equal(decode(await (await read('interviewWorkspace')).json()).applications.some(row=>row.id===app.id),false)}finally{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.interviewPanelAssignment.delete({where:{id:assignment.id}})}
++  assert.equal((await read('assignedRooms',[require('node:crypto').randomUUID()])).status,403);
++ });
++ await t.test('capability removal and suspension deny the same read after earlier successful responses',async()=>{
++  const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:fixture.userId,clubId}}});
++  try{await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});assert.equal((await read('assignedRooms')).status,403)}finally{await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}})}
++  try{await db.club.update({where:{id:clubId},data:{suspendedAt:new Date()}});assert.equal((await read('assignedRooms')).status,403)}finally{await db.club.update({where:{id:clubId},data:{suspendedAt:null}})}
++ });
++ await t.test('disabled accounts and captured revoked cookies cannot replay GET reads',async()=>{
++  try{await db.user.update({where:{id:fixture.userId},data:{disabledAt:new Date()}});assert.equal((await read('assignedRooms')).status,401)}finally{await db.user.update({where:{id:fixture.userId},data:{disabledAt:null}})}
++  const captured=actor.cookieHeader();await actor.client.auth.signOut({scope:'local'});
++  for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds']){const r=await fetch(config.appUrl+'/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([clubId])}),{headers:{cookie:captured}});assert.equal(r.status,401,kind)}
++ });
++});
+diff --git a/tests/server-phase-trace.test.cjs b/tests/server-phase-trace.test.cjs
+new file mode 100644
+index 0000000..3e60946
+--- /dev/null
++++ b/tests/server-phase-trace.test.cjs
+@@ -0,0 +1,30 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load}=require('./helpers/voting-harness.cjs');
++const {traceWorkspaceRequest,serverPhase,tracePrismaTransactions,traceDatabaseQuery}=load('lib/server-phase-trace.ts');
++test('traces isolate concurrent requests, contain fixed labels, and never emit caller data',async()=>{
++ const one=traceWorkspaceRequest(async()=>{await serverPhase('identity',()=>Promise.resolve('secret'));return new Response('private')});
++ const two=traceWorkspaceRequest(async()=>new Response('denied',{status:403}));
++ const [a,b]=await Promise.all([one,two]);
++ assert.notEqual(a.headers.get('x-outclass-trace-id'),b.headers.get('x-outclass-trace-id'));
++ assert.match(a.headers.get('server-timing'),/identity;dur=/);assert.doesNotMatch(b.headers.get('server-timing'),/identity/);
++ assert.doesNotMatch([...a.headers].flat().join(' '),/secret|private/);
++});
++test('Prisma tracing preserves batch laziness, callback identity, options and errors',async()=>{
++ const tx={},options={timeout:1234},seen=[];
++ const client=tracePrismaTransactions({$transaction:async(operation,opts)=>{seen.push(opts);return typeof operation==='function'?operation(tx):operation}});
++ const response=await traceWorkspaceRequest(async()=>{
++   assert.equal(await client.$transaction(value=>{assert.equal(value,tx);return 'ok'},options),'ok');
++   await traceDatabaseQuery({strings:['SELECT secret FOR UPDATE']},()=>Promise.resolve('result'));
++   await assert.rejects(serverPhase('live_session',()=>Promise.reject(Error('sensitive error'))),/sensitive error/);
++   assert.deepEqual(await client.$transaction(['lazy promise'],options),['lazy promise']);
++   return new Response();
++ });
++ assert.deepEqual(seen,[options,options]);
++ const header=response.headers.get('server-timing');for(const phase of ['transaction','transaction_acquire','database','lock_query','live_session'])assert.match(header,new RegExp(phase+';dur='));
++ assert.doesNotMatch(header,/secret|sensitive|SELECT/);
++});
++test('opt-in phase logs contain only a fresh trace ID, status, fixed phase labels and numeric measurements',async()=>{
++ const prior=process.env.OUTCLASS_PHASE_TRACE,info=console.info,logs=[];process.env.OUTCLASS_PHASE_TRACE='1';console.info=value=>logs.push(value);
++ try{await traceWorkspaceRequest(async()=>{await traceDatabaseQuery({strings:['SELECT sensitive_fixture FOR UPDATE']},()=>Promise.resolve('sensitive_result'));return new Response('sensitive_body',{status:403})})}finally{console.info=info;if(prior===undefined)delete process.env.OUTCLASS_PHASE_TRACE;else process.env.OUTCLASS_PHASE_TRACE=prior}
++ assert.equal(logs.length,1);assert.doesNotMatch(logs[0],/sensitive|SELECT|cookie|token|userId|clubId|error/);const record=JSON.parse(logs[0]);assert.equal(record.event,'workspace.phases');assert.equal(record.status,403);assert.equal(typeof record.totalMs,'number');assert.deepEqual(Object.keys(record.phases).sort(),['database','lock_query']);
++});
+diff --git a/tests/workspace-read-transport.test.cjs b/tests/workspace-read-transport.test.cjs
+new file mode 100644
+index 0000000..d2aee58
+--- /dev/null
++++ b/tests/workspace-read-transport.test.cjs
+@@ -0,0 +1,30 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load}=require('./helpers/voting-harness.cjs');
++const id='00000000-0000-4000-8000-000000000001';
++test('GET allowlist forwards only validated read arguments, preserves wire dates/no-store and reauthorizes every request',async()=>{
++ let demo=false,allowed=true;const seen=[];
++ const reader=name=>async(...args)=>{seen.push([name,...args]);if(!allowed)throw Error('Revoked');return {at:new Date('2026-10-21')}};
++ const modules=['club-overview','crm','club-onboarding','club-directory','tasks','tutorials','club-settings','applicant-intelligence','meetings','applications','organization-members','voting','interview-entry','interview-kits','interview-rooms','interview-booking-publication','communications'];
++ const mocks=Object.fromEntries(modules.map(name=>['@/actions/'+name,new Proxy({},{get:(_,key)=>key==='then'?undefined:key==='__esModule'?true:reader(key)})]));
++ mocks['next/headers']={cookies:async()=>({get:()=>demo?{value:'1'}:undefined})};
++ const {GET}=load('app/api/workspace/route.ts',mocks),{decodeWorkspaceData}=load('lib/workspace-wire.ts');
++ const get=(kind,args)=>GET(new Request('https://outclass.test/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)})));
++ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements']){
++   const response=await get(kind,[id]);assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.ok(decodeWorkspaceData(await response.json()).at instanceof Date);assert.match(response.headers.get('x-outclass-trace-id'),/^[\da-f-]{36}$/);
++   assert.equal((await get(kind,[id,{userId:'forged'}])).status,400);assert.equal((await get(kind,['invalid-id'])).status,400);
++ }
++ assert.equal((await get('bookingPublication',[{clubId:id,roundId:id}])).status,200);
++ assert.equal((await get('bookingPublication',[{clubId:id,roundId:id,userId:id}])).status,400);
++ for(const kind of ['meetings','notifications']){assert.equal((await get(kind,[])).status,200);assert.equal((await get(kind,[null])).status,200)}
++ const before=seen.length;await get('assignedRooms',[id]);await get('assignedRooms',[id]);assert.equal(seen.length,before+2);
++ allowed=false;assert.equal((await get('assignedRooms',[id])).status,403);allowed=true;
++ for(const name of ['setInterviewRoomOpen','saveInterviewSession','publishClubAnnouncement','arbitraryAction'])assert.equal((await get(name,[id])).status,400);
++ demo=true;const count=seen.length;assert.equal((await get('assignedRooms',[id])).status,403);assert.equal(seen.length,count);
++});
++test('read transport uses explicit credential-sensitive GET requests and releases slots after errors',async()=>{
++ const source=require('node:fs').readFileSync('lib/workspace-read.ts','utf8'),ts=require('typescript');let calls=[];
++ const loaded={exports:{}};const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
++ new Function('require','module','exports','fetch',code)(name=>load(name.slice(2)+'.ts'),loaded,loaded.exports,async(url,options)=>{calls.push({url,options});return Response.json({$workspace:'value',value:null},{status:403})});
++ await assert.rejects(loaded.exports.readWorkspace('assignedRooms',[id]),/access changed/);
++ assert.equal(calls.length,1);assert.equal(calls[0].options.cache,'no-store');assert.equal(calls[0].options.credentials,'same-origin');assert.equal(calls[0].options.method,undefined);assert.equal(new URL(calls[0].url,'https://outclass.test').searchParams.get('kind'),'assignedRooms');
++});
+diff --git a/tests/workspace-response.test.cjs b/tests/workspace-response.test.cjs
+new file mode 100644
+index 0000000..8331d0e
+--- /dev/null
++++ b/tests/workspace-response.test.cjs
+@@ -0,0 +1,9 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{gunzipSync}=require('node:zlib');
++const {load}=require('./helpers/voting-harness.cjs'),{workspaceJsonResponse}=load('lib/workspace-response.ts');
++const headers={'Cache-Control':'private, no-store',Vary:'Cookie'};
++test('large workspace GET bodies negotiate gzip without caching private bytes or changing JSON',async()=>{
++ const data={value:'Repeated local fixture '.repeat(500)};
++ for(const encoding of ['gzip','br, gzip;q=0.5','*;q=1']){const r=await workspaceJsonResponse(data,new Request('https://outclass.test',{headers:{'Accept-Encoding':encoding}}),headers);assert.equal(r.headers.get('content-encoding'),'gzip');assert.equal(r.headers.get('cache-control'),'private, no-store');assert.match(r.headers.get('vary'),/Cookie/);assert.match(r.headers.get('vary'),/Accept-Encoding/);assert.deepEqual(JSON.parse(gunzipSync(Buffer.from(await r.arrayBuffer()))),data)}
++ for(const encoding of ['', 'br','gzip;q=0, *;q=1','gzip;q=invalid','gzip;q=2']){const r=await workspaceJsonResponse(data,new Request('https://outclass.test',{headers:{'Accept-Encoding':encoding}}),headers);assert.equal(r.headers.get('content-encoding'),null);assert.deepEqual(await r.json(),data)}
++ const small=await workspaceJsonResponse({value:'small'},new Request('https://outclass.test',{headers:{'Accept-Encoding':'gzip'}}),headers);assert.equal(small.headers.get('content-encoding'),null);
++});

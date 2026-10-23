@@ -13,7 +13,7 @@ function actions(prisma,userId){
   new Function('require','module','exports',code)(Object.assign(n=>n in mocks?mocks[n]:n.startsWith('@/')?load(n.slice(2)+'.ts'):require(n),{resolve:require.resolve}),mod,mod.exports);
   return mod.exports;
  }
- return {kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
+ return {entries:load('actions/interview-entry.ts'),kits:load('actions/interview-kits.ts'),resume:load('actions/interview-resumes.ts'),members:load('actions/organization-members.ts'),evaluations:load('actions/evaluations.ts')};
 }
 test('native PostgreSQL interview transactions: independent drafts, simultaneous finish, annotations, revocation and immutable anonymous reopening',{skip:!databaseUrl,timeout:120000},async t=>{
  const url=new URL(databaseUrl);assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Requires disposable local outclass_security_test');
@@ -35,6 +35,11 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  await own.members.setMemberInterviewOffices({clubId:club.id,memberId:ownerMember.id,offices:['PRESIDENT']});
  await own.members.setMemberInterviewOffices({clubId:club.id,memberId:leaderMember.id,offices:['BOARD']});
  for(const member of [oneMember,twoMember])await own.members.setInterviewPanelAssignment({...scope,memberId:member.id,assigned:true});
+ const room=await prisma.interviewRoom.create({data:{clubId:club.id,roundId:round.id,name:'Native assigned room',location:'Synthetic',kind:'IN_PERSON',timezone:'UTC',duration:20,isOpen:true,panelApprovedBy:owner.id,panelMemberIds:[oneMember.id,twoMember.id],approvedPanelMemberIds:[oneMember.id,twoMember.id]}});
+ const slot=await prisma.interviewSlot.create({data:{clubId:club.id,roomId:room.id,location:room.location,startTime:new Date('2099-10-20T17:00:00Z'),endTime:new Date('2099-10-20T17:20:00Z')}});
+ await prisma.interviewBooking.create({data:{applicationId:app.id,roundId:round.id,slotId:slot.id}});
+ assert.equal((await a.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
+ assert.equal((await b.entries.getAssignedInterviewRooms(club.id))[0].applicationId,app.id);
  await assert.rejects(a.members.setMemberInterviewOffices({clubId:club.id,memberId:oneMember.id,offices:['BOARD']}),/owner/);
  for(const user of [applicant,outsider])await assert.rejects(actions(prisma,user.id).kits.openInterviewSession(scope));
  await assert.rejects(a.kits.openInterviewSession({...scope,clubId:randomUUID()}));
@@ -107,7 +112,7 @@ test('native PostgreSQL interview transactions: independent drafts, simultaneous
  // must recheck after commit, rather than use an authorization captured beforehand.
  let release,locked;const ready=new Promise(resolve=>locked=resolve),hold=new Promise(resolve=>release=resolve);
  const revoke=prisma.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "Club" WHERE id=${club.id} FOR UPDATE`;locked();await hold;await tx.interviewPanelAssignment.update({where:{applicationId_roundId_memberId:{applicationId:app.id,roundId:round.id,memberId:oneMember.id}},data:{revokedAt:new Date()}});});
- await ready;const pending=a.kits.openInterviewSession(scope);release();await revoke;await assert.rejects(pending,/panel/);
+ await ready;const pending=a.kits.openInterviewSession(scope),pendingList=a.entries.getAssignedInterviewRooms(club.id);release();await revoke;await assert.rejects(pending,/panel/);assert.deepEqual(await pendingList,[]);
  assert.equal((await prisma.interviewResumeDocument.findUnique({where:{id:document.id}})).contentHash,document.contentHash);
  const audit=await prisma.auditLog.findMany({where:{clubId:club.id}});assert.doesNotMatch(JSON.stringify(audit),/Comment one|Edit A|Only interviewer/);
 });

@@ -1,3 +1,5 @@
+import { workspaceJsonResponse } from "@/lib/workspace-response"
+import { serverPhase, traceWorkspaceRequest } from "@/lib/server-phase-trace"
 import { UniversityVerificationError } from "@/utils/verified-email-policy"
 import { getVotingWorkspace, getVotingJoinInfo } from "@/actions/voting"
 import { genderValues } from "@/lib/student-profile"
@@ -29,6 +31,7 @@ const votingArgs = z.preprocess(args => Array.isArray(args) && args.length === 1
 // An explicit read allowlist. Each private loader still runs its original live
 // authentication/authorization; no client identity or arbitrary action dispatch.
 export async function GET(request: Request) {
+  return traceWorkspaceRequest(async () => {
   try {
     // Invitation discovery can bind a verified school identity. Keep all live
     // readers disabled in demo even when middleware is bypassed or a stale
@@ -43,6 +46,15 @@ export async function GET(request: Request) {
       case "availabilityOverview": data = await (await import("@/actions/availability")).getAvailabilityOverview(z.tuple([z.unknown()]).parse(args)[0]); break
       case "staffingCoverage": data = await (await import("@/actions/availability")).getRoundStaffingCoverage(z.tuple([z.unknown()]).parse(args)[0]); break
       case "panelWorkspace": data = await (await import("@/actions/panel-proposals")).getPanelProposalWorkspace(z.tuple([z.unknown()]).parse(args)[0]); break
+      case "assignedRooms": data = await (await import("@/actions/interview-entry")).getAssignedInterviewRooms(...clubArgs.parse(args)); break
+      case "interviewWorkspace": data = await (await import("@/actions/interview-kits")).getInterviewWorkspace(...clubArgs.parse(args)); break
+      case "interviewRounds": data = await (await import("@/actions/interview-kits")).getInterviewRounds(...clubArgs.parse(args)); break
+      case "roomWorkspace": data = await (await import("@/actions/interview-rooms")).getRoomWorkspace(...clubArgs.parse(args)); break
+      case "bookingPublication": data = await (await import("@/actions/interview-booking-publication")).getInterviewBookingPublication(...z.tuple([z.object({ clubId: z.string().uuid(), roundId: z.string().uuid() }).strict()]).parse(args)); break
+      case "tasks": data = await (await import("@/actions/tasks")).getTaskWorkspace(...clubArgs.parse(args)); break
+      case "meetings": data = await (await import("@/actions/meetings")).listMeetings(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
+      case "announcements": data = await (await import("@/actions/communications")).getClubAnnouncements(...clubArgs.parse(args)); break
+      case "notifications": data = await (await import("@/actions/communications")).getDurableNotifications(...z.tuple([z.string().uuid().nullish().transform(value => value ?? undefined)]).parse(Array.isArray(args) && args.length === 0 ? [null] : args)); break
       case "dashboardReviews": data = await getDashboardReviewQueue(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       case "overview": data = await getClubWorkspaceOverview(...clubArgs.parse(args)); break
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
@@ -63,11 +75,12 @@ export async function GET(request: Request) {
       case "attendance": data = await recruitmentAttendanceSummary(...z.tuple([z.string().uuid(), z.string().uuid()]).parse(args)); break
       default: return Response.json({ error: "Unknown workspace read" }, { status: 400, headers })
     }
-    return Response.json(encodeWorkspaceData(data), { headers })
+    return await serverPhase("serialization", () => workspaceJsonResponse(encodeWorkspaceData(data), request, headers))
   } catch (error) {
     if (error instanceof UniversityVerificationError) return Response.json({ error: error.code }, { status: error.code === "UNIVERSITY_VERIFICATION_REQUIRED" ? 403 : 503, headers })
     const redirect = error && typeof error === "object" && "digest" in error && String(error.digest).startsWith("NEXT_REDIRECT")
     const invalid = error instanceof z.ZodError || error instanceof SyntaxError
     return Response.json({ error: invalid ? "Invalid workspace read" : "Workspace access unavailable" }, { status: invalid ? 400 : redirect ? 401 : 403, headers })
   }
+  })
 }

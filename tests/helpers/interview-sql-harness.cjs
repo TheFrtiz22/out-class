@@ -13,6 +13,7 @@ async function harness(options={}){
  relations.InterviewSlot.panelScheduleVersion=['InterviewPanelScheduleVersion','panelScheduleVersionId','id'];relations.InterviewPanelScheduleVersion={publisher:['User','publishedBy','id'],round:['PipelineRound','roundId','id']};relations.NotificationEmailOutbox={notification:['UserNotification','notificationId','id'],delivery:['NotificationEmailDelivery','deliveryId','id']};relations.Application.interviewAssignments=['InterviewPanelAssignment','id','applicationId'];
  relations.Application.club=['Club','clubId','id'];relations.PipelineRound={bookingCycle:['RecruitmentCycle','bookingCycleId','id']};
  relations.Application.bookings=['InterviewBooking','id','applicationId'];
+ relations.InterviewRecord.application=['Application','applicationId','id'];
  relations.User.memberships=['ClubMember','id','userId'];relations.UserNotification={club:['Club','clubId','id']};
  relations.Club={pipelineRounds:['PipelineRound','id','clubId'],members:['ClubMember','id','clubId']};
  relations.ClubMember.club=['Club','clubId','id'];relations.ClubMember.interviewParticipation=['InterviewRoundParticipation','id','memberId'];
@@ -21,11 +22,11 @@ async function harness(options={}){
  function orm(client){
   let counter=0;
   const filter=(table,w,alias,values)=>Object.entries(w||{}).map(([key,v])=>{
-   if(['OR','AND'].includes(key))return '('+v.map(item=>filter(table,item,alias,values)).join(key==='OR'?' OR ':' AND ')+')';
+   if(['OR','AND'].includes(key))return v.length?'('+v.map(item=>filter(table,item,alias,values)).join(key==='OR'?' OR ':' AND ')+')':key==='OR'?'FALSE':'TRUE';
    if(key.includes('_')&&v&&typeof v==='object')return filter(table,v,alias,values);
    const rel=relations[table]?.[key];if(rel){const[r,local,foreign]=rel,a='r'+(++counter);return `EXISTS(SELECT 1 FROM "${r}" ${a} WHERE ${a}."${foreign}"=${alias}."${local}" AND ${filter(r,v.some||v,a,values)})`;}
    const column=`${alias}."${key}"`;if(v===null)return `${column} IS NULL`;
-   if(v&&typeof v==='object'&&!(v instanceof Date)){return Object.entries(v).map(([op,value])=>{if(op==='not'&&value===null)return `${column} IS NOT NULL`;if(op==='startsWith'){values.push(value+'%');return `${column} LIKE $${values.length}`;}if(op==='hasSome'){values.push(value);return `${column} && $${values.length}::text[]`;}if(op==='in'){values.push(value);return `${column}=ANY($${values.length}::text[])`;}values.push(value);return `${column} ${({not:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='})[op]} $${values.length}`;}).join(' AND ');}
+   if(v&&typeof v==='object'&&!(v instanceof Date)){return Object.entries(v).map(([op,value])=>{if(op==='not'&&value===null)return `${column} IS NOT NULL`;if(op==='startsWith'){values.push(value+'%');return `${column} LIKE $${values.length}`;}if(op==='has'){values.push(value);return `$${values.length}=ANY(${column})`;}if(op==='hasSome'){values.push(value);return `${column} && $${values.length}::text[]`;}if(op==='in'){values.push(value);return `${column}=ANY($${values.length}::text[])`;}values.push(value);return `${column} ${({not:'<>',gt:'>',gte:'>=',lt:'<',lte:'<='})[op]} $${values.length}`;}).join(' AND ');}
    values.push(v);return `${column}=$${values.length}`;
   }).join(' AND ')||'TRUE';
   const all=async(table,w={},orderBy)=>{const values=[],where=filter(table,w,'t',values);return(await client.query(`SELECT t.* FROM "${table}" t WHERE ${where}${orderBy?' ORDER BY '+(Array.isArray(orderBy)?orderBy:[orderBy]).flatMap(o=>Object.entries(o).filter(([k,d])=>typeof d==='string').map(([k,d])=>`"${k}" ${d==='desc'?'DESC':'ASC'}`)).join(','):''}`,values)).rows;};

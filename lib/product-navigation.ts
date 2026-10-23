@@ -54,7 +54,12 @@ export function managerNavigation(member: ClubAccess, clubId: string, mode: stri
     ...(availableSettings(member).length ? [item("settings", "Settings")] : [])]
 }
 /** Shared by links, buttons and workspace selects; domain forms retain their own guards. */
-export function canLeaveWorkspace() {
+export function canLeaveWorkspace(retained?: HTMLElement | null) {
+  // A retained editor is not leaving the page. Continue guarding other forms.
+  if (retained) {
+    if ([...document.querySelectorAll('[data-saving="true"]')].some(node => !retained.contains(node))) return false
+    return ![...document.querySelectorAll('[data-unsaved="true"]')].some(node => !retained.contains(node)) || window.confirm("Leave this page? Your unsaved changes will be lost.")
+  }
   if (document.querySelector('[data-saving="true"]')) return false
   return !document.querySelector('[data-unsaved="true"]') || window.confirm("Leave this page? Your unsaved changes will be lost.")
 }

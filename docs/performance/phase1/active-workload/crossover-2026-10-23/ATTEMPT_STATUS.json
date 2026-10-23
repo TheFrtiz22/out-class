@@ -1,0 +1,10 @@
+{
+  "acceptedAsCompleteStudy": false,
+  "reason": "Block-seven control warmup timed out before 4 of 8 planned warmup navigations were recorded; measured block seven was not run.",
+  "measuredObservations": 240,
+  "observedWarmupNavigations": 52,
+  "measuredBrowserErrors": 2,
+  "cause": "Unclassified: original diagnostics did not retain HTTP request statuses or exact warmup stage.",
+  "cleanupComplete": true,
+  "repeat": "../crossover-2026-10-23-repeat/PROTOCOL.json"
+}

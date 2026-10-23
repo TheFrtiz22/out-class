@@ -1,0 +1,342 @@
+{
+  "date": "2026-10-23",
+  "sourceCommit": "97db164e133809ab2852d7ebcc946b2e92ef1d4f",
+  "currentHeadAtFinish": "97db164e133809ab2852d7ebcc946b2e92ef1d4f",
+  "productionApplicationChanged": false,
+  "completeRepeat": {
+    "primaryObservations": 320,
+    "sameBuildControlObservations": 80,
+    "warmupObservations": 80,
+    "browserErrors": 0,
+    "httpErrors": 0,
+    "transportFailures": 0,
+    "all24Links": true
+  },
+  "incompleteFirst": {
+    "measuredObservations": 240,
+    "savedWarmupObservations": 52,
+    "controlHydrationRecoveries": 2,
+    "unclassifiedControlWarmupTimeouts": 1,
+    "acceptedAsCompleteStudy": false
+  },
+  "tests": {
+    "broadUnit": {
+      "tests": 1362,
+      "passed": 1325,
+      "failed": 0,
+      "skipped": 37
+    },
+    "finalFocused": {
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "realAuthPerSetup": 38,
+    "setups": 2,
+    "setupSummaries": [
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 77826.970291"
+      ],
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 75503.984042"
+      ]
+    ],
+    "bothProductionVariantsBuiltInBothStudies": true,
+    "changedFileLint": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "scopeNote": "Two analyzer tests were added after the broad suite began and pass in the final focused run. Failure-only diagnostic refinements are covered by the focused checks and complete repeat. Application source is unchanged."
+  },
+  "cleanup": {
+    "first": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "repeat": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "diagnosticWatcherStopped": true,
+    "listener3119Closed": true,
+    "reservedContainersRemaining": 0,
+    "privateRuntimeLogsRemoved": true
+  },
+  "registeredAnalyzerUnchanged": true,
+  "patchAppliesToSourceHead": true,
+  "sourceFiles": {
+    "scripts/active-interview-fixture.cjs": "d17270cf5a9bed2799f9cec3142e80a7094bb36187501a345844df1dfcb2802d",
+    "scripts/navigation-audit.cjs": "f41f0f798c0b1bc804094cbee1f3606d93cdd9821a3a236e06a287955471b7f3",
+    "scripts/navigation-fixture-config.cjs": "516e3c0d393250ce35dd0e819729b9498c3810fa927f4b791cb63e07103bdfec",
+    "scripts/navigation-crossover.cjs": "18bae41343468f520a69a1cce5681434c81fc3649df9c9147ceec7b6ee8d6374",
+    "scripts/summarize-navigation-crossover.cjs": "9022295f3dd053656e86f79c18010b57149a5f0756f6e09687408d7c891529aa",
+    "tests/navigation-crossover.test.cjs": "f8faeb7aacc99aeeff4a35d73d14b92ff8daef8366c14c21ed6246c27a3e9f42",
+    "tests/navigation-crossover-analysis.test.cjs": "524f7dd2b1d91930873b5924d64c050342126c625c05653b9506dbbc3b8294db"
+  },
+  "raw": [
+    {
+      "path": "block-01-A-measure/browser-samples.json",
+      "sha256": "393d02c42a12891674e5a5802e4c0829205be01b545b97965a358f040851c1da",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-01-A-warmup/browser-samples.json",
+      "sha256": "442cee72b5c285320e72806ff49e37605fb850a7a4c8c9de32943579a2fb63c7",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-02-B-measure/browser-samples.json",
+      "sha256": "8ab4abb5eb31699414a2223369abaae56e6a410297b10b0189e7e353c8870e3c",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-02-B-warmup/browser-samples.json",
+      "sha256": "804f53f8e114f06c16842f21520538329839a8bad37c614a01dd1fc099c87555",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-03-B-measure/browser-samples.json",
+      "sha256": "fed1e4c91403285255999f11c3580b655823a7566b1ff445376a79c686d9395d",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-03-B-warmup/browser-samples.json",
+      "sha256": "2d4974515248ee1c2c4bcbaab4deacf2754e73dbfb6bfd084b1be2d96ca90ac9",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-04-A-measure/browser-samples.json",
+      "sha256": "1a69379272aa22f3097546b86cbaf71547680f53f1860d9b5c3f0cb3eac7190f",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-04-A-warmup/browser-samples.json",
+      "sha256": "d800092a8c02abc6830483c2f64c892df4dca587b1112d992b7959a70293839a",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-05-A-measure/browser-samples.json",
+      "sha256": "73cdef2b695f47dd72236a2cc841b755b0d5eb5639fecc1303b72d2d446aa140",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-05-A-warmup/browser-samples.json",
+      "sha256": "3736d25f77cbbb27b3cb7b2990649121776ff544c07e8ed4f6ccc0d97aaed0a8",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-06-A-measure/browser-samples.json",
+      "sha256": "1849b60a18d194a2a1f937da8eb0e25f7d37c5ab11a0e62c2feb83868d3258b5",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-06-A-warmup/browser-samples.json",
+      "sha256": "e19343035fcfc355ed0fc8540d569ff86dcb33e0e62917ee803273459abc5c95",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-07-B-measure/browser-samples.json",
+      "sha256": "251907d9a2392b59f1246dfe6eb8eaa20d2cd64a66d301e3fb193fd10dd2252f",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-07-B-warmup/browser-samples.json",
+      "sha256": "c7d715b2a86fd4838c487c46777e119febeaa9cc62bdad6f09dae943cb0d0dbe",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-08-A-measure/browser-samples.json",
+      "sha256": "ab39c460b8409ff74c0ad149961b66ad721cae56bf3d5580a5262e7b0ec17d47",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-08-A-warmup/browser-samples.json",
+      "sha256": "ca583a4633494ccbb894e6fda52527c37e9eeec87cc3d58ee6fad3b1fe51fc67",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-09-A-measure/browser-samples.json",
+      "sha256": "84885575043ab865193bfa8d0f33853ec1779b52f8fa72db201d895fbeb1ac4d",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-09-A-warmup/browser-samples.json",
+      "sha256": "1934fbc8dbeddea2582d4309a679caed7a1e9536093784ee67e7b5351073075a",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-10-B-measure/browser-samples.json",
+      "sha256": "6b2053bd72ee185f6bed7aa429e3c6ca76b673887e02940aad334e64bc67d4bc",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "block-10-B-warmup/browser-samples.json",
+      "sha256": "4d7ec3c949f4ceb2eca2c81180b4a7708d6a6f74daac3b93f3fab2f699702031",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    }
+  ],
+  "incompleteRaw": [
+    {
+      "path": "../crossover-2026-10-23/block-01-A-measure/browser-samples.json",
+      "sha256": "451d1faa9842e563201008d840951562dc89fb5143d416a05e2441e4bef226a6",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-01-A-warmup/browser-samples.json",
+      "sha256": "fe60177442ca040566a7693f709d03d096a0641c71c0f8374b99b15cabb63b8a",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-02-B-measure/browser-samples.json",
+      "sha256": "647f64a7bb5d3022ca6b6a92f7926567549f884bc01f2b1e3095968983c5c626",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-02-B-warmup/browser-samples.json",
+      "sha256": "1804f7069c1c2809cc97912662c9959274c5454cdbc1330343023bbd12d4c8c6",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-03-B-measure/browser-samples.json",
+      "sha256": "580509d8a6d43e62ce820157031524c18581e75a22352f17be509ab49ed5e2e0",
+      "observations": 40,
+      "failures": 2,
+      "browserErrors": 2
+    },
+    {
+      "path": "../crossover-2026-10-23/block-03-B-warmup/browser-samples.json",
+      "sha256": "7fdd5935591701bd2380b3db4e87e6c4b5823962914c2ad16a242c2015cc04d7",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-04-A-measure/browser-samples.json",
+      "sha256": "c06726700656efe1f2681e3d486b266f7edae9a00ab7b84ffcdb408b2dbb5322",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-04-A-warmup/browser-samples.json",
+      "sha256": "e0beac53319e5c71ad14158ab787810bbdfd0a4b06a8ee4406fd77aeea72ff82",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-05-A-measure/browser-samples.json",
+      "sha256": "96d080fe7c0a5e3cc913d9b3a0cbcd575d977c297a7e2b9085121aea99fa7f05",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-05-A-warmup/browser-samples.json",
+      "sha256": "7f8c21702dccb6ca3ca8cd53f37bf1237980fa20678507a8226fa84f9fe81da0",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-06-A-measure/browser-samples.json",
+      "sha256": "5d6a4a59619397a207f268f63219bea8da77f0f34cd8cb79fac74d3493d69a18",
+      "observations": 40,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-06-A-warmup/browser-samples.json",
+      "sha256": "c91cabaca329e7d5d794f32fc4a65f9b910619aa19e40d30fb2f4e2febfc64ed",
+      "observations": 8,
+      "failures": 0,
+      "browserErrors": 0
+    },
+    {
+      "path": "../crossover-2026-10-23/block-07-B-warmup/browser-samples.json",
+      "sha256": "6b80e5125ad559be4aaec0c8061822937c781fb06cc3a0c39b224bb7de2ab9bb",
+      "observations": 4,
+      "failures": 1,
+      "browserErrors": 0
+    }
+  ],
+  "artifactHashes": {
+    "PROTOCOL.json": "0f8e1547959e6121064e8a8a420986ff31d2496487069623d3ed84f10fb2abe1",
+    "ANALYSIS_PLAN.json": "3523805ecd9e0a8c945f068377309dcec35c5b0cc899f6c78dbc6a037f01949a",
+    "SOURCE_COMPARISON.json": "501f1491ca0eb6f9c5eb0757df2096d02ff526db25dd63f53d1f8cb4e89641c9",
+    "COMPARISON.json": "f9b2c2aae607df3928528a8ef8aa6d31676506e3c8c20c51ca0f632540400ab5",
+    "SYSTEM.json": "80074674cce3373f9b3648eae6b5444688058fb0880259c6ec4bf60d6d22b34b",
+    "POOL_SUMMARY.json": "a1030f12374b449d553609af6b49725ff3421e53b16efb391949eba26a623a6d",
+    "DIAGNOSTICS.json": "11c9096175e30065cd80014b0954443a34178cf8a80cff07bf18a003c9d9dccd",
+    "CROSSOVER_REPORT.md": "41c6b491a3b80d6d6910acf6adae6d2e0588fb7c21b3c7b93fb60e67b1add64e",
+    "CROSSOVER.diff": "f3cd67acb3620e119e30912cdee40d502a99b5a305972c577790c7cfe3958a5b",
+    "TEST_RESULTS.log": "0beccab61cf0717b45584335889292389868ba76f6c6cdd866f34ddcb13802b4"
+  }
+}

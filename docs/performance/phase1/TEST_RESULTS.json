@@ -1,0 +1,274 @@
+{
+  "full": {
+    "tests": 1339,
+    "passed": 1304,
+    "failed": 0,
+    "skipped": 35
+  },
+  "focusedFinal": {
+    "tests": 23,
+    "passed": 23,
+    "failed": 0,
+    "skipped": 0
+  },
+  "realAuthHttpBrowser": {
+    "tests": 55,
+    "passed": 55,
+    "failed": 0,
+    "skipped": 0
+  },
+  "getVotingFollowup": {
+    "tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "schedulerBookmarksFollowup": {
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeSecurity": {
+    "tests": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "auditReference": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "testFixtureCorrected": true,
+    "applicationSourcesChanged": false
+  },
+  "build": "passed",
+  "typecheck": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 26
+  },
+  "migrationRegression": {
+    "passed": true,
+    "migrations": 57,
+    "tablesWithRls": 78
+  },
+  "patchAppliesToAuditReference": true,
+  "initialNativeSecurity": {
+    "passed": 2,
+    "failed": 1,
+    "auditReferenceSameFailure": true
+  },
+  "onboardingInvitationUnitFollowup": {
+    "tests": 27,
+    "passed": 27,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeFollowupLint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "followupNote": "Only tests and evidence changed after the measured implementation. Full application suite, build and navigation measurements were not repeated; previous results above remain historical.",
+  "activeWorkloadFollowup": {
+    "date": "2026-10-22",
+    "applicationSourcesChanged": false,
+    "reservedAuth": {
+      "tests": 38,
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0
+    },
+    "activeHttp": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "harnessUnit": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    "primaryObservations": 400,
+    "referenceBrowserErrors": 1,
+    "currentBrowserErrors": 3,
+    "currentHttpErrors": 0,
+    "currentTransportFailures": 0,
+    "all24LinksPresent": true,
+    "browserAcceptancePassed": false,
+    "fullSuiteRerun": false,
+    "evidence": "active-workload/EVIDENCE.json",
+    "newerWorkspaceApplicationEditsCovered": false
+  },
+  "hydrationFollowup": {
+    "date": "2026-10-22",
+    "currentHead": "43bb46429c817a2a0110a85475268cdf917b5e65",
+    "workspaceUnit": {
+      "tests": 1358,
+      "passed": 1321,
+      "failed": 0,
+      "skipped": 37,
+      "durationMs": 93220.584792
+    },
+    "currentHeadProductionAuthBrowser": {
+      "tests": 58,
+      "passed": 58,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 123001.081333
+    },
+    "frozenBaseProductionAuthHttp": {
+      "tests": 41,
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 82396.066875
+    },
+    "frozenBasePhase1HttpBrowser": {
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 3242.712667
+    },
+    "focusedRegressions": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 1790.675
+    },
+    "productionBuild": {
+      "passed": true,
+      "target": "hydration-current-head-verification",
+      "sourceCommit": "43bb46429c817a2a0110a85475268cdf917b5e65",
+      "applicationSourcesModified": true,
+      "poolLimitPerPrismaClient": 8,
+      "buildId": "31VS4LckOwX7L6b5jpbZI",
+      "existingLintWarnings": 22
+    },
+    "workspaceTypecheck": {
+      "passed": true
+    },
+    "changedFileLint": {
+      "passed": true,
+      "errors": 0,
+      "warnings": 0
+    },
+    "nativeTestOverrides": [
+      "Dedicated loopback hydration profile and local TLS mail only.",
+      "The existing empty-room Phase 1 suite targets the second fixture club; active-room checks target the first.",
+      "No authorization mocks or application security changes."
+    ],
+    "initialFailures": {
+      "unit": {
+        "tests": 1358,
+        "passed": 1320,
+        "failed": 1,
+        "skipped": 37,
+        "durationMs": 97735.673916,
+        "cause": "Existing test required exactly Cookie in Vary; corrected to require Cookie and Accept-Encoding."
+      },
+      "frozenAuth": {
+        "tests": 39,
+        "passed": 31,
+        "failed": 8,
+        "skipped": 0,
+        "durationMs": 78209.613625,
+        "cause": "Restart omitted isolated local SMTP settings; restored only the local mail fixture settings, then all checks passed."
+      }
+    },
+    "securityNativeHistory": "Three native security/concurrency suites passed on Phase 1 and the audit reference in NATIVE_SECURITY_RESULT.json. Those database-only suites were not repeated for this layout-only application change.",
+    "browserAcceptance": {
+      "observations": 400,
+      "errors": 0,
+      "all24Links": true
+    },
+    "evidence": "active-workload/hydration/EVIDENCE.json"
+  },
+  "crossoverFollowup": {
+    "broadUnit": {
+      "tests": 1362,
+      "passed": 1325,
+      "failed": 0,
+      "skipped": 37
+    },
+    "finalFocused": {
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "realAuthPerSetup": 38,
+    "setups": 2,
+    "setupSummaries": [
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 77826.970291"
+      ],
+      [
+        "ℹ tests 38",
+        "ℹ suites 0",
+        "ℹ pass 38",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 75503.984042"
+      ]
+    ],
+    "bothProductionVariantsBuiltInBothStudies": true,
+    "changedFileLint": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "scopeNote": "Two analyzer tests were added after the broad suite began and pass in the final focused run. Failure-only diagnostic refinements are covered by the focused checks and complete repeat. Application source is unchanged.",
+    "evidence": "active-workload/crossover-2026-10-23-repeat/EVIDENCE.json"
+  },
+  "assignedRoomBatchFollowup": {
+    "report": "active-workload/assigned-room-batch-2026-10-23/ASSIGNED_ROOM_BATCH_REPORT.md",
+    "sourceCommit": "a3c36e0e8a3c50ab6be02a0080e66e0a9c597904",
+    "productionBuilds": {
+      "A": {
+        "buildId": "tgG74wyMmaN0lwO3AEW0f",
+        "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+      },
+      "B": {
+        "buildId": "W8H3d5IHJkj7Abt9foxXH",
+        "layoutSha256": "c11380fc6e37eb8afe0bacbe240f9c42b23de7cae0ac1a4e2f37d562d9be2efb"
+      }
+    },
+    "queryStatements": {
+      "before": 170,
+      "after": 32
+    },
+    "ordinaryPassed": 1332,
+    "ordinaryGatedSkips": 37,
+    "realAuthBrowserPassedPerSetup": 58,
+    "nativeSuitesPassed": 3,
+    "finalFocusedPassed": 11,
+    "navigationObservations": 480,
+    "navigationErrors": 0,
+    "navigationCleanup": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    },
+    "queryCorrectionCleanup": {
+      "appStopped": true,
+      "ownContainersRemoved": true,
+      "credentialsAndPrivateArchivesRemoved": true,
+      "unrelatedStacksUntouched": true
+    }
+  }
+}
