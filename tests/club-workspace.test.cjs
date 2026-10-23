@@ -132,6 +132,7 @@ function setup(permissions = [], isOwner = false) {
   };
   return {
     api: load("actions/club-overview.ts", {
+      "@/utils/dashboard-summary": { dashboardSummary: async () => ({}) },
       "@/utils/prisma": { prisma },
       "@/utils/auth": auth,
     }),
@@ -154,7 +155,8 @@ test("member overview reads personal outstanding work and sends no recruitment o
   assert.equal(h.queries.recruitment, undefined);
   assert.equal(h.queries.work.where.memberId, "member");
   assert.equal(h.queries.work.where.task.clubId, clubId);
-  assert.equal(h.queries.work.where.submittedAt, null);
+  assert.deepEqual(h.queries.work.where.OR, [{ submittedAt: null }, { revisionRequestedAt: { not: null } }]);
+  assert.deepEqual(h.queries.work.where.task.status, { notIn: ["DRAFT", "DONE"] });
   assert.equal(h.queries.meeting.where.clubId, clubId);
   assert.ok(h.queries.meeting.where.date.gte instanceof Date);
   h.revoke();
