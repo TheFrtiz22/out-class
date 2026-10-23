@@ -1,0 +1,74 @@
+{
+  "ordinary": {
+    "tests": 1392,
+    "pass": 1351,
+    "fail": 0,
+    "skipped": 41,
+    "duration_ms": 340636.084417
+  },
+  "authAndPhase2Browser": {
+    "tests": 45,
+    "pass": 45,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 82844.386834
+  },
+  "phase1AndPhase2Browser": {
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 7647.76775
+  },
+  "analysis": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 231.120958
+  },
+  "nativeSecurity": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 4198.592792
+  },
+  "migrations": {
+    "passed": true,
+    "migrations": 57,
+    "rlsTables": 78
+  },
+  "typecheck": {
+    "passed": true
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22,
+    "newCodeAndToolsWarnings": 0
+  },
+  "build": {
+    "baseline": "dr_-Ep2I3_wJ7iM3BfvCd",
+    "candidate": "9yPGS3b9_bIE5JDnPtUKO",
+    "workspaceFirstLoadJsReportedKb": {
+      "before": 522,
+      "after": 522
+    }
+  },
+  "settingsAcceptance": {
+    "pass": 11,
+    "fail": 0
+  },
+  "initialVerificationFailures": {
+    "baselineOrderingControl": "All four selected-tab ordering cases intentionally fail against unmodified baseline code.",
+    "firstCandidateBrowserRun": "The request gates were released after unroute, which already handled the routes. Releasing before unroute repairs the fixture. The existing rapid Interview Rooms test also needed the current keyboard flyout path. Application source did not change in those repairs.",
+    "pilot": "First two pilots exposed current dashboard/switcher/pointer selector mismatches; all eight cases pass in the third pilot. Pilots are excluded from accepted comparison."
+  },
+  "finalFocused": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0
+  },
+  "postCollectionTooling": "Only fresh evidence-output/baseline-manifest arguments and an additional support/club/privacy regression were added after collection. The seven measured application files are unchanged."
+}

@@ -1,0 +1,58 @@
+{
+  "baseline": "145fed90e046fe11577c86654c5f29ff6964f177",
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "candidate": "Overlap selected-tab module loading and fresh authorized initial GET for Members, Applicants, Tasks and Announcements.",
+  "scope": "Application code and disposable local measurement only.",
+  "security": [
+    "Fresh original GET authorization per visit; no authorization cache.",
+    "No protected stale-data reveal while initial validation is pending.",
+    "Fence previous navigation and authority results; preserve mutations and Demo adapters.",
+    "No production infrastructure, database, schema or index changes."
+  ],
+  "measurement": {
+    "paths": [
+      "overview \u2192 members",
+      "recruiting \u2192 applicants",
+      "meetings \u2192 tasks",
+      "tasks \u2192 announcements"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "samplesPerPathCondition": 20,
+    "sameFixture": true,
+    "noConcurrentBuildsOrTestsDuringCollection": true,
+    "metrics": [
+      "click-to-useful-content p50/p95/max",
+      "network completion",
+      "server phases",
+      "request count",
+      "encoded bytes",
+      "browser/HTTP errors"
+    ],
+    "inputMethod": "Keyboard activation, consistently in both builds; pointer/touch covered separately by acceptance checks.",
+    "blocks": [
+      "BA",
+      "AB",
+      "AA",
+      "BA",
+      "AB"
+    ],
+    "samplesPerPathConditionPerBlock": 5,
+    "fixedWarmupSamplesPerPathConditionPerBlock": 1,
+    "samplesPerPathConditionPerBuild": 20,
+    "sameBuildControl": "The middle AA pair is analyzed separately; no source changes.",
+    "firstTwoPilotFailures": "Obsolete club-label selector and pointer flyout adapter; retained, excluded from the registered keyboard comparison. The third pilot passes all eight cases."
+  },
+  "decision": "Keep only demonstrated improvements; report warm/security and payload tradeoffs explicitly.",
+  "release": "Reviewable branch; Phase 1 merge authorization applied to that branch.",
+  "analysis": {
+    "percentiles": "Nearest rank, same function as existing navigation harness.",
+    "primary": "All four BA/AB pairs pooled; the middle AA pair and all warmups remain separate.",
+    "intervals": "10,000 fixed-seed resamples of four whole matched blocks; descriptive intervals, not production inference.",
+    "bootstrapSeed": 20261023,
+    "failurePolicy": "Preserve all rows and failures. A missing planned observation, browser/HTTP error, or missing workspace body counter stops acceptance. No retries or outlier removal.",
+    "initialCodeCost": "Also record all script body bytes loaded before each measured click; cold values include initial source-page JS."
+  }
+}

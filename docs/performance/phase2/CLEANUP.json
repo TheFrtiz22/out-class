@@ -1,0 +1,9 @@
+{
+  "applicationStopped": true,
+  "ownContainersRemoved": true,
+  "ownCredentialsAndPrivateBuildSnapshotsRemoved": true,
+  "priorInactiveDirectoryRestored": true,
+  "priorDirectoryContainsActiveCredentials": false,
+  "unrelatedContainersUnchanged": true,
+  "productionServicesTouched": false
+}

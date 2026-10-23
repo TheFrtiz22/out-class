@@ -160,34 +160,24 @@ test('query-only club transitions skip RSC navigation and preserve modified/cros
   assert.equal(api.navigateWithinClub('https://other.test/club/a/workspace'), false);
 });
 
-test('Members mounts without Overview and its resource survives navigation only within the same identity/grants', async () => {
-  const h = hooks(); let query = 'section=members', calls = 0;
-  let member = { id: 'membership', userId: 'user-a', clubId, isOwner: true, status: 'ACTIVE', accessRole: 'OWNER', permissions: [], interviewOffices: [], club: { id: clubId, name: 'Club' } };
-  let user = { id: 'user-a', memberships: [member] };
-  const load = loader({
-    react: h.react, 'next/dynamic': { __esModule: true, default: () => 'Dynamic' }, 'next/link': { __esModule: true, default: 'Link' },
-    'next/navigation': { useRouter: () => ({ push() {}, replace() {} }), useSearchParams: () => new URLSearchParams(query) },
-    '@/contexts/auth-context': { useAuth: () => ({ user, loading: false, activeClubId: clubId, selectClub() {} }) },
-    '@/contexts/demo-context': { useDemoMode: () => ({ ready: true, isDemoEnabled: false }) },
-    '@/lib/workspace-api': { getClubWorkspaceOverview: async () => { calls++; return { club: member.club, membership: member }; } },
-    '@/lib/application-state': { ApplicationStateProvider: 'Provider', useApplicationState: () => ({}) },
-  });
-  const { ClubWorkspace } = load('components/club-workspace.tsx');
-  const render = () => h.render(() => ClubWorkspace({ clubId, section: 'members' }));
-  let tree = render(); await h.flush(); assert.equal(calls, 0);
-  const child = nodes(tree).find(n => typeof n.props?.onDirectory === 'function');
-  const directory = { actor: member, members: [member], invitations: [], identifierTypes: [] };
-  child.props.onDirectory(directory); tree = render();
-  query = 'section=settings'; render(); await h.flush();
-  query = 'section=members'; tree = render();
-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, directory);
-  member = { ...member, club: { ...member.club, pipelineVersion: 1 } }; user = { ...user, memberships: [member] }; tree = render();
-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Pipeline/privacy version changes invalidate retained resources');
-  user = { id: 'user-b', memberships: [{ ...member, id: 'other-membership', userId: 'user-b' }] }; tree = render();
-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined);
-  child.props.onDirectory(directory); tree = render(); assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Late replies cannot restore another account resource');
-  user = { id: 'user-a', memberships: [{ ...member, permissions: ['members.manage'] }] }; tree = render();
-  assert.equal(nodes(tree).find(n => n.props?.onDirectory).props.initialDirectory, undefined, 'Grant change invalidates prior data');
+test('Members delegates each visit to a fresh selected-tab loader and privacy/account changes remain scoped', async () => {
+  const h=hooks();let query='section=members',calls=0;
+  let member={id:'membership',userId:'user-a',clubId,isOwner:true,status:'ACTIVE',accessRole:'OWNER',permissions:[],interviewOffices:[],club:{id:clubId,name:'Club'}};
+  let user={id:'user-a',memberships:[member]};
+  const load=loader({react:h.react,'next/dynamic':{__esModule:true,default:()=>'Dynamic'},'next/link':{__esModule:true,default:'Link'},
+    'next/navigation':{useRouter:()=>({push(){},replace(){}}),useSearchParams:()=>new URLSearchParams(query)},
+    '@/contexts/auth-context':{useAuth:()=>({user,loading:false,activeClubId:clubId,selectClub(){}})},
+    '@/contexts/demo-context':{useDemoMode:()=>({ready:true,isDemoEnabled:false})},
+    '@/lib/workspace-api':{getClubWorkspaceOverview:async()=>{calls++;return{club:member.club,membership:member}}},
+    '@/lib/application-state':{ApplicationStateProvider:'Provider',useApplicationState:()=>({})}});
+  const {ClubWorkspace}=load('components/club-workspace.tsx'),render=()=>h.render(()=>ClubWorkspace({clubId,section:'members'}));
+  const selected=tree=>nodes(tree).find(n=>n.props?.kind==='members');
+  let tree=render();await h.flush();assert.equal(calls,0);const original=selected(tree).props.privacyScope;
+  assert.equal(selected(tree).props.initialDirectory,undefined,'No retained directory is revealed before a new live read');
+  query='section=settings';render();await h.flush();query='section=members';tree=render();assert.ok(selected(tree));
+  member={...member,club:{...member.club,pipelineVersion:1}};user={...user,memberships:[member]};tree=render();assert.notEqual(selected(tree).props.privacyScope,original);
+  const previous=selected(tree).props.privacyScope;user={id:'user-b',memberships:[{...member,id:'other-membership',userId:'user-b'}]};tree=render();assert.notEqual(selected(tree).props.privacyScope,previous);
+  user={id:'user-a',memberships:[{...member,permissions:['members.manage']}]};tree=render();assert.notEqual(selected(tree).props.privacyScope,original);
 });
 
 test('advanced permissions delegate one directory and one self-identity refresh to their owner', async () => {

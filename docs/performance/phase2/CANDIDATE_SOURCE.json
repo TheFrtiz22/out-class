@@ -1,0 +1,15 @@
+{
+  "baseline": "145fed90e046fe11577c86654c5f29ff6964f177",
+  "candidateBuildId": "9yPGS3b9_bIE5JDnPtUKO",
+  "capturedAfterCollection": true,
+  "applicationDifferences": {
+    "components/club-announcements.tsx": "f3546dafc9057b45e1c2d42049bef36bdc935ac6831db01927534fba5509e30a",
+    "components/club-members.tsx": "738fd605bb26fdfdb1c865c9ec5e75ee6f06ab3e051237e29907a5a0083bfbd9",
+    "components/club-tasks.tsx": "6a00140f05f32755104ffe99c4c2391acf78186323e7816a950036a189186e05",
+    "components/club-workspace.tsx": "bf39ae83b8a303aa0b4b967817811d37fcdbb399ff649087207dc9590cb735b6",
+    "components/organization-member-management.tsx": "087b9a9e41a249de574a1416e34388bfc483abefc2fb3b2b0ca6716a40c2d40a",
+    "components/views/leader-dashboard/live-leader-workspace.tsx": "9075316341c89e41f4d7d92876483bb9d490474e9fecb770d413eb4882301d5a",
+    "components/selected-club-workspace.tsx": "eee6719653bab176edf2d0a09ffe0f97f2ed1e1587ba6690b6c320e54860589d"
+  },
+  "otherTrackedApplicationFilesMatchBaseline": true
+}

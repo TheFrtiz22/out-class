@@ -1,0 +1,298 @@
+{
+  "environment": "local Next production build + disposable local Supabase",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1
+  },
+  "sampleCount": 1,
+  "metricsNotes": {
+    "meaningfulMs": "DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing",
+    "interactiveMs": "first enabled visible control after content predicate; no mutation is invoked",
+    "requestOffsets": "relative to captured DOM click timestamp",
+    "networkCompleteMs": "observed non-SSE requests drained after useful content; includes background traffic",
+    "cpu": "CDP delta through settle, so includes post-content background work",
+    "react": "production commit notifications only; profiler render durations unavailable"
+  },
+  "samples": [
+    {
+      "path": "overview → members",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.29999999701976776,
+      "meaningfulMs": 307.40000000596046,
+      "interactiveMs": 308,
+      "networkCompleteMs": 286.10009765625,
+      "requestCount": 2,
+      "encodedBodyBytes": 24520,
+      "scriptMs": 22.303000000000004,
+      "taskMs": 73.15599999999998,
+      "layoutMs": 4.071999999999999,
+      "longTasks": [],
+      "reactCommitCount": 8,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/5728.4ed94115c97e6e23.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 2.10009765625,
+          "endMs": 25.10009765625,
+          "encodedBodyBytes": 19159,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.734,
+          "transferMs": 0.653
+        },
+        {
+          "route": "/api/workspace?kind=members",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=41.70, database;dur=18.81, live_session;dur=0.62, transaction_acquire;dur=0.91, transaction;dur=9.31, compression;dur=0.73, serialization;dur=1.32, total;dur=54.71",
+          "traceId": "cedbd998-f9fb-4947-a5f3-6abc7f81f49b",
+          "startMs": 229.10009765625,
+          "endMs": 286.10009765625,
+          "encodedBodyBytes": 5361,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 56.507000000000005,
+          "transferMs": 0.40800000000000125
+        }
+      ]
+    },
+    {
+      "path": "overview → members",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0,
+      "meaningfulMs": 30.700000002980232,
+      "interactiveMs": 31.100000008940697,
+      "networkCompleteMs": 45.699951171875,
+      "requestCount": 1,
+      "encodedBodyBytes": 5361,
+      "scriptMs": 6.131999999999999,
+      "taskMs": 22.085999999999995,
+      "layoutMs": 1.514999999999999,
+      "longTasks": [],
+      "reactCommitCount": 3,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=members",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=27.77, database;dur=14.50, live_session;dur=0.72, transaction_acquire;dur=0.30, transaction;dur=6.40, compression;dur=0.21, serialization;dur=0.57, total;dur=36.39",
+          "traceId": "55b93407-cde8-42c3-9028-30ef52f82261",
+          "startMs": 6.699951171875,
+          "endMs": 45.699951171875,
+          "encodedBodyBytes": 5361,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 38.436,
+          "transferMs": 0.34900000000000375
+        }
+      ]
+    },
+    {
+      "path": "meetings → tasks",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.5,
+      "meaningfulMs": 329.59999999403954,
+      "interactiveMs": 330.09999999403954,
+      "networkCompleteMs": 307.599853515625,
+      "requestCount": 3,
+      "encodedBodyBytes": 26149,
+      "scriptMs": 17.792999999999996,
+      "taskMs": 72.525,
+      "layoutMs": 3.4659999999999993,
+      "longTasks": [],
+      "reactCommitCount": 7,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/134.37f04e8e77e86a6a.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 2.599853515625,
+          "endMs": 40.599853515625,
+          "encodedBodyBytes": 18811,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 4.485,
+          "transferMs": 0.734
+        },
+        {
+          "route": "/_next/static/css/cfe63f9689340433.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 3.599853515625,
+          "endMs": 39.599853515625,
+          "encodedBodyBytes": 2971,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.8979999999999997,
+          "transferMs": 0.29000000000000004
+        },
+        {
+          "route": "/api/workspace?kind=tasks",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=35.19, database;dur=11.19, live_session;dur=0.61, lock_query;dur=0.88, compression;dur=0.26, serialization;dur=0.62, total;dur=50.62",
+          "traceId": "06efa250-eba2-408c-b0b4-f00144379fd6",
+          "startMs": 251.599853515625,
+          "endMs": 307.599853515625,
+          "encodedBodyBytes": 4367,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 55.38,
+          "transferMs": 0.6450000000000031
+        }
+      ]
+    },
+    {
+      "path": "meetings → tasks",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0.09999999403953552,
+      "meaningfulMs": 64.19999998807907,
+      "interactiveMs": 64.5,
+      "networkCompleteMs": 40.599853515625,
+      "requestCount": 1,
+      "encodedBodyBytes": 4367,
+      "scriptMs": 3.6199999999999983,
+      "taskMs": 14.221999999999985,
+      "layoutMs": 0.5570000000000002,
+      "longTasks": [],
+      "reactCommitCount": 4,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=tasks",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=27.68, database;dur=6.27, live_session;dur=0.58, lock_query;dur=0.71, compression;dur=0.18, serialization;dur=0.41, total;dur=35.23",
+          "traceId": "dce15f86-a770-4619-98db-d8fa6b227b26",
+          "startMs": 2.599853515625,
+          "endMs": 40.599853515625,
+          "encodedBodyBytes": 4367,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 37.348,
+          "transferMs": 0.4100000000000037
+        }
+      ]
+    },
+    {
+      "path": "tasks → announcements",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 297,
+      "interactiveMs": 297.40000000596046,
+      "networkCompleteMs": 277.5,
+      "requestCount": 2,
+      "encodedBodyBytes": 5016,
+      "scriptMs": 15.184000000000003,
+      "taskMs": 56.34499999999999,
+      "layoutMs": 2.573,
+      "longTasks": [],
+      "reactCommitCount": 7,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/8634.0829869ef2957cae.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 1.5,
+          "endMs": 34.5,
+          "encodedBodyBytes": 4761,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.2489999999999999,
+          "transferMs": 0.41400000000000015
+        },
+        {
+          "route": "/api/workspace?kind=announcements",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=24.52, database;dur=3.33, live_session;dur=0.49, lock_query;dur=0.55, serialization;dur=0.08, total;dur=29.12",
+          "traceId": "8b86ec3d-b7e2-49b2-96e0-1daeeadb1b3e",
+          "startMs": 244.5,
+          "endMs": 277.5,
+          "encodedBodyBytes": 255,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 32.595,
+          "transferMs": 0.43900000000000006
+        }
+      ]
+    },
+    {
+      "path": "tasks → announcements",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 63.8999999910593,
+      "interactiveMs": 64.20000000298023,
+      "networkCompleteMs": 42.800048828125,
+      "requestCount": 1,
+      "encodedBodyBytes": 255,
+      "scriptMs": 3.154000000000004,
+      "taskMs": 12.369999999999992,
+      "layoutMs": 0.3199999999999991,
+      "longTasks": [],
+      "reactCommitCount": 4,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=announcements",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=33.37, database;dur=3.50, live_session;dur=0.79, lock_query;dur=0.84, serialization;dur=0.09, total;dur=37.57",
+          "traceId": "8ff16e32-364e-4135-a934-9d6b299a4006",
+          "startMs": 2.800048828125,
+          "endMs": 42.800048828125,
+          "encodedBodyBytes": 255,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 39.583999999999996,
+          "transferMs": 0.32200000000000273
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ]
+}

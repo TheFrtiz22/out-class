@@ -1,0 +1,44 @@
+▶ selected tabs request authorized data while code is still loading, then consume it exactly once
+  ✖ members (3613.085917ms)
+  ✖ pipeline (3522.663833ms)
+  ✖ tasks (3465.82575ms)
+  ✖ announcements (3556.056833ms)
+✖ selected tabs request authorized data while code is still loading, then consume it exactly once (14493.04925ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14722.102875
+
+✖ failing tests:
+
+test at tests/navigation-phase2-e2e.test.cjs:12:125
+✖ members (3613.085917ms)
+  Error: Data waited for the blocked code chunk
+      at Timeout._onTimeout (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase2-e2e.test.cjs:12:821)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)
+
+test at tests/navigation-phase2-e2e.test.cjs:12:125
+✖ pipeline (3522.663833ms)
+  Error: Data waited for the blocked code chunk
+      at Timeout._onTimeout (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase2-e2e.test.cjs:12:821)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)
+
+test at tests/navigation-phase2-e2e.test.cjs:12:125
+✖ tasks (3465.82575ms)
+  Error: Data waited for the blocked code chunk
+      at Timeout._onTimeout (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase2-e2e.test.cjs:12:821)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)
+
+test at tests/navigation-phase2-e2e.test.cjs:12:125
+✖ announcements (3556.056833ms)
+  Error: Data waited for the blocked code chunk
+      at Timeout._onTimeout (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase2-e2e.test.cjs:12:821)
+      at listOnTimeout (node:internal/timers:685:17)
+      at process.processTimers (node:internal/timers:618:7)

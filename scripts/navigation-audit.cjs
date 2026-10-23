@@ -119,7 +119,7 @@ function installBrowserObservers(options) {
   for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const result=original.apply(this,args);if(window.__navAudit.armed && window.__navAudit.click && !window.__navAudit.url)window.__navAudit.url=performance.now();return result;};}
 }
 async function waitReady(page, desc) {
-  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
+  await page.waitForFunction(d=>(!d.href||location.pathname===new URL(d.href,location.origin).pathname)&&(!d.clubLabel||[...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(d.clubLabel)))&&[...document.querySelectorAll(d.selector)].some(el=>el.getClientRects().length&&el.textContent.includes(d.text)),desc,{timeout:30000});
 }
 async function main() {
   const config=profile.readConfig(path.join(root,'config.json'));
@@ -142,6 +142,7 @@ async function main() {
   const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
+  if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
   if(active)descriptors.interviews.text=active.readyText;
   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
   assert.ok(sampleCount>0&&sampleCount<=100);
@@ -206,6 +207,16 @@ async function main() {
   }
   async function clickTarget(s,from,to) {
     const {page}=s;
+    if(process.argv.includes('--phase2')) {
+      const tour=descriptors[to].tour;
+      let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+      if(!await item.count() && to==='applicants') {
+        const group=page.getByRole('button',{name:'Applicants',exact:true}).filter({visible:true}).first();
+        await group.focus();await page.keyboard.press('ArrowRight');
+        item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
+      }
+      await item.focus();return page.keyboard.press('Enter');
+    }
     if(to==='applicantDetail')return page.locator('[data-applicant-id]').first().click();
     if(to==='memberDetail')return page.getByRole('button',{name:'Member details · Audit Student 000',exact:true}).click();
     if(from==='applicantDetail'||from==='memberDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
@@ -240,7 +251,7 @@ async function main() {
     if(to==='personal'||to==='club2'||from==='personal'||from==='club2')await page.getByRole('button',{name:/Switch workspace:/}).first().click();
     else if(!['voting'].includes(from)&&to!=='voting'&&descriptors[to].tour){
       const item=page.locator('[data-tour="'+descriptors[to].tour+'"]').first();
-      if(!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
+      if(!process.argv.includes('--phase2')&&!await item.isVisible()&&['applicants','decisions'].includes(to))await page.getByRole('button',{name:to==='decisions'?'Decisions':'Applicants',exact:true}).first().click();
     }
     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const startIndex=s.requests.length;
@@ -251,7 +262,7 @@ async function main() {
       const check=()=>{
         if(!a.click||scheduled||a.ready)return;
         if(desc.href&&location.pathname!==new URL(desc.href,location.origin).pathname)return;
-        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger')].some(el=>el.textContent.includes(desc.clubLabel)))return;
+        if(desc.clubLabel&&![...document.querySelectorAll('.oc-workspace-switcher-trigger, [aria-label^="Switch club:"]')].some(el=>el.textContent.includes(desc.clubLabel)))return;
         const root=[...document.querySelectorAll(desc.selector)].find(el=>el.getClientRects().length&&el.textContent.includes(desc.text));
         if(!root)return;
         // Closing Voting reveals Applicants already mounted underneath.
@@ -273,7 +284,9 @@ async function main() {
     const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
     if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
     if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
+    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod='keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
     allSamples.push(row);
+    if(process.argv.includes('--phase2'))assert.equal(row.pageErrorCount,0,'browser_script_error');
     if(active){assert.equal(row.pageErrorCount,0,'browser_script_error');if(row.hydration)assert.equal(row.hydration.length,0,'hydration_recovery');assert.equal(row.renderedRooms,24,'room_count');assert.equal(row.openInterviewLinks,24,'open_link_count');}
     return row;
   }
@@ -314,7 +327,7 @@ async function main() {
     return;
   }
   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
-  const selected=process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const selected=process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
   try {
     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
