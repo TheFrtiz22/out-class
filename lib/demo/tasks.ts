@@ -22,7 +22,7 @@ function access(clubId: string, manage = false) {
     throw new Error("Task access unavailable.");
   return { s, member, manage: clubId === s.clubs[0].id };
 }
-export function getTaskWorkspace(clubId: string) {
+export function getTaskWorkspace(clubId: string, focus?: { taskId: string; assignmentId?: string }) {
   const { s, member, manage } = access(clubId);
   const members = s.memberships
     .filter((m) => m.clubId === clubId)
@@ -45,7 +45,7 @@ export function getTaskWorkspace(clubId: string) {
     tasks: s.tasks
       .filter(
         (t) =>
-          t.clubId === clubId &&
+          t.clubId === clubId && (!focus || t.id === focus.taskId || t.projectId === focus.taskId) &&
           (manage || t.assignments.some((a) => a.memberId === member.id)),
       )
       .map((t) => ({
@@ -53,7 +53,7 @@ export function getTaskWorkspace(clubId: string) {
         audience: projectTaskAudience(t.audience),
         project: t.projectId ? s.tasks.filter(project=>project.id===t.projectId&&project.clubId===clubId&&project.kind==="PROJECT").map(project=>({id:project.id,title:project.title}))[0]??null : null,
         assignments: t.assignments.filter(
-          (a) => manage || a.memberId === member.id,
+          (a) => (manage || a.memberId === member.id) && (!focus?.assignmentId || a.id === focus.assignmentId || t.projectId === focus.taskId && a.memberId === member.id),
         ).map(a => ({ ...a, member: members.find(m => m.id === a.memberId)! })),
       })),
   });

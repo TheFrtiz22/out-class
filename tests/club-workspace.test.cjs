@@ -106,6 +106,8 @@ function setup(permissions = [], isOwner = false) {
         return [{ status: "SUBMITTED", _count: { _all: 3 } }];
       },
     },
+    interviewBooking: { count: async (args) => { queries.interviews = args; return 2; } },
+    votingSession: { findMany: async (args) => { queries.voting = args; return [{ id: "session", state: "OPEN" }]; } },
     pipelineRound: {
       findMany: async (args) => {
         queries.rounds = args;
@@ -130,6 +132,7 @@ function setup(permissions = [], isOwner = false) {
   };
   return {
     api: load("actions/club-overview.ts", {
+      "@/utils/dashboard-summary": { dashboardSummary: async () => ({}) },
       "@/utils/prisma": { prisma },
       "@/utils/auth": auth,
     }),
@@ -144,11 +147,16 @@ test("member overview reads personal outstanding work and sends no recruitment o
     result = await h.api.getClubWorkspaceOverview(clubId);
   assert.equal(result.awaitingReview, null);
   assert.equal(result.recruitment, null);
+  assert.equal(result.upcomingInterviews, null);
+  assert.equal(result.votingSessions, null);
+  assert.equal(h.queries.interviews, undefined);
+  assert.equal(h.queries.voting, undefined);
   assert.equal(h.queries.review, undefined);
   assert.equal(h.queries.recruitment, undefined);
   assert.equal(h.queries.work.where.memberId, "member");
   assert.equal(h.queries.work.where.task.clubId, clubId);
-  assert.equal(h.queries.work.where.submittedAt, null);
+  assert.deepEqual(h.queries.work.where.OR, [{ submittedAt: null }, { revisionRequestedAt: { not: null } }]);
+  assert.deepEqual(h.queries.work.where.task.status, { notIn: ["DRAFT", "DONE"] });
   assert.equal(h.queries.meeting.where.clubId, clubId);
   assert.ok(h.queries.meeting.where.date.gte instanceof Date);
   h.revoke();
@@ -167,6 +175,8 @@ test("review-only overview restricts recruitment counts to anonymous rounds and 
   await owner.api.getClubWorkspaceOverview(clubId);
   assert.equal(owner.queries.recruitment.where.round, undefined);
   assert.equal(owner.queries.review.where.task.clubId, clubId);
+  assert.equal(owner.queries.interviews.where.slot.clubId, clubId);
+  assert.equal(owner.queries.voting.where.clubId, clubId);
   await owner.api.getWorkspaceRounds(clubId);
   assert.deepEqual(owner.queries.rounds.select, {
     id: true,
