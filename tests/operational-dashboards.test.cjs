@@ -27,5 +27,12 @@ test('design preview fixtures satisfy both real dashboard component contracts at
  const recruiting=load('components/recruiting-overview.tsx',{...mocks,'@/lib/workspace-api':{}}).RecruitingOverview
  const manager=load('components/manager-overview.tsx',mocks).ManagerOverview
  const nodes=n=>!n||typeof n!=='object'?[]:Array.isArray(n)?n.flatMap(nodes):[n,...nodes(n.props?.children)]
+ const reviewLinks = permissions => nodes(recruiting({data:{...mod.exports.overview,membership:{isOwner:false,status:'ACTIVE',permissions},operations:{...mod.exports.overview.operations,votes:[]}}})).filter(n=>n.type==='a').map(n=>n.props.href)
+ for (const permissions of [[],['applications.review'],['decisions.vote'],['decisions.manage']]) {
+  assert.ok(!reviewLinks(permissions).some(h=>h.includes('voting=1')||h.includes('#recruitment-review')),'partial access must not expose review mode shortcuts')
+ }
+ assert.ok(reviewLinks(['applications.review','decisions.vote']).some(h=>h.endsWith('&voting=1')),'voting remains discoverable before any session exists')
+ assert.ok(reviewLinks(['decisions.manage','applicants.identify']).some(h=>h.endsWith('#recruitment-review')),'decision makers can discover quick review')
+
  for(const [component,data] of [[recruiting,mod.exports.overview],[manager,mod.exports.managerOverview]]){assert.ok(data.operations);assert.ok(Array.isArray(data.operations.bookings));assert.ok(Array.isArray(data.operations.votes));const tree=component({data});assert.ok(nodes(tree).some(n=>n.type==='h2'));assert.ok(nodes(tree).some(n=>n.type==='button'),'real inline entry points render')}
 })
