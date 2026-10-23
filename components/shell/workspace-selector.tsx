@@ -25,7 +25,7 @@ export function WorkspaceSelector({ access, current, clubId, onSwitch, children,
   const index = options.findIndex(option => option.id === current)
   const columns = options.map((_, position) => position === index ? "var(--workspace-selected-track)" : "minmax(0,1fr)").join(" ")
   return <div className="oc-workspace-selector oc-evolving-toggle" data-workspace-count={options.length} data-current-workspace={current} data-subdivided={divided} style={{ "--workspace-count": options.length, "--workspace-index": Math.max(0, index), "--workspace-columns": columns } as CSSProperties}>
-    <div className="oc-workspace-captions">{options.map(option => <span key={option.id} aria-label={option.id === current ? `Current workspace: ${option.label}` : undefined}>{option.id === current && divided ? option.label : null}</span>)}</div>
+    <div className="oc-workspace-captions">{options.map(option => <span key={option.id} role={option.id === current ? "group" : undefined} aria-label={option.id === current ? `Current workspace: ${option.label}` : undefined}>{option.id === current && divided ? option.label : null}</span>)}</div>
     <div className="oc-evolving-bar"><nav aria-label="Workspaces" className="oc-evolving-segments" data-has-active={index >= 0}>
       <span className="oc-evolving-indicator" aria-hidden="true" />
       {options.map(option => <div key={option.id} className="oc-workspace-segment" data-selected={current === option.id} data-workspace-kind={option.id} data-workspace-label={option.label}>
