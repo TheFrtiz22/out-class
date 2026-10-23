@@ -1494,3 +1494,19 @@ migrate-local: PASS
 build: PASS
 Published panel approval → private GET → mobile room link → live revocation: PASS
 Browser → actual server actions → local Prisma/Postgres: PASS
+
+Final CI repair: Members saved-state closure and Admin caption accessibility
+✔ browser: meeting dialog preserves optional fields, draft recovery, validation, list refresh and in-dashboard editing (4797.635667ms)
+✔ browser: Members prioritizes directory, keeps invitations/settings separate and only adds after explicit confirmation (5092.201292ms)
+✔ browser: announcement preview confirms exact recipients before publishing and returns to chronological list (3528.614625ms)
+✔ browser: Start voting creates a canonical recoverable draft and never publishes decisions (1174.590875ms)
+✔ central workspace selector: verified eligibility, revocation, route hierarchy, guards, keyboard and responsive accessibility (12904.471959ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28092.266792
+Changed-file ESLint: passed (0 errors, 0 warnings).

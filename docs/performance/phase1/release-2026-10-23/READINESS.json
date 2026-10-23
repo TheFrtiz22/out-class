@@ -69,5 +69,23 @@
       "Include existing marketing branding in the narrow template response key assertion.",
       "Accept exact official local Mailpit mirror repositories without disabling TLS."
     ]
+  },
+  "finalCiRepair": {
+    "hostedDisposableJobsPassed": 8,
+    "hostedOrdinarySuiteBeforeRepair": {
+      "pass": 1347,
+      "fail": 1,
+      "skipped": 38
+    },
+    "localAffectedBrowserTests": {
+      "pass": 5,
+      "fail": 0
+    },
+    "changedFileLintPassed": true,
+    "changes": [
+      "Preserve current workspace caption name with a valid group role; scan the Admin route for accessibility.",
+      "Wait for actual eligibility save/refresh completion before testing Escape closure."
+    ],
+    "productionSecurityChanges": false
   }
 }
