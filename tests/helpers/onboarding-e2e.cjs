@@ -12,9 +12,10 @@ function totp(secret){
 }
 function readConfig(filename){
  const config=JSON.parse(fs.readFileSync(filename));
- const writing=config.suite==='application-writing',prefix=writing?'573':'553';
- assert.equal(config.projectId,writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e');
- for(const [value,port] of [[config.appUrl,config.suite==='application-writing'?'3109':'3107'],[config.status.API_URL,`${prefix}21`],[config.status.DB_URL,`${prefix}22`],[config.status.MAILPIT_URL,`${prefix}24`]]){
+ const dashboards=config.suite==='dashboards',writing=config.suite==='application-writing',prefix=dashboards?(config.portPrefix||'593'):writing?'573':'553';
+ assert.match(prefix,/^[1-5]\d{2}$|^6[0-4]\d$/);
+ assert.equal(config.projectId,dashboards?'outclass-dashboards-e2e':writing?'outclass-application-writing-e2e':'outclass-onboarding-e2e');
+ for(const [value,port] of [[config.appUrl,dashboards?'3115':writing?'3109':'3107'],[config.status.API_URL,`${prefix}21`],[config.status.DB_URL,`${prefix}22`],[config.status.MAILPIT_URL,`${prefix}24`]]){
   const url=new URL(value);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));assert.equal(url.port,port,'E2E requires dedicated local ports; never use an application/production URL');
  }
  return config;

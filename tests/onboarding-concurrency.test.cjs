@@ -7,6 +7,10 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  const url=new URL(databaseUrl);
  assert.ok(['127.0.0.1','localhost'].includes(url.hostname)&&url.pathname==='/outclass_security_test','Only an isolated local outclass_security_test database is allowed');
  const {PrismaClient}=require('@prisma/client');const prisma=new PrismaClient({datasourceUrl:databaseUrl});t.after(()=>prisma.$disconnect());
+ // The disposable runner disables real email globally; this suite replaces the
+ // SMTP transport below and must exercise its mocked delivery path explicitly.
+ const savedEmailEnabled=process.env.COMMUNICATIONS_EMAIL_ENABLED;process.env.COMMUNICATIONS_EMAIL_ENABLED='true';
+ t.after(()=>{if(savedEmailEnabled===undefined)delete process.env.COMMUNICATIONS_EMAIL_ENABLED;else process.env.COMMUNICATIONS_EMAIL_ENABLED=savedEmailEnabled;});
  const saved=process.env.OUTCLASS_PLATFORM_ADMIN_IDS;const platform=randomUUID();process.env.OUTCLASS_PLATFORM_ADMIN_IDS=platform;
  t.after(()=>{if(saved===undefined)delete process.env.OUTCLASS_PLATFORM_ADMIN_IDS;else process.env.OUTCLASS_PLATFORM_ADMIN_IDS=saved;});
  const createUser=async prefix=>prisma.user.create({data:{id:randomUUID(),email:`${prefix}${randomUUID().replaceAll('-','').slice(0,8)}@virginia.edu`}});
@@ -25,7 +29,12 @@ test('native PostgreSQL: concurrent claims, duplicate imports, email delivery, a
  }
  const ownerInvite=await invitation(account,club.id);
  const accepted=await Promise.allSettled([api.acceptIdentityClubInvitation(ownerInvite.id),api.acceptIdentityClubInvitation(ownerInvite.id)]);
- assert.equal(accepted.filter(x=>x.status==='fulfilled').length,1);assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id}}),1);
+ // The second caller may observe the committed acceptance and safely retry it.
+ // Both must resolve to this club without duplicating the grant or its audit.
+ assert.equal(accepted.filter(x=>x.status==='fulfilled').length,2);
+ assert.ok(accepted.every(x=>x.value.clubId===club.id));
+ assert.equal(await prisma.clubMember.count({where:{clubId:club.id,userId:account.id}}),1);
+ assert.equal(await prisma.auditLog.count({where:{clubId:club.id,targetId:ownerInvite.id,action:'club.invite.accept'}}),1);
  const outsider=await createUser('outsider');const ownAccount=account;account=outsider;
  await assert.rejects(api.acceptIdentityClubInvitation(ownerInvite.id));await assert.rejects(roster.previewRosterImport({clubId:club.id,requestId:randomUUID(),filename:'roster.csv',csv:'name,computing_id\nJohn,jms8xy'}),/Denied/);account=ownAccount;
  // Different owner invitations, same unclaimed organization: only one platform claim succeeds.
