@@ -1,15 +1,201 @@
-.oc-command-center{--command-line:var(--border);width:100%;min-width:0;color:var(--foreground)}
-.oc-command-context{display:flex;align-items:start;justify-content:space-between;gap:1rem;padding:0 0 1.5rem;border-bottom:1px solid var(--command-line)}
-.oc-command-eyebrow{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-foreground);margin-bottom:.55rem}
-.oc-command-context>div{min-width:0;flex:1;overflow-wrap:anywhere}.oc-command-context h2{font-family:var(--font-heading,inherit);font-size:clamp(1.35rem,2vw,1.8rem);font-weight:600;line-height:1.25;letter-spacing:-.02em}
-.oc-command-context p:not(.oc-command-eyebrow){font-size:.85rem;color:var(--muted-foreground);margin-top:.65rem;line-height:1.7}
-.oc-command-columns{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,1fr);gap:2.5rem}.oc-command-columns>*{min-width:0}
-.oc-command-section{padding:1.5rem 0;border-bottom:1px solid var(--command-line)}.oc-command-section>header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:.8rem}.oc-command-section h2{font-size:1rem;font-weight:600}.oc-command-section>header>span{font-size:.75rem;color:var(--muted-foreground)}
-.oc-command-list{list-style:none;padding:0;margin:0}.oc-command-list>li+li{border-top:1px solid var(--command-line)}
-.oc-command-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;width:100%;min-height:72px;padding:1rem .25rem;text-align:left;font-size:.85rem;border-radius:.25rem;overflow-wrap:anywhere}.oc-command-row>span:first-child{min-width:0;flex:1}.oc-command-row strong{display:block;font-weight:600;line-height:1.5}.oc-command-row small{display:block;font-size:.75rem;line-height:1.7;color:var(--muted-foreground);margin-top:.25rem}.oc-command-row>span:last-child:not(:first-child){font-size:.75rem;flex-shrink:0;max-width:42%;line-height:1.6}
-button.oc-command-row:hover{background:var(--muted)}.oc-command-center button:focus-visible,.oc-command-center a:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
-.oc-command-date[data-urgent=true]{color:var(--destructive);font-weight:600}.oc-command-empty,.oc-command-footnote{font-size:.78rem;line-height:1.8;color:var(--muted-foreground);padding:.5rem 0}.oc-command-empty{padding:1rem 0}.oc-command-link{display:inline-flex;align-items:center;min-height:44px;font-size:.8rem;text-decoration:underline;text-underline-offset:4px;gap:.3rem}.oc-command-stacked{display:flex;flex-direction:column;align-items:flex-start;gap:.3rem}.oc-command-stacked time{font-size:.75rem;color:var(--muted-foreground)}.oc-command-excerpt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.8rem;line-height:1.7;color:var(--muted-foreground);margin-top:.3rem}.oc-command-pipeline{display:flex;flex-wrap:wrap;gap:.5rem}.oc-command-pipeline button{flex:1 1 130px;min-width:0;min-height:106px;text-align:left;padding:.8rem;border:1px solid var(--command-line);border-radius:.6rem}.oc-command-pipeline button[aria-pressed=true]{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary)}.oc-command-pipeline strong{display:block;font-size:1.5rem;font-weight:600}.oc-command-pipeline span{display:block;font-size:.8rem;margin-top:.35rem}.oc-command-pipeline small{display:block;font-size:.65rem;line-height:1.6;margin-top:.35rem}.oc-command-coverage{font-size:.8rem;color:var(--muted-foreground)}.oc-command-coverage strong{font-size:1.3rem;color:var(--foreground);margin-right:.5rem}.oc-command-center progress{width:100%;height:.4rem;accent-color:var(--primary);margin:1rem 0 .5rem}
-@media(max-width:800px){.oc-command-columns{grid-template-columns:minmax(0,1fr);gap:0}.oc-command-context{flex-wrap:wrap}.oc-command-pipeline button{flex-basis:140px}.oc-command-row{align-items:flex-start}.oc-command-row>span:last-child:not(:first-child){max-width:38%}}
-@media(prefers-reduced-motion:reduce){.oc-command-center *{scroll-behavior:auto}}
+/* One foundation; Recruiting is an operations console, Club is a personal home. */
+.oc-command-center {
+  --command-line: var(--border);
+  --command-surface: var(--card);
+  --command-inset: clamp(1rem, 1.6vw, 1.5rem);
+  width: 100%; min-width: 0; color: var(--foreground);
+  font-size: .9375rem; line-height: 1.5;
+}
+.oc-command-context { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 0 1.25rem; }
+.oc-command-context > div { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.oc-command-eyebrow { margin-bottom: .4rem; color: var(--muted-foreground); font-size: .6875rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+.oc-command-context h2 { font-size: clamp(1.25rem, 1.7vw, 1.625rem); font-weight: 600; line-height: 1.3; letter-spacing: -.025em; text-wrap: pretty; }
+.oc-command-context-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem 1rem; margin-top: .65rem; color: var(--muted-foreground); font-size: .8125rem; }
+.oc-command-status { display: inline-flex; align-items: center; gap: .4rem; font-size: .75rem; }
+.oc-command-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--muted-foreground); }
+.oc-command-status[data-state=open]::before { background: var(--success); }
+.oc-command-refresh { flex-shrink: 0; font-size: .8125rem; box-shadow: none; }
+.oc-command-columns { display: grid; grid-template-columns: minmax(0, 1.85fr) minmax(260px, .9fr); gap: 1.5rem; align-items: start; }
+.oc-command-columns > * { min-width: 0; }
+.oc-command-section { padding: 1.25rem 0; border-bottom: 1px solid var(--command-line); }
+.oc-command-section > header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem .75rem; margin-bottom: .65rem; }
+.oc-command-section h2 { display: flex; align-items: center; gap: .5rem; font-size: .9375rem; font-weight: 600; letter-spacing: -.01em; }
+.oc-command-section > header > span { color: var(--muted-foreground); font-size: .75rem; }
+.oc-section-count { display: inline-grid; place-items: center; min-width: 1.5rem; height: 1.5rem; padding: 0 .35rem; border: 1px solid var(--command-line); border-radius: var(--oc-radius-sm); color: var(--muted-foreground); font-size: .75rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.oc-command-list { list-style: none; padding: 0; margin: 0; }
+.oc-command-list > li + li { border-top: 1px solid var(--command-line); }
+.oc-command-row { display: flex; align-items: center; justify-content: space-between; gap: .85rem; width: 100%; min-height: 64px; padding: .85rem .25rem; border-radius: var(--oc-radius-sm); text-align: left; font-size: .875rem; overflow-wrap: anywhere; }
+.oc-command-row > span:first-child:not(.oc-record-number):not(.oc-task-marker):not(.oc-calendar-date), .oc-command-row .oc-record-copy { min-width: 0; flex: 1; }
+.oc-command-row strong { display: block; font-weight: 600; line-height: 1.45; }
+.oc-command-row small { display: block; margin-top: .2rem; color: var(--muted-foreground); font-size: .75rem; font-weight: 400; line-height: 1.6; }
+.oc-command-row > span:last-child:not(:first-child):not(.oc-calendar-copy) { flex-shrink: 0; max-width: 38%; font-size: .75rem; line-height: 1.5; }
+.oc-command-row svg { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.oc-command-row > span:last-child svg, .oc-command-link svg { margin-left: .2rem; }
+.oc-command-center button:focus-visible, .oc-command-center a:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.oc-command-center button:disabled { cursor: wait; }
+button.oc-command-row:hover { background: var(--muted); }
+.oc-command-date[data-urgent=true], .oc-team-metrics dd[data-urgent=true] { color: var(--destructive); }
+.oc-command-empty, .oc-command-footnote { padding: .4rem 0; color: var(--muted-foreground); font-size: .75rem; line-height: 1.7; }
+.oc-command-empty { padding: 1rem 0; }
+.oc-command-link { display: inline-flex; align-items: center; gap: .25rem; min-height: 44px; font-size: .8125rem; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 4px; }
+.oc-command-link:hover { text-decoration-color: currentColor; }
+.oc-command-stacked { flex-direction: column; align-items: flex-start; gap: .2rem; min-height: 0; }
+.oc-command-stacked time, .oc-calendar-copy time { color: var(--muted-foreground); font-size: .75rem; }
+.oc-command-excerpt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: .35rem; color: var(--muted-foreground); font-size: .8125rem; font-weight: 400; line-height: 1.6; }
+/* A connected sequence of configured rounds, with one stable selection edge. */
+.oc-pipeline-section { padding: .5rem 0 1.25rem; border: 0; }
+.oc-command-pipeline { display: flex; overflow-x: auto; border: 1px solid var(--command-line); border-radius: var(--oc-radius-md); background: var(--command-surface); scrollbar-width: thin; }
+.oc-command-pipeline button { position: relative; flex: 1 0 155px; min-width: 0; padding: .8rem 1rem .9rem; border-bottom: 3px solid transparent; text-align: left; }
+.oc-command-pipeline button + button { border-left: 1px solid var(--command-line); }
+.oc-command-pipeline button[aria-pressed=true] { background: var(--oc-surface-blue); border-bottom-color: var(--primary); }
+.oc-command-pipeline button:hover { background: var(--oc-surface-blue); }
+.oc-command-pipeline button:focus-visible { z-index: 1; outline-offset: -3px; }
+.oc-pipeline-step { display: flex; align-items: center; justify-content: space-between; margin-bottom: .3rem; color: var(--muted-foreground); font-size: .625rem; letter-spacing: .08em; text-transform: uppercase; }
+.oc-pipeline-label { display: block; font-size: .8125rem; font-weight: 600; }
+.oc-command-pipeline strong { display: flex; align-items: baseline; gap: .4rem; margin-top: .4rem; font-size: 1.375rem; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-command-pipeline strong small { font-size: .6875rem; font-weight: 400; color: var(--muted-foreground); }
+.oc-pipeline-pending { display: block; margin-top: .35rem; color: var(--muted-foreground); font-size: .6875rem; }
+.oc-pipeline-pending[data-pending=true] { color: var(--info); }
+/* Recruiting's primary workspace is deliberately stronger than its context rail. */
+.oc-command-recruiting .oc-review-console { padding: var(--command-inset); border: 1px solid var(--command-line); border-top: 3px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--command-surface); }
+.oc-review-console > header { margin-bottom: .2rem; }
+.oc-review-console > .oc-command-footnote { margin-bottom: .5rem; }
+.oc-record-number { width: 1.5rem; flex: 0 0 1.5rem; color: var(--muted-foreground); font-size: .6875rem; font-variant-numeric: tabular-nums; }
+.oc-review-records { border-block: 1px solid var(--command-line); }
+.oc-record-action { display: inline-flex; align-items: center; gap: .2rem; color: var(--primary); }
+.oc-command-recruiting .oc-command-columns > aside { padding: 0 var(--command-inset); border: 1px solid var(--command-line); border-radius: var(--oc-radius-md); background: color-mix(in srgb, var(--oc-surface-blue) 40%, var(--background)); }
+.oc-command-recruiting aside .oc-command-section:last-child { border-bottom: 0; }
+.oc-command-section[data-attention=true] > header h2::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-ink); }
+.oc-command-coverage { color: var(--muted-foreground); font-size: .75rem; }
+.oc-command-coverage strong { margin-right: .35rem; color: var(--foreground); font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-command-center progress { display: block; width: 100%; height: 4px; margin: .75rem 0; overflow: hidden; border: 0; border-radius: 2px; background: var(--command-line); accent-color: var(--primary); }
+.oc-command-center progress::-webkit-progress-bar { background: var(--command-line); }
+.oc-command-center progress::-webkit-progress-value { background: var(--primary); }
+.oc-command-center progress::-moz-progress-bar { background: var(--primary); }
+/* Shared date object, with a more editorial calendar treatment in Club. */
+.oc-command-row.oc-calendar-record { align-items: flex-start; justify-content: flex-start; }
+.oc-calendar-date { display: flex; flex-direction: column; align-items: center; flex: 0 0 42px; padding: .35rem 0; border: 1px solid var(--command-line); border-radius: var(--oc-radius-sm); background: var(--command-surface); line-height: 1; }
+.oc-calendar-date > span { font-size: .625rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-foreground); }
+.oc-calendar-date > strong { margin-top: .3rem; font-size: 1.125rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.oc-calendar-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: .25rem; }
+.oc-calendar-copy small { margin: 0; }
+.oc-calendar-copy > span:last-child { margin-top: .4rem; font-size: .75rem; }
+/* Club: warm, personal work with an editorial calendar and a distinct officer desk. */
+.oc-command-club .oc-command-context { padding: 1.15rem var(--command-inset); margin-bottom: .5rem; border: 1px solid var(--command-line); border-radius: var(--oc-radius-md); background: var(--oc-surface-warm); }
+.oc-command-club .oc-command-context h2 { font-family: var(--oc-font-display); font-size: clamp(1.25rem, 1.7vw, 1.5rem); font-weight: 400; }
+.oc-command-club .oc-command-columns { grid-template-columns: minmax(0, 1.35fr) minmax(290px, 1fr); gap: 0 2.5rem; }
+.oc-personal-work { border-bottom: 0; }
+.oc-work-filters { display: flex; padding: 2px; border: 1px solid var(--command-line); border-radius: var(--oc-radius-md); }
+.oc-work-filters button { min-height: 32px; padding-inline: .65rem; border-radius: var(--oc-radius-sm); font-size: .75rem; box-shadow: none; }
+.oc-work-filters [aria-pressed=true] { background: var(--command-surface); color: var(--foreground); }
+.oc-task-marker { flex: 0 0 8px; width: 8px; height: 8px; margin: .35rem .35rem .35rem 0; border: 1.5px solid var(--muted-foreground); border-radius: 50%; }
+.oc-task-record[data-urgent=true] .oc-task-marker { border-color: var(--destructive); background: var(--error-subtle); }
+.oc-command-club .oc-task-record { min-height: 86px; }
+.oc-task-record .oc-command-date { max-width: 31%; font-variant-numeric: tabular-nums; }
+.oc-officer-work { margin: .25rem 0 .5rem; padding: 1rem var(--command-inset); border: 1px solid var(--command-line); border-radius: var(--oc-radius-md); background: var(--command-surface); }
+.oc-officer-work .oc-command-eyebrow { margin-bottom: .2rem; font-size: .625rem; }
+.oc-club-calendar { padding-bottom: .75rem; }
+.oc-club-calendar .oc-command-list > li + li { border: 0; }
+.oc-club-calendar .oc-calendar-record { padding: 1.05rem 0; }
+.oc-club-calendar .oc-calendar-date { flex-basis: 54px; padding: .6rem 0; background: var(--oc-surface-warm); border: 0; border-radius: var(--oc-radius-md); }
+.oc-club-calendar .oc-calendar-date > strong { font-family: var(--oc-font-display); font-size: 1.65rem; }
+.oc-club-calendar .oc-calendar-copy > strong { font-size: 1rem; font-weight: 600; }
+.oc-club-calendar .oc-calendar-action { color: var(--primary); }
+.oc-activity-stream > li { position: relative; padding-left: 1.25rem; border-left: 1px solid var(--command-line); }
+.oc-activity-stream > li + li { border-top: 0; }
+.oc-activity-stream > li::before { content: ''; position: absolute; left: -4px; top: 1.5rem; width: 7px; height: 7px; border-radius: 50%; background: var(--muted-foreground); outline: 4px solid var(--background); }
+.oc-team-pulse { border-bottom: 0; }
+.oc-team-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: .75rem 0; gap: 1rem; }
+.oc-team-metrics > div + div { border-left: 1px solid var(--command-line); padding-left: 1rem; }
+.oc-team-metrics dt { color: var(--muted-foreground); font-size: .75rem; }
+.oc-team-metrics dd { margin-top: .3rem; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.oc-team-metrics dd small { font-size: .8125rem; font-weight: 400; color: var(--muted-foreground); }
+/* The same operational components are refined in place, including portaled drawers. */
+.oc-dashboard-drawer { gap: .5rem; background: var(--background); }
+.oc-dashboard-drawer > [data-slot=sheet-title] { padding-bottom: .35rem; }
+.oc-dashboard-drawer > [data-slot=sheet-description] { padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); line-height: 1.6; }
+.oc-dashboard-detail { font-size: .9375rem; line-height: 1.65; }
+.oc-dashboard-detail > [role=alert] { padding: .85rem 1rem; border-left: 3px solid var(--destructive); background: var(--error-subtle); }
+.oc-dashboard-detail > [role=status]:not(:empty), .oc-applicant-drawer p[role=status]:not(:empty) { padding: .65rem .85rem; border: 1px solid var(--border); border-radius: var(--oc-radius-sm); background: var(--oc-surface-blue); }
+.oc-dashboard-detail > [data-confirmed=true] { color: var(--success); background: var(--success-subtle); border-color: color-mix(in srgb, var(--success) 25%, var(--border)); }
+.oc-preparation-context { display: grid; gap: .25rem; padding: 1rem; background: var(--oc-surface-blue); border-left: 3px solid var(--primary); }
+.oc-panel-validation { padding: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: var(--oc-radius-md); }
+.oc-panel-validation[data-ready=false] { border-left: 3px solid var(--brand-ink); }
+.oc-dashboard-drawer .oc-review-heading, .oc-dashboard-drawer .oc-review-submission, .oc-dashboard-drawer .oc-task-resources { border-radius: var(--oc-radius-md); box-shadow: none; }
+.oc-dashboard-drawer .oc-announcement-detail > p:first-child { color: var(--muted-foreground); font-size: .8125rem; }
+.oc-applicant-drawer [data-slot=sheet-header] { padding-bottom: 1.25rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.oc-applicant-drawer form[data-autosave-editor] { padding: 1rem; border: 1px solid var(--border); border-top: 2px solid var(--primary); border-radius: var(--oc-radius-md); background: var(--card); }
+.oc-applicant-drawer .oc-applicant-resume { border-radius: var(--oc-radius-md); }
+.oc-applicant-drawer > button:not(:last-child) { align-self: start; margin: .75rem 1.5rem 0; }
+.oc-dashboard-loading { padding-block: 1rem; }
+.oc-loading-pipeline { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 1.25rem 0; }
+.oc-loading-records { display: grid; gap: 1rem; padding-top: 1.25rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .oc-command-row, .oc-command-pipeline button, .oc-command-link { transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease; }
+  .oc-record-action svg, .oc-calendar-action svg { transition: transform 140ms ease; }
+  button.oc-command-row:hover :is(.oc-record-action, .oc-calendar-action) svg { transform: translateX(2px); }
+  .oc-dashboard-drawer, .oc-applicant-drawer { animation-duration: 220ms; transition-duration: 220ms; }
+  .oc-dashboard-detail > [data-confirmed=true] { animation: oc-dashboard-confirmed 200ms ease-out; }
+  @keyframes oc-dashboard-confirmed { from { opacity: .5; } to { opacity: 1; } }
+}
+@media (max-width: 1100px) {
+  .oc-command-columns { gap: 1rem; grid-template-columns: minmax(0, 1.5fr) minmax(235px, 1fr); }
+  .oc-command-club .oc-command-columns { gap: 0 1.5rem; grid-template-columns: minmax(0, 1.2fr) minmax(255px, 1fr); }
+}
+@media (max-width: 800px) {
+  .oc-command-columns, .oc-command-club .oc-command-columns { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .oc-command-context { align-items: flex-start; }
+  .oc-command-context { flex-wrap: wrap; }
+  .oc-command-context > div { flex-basis: 100%; }
+  .oc-command-refresh { min-height: 36px; height: 36px; }
+  .oc-command-club .oc-command-context { padding: 1rem; }
+  .oc-command-row > span:last-child:not(:first-child):not(.oc-calendar-copy) { max-width: 32%; }
+  .oc-command-pipeline button { flex-basis: 145px; padding: .7rem .8rem; }
+  .oc-command-pipeline strong { font-size: 1.25rem; }
+}
+@media (max-width: 480px) {
+  .oc-command-section > header { align-items: flex-start; }
+  .oc-command-recruiting .oc-review-console { padding: .85rem; }
+  .oc-record-number { display: none; }
+  .oc-command-row { gap: .65rem; }
+  .oc-command-context-meta { gap: .35rem .7rem; font-size: .75rem; }
+  .oc-command-refresh { min-height: 44px; }
+  .oc-team-metrics { gap: .65rem; }
+  .oc-team-metrics > div + div { padding-left: .65rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-command-center *, .oc-dashboard-drawer, .oc-dashboard-drawer *, .oc-applicant-drawer, .oc-applicant-drawer * { scroll-behavior: auto; animation: none !important; transition: none !important; }
+}
+@media (forced-colors: active) {
+  .oc-command-pipeline button[aria-pressed=true] { outline: 2px solid Highlight; outline-offset: -3px; }
+  .oc-command-status::before, .oc-task-marker { forced-color-adjust: none; background: CanvasText; }
+}
 
-.oc-command-row svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+.oc-command-club .oc-club-grid > :is(.oc-personal-work, .oc-officer-work, .oc-club-activity, .oc-team-pulse) { grid-column: 1; }
+.oc-command-club .oc-club-grid > .oc-club-calendar { grid-column: 2; grid-row: 1 / span 4; }
+.oc-dashboard-error { padding: 1.25rem; border: 1px solid var(--border); border-left: 3px solid var(--destructive); border-radius: var(--oc-radius-md); background: var(--card); }
+.oc-dashboard-error > p { margin-bottom: .75rem; }
+@media (max-width: 800px) {
+  .oc-command-club .oc-club-grid > :is(.oc-personal-work, .oc-officer-work, .oc-club-activity, .oc-team-pulse, .oc-club-calendar, .oc-command-footnote) { grid-column: 1; grid-row: auto; }
+}
+
+/* Refinement pass 2: avoid calendar row allocation stretching the personal task area. */
+.oc-command-club .oc-club-grid > .oc-personal-work { grid-row: 1; }
+.oc-command-club .oc-club-grid > .oc-officer-work { grid-row: 2; }
+.oc-command-club .oc-club-grid > .oc-club-activity { grid-row: 3; }
+.oc-command-club .oc-club-grid > .oc-team-pulse { grid-row: 4; }
+.oc-command-club .oc-club-grid { grid-template-rows: min-content min-content min-content min-content; }
+.oc-applicant-drawer:has(> button:not(:last-child)) > .oc-applicant-drawer-scroll { padding-top: 1.25rem; }
+.oc-applicant-drawer [data-slot=sheet-header] > button { align-self: flex-start; width: auto; }
+.oc-applicant-profile-layout:has(.oc-applicant-assessment) > .oc-applicant-resume { position: static; }
+.oc-applicant-assessment { padding: 1.15rem; border: 1px solid var(--border); border-radius: var(--oc-radius-md); background: var(--background); }
+.oc-applicant-assessment > section:last-of-type { border-bottom: 0; }
+@media (min-width: 1024px) {
+  .oc-applicant-profile-layout:has(.oc-applicant-assessment) { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+  .oc-applicant-profile-layout > .oc-applicant-assessment { grid-column: 2; grid-row: 1 / span 2; }
+  .oc-applicant-profile-layout:has(.oc-applicant-assessment) > .oc-applicant-resume { grid-column: 1; }
+}
+@media (max-width: 800px) {
+  .oc-command-club .oc-club-grid > :is(.oc-personal-work, .oc-officer-work, .oc-club-activity, .oc-team-pulse, .oc-club-calendar) { grid-row: auto; }
+  .oc-command-club .oc-club-grid { gap: .25rem; }
+}

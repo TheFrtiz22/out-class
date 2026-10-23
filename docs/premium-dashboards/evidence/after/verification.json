@@ -1,0 +1,77 @@
+{
+  "recruiting": [
+    "owner",
+    "anonymous reviewer",
+    "identified assigned reviewer",
+    "outsider denied",
+    "revoked membership denied",
+    "empty second club"
+  ],
+  "club": [
+    "general member",
+    "owner task reviewer",
+    "inline submission",
+    "inline approval",
+    "recipient-only announcement",
+    "meeting preview"
+  ],
+  "widths": [
+    1440,
+    1280,
+    1024,
+    768,
+    390
+  ],
+  "readSamples": [
+    {
+      "ms": 184,
+      "bytes": 3702
+    },
+    {
+      "ms": 232,
+      "bytes": 1798
+    },
+    {
+      "ms": 157,
+      "bytes": 2193
+    },
+    {
+      "ms": 118,
+      "bytes": 2627
+    },
+    {
+      "ms": 170,
+      "bytes": 5621
+    },
+    {
+      "ms": 173,
+      "bytes": 5621
+    },
+    {
+      "ms": 528,
+      "bytes": 5621
+    },
+    {
+      "ms": 335,
+      "bytes": 5621
+    },
+    {
+      "ms": 245,
+      "bytes": 5621
+    }
+  ],
+  "databaseConfirmed": true,
+  "concurrency": [
+    "task submission",
+    "evaluation finalization",
+    "decision publication"
+  ],
+  "slowRefresh": true,
+  "failureRecovery": true,
+  "keyboardRoundSelection": true,
+  "motionPreferences": [
+    "reduce",
+    "no-preference"
+  ],
+  "asOf": "2026-10-23T15:35:30.867Z"
+}
