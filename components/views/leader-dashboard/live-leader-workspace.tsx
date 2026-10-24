@@ -1,5 +1,7 @@
 "use client"
 import "@/components/product/operational-dashboard.css"
+import { applicantPage, APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
+import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
 import { useEditorDraft } from "@/hooks/use-editor-draft"
 import { AutosaveStatus } from "@/components/ui/autosave-status"
 import { ApplicationCycleAssignment } from "@/components/recruitment-cycles";
@@ -30,7 +32,7 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronLeft, ChevronRight, RefreshCw, Search } from "@/components/icons"
 import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
-import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+import { getClubPipelineList, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
 import { submitEvaluation } from "@/lib/workspace-api"
 import { useApplicationState } from "@/lib/application-state"
 import { useAuth, type ExtendedMembership } from "@/contexts/auth-context"
@@ -58,7 +60,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 
-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
+type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
 type Candidate = Pipeline["applications"][number]
 const selectStyle =
   "h-9 max-w-full rounded-md border border-border bg-background px-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
@@ -133,11 +135,12 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const previewId = preview?.applicationId
   const demo = useDemoMode()
   const { leaderFocus, clearLeaderFocus } = useApplicationState()
-  const [data, setData] = useState<Pipeline | null>(initialData)
+  const [listData, setData] = useState<Pipeline | null>(initialData)
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(!initialData)
+  const [listLoading, setLoading] = useState(!initialData)
   const [revision, setRevision] = useState(0)
   const [query, setQuery] = useState("")
+  const [page, setPage] = useState(0)
   const [round, setRound] = useState("")
   const [decisionGroup, setDecisionGroup] = useState<DecisionGroup>("pending")
   const [status, setStatus] = useState("")
@@ -168,19 +171,25 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   const [boardError, setBoardError] = useState("")
   const mutating = useRef(false)
   const firstRead = useRef(validatedInitialData && !!initialData)
+  const detail = usePipelineApplicant(membership.clubId, previewId || activeId, revision)
+  const data = previewId ? detail.pipeline : listData
+  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
   const retained = useRef(data), publish = useRef(onData)
   retained.current = data
   publish.current = onData
   useEffect(() => { publish.current?.(data) }, [data])
+  const roundsForReview = useRef(data?.rounds)
+  roundsForReview.current = data?.rounds
   const heading = useRef<HTMLHeadingElement>(null)
   const search = useRef<HTMLInputElement>(null)
   useEffect(() => {
+    if (previewId) return
     if (firstRead.current) { firstRead.current = false; return }
     let current = true
     setLoading(!retained.current)
     setError("")
     
-    getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+    getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
       .then((result) => {
         if (current) setData(result)
       })
@@ -257,13 +266,24 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       membership.id,
     ],
   )
+  const displayed = applicantPage(filtered, page)
+  const workspaceElement = useRef<HTMLDivElement>(null)
+  const focusPage = useRef(false)
+  useEffect(() => {
+    if (!focusPage.current) return
+    focusPage.current = false
+    if (activeId) return
+    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLButtonElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
+    return () => cancelAnimationFrame(frame)
+  }, [displayed.page, activeId])
+  useEffect(() => { setPage(0) }, [query, round, status, review, major, year, gpa, sat, act, rating, sort, descending, decisionGroup, gender, rejectedOnly, decisionsOnly])
   const previewOpened = useRef(false), previewOpen = useRef<(app: Candidate) => void>(() => {})
   useEffect(() => {
     if (!previewId || !data || loading || previewOpened.current) return
     const target = data.applications.find(app => app.id === previewId)
     if (target) { previewOpened.current = true; previewOpen.current(target) }
   }, [previewId, data, loading])
-  const active = applicants.find((app) => app.id === activeId)
+  const active = activeId ? detail.application : null
   const canEvaluate = active?.canEvaluate === true
   const dirty = canEvaluate && JSON.stringify([score, notes]) !== baseline
   const draftSave = useEditorDraft({
@@ -285,17 +305,15 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (busy) return
     const apply = () => {
     setActiveId(app?.id || null)
+    if (app) { const index = filtered.findIndex(item => item.id === app.id); if (index >= 0) setPage(Math.floor(index / APPLICANT_PAGE_SIZE)) }
     if (!app) { setQuickQueue(null); preview?.onClose() }
     setMessage("")
     setDecision("")
     if (app) {
-      const mine = findReviewerEvaluation(app.evaluations, membership.id, data?.rounds.find(item => item.id === app.roundId))
-      const value = mine ? String(mine.score) : ""
-      setScore(value)
-      setNotes(mine?.notes || "")
-      setBaseline(JSON.stringify([value, mine?.notes || ""]))
+      setScore("")
+      setNotes("")
+      setBaseline(JSON.stringify(["", ""]))
       setTargetRound(app.roundId)
-      requestAnimationFrame(() => heading.current?.focus())
     } else
       requestAnimationFrame(() => {
         Array.from(
@@ -310,6 +328,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
     if (active?.canEvaluate && (draftSave.dirty || draftSave.saving)) void draftSave.flush().then(apply).catch(() => {})
     else apply()
   }
+  useEffect(() => {
+    if (!active) return
+    const mine = findReviewerEvaluation(active.evaluations, membership.id, roundsForReview.current?.find(item => item.id === active.roundId))
+    const value = mine ? String(mine.score) : ""
+    setScore(value)
+    setNotes(mine?.notes || "")
+    setBaseline(JSON.stringify([value, mine?.notes || ""]))
+    setTargetRound(active.roundId)
+    requestAnimationFrame(() => heading.current?.focus())
+  }, [active, membership.id])
   previewOpen.current = open
   async function mutate(kind: "review" | "round" | "decision") {
     if (!active || mutating.current) return
@@ -343,8 +371,8 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
                         ...app,
                         canEvaluate: false,
                         evaluations: [
-                          ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
-                          result.evaluation,
+                          ...app.evaluations,
+                          { interviewerId: result.evaluation.interviewerId },
                         ],
                       }
                     : app,
@@ -355,6 +383,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
         await draftSave.clear()
         setBaseline(JSON.stringify([score, notes]))
         setMessage("Evaluation saved.")
+        setRevision(value => value + 1)
       } else if (kind === "round") {
         await moveApplicantRound({
           clubId: membership.clubId,
@@ -404,7 +433,7 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   async function writeStatus(app: Candidate, status: "IN_REVIEW" | "INTERVIEWING" | "WAITLISTED" | "ACCEPTED" | "REJECTED") {
     await setApplicationStatus({ clubId: membership.clubId, applicationId: app.id, status, expectedStatus: app.status === "DRAFTING" ? undefined : app.status })
     try {
-      const refreshed = await getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+      const refreshed = await getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
       setData(refreshed)
       return refreshed
     } catch (error) {
@@ -453,14 +482,14 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
   if (!data || error)
     return (
       <div role="alert" className="space-y-3">
-        <p>{error || "No data available."}</p>
+        <p>{error || (previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
         <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
           Try again
         </Button>
       </div>
     )
   return (
-    <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
+    <div ref={workspaceElement} className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
       <div hidden={!!preview}>
       {!active && message && <p role="status" className="text-sm">{message}</p>}
       {decisionsOnly && <>
@@ -663,11 +692,16 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
       <div className="flex flex-wrap items-center gap-3"><label className="text-sm">Sort applicants <select aria-label="Sort applicants" className={selectStyle} value={sort} onChange={event => sortBy(event.target.value as ApplicantSort)}><option value="name">Name / anonymous ID</option><option value="year">Class year</option><option value="status">Status</option><option value="gpa">GPA</option><option value="sat">SAT</option><option value="act">ACT</option><option value="round">Round</option><option value="score">Rating</option></select></label><Button variant="ghost" size="sm" onClick={() => setDescending(value => !value)}>{descending ? "Descending ↓" : "Ascending ↑"}</Button></div>
       {view === "kanban" && <p className="text-xs leading-6 text-muted-foreground">Drag a candidate to another column or use Move to. Review the change before it is saved. Interview moves require an interview round.</p>}
       {rejectedOnly&&<p>Rejected applications are retained here with their reviews and decision history. Reconsideration returns an application to review; it does not change the student’s account or membership.</p>}
-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} allApplicants={filtered} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+      {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="outline" aria-label="Previous applicant page" disabled={displayed.page === 0} onClick={() => { focusPage.current = true; setPage(displayed.page - 1) }}>Previous page</Button>
+        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {filtered.length}</p>
+        <Button variant="outline" aria-label="Next applicant page" disabled={displayed.page + 1 === displayed.count} onClick={() => { focusPage.current = true; setPage(displayed.page + 1) }}>Next page</Button>
+      </nav>}
       </div>
       {preview && !active && !data.applications.length && <p role="alert">This applicant is no longer available. <Button onClick={preview.onClose}>Close preview</Button></p>}
       <Sheet
-        open={!!active}
+        open={!!activeId}
         onOpenChange={(value) => {
           if (!value) open()
         }}
@@ -679,6 +713,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
             if (dirty || busy) event.preventDefault()
           }}
         >
+          {activeId && !active && <>
+            <SheetHeader><SheetTitle>Applicant review</SheetTitle><SheetDescription>{detail.error ? "This applicant could not be loaded. Your access may have changed." : "Loading applicant…"}</SheetDescription></SheetHeader>
+            {detail.error && <div role="alert"><Button variant="outline" onClick={detail.retry}>Retry applicant</Button></div>}
+          </>}
           {active && (
             <>
               {preview?.onNext && <Button variant="outline" disabled={busy} onClick={() => void (canEvaluate ? draftSave.flush() : Promise.resolve()).then(() => preview.onNext?.()).catch(() => {})}>Next assigned review</Button>}

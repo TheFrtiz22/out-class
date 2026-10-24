@@ -1,4 +1,6 @@
 "use server";
+import type { Prisma } from "@prisma/client";
+import { pipelineListProjection } from "@/lib/pipeline-list";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
@@ -24,6 +26,15 @@ import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
 const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
+  return readClubPipeline(clubId, input);
+}
+
+/** Same live authority and privacy projection; detail collections are read only on opening. */
+export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
+  return pipelineListProjection(await readClubPipeline(clubId, input, true));
+}
+
+async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>, listOnly = false) {
   const filter = pipelineFilter.parse(input);
   // Only members can view the pipeline
   const { membership } = await requireClubPermission(clubId, [], { allowSuspendedRead: true });
@@ -51,23 +62,33 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
     }
     const where = { clubId, ...(filter.applicationId ? { id: filter.applicationId } : {}), status: { not: "DRAFTING" as const }, ...(filter.roundId ? { roundId: filter.roundId } : {}), ...(hasPermission(membership, "applicants.identify") ? {} : { round: { anonymousReview: true } }) };
     phase = "applications";
-    const applications = await tx.application.findMany({
-      where: {
-        ...where,
-        ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
-      },
-      include: {
-        recruitmentOffer: { select: { status: true, expiresAt: true } },
-        round: true,
-        student: {
-          include: { studentProfile: { include: { experiences: true } } },
-        },
-        evaluations: { omit: { notes: true, applicantQuestions: true } },
-        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
-        answers: { include: { question: true } },
-        bookings: { include: { slot: true } },
-      },
-    });
+    const applicationWhere = {
+      ...where,
+      ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+    };
+    const commonInclude = {
+      recruitmentOffer: { select: { status: true, expiresAt: true } },
+      round: true,
+      evaluations: { omit: { notes: true, applicantQuestions: true } },
+      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+    } satisfies Prisma.ApplicationInclude;
+    const applications = listOnly
+      ? (await tx.application.findMany({ where: applicationWhere, include: {
+          ...commonInclude, student: { include: { studentProfile: true } },
+        } })).map(raw => ({
+          ...raw, answers: [], bookings: [],
+          // Internal normalization for the shared privacy projector. These
+          // relations are omitted from SQL and from the list wire contract.
+          student: { ...raw.student, studentProfile: raw.student.studentProfile ? {
+            ...raw.student.studentProfile, experiences: [],
+          } : null },
+        }))
+      : await tx.application.findMany({ where: applicationWhere, include: {
+          ...commonInclude,
+          student: { include: { studentProfile: { include: { experiences: true } } } },
+          answers: { include: { question: true } },
+          bookings: { include: { slot: true } },
+        } });
     phase = "counts";
     const counts = filter.genderCounts ? await tx.application.groupBy({ by: ["studentId"], where }) : [];
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];

@@ -1,0 +1,123 @@
+{
+  "mode": "5000-applicant reliability stress; every planned attempt counted, including preparation and measured timeouts",
+  "baseline": "583b231f4a6e7eed9222ac983c9e6634483be6e9",
+  "planSha256": "dfbe71ef6e2dcf84fe0b85700b844b26285997c120ee08998c3aa53b0b3f0ad6",
+  "buildIds": {
+    "A": "ZF31McrfqLY3OLGDzGh-T",
+    "B": "bJzuxddYtxuN7DUyKkjHM"
+  },
+  "applicationDifferences": [
+    "actions/crm.ts",
+    "app/api/workspace/route.ts",
+    "components/live-voting/board-decision-mode.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-applicant-views.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "lib/workspace-api.ts",
+    "lib/pipeline-list.ts",
+    "hooks/use-pipeline-applicant.ts",
+    "lib/applicant-pagination.ts"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "completed": [
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "caseFailures": 3,
+      "exit": 1,
+      "httpErrors": 4,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "caseFailures": 1,
+      "exit": 1,
+      "httpErrors": 1,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "caseFailures": 0,
+      "exit": 0,
+      "httpErrors": 0,
+      "browserErrors": 0
+    }
+  ],
+  "failures": [],
+  "poolLimitPerClient": 8,
+  "environment": "One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; fixed keyboard activation.",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 5000,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "collectionComplete": true,
+  "applicationStopped": true,
+  "privateFixtureRetainedForExplicitCleanup": true
+}

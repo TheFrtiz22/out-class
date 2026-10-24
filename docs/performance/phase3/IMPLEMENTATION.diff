@@ -1,0 +1,738 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index b5388de..01382a2 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -1,0 +2,2 @@
++import type { Prisma } from "@prisma/client";
++import { pipelineListProjection } from "@/lib/pipeline-list";
+@@ -26,0 +29,9 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
++  return readClubPipeline(clubId, input);
++}
++
++/** Same live authority and privacy projection; detail collections are read only on opening. */
++export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
++  return pipelineListProjection(await readClubPipeline(clubId, input, true));
++}
++
++async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>, listOnly = false) {
+@@ -54,17 +65,27 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
+-    const applications = await tx.application.findMany({
+-      where: {
+-        ...where,
+-        ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
+-      },
+-      include: {
+-        recruitmentOffer: { select: { status: true, expiresAt: true } },
+-        round: true,
+-        student: {
+-          include: { studentProfile: { include: { experiences: true } } },
+-        },
+-        evaluations: { omit: { notes: true, applicantQuestions: true } },
+-        interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
+-        answers: { include: { question: true } },
+-        bookings: { include: { slot: true } },
+-      },
+-    });
++    const applicationWhere = {
++      ...where,
++      ...(filter.gender ? { student: { studentProfile: { gender: filter.gender } } } : {}),
++    };
++    const commonInclude = {
++      recruitmentOffer: { select: { status: true, expiresAt: true } },
++      round: true,
++      evaluations: { omit: { notes: true, applicantQuestions: true } },
++      interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
++    } satisfies Prisma.ApplicationInclude;
++    const applications = listOnly
++      ? (await tx.application.findMany({ where: applicationWhere, include: {
++          ...commonInclude, student: { include: { studentProfile: true } },
++        } })).map(raw => ({
++          ...raw, answers: [], bookings: [],
++          // Internal normalization for the shared privacy projector. These
++          // relations are omitted from SQL and from the list wire contract.
++          student: { ...raw.student, studentProfile: raw.student.studentProfile ? {
++            ...raw.student.studentProfile, experiences: [],
++          } : null },
++        }))
++      : await tx.application.findMany({ where: applicationWhere, include: {
++          ...commonInclude,
++          student: { include: { studentProfile: { include: { experiences: true } } } },
++          answers: { include: { question: true } },
++          bookings: { include: { slot: true } },
++        } });
+diff --git a/app/api/workspace/route.ts b/app/api/workspace/route.ts
+index 30b713a..a34edd3 100644
+--- a/app/api/workspace/route.ts
++++ b/app/api/workspace/route.ts
+@@ -10 +10 @@ import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds }
+-import { getClubPipeline } from "@/actions/crm"
++import { getClubPipeline, getClubPipelineList } from "@/actions/crm"
+@@ -61,0 +62 @@ export async function GET(request: Request) {
++      case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+diff --git a/components/live-voting/board-decision-mode.tsx b/components/live-voting/board-decision-mode.tsx
+index a68b9e6..c586ac1 100644
+--- a/components/live-voting/board-decision-mode.tsx
++++ b/components/live-voting/board-decision-mode.tsx
+@@ -9 +9 @@ import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVot
+-import type { getClubPipeline } from "@/lib/workspace-api"
++import type { getClubPipelineList } from "@/lib/workspace-api"
+@@ -21 +21 @@ import "./voting-mode.css"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index 2777aa0..01bf3e5 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -25 +25 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
+diff --git a/components/views/leader-dashboard/live-applicant-views.tsx b/components/views/leader-dashboard/live-applicant-views.tsx
+index a4633b4..240df49 100644
+--- a/components/views/leader-dashboard/live-applicant-views.tsx
++++ b/components/views/leader-dashboard/live-applicant-views.tsx
+@@ -7 +7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+-import type { getClubPipeline } from "@/lib/workspace-api"
++import type { getClubPipelineList } from "@/lib/workspace-api"
+@@ -16 +16 @@ import { formatAverage } from "@/lib/interview-review-summary"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
+@@ -19,2 +19,2 @@ export type ApplicantLane = (typeof applicantLanes)[number]["id"]
+-type Props = { applicants: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
+-export function ApplicantInterview({ app }: { app: Candidate }) {
++type Props = { applicants: Candidate[]; allApplicants?: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
++export function ApplicantInterview({ app }: { app: Awaited<ReturnType<typeof import("@/lib/workspace-api").getClubPipeline>>["applications"][number] }) {
+@@ -48 +48 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
+-export function LiveApplicantKanban({ applicants, rounds, open, name, canMove, move, busy }: Props) {
++export function LiveApplicantKanban({ applicants, allApplicants = applicants, rounds, open, name, canMove, move, busy }: Props) {
+@@ -53 +53,2 @@ export function LiveApplicantKanban({ applicants, rounds, open, name, canMove, m
+-    return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{cards.length}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
++    const total = allApplicants.filter(app => applicantLane(app.status) === lane.id).length
++    return <section key={lane.id} aria-label={`${lane.title} applicants`} data-drop-active={over === lane.id} className="min-w-0 rounded-lg border bg-muted/30 p-3 data-[drop-active=true]:border-primary data-[drop-active=true]:bg-secondary" onDragOver={event => { const app = applicants.find(candidate => candidate.id === dragging.current); if (!busy && app && canMove?.(app, lane.id)) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setOver(lane.id) } }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null) }} onDrop={event => { event.preventDefault(); const app = applicants.find(candidate => candidate.id === dragging.current); dragging.current = null; setOver(null); if (!busy && app && canMove?.(app, lane.id)) move?.(app, lane.id) }}><header className="mb-4"><h3 className="oc-card-heading flex items-center justify-between">{lane.title}<span className="text-xs font-normal text-muted-foreground">{total}</span></h3><p className="mt-1 text-xs text-muted-foreground">{lane.description}</p></header>
+@@ -58 +59 @@ export function LiveApplicantKanban({ applicants, rounds, open, name, canMove, m
+-      {!cards.length && <p className="py-6 text-xs text-muted-foreground">No applicants in this lane with the current filters.</p>}
++      {!cards.length && <p className="py-6 text-xs text-muted-foreground">{total ? "No applicants from this lane on this page." : "No applicants in this lane with the current filters."}</p>}
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index 50e8f66..afe0f4f 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -2,0 +3,2 @@ import "@/components/product/operational-dashboard.css"
++import { applicantPage, APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
++import { usePipelineApplicant } from "@/hooks/use-pipeline-applicant"
+@@ -33 +35 @@ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipeline, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelineList, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+@@ -61 +63 @@ import { Badge } from "@/components/ui/badge"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
+@@ -136 +138 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [data, setData] = useState<Pipeline | null>(initialData)
++  const [listData, setData] = useState<Pipeline | null>(initialData)
+@@ -138 +140 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [loading, setLoading] = useState(!initialData)
++  const [listLoading, setLoading] = useState(!initialData)
+@@ -140,0 +143 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const [page, setPage] = useState(0)
+@@ -170,0 +174,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const detail = usePipelineApplicant(membership.clubId, previewId || activeId, revision)
++  const data = previewId ? detail.pipeline : listData
++  const loading = previewId ? !detail.pipeline && !detail.error : listLoading
+@@ -174,0 +181,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const roundsForReview = useRef(data?.rounds)
++  roundsForReview.current = data?.rounds
+@@ -177,0 +186 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    if (previewId) return
+@@ -183 +192 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
++    getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+@@ -259,0 +269,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const displayed = applicantPage(filtered, page)
++  const workspaceElement = useRef<HTMLDivElement>(null)
++  const focusPage = useRef(false)
++  useEffect(() => {
++    if (!focusPage.current) return
++    focusPage.current = false
++    if (activeId) return
++    const frame = requestAnimationFrame(() => Array.from(workspaceElement.current?.querySelectorAll<HTMLButtonElement>("[data-applicant-id]") ?? []).find(button => button.getClientRects().length > 0)?.focus())
++    return () => cancelAnimationFrame(frame)
++  }, [displayed.page, activeId])
++  useEffect(() => { setPage(0) }, [query, round, status, review, major, year, gpa, sat, act, rating, sort, descending, decisionGroup, gender, rejectedOnly, decisionsOnly])
+@@ -266 +286 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const active = applicants.find((app) => app.id === activeId)
++  const active = activeId ? detail.application : null
+@@ -287,0 +308 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++    if (app) { const index = filtered.findIndex(item => item.id === app.id); if (index >= 0) setPage(Math.floor(index / APPLICANT_PAGE_SIZE)) }
+@@ -292,5 +313,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const mine = findReviewerEvaluation(app.evaluations, membership.id, data?.rounds.find(item => item.id === app.roundId))
+-      const value = mine ? String(mine.score) : ""
+-      setScore(value)
+-      setNotes(mine?.notes || "")
+-      setBaseline(JSON.stringify([value, mine?.notes || ""]))
++      setScore("")
++      setNotes("")
++      setBaseline(JSON.stringify(["", ""]))
+@@ -298 +316,0 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      requestAnimationFrame(() => heading.current?.focus())
+@@ -312,0 +331,10 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  useEffect(() => {
++    if (!active) return
++    const mine = findReviewerEvaluation(active.evaluations, membership.id, roundsForReview.current?.find(item => item.id === active.roundId))
++    const value = mine ? String(mine.score) : ""
++    setScore(value)
++    setNotes(mine?.notes || "")
++    setBaseline(JSON.stringify([value, mine?.notes || ""]))
++    setTargetRound(active.roundId)
++    requestAnimationFrame(() => heading.current?.focus())
++  }, [active, membership.id])
+@@ -346,2 +374,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-                          ...app.evaluations.filter((item) => item.id !== result.evaluation.id),
+-                          result.evaluation,
++                          ...app.evaluations,
++                          { interviewerId: result.evaluation.interviewerId },
+@@ -357,0 +386 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++        setRevision(value => value + 1)
+@@ -407 +436 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const refreshed = await getClubPipeline(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
++      const refreshed = await getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+@@ -456 +485 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <p>{error || "No data available."}</p>
++        <p>{error || (previewId && detail.error ? "Couldn’t load this applicant. Your access may have changed." : "No data available.")}</p>
+@@ -463 +492 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    <div className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
++    <div ref={workspaceElement} className="oc-live-pipeline space-y-6" data-unsaved={draftSave.dirty} data-saving={busy}>
+@@ -666 +695,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={filtered} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} allApplicants={filtered} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {displayed.count > 1 && <nav aria-label="Applicant pages" className="flex flex-wrap items-center justify-between gap-3">
++        <Button variant="outline" aria-label="Previous applicant page" disabled={displayed.page === 0} onClick={() => { focusPage.current = true; setPage(displayed.page - 1) }}>Previous page</Button>
++        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {filtered.length}</p>
++        <Button variant="outline" aria-label="Next applicant page" disabled={displayed.page + 1 === displayed.count} onClick={() => { focusPage.current = true; setPage(displayed.page + 1) }}>Next page</Button>
++      </nav>}
+@@ -670 +704 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        open={!!active}
++        open={!!activeId}
+@@ -681,0 +716,4 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++          {activeId && !active && <>
++            <SheetHeader><SheetTitle>Applicant review</SheetTitle><SheetDescription>{detail.error ? "This applicant could not be loaded. Your access may have changed." : "Loading applicant…"}</SheetDescription></SheetHeader>
++            {detail.error && <div role="alert"><Button variant="outline" onClick={detail.retry}>Retry applicant</Button></div>}
++          </>}
+diff --git a/hooks/use-pipeline-applicant.ts b/hooks/use-pipeline-applicant.ts
+new file mode 100644
+index 0000000..aa5aabb
+--- /dev/null
++++ b/hooks/use-pipeline-applicant.ts
+@@ -0,0 +1,27 @@
++"use client"
++
++import { useEffect, useMemo, useState } from "react"
++import { useAuth } from "@/contexts/auth-context"
++import { useDemoMode } from "@/contexts/demo-context"
++import { getClubPipeline } from "@/lib/workspace-api"
++
++type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++
++/** A fresh, single-applicant read per opening; late or previous-authority results stay hidden. */
++export function usePipelineApplicant(clubId: string, applicationId: string | null, revision: number) {
++  const { user, readAuthority, isImpersonating } = useAuth()
++  const demo = useDemoMode()
++  const [retry, setRetry] = useState(0)
++  const owner = useMemo(() => ({ clubId, applicationId, revision, retry, user, readAuthority, isImpersonating, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [clubId, applicationId, revision, retry, user, readAuthority, isImpersonating, demo.ready, demo.isDemoEnabled])
++  const [result, setResult] = useState<{ owner: object; pipeline: Pipeline | null; error: boolean } | null>(null)
++  useEffect(() => {
++    if (!applicationId || !demo.ready) return
++    let current = true
++    getClubPipeline(clubId, { applicationId }).then(data => {
++      if (current) setResult({ owner, pipeline: data, error: !data.applications.some(app => app.id === applicationId) })
++    }).catch(() => { if (current) setResult({ owner, pipeline: null, error: true }) })
++    return () => { current = false }
++  }, [owner, clubId, applicationId, demo.ready])
++  const current = result?.owner === owner ? result : null
++  return { pipeline: current?.pipeline ?? null, application: current?.pipeline?.applications.find(app => app.id === applicationId) ?? null, error: current?.error ?? false, retry: () => setRetry(value => value + 1) }
++}
+diff --git a/lib/applicant-pagination.ts b/lib/applicant-pagination.ts
+new file mode 100644
+index 0000000..0734bdf
+--- /dev/null
++++ b/lib/applicant-pagination.ts
+@@ -0,0 +1,9 @@
++export const APPLICANT_PAGE_SIZE = 100
++
++/** Display boundary only: callers retain the complete filtered selection. */
++export function applicantPage<T>(applicants: readonly T[], requested: number) {
++  const count = Math.max(1, Math.ceil(applicants.length / APPLICANT_PAGE_SIZE))
++  const page = Math.max(0, Math.min(count - 1, Math.trunc(requested) || 0))
++  const start = page * APPLICANT_PAGE_SIZE
++  return { page, count, start, items: applicants.slice(start, start + APPLICANT_PAGE_SIZE) }
++}
+diff --git a/lib/pipeline-list.ts b/lib/pipeline-list.ts
+new file mode 100644
+index 0000000..f82ea0e
+--- /dev/null
++++ b/lib/pipeline-list.ts
+@@ -0,0 +1,27 @@
++import type { getClubPipeline } from "@/actions/crm"
++
++type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
++
++/** Run only after the canonical per-applicant privacy and score projection. */
++export function pipelineListProjection(data: Pipeline) {
++  return {
++    rounds: data.rounds,
++    genderCounts: data.genderCounts,
++    applications: data.applications.map(app => {
++      const profile = app.student.studentProfile
++      return {
++        id: app.id, roundId: app.roundId, status: app.status, studentId: app.studentId,
++        student: {
++          email: app.student.email,
++          studentProfile: profile ? {
++            firstName: profile.firstName, lastName: profile.lastName, major: profile.major,
++            academicYear: profile.academicYear, gpa: profile.gpa,
++            satScore: profile.satScore, actScore: profile.actScore,
++          } : null,
++        },
++        evaluations: app.evaluations.map(e => ({ interviewerId: e.interviewerId })),
++        roundScore: app.roundScore,
++      }
++    }),
++  }
++}
+diff --git a/lib/workspace-api.ts b/lib/workspace-api.ts
+index dca72fc..dc3afe8 100644
+--- a/lib/workspace-api.ts
++++ b/lib/workspace-api.ts
+@@ -1,0 +2 @@
++import { pipelineListProjection } from "@/lib/pipeline-list";
+@@ -135,0 +137,4 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
++export const getClubPipelineList = adapt(
++  (...args: Parameters<typeof crm.getClubPipelineList>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineList>>>("pipelineList", args),
++  async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await getClubPipeline(...args)),
++)
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 27508ec..6d0a340 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -144,0 +145 @@ async function main() {
++  if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
+@@ -164 +165,9 @@ async function main() {
+-    const requests=[],pending=new Set(),pageErrors=[];
++    const requests=[],pending=new Set(),pageErrors=[],wire=[];
++    if(process.argv.includes('--phase3')) {
++      await cdp.send('Network.enable');
++      cdp.on('Network.requestWillBeSent',event=>{
++        const headers=Object.fromEntries(Object.entries(event.request.headers).map(([key,value])=>[key.toLowerCase(),value]));
++        wire.push({id:event.requestId,key:event.request.method+' '+event.request.url+' '+(headers['next-action']||''),bytes:0});
++      });
++      cdp.on('Network.dataReceived',event=>{const item=wire.find(row=>row.id===event.requestId);if(item)item.bytes+=event.encodedDataLength;});
++    }
+@@ -177 +186 @@ async function main() {
+-    return {context,page,cdp,requests,pending,pageErrors,participant};
++    return {context,page,cdp,requests,pending,pageErrors,participant,wire};
+@@ -210 +219,3 @@ async function main() {
+-    if(process.argv.includes('--phase2')) {
++    if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
++    if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
++    if(process.argv.includes('--phase2') && descriptors[to].tour) {
+@@ -257,0 +269 @@ async function main() {
++    s.sampleStartIndex=startIndex;
+@@ -283 +295,10 @@ async function main() {
+-    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
++    const rows=s.requests.slice(startIndex).map(({req,...r},offset)=>{
++      let encodedBodyBytes=r.bytes,bodyBytesSource='playwright';
++      if(process.argv.includes('--phase3') && encodedBodyBytes===null && r.failed) {
++        const key=req.method()+' '+req.url()+' '+(req.headers()['next-action']||'');
++        const ordinal=s.requests.slice(0,startIndex+offset).filter(row=>row.req.method()+' '+row.req.url()+' '+(row.req.headers()['next-action']||'')===key).length;
++        const received=s.wire.filter(row=>row.key===key)[ordinal];
++        if(received){encodedBodyBytes=received.bytes;bodyBytesSource='cdp_received_chunks_before_cancel';}
++      }
++      return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
++    });
+@@ -287 +308 @@ async function main() {
+-    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod='keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
++    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
+@@ -288,0 +310,4 @@ async function main() {
++    if(process.argv.includes('--phase3')) {
++      row.cycleReadError=await page.getByText('Cycles could not load.',{exact:true}).count()>0;
++      assert.equal(row.cycleReadError,false,'Recruitment cycle read failed in the UI');
++    }
+@@ -330 +355 @@ async function main() {
+-  const selected=process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
++  const selected=process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+@@ -338,0 +364 @@ async function main() {
++          let attemptStage='source';
+@@ -341 +367,2 @@ async function main() {
+-            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++            if(condition==='warm'){attemptStage='warm target';await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);attemptStage='warm return';await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
++            attemptStage='measured';
+@@ -343,0 +371,9 @@ async function main() {
++          } catch(error) {
++            if(!process.argv.includes('--record-failures')) throw error;
++            const message=String(error.message).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]').slice(0,1800);
++            let diagnostic=null;
++            try { diagnostic=await Promise.race([s.page.evaluate(()=>({tool:new URLSearchParams(location.search).get('tool'),pipeline:!!document.querySelector('.oc-live-pipeline'),sheet:!!document.querySelector('[data-slot="sheet-content"]'),alerts:document.querySelectorAll('[role="alert"]').length,click:window.__navAudit.click,origin:performance.timeOrigin,now:performance.now()})),new Promise(resolve=>setTimeout(()=>resolve(null),2000))]); } catch {}
++            const requests=s.requests.slice(attemptStage==='measured'?(s.sampleStartIndex??0):0).map(r=>({route:r.route,type:r.type,method:r.method,status:r.status,failed:r.failed||false,failureReason:r.failureReason||null,encodedBodyBytes:r.bytes}));
++            const observation={path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
++            failures.push({path:observation.path,condition,index:i,stage:attemptStage,error:message});allSamples.push(observation);
++            console.log('RECORDED FAILURE '+observation.path+' '+condition+' '+(i+1)+'/'+sampleCount+' '+attemptStage);
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index d0128e0..56e49e2 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -33,0 +34,4 @@ async function main(){
++  if(process.argv.includes('--pipeline-study')) cases.splice(0,cases.length,
++    ['pipeline','actions/crm.ts','getClubPipeline',[clubId]],
++    ['pipelineList','actions/crm.ts','getClubPipelineList',[clubId]],
++    ['pipelineDetail','actions/crm.ts','getClubPipeline',[clubId,{applicationId:app.id}]]);
+@@ -42 +46,3 @@ async function main(){
+-  fs.mkdirSync('docs/performance/evidence',{recursive:true});fs.writeFileSync('docs/performance/evidence/loader-samples.json',JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
++  const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
++  if(process.argv.includes('--pipeline-study')){assert.ok(output.startsWith(path.resolve('docs/performance/phase3')+path.sep));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
+diff --git a/scripts/navigation-pipeline-stress.cjs b/scripts/navigation-pipeline-stress.cjs
+new file mode 100644
+index 0000000..f8d7503
+--- /dev/null
++++ b/scripts/navigation-pipeline-stress.cjs
+@@ -0,0 +1,55 @@
++// Frozen local production outputs, one disposable fixture, predeclared blocks.
++// Never reads application .env, accepts hosted URLs, or changes production.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
++const {spawn,spawnSync,execFileSync}=require('node:child_process'),{createHash,randomUUID}=require('node:crypto');
++const {readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const hash=body=>createHash('sha256').update(body).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase3/stress-5000');assert.ok(out.startsWith(path.join(repo,'docs/performance/phase3')+path.sep)&&!fs.existsSync(out),'Use a new Phase 3 evidence directory');
++ const configFile=path.join(root,'config.json'),config=readConfig(configFile),s=config.status;
++ assert.equal(config.buildDir,dist);assert.equal(config.appUrl,'http://127.0.0.1:3107');
++ const builds={A:path.join(root,'phase3-build-candidate'),B:path.join(root,'phase3-build-baseline')};
++ assert.ok(fs.existsSync(path.join(builds.B,'BUILD_ID')));assert.equal(fs.readFileSync(path.join(builds.A,'BUILD_ID'),'utf8').trim(),JSON.parse(fs.readFileSync(path.join(repo,'docs/performance/phase3/CANDIDATE_SOURCE.json'))).buildId);
++ const plan=JSON.parse(fs.readFileSync(path.join(repo,'docs/performance/phase3/PLAN.json')));
++ const baselinePath=path.resolve(repo,process.argv.find(a=>a.startsWith('--baseline-source='))?.slice(18)||'docs/performance/phase3/BASELINE_SOURCE.json');const baseline=JSON.parse(fs.readFileSync(baselinePath));
++ assert.equal(baseline.commit,plan.baseline);assert.equal(fs.readFileSync(path.join(builds.B,'BUILD_ID'),'utf8').trim(),baseline.buildId);
++ assert.equal(fs.readFileSync(path.join(root,'.phase3-study-owner'),'utf8'),repo);
++ assert.equal(fs.readFileSync(path.join(dist,'BUILD_ID'),'utf8').trim(),fs.readFileSync(path.join(builds.A,'BUILD_ID'),'utf8').trim());fs.mkdirSync(out,{recursive:true});fs.copyFileSync(path.join(repo,'docs/performance/phase3/PLAN.json'),path.join(out,'PLAN.json'));
++ const ids=Object.fromEntries(Object.entries(builds).map(([v,p])=>[v,fs.readFileSync(path.join(p,'BUILD_ID'),'utf8').trim()]));assert.notEqual(ids.A,ids.B);
++ const differences=Object.entries(baseline.files).filter(([file,digest])=>!fs.existsSync(path.join(repo,file))||hash(fs.readFileSync(path.join(repo,file)))!==digest).map(([file])=>file);
++ for (const file of ['lib/pipeline-list.ts','hooks/use-pipeline-applicant.ts','lib/applicant-pagination.ts']) if (!differences.includes(file)) differences.push(file);
++ const record={mode:'5000-applicant reliability stress; every planned attempt counted, including preparation and measured timeouts',baseline:baseline.commit,planSha256:hash(fs.readFileSync(path.join(repo,'docs/performance/phase3/PLAN.json'))),buildIds:ids,applicationDifferences:differences,blocks:plan.measurement.blocks,completed:[],failures:[],poolLimitPerClient:8,environment:'One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; keyboard list activation and pointer detail selection.'};
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(record,null,2)+'\n');save();
++ const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');
++ const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:config.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:config.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''};
++ let running,aborted=false,phase='starting',cpuLast=cpu();const telemetry=[];
++ function cpu(){return os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((x,y)=>x+y,0)}),{idle:0,total:0})}
++ const sample=setInterval(()=>{const next=cpu(),total=next.total-cpuLast.total;telemetry.push({at:new Date().toISOString(),phase,cpuBusyPercent:total?Math.round(10000*(1-(next.idle-cpuLast.idle)/total))/100:null,load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});cpuLast=next},1000);
++ async function stop(){
++  const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;
++  const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid,'Only the registered local listener can stop');
++  assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');
++  for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Registered listener failed to stop');
++ }
++ async function start(variant){await stop();assert.equal(fs.readFileSync(path.join(root,'.phase3-study-owner'),'utf8'),repo);fs.rmSync(dist,{recursive:true});fs.cpSync(builds[variant],dist,{recursive:true});
++  assert.equal(fs.readFileSync(path.join(dist,'BUILD_ID'),'utf8').trim(),ids[variant]);const fd=fs.openSync(path.join(root,'phase3-server.log'),'a'),app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
++  for(let n=0;n<100;n++){try{if((await fetch(config.appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Local production output did not start');
++ }
++ async function collect(destination,samples){assert.ok(!aborted);const fd=fs.openSync(path.join(root,'phase3-benchmark.log'),'a');running=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--record-failures','--cold-warm','--samples='+samples,'--out='+destination],{cwd:repo,env,stdio:['ignore',fd,fd]});const exit=await new Promise((resolve,reject)=>{running.once('error',reject);running.once('close',resolve)});running=null;fs.closeSync(fd);
++  const file=path.join(destination,'browser-samples.json');assert.ok(fs.existsSync(file),'Every planned block must produce evidence');const data=JSON.parse(fs.readFileSync(file));
++  const result={directory:path.relative(out,destination),planned:samples*4,observed:data.samples.length,caseFailures:data.failures.length,exit};record.completed.push(result);save();assert.ok(exit===0||exit===1&&data.failures.length>0,'Unexpected harness process failure');assert.equal(data.samples.length,samples*4,'Every planned attempt must have an outcome');
++  result.httpErrors=data.samples.flatMap(r=>r.requests).filter(q=>q.status>=400).length;
++  result.browserErrors=data.samples.reduce((n,r)=>n+(r.pageErrorCount||0),0);save();
++
++ }
++ const abort=()=>{aborted=true;running?.kill('SIGTERM')};process.once('SIGINT',abort);process.once('SIGTERM',abort);
++ try{for(const size of [5000]){await stop();record.fixture=await require('./pipeline-scale-fixture.cjs').scaleFixture(size);save();for(const[pair,order]of record.blocks.entries())for(const[position,variant]of [...order].entries()){
++   phase=`${pair}-${position}-${variant}-starting`;await start(variant);
++   const prefix=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${variant}`);phase=`${pair}-${position}-${variant}-warmup`;await collect(prefix+'-warmup',1);phase=`${pair}-${position}-${variant}-measure`;await collect(prefix+'-measure',5);
++   console.log(`Pair ${pair+1}/${record.blocks.length}, ${variant}, complete; every planned row retained.`);
++  }phase=`size-${size}-loader-probe`;await stop();const probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-loaders.json`)],{cwd:repo,env,encoding:'utf8'});assert.equal(probe.status,0,'Loader probe failed; retain browser observations and stop');}record.collectionComplete=true;save();
++ }catch(error){record.failures.push({phase,name:error.name,message:String(error.message).split('\n')[0]});save();throw error;
++ }finally{clearInterval(sample);running?.kill('SIGTERM');await stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(telemetry,null,2)+'\n');fs.rmSync(dist,{recursive:true});fs.cpSync(builds.A,dist,{recursive:true});record.applicationStopped=true;record.privateFixtureRetainedForExplicitCleanup=true;save();process.removeListener('SIGINT',abort);process.removeListener('SIGTERM',abort);}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-pipeline-study.cjs b/scripts/navigation-pipeline-study.cjs
+new file mode 100644
+index 0000000..c05ac7a
+--- /dev/null
++++ b/scripts/navigation-pipeline-study.cjs
+@@ -0,0 +1,52 @@
++// Frozen local production outputs, one disposable fixture, predeclared blocks.
++// Never reads application .env, accepts hosted URLs, or changes production.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
++const {spawn,spawnSync,execFileSync}=require('node:child_process'),{createHash,randomUUID}=require('node:crypto');
++const {readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const hash=body=>createHash('sha256').update(body).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase3/comparison');assert.ok(out.startsWith(path.join(repo,'docs/performance/phase3')+path.sep)&&!fs.existsSync(out),'Use a new Phase 3 evidence directory');
++ const configFile=path.join(root,'config.json'),config=readConfig(configFile),s=config.status;
++ assert.equal(config.buildDir,dist);assert.equal(config.appUrl,'http://127.0.0.1:3107');
++ const builds={A:path.join(root,'phase3-build-candidate'),B:path.join(root,'phase3-build-baseline')};
++ assert.ok(fs.existsSync(path.join(builds.B,'BUILD_ID')));assert.ok(!fs.existsSync(builds.A));
++ const plan=JSON.parse(fs.readFileSync(path.join(repo,'docs/performance/phase3/PLAN.json')));
++ const baselinePath=path.resolve(repo,process.argv.find(a=>a.startsWith('--baseline-source='))?.slice(18)||'docs/performance/phase3/BASELINE_SOURCE.json');const baseline=JSON.parse(fs.readFileSync(baselinePath));
++ assert.equal(baseline.commit,plan.baseline);assert.equal(fs.readFileSync(path.join(builds.B,'BUILD_ID'),'utf8').trim(),baseline.buildId);
++ assert.ok(!fs.existsSync(path.join(root,'.phase3-study-owner')));fs.writeFileSync(path.join(root,'.phase3-study-owner'),repo,{mode:0o600});
++ fs.cpSync(dist,builds.A,{recursive:true});fs.mkdirSync(out,{recursive:true});fs.copyFileSync(path.join(repo,'docs/performance/phase3/PLAN.json'),path.join(out,'PLAN.json'));
++ const ids=Object.fromEntries(Object.entries(builds).map(([v,p])=>[v,fs.readFileSync(path.join(p,'BUILD_ID'),'utf8').trim()]));assert.notEqual(ids.A,ids.B);
++ const differences=Object.entries(baseline.files).filter(([file,digest])=>!fs.existsSync(path.join(repo,file))||hash(fs.readFileSync(path.join(repo,file)))!==digest).map(([file])=>file);
++ for (const file of ['lib/pipeline-list.ts','hooks/use-pipeline-applicant.ts','lib/applicant-pagination.ts']) if (!differences.includes(file)) differences.push(file);
++ const record={baseline:baseline.commit,planSha256:hash(fs.readFileSync(path.join(repo,'docs/performance/phase3/PLAN.json'))),buildIds:ids,applicationDifferences:differences,blocks:plan.measurement.blocks,completed:[],failures:[],poolLimitPerClient:8,environment:'One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; keyboard list activation and pointer detail selection.'};
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(record,null,2)+'\n');save();
++ const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');
++ const env={...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:config.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:config.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''};
++ let running,aborted=false,phase='starting',cpuLast=cpu();const telemetry=[];
++ function cpu(){return os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((x,y)=>x+y,0)}),{idle:0,total:0})}
++ const sample=setInterval(()=>{const next=cpu(),total=next.total-cpuLast.total;telemetry.push({at:new Date().toISOString(),phase,cpuBusyPercent:total?Math.round(10000*(1-(next.idle-cpuLast.idle)/total))/100:null,load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});cpuLast=next},1000);
++ async function stop(){
++  const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;
++  const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid,'Only the registered local listener can stop');
++  assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');
++  for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Registered listener failed to stop');
++ }
++ async function start(variant){await stop();assert.equal(fs.readFileSync(path.join(root,'.phase3-study-owner'),'utf8'),repo);fs.rmSync(dist,{recursive:true});fs.cpSync(builds[variant],dist,{recursive:true});
++  assert.equal(fs.readFileSync(path.join(dist,'BUILD_ID'),'utf8').trim(),ids[variant]);const fd=fs.openSync(path.join(root,'phase3-server.log'),'a'),app=spawn(process.execPath,['node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1'],{cwd:repo,env,detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));
++  for(let n=0;n<100;n++){try{if((await fetch(config.appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Local production output did not start');
++ }
++ async function collect(destination,samples){assert.ok(!aborted);const fd=fs.openSync(path.join(root,'phase3-benchmark.log'),'a');running=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--samples='+samples,'--out='+destination],{cwd:repo,env,stdio:['ignore',fd,fd]});const exit=await new Promise((resolve,reject)=>{running.once('error',reject);running.once('close',resolve)});running=null;fs.closeSync(fd);
++  const file=path.join(destination,'browser-samples.json');assert.ok(fs.existsSync(file),'Every planned block must produce evidence');const data=JSON.parse(fs.readFileSync(file));
++  const result={directory:path.relative(out,destination),planned:samples*4,observed:data.samples.length,failures:data.failures,exit};record.completed.push(result);save();assert.equal(exit,0,'A benchmark block failed; retain it and stop');assert.equal(data.failures.length,0);assert.equal(data.samples.length,samples*4);assert.ok(data.samples.every(r=>r.pageErrorCount===0&&r.requests.every(q=>q.status>=200&&q.status<400&&(!q.failed||(q.route==='actions/recruitment-management.ts:getRecruitmentCycles'&&q.status===200&&q.failureReason==='net::ERR_ABORTED'&&r.cycleReadError===false&&Number.isFinite(q.encodedBodyBytes)&&q.encodedBodyBytes>0)))),'Browser or HTTP failures invalidate the block');assert.ok(data.samples.every(r=>r.requests.filter(q=>q.route.startsWith('/api/workspace')).every(q=>Number.isFinite(q.encodedBodyBytes)&&q.encodedBodyBytes>0)),'Missing body counters invalidate the block');
++ }
++ const abort=()=>{aborted=true;running?.kill('SIGTERM')};process.once('SIGINT',abort);process.once('SIGTERM',abort);
++ try{for(const size of plan.measurement.cohorts){await stop();record.fixture=await require('./pipeline-scale-fixture.cjs').scaleFixture(size);save();for(const[pair,order]of record.blocks.entries())for(const[position,variant]of [...order].entries()){
++   phase=`${pair}-${position}-${variant}-starting`;await start(variant);
++   const prefix=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${variant}`);phase=`${pair}-${position}-${variant}-warmup`;await collect(prefix+'-warmup',1);phase=`${pair}-${position}-${variant}-measure`;await collect(prefix+'-measure',5);
++   console.log(`Pair ${pair+1}/${record.blocks.length}, ${variant}, complete; every planned row retained.`);
++  }phase=`size-${size}-loader-probe`;await stop();const probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-loaders.json`)],{cwd:repo,env,encoding:'utf8'});assert.equal(probe.status,0,'Loader probe failed; retain browser observations and stop');}record.collectionComplete=true;save();
++ }catch(error){record.failures.push({phase,name:error.name,message:String(error.message).split('\n')[0]});save();throw error;
++ }finally{clearInterval(sample);running?.kill('SIGTERM');await stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(telemetry,null,2)+'\n');fs.rmSync(dist,{recursive:true});fs.cpSync(builds.A,dist,{recursive:true});record.applicationStopped=true;record.privateFixtureRetainedForExplicitCleanup=true;save();process.removeListener('SIGINT',abort);process.removeListener('SIGTERM',abort);}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/pipeline-scale-fixture.cjs b/scripts/pipeline-scale-fixture.cjs
+new file mode 100644
+index 0000000..9d8b190
+--- /dev/null
++++ b/scripts/pipeline-scale-fixture.cjs
+@@ -0,0 +1,19 @@
++// Only expands the reserved disposable navigation fixture; never loads .env.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{randomUUID}=require('node:crypto'),{PrismaClient}=require('@prisma/client');
++const {readConfig}=require('../tests/helpers/onboarding-e2e.cjs');
++async function scaleFixture(size){assert.ok([100,1000,5000].includes(size));const root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),config=readConfig(path.join(root,'config.json')),file=path.join(root,'navigation-fixture.json'),f=JSON.parse(fs.readFileSync(file)),clubId=f.clubIds[0];assert.equal(config.appUrl,'http://127.0.0.1:3107');
++ const db=new PrismaClient({datasourceUrl:config.status.DB_URL});try{const count=await db.application.count({where:{clubId}});assert.ok(count<=size);const round=await db.pipelineRound.findFirstOrThrow({where:{clubId,type:'APPLICATION_REVIEW'}}),history=await db.pipelineRound.findFirstOrThrow({where:{clubId,type:'INTERVIEW'}}),members=await db.clubMember.findMany({where:{clubId,userId:{not:f.userId}},take:2});assert.equal(members.length,2);
++ for(let start=count;start<size;start+=200){const users=[],profiles=[],apps=[];for(let i=start;i<Math.min(size,start+200);i++){const id=randomUUID();users.push({id,email:'scale'+id.replaceAll('-','')+'@virginia.edu'});profiles.push({id:randomUUID(),userId:id,firstName:'Scale',lastName:'Student '+String(i).padStart(5,'0'),computingId:'scale'+id.replaceAll('-',''),major:'Economics',gradYear:2028});apps.push({id:randomUUID(),clubId,studentId:id,roundId:round.id,status:'SUBMITTED',submittedAt:new Date('2026-10-01T12:00:00Z')})}await db.$transaction([db.user.createMany({data:users}),db.studentProfile.createMany({data:profiles}),db.application.createMany({data:apps})])}
++ let questions=await db.applicationQuestion.findMany({where:{clubId,prompt:{startsWith:'Scale fixture question '}}});if(!questions.length){await db.applicationQuestion.createMany({data:[0,1,2].map(i=>({clubId,prompt:'Scale fixture question '+i,type:'ESSAY',order:i}))});questions=await db.applicationQuestion.findMany({where:{clubId,prompt:{startsWith:'Scale fixture question '}}})}assert.equal(questions.length,3);
++ const marker=path.join(root,'phase3-enriched-count.json'),from=fs.existsSync(marker)?JSON.parse(fs.readFileSync(marker)).count:0;assert.ok(from<=size);const apps=await db.application.findMany({where:{clubId},orderBy:{id:'asc'},select:{id:true,studentId:true}});assert.equal(apps.length,size);
++ // Already-enriched applications are identified by their synthetic answers, not array offsets.
++ for(let start=0;start<apps.length;start+=200){const batch=apps.slice(start,start+200),answered=await db.applicationAnswer.findMany({where:{applicationId:{in:batch.map(a=>a.id)},questionId:questions[0].id},select:{applicationId:true}}),done=new Set(answered.map(a=>a.applicationId)),fresh=batch.filter(a=>!done.has(a.id));if(!fresh.length)continue;
++ const profiles=await db.studentProfile.findMany({where:{userId:{in:fresh.map(a=>a.studentId)}},select:{id:true}});
++ await db.studentProfile.updateMany({where:{id:{in:profiles.map(p=>p.id)}},data:{bio:'Synthetic biography. '.repeat(50)}});
++ await db.experience.createMany({data:profiles.flatMap(p=>[0,1].map(i=>({studentProfileId:p.id,title:'Synthetic historical role '+i,subtitle:'Disposable scale benchmark '.repeat(6),period:'2024–2026'})))});
++ await db.applicationAnswer.createMany({data:fresh.flatMap(a=>questions.map(q=>({applicationId:a.id,questionId:q.id,response:'Synthetic application evidence. '.repeat(32)})))});
++ await db.evaluation.createMany({data:fresh.flatMap(a=>[round,history].map((r,i)=>({applicationId:a.id,interviewerId:members[i].id,roundId:r.id,round:r.name,score:8,submittedAt:new Date('2026-10-01T12:00:00Z'),notes:'Private fixture feedback. '.repeat(20)})))});
++ }
++ f.counts.applicantsInMeasuredClub=size;f.counts.scaleHistory={essayAnswersPerApplicant:3,essayCharacters:1024,profileBioCharacters:1050,additionalExperiences:2,submittedEvaluationsPerApplicant:2,rounds:2,bookingHistory:false};fs.writeFileSync(file,JSON.stringify(f),{mode:0o600});fs.writeFileSync(marker,JSON.stringify({count:size}),{mode:0o600});return f.counts;
++ }finally{await db.$disconnect()}}
++module.exports={scaleFixture};if(require.main===module)scaleFixture(Number(process.argv[2])).then(counts=>console.log(JSON.stringify(counts))).catch(e=>{console.error(e.name+': local fixture expansion failed');process.exitCode=1});
+diff --git a/scripts/summarize-pipeline-navigation.cjs b/scripts/summarize-pipeline-navigation.cjs
+new file mode 100644
+index 0000000..37000fb
+--- /dev/null
++++ b/scripts/summarize-pipeline-navigation.cjs
+@@ -0,0 +1,5 @@
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{distribution}=require('./navigation-audit.cjs');
++function enrich(row){const full=row.requests.filter(r=>/^\/api\/workspace\?kind=pipeline(?:List)?$/.test(r.route));const request=full[0],phases={};assert.ok(full.length<=1);for(const m of(request?.serverTiming||'').matchAll(/([a-z_]+);dur=([\d.]+)/g))phases[m[1]]=Number(m[2]);return{...row,readStartMs:request?.startMs??null,readTtfbMs:request?.ttfbMs??null,readServerMs:phases.total??null,identityMs:phases.identity??null,databaseMs:phases.database??null,acquisitionMs:phases.transaction_acquire??null,serializationMs:phases.serialization??null,readBodyBytes:request?.encodedBodyBytes??0,readCount:full.length,successfulCycleCancellationCount:row.requests.filter(r=>r.failed&&r.status===200&&r.route==='actions/recruitment-management.ts:getRecruitmentCycles').length}};
++function summarize(root,partial=false){const protocol=JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));if(!partial){assert.equal(protocol.collectionComplete,true);assert.equal(protocol.failures.length,0);assert.equal(protocol.completed.length,24)}const blocks=partial?protocol.completed.filter(b=>/^size-(100|1000)-/.test(b.directory)):protocol.completed;if(partial)assert.equal(blocks.length,16);const entries=blocks.map(block=>{const m=/^size-(\d+)-pair-(\d+)-(\d+)-([AB])-(measure|warmup)$/.exec(block.directory);assert.ok(m);const data=JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));assert.equal(data.failures.length,0);assert.equal(data.samples.length,block.planned);return{size:Number(m[1]),pair:Number(m[2]),position:Number(m[3]),variant:m[4],phase:m[5],samples:data.samples.map(enrich)}}),primary=entries.filter(e=>e.phase==='measure'),metrics=['meaningfulMs','interactiveMs','networkCompleteMs','requestCount','encodedBodyBytes','initialScriptBytes','scriptMs','taskMs','readStartMs','readTtfbMs','readServerMs','identityMs','databaseMs','acquisitionMs','serializationMs','readBodyBytes','readCount','successfulCycleCancellationCount'],groups=[];
++for(const size of (partial?[100,1000]:[100,1000,5000]))for(const route of ['recruiting → applicants','applicants → applicantDetail'])for(const condition of ['cold','warm']){const group={size,path:route,condition};for(const variant of ['B','A']){const rows=primary.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition);assert.equal(rows.length,10);assert.ok(rows.every(r=>r.pageErrorCount===0));const selected=route==='recruiting → applicants'||variant==='A';assert.ok(rows.every(r=>r.readCount===(selected?1:0)),'Selected data read count changed');group[variant]=Object.fromEntries(metrics.map(metric=>[metric,distribution(rows.map(r=>r[metric]))]));}group.medianDifferenceMs=Math.round((group.A.meaningfulMs.p50-group.B.meaningfulMs.p50)*100)/100;group.pairedMedians=[1,2].map(pair=>Object.fromEntries(['B','A'].map(v=>[v,distribution(primary.find(e=>e.size===size&&e.pair===pair&&e.variant===v).samples.filter(r=>r.path===route&&r.condition===condition).map(r=>r.meaningfulMs))])));groups.push(group)}return{protocol:{baseline:protocol.baseline,buildIds:protocol.buildIds,observations:entries.flatMap(e=>e.samples).length,primary:primary.flatMap(e=>e.samples).length,warmups:entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples).length,applicationOrHttpErrors:0,successfulCycleCancellations:entries.flatMap(e=>e.samples).reduce((n,r)=>n+r.successfulCycleCancellationCount,0),percentiles:'Nearest rank at n=10; p95 equals maximum. Local descriptive cohort, not a production estimate.'},groups}}
++module.exports={enrich,summarize};if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase3/comparison'),result=summarize(root,process.argv.includes('--complete-smaller-cohorts'));fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,bytes:[g.B.readBodyBytes.p50,g.A.readBodyBytes.p50]})),null,2))}
+diff --git a/scripts/summarize-pipeline-stress.cjs b/scripts/summarize-pipeline-stress.cjs
+new file mode 100644
+index 0000000..f87d316
+--- /dev/null
++++ b/scripts/summarize-pipeline-stress.cjs
+@@ -0,0 +1,7 @@
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{distribution}=require('./navigation-audit.cjs'),{enrich}=require('./summarize-pipeline-navigation.cjs');
++const metrics=['meaningfulMs','interactiveMs','networkCompleteMs','requestCount','encodedBodyBytes','initialScriptBytes','scriptMs','taskMs','readStartMs','readTtfbMs','readServerMs','identityMs','databaseMs','acquisitionMs','serializationMs','readBodyBytes','readCount','successfulCycleCancellationCount'];
++function summarizeGroup(rows,planned=10){assert.equal(rows.length,planned);const failed=rows.filter(r=>r.failed),successful=rows.filter(r=>!r.failed).map(enrich);return{planned,successful:successful.length,failed:failed.length,sourceFailures:failed.filter(r=>r.stage==='source').length,preparationFailures:failed.filter(r=>r.stage!=='measured').length,measuredFailures:failed.filter(r=>r.stage==='measured').length,latencyInterpretation:failed.length?'Successful attempts only; full-cohort p95 is not established. Preparation failures have no click-to-content latency.':'All planned measured observations; nearest-rank p95 equals maximum at n=10.',...Object.fromEntries(metrics.map(m=>[m,distribution(successful.map(r=>r[m]))]))}}
++function summarize(root){const protocol=JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));assert.equal(protocol.collectionComplete,true);assert.equal(protocol.failures.length,0);assert.equal(protocol.completed.length,8);const entries=protocol.completed.map(b=>{const m=/^size-5000-pair-(\d+)-(\d+)-([AB])-(measure|warmup)$/.exec(b.directory);assert.ok(m);const d=JSON.parse(fs.readFileSync(path.join(root,b.directory,'browser-samples.json')));assert.equal(d.samples.length,b.planned);return{variant:m[3],phase:m[4],samples:d.samples}}),primary=entries.filter(e=>e.phase==='measure'),warmups=entries.filter(e=>e.phase==='warmup'),groups=[];
++ for(const route of ['recruiting → applicants','applicants → applicantDetail'])for(const condition of ['cold','warm']){const g={size:5000,path:route,condition};for(const variant of ['B','A'])g[variant]=summarizeGroup(primary.filter(e=>e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));groups.push(g)}
++ const rows=primary.flatMap(e=>e.samples);return{protocol:{buildIds:protocol.buildIds,totalOutcomes:entries.flatMap(e=>e.samples).length,primaryOutcomes:rows.length,warmupOutcomes:warmups.flatMap(e=>e.samples).length,failedPrimary:rows.filter(r=>r.failed).length,failedWarmup:warmups.flatMap(e=>e.samples).filter(r=>r.failed).length,pageErrors:rows.reduce((n,r)=>n+(r.pageErrorCount||0),0),sourceFailureImage404s:rows.filter(r=>r.failed).flatMap(r=>r.requests).filter(q=>q.status===404&&q.route.startsWith('/logos/')).length,timedSuccessfulReadHttpErrors:rows.filter(r=>!r.failed).flatMap(r=>r.requests).filter(q=>q.status>=400).length,successfulCycleCancellations:rows.filter(r=>!r.failed).map(enrich).reduce((n,r)=>n+r.successfulCycleCancellationCount,0)},groups,failures:primary.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,clickToContentLowerBoundMs:r.clickToContentLowerBoundMs,error:r.error})))}}
++module.exports={summarizeGroup,summarize};if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase3/stress-5000'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2))}
+diff --git a/tests/applicant-pagination.test.cjs b/tests/applicant-pagination.test.cjs
+new file mode 100644
+index 0000000..7973a6f
+--- /dev/null
++++ b/tests/applicant-pagination.test.cjs
+@@ -0,0 +1,2 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{load}=require('./helpers/voting-harness.cjs'),{applicantPage,APPLICANT_PAGE_SIZE}=load('lib/applicant-pagination.ts');
++test('applicant display pages bound DOM input while retaining stable IDs and complete filter selection',()=>{const all=Array.from({length:5000},(_,i)=>({id:String(i),status:i%2?'ACCEPTED':'IN_REVIEW'})),copy=all.slice();assert.equal(APPLICANT_PAGE_SIZE,100);assert.equal(applicantPage(all,0).items.length,100);assert.equal(applicantPage(all,49).items[99].id,'4999');assert.equal(applicantPage(all,99).page,49);assert.deepEqual(all,copy);const filtered=all.filter(a=>a.status==='ACCEPTED');assert.equal(filtered.length,2500);assert.equal(applicantPage(filtered,0).items[0].id,'1');assert.equal(applicantPage(filtered,0).count,25);assert.equal(applicantPage([],3).items.length,0);assert.equal(applicantPage(all,-1).page,0)});
+diff --git a/tests/club-workspace-refinements-browser.test.cjs b/tests/club-workspace-refinements-browser.test.cjs
+index 506609c..10d24c3 100644
+--- a/tests/club-workspace-refinements-browser.test.cjs
++++ b/tests/club-workspace-refinements-browser.test.cjs
+@@ -14 +14 @@ async function fixture() {
+-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
++  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+@@ -19 +19 @@ async function fixture() {
+-    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>({user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
++    '@/contexts/auth-context': `const member=${JSON.stringify(owner)};exports.useAuth=()=>window.__refinementAuth??=({user:{id:'owner',memberships:[member]},activeClubId:'club',selectClub(){},refreshUser:async()=>{}});`,
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index 630decc..70fbbf8 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -34 +34 @@ function fixture() {
+-      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
++      findMany: async ({ where, include }) => { state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+@@ -147,0 +148,12 @@ test('pipeline failure diagnostics identify the failing phase without serializin
++
++for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
++ const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
++ f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
++ f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
++ await assert.rejects(f.crm[reader](id(99)));
++});
++
++test('list query omits detail relations while canonical detail still includes them',async()=>{
++ const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.equal(f.state.pipelineQuery.student.include.studentProfile,true);
++ await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
++});
+diff --git a/tests/demo-mode.test.cjs b/tests/demo-mode.test.cjs
+index f6b6e52..5b33baa 100644
+--- a/tests/demo-mode.test.cjs
++++ b/tests/demo-mode.test.cjs
+@@ -166,0 +167,2 @@ test("demo workspace switching preserves one identity and grants leadership only
++  const compact=await api.getClubPipelineList(s.clubs[0].id)
++  assert.ok(compact.applications.every(app=>!("answers" in app)&&!("bookings" in app)))
+@@ -168,0 +171 @@ test("demo workspace switching preserves one identity and grants leadership only
++  await assert.rejects(api.getClubPipelineList(s.clubs[1].id), /perspective/)
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index f1aab0c..4ece9f9 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -26,4 +26,5 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  let index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
+-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=typeof value==='function'?value(slots[i]):value}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
+-  const api = {getClubPipeline:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);return {evaluation:{id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes}}}}
+-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
++  let changed = false, index = 0, pipeline = { rounds: [{id:'round',name:'Review',order:0}], applications:[{id:'candidate',canEvaluate:true,studentId:'student',roundId:'round',status:'IN_REVIEW',student:{email:'sample@demo.invalid',studentProfile:null},evaluations:[],answers:[],bookings:[]}] }
++  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
++  const api = {getClubPipelineList:async()=>{calls.push(['load']);return structuredClone(pipeline)},setApplicationStatus:async input=>{calls.push(['status',input]);const target=pipeline.applications.find(app=>app.id===input.applicationId);if(input.expectedStatus!==target.status)throw Error('stale');target.status=input.status;if(input.status==='ACCEPTED')target.recruitmentOffer={status:'PENDING',expiresAt:new Date(Date.now()+86400000)};return {success:true}},moveApplicantRound:async input=>{calls.push(['round',input]);if(input.expectedRoundId!==pipeline.applications[0].roundId)throw Error('stale');pipeline.applications[0].roundId=input.newRoundId;pipeline.applications[0].studentId='anonymous-candidate';pipeline.applications[0].student={email:'',studentProfile:{firstName:'Applicant',lastName:'CANDIDATE',experiences:[]}};return {success:true}},submitEvaluation:async input=>{calls.push(['review',input]);const evaluation={id:'evaluation',interviewerId:'member',round:'Review',score:input.score,notes:input.notes};pipeline.applications[0].evaluations=[evaluation];pipeline.applications[0].canEvaluate=false;return {evaluation}}}
++  let detailKey='',detail=null;
++  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+@@ -31 +32 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();return tree}}
++  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();if(!changed)return tree}throw Error('Component failed to settle')}}
+@@ -57 +58 @@ test('evaluation save updates both presentations and explicit round movement rel
+-  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].score,8)
++  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member');assert.equal(h.calls.find(call=>call[0]==='review')[1].score,8)
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index 7787f59..e89afad 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -12 +12 @@ test('selected tabs request authorized data while code is still loading, then co
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===kind){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelineList':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+diff --git a/tests/navigation-phase3-e2e.test.cjs b/tests/navigation-phase3-e2e.test.cjs
+new file mode 100644
+index 0000000..6d82aac
+--- /dev/null
++++ b/tests/navigation-phase3-e2e.test.cjs
+@@ -0,0 +1,25 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor}};
++test('pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity',{skip:!configFile},async()=>{const f=await fixture(),club=f.data.clubIds[0],db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),decode=load('lib/workspace-wire.ts').decodeWorkspaceData,project=load('lib/pipeline-list.ts').pipelineListProjection;
++ const backups=[];for(const id of f.data.clubIds){const member=await db.clubMember.findFirstOrThrow({where:{clubId:id,userId:{not:f.data.userId}}});backups.push(member);await db.clubMember.update({where:{id:member.id},data:{isOwner:true,accessRole:'OWNER'}})}
++ const read=(kind,args=[club,{}],cookie)=>f.actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)}),cookie?{headers:{cookie}}:{});
++ try{const full=decode(await(await read('pipeline')).json()),response=await read('pipelineList');assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);assert.match(response.headers.get('server-timing'),/identity;dur=.*live_session;dur=/);assert.deepEqual(decode(await response.json()),project(full));
++ assert.equal((await read('pipelineList',[club,{userId:f.data.userId}])).status,400);assert.equal((await read('pipelineList',[require('crypto').randomUUID(),{}])).status,403);assert.equal((await read('pipelineList',[club,{}],f.actor.cookieHeader()+'; '+load('lib/demo/access.ts').DEMO_COOKIE+'=1')).status,403);
++ const round=await db.pipelineRound.findFirstOrThrow({where:{clubId:club,type:'APPLICATION_REVIEW'}});try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const list=decode(await(await read('pipelineList')).json());for(const app of list.applications.filter(a=>a.roundId===round.id)){assert.ok(app.studentId.startsWith('anonymous-'));assert.equal(app.student.email,'');assert.equal(app.student.studentProfile.firstName,'Applicant')}}finally{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}})}
++ const backup=await db.clubMember.findFirstOrThrow({where:{clubId:club,userId:{not:f.data.userId}}});await db.clubMember.update({where:{id:backup.id},data:{isOwner:true,accessRole:'OWNER'}});const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:club}}});try{await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});assert.equal((await read('pipelineList')).status,403)}finally{await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}});await db.clubMember.update({where:{id:backup.id},data:{isOwner:backup.isOwner,accessRole:backup.accessRole}})}
++ try{await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});assert.equal((await read('pipelineList')).status,401)}finally{await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++ const captured=f.actor.cookieHeader();await f.actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelineList','pipeline'])assert.equal((await read(kind,[club,{}],captured)).status,401);
++ }finally{for(const member of backups)await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole}});await db.$disconnect()}
++});
++test('applicant list avoids detail reads; closing a pending detail fences it from the next candidate',{skip:!configFile},async()=>{const f=await fixture(),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();const reads=[],errors=[];let release;
++ try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,1);assert.equal(reads.includes('pipeline'),false);
++ let received;const held=new Promise(resolve=>received=resolve);const gate=async route=>{const response=await route.fetch();release=()=>route.fulfill({response});received()};await page.route('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).first().click();await held;assert.equal(await page.getByText('Loading applicant…',{exact:true}).count(),1);const sheet=page.locator('[data-slot="sheet-content"]');await sheet.getByRole('button',{name:'Close',exact:true}).click();await release();await page.unroute('**/api/workspace?kind=pipeline&*',gate);await page.locator('[data-applicant-id]').filter({visible:true}).nth(1).click();await sheet.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();assert.equal(await sheet.getByRole('heading',{name:'Audit Student 000',exact:true}).count(),0);assert.equal(reads.filter(k=>k==='pipeline').length,2);assert.deepEqual(errors,[]);
++ }finally{if(release)await release().catch(()=>{});await context.close();await browser.close()}
++});
++test('fresh applicant detail preserves an autosaved review draft across close and reopen',{skip:!configFile},async()=>{const f=await fixture(),clubId=f.data.clubIds[0],db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId,type:'APPLICATION_REVIEW'}}),app=await db.application.findFirstOrThrow({where:{clubId,student:{studentProfile:{lastName:'Student 000'}}}}),browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();const prior=await db.editorDraft.findMany({where:{userId:f.data.userId}});assert.equal(prior.length,0,'This test owns only an empty disposable actor draft namespace');
++ try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});await page.goto(f.config.appUrl+'/club/'+clubId+'/workspace?section=recruitment&tool=applicants');const candidate=page.locator(`[data-applicant-id="${app.id}"]`).filter({visible:true}).first();await page.getByRole('textbox',{name:'Search applicants',exact:true}).fill(load('lib/anonymous-review.ts').anonymousApplicantLabel(app.id));await candidate.click();const score=page.getByLabel('Score (1–10)',{exact:true}),notes=page.getByLabel('Overall evaluation feedback',{exact:true});await score.waitFor();await page.waitForFunction(()=>!document.getElementById('review-score').disabled);await score.fill('8');await notes.fill('Phase 3 disposable draft continuity');await notes.blur();await page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot="sheet-content"]').waitFor({state:'hidden'});await candidate.click();await page.waitForFunction(()=>document.getElementById('review-notes')?.value==='Phase 3 disposable draft continuity');assert.equal(await score.inputValue(),'8');
++ }finally{await context.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.editorDraft.deleteMany({where:{userId:f.data.userId}});await db.$disconnect()}
++});
++test('large applicant pages preserve whole-list search/counts and page changes issue no reads',{skip:!configFile},async()=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await search.fill('Scale Student 04999');await page.getByText('Scale Student 04999',{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,1)}finally{await context.close();await browser.close()}});
+diff --git a/tests/pipeline-detail-owner.test.cjs b/tests/pipeline-detail-owner.test.cjs
+new file mode 100644
+index 0000000..cb6e159
+--- /dev/null
++++ b/tests/pipeline-detail-owner.test.cjs
+@@ -0,0 +1,10 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),ts=require('typescript');
++const tick=async()=>{for(let i=0;i<20;i++)await Promise.resolve()};
++function setup(){const state=[],effects=[],cleanups=new Map(),reads=[];let cursor=0,user={},epoch={},support=false,demo={ready:true,isDemoEnabled:false};
++ const hooks={useState(init){const i=cursor++;if(!(i in state))state[i]=init;return[state[i],v=>state[i]=typeof v==='function'?v(state[i]):v]},useMemo(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i].deps[j]))state[i]={deps,value:fn()};return state[i].value},useEffect(fn,deps){const i=cursor++;if(!state[i]||deps.some((d,j)=>d!==state[i][j])){state[i]=deps;effects.push([i,fn])}}};
++ const mocks={react:hooks,'@/contexts/auth-context':{useAuth:()=>({user,readAuthority:epoch,isImpersonating:support})},'@/contexts/demo-context':{useDemoMode:()=>demo},'@/lib/workspace-api':{getClubPipeline:(club,filter)=>new Promise((resolve,reject)=>reads.push({club,filter,resolve,reject}))}};
++ const mod={exports:{}};new Function('require','module','exports',ts.transpileModule(fs.readFileSync('hooks/use-pipeline-applicant.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText)(n=>mocks[n]||require(n),mod,mod.exports);
++ return{reads,render(club,id,revision=0){cursor=0;return mod.exports.usePipelineApplicant(club,id,revision)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},rotate(){epoch={}},user(){user={}},support(){support=!support},demo(value){demo=value}};
++}
++test('detail opens fresh, fences late candidate/close results and retries denied reads',async()=>{const f=setup();assert.equal(f.render('club',null).application,null);await f.flush();assert.equal(f.reads.length,0);f.render('club','A');await f.flush();assert.deepEqual(f.reads[0].filter,{applicationId:'A'});f.render('club',null);await f.flush();f.render('club','B');await f.flush();f.reads[0].resolve({applications:[{id:'A',secret:'old'}]});await tick();assert.equal(f.render('club','B').application,null);f.reads[1].resolve({applications:[{id:'B'}]});await tick();assert.equal(f.render('club','B').application.id,'B');f.render('club',null);await f.flush();f.render('club','B');await f.flush();assert.equal(f.reads.length,3);f.reads[2].reject(Error('revoked'));await tick();const value=f.render('club','B');assert.equal(value.error,true);assert.equal(value.application,null);value.retry();f.render('club','B');await f.flush();assert.equal(f.reads.length,4)});
++test('authority, club, revision and Demo changes hide detail synchronously and discard pending results',async()=>{const f=setup();let club='one',rev=0;for(const change of [()=>{},()=>f.rotate(),()=>f.user(),()=>f.support(),()=>club='two',()=>rev++,()=>f.demo({ready:true,isDemoEnabled:true})]){change();assert.equal(f.render(club,'A',rev).application,null);await f.flush();f.reads.at(-1).resolve({applications:[{id:'A'}]});await tick();assert.equal(f.render(club,'A',rev).application.id,'A')}f.demo({ready:false,isDemoEnabled:false});assert.equal(f.render(club,'A',rev).application,null);await f.flush();assert.equal(f.reads.length,7)});
+diff --git a/tests/pipeline-list.test.cjs b/tests/pipeline-list.test.cjs
+new file mode 100644
+index 0000000..4514422
+--- /dev/null
++++ b/tests/pipeline-list.test.cjs
+@@ -0,0 +1,15 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load}=require('./helpers/voting-harness.cjs');
++const {pipelineListProjection}=load('lib/pipeline-list.ts');
++test('pipeline list allowlist preserves filtering/ordering fields and excludes all detail content',()=>{
++ const app={id:'app',roundId:'round',studentId:'student',status:'SUBMITTED',student:{email:'visible@example.invalid',studentProfile:{firstName:'First',lastName:'Last',major:'Math',academicYear:'First Year',gpa:3.4,satScore:1400,actScore:30,bio:'SECRET',headshotUrl:'SECRET',experiences:[{title:'SECRET'}]}},evaluations:[{interviewerId:'reviewer',notes:'SECRET',score:8}],roundScore:{average:8},answers:[{response:'SECRET'}],bookings:[{id:'SECRET'}],anonymousReviewText:'SECRET',futureColumn:'SECRET'};
++ const data=pipelineListProjection({rounds:[{id:'round'}],genderCounts:null,applications:[app]});
++ assert.doesNotMatch(JSON.stringify(data),/SECRET|answers|bookings|experiences|notes|futureColumn/);
++ assert.equal(data.applications[0].student.studentProfile.gpa,3.4);assert.deepEqual(data.applications[0].evaluations,[{interviewerId:'reviewer'}]);assert.deepEqual(data.applications[0].roundScore,{average:8});
++});
++test('anonymous list runs after canonical masking and never restores identity or withheld fields',()=>{
++ const {anonymousApplication}=load('lib/anonymous-review.ts');
++ const app={id:'1234',clubId:'club',roundId:'round',studentId:'SECRET',status:'SUBMITTED',student:{email:'SECRET',studentProfile:{firstName:'SECRET',lastName:'SECRET',major:'SECRET',gradYear:2028,gpa:3.3}},evaluations:[],answers:[],bookings:[]};
++ const masked=anonymousApplication(app);const list=pipelineListProjection({rounds:[],genderCounts:null,applications:[{...masked,roundScore:null}]});
++ assert.doesNotMatch(JSON.stringify(list),/SECRET/);assert.equal(list.applications[0].student.studentProfile.firstName,'Applicant');assert.equal(list.applications[0].student.studentProfile.gpa,3.3);
++});
+diff --git a/tests/pipeline-navigation-analysis.test.cjs b/tests/pipeline-navigation-analysis.test.cjs
+new file mode 100644
+index 0000000..1440328
+--- /dev/null
++++ b/tests/pipeline-navigation-analysis.test.cjs
+@@ -0,0 +1,3 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),{enrich}=require('../scripts/summarize-pipeline-navigation.cjs');
++test('pipeline analysis distinguishes original resident detail from the new protected single-applicant read',()=>{const base={requests:[]};assert.equal(enrich(base).readCount,0);assert.equal(enrich(base).readServerMs,null);const row=enrich({requests:[{route:'/api/workspace?kind=pipelineList',startMs:4,ttfbMs:10,encodedBodyBytes:200,serverTiming:'identity;dur=2, live_session;dur=1, database;dur=4, total;dur=8'}]});assert.equal(row.readCount,1);assert.equal(row.readServerMs,8);assert.equal(row.identityMs,2);assert.equal(row.readBodyBytes,200);assert.throws(()=>enrich({requests:[{route:'/api/workspace?kind=pipeline'},{route:'/api/workspace?kind=pipelineList'}]}));});
++test('stress analysis retains preparation failures in the denominator without inventing navigation latency',()=>{const {summarizeGroup}=require('../scripts/summarize-pipeline-stress.cjs'),success={meaningfulMs:10,requests:[]},rows=[...Array.from({length:9},()=>success),{failed:true,stage:'source',requests:[]}],r=summarizeGroup(rows);assert.equal(r.planned,10);assert.equal(r.successful,9);assert.equal(r.failed,1);assert.equal(r.preparationFailures,1);assert.equal(r.meaningfulMs.samples,9);assert.equal(r.meaningfulMs.p95,10);assert.match(r.latencyInterpretation,/full-cohort p95 is not established/);assert.throws(()=>summarizeGroup(rows.slice(1)));});
+diff --git a/tests/review-editor-access-browser.test.cjs b/tests/review-editor-access-browser.test.cjs
+index af5ad11..4e8c97f 100644
+--- a/tests/review-editor-access-browser.test.cjs
++++ b/tests/review-editor-access-browser.test.cjs
+@@ -8 +8 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+-  '@/contexts/auth-context':`exports.useAuth=()=>({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
++  '@/contexts/auth-context':`exports.useAuth=()=>window.__reviewAuth??=({user:{id:'synthetic-reviewer',memberships:[{id:'synthetic-member',clubId:'${club}',userId:'synthetic-reviewer',isOwner:true,status:'ACTIVE',permissions:[],club:{name:'Synthetic club'}}]},activeClubId:'${club}',selectClub(){}});`,
+@@ -11 +11 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+-  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned');return p};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');return r.json()};`,
++  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{window.__pipelineDetails=(window.__pipelineDetails||0)+1;const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned')&&!window.__reviewFinalized;return p};exports.getClubPipelineList=async()=>{window.__pipelineLists=(window.__pipelineLists||0)+1;return exports.getClubPipeline()};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');const value=await r.json();window.__reviewFinalized=true;return value};`,
+@@ -21 +21 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+- const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main><LiveLeaderWorkspace scoped/></main>);`,mocks);
++ const js=bundle(`import React from'react';import{createRoot}from'react-dom/client';import{LiveLeaderWorkspace,ApplicantReviewPreview}from'@/components/views/leader-dashboard/live-leader-workspace';createRoot(document.getElementById('root')).render(<main>{new URLSearchParams(location.search).has("preview")?<ApplicantReviewPreview clubId="${club}" applicationId="${app}" onClose={()=>{}} onChanged={()=>{}}/>:<LiveLeaderWorkspace scoped/>}</main>);`,mocks);
+@@ -40 +40 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+-  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');assert.deepEqual(errors,[]);
++  const afterFinalization=writes.length;await page.clock.runFor(2000);assert.equal(writes.length,afterFinalization,'a finalized review must not keep autosaving');await page.goto(base+'?preview=1');await page.getByRole('heading',{name:'Synthetic Applicant',exact:true}).waitFor();assert.equal(await page.evaluate(()=>window.__pipelineDetails),1);assert.equal(await page.evaluate(()=>window.__pipelineLists||0),0,'single-candidate preview must not request a redundant list');assert.deepEqual(errors,[]);
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+index ebe1176..82a38d8 100644
+--- a/tests/selected-workspace-loader.test.cjs
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -12 +12 @@ test('all four selected resources start their guarded read alongside code loadin
+- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelineList':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
+diff --git a/tests/workspace-read-transport.test.cjs b/tests/workspace-read-transport.test.cjs
+index d2aee58..7aac123 100644
+--- a/tests/workspace-read-transport.test.cjs
++++ b/tests/workspace-read-transport.test.cjs
+@@ -12 +12 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
+- for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements']){
++ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','tasks','meetings','announcements']){

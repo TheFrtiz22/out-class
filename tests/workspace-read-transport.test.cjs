@@ -9,7 +9,7 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
  mocks['next/headers']={cookies:async()=>({get:()=>demo?{value:'1'}:undefined})};
  const {GET}=load('app/api/workspace/route.ts',mocks),{decodeWorkspaceData}=load('lib/workspace-wire.ts');
  const get=(kind,args)=>GET(new Request('https://outclass.test/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify(args)})));
- for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','tasks','meetings','announcements']){
+ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','tasks','meetings','announcements']){
    const response=await get(kind,[id]);assert.equal(response.status,200,kind);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/(?:^|,\s*)Cookie(?:,|$)/);assert.ok(decodeWorkspaceData(await response.json()).at instanceof Date);assert.match(response.headers.get('x-outclass-trace-id'),/^[\da-f-]{36}$/);
    assert.equal((await get(kind,[id,{userId:'forged'}])).status,400);assert.equal((await get(kind,['invalid-id'])).status,400);
  }

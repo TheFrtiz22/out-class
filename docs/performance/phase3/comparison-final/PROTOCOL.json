@@ -1,0 +1,205 @@
+{
+  "baseline": "583b231f4a6e7eed9222ac983c9e6634483be6e9",
+  "planSha256": "2e8b7c0e3afcb4b89b69756b72b48b285efdd4683827efc15a56d3b67d63dee1",
+  "buildIds": {
+    "A": "63qzBSGbpU612GtjFzsEo",
+    "B": "bJzuxddYtxuN7DUyKkjHM"
+  },
+  "applicationDifferences": [
+    "actions/crm.ts",
+    "app/api/workspace/route.ts",
+    "components/live-voting/board-decision-mode.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-applicant-views.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "lib/workspace-api.ts",
+    "lib/pipeline-list.ts",
+    "hooks/use-pipeline-applicant.ts"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "completed": [
+    {
+      "directory": "size-100-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 12,
+      "failures": [
+        {
+          "path": "recruiting → applicants",
+          "condition": "warm",
+          "error": "page.waitForFunction: Timeout 30000ms exceeded."
+        },
+        {
+          "path": "applicants → applicantDetail",
+          "condition": "warm",
+          "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-applicant-id]').visible().first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" data-applicant-id=\"f83afe7d-5909-4df8-bc80-3a6b80ec0a65\" class=\"min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - performing click action\u001b[22m\n"
+        }
+      ],
+      "exit": 1
+    }
+  ],
+  "failures": [
+    {
+      "phase": "0-1-A-measure",
+      "name": "AssertionError",
+      "message": "A benchmark block failed; retain it and stop"
+    }
+  ],
+  "poolLimitPerClient": 8,
+  "environment": "One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; fixed keyboard activation.",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 5000,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "applicationStopped": true,
+  "privateFixtureRetainedForExplicitCleanup": true
+}

@@ -31,6 +31,10 @@ async function main(){
  try{
   const clubId=fixture.clubIds[0],app=await db.application.findFirst({where:{clubId},select:{id:true}});
   const cases=[['overview','actions/club-overview.ts','getClubWorkspaceOverview',[clubId]],['members','actions/organization-members.ts','getOrganizationMemberManagement',[clubId]],['pipeline','actions/crm.ts','getClubPipeline',[clubId]],['tasks','actions/tasks.ts','getTaskWorkspace',[clubId]],['meetings','actions/meetings.ts','listMeetings',[clubId]],['announcements','actions/communications.ts','getClubAnnouncements',[clubId]],['voting','actions/voting.ts','getVotingWorkspace',[clubId]],['applicantDisplay','actions/applicant-intelligence.ts','getApplicantDisplay',[{clubId,applicationId:app.id}]],['assignedRooms','actions/interview-entry.ts','getAssignedInterviewRooms',[clubId]],['interviewWorkspace','actions/interview-kits.ts','getInterviewWorkspace',[clubId]],['interviewRounds','actions/interview-kits.ts','getInterviewRounds',[clubId]],['roomWorkspace','actions/interview-rooms.ts','getRoomWorkspace',[clubId]]];
+  if(process.argv.includes('--pipeline-study')) cases.splice(0,cases.length,
+    ['pipeline','actions/crm.ts','getClubPipeline',[clubId]],
+    ['pipelineList','actions/crm.ts','getClubPipelineList',[clubId]],
+    ['pipelineDetail','actions/crm.ts','getClubPipeline',[clubId,{applicationId:app.id}]]);
   const results=[];
   for(const [name,file,fn,args]of cases){
    try{
@@ -39,7 +43,9 @@ async function main(){
     results.push({name,file,fn,samples,elapsedMs:distribution(samples.map(s=>s.elapsedMs)),queryCount:distribution(samples.map(s=>s.queries.length)),authVerificationCount:distribution(samples.map(s=>s.auth.filter(a=>a.path.endsWith('/user')).length)),jsonBytes:distribution(samples.map(s=>s.jsonBytes))});console.log(name+': '+JSON.stringify(results.at(-1).elapsedMs));
    }catch(e){results.push({name,file,fn,unavailable:e.name+': '+String(e.message).split('\n').filter(Boolean).at(-1)});console.log(name+': unavailable');}
   }
-  fs.mkdirSync('docs/performance/evidence',{recursive:true});fs.writeFileSync('docs/performance/evidence/loader-samples.json',JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
+  const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
+  if(process.argv.includes('--pipeline-study')){assert.ok(output.startsWith(path.resolve('docs/performance/phase3')+path.sep));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+  fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
  }finally{global.fetch=originalFetch;await db.$disconnect();}
 }
 if(require.main===module)main().catch(e=>{console.error(e.name);process.exitCode=1;});

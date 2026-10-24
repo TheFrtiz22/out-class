@@ -1,0 +1,607 @@
+{
+  "accepted": false,
+  "reason": "The 5000-applicant candidate stopped on two warm browser timeouts. Smaller completed cohorts are descriptive prototype evidence only; no rows are pooled into the final paged comparison.",
+  "protocol": {
+    "baseline": "583b231f4a6e7eed9222ac983c9e6634483be6e9",
+    "planSha256": "2e8b7c0e3afcb4b89b69756b72b48b285efdd4683827efc15a56d3b67d63dee1",
+    "buildIds": {
+      "A": "63qzBSGbpU612GtjFzsEo",
+      "B": "bJzuxddYtxuN7DUyKkjHM"
+    },
+    "applicationDifferences": [
+      "actions/crm.ts",
+      "app/api/workspace/route.ts",
+      "components/live-voting/board-decision-mode.tsx",
+      "components/selected-club-workspace.tsx",
+      "components/views/leader-dashboard/live-applicant-views.tsx",
+      "components/views/leader-dashboard/live-leader-workspace.tsx",
+      "lib/workspace-api.ts",
+      "lib/pipeline-list.ts",
+      "hooks/use-pipeline-applicant.ts"
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "completed": [
+      {
+        "directory": "size-100-pair-1-1-B-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-1-1-B-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-1-2-A-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-1-2-A-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-2-1-A-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-2-1-A-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-2-2-B-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-100-pair-2-2-B-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-1-1-B-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-1-1-B-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-1-2-A-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-1-2-A-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-2-1-A-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-2-1-A-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-2-2-B-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-1000-pair-2-2-B-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-5000-pair-1-1-B-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-5000-pair-1-1-B-measure",
+        "planned": 20,
+        "observed": 20,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-5000-pair-1-2-A-warmup",
+        "planned": 4,
+        "observed": 4,
+        "failures": [],
+        "exit": 0
+      },
+      {
+        "directory": "size-5000-pair-1-2-A-measure",
+        "planned": 20,
+        "observed": 12,
+        "failures": [
+          {
+            "path": "recruiting → applicants",
+            "condition": "warm",
+            "error": "page.waitForFunction: Timeout 30000ms exceeded."
+          },
+          {
+            "path": "applicants → applicantDetail",
+            "condition": "warm",
+            "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-applicant-id]').visible().first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" data-applicant-id=\"f83afe7d-5909-4df8-bc80-3a6b80ec0a65\" class=\"min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - performing click action\u001b[22m\n"
+          }
+        ],
+        "exit": 1
+      }
+    ],
+    "failures": [
+      {
+        "phase": "0-1-A-measure",
+        "name": "AssertionError",
+        "message": "A benchmark block failed; retain it and stop"
+      }
+    ],
+    "poolLimitPerClient": 8,
+    "environment": "One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; fixed keyboard activation.",
+    "fixture": {
+      "clubs": 2,
+      "membersPerClub": 61,
+      "applicantsPerClub": 100,
+      "meetingsPerClub": 1,
+      "tasksPerClub": 1,
+      "announcementsPerClub": 1,
+      "applicantsInMeasuredClub": 5000,
+      "scaleHistory": {
+        "essayAnswersPerApplicant": 3,
+        "essayCharacters": 1024,
+        "profileBioCharacters": 1050,
+        "additionalExperiences": 2,
+        "submittedEvaluationsPerApplicant": 2,
+        "rounds": 2,
+        "bookingHistory": false
+      }
+    },
+    "applicationStopped": true,
+    "privateFixtureRetainedForExplicitCleanup": true
+  },
+  "groups": [
+    {
+      "size": 100,
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 96.1,
+          "p95": 256.9,
+          "max": 256.9
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 60783,
+          "p95": 60783,
+          "max": 60783
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 67.2,
+          "p95": 82.1,
+          "max": 82.1
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 6931,
+          "p95": 6931,
+          "max": 6931
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 74.3,
+          "p95": 76.6,
+          "max": 76.6
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 60783,
+          "p95": 60783,
+          "max": 60783
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 57.7,
+          "p95": 59.2,
+          "max": 59.2
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 6931,
+          "p95": 6931,
+          "max": 6931
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 52.6,
+          "p95": 57.8,
+          "max": 57.8
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 79.7,
+          "p95": 100.3,
+          "max": 100.3
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    },
+    {
+      "size": 100,
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 33.2,
+          "p95": 48.7,
+          "max": 48.7
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 83.5,
+          "p95": 97.9,
+          "max": 97.9
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 434,
+          "p95": 469.9,
+          "max": 469.9
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 600547,
+          "p95": 600547,
+          "max": 600547
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 299.8,
+          "p95": 363.7,
+          "max": 363.7
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 70599,
+          "p95": 70599,
+          "max": 70599
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 429,
+          "p95": 501.5,
+          "max": 501.5
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 600547,
+          "p95": 600547,
+          "max": 600547
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 256.4,
+          "p95": 303.8,
+          "max": 303.8
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 70599,
+          "p95": 70599,
+          "max": 70599
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 209.4,
+          "p95": 228.1,
+          "max": 228.1
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 299.9,
+          "p95": 333.2,
+          "max": 333.2
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 179,
+          "p95": 187.3,
+          "max": 187.3
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 278.9,
+          "p95": 323.3,
+          "max": 323.3
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 1915.4,
+          "p95": 1988.9,
+          "max": 1988.9
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 2982583,
+          "p95": 2982583,
+          "max": 2982583
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 1186,
+          "p95": 1191.4,
+          "max": 1191.4
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 353393,
+          "p95": 353393,
+          "max": 353393
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 1890.8,
+          "p95": 1984.2,
+          "max": 1984.2
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 2982583,
+          "p95": 2982583,
+          "max": 2982583
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readBodyBytes": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "B": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 950.6,
+          "p95": 1061.8,
+          "max": 1061.8
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 1213.8,
+          "p95": 1425.7,
+          "max": 1425.7
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "B": {
+        "meaningfulMs": {
+          "samples": 5,
+          "p50": 872.1,
+          "p95": 911.3,
+          "max": 911.3
+        },
+        "readBodyBytes": {
+          "samples": 5,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        }
+      },
+      "A": {
+        "meaningfulMs": {
+          "samples": 2,
+          "p50": 1164.7,
+          "p95": 1170.1,
+          "max": 1170.1
+        },
+        "readBodyBytes": {
+          "samples": 2,
+          "p50": 1867,
+          "p95": 1867,
+          "max": 1867
+        }
+      }
+    }
+  ]
+}

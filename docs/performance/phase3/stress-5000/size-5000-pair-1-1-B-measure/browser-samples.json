@@ -1,0 +1,3075 @@
+{
+  "environment": "local Next production build + disposable local Supabase",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 5000,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "sampleCount": 5,
+  "metricsNotes": {
+    "meaningfulMs": "DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing",
+    "interactiveMs": "first enabled visible control after content predicate; no mutation is invoked",
+    "requestOffsets": "relative to captured DOM click timestamp",
+    "networkCompleteMs": "observed non-SSE requests drained after useful content; includes background traffic",
+    "cpu": "CDP delta through settle, so includes post-content background work",
+    "react": "production commit notifications only; profiler render durations unavailable"
+  },
+  "samples": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 1831.4000000059605,
+      "interactiveMs": 1836.7000000029802,
+      "networkCompleteMs": 1034.39990234375,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 276.97299999999996,
+      "taskMs": 958.8220000000001,
+      "layoutMs": 214.62900000000002,
+      "longTasks": [
+        {
+          "start": 1365.2999999970198,
+          "duration": 53
+        },
+        {
+          "start": 1428,
+          "duration": 651
+        },
+        {
+          "start": 2079.2000000029802,
+          "duration": 135
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.39990234375,
+          "endMs": 8.39990234375,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.0110000000000001,
+          "transferMs": 0.5899999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.39990234375,
+          "endMs": 10.39990234375,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.824,
+          "transferMs": 3.2689999999999997,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.39990234375,
+          "endMs": 9.39990234375,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.755,
+          "transferMs": 0.42699999999999994,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.39990234375,
+          "endMs": 8.39990234375,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.378,
+          "transferMs": 0.49400000000000005,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=22.01, database;dur=620.35, live_session;dur=0.49, transaction_acquire;dur=0.40, transaction;dur=667.49, compression;dur=61.69, serialization;dur=235.29, total;dur=926.76",
+          "traceId": "869d093f-7153-4843-86e2-ce4d11d8e696",
+          "startMs": 6.39990234375,
+          "endMs": 1034.39990234375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 928.397,
+          "transferMs": 46.38900000000001,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 1,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 1749.1000000089407,
+      "interactiveMs": 1754.5,
+      "networkCompleteMs": 952.5,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 276.58700000000005,
+      "taskMs": 936.0490000000001,
+      "layoutMs": 217.338,
+      "longTasks": [
+        {
+          "start": 1354.5,
+          "duration": 653
+        },
+        {
+          "start": 2008.2000000029802,
+          "duration": 131
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.5,
+          "endMs": 15.5,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.301,
+          "transferMs": 0.7639999999999998,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.5,
+          "endMs": 15.5,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.286,
+          "transferMs": 2.8649999999999998,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.5,
+          "endMs": 15.5,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.086,
+          "transferMs": 0.5349999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.5,
+          "endMs": 14.5,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.6559999999999999,
+          "transferMs": 0.483,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=20.72, database;dur=587.98, live_session;dur=0.49, transaction_acquire;dur=0.54, transaction;dur=628.91, compression;dur=61.15, serialization;dur=215.25, total;dur=866.94",
+          "traceId": "88fa8d85-626e-4c54-af39-7cdb75b695fa",
+          "startMs": 6.5,
+          "endMs": 952.5,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 868.28,
+          "transferMs": 34.37900000000002,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 2,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 1751.2999999970198,
+      "interactiveMs": 1756.6000000089407,
+      "networkCompleteMs": 948.39990234375,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 279.967,
+      "taskMs": 944.459,
+      "layoutMs": 215.77599999999998,
+      "longTasks": [
+        {
+          "start": 1384.7999999970198,
+          "duration": 654
+        },
+        {
+          "start": 2038.7999999970198,
+          "duration": 136
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.39990234375,
+          "endMs": 9.39990234375,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.266,
+          "transferMs": 0.7489999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.39990234375,
+          "endMs": 10.39990234375,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.3680000000000003,
+          "transferMs": 3.046,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.39990234375,
+          "endMs": 9.39990234375,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.085,
+          "transferMs": 0.4840000000000002,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.39990234375,
+          "endMs": 8.39990234375,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.571,
+          "transferMs": 0.668,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.79, database;dur=577.86, live_session;dur=0.56, transaction_acquire;dur=0.44, transaction;dur=618.59, compression;dur=61.33, serialization;dur=220.72, total;dur=863.04",
+          "traceId": "50cd2086-8e8b-47db-b3cc-b2dbbbd63389",
+          "startMs": 6.39990234375,
+          "endMs": 948.39990234375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 864.5949999999999,
+          "transferMs": 34.44500000000005,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 3,
+      "clickToUrlMs": 0.30000001192092896,
+      "meaningfulMs": 1755.5,
+      "interactiveMs": 1761,
+      "networkCompleteMs": 947.2001953125,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 282.617,
+      "taskMs": 955.6890000000001,
+      "layoutMs": 216.312,
+      "longTasks": [
+        {
+          "start": 1340.2000000029802,
+          "duration": 658
+        },
+        {
+          "start": 1998.2999999970198,
+          "duration": 139
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.2001953125,
+          "endMs": 14.2001953125,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.391,
+          "transferMs": 0.7429999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.2001953125,
+          "endMs": 14.2001953125,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.27,
+          "transferMs": 2.9339999999999997,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.2001953125,
+          "endMs": 14.2001953125,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.7909999999999999,
+          "transferMs": 0.6839999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.2001953125,
+          "endMs": 13.2001953125,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.733,
+          "transferMs": 2.285,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=20.47, database;dur=566.28, live_session;dur=0.68, transaction_acquire;dur=0.44, transaction;dur=610.20, compression;dur=62.16, serialization;dur=221.81, total;dur=854.72",
+          "traceId": "5b4a8f69-340c-49bd-aa8d-ae9308ada689",
+          "startMs": 6.2001953125,
+          "endMs": 947.2001953125,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 856.327,
+          "transferMs": 37.822,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 4,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 1747.7000000029802,
+      "interactiveMs": 1753.7999999970198,
+      "networkCompleteMs": 940,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 294.27599999999995,
+      "taskMs": 955.4460000000001,
+      "layoutMs": 206.035,
+      "longTasks": [
+        {
+          "start": 1342.5999999940395,
+          "duration": 657
+        },
+        {
+          "start": 2000.2999999970198,
+          "duration": 138
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6,
+          "endMs": 12,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.291,
+          "transferMs": 0.8410000000000002,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6,
+          "endMs": 13,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.2529999999999997,
+          "transferMs": 2.976,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6,
+          "endMs": 12,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.712,
+          "transferMs": 0.793,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6,
+          "endMs": 12,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.7,
+          "transferMs": 0.4800000000000001,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=24.40, database;dur=575.99, live_session;dur=0.88, transaction_acquire;dur=0.67, transaction;dur=615.10, compression;dur=61.10, serialization;dur=211.22, total;dur=853.34",
+          "traceId": "c9d176aa-b89a-4b07-a89b-3a6f9030d9e4",
+          "startMs": 6,
+          "endMs": 940,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 855.028,
+          "transferMs": 36.273000000000025,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0.19999998807907104,
+      "meaningfulMs": 1771.8999999910593,
+      "interactiveMs": 1777.8999999910593,
+      "networkCompleteMs": 973.900146484375,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 271.06700000000006,
+      "taskMs": 934.739,
+      "layoutMs": 182.025,
+      "longTasks": [
+        {
+          "start": 3382.5999999940395,
+          "duration": 621
+        },
+        {
+          "start": 4003.7000000029802,
+          "duration": 168
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=20.50, database;dur=552.05, live_session;dur=0.47, transaction_acquire;dur=0.43, transaction;dur=591.36, compression;dur=61.43, serialization;dur=259.69, total;dur=873.32",
+          "traceId": "4af5dc6d-605d-4686-b6ff-48ad14cd155d",
+          "startMs": 2.900146484375,
+          "endMs": 973.900146484375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 875.091,
+          "transferMs": 47.335000000000036,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 1,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 1807.4000000059605,
+      "interactiveMs": 1813.2999999970198,
+      "networkCompleteMs": 1027.39990234375,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 262.77900000000005,
+      "taskMs": 917.079,
+      "layoutMs": 188.32,
+      "longTasks": [
+        {
+          "start": 3502.0999999940395,
+          "duration": 618
+        },
+        {
+          "start": 4120.699999988079,
+          "duration": 152
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.31, database;dur=575.53, live_session;dur=0.49, transaction_acquire;dur=0.41, transaction;dur=616.92, compression;dur=67.13, serialization;dur=287.22, total;dur=927.26",
+          "traceId": "c2c2b94b-1bfe-4723-87c5-b57ca09ffe3d",
+          "startMs": 2.39990234375,
+          "endMs": 1027.39990234375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 928.827,
+          "transferMs": 45.403999999999996,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 2,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 1815.2000000029802,
+      "interactiveMs": 1820.9000000059605,
+      "networkCompleteMs": 1050.5,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 256.04200000000003,
+      "taskMs": 905.0709999999997,
+      "layoutMs": 182.224,
+      "longTasks": [
+        {
+          "start": 3547.1000000089407,
+          "duration": 53
+        },
+        {
+          "start": 3608.5,
+          "duration": 605
+        },
+        {
+          "start": 4214.20000000298,
+          "duration": 150
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=22.63, database;dur=612.55, live_session;dur=0.50, transaction_acquire;dur=0.43, transaction;dur=652.79, compression;dur=62.14, serialization;dur=268.46, total;dur=945.85",
+          "traceId": "39867c8b-d80e-4ecc-b4fa-69cdd7a86502",
+          "startMs": 3.5,
+          "endMs": 1050.5,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 947.633,
+          "transferMs": 46.54299999999989,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 3,
+      "clickToUrlMs": 0.09999999403953552,
+      "meaningfulMs": 1717,
+      "interactiveMs": 1722.7999999970198,
+      "networkCompleteMs": 18871,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 247.39399999999995,
+      "taskMs": 884.6470000000002,
+      "layoutMs": 178.71099999999998,
+      "longTasks": [
+        {
+          "start": 3509.3999999910593,
+          "duration": 52
+        },
+        {
+          "start": 3569.199999988079,
+          "duration": 595
+        },
+        {
+          "start": 4164.399999991059,
+          "duration": 148
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.19, database;dur=569.21, live_session;dur=0.49, transaction_acquire;dur=0.45, transaction;dur=616.72, compression;dur=61.70, serialization;dur=223.43, total;dur=863.39",
+          "traceId": "49055ebf-3e14-4da1-8bdc-e106f5c8e834",
+          "startMs": 17908,
+          "endMs": 18871,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 865.0699999999999,
+          "transferMs": 44.436000000000035,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 4,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 1814.7999999970198,
+      "interactiveMs": 1820.5999999940395,
+      "networkCompleteMs": 1063.5,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 253.29799999999997,
+      "taskMs": 896.555,
+      "layoutMs": 180.43499999999997,
+      "longTasks": [
+        {
+          "start": 3571.699999988079,
+          "duration": 50
+        },
+        {
+          "start": 3622.2999999970198,
+          "duration": 52
+        },
+        {
+          "start": 3683.199999988079,
+          "duration": 595
+        },
+        {
+          "start": 4278.399999991059,
+          "duration": 147
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.98, database;dur=612.55, live_session;dur=0.45, transaction_acquire;dur=0.53, transaction;dur=651.86, compression;dur=61.94, serialization;dur=279.18, total;dur=954.82",
+          "traceId": "c656dae7-6399-4ed2-ad6e-1f94ad5534b0",
+          "startMs": 2.5,
+          "endMs": 1063.5,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 956.539,
+          "transferMs": 50.680000000000064,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": null,
+      "meaningfulMs": 903.5999999940395,
+      "interactiveMs": 903.7000000029802,
+      "networkCompleteMs": 904.10009765625,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 212.35700000000003,
+      "taskMs": 1148.221,
+      "layoutMs": 1.3279999999999959,
+      "longTasks": [
+        {
+          "start": 2935.7000000029802,
+          "duration": 80
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=32.24, database;dur=6.57, live_session;dur=1.20, lock_query;dur=0.75, serialization;dur=0.06, total;dur=39.37",
+          "traceId": "4f2eba82-28c2-41be-9baa-e1087c900713",
+          "startMs": 822.10009765625,
+          "endMs": 903.10009765625,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 40.964999999999996,
+          "transferMs": 0.3060000000000045,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=31.80, database;dur=9.94, live_session;dur=0.55, lock_query;dur=0.96, transaction_acquire;dur=0.65, transaction;dur=8.81, compression;dur=0.11, serialization;dur=0.19, total;dur=43.83",
+          "traceId": "a1b51a96-ce85-4321-a584-2501bbce26ed",
+          "startMs": 822.10009765625,
+          "endMs": 904.10009765625,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 47.43,
+          "transferMs": 0.3640000000000043,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 822.10009765625,
+          "endMs": 904.10009765625,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 43.266999999999996,
+          "transferMs": 0.35200000000000387,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "failed": true,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+      "diagnostic": {
+        "tool": "applicants",
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 17332
+        },
+        {
+          "route": "/_next/static/media/472ac8eb7f5a0b0f.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 57596
+        },
+        {
+          "route": "/_next/static/media/512f7db3dabc21be-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 170188
+        },
+        {
+          "route": "/_next/static/media/7792f25d7cfcf9ce-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 137996
+        },
+        {
+          "route": "/_next/static/media/ab2f35892575ff34.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 62892
+        },
+        {
+          "route": "/_next/static/css/fc6b551cd24cfad9.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 24653
+        },
+        {
+          "route": "/_next/static/css/a09927054615074f.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 420
+        },
+        {
+          "route": "/logos/[fixture-id].png",
+          "type": "image",
+          "method": "GET",
+          "status": 404,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 22878
+        },
+        {
+          "route": "/brand/premium-board/07_favicon.svg",
+          "type": "image",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1042
+        },
+        {
+          "route": "/_next/static/css/1d855ce843122211.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 971
+        },
+        {
+          "route": "/_next/static/css/76cc533d4b3af810.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 4640
+        },
+        {
+          "route": "/_next/static/css/a70b6e0ef634c549.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3704
+        },
+        {
+          "route": "/_next/static/css/53a57b0474d152a5.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 6520
+        },
+        {
+          "route": "/_next/static/css/4b522f2a36a5a87b.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 737
+        },
+        {
+          "route": "/_next/static/css/f0d7afa5b9a0f0df.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1000
+        },
+        {
+          "route": "/_next/static/css/13e33bce5df67965.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 818
+        },
+        {
+          "route": "/_next/static/css/6a175d43dec28046.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1030
+        },
+        {
+          "route": "/_next/static/chunks/webpack-44b839e3eefc2403.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3974
+        },
+        {
+          "route": "/_next/static/chunks/03fab609-5a0bb1698bb53e17.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 54425
+        },
+        {
+          "route": "/_next/static/chunks/5991-729b7ca8a33f4c5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 46517
+        },
+        {
+          "route": "/_next/static/chunks/main-app-f6e285b31fe00095.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 573
+        },
+        {
+          "route": "/_next/static/chunks/2384-bd17dafd68ae3fd1.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 5217
+        },
+        {
+          "route": "/_next/static/chunks/app/loading-eaa94abb0f0d9594.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 955
+        },
+        {
+          "route": "/_next/static/chunks/25e72e9d-737ce20f2576701c.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 14340
+        },
+        {
+          "route": "/_next/static/chunks/2306-4b43b752cb440e50.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9611
+        },
+        {
+          "route": "/_next/static/chunks/2615-9411eef1b18cdbc0.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3405
+        },
+        {
+          "route": "/_next/static/chunks/7300-6734730ac5bb98e8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 13137
+        },
+        {
+          "route": "/_next/static/chunks/7171-54d2d734bbe7111d.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 62116
+        },
+        {
+          "route": "/_next/static/chunks/4024-5440301815e978c8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 54883
+        },
+        {
+          "route": "/_next/static/chunks/9243-238f413d4751bfb6.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8819
+        },
+        {
+          "route": "/_next/static/chunks/1459-17ae75d6bc417a2b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 2893
+        },
+        {
+          "route": "/_next/static/chunks/6250-e0f56014679202d6.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 10485
+        },
+        {
+          "route": "/_next/static/chunks/3043-9e568f8c595b2baf.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9259
+        },
+        {
+          "route": "/_next/static/chunks/6883-5051f7540aa73962.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 7022
+        },
+        {
+          "route": "/_next/static/chunks/1732-321df5c1970d1d8a.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8235
+        },
+        {
+          "route": "/_next/static/chunks/719-ccf8eca6465050dd.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 5972
+        },
+        {
+          "route": "/_next/static/chunks/6718-aad1d8520c2e4ccb.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3714
+        },
+        {
+          "route": "/_next/static/chunks/5662-068e09f638d3bea3.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 53978
+        },
+        {
+          "route": "/_next/static/chunks/3326-8c6cd7cddc0b8d5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 42281
+        },
+        {
+          "route": "/_next/static/chunks/1236-c648079287be63ba.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 11434
+        },
+        {
+          "route": "/_next/static/chunks/6761-50685059add5d43c.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 26851
+        },
+        {
+          "route": "/_next/static/chunks/2019-c5851120b95f7b56.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 12706
+        },
+        {
+          "route": "/_next/static/chunks/9030-a37e64c3b34e6620.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8174
+        },
+        {
+          "route": "/_next/static/chunks/7925-3330111bc5599563.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9846
+        },
+        {
+          "route": "/_next/static/chunks/1656-3976b249aad479b9.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 7687
+        },
+        {
+          "route": "/_next/static/chunks/app/club/%5BclubId%5D/workspace/page-1ce4373805f1a1a8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 26782
+        },
+        {
+          "route": "/_next/static/chunks/2-4ab7d37e8566d8f2.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3191
+        },
+        {
+          "route": "/_next/static/chunks/app/layout-7ede42e259712ef1.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9870
+        },
+        {
+          "route": "/_next/static/chunks/app/error-b822847940a2f65d.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 2033
+        },
+        {
+          "route": "/api/platform/view-as",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 44
+        },
+        {
+          "route": "/api/workspace?kind=corkboard",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 43
+        },
+        {
+          "route": "/api/workspace?kind=invitations",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 33
+        },
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3397
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 24960
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1619
+        },
+        {
+          "route": "/api/platform/eligibility",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 29
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 817
+        },
+        {
+          "route": "/logos/[fixture-id].png",
+          "type": "image",
+          "method": "GET",
+          "status": 404,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3785
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/api/communications/stream",
+          "type": "eventsource",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 167
+        },
+        {
+          "route": "/api/workspace?kind=tutorial",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 76
+        },
+        {
+          "route": "/api/workspace?kind=taskNotifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 637
+        },
+        {
+          "route": "/api/workspace?kind=notifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 693
+        },
+        {
+          "route": "/api/workspace?kind=notifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 693
+        }
+      ]
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 2,
+      "clickToUrlMs": null,
+      "meaningfulMs": 886.1999999880791,
+      "interactiveMs": 886.1999999880791,
+      "networkCompleteMs": 887.39990234375,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 220.181,
+      "taskMs": 1146.974,
+      "layoutMs": 1.472000000000001,
+      "longTasks": [
+        {
+          "start": 3260.7000000029802,
+          "duration": 83
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=67.63, database;dur=11.04, live_session;dur=1.85, lock_query;dur=1.48, serialization;dur=0.11, total;dur=79.64",
+          "traceId": "7ce0cf83-e92b-4dff-b5b1-4e4f22d1a23f",
+          "startMs": 801.39990234375,
+          "endMs": 886.39990234375,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 88.456,
+          "transferMs": 0.6059999999999945,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=64.80, database;dur=17.27, live_session;dur=2.26, lock_query;dur=1.11, transaction_acquire;dur=0.81, transaction;dur=12.83, compression;dur=0.13, serialization;dur=0.22, total;dur=84.74",
+          "traceId": "52f83fb2-5ad2-488e-82a6-533579a06fa9",
+          "startMs": 801.39990234375,
+          "endMs": 887.39990234375,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 96.576,
+          "transferMs": 0.6770000000000067,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 801.39990234375,
+          "endMs": 887.39990234375,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 89.576,
+          "transferMs": 0.7920000000000016,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 3,
+      "clickToUrlMs": null,
+      "meaningfulMs": 874.1999999880791,
+      "interactiveMs": 874.1999999880791,
+      "networkCompleteMs": 874.599853515625,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 213.94299999999998,
+      "taskMs": 1104.578,
+      "layoutMs": 1.2949999999999906,
+      "longTasks": [
+        {
+          "start": 2843.7000000029802,
+          "duration": 68
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=31.10, database;dur=6.03, live_session;dur=0.64, lock_query;dur=0.64, serialization;dur=0.06, total;dur=37.66",
+          "traceId": "1db23b11-de98-4e88-8c0b-fa274495a396",
+          "startMs": 804.599853515625,
+          "endMs": 874.599853515625,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 39.287,
+          "transferMs": 0.27599999999999625,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=29.87, database;dur=12.06, live_session;dur=0.39, lock_query;dur=0.74, transaction_acquire;dur=0.44, transaction;dur=10.35, compression;dur=0.12, serialization;dur=0.20, total;dur=43.55",
+          "traceId": "355baeca-ae2a-418d-a8a9-b19120cd42f9",
+          "startMs": 804.599853515625,
+          "endMs": 874.599853515625,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 47.214,
+          "transferMs": 0.28600000000000136,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 804.599853515625,
+          "endMs": 874.599853515625,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 40.68,
+          "transferMs": 0.35600000000000165,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 4,
+      "clickToUrlMs": null,
+      "meaningfulMs": 891.7999999970198,
+      "interactiveMs": 891.7999999970198,
+      "networkCompleteMs": 892.39990234375,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 219.547,
+      "taskMs": 1130.309,
+      "layoutMs": 1.4530000000000098,
+      "longTasks": [
+        {
+          "start": 2846.6000000089407,
+          "duration": 71
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=24.11, database;dur=6.74, live_session;dur=0.62, lock_query;dur=1.36, serialization;dur=0.05, total;dur=31.53",
+          "traceId": "86cfb95f-11bf-4da6-8a46-88c514535ad1",
+          "startMs": 818.39990234375,
+          "endMs": 891.39990234375,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 33.531,
+          "transferMs": 0.3919999999999959,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=25.79, database;dur=8.66, live_session;dur=0.61, lock_query;dur=0.58, transaction_acquire;dur=0.45, transaction;dur=7.22, compression;dur=0.11, serialization;dur=0.18, total;dur=36.11",
+          "traceId": "8309d8cb-d9d8-464b-9b8b-b6e0b8cd1ad4",
+          "startMs": 818.39990234375,
+          "endMs": 892.39990234375,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 40.041,
+          "transferMs": 0.4620000000000033,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 818.39990234375,
+          "endMs": 892.39990234375,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 35.992000000000004,
+          "transferMs": 0.6789999999999949,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "failed": true,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+      "diagnostic": {
+        "tool": "applicants",
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 17206
+        },
+        {
+          "route": "/_next/static/media/472ac8eb7f5a0b0f.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 57596
+        },
+        {
+          "route": "/_next/static/media/512f7db3dabc21be-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 170188
+        },
+        {
+          "route": "/_next/static/media/7792f25d7cfcf9ce-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 137996
+        },
+        {
+          "route": "/_next/static/media/ab2f35892575ff34.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 62892
+        },
+        {
+          "route": "/_next/static/css/fc6b551cd24cfad9.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 24653
+        },
+        {
+          "route": "/_next/static/css/a09927054615074f.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 420
+        },
+        {
+          "route": "/logos/[fixture-id].png",
+          "type": "image",
+          "method": "GET",
+          "status": 404,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 22878
+        },
+        {
+          "route": "/brand/premium-board/07_favicon.svg",
+          "type": "image",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1042
+        },
+        {
+          "route": "/_next/static/css/1d855ce843122211.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 971
+        },
+        {
+          "route": "/_next/static/css/76cc533d4b3af810.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 4640
+        },
+        {
+          "route": "/_next/static/css/a70b6e0ef634c549.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3704
+        },
+        {
+          "route": "/_next/static/css/53a57b0474d152a5.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 6520
+        },
+        {
+          "route": "/_next/static/css/4b522f2a36a5a87b.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 737
+        },
+        {
+          "route": "/_next/static/css/f0d7afa5b9a0f0df.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1000
+        },
+        {
+          "route": "/_next/static/css/13e33bce5df67965.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 818
+        },
+        {
+          "route": "/_next/static/css/6a175d43dec28046.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1030
+        },
+        {
+          "route": "/_next/static/chunks/webpack-44b839e3eefc2403.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3974
+        },
+        {
+          "route": "/_next/static/chunks/03fab609-5a0bb1698bb53e17.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 54425
+        },
+        {
+          "route": "/_next/static/chunks/5991-729b7ca8a33f4c5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 46517
+        },
+        {
+          "route": "/_next/static/chunks/main-app-f6e285b31fe00095.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 573
+        },
+        {
+          "route": "/_next/static/chunks/2384-bd17dafd68ae3fd1.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 5217
+        },
+        {
+          "route": "/_next/static/chunks/app/loading-eaa94abb0f0d9594.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 955
+        },
+        {
+          "route": "/_next/static/chunks/25e72e9d-737ce20f2576701c.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 14340
+        },
+        {
+          "route": "/_next/static/chunks/2306-4b43b752cb440e50.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9611
+        },
+        {
+          "route": "/_next/static/chunks/2615-9411eef1b18cdbc0.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3405
+        },
+        {
+          "route": "/_next/static/chunks/7300-6734730ac5bb98e8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 13137
+        },
+        {
+          "route": "/_next/static/chunks/7171-54d2d734bbe7111d.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 62116
+        },
+        {
+          "route": "/_next/static/chunks/4024-5440301815e978c8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 54883
+        },
+        {
+          "route": "/_next/static/chunks/9243-238f413d4751bfb6.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8819
+        },
+        {
+          "route": "/_next/static/chunks/1459-17ae75d6bc417a2b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 2893
+        },
+        {
+          "route": "/_next/static/chunks/6250-e0f56014679202d6.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 10485
+        },
+        {
+          "route": "/_next/static/chunks/3043-9e568f8c595b2baf.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9259
+        },
+        {
+          "route": "/_next/static/chunks/6883-5051f7540aa73962.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 7022
+        },
+        {
+          "route": "/_next/static/chunks/1732-321df5c1970d1d8a.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8235
+        },
+        {
+          "route": "/_next/static/chunks/719-ccf8eca6465050dd.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 5972
+        },
+        {
+          "route": "/_next/static/chunks/6718-aad1d8520c2e4ccb.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3714
+        },
+        {
+          "route": "/_next/static/chunks/5662-068e09f638d3bea3.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 53978
+        },
+        {
+          "route": "/_next/static/chunks/3326-8c6cd7cddc0b8d5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 42281
+        },
+        {
+          "route": "/_next/static/chunks/1236-c648079287be63ba.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 11434
+        },
+        {
+          "route": "/_next/static/chunks/6761-50685059add5d43c.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 26851
+        },
+        {
+          "route": "/_next/static/chunks/2019-c5851120b95f7b56.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 12706
+        },
+        {
+          "route": "/_next/static/chunks/9030-a37e64c3b34e6620.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 8174
+        },
+        {
+          "route": "/_next/static/chunks/7925-3330111bc5599563.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9846
+        },
+        {
+          "route": "/_next/static/chunks/1656-3976b249aad479b9.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 7687
+        },
+        {
+          "route": "/_next/static/chunks/app/club/%5BclubId%5D/workspace/page-1ce4373805f1a1a8.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 26782
+        },
+        {
+          "route": "/_next/static/chunks/2-4ab7d37e8566d8f2.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3191
+        },
+        {
+          "route": "/_next/static/chunks/app/layout-7ede42e259712ef1.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 9870
+        },
+        {
+          "route": "/_next/static/chunks/app/error-b822847940a2f65d.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 2033
+        },
+        {
+          "route": "/api/platform/view-as",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 44
+        },
+        {
+          "route": "/api/workspace?kind=corkboard",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 43
+        },
+        {
+          "route": "/api/workspace?kind=invitations",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 33
+        },
+        {
+          "route": "/api/platform/eligibility",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 29
+        },
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3397
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 24960
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1619
+        },
+        {
+          "route": "/logos/[fixture-id].png",
+          "type": "image",
+          "method": "GET",
+          "status": 404,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3725
+        },
+        {
+          "route": "/api/workspace?kind=tutorial",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 76
+        },
+        {
+          "route": "/api/communications/stream",
+          "type": "eventsource",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 167
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 817
+        },
+        {
+          "route": "/api/workspace?kind=taskNotifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 637
+        },
+        {
+          "route": "/api/workspace?kind=notifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 693
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/api/workspace?kind=notifications",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 693
+        }
+      ]
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "clickToUrlMs": null,
+      "meaningfulMs": 824.6000000089407,
+      "interactiveMs": 824.6000000089407,
+      "networkCompleteMs": 824.699951171875,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 194.7,
+      "taskMs": 1644.882,
+      "layoutMs": 1.1340000000000239,
+      "longTasks": [
+        {
+          "start": 5312.29999999702,
+          "duration": 55
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=38.33, database;dur=6.44, live_session;dur=1.34, lock_query;dur=1.02, serialization;dur=0.08, total;dur=45.17",
+          "traceId": "863aafb0-6946-43a6-8928-86ce15d0beee",
+          "startMs": 768.699951171875,
+          "endMs": 824.699951171875,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 48.562999999999995,
+          "transferMs": 0.35300000000000153,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=37.10, database;dur=11.48, live_session;dur=0.66, lock_query;dur=0.78, transaction_acquire;dur=0.50, transaction;dur=9.01, compression;dur=0.12, serialization;dur=0.20, total;dur=50.38",
+          "traceId": "9d7a404c-64ae-4adc-97c6-b833aed09a80",
+          "startMs": 768.699951171875,
+          "endMs": 824.699951171875,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 55.476,
+          "transferMs": 0.3960000000000008,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 768.699951171875,
+          "endMs": 824.699951171875,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 50.678,
+          "transferMs": 0.5769999999999982,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "clickToUrlMs": null,
+      "meaningfulMs": 835.5,
+      "interactiveMs": 835.6000000089407,
+      "networkCompleteMs": 836.199951171875,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 193.66399999999996,
+      "taskMs": 1632.0859999999998,
+      "layoutMs": 0.8420000000000094,
+      "longTasks": [
+        {
+          "start": 5077.70000000298,
+          "duration": 57
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=32.84, database;dur=5.90, live_session;dur=0.69, lock_query;dur=0.78, serialization;dur=0.07, total;dur=39.32",
+          "traceId": "0ebdc853-2645-43a7-beeb-86c52f330e6a",
+          "startMs": 777.199951171875,
+          "endMs": 836.199951171875,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 41.018,
+          "transferMs": 0.2909999999999968,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=31.88, database;dur=10.62, live_session;dur=0.41, lock_query;dur=0.58, transaction_acquire;dur=0.59, transaction;dur=9.30, compression;dur=0.13, serialization;dur=0.23, total;dur=44.28",
+          "traceId": "d4cb726a-4ffb-4a2d-8b22-d7b0e1a8f3bc",
+          "startMs": 777.199951171875,
+          "endMs": 836.199951171875,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 47.875,
+          "transferMs": 0.3609999999999971,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 777.199951171875,
+          "endMs": 836.199951171875,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 42.757000000000005,
+          "transferMs": 0.5850000000000009,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "failed": true,
+      "stage": "source",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=applicants\", waiting until \"domcontentloaded\"\u001b[22m\n",
+      "diagnostic": {
+        "tool": "applicants",
+        "pipeline": false,
+        "sheet": false,
+        "alerts": 0
+      },
+      "clickToContentLowerBoundMs": null,
+      "meaningfulMs": null,
+      "interactiveMs": null,
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "requests": [
+        {
+          "route": "/club/[fixture-id]/workspace",
+          "type": "document",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 17206
+        },
+        {
+          "route": "/_next/static/media/472ac8eb7f5a0b0f.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 57596
+        },
+        {
+          "route": "/_next/static/media/512f7db3dabc21be-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 170188
+        },
+        {
+          "route": "/_next/static/media/7792f25d7cfcf9ce-s.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 137996
+        },
+        {
+          "route": "/_next/static/media/ab2f35892575ff34.p.woff2",
+          "type": "font",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 62892
+        },
+        {
+          "route": "/_next/static/css/fc6b551cd24cfad9.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 24653
+        },
+        {
+          "route": "/_next/static/css/a09927054615074f.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 420
+        },
+        {
+          "route": "/logos/[fixture-id].png",
+          "type": "image",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/brand/premium-board/07_favicon.svg",
+          "type": "image",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1042
+        },
+        {
+          "route": "/_next/static/css/1d855ce843122211.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 971
+        },
+        {
+          "route": "/_next/static/css/76cc533d4b3af810.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 4640
+        },
+        {
+          "route": "/_next/static/css/a70b6e0ef634c549.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3704
+        },
+        {
+          "route": "/_next/static/css/53a57b0474d152a5.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 6520
+        },
+        {
+          "route": "/_next/static/css/4b522f2a36a5a87b.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 737
+        },
+        {
+          "route": "/_next/static/css/f0d7afa5b9a0f0df.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1000
+        },
+        {
+          "route": "/_next/static/css/13e33bce5df67965.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 818
+        },
+        {
+          "route": "/_next/static/css/6a175d43dec28046.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 1030
+        },
+        {
+          "route": "/_next/static/chunks/webpack-44b839e3eefc2403.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 3974
+        },
+        {
+          "route": "/_next/static/chunks/03fab609-5a0bb1698bb53e17.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 54425
+        },
+        {
+          "route": "/_next/static/chunks/5991-729b7ca8a33f4c5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 46517
+        },
+        {
+          "route": "/_next/static/chunks/main-app-f6e285b31fe00095.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 573
+        },
+        {
+          "route": "/_next/static/chunks/2384-bd17dafd68ae3fd1.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 5217
+        },
+        {
+          "route": "/_next/static/chunks/app/loading-eaa94abb0f0d9594.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 955
+        },
+        {
+          "route": "/_next/static/chunks/25e72e9d-737ce20f2576701c.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": 14340
+        },
+        {
+          "route": "/_next/static/chunks/2306-4b43b752cb440e50.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/2615-9411eef1b18cdbc0.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/7300-6734730ac5bb98e8.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/7171-54d2d734bbe7111d.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/4024-5440301815e978c8.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/9243-238f413d4751bfb6.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/1459-17ae75d6bc417a2b.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/6250-e0f56014679202d6.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/3043-9e568f8c595b2baf.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/6883-5051f7540aa73962.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/1732-321df5c1970d1d8a.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/719-ccf8eca6465050dd.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/6718-aad1d8520c2e4ccb.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/5662-068e09f638d3bea3.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/3326-8c6cd7cddc0b8d5b.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/1236-c648079287be63ba.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/6761-50685059add5d43c.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/2019-c5851120b95f7b56.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/9030-a37e64c3b34e6620.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/7925-3330111bc5599563.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/1656-3976b249aad479b9.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/app/club/%5BclubId%5D/workspace/page-1ce4373805f1a1a8.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/2-4ab7d37e8566d8f2.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/app/layout-7ede42e259712ef1.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        },
+        {
+          "route": "/_next/static/chunks/app/error-b822847940a2f65d.js",
+          "type": "script",
+          "method": "GET",
+          "status": null,
+          "failed": false,
+          "failureReason": null,
+          "encodedBodyBytes": null
+        }
+      ]
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "clickToUrlMs": null,
+      "meaningfulMs": 839.5999999940395,
+      "interactiveMs": 839.6999999880791,
+      "networkCompleteMs": 841.7998046875,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 204.03000000000006,
+      "taskMs": 1647.478,
+      "layoutMs": 0.9379999999999944,
+      "longTasks": [],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=35.43, database;dur=6.41, live_session;dur=1.06, lock_query;dur=0.62, serialization;dur=0.07, total;dur=41.85",
+          "traceId": "f43285dd-8aa0-4963-8699-7d14a0679d17",
+          "startMs": 839.7998046875,
+          "endMs": 840.7998046875,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 43.641999999999996,
+          "transferMs": 0.35300000000000153,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=34.43, database;dur=13.68, live_session;dur=0.99, lock_query;dur=0.87, transaction_acquire;dur=0.56, transaction;dur=11.38, compression;dur=0.18, serialization;dur=0.28, total;dur=50.17",
+          "traceId": "7aa83186-d1be-4b8c-9d76-ebb860bf99be",
+          "startMs": 839.7998046875,
+          "endMs": 840.7998046875,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 53.442,
+          "transferMs": 0.43599999999999994,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 839.7998046875,
+          "endMs": 841.7998046875,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 46.501,
+          "transferMs": 0.5350000000000037,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "pointer",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    }
+  ],
+  "failures": [
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "index": 1,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "stage": "source",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "stage": "source",
+      "error": "page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:3107/club/[fixture-id]/workspace?section=recruitment&tool=applicants\", waiting until \"domcontentloaded\"\u001b[22m\n"
+    }
+  ]
+}

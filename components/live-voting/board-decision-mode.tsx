@@ -6,7 +6,7 @@ import { compareAcademicYears } from "@/lib/recruitment-profile"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ApplicantDisplayPanel } from "@/components/applicant-intelligence"
 import { getVotingWorkspace, createVotingSession, submitVotingBallot, commandVotingSession, seedVotingDemo } from "@/lib/workspace-api"
-import type { getClubPipeline } from "@/lib/workspace-api"
+import type { getClubPipelineList } from "@/lib/workspace-api"
 import type { AppStatus } from "@prisma/client"
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context"
@@ -18,7 +18,7 @@ import type { Decision } from "@/lib/voting-engine"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import "./voting-mode.css"
-type Pipeline = Awaited<ReturnType<typeof getClubPipeline>>
+type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
 type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
 const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
 export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {

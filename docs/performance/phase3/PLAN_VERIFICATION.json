@@ -1,0 +1,26 @@
+[
+  {
+    "folder": "comparison",
+    "digest": "6c95651525d0477ec388384dfe9b9b9775fc6ebe6c49cf84f4e20f7b88f0ad53",
+    "expected": "6c95651525d0477ec388384dfe9b9b9775fc6ebe6c49cf84f4e20f7b88f0ad53",
+    "match": true
+  },
+  {
+    "folder": "comparison-final",
+    "digest": "2e8b7c0e3afcb4b89b69756b72b48b285efdd4683827efc15a56d3b67d63dee1",
+    "expected": "2e8b7c0e3afcb4b89b69756b72b48b285efdd4683827efc15a56d3b67d63dee1",
+    "match": true
+  },
+  {
+    "folder": "comparison-paged",
+    "digest": "3028103f4b342838e2fc3539c50d5e8f91441dc6f31c3bad7bfd169f1675fba0",
+    "expected": "3028103f4b342838e2fc3539c50d5e8f91441dc6f31c3bad7bfd169f1675fba0",
+    "match": true
+  },
+  {
+    "folder": "stress-5000",
+    "digest": "dfbe71ef6e2dcf84fe0b85700b844b26285997c120ee08998c3aa53b0b3f0ad6",
+    "expected": "dfbe71ef6e2dcf84fe0b85700b844b26285997c120ee08998c3aa53b0b3f0ad6",
+    "match": true
+  }
+]

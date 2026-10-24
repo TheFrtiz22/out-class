@@ -142,6 +142,7 @@ async function main() {
   const actionNames=new Map(Object.entries(manifest.node).map(([id,v])=>[id,(v.filename||'')+':'+v.exportedName]));
   const browser=await chromium.launch({headless:true});
   const descriptors=routes(fixture), allSamples=[], failures=[];
+  if(process.argv.includes('--phase3')) Object.assign(descriptors.applicantDetail,{text:'Synthetic application evidence.'});
   if(process.argv.includes('--phase2')) { Object.assign(descriptors.overview,{selector:'.oc-command-club'}); Object.assign(descriptors.recruiting,{selector:'.oc-command-recruiting',text:'Current pipeline'}); }
   if(active)descriptors.interviews.text=active.readyText;
   const sampleCount=Number(process.argv.find(a=>a.startsWith('--samples='))?.split('=')[1]||20);
@@ -161,7 +162,15 @@ async function main() {
       });
     }
     await cdp.send('Performance.enable');
-    const requests=[],pending=new Set(),pageErrors=[];
+    const requests=[],pending=new Set(),pageErrors=[],wire=[];
+    if(process.argv.includes('--phase3')) {
+      await cdp.send('Network.enable');
+      cdp.on('Network.requestWillBeSent',event=>{
+        const headers=Object.fromEntries(Object.entries(event.request.headers).map(([key,value])=>[key.toLowerCase(),value]));
+        wire.push({id:event.requestId,key:event.request.method+' '+event.request.url+' '+(headers['next-action']||''),bytes:0});
+      });
+      cdp.on('Network.dataReceived',event=>{const item=wire.find(row=>row.id===event.requestId);if(item)item.bytes+=event.encodedDataLength;});
+    }
     page.on('pageerror',error=>{
       const react=/Minified React error #(\d+)/.exec(error.message||'');
       pageErrors.push(react?'react_'+react[1]:/ResizeObserver loop/.test(error.message||'')?'resize_observer_loop':['TypeError','ReferenceError','RangeError','SyntaxError'].includes(error.name)?error.name:'page_error');
@@ -174,7 +183,7 @@ async function main() {
     page.on('response',response=>{const row=requests.find(r=>r.req===response.request());if(row){row.status=response.status();row.serverTiming=response.headers()['server-timing']||null;row.traceId=response.headers()['x-outclass-trace-id']||null;}});
     page.on('requestfinished',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.timing=req.timing();void req.sizes().then(s=>{row.bytes=s.responseBodySize;}).catch(()=>{});}});
     page.on('requestfailed',req=>{pending.delete(req);const row=requests.find(r=>r.req===req);if(row){row.end=Date.now();row.failed=true;const reason=req.failure()?.errorText;row.failureReason=/^net::[A-Z_]+$/.test(reason||"")?reason:"transport_failure";}});
-    return {context,page,cdp,requests,pending,pageErrors,participant};
+    return {context,page,cdp,requests,pending,pageErrors,participant,wire};
   }
   async function settle(s) {
     // SSE is ongoing. Wait for other requests to drain, with a finite bound.
@@ -207,7 +216,9 @@ async function main() {
   }
   async function clickTarget(s,from,to) {
     const {page}=s;
-    if(process.argv.includes('--phase2')) {
+    if(to==='applicantDetail')return page.locator('[data-applicant-id]').filter({visible:true}).first().click();
+    if(from==='applicantDetail')return page.locator('[data-slot="sheet-content"]').getByRole('button',{name:'Close',exact:true}).click();
+    if(process.argv.includes('--phase2') && descriptors[to].tour) {
       const tour=descriptors[to].tour;
       let item=page.locator('[data-tour="'+tour+'"]').filter({visible:true}).first();
       if(!await item.count() && to==='applicants') {
@@ -255,6 +266,7 @@ async function main() {
     }
     const beforeMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const startIndex=s.requests.length;
+    s.sampleStartIndex=startIndex;
     await page.evaluate(desc=>{
       const a=window.__navAudit;a.phase='navigation';a.armed=true;a.click=0;a.url=0;a.ready=0;a.interactive=0;
       if(a.observer)a.observer.disconnect();
@@ -280,12 +292,25 @@ async function main() {
     const afterMetrics=Object.fromEntries((await s.cdp.send('Performance.getMetrics')).metrics.map(x=>[x.name,x.value]));
     const marks=await page.evaluate(()=>{const a=window.__navAudit;a.armed=false;a.observer.disconnect();return{click:a.click,origin:performance.timeOrigin,url:a.url,ready:a.ready,interactive:a.interactive,longTasks:a.longTasks.filter(t=>t.start>=a.click&&t.start<a.ready),commits:a.commits.filter(t=>t>=a.click&&t<=a.ready).length};});
     const clickWall=marks.origin+marks.click;
-    const rows=s.requests.slice(startIndex).map(({req,...r})=>({route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes:r.bytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null}));
+    const rows=s.requests.slice(startIndex).map(({req,...r},offset)=>{
+      let encodedBodyBytes=r.bytes,bodyBytesSource='playwright';
+      if(process.argv.includes('--phase3') && encodedBodyBytes===null && r.failed) {
+        const key=req.method()+' '+req.url()+' '+(req.headers()['next-action']||'');
+        const ordinal=s.requests.slice(0,startIndex+offset).filter(row=>row.req.method()+' '+row.req.url()+' '+(row.req.headers()['next-action']||'')===key).length;
+        const received=s.wire.filter(row=>row.key===key)[ordinal];
+        if(received){encodedBodyBytes=received.bytes;bodyBytesSource='cdp_received_chunks_before_cancel';}
+      }
+      return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
+    });
     const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
     if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
     if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
-    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod='keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
+    if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
     allSamples.push(row);
+    if(process.argv.includes('--phase3')) {
+      row.cycleReadError=await page.getByText('Cycles could not load.',{exact:true}).count()>0;
+      assert.equal(row.cycleReadError,false,'Recruitment cycle read failed in the UI');
+    }
     if(process.argv.includes('--phase2'))assert.equal(row.pageErrorCount,0,'browser_script_error');
     if(active){assert.equal(row.pageErrorCount,0,'browser_script_error');if(row.hydration)assert.equal(row.hydration.length,0,'hydration_recovery');assert.equal(row.renderedRooms,24,'room_count');assert.equal(row.openInterviewLinks,24,'open_link_count');}
     return row;
@@ -327,7 +352,7 @@ async function main() {
     return;
   }
   const pairs=[['overview','members'],['members','meetings'],['meetings','tasks'],['tasks','announcements'],['announcements','overview'],['recruiting','applicants'],['applicants','interviews'],['interviews','decisions'],['decisions','recruiting'],['applicants','voting'],['voting','applicants'],['overview','settings'],['settings','overview'],['overview','recruiting'],['recruiting','overview'],['overview','club2'],['personal','overview'],['overview','personal']];
-  const selected=process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
+  const selected=process.argv.includes('--phase3')?[['recruiting','applicants'],['applicants','applicantDetail']]:process.argv.includes('--phase2')?[['overview','members'],['recruiting','applicants'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--only-interviews')?[['applicants','interviews']]:process.argv.includes('--phase1')?[['applicants','interviews'],['members','meetings'],['meetings','tasks'],['tasks','announcements']]:process.argv.includes('--smoke')?pairs.slice(0,1):process.argv.includes('--member-details')?[['members','memberDetail']]:process.argv.includes('--cross-club')?[['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]:process.argv.includes('--details')?[['applicants','applicantDetail'],['members','memberDetail']]:process.argv.includes('--only-voting')?pairs.filter(p=>p.includes('voting')):process.argv.includes('--waterfalls')?pairs.filter(([f,t])=>f==='overview'&&t==='members'||f==='recruiting'&&t==='applicants'||f==='applicants'&&t==='interviews'):pairs.filter(p=>!p.includes('club2')&&!p.includes('personal')).concat([['recruiting','club2'],['personal','recruiting'],['recruiting','personal']]);
   const outputStem=process.argv.includes('--member-details')?'member-detail':process.argv.includes('--cross-club')?'cross-club':process.argv.includes('--details')?'detail':process.argv.includes('--only-voting')?'voting':process.argv.includes('--waterfalls')?'waterfall':'browser';
   try {
     for(const [from,to] of selected)for(const condition of (process.argv.includes('--cold-warm')?['cold','warm']:['cold','warm','repeated'])){
@@ -336,11 +361,22 @@ async function main() {
         if(condition==='repeated') {shared=await session();await open(shared,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(shared,'applicants','voting');await waitReady(shared.page,descriptors.voting);await settle(shared);}}
         for(let i=0;i<sampleCount;i++) {
           const s=shared||await session();
+          let attemptStage='source';
           try {
             if(!shared){await open(s,from==='voting'?'applicants':from);if(from==='voting'){await clickTarget(s,'applicants','voting');await waitReady(s.page,descriptors.voting);await settle(s);}}
-            if(condition==='warm'){await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+            if(condition==='warm'){attemptStage='warm target';await clickTarget(s,from,to);await waitReady(s.page,descriptors[to]);await settle(s);attemptStage='warm return';await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+            attemptStage='measured';
             const r=await sample(s,from,to,condition,i);console.log(`${r.path} ${condition} ${i+1}/${sampleCount}: ${r.meaningfulMs.toFixed(1)} ms, ${r.requestCount} requests`);
             if(shared&&i<sampleCount-1){await clickTarget(s,to,from);await waitReady(s.page,descriptors[from]);await settle(s);}
+          } catch(error) {
+            if(!process.argv.includes('--record-failures')) throw error;
+            const message=String(error.message).replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi,'[fixture-id]').slice(0,1800);
+            let diagnostic=null;
+            try { diagnostic=await Promise.race([s.page.evaluate(()=>({tool:new URLSearchParams(location.search).get('tool'),pipeline:!!document.querySelector('.oc-live-pipeline'),sheet:!!document.querySelector('[data-slot="sheet-content"]'),alerts:document.querySelectorAll('[role="alert"]').length,click:window.__navAudit.click,origin:performance.timeOrigin,now:performance.now()})),new Promise(resolve=>setTimeout(()=>resolve(null),2000))]); } catch {}
+            const requests=s.requests.slice(attemptStage==='measured'?(s.sampleStartIndex??0):0).map(r=>({route:r.route,type:r.type,method:r.method,status:r.status,failed:r.failed||false,failureReason:r.failureReason||null,encodedBodyBytes:r.bytes}));
+            const observation={path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
+            failures.push({path:observation.path,condition,index:i,stage:attemptStage,error:message});allSamples.push(observation);
+            console.log('RECORDED FAILURE '+observation.path+' '+condition+' '+(i+1)+'/'+sampleCount+' '+attemptStage);
           } finally {if(!shared)await s.context.close();}
         }
       } catch(e){failures.push({path:from+' → '+to,condition,error:String(e.message).slice(0,1800)});console.log('UNAVAILABLE '+from+' → '+to+' '+condition+': '+String(e.message).slice(0,800));if(shared)console.log('Fixture UI diagnostics: '+await shared.page.locator('body').innerText().then(s=>s.slice(0,1800)).catch(()=>''));}

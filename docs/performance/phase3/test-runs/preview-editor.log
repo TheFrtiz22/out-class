@@ -1,0 +1,35 @@
+✔ live board lanes are status-based, exclude drafts, and keep waitlists distinct from closed decisions (0.413959ms)
+✔ List/Kanban toggle preserves the same filtered server data and does not mutate or reload it (148.256417ms)
+✔ drawer status writes send expectedStatus, reject stale outcomes, and refresh canonical offer state (91.2715ms)
+✔ read/review access alone never exposes enabled round moves or decision buttons (68.270417ms)
+✔ evaluation save updates both presentations and explicit round movement reloads anonymous identity (69.241125ms)
+✔ an identified applicant without current panel authority has no review editor or blocking review draft (67.602959ms)
+✔ decision groups use persisted status, exclude drafts, and keep waitlists out of Pending (0.11775ms)
+✔ Decisions reuses expected-status mutations and moves saved outcomes between groups (63.290541ms)
+✔ Decisions preserves stale failures and hides mutation controls from anonymous reviewers (172.671708ms)
+✔ Kanban round moves reject stale data and share the refreshed anonymous projection with List (98.20575ms)
+✔ Kanban decisions use expected status and appear in List after server reload (61.776542ms)
+✔ drawer renders stable-ID review with historical label when current name is Panel (57.218625ms)
+✔ drawer renders stable-ID review with historical label when current name is Review (59.217625ms)
+✔ drawer legacy label compatibility, roundId=null (71.137708ms)
+✔ drawer legacy label compatibility, roundId=undefined (69.122167ms)
+✔ drawer legacy label compatibility, roundId=different-round (70.673125ms)
+✔ moving from the drawer locates the target-round review by stable ID despite an old label (57.155333ms)
+✔ rejected applicants leave active queues and remain in the deliberate retained-history tab (118.672667ms)
+✔ recruitment review comes before filter toggles and is absent from Decisions (119.118208ms)
+✔ quick review saves expected-status decisions and advances only after success (77.433834ms)
+✔ quick review preserves the candidate after a rejected stale write and skips without publishing (59.707833ms)
+✔ review-only users cannot start quick review or move board candidates (51.887375ms)
+✔ board drops require an explicit outcome and preserve expected status (52.365125ms)
+✔ decision status stays unchanged until the server acknowledges publication (62.070125ms)
+✔ detail opens fresh, fences late candidate/close results and retries denied reads (22.682667ms)
+✔ authority, club, revision and Demo changes hide detail synchronously and discard pending results (4.33225ms)
+✔ browser: unassigned reviews have no editor or draft requests; assigned reviews save on desktop/mobile and become read-only immediately after finalization (4152.039917ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4414.07175

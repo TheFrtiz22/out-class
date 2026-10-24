@@ -1,0 +1,25 @@
+{
+  "completedLocalDate": "2026-10-24",
+  "timezone": "America/New_York",
+  "node": "v26.9.0",
+  "os": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M5",
+  "cpuCount": 10,
+  "memoryGiB": 16,
+  "versions": {
+    "next": "15.5.27",
+    "react": "19.2.0",
+    "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.116.0",
+    "playwright": "1.64.0"
+  },
+  "fixture": "Reserved loopback onboarding project on app3107/API55321/DB55322; two clubs, one measured club; no production credentials",
+  "postgresImage": "public.ecr.aws/supabase/postgres:17.11.0.002",
+  "benchmark": "Frozen production Next outputs; single desktop Chromium client; pool limit8; no parallel builds/tests during collection; cold means fresh browser context, warm server/database",
+  "limitations": [
+    "Loopback network and synthetic histories; no hosted or low-end/mobile performance distribution",
+    "No active booking history or reviewer assignments; synthetic essay text is highly compressible",
+    "Whole compact list still fetched; only DOM display pages are bounded"
+  ]
+}

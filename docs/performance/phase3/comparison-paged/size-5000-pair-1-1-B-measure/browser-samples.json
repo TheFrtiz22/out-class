@@ -1,0 +1,1258 @@
+{
+  "environment": "local Next production build + disposable local Supabase",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 5000,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "sampleCount": 5,
+  "metricsNotes": {
+    "meaningfulMs": "DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing",
+    "interactiveMs": "first enabled visible control after content predicate; no mutation is invoked",
+    "requestOffsets": "relative to captured DOM click timestamp",
+    "networkCompleteMs": "observed non-SSE requests drained after useful content; includes background traffic",
+    "cpu": "CDP delta through settle, so includes post-content background work",
+    "react": "production commit notifications only; profiler render durations unavailable"
+  },
+  "samples": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.3999999910593033,
+      "meaningfulMs": 1821.0999999940395,
+      "interactiveMs": 1826.7999999970198,
+      "networkCompleteMs": 993.800048828125,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 302.668,
+      "taskMs": 972.2369999999999,
+      "layoutMs": 212.93599999999998,
+      "longTasks": [
+        {
+          "start": 1379.9000000059605,
+          "duration": 675
+        },
+        {
+          "start": 2055.2999999970198,
+          "duration": 140
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.0959999999999999,
+          "transferMs": 0.601,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 13.800048828125,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.0549999999999997,
+          "transferMs": 2.7740000000000005,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.823,
+          "transferMs": 0.5329999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.466,
+          "transferMs": 0.551,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.74, database;dur=612.99, live_session;dur=0.54, transaction_acquire;dur=0.45, transaction;dur=659.48, compression;dur=61.56, serialization;dur=219.16, total;dur=902.33",
+          "traceId": "d055449d-8ab4-432b-8655-db0e95aa8f2e",
+          "startMs": 5.800048828125,
+          "endMs": 993.800048828125,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 903.846,
+          "transferMs": 35.39199999999994,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 1,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 1856.4000000059605,
+      "interactiveMs": 1867.300000011921,
+      "networkCompleteMs": 948.89990234375,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 285.90400000000005,
+      "taskMs": 1066.212,
+      "layoutMs": 219.561,
+      "longTasks": [
+        {
+          "start": 1341.2000000029802,
+          "duration": 660
+        },
+        {
+          "start": 2001.4000000059605,
+          "duration": 235
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.89990234375,
+          "endMs": 14.89990234375,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.1809999999999998,
+          "transferMs": 0.7180000000000002,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.89990234375,
+          "endMs": 14.89990234375,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.2270000000000003,
+          "transferMs": 2.869,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.89990234375,
+          "endMs": 14.89990234375,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.9710000000000001,
+          "transferMs": 0.47,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.89990234375,
+          "endMs": 14.89990234375,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.49600000000000005,
+          "transferMs": 0.5749999999999998,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=20.87, database;dur=568.66, live_session;dur=0.48, transaction_acquire;dur=0.44, transaction;dur=612.14, compression;dur=61.78, serialization;dur=224.45, total;dur=859.22",
+          "traceId": "03c2a0e1-e20b-47b0-8fb8-bbac52abe342",
+          "startMs": 5.89990234375,
+          "endMs": 948.89990234375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 860.686,
+          "transferMs": 38.29099999999994,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 2,
+      "clickToUrlMs": 0.5,
+      "meaningfulMs": 1819.2999999970198,
+      "interactiveMs": 1824.9000000059605,
+      "networkCompleteMs": 215004.69995117188,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 296.794,
+      "taskMs": 1098.238,
+      "layoutMs": 207.31,
+      "longTasks": [
+        {
+          "start": 1611.9000000059605,
+          "duration": 54
+        },
+        {
+          "start": 1675.2000000029802,
+          "duration": 650
+        },
+        {
+          "start": 2326.0999999940395,
+          "duration": 141
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 213996.69995117188,
+          "endMs": 214002.69995117188,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 7.187,
+          "transferMs": 3.173,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 213996.69995117188,
+          "endMs": 214006.69995117188,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 9.044,
+          "transferMs": 4.404,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 213996.69995117188,
+          "endMs": 214003.69995117188,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 9.796999999999999,
+          "transferMs": 2.1910000000000007,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 213996.69995117188,
+          "endMs": 214004.69995117188,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 10.452,
+          "transferMs": 1.2219999999999995,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=26.38, database;dur=602.48, live_session;dur=0.49, transaction_acquire;dur=0.41, transaction;dur=649.44, compression;dur=61.23, serialization;dur=224.92, total;dur=903.87",
+          "traceId": "2a56ff47-6384-4c2e-a738-a1500f7e5ecb",
+          "startMs": 213996.69995117188,
+          "endMs": 215004.69995117188,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 906.4309999999999,
+          "transferMs": 49.86800000000005,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 3,
+      "clickToUrlMs": 0.3999999910593033,
+      "meaningfulMs": 1754.8999999910593,
+      "interactiveMs": 1760.2999999970198,
+      "networkCompleteMs": 950.5,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 284.228,
+      "taskMs": 946.6869999999999,
+      "layoutMs": 216.588,
+      "longTasks": [
+        {
+          "start": 1397.5999999940395,
+          "duration": 655
+        },
+        {
+          "start": 2053.199999988079,
+          "duration": 137
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.5,
+          "endMs": 12.5,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.432,
+          "transferMs": 0.7529999999999999,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.5,
+          "endMs": 13.5,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.251,
+          "transferMs": 2.8579999999999997,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.5,
+          "endMs": 13.5,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.217,
+          "transferMs": 0.55,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.5,
+          "endMs": 12.5,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.726,
+          "transferMs": 2.215,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.74, database;dur=585.23, live_session;dur=0.73, transaction_acquire;dur=0.44, transaction;dur=624.23, compression;dur=61.52, serialization;dur=213.46, total;dur=861.60",
+          "traceId": "fd2e4b9f-9341-4544-b6d8-a24d033dfdbb",
+          "startMs": 6.5,
+          "endMs": 950.5,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 863.187,
+          "transferMs": 36.985000000000014,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 4,
+      "clickToUrlMs": 0.3999999910593033,
+      "meaningfulMs": 1765.3999999910593,
+      "interactiveMs": 1771,
+      "networkCompleteMs": 942.800048828125,
+      "requestCount": 5,
+      "encodedBodyBytes": 3016504,
+      "scriptMs": 299.933,
+      "taskMs": 965.57,
+      "layoutMs": 212.847,
+      "longTasks": [
+        {
+          "start": 1383.8999999910593,
+          "duration": 674
+        },
+        {
+          "start": 2058.7999999970198,
+          "duration": 136
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-60350252dc13af07.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 3397,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.23,
+          "transferMs": 0.8260000000000001,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/4757.a41d59c903be8651.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 24960,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.3280000000000003,
+          "transferMs": 2.974,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.800048828125,
+          "endMs": 12.800048828125,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.984,
+          "transferMs": 0.6140000000000001,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.800048828125,
+          "endMs": 11.800048828125,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.565,
+          "transferMs": 0.608,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=21.73, database;dur=566.46, live_session;dur=0.50, transaction_acquire;dur=0.40, transaction;dur=604.38, compression;dur=62.05, serialization;dur=226.12, total;dur=854.04",
+          "traceId": "65d2d518-a328-44e0-9420-d6fc37302676",
+          "startMs": 6.800048828125,
+          "endMs": 942.800048828125,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 855.5649999999999,
+          "transferMs": 37.047000000000025,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540385,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 1919.0999999940395,
+      "interactiveMs": 1925.4000000059605,
+      "networkCompleteMs": 1116.900146484375,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 267.40999999999997,
+      "taskMs": 960.5830000000002,
+      "layoutMs": 182.63800000000003,
+      "longTasks": [
+        {
+          "start": 3504.5,
+          "duration": 67
+        },
+        {
+          "start": 3581.300000011921,
+          "duration": 617
+        },
+        {
+          "start": 4198.9000000059605,
+          "duration": 175
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=27.88, database;dur=647.59, live_session;dur=0.92, transaction_acquire;dur=0.82, transaction;dur=684.81, compression;dur=62.58, serialization;dur=274.55, total;dur=990.03",
+          "traceId": "4d3c005f-b5b5-49e9-ba35-7de006ddc309",
+          "startMs": 2.900146484375,
+          "endMs": 1116.900146484375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 992.253,
+          "transferMs": 54.08400000000006,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 1,
+      "clickToUrlMs": 0.29999999701976776,
+      "meaningfulMs": 1908.9000000059605,
+      "interactiveMs": 1914.7999999970198,
+      "networkCompleteMs": 1114.900146484375,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 269.04100000000005,
+      "taskMs": 932.056,
+      "layoutMs": 196.385,
+      "longTasks": [
+        {
+          "start": 3684.2000000029802,
+          "duration": 50
+        },
+        {
+          "start": 3791.9000000059605,
+          "duration": 631
+        },
+        {
+          "start": 4423.5,
+          "duration": 153
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=19.64, database;dur=658.71, live_session;dur=0.49, transaction_acquire;dur=0.44, transaction;dur=699.38, compression;dur=62.20, serialization;dur=289.62, total;dur=1010.66",
+          "traceId": "bd821b6a-0cc3-4bc1-97a0-5e292a9e0596",
+          "startMs": 2.900146484375,
+          "endMs": 1114.900146484375,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1012.308,
+          "transferMs": 50.11400000000003,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 2,
+      "clickToUrlMs": 0.10000000894069672,
+      "meaningfulMs": 1850.6000000089407,
+      "interactiveMs": 1856.7000000029802,
+      "networkCompleteMs": 1039.800048828125,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 271.579,
+      "taskMs": 950.4129999999999,
+      "layoutMs": 190.932,
+      "longTasks": [
+        {
+          "start": 3503,
+          "duration": 52
+        },
+        {
+          "start": 3555.800000011921,
+          "duration": 50
+        },
+        {
+          "start": 3613.6000000089407,
+          "duration": 640
+        },
+        {
+          "start": 4254.4000000059605,
+          "duration": 161
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=23.25, database;dur=591.33, live_session;dur=0.45, transaction_acquire;dur=0.50, transaction;dur=630.12, compression;dur=61.72, serialization;dur=276.64, total;dur=931.92",
+          "traceId": "49464ffa-a827-46d3-a927-67aa08c239e8",
+          "startMs": 2.800048828125,
+          "endMs": 1039.800048828125,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 933.585,
+          "transferMs": 52.80200000000002,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 3,
+      "clickToUrlMs": 0.09999999403953552,
+      "meaningfulMs": 1857.7000000029802,
+      "interactiveMs": 1863.7000000029802,
+      "networkCompleteMs": 1032,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 274.422,
+      "taskMs": 979.237,
+      "layoutMs": 214.35600000000002,
+      "longTasks": [
+        {
+          "start": 3428.2000000029802,
+          "duration": 62
+        },
+        {
+          "start": 3499.7999999970198,
+          "duration": 665
+        },
+        {
+          "start": 4164.899999991059,
+          "duration": 150
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=20.28, database;dur=628.39, live_session;dur=0.41, transaction_acquire;dur=0.45, transaction;dur=669.14, compression;dur=61.46, serialization;dur=224.63, total;dur=915.78",
+          "traceId": "ee4ab271-3853-4210-89f4-6a953e1bf503",
+          "startMs": 3,
+          "endMs": 1032,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 917.366,
+          "transferMs": 48.702999999999975,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 4,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 1832.7999999970198,
+      "interactiveMs": 1838.7000000029802,
+      "networkCompleteMs": 1061.699951171875,
+      "requestCount": 1,
+      "encodedBodyBytes": 2985711,
+      "scriptMs": 261.111,
+      "taskMs": 900.3990000000001,
+      "layoutMs": 183.80800000000002,
+      "longTasks": [
+        {
+          "start": 3591.7000000029802,
+          "duration": 614
+        },
+        {
+          "start": 4205.9000000059605,
+          "duration": 148
+        }
+      ],
+      "reactCommitCount": 9,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipeline",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=22.59, database;dur=613.82, live_session;dur=0.50, transaction_acquire;dur=0.51, transaction;dur=653.25, compression;dur=70.73, serialization;dur=286.25, total;dur=964.01",
+          "traceId": "dd33d28f-d92b-495c-95a4-6b07e2417e64",
+          "startMs": 2.699951171875,
+          "endMs": 1061.699951171875,
+          "encodedBodyBytes": 2985711,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 966.49,
+          "transferMs": 43.80499999999995,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": null,
+      "meaningfulMs": 835.5999999940395,
+      "interactiveMs": 835.5999999940395,
+      "networkCompleteMs": 836.5,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 193.69800000000004,
+      "taskMs": 1636.3020000000001,
+      "layoutMs": 0.8599999999999997,
+      "longTasks": [
+        {
+          "start": 5237.29999999702,
+          "duration": 56
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=46.57, database;dur=5.37, live_session;dur=0.47, lock_query;dur=0.70, serialization;dur=0.05, total;dur=51.92",
+          "traceId": "e13feafd-4d70-4703-ab4c-56e785cffc56",
+          "startMs": 778.5,
+          "endMs": 835.5,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 54.854,
+          "transferMs": 0.3410000000000011,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=44.90, database;dur=10.36, live_session;dur=0.80, lock_query;dur=0.59, transaction_acquire;dur=0.55, transaction;dur=8.73, compression;dur=0.12, serialization;dur=0.21, total;dur=57.11",
+          "traceId": "8a55e943-9e1f-4ed0-aa04-8793528e4c78",
+          "startMs": 778.5,
+          "endMs": 836.5,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 61.1,
+          "transferMs": 0.3810000000000002,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 778.5,
+          "endMs": 836.5,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 56.422000000000004,
+          "transferMs": 0.5640000000000001,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 1,
+      "clickToUrlMs": null,
+      "meaningfulMs": 828.5999999940395,
+      "interactiveMs": 828.5999999940395,
+      "networkCompleteMs": 829.2998046875,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 190.8120000000001,
+      "taskMs": 1627.7309999999998,
+      "layoutMs": 0.8170000000000122,
+      "longTasks": [
+        {
+          "start": 5114.20000000298,
+          "duration": 52
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=32.13, database;dur=5.23, live_session;dur=0.61, lock_query;dur=0.58, serialization;dur=0.06, total;dur=37.28",
+          "traceId": "57b25f2d-dd86-4d05-aa5f-6b2e2849f5b3",
+          "startMs": 775.2998046875,
+          "endMs": 828.2998046875,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 38.913000000000004,
+          "transferMs": 0.3410000000000011,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=31.02, database;dur=8.61, live_session;dur=0.53, lock_query;dur=0.50, transaction_acquire;dur=0.46, transaction;dur=7.09, compression;dur=0.12, serialization;dur=0.21, total;dur=41.28",
+          "traceId": "c4aba05c-86e1-46be-ab4f-4785ac412df7",
+          "startMs": 775.2998046875,
+          "endMs": 829.2998046875,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 44.163,
+          "transferMs": 0.35300000000000153,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 775.2998046875,
+          "endMs": 829.2998046875,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 40.797000000000004,
+          "transferMs": 0.5309999999999988,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 2,
+      "clickToUrlMs": null,
+      "meaningfulMs": 839.5,
+      "interactiveMs": 839.5999999940395,
+      "networkCompleteMs": 26180.39990234375,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 198.05799999999996,
+      "taskMs": 1660.4989999999998,
+      "layoutMs": 1.0280000000000011,
+      "longTasks": [
+        {
+          "start": 5344.79999999702,
+          "duration": 54
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=42.42, database;dur=6.17, live_session;dur=0.82, lock_query;dur=1.20, serialization;dur=0.06, total;dur=48.79",
+          "traceId": "558c757f-1bf4-4720-a0b3-8fb47d7f7ab0",
+          "startMs": 26124.39990234375,
+          "endMs": 26180.39990234375,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 53.696,
+          "transferMs": 0.4070000000000036,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=42.37, database;dur=9.61, live_session;dur=0.66, lock_query;dur=0.67, transaction_acquire;dur=0.48, transaction;dur=7.70, compression;dur=0.11, serialization;dur=0.20, total;dur=53.58",
+          "traceId": "8d838a34-f253-4dd8-9107-73ef38870df9",
+          "startMs": 26124.39990234375,
+          "endMs": 26180.39990234375,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 59.748,
+          "transferMs": 0.4269999999999996,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 26124.39990234375,
+          "endMs": 26180.39990234375,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 55.609,
+          "transferMs": 0.615000000000002,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 3,
+      "clickToUrlMs": null,
+      "meaningfulMs": 844.0999999940395,
+      "interactiveMs": 844.0999999940395,
+      "networkCompleteMs": 844.39990234375,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 194.37300000000002,
+      "taskMs": 1656.716,
+      "layoutMs": 0.8379999999999777,
+      "longTasks": [
+        {
+          "start": 5087.70000000298,
+          "duration": 54
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=34.31, database;dur=8.77, live_session;dur=0.73, lock_query;dur=0.71, serialization;dur=0.07, total;dur=42.23",
+          "traceId": "1a175f1f-29a8-457b-903a-6a24b1c18507",
+          "startMs": 788.39990234375,
+          "endMs": 844.39990234375,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 43.816,
+          "transferMs": 0.3469999999999942,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=35.49, database;dur=12.49, live_session;dur=0.37, lock_query;dur=0.77, transaction_acquire;dur=1.81, transaction;dur=10.27, compression;dur=0.11, serialization;dur=0.21, total;dur=50.96",
+          "traceId": "380e5c7d-746a-4c86-abfd-5b6f42370d7b",
+          "startMs": 788.39990234375,
+          "endMs": 844.39990234375,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 53.903999999999996,
+          "transferMs": 0.4170000000000016,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 788.39990234375,
+          "endMs": 844.39990234375,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 49.657000000000004,
+          "transferMs": 0.5319999999999965,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "index": 4,
+      "clickToUrlMs": null,
+      "meaningfulMs": 854,
+      "interactiveMs": 854.0999999940395,
+      "networkCompleteMs": 15061.5,
+      "requestCount": 3,
+      "encodedBodyBytes": 907,
+      "scriptMs": 191.55299999999997,
+      "taskMs": 1653.7890000000002,
+      "layoutMs": 0.9379999999999944,
+      "longTasks": [
+        {
+          "start": 5415,
+          "duration": 65
+        }
+      ],
+      "reactCommitCount": 6,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=attendance",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=33.81, database;dur=5.19, live_session;dur=0.97, lock_query;dur=0.92, serialization;dur=0.05, total;dur=39.09",
+          "traceId": "4b777a2d-16ca-4579-9f03-fbea13dfc888",
+          "startMs": 14994.5,
+          "endMs": 15061.5,
+          "encodedBodyBytes": 54,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 40.785999999999994,
+          "transferMs": 0.3710000000000022,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "/api/workspace?kind=applicantDisplay",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=33.14, database;dur=8.84, live_session;dur=0.44, lock_query;dur=0.77, transaction_acquire;dur=0.50, transaction;dur=7.27, compression;dur=0.12, serialization;dur=0.19, total;dur=43.66",
+          "traceId": "93f94da5-e621-4093-9c5c-9723c7e76456",
+          "startMs": 14994.5,
+          "endMs": 15061.5,
+          "encodedBodyBytes": 767,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 46.519,
+          "transferMs": 0.37300000000000466,
+          "bodyBytesSource": "playwright"
+        },
+        {
+          "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+          "type": "fetch",
+          "method": "POST",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 14994.5,
+          "endMs": 15061.5,
+          "encodedBodyBytes": 86,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 43.282999999999994,
+          "transferMs": 0.5130000000000052,
+          "bodyBytesSource": "playwright"
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570361,
+      "cycleReadError": false
+    }
+  ],
+  "failures": [
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ]
+}

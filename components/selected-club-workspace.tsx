@@ -22,7 +22,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
     case "pipeline": {
       const [module, data] = await Promise.all([
         import("@/components/views/leader-dashboard/live-leader-workspace"),
-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipeline>>>("pipeline", [clubId, { genderCounts: false }]),
+        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
       ])
       return { kind, module, data } as const
     }

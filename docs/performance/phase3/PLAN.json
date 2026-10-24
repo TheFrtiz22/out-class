@@ -1,0 +1,38 @@
+{
+  "baseline": "583b231f4a6e7eed9222ac983c9e6634483be6e9",
+  "auditReference": "3017e01d5b55bc8fb38d4f8fbec4906dd93bf619",
+  "scope": "Compact whole-pipeline list plus fresh single-applicant detail; render 100 applicants per display page after the unpaged 5000-applicant candidate timed out. Whole-list filters, counts, kanban lane totals, quick review and voting selection remain complete. Server pagination remains a later step.",
+  "measurement": {
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "paths": [
+      "recruiting → applicants",
+      "applicants → applicantDetail"
+    ],
+    "conditions": [
+      "cold",
+      "warm"
+    ],
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerPathConditionPerBlock": 5,
+    "fixedWarmupSamplesPerPathConditionPerBlock": 1,
+    "samplesPerBuildPathConditionCohort": 10,
+    "percentiles": "Existing nearest-rank function; p95 equals maximum at n=10. Descriptive local results, not a production percentile estimate.",
+    "fixture": "Identical within each cohort: 3 synthetic 1024-character essays, 1050-character biography, 2 added experiences and 2 submitted evaluations across 2 rounds per applicant; no booking history. Seeded 100 applicants also retain their original experience.",
+    "controls": "Frozen production outputs, one loopback app and database, identical pool limit 8, one desktop Chromium client, keyboard navigation and pointer detail selection, no concurrent builds/tests during collection.",
+    "failurePolicy": "Retain every warmup/measurement and stop on missing samples, browser errors, HTTP errors or missing workspace body counters. No outlier removal.",
+    "successfulFlightCancellation": "After the first strict attempt stopped on baseline net::ERR_ABORTED: separately count only HTTP 200 getRecruitmentCycles Flight cancellations with no cycle-error UI, no page errors and CDP received-byte counters. All other cancellations/errors stop collection. Retain the stopped attempt and every observation.",
+    "priorAttempts": "comparison/ stopped on two successful baseline Flight cancellations under the initial strict policy. comparison-final/ retained a complete 100/1000 comparison and incomplete 5000 split-only candidate: two warm browser timeouts. Neither attempt is pooled into the final paged comparison.",
+    "displayPageSize": 100,
+    "finalFixture": "A fresh independent navigation actor and two clubs in the same reserved disposable stack. The earlier 5000-applicant fixture is retained after a proposed shrink was rejected and rolled back; no guard is bypassed. Counts/content match the registered cohorts. Both frozen builds share the same unchanged fixture within each cohort.",
+    "finalAnalysis": "Completed 100/1000 cohorts from comparison-paged are retained (all planned rows, no missing observations). At 5000 the original build timed out, so a separate fixed BA/AB stress cohort records every planned attempt, including preparation failures and measured timeouts. No outliers are removed. Failed observations have no invented click-to-content value; success-only distributions and failure rates are reported separately."
+  },
+  "security": "Original live verified identity/session/member/capability/suspension/support/privacy projection on both contracts. No authorization cache. Private no-store, Vary Cookie, Demo adapters and voting snapshot checks preserved.",
+  "restrictions": "No production infrastructure, configuration, database/schema/index changes, caching library, merge or deployment."
+}

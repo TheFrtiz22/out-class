@@ -1,0 +1,68 @@
+{
+  "baseline": "583b231f4a6e7eed9222ac983c9e6634483be6e9",
+  "planSha256": "6c95651525d0477ec388384dfe9b9b9775fc6ebe6c49cf84f4e20f7b88f0ad53",
+  "buildIds": {
+    "A": "63qzBSGbpU612GtjFzsEo",
+    "B": "bJzuxddYtxuN7DUyKkjHM"
+  },
+  "applicationDifferences": [
+    "actions/crm.ts",
+    "app/api/workspace/route.ts",
+    "components/live-voting/board-decision-mode.tsx",
+    "components/selected-club-workspace.tsx",
+    "components/views/leader-dashboard/live-applicant-views.tsx",
+    "components/views/leader-dashboard/live-leader-workspace.tsx",
+    "lib/workspace-api.ts",
+    "lib/pipeline-list.ts",
+    "hooks/use-pipeline-applicant.ts"
+  ],
+  "blocks": [
+    "BA",
+    "AB"
+  ],
+  "completed": [
+    {
+      "directory": "size-100-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": [],
+      "exit": 0
+    },
+    {
+      "directory": "size-100-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": [],
+      "exit": 0
+    }
+  ],
+  "failures": [
+    {
+      "phase": "0-0-B-measure",
+      "name": "AssertionError",
+      "message": "Browser or HTTP failures invalidate the block"
+    }
+  ],
+  "poolLimitPerClient": 8,
+  "environment": "One loopback production-build browser; desktop Chromium; real local Supabase Auth/PostgreSQL; fixed keyboard activation.",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 100,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 1024,
+      "profileBioCharacters": 1050,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "applicationStopped": true,
+  "privateFixtureRetainedForExplicitCleanup": true
+}

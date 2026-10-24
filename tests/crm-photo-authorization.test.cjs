@@ -31,7 +31,7 @@ function fixture() {
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {
-      findMany: async ({ where }) => { if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+      findMany: async ({ where, include }) => { state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
@@ -144,4 +144,16 @@ test('pipeline failure diagnostics identify the failing phase without serializin
  assert.equal(rows[0][1].code,'P2028');assert.equal(rows[0][1].phase,'applications');
  assert.ok(rows[0][1].elapsedMs>=0);assert.ok(rows[0][1].acquisitionMs>=0);assert.ok(rows[0][1].transactionMs>=0);
  assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
+});
+
+for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
+ const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
+ f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
+ f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
+ await assert.rejects(f.crm[reader](id(99)));
+});
+
+test('list query omits detail relations while canonical detail still includes them',async()=>{
+ const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.equal(f.state.pipelineQuery.student.include.studentProfile,true);
+ await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
 });

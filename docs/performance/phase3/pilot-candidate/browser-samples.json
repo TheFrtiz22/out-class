@@ -1,0 +1,180 @@
+{
+  "environment": "local Next production build + disposable local Supabase",
+  "fixture": {
+    "clubs": 2,
+    "membersPerClub": 61,
+    "applicantsPerClub": 100,
+    "meetingsPerClub": 1,
+    "tasksPerClub": 1,
+    "announcementsPerClub": 1,
+    "applicantsInMeasuredClub": 100,
+    "scaleHistory": {
+      "essayAnswersPerApplicant": 3,
+      "essayCharacters": 992,
+      "profileBioCharacters": 1000,
+      "additionalExperiences": 2,
+      "submittedEvaluationsPerApplicant": 2,
+      "rounds": 2,
+      "bookingHistory": false
+    }
+  },
+  "sampleCount": 1,
+  "metricsNotes": {
+    "meaningfulMs": "DOM content predicate followed by two requestAnimationFrame callbacks; paint proxy, not screenshot timing",
+    "interactiveMs": "first enabled visible control after content predicate; no mutation is invoked",
+    "requestOffsets": "relative to captured DOM click timestamp",
+    "networkCompleteMs": "observed non-SSE requests drained after useful content; includes background traffic",
+    "cpu": "CDP delta through settle, so includes post-content background work",
+    "react": "production commit notifications only; profiler render durations unavailable"
+  },
+  "samples": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "index": 0,
+      "clickToUrlMs": 0.4000000059604645,
+      "meaningfulMs": 86.90000000596046,
+      "interactiveMs": 87.40000000596046,
+      "networkCompleteMs": 49.900146484375,
+      "requestCount": 5,
+      "encodedBodyBytes": 38138,
+      "scriptMs": 25.23700000000001,
+      "taskMs": 72.61500000000001,
+      "layoutMs": 5.6690000000000005,
+      "longTasks": [],
+      "reactCommitCount": 8,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/_next/static/chunks/7923-aca81297311fc099.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 5.900146484375,
+          "endMs": 16.900146484375,
+          "encodedBodyBytes": 3396,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.297,
+          "transferMs": 0.6179999999999999
+        },
+        {
+          "route": "/_next/static/chunks/8340.e797ada6dec8ee81.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.900146484375,
+          "endMs": 16.900146484375,
+          "encodedBodyBytes": 25375,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 2.436,
+          "transferMs": 3.206
+        },
+        {
+          "route": "/_next/static/chunks/1289.788fb18d72dff839.js",
+          "type": "script",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.900146484375,
+          "endMs": 16.900146484375,
+          "encodedBodyBytes": 1619,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 1.244,
+          "transferMs": 0.4910000000000001
+        },
+        {
+          "route": "/_next/static/css/ec6f83545b6128bd.css",
+          "type": "stylesheet",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": null,
+          "traceId": null,
+          "startMs": 6.900146484375,
+          "endMs": 15.900146484375,
+          "encodedBodyBytes": 817,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 0.867,
+          "transferMs": 2.6639999999999997
+        },
+        {
+          "route": "/api/workspace?kind=pipelineList",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=22.85, database;dur=13.08, live_session;dur=0.55, transaction_acquire;dur=0.49, transaction;dur=14.94, compression;dur=0.99, serialization;dur=1.55, total;dur=41.86",
+          "traceId": "e830cefb-525d-4a86-a2f9-016dc1e8473f",
+          "startMs": 6.900146484375,
+          "endMs": 49.900146484375,
+          "encodedBodyBytes": 6931,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 43.642,
+          "transferMs": 0.2710000000000008
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 540429
+    },
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "index": 0,
+      "clickToUrlMs": 0.20000000298023224,
+      "meaningfulMs": 69.20000000298023,
+      "interactiveMs": 69.8999999910593,
+      "networkCompleteMs": 45.39990234375,
+      "requestCount": 1,
+      "encodedBodyBytes": 6931,
+      "scriptMs": 11.024999999999993,
+      "taskMs": 34.022999999999996,
+      "layoutMs": 4.255,
+      "longTasks": [],
+      "reactCommitCount": 8,
+      "reactRenderDurationMs": null,
+      "requests": [
+        {
+          "route": "/api/workspace?kind=pipelineList",
+          "type": "fetch",
+          "method": "GET",
+          "status": 200,
+          "serverTiming": "identity;dur=25.31, database;dur=11.88, live_session;dur=0.52, transaction_acquire;dur=0.47, transaction;dur=12.35, compression;dur=0.22, serialization;dur=0.65, total;dur=40.27",
+          "traceId": "5cf32a79-96b2-49be-bb6d-abf6a3ce230a",
+          "startMs": 3.39990234375,
+          "endMs": 45.39990234375,
+          "encodedBodyBytes": 6931,
+          "failed": false,
+          "failureReason": null,
+          "ttfbMs": 41.964999999999996,
+          "transferMs": 0.33500000000000085
+        }
+      ],
+      "pageErrorCount": 0,
+      "pageErrorKinds": [],
+      "inputMethod": "keyboard",
+      "initialScriptBytes": 570819
+    }
+  ],
+  "failures": [
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    }
+  ]
+}

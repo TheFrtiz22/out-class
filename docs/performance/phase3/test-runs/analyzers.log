@@ -1,0 +1,10 @@
+✔ pipeline analysis distinguishes original resident detail from the new protected single-applicant read (3.390708ms)
+✔ stress analysis retains preparation failures in the denominator without inventing navigation latency (0.437625ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 207.258542

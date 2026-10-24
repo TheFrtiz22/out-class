@@ -1,0 +1,174 @@
+{
+  "generatedAt": "2026-10-23T20:36:33.390Z",
+  "sampleCount": 5,
+  "groups": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 5,
+        "p50": 1186,
+        "p95": 1191.4,
+        "max": 1191.4
+      },
+      "interactiveMs": {
+        "samples": 5,
+        "p50": 1191.6,
+        "p95": 1196.8,
+        "max": 1196.8
+      },
+      "clickToUrlMs": {
+        "samples": 5,
+        "p50": 0.4,
+        "p95": 0.5,
+        "max": 0.5
+      },
+      "networkCompleteMs": {
+        "samples": 5,
+        "p50": 373.1,
+        "p95": 413,
+        "max": 413
+      },
+      "scriptMs": {
+        "samples": 5,
+        "p50": 285.36,
+        "p95": 297.08,
+        "max": 297.08
+      },
+      "taskMs": {
+        "samples": 5,
+        "p50": 865.09,
+        "p95": 904.41,
+        "max": 904.41
+      },
+      "requestCount": {
+        "samples": 5,
+        "p50": 5,
+        "p95": 5,
+        "max": 5
+      },
+      "encodedBodyBytes": {
+        "samples": 5,
+        "p50": 384636,
+        "p95": 384636,
+        "max": 384636
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "cold",
+      "meaningfulMs": {
+        "samples": 5,
+        "p50": 1213.8,
+        "p95": 1425.7,
+        "max": 1425.7
+      },
+      "interactiveMs": {
+        "samples": 5,
+        "p50": 1216.6,
+        "p95": 1425.8,
+        "max": 1425.8
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 5,
+        "p50": 1255.4,
+        "p95": 1470.6,
+        "max": 1470.6
+      },
+      "scriptMs": {
+        "samples": 5,
+        "p50": 403.34,
+        "p95": 453.04,
+        "max": 453.04
+      },
+      "taskMs": {
+        "samples": 5,
+        "p50": 1472.84,
+        "p95": 1619.65,
+        "max": 1619.65
+      },
+      "requestCount": {
+        "samples": 5,
+        "p50": 4,
+        "p95": 4,
+        "max": 4
+      },
+      "encodedBodyBytes": {
+        "samples": 5,
+        "p50": 2769,
+        "p95": 2769,
+        "max": 2769
+      }
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "meaningfulMs": {
+        "samples": 2,
+        "p50": 1164.7,
+        "p95": 1170.1,
+        "max": 1170.1
+      },
+      "interactiveMs": {
+        "samples": 2,
+        "p50": 1164.8,
+        "p95": 1170.1,
+        "max": 1170.1
+      },
+      "clickToUrlMs": {
+        "samples": 0,
+        "p50": null,
+        "p95": null,
+        "max": null
+      },
+      "networkCompleteMs": {
+        "samples": 2,
+        "p50": 1199.3,
+        "p95": 1207.6,
+        "max": 1207.6
+      },
+      "scriptMs": {
+        "samples": 2,
+        "p50": 367.81,
+        "p95": 373.53,
+        "max": 373.53
+      },
+      "taskMs": {
+        "samples": 2,
+        "p50": 1993.7,
+        "p95": 1995.52,
+        "max": 1995.52
+      },
+      "requestCount": {
+        "samples": 2,
+        "p50": 4,
+        "p95": 4,
+        "max": 4
+      },
+      "encodedBodyBytes": {
+        "samples": 2,
+        "p50": 2764,
+        "p95": 2764,
+        "max": 2764
+      }
+    }
+  ],
+  "failures": [
+    {
+      "path": "recruiting → applicants",
+      "condition": "warm",
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    {
+      "path": "applicants → applicantDetail",
+      "condition": "warm",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-applicant-id]').visible().first()\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" data-applicant-id=\"f83afe7d-5909-4df8-bc80-3a6b80ec0a65\" class=\"min-h-11 rounded text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\u001b[2m    - done scrolling\u001b[22m\n\u001b[2m    - performing click action\u001b[22m\n"
+    }
+  ]
+}

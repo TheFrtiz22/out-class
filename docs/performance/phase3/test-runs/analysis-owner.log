@@ -1,0 +1,14 @@
+✔ applicant display pages bound DOM input while retaining stable IDs and complete filter selection (1.208875ms)
+✔ detail opens fresh, fences late candidate/close results and retries denied reads (24.04225ms)
+✔ authority, club, revision and Demo changes hide detail synchronously and discard pending results (6.820958ms)
+✔ pipeline list allowlist preserves filtering/ordering fields and excludes all detail content (0.615708ms)
+✔ anonymous list runs after canonical masking and never restores identity or withheld fields (23.21125ms)
+✔ pipeline analysis distinguishes original resident detail from the new protected single-applicant read (3.820584ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 436.027792

@@ -1,0 +1,105 @@
+{
+  "ordinary": {
+    "tests": 1408,
+    "pass": 1363,
+    "fail": 0,
+    "skipped": 45,
+    "duration_ms": 339623.461458
+  },
+  "frozenBuildAuthAndNavigation": {
+    "tests": 35,
+    "pass": 35,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 25956.902875
+  },
+  "focusedPreviewAndEditor": {
+    "tests": 27,
+    "pass": 27,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 4414.07175
+  },
+  "analysisAndOwner": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 436.027792,
+    "additionalFinalAnalyzerTests": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0
+    }
+  },
+  "nativeSecurity": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 3629.166125
+  },
+  "migrations": {
+    "passed": true,
+    "migrations": 57,
+    "rlsTables": 78
+  },
+  "build": {
+    "baseline": "bJzuxddYtxuN7DUyKkjHM",
+    "candidate": "ZF31McrfqLY3OLGDzGh-T",
+    "typecheckPassed": true,
+    "workspaceFirstLoadKbBefore": 522,
+    "workspaceFirstLoadKbAfter": 522
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "additionalOnboardingAdminSettings": {
+    "passedDistinctNodeTestCounts": 31,
+    "sourceRun": {
+      "tests": 48,
+      "pass": 47,
+      "fail": 1,
+      "skipped": 0,
+      "duration_ms": 132409.662834
+    },
+    "note": "Onboarding, student-claim and Settings/Admin groups passed. The sole failure in that run was an anonymous draft selector looking outside the first display page; it now searches the anonymous label and passes in the final 35-case batch."
+  },
+  "distinctAuthAndNavigationNodeTestCounts": 66,
+  "knownGates": "The ordinary suite skips 45 environment-gated cases. The targeted Auth/browser and native runs activate the described suites; this is not a claim that every legacy gated harness ran. The previously documented broad publication-selector limitation remains.",
+  "retainedFailures": [
+    "Initial GET argument default normalization was fixed before collection.",
+    "Old component test adapters assumed a full pipeline and unstable mock identity snapshots; updated to the list/detail contract.",
+    "Initial detail readiness strings were obsolete or not rendered; use the same real response-content predicate for both builds.",
+    "Repeated local admin verification reached the unchanged five-attempts/15-minute limit; later Admin groups passed after natural expiry. No attempt rows or limits were reset.",
+    "The first strict study stopped on successful HTTP-200 recruitment-cycle Flight cancellations; a separate counted, byte-observed, UI-verified class was registered before further measurement.",
+    "The split-only 5000-applicant candidate timed out twice on warm browser interactions; preserved and rejected. Display pages were added.",
+    "A disposable fixture shrink was rejected and rolled back; the prior 5000 rows were verified retained and a fresh independent actor/cohort was seeded. No database guard was bypassed."
+  ],
+  "securityCoverage": [
+    "Live provider identity and auth.sessions revocation; account disablement and club capability loss",
+    "Anonymous identity masking and list projection equality with the canonical authorized full projection",
+    "Strict GET argument allowlist; private no-store, Cookie-sensitive handling and Demo denial",
+    "Late candidate/close/session/club/privacy/support owner fencing",
+    "Selected code/data overlap, exact single initial request, rapid tab switching",
+    "Scheduler draft/hidden-workspace and concurrency regressions in the existing suites",
+    "5000-applicant page bounds, global search/counts, no page-change reads and search focus",
+    "Real autosaved anonymous review draft continuity; single-candidate preview without duplicate list read"
+  ],
+  "benchmarkOutcomes": {
+    "planned": 288,
+    "measured": 240,
+    "warmups": 48,
+    "measuredSuccesses": 236,
+    "preparationFailures": 4,
+    "timedListFailures": 0,
+    "stressFailuresByBuild": {
+      "baseline": 3,
+      "candidate": 1
+    },
+    "observed404ImagesWithinFailedPreparations": 5,
+    "successfulTimedHttpErrors": 0,
+    "successfulFlightCancellationsIncludingWarmups": 19
+  }
+}
