@@ -73,14 +73,23 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
       interviewAssignments: { where: { revokedAt: null }, include: { member: true } },
     } satisfies Prisma.ApplicationInclude;
     const applications = listOnly
-      ? (await tx.application.findMany({ where: applicationWhere, include: {
-          ...commonInclude, student: { include: { studentProfile: true } },
+      ? (await tx.application.findMany({ where: applicationWhere,
+          omit: { anonymousReviewText: true },
+          include: {
+          ...commonInclude, student: { include: { studentProfile: { omit: {
+            bio: true, linkedinUrl: true, resumeUrl: true, headshotUrl: true,
+            scholarStatus: true, highSchool: true, pronouns: true,
+          } } } },
         } })).map(raw => ({
-          ...raw, answers: [], bookings: [],
+          ...raw, anonymousReviewText: null, answers: [], bookings: [],
           // Internal normalization for the shared privacy projector. These
           // relations are omitted from SQL and from the list wire contract.
           student: { ...raw.student, studentProfile: raw.student.studentProfile ? {
             ...raw.student.studentProfile, experiences: [],
+            // Inert detail values are internal to the canonical privacy projector;
+            // the explicit list DTO cannot expose or consume them.
+            bio: null, linkedinUrl: null, resumeUrl: null, headshotUrl: null,
+            scholarStatus: null, highSchool: null, pronouns: null,
           } : null },
         }))
       : await tx.application.findMany({ where: applicationWhere, include: {

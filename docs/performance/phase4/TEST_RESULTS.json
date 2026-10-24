@@ -1,0 +1,90 @@
+{
+  "ordinary": {
+    "tests": 1413,
+    "pass": 1368,
+    "fail": 0,
+    "skipped": 45,
+    "duration_ms": 79912.450291
+  },
+  "frozenBuildAuthNavigationSettingsAdmin": {
+    "tests": 46,
+    "pass": 46,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 34760.831708
+  },
+  "baselineOnboarding": {
+    "tests": 38,
+    "pass": 38,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 76215.274375
+  },
+  "nativeSecurityConcurrency": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 3488.90325
+  },
+  "focusedLogoBrowser": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 2523.368459
+  },
+  "analyzers": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0,
+    "duration_ms": 193.853583
+  },
+  "build": {
+    "baseline": "Yw7wq85L6rD1hngirqnqg",
+    "candidate": "WWr8d2B70LK55qBEJMcj6",
+    "productionBuildAndTypecheckPassed": true
+  },
+  "migrations": {
+    "passed": true,
+    "migrations": 57,
+    "rlsBrowserDeniedTables": 78
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "acceptedBenchmark": {
+    "baseline": "ca6899c80689e14bea6ecf8f969b21afdc4fb939",
+    "buildIds": {
+      "baseline": "Yw7wq85L6rD1hngirqnqg",
+      "candidate": "WWr8d2B70LK55qBEJMcj6"
+    },
+    "planned": 288,
+    "measured": 240,
+    "warmups": 48,
+    "failedMeasured": 0,
+    "failedWarmups": 0,
+    "pageErrors": 0,
+    "timedSuccessfulHttpErrors": 0,
+    "sourceHttpErrorsByVariant": {
+      "B": 240,
+      "A": 0
+    },
+    "percentiles": "Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate."
+  },
+  "retainedConfoundedBenchmark": {
+    "planned": 288,
+    "measured": 240,
+    "warmups": 48,
+    "readinessTimeouts": 2,
+    "excludedAsWholeCollection": true,
+    "reason": "Verified host Sleep/Maintenance/DarkWake intervals; no samples individually removed or replaced."
+  },
+  "limitations": [
+    "45 ordinary tests are environment-gated. Corresponding targeted Auth/navigation/native suites run separately; not every legacy gated harness is activated.",
+    "The earlier broad publication-selector limitation remains.",
+    "Cold/warm performance is local desktop evidence; no hosted/mobile/concurrent-traffic performance claim."
+  ]
+}

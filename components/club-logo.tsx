@@ -1,7 +1,7 @@
 "use client"
 import { logoBackgroundColor } from "@/lib/club-logo-background"
 import { useLogoAnalysis } from "@/hooks/use-logo-analysis"
-import { clubAssetSource } from "@/lib/club-assets"
+import { clubLogoSource } from "@/lib/club-assets"
 
 import { useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
@@ -29,7 +29,7 @@ type ClubLogoProps = {
 }
 
 export function ClubLogo(props: ClubLogoProps) {
-  const src = clubAssetSource(props.logoUrl?.trim(), props.assetPreview) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
+  const src = clubLogoSource(props.logoUrl, props.clubId, props.text, props.assetPreview)
   // Remount on source changes so a failed image never hides a replacement logo.
   return <ClubLogoImage key={src} {...props} src={src} />
 }
@@ -41,7 +41,7 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
   const [loaded, setLoaded] = useState(false)
   const dimensions = cn("shrink-0 shadow-none", sizeMap[size], className)
 
-  if (failed) {
+  if (!src || failed) {
     return fallback ?? (
       <div
         className={cn("flex items-center justify-center font-semibold tracking-tight text-white", dimensions)}

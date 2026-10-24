@@ -1,0 +1,189 @@
+{
+  "source": "Read-only macOS power management log; only timestamps/event categories retained. No user/device identifiers or full log lines exported.",
+  "events": [
+    {
+      "utc": "2026-10-24T15:37:24+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:37:25+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:37:27+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:37:37+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:37:39+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:37:43+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:37:53+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:37:54+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:37:55+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:37:58+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:49:08+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:49:10+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:49:31+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:49:41+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:49:43+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:50:27+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:50:37+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:50:38+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:50:45+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:50:55+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:50:57+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:58:30+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:58:40+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:58:41+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:59:04+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:59:14+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:59:16+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T15:59:48+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T15:59:58+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T15:59:59+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T16:00:00+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T16:00:10+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T16:00:12+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T16:04:09+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T16:07:10+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T16:07:12+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T16:10:31+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T16:10:59+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T16:11:01+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T16:11:39+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T16:11:49+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T16:11:50+00:00",
+      "event": "Wake"
+    },
+    {
+      "utc": "2026-10-24T16:12:54+00:00",
+      "event": "DarkWake"
+    },
+    {
+      "utc": "2026-10-24T16:13:09+00:00",
+      "event": "Sleep"
+    },
+    {
+      "utc": "2026-10-24T16:13:10+00:00",
+      "event": "Wake"
+    }
+  ],
+  "sleepReasonCategoriesInStudyWindow": {
+    "Maintenance Sleep": 14,
+    "Idle Sleep": 2
+  }
+}

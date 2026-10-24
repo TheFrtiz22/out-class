@@ -1,0 +1,337 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index 01382a2..e418949 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -76,2 +76,7 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
+-      ? (await tx.application.findMany({ where: applicationWhere, include: {
+-          ...commonInclude, student: { include: { studentProfile: true } },
++      ? (await tx.application.findMany({ where: applicationWhere,
++          omit: { anonymousReviewText: true },
++          include: {
++          ...commonInclude, student: { include: { studentProfile: { omit: {
++            bio: true, linkedinUrl: true, resumeUrl: true, headshotUrl: true,
++            scholarStatus: true, highSchool: true, pronouns: true,
++          } } } },
+@@ -79 +84 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
+-          ...raw, answers: [], bookings: [],
++          ...raw, anonymousReviewText: null, answers: [], bookings: [],
+@@ -83,0 +89,4 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
++            // Inert detail values are internal to the canonical privacy projector;
++            // the explicit list DTO cannot expose or consume them.
++            bio: null, linkedinUrl: null, resumeUrl: null, headshotUrl: null,
++            scholarStatus: null, highSchool: null, pronouns: null,
+diff --git a/components/club-logo.tsx b/components/club-logo.tsx
+index 4e3cf69..9b719af 100644
+--- a/components/club-logo.tsx
++++ b/components/club-logo.tsx
+@@ -4 +4 @@ import { useLogoAnalysis } from "@/hooks/use-logo-analysis"
+-import { clubAssetSource } from "@/lib/club-assets"
++import { clubLogoSource } from "@/lib/club-assets"
+@@ -32 +32 @@ export function ClubLogo(props: ClubLogoProps) {
+-  const src = clubAssetSource(props.logoUrl?.trim(), props.assetPreview) || `/logos/${encodeURIComponent(props.clubId || props.text.toLowerCase())}.png`
++  const src = clubLogoSource(props.logoUrl, props.clubId, props.text, props.assetPreview)
+@@ -44 +44 @@ function ClubLogoImage({ src, text, color, alt = "", size = "md", className, fal
+-  if (failed) {
++  if (!src || failed) {
+diff --git a/lib/club-assets.ts b/lib/club-assets.ts
+index 9fd8172..5aca499 100644
+--- a/lib/club-assets.ts
++++ b/lib/club-assets.ts
+@@ -10,0 +11,12 @@ export function clubProfileImages(value: { logoUrl?: string | null; bannerUrl?:
++
++// Only checked-in artwork may be inferred from a legacy club key. Database IDs
++// do not imply image files; absent artwork should render the existing monogram.
++const bundledClubLogos: Readonly<Record<string, string>> = {
++  "vvf": "/logos/vvf.webp", "mii": "/logos/mii.webp",
++  "180-degrees": "/logos/180-degrees.png", "180-degrees-globe": "/logos/180-degrees-globe.png",
++  "enactus": "/logos/enactus.png", "enactus-wordmark": "/logos/enactus-wordmark.png",
++};
++export function clubLogoSource(value: string | null | undefined, clubId: string | undefined, text: string, preview = false) {
++  const legacyKey = clubId || text.toLowerCase();
++  return clubAssetSource(value?.trim(), preview) || (Object.hasOwn(bundledClubLogos, legacyKey) ? bundledClubLogos[legacyKey] : "");
++}
+diff --git a/public/logos/README.md b/public/logos/README.md
+index e19ca7f..2b41398 100644
+--- a/public/logos/README.md
++++ b/public/logos/README.md
+@@ -3 +3,4 @@
+-Place PNGs here using the club ID as the filename, for example:
++`ClubLogo` accepts an explicit `logoUrl` (including a protected club-asset reference).
++That source takes precedence over bundled legacy artwork. Known bundled keys are
++`vvf`, `mii`, `180-degrees`, `180-degrees-globe`, `enactus` and `enactus-wordmark`.
++Their exact PNG/WebP paths are listed in `lib/club-assets.ts`.
+@@ -5,11 +8,4 @@ Place PNGs here using the club ID as the filename, for example:
+-- aif.png — Alternative Investment Fund
+-- vcg.png — Virginia Consulting Group
+-- meridian.png — Meridian Capital Group
+-- mii.png — McIntire Investment Institute
+-- vvf.png — Virginia Venture Fund
+-- 180-degrees.png — 180 Degrees Consulting
+-- commerce-council.png — Commerce Council
+-- enactus.png — Enactus
+-
+-ClubLogo also accepts an explicit logoUrl, which overrides the ID path.
+-Missing or broken images retain the existing initials/wordmark placeholder.
++For a new bundled image, add its path to that map or pass an explicit `logoUrl`.
++Database UUIDs and unknown labels do not imply local files. Missing artwork renders
++the existing accessible initials/wordmark immediately, without a guessed request.
++A broken explicit source retains the same fallback; replacing it retries the new source.
+diff --git a/scripts/navigation-audit.cjs b/scripts/navigation-audit.cjs
+index 6d0a340..d6bf6c7 100644
+--- a/scripts/navigation-audit.cjs
++++ b/scripts/navigation-audit.cjs
+@@ -194 +194,13 @@ async function main() {
+-  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
++  async function preparationSnapshot(s, started) {
++    const dom = await s.page.evaluate(() => {
++      const text = document.body?.textContent || "";
++      const nav = performance.getEntriesByType("navigation")[0];
++      return { readyState: document.readyState, opening: text.includes("Opening club workspace…"), selectedLoading: text.includes("Loading workspace…"), pipeline: !!document.querySelector(".oc-live-pipeline"), accessUnavailable: text.includes("Club workspace unavailable"), alerts: document.querySelectorAll('[role="alert"]').length, document: nav ? {ttfbMs:nav.responseStart, domContentLoadedMs:nav.domContentLoadedEventEnd} : null };
++    }).catch(() => null);
++    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
++  }
++  async function open(s,id) {
++    const started=Date.now();
++    try { await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);s.sourceReadyMs=Date.now()-started;await settle(s); }
++    finally { if(process.argv.includes('--source-diagnostics')) s.preparation=await preparationSnapshot(s,started); }
++  }
+@@ -305 +317 @@ async function main() {
+-    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
++    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
+@@ -377 +389 @@ async function main() {
+-            const observation={path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
++            const observation={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
+diff --git a/scripts/navigation-http-diagnostics.cjs b/scripts/navigation-http-diagnostics.cjs
+new file mode 100644
+index 0000000..ac8fd91
+--- /dev/null
++++ b/scripts/navigation-http-diagnostics.cjs
+@@ -0,0 +1,19 @@
++// Diagnostic preload for the reserved disposable loopback server only.
++// Fixed categories, request-scoped trace IDs and durations; never URLs/args/headers/bodies.
++const http=require('node:http'),{randomUUID}=require('node:crypto');
++if(process.env.OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS==='1'){
++ const original=http.Server.prototype.emit;
++ http.Server.prototype.emit=function(event,...args){
++  if(event==='request'){
++   const [request,response]=args,address=this.address();
++   if(address&&typeof address==='object'&&address.port===3107&&['127.0.0.1','::ffff:127.0.0.1'].includes(address.address)){
++    const started=performance.now(),requestId=randomUUID();let finished=false;
++    const url=new URL(request.url,'http://127.0.0.1:3107'),kind=url.searchParams.get('kind');
++    const category=url.pathname==='/api/workspace'?['pipeline','pipelineList','notifications','taskNotifications','invitations','corkboard'].includes(kind)?kind:'workspace_other':url.pathname.startsWith('/_next/')?'static':url.pathname.startsWith('/logos/')?'logo':url.pathname==='/api/communications/stream'?'stream':url.pathname.startsWith('/club/')?'document':url.pathname.startsWith('/api/')?'api_other':'other';
++    const log=(stage)=>console.info(JSON.stringify({event:'navigation.http',requestId,category,stage,elapsedMs:+(performance.now()-started).toFixed(2),status:response.statusCode,traceId:response.getHeader('x-outclass-trace-id')||null}));
++    log('received');response.once('finish',()=>{finished=true;log('finish')});response.once('close',()=>{if(!finished)log('closed_before_finish')});
++   }
++  }
++  return Reflect.apply(original,this,[event,...args]);
++ };
++}
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index 56e49e2..6066421 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -19 +19 @@ async function main(){
+- db.$on('query',e=>{const table=e.query.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1]||null;queries.push({operation:e.query.trim().split(/\s+/)[0],table,durationMs:e.duration});});
++ db.$on('query',e=>{const table=e.query.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1]||null;queries.push({operation:e.query.trim().split(/\s+/)[0],table,durationMs:e.duration,...(process.argv.includes('--pipeline-study')?{detailColumnsInSelect:['anonymousReviewText','bio','linkedinUrl','resumeUrl','headshotUrl','scholarStatus','highSchool','pronouns'].filter(column=>e.query.split(/\bFROM\b/i)[0].includes('\"'+column+'\"'))}:{})});});
+@@ -47 +47 @@ async function main(){
+-  if(process.argv.includes('--pipeline-study')){assert.ok(output.startsWith(path.resolve('docs/performance/phase3')+path.sep));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+diff --git a/scripts/navigation-phase4-local.cjs b/scripts/navigation-phase4-local.cjs
+new file mode 100644
+index 0000000..2e69743
+--- /dev/null
++++ b/scripts/navigation-phase4-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase4-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase4-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','logo','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','logo','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase4-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase4-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase4-study.cjs b/scripts/navigation-phase4-study.cjs
+new file mode 100644
+index 0000000..ce82d2a
+--- /dev/null
++++ b/scripts/navigation-phase4-study.cjs
+@@ -0,0 +1,33 @@
++// Fixed, local-only comparison. Frozen builds and every planned outcome are retained.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn,spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
++const local=require('./navigation-phase4-local.cjs'),repo=local.repo,evidence=path.join(repo,'docs/performance/phase4');
++const hash=b=>createHash('sha256').update(b).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase4/comparison');assert.ok(out.startsWith(evidence+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);
++ const planBytes=fs.readFileSync(path.join(evidence,'PLAN.json')),plan=JSON.parse(planBytes);fs.writeFileSync(path.join(out,'PLAN.json'),planBytes);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(evidence,name.toUpperCase()+'_SOURCE.json')))]));
++ for(const name of ['baseline','candidate'])assert.equal(fs.readFileSync(path.join(local.privateRoot(),name,'BUILD_ID'),'utf8').trim(),manifests[name].buildId);
++ for(const [file,digest]of Object.entries(manifests.candidate.files))assert.equal(hash(fs.readFileSync(path.join(repo,file))),digest,file);
++ const protocol={startedAt:new Date().toISOString(),baseline:plan.baseline,planSha256:hash(planBytes),toolHashes:Object.fromEntries(['navigation-audit.cjs','navigation-http-diagnostics.cjs','navigation-phase4-local.cjs','navigation-phase4-study.cjs','navigation-loader-audit.cjs','pipeline-scale-fixture.cjs'].map(name=>[name,hash(fs.readFileSync(path.join(repo,'scripts',name)))])),buildIds:Object.fromEntries(Object.entries(manifests).map(([name,m])=>[name,m.buildId])),completed:[],failures:[],poolLimitPerClient:8,fixtureStrategy:'Independent cohort per size, identical within each cohort/build pair',complete:false};
++ let phase='starting';const system=[];let previous=require('node:os').cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});const monitor=setInterval(()=>{const os=require('node:os'),next=os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});system.push({at:new Date().toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total))).toFixed(2),load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});previous=next},1000);
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ async function fixture(size){
++  await local.stop();const current=path.join(local.root,'navigation-fixture.json'),marker=path.join(local.root,'phase3-enriched-count.json'),target=path.join(local.privateRoot(),'fixture-'+size+'.json');
++  if(!fs.existsSync(target)){
++   if(fs.existsSync(current)){const f=JSON.parse(fs.readFileSync(current)),existing=f.counts.applicantsInMeasuredClub||100;const saved=path.join(local.privateRoot(),'fixture-'+existing+'.json');if(!fs.existsSync(saved))fs.copyFileSync(current,saved);fs.rmSync(current);}
++   // Credential-file rebinding only. No database rows are removed or rewritten.
++   fs.rmSync(marker,{force:true});const seed=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--seed'],{cwd:repo,encoding:'utf8'});assert.equal(seed.status,0,'Reserved fixture signup failed');await require('./pipeline-scale-fixture.cjs').scaleFixture(size);fs.copyFileSync(current,target);
++  }
++  fs.copyFileSync(target,current);const f=JSON.parse(fs.readFileSync(current));assert.equal(f.counts.applicantsInMeasuredClub||100,size);const db=new(require('@prisma/client').PrismaClient)({datasourceUrl:local.config().status.DB_URL});try{assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size)}finally{await db.$disconnect()}
++ }
++ async function collect(directory,samples){
++  const fd=fs.openSync(path.join(local.root,'phase4-benchmark.log'),'a');const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+samples,'--out='+directory],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)});fs.closeSync(fd);const result={status};
++  const file=path.join(directory,'browser-samples.json');assert.ok(fs.existsSync(file),'Every block must emit all outcomes');const data=JSON.parse(fs.readFileSync(file));assert.equal(data.samples.length,samples*4,'No missing or replacement rows');assert.ok([0,1].includes(result.status));assert.equal(result.status,data.failures.length?1:0);protocol.completed.push({directory:path.relative(out,directory),planned:samples*4,observed:data.samples.length,failures:data.failures.length});save();
++ }
++ try{for(const size of plan.measurement.cohorts){phase='fixture-'+size;await fixture(size);for(const[pair,order]of plan.measurement.blocks.entries())for(const[position,letter]of[...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';phase=`${size}-${pair}-${letter}-start`;await local.start(variant);const stem=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${letter}`);phase=`${size}-${pair}-${letter}-warmup`;await collect(stem+'-warmup',1);phase=`${size}-${pair}-${letter}-measure`;await collect(stem+'-measure',5);console.log(`Completed ${size}, pair ${pair+1}, ${letter}; all planned outcomes retained.`);
++ }await local.stop();const fd=fs.openSync(path.join(local.root,'phase4-loaders.log'),'a'),probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-candidate-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(probe.status,0);const loaded=JSON.parse(fs.readFileSync(path.join(out,`size-${size}-candidate-loaders.json`))),list=loaded.results.find(r=>r.name==='pipelineList');assert.ok(list.samples.every(s=>s.queries.every(q=>q.detailColumnsInSelect.length===0)),'List SQL still reads omitted detail columns');}protocol.complete=true;protocol.completedAt=new Date().toISOString();save();
++ }catch(error){protocol.failures.push({name:error.name,message:error.message.split('\n')[0]});save();throw error}
++ finally{clearInterval(monitor);await local.stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(system,null,2)+'\n');protocol.applicationStopped=true;save();}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/summarize-navigation-phase4.cjs b/scripts/summarize-navigation-phase4.cjs
+new file mode 100644
+index 0000000..d0fbc62
+--- /dev/null
++++ b/scripts/summarize-navigation-phase4.cjs
+@@ -0,0 +1,76 @@
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { distribution } = require('./navigation-audit.cjs');
++const { enrich } = require('./summarize-pipeline-navigation.cjs');
++const { summarizeGroup } = require('./summarize-pipeline-stress.cjs');
++
++function sourceMetrics(row) {
++  const source = row.preparation;
++  assert.ok(source, 'Source observations are required for every outcome');
++  const requests = source.requests.filter(r => r.type !== 'eventsource');
++  const scripts = requests.filter(r => r.type === 'script');
++  const completeBytes = requests.every(r => Number.isFinite(r.encodedBodyBytes));
++  return {
++    meaningfulMs: source.meaningfulMs,
++    elapsedIncludingDrainMs: source.elapsedMs,
++    documentTtfbMs: source.dom?.document?.ttfbMs ?? null,
++    requestCount: source.requests.length,
++    nonSsePending: requests.filter(r => r.pending).length,
++    logoRequestCount: requests.filter(r => r.route.startsWith('/logos/')).length,
++    httpErrors: requests.filter(r => r.status >= 400).length,
++    encodedBodyBytes: completeBytes ? requests.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++    scriptBytes: scripts.every(r => Number.isFinite(r.encodedBodyBytes)) ? scripts.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++  };
++}
++function describe(rows) {
++  const result = summarizeGroup(rows);
++  const successful = rows.filter(r => !r.failed);
++  assert.ok(successful.map(enrich).every(r => r.readCount === 1), 'Each successful selected list/detail navigation requires exactly one fresh read');
++  const source = rows.map(sourceMetrics);
++  const sourceMetricsNames = Object.keys(source[0]);
++  const transfer = successful.map(r => r.requests.find(q => /^\/api\/workspace\?kind=pipeline(?:List)?$/.test(q.route))?.transferMs);
++  return {
++    ...result,
++    readTransferMs: distribution(transfer),
++    timedHttpErrors: successful.flatMap(r => r.requests).filter(r => r.status >= 400).length,
++    pendingSourceObservations: source.filter(r => r.nonSsePending > 0).length,
++    source: {
++      planned: rows.length,
++      successful: source.filter(r => Number.isFinite(r.meaningfulMs)).length,
++      latencyInterpretation: source.every(r => Number.isFinite(r.meaningfulMs)) ? 'All planned source preparations; visible DOM content predicate, before background drain.' : 'Successful source preparations only; full-cohort source p95 is not established.',
++      ...Object.fromEntries(sourceMetricsNames.map(name => [name, distribution(source.map(r => r[name]))])),
++    },
++  };
++}
++function summarize(root) {
++  const protocol = JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));
++  assert.equal(protocol.complete, true);
++  assert.equal(protocol.failures.length, 0, 'Fatal collection failures must be reported separately');
++  assert.equal(protocol.completed.length, 24);
++  const entries = protocol.completed.map(block => {
++    const m = /^size-(100|1000|5000)-pair-([12])-([12])-([AB])-(measure|warmup)$/.exec(block.directory);
++    assert.ok(m, 'Unexpected block');
++    const data = JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));
++    assert.equal(data.samples.length, block.planned);
++    assert.equal(data.samples.filter(r=>r.failed).length, block.failures);
++    return {size:Number(m[1]),pair:Number(m[2]),variant:m[4],phase:m[5],samples:data.samples};
++  });
++  const measured = entries.filter(e=>e.phase==='measure');
++  const warmups = entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples);
++  const groups = [];
++  for (const size of [100,1000,5000]) for (const route of ['recruiting → applicants','applicants → applicantDetail']) for (const condition of ['cold','warm']) {
++    const group = {size,path:route,condition};
++    for (const variant of ['B','A']) group[variant]=describe(measured.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));
++    group.pairedMedians = [1,2].map(pair=>Object.fromEntries(['B','A'].map(variant=>[variant,distribution(measured.find(e=>e.size===size&&e.pair===pair&&e.variant===variant).samples.filter(r=>r.path===route&&r.condition===condition&&!r.failed).map(r=>r.meaningfulMs))])));
++    groups.push(group);
++  }
++  const all = measured.flatMap(e=>e.samples);
++  return {
++    protocol: {baseline:protocol.baseline,buildIds:protocol.buildIds,planned:all.length+warmups.length,measured:all.length,warmups:warmups.length,failedMeasured:all.filter(r=>r.failed).length,failedWarmups:warmups.filter(r=>r.failed).length,pageErrors:all.reduce((n,r)=>n+(r.pageErrorCount||0),0),timedSuccessfulHttpErrors:all.filter(r=>!r.failed).flatMap(r=>r.requests).filter(r=>r.status>=400).length,sourceHttpErrorsByVariant:Object.fromEntries(['B','A'].map(variant=>[variant,measured.filter(e=>e.variant===variant).flatMap(e=>e.samples).reduce((n,r)=>n+sourceMetrics(r).httpErrors,0)])),percentiles:'Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate.'},
++    groups,
++    failures: measured.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({size:e.size,variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,preparation:r.preparation,error:r.error}))),
++  };
++}
++module.exports = {sourceMetrics,describe,summarize};
++if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase4/comparison'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,failures:[g.B.failed,g.A.failed]})),null,2));}
+diff --git a/tests/club-logo-source.test.cjs b/tests/club-logo-source.test.cjs
+new file mode 100644
+index 0000000..b4c80ef
+--- /dev/null
++++ b/tests/club-logo-source.test.cjs
+@@ -0,0 +1,11 @@
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
++const {load}=require('./helpers/voting-harness.cjs'),{clubLogoSource}=load('lib/club-assets.ts');
++test('missing club artwork has no guessed URL; each inferred legacy source exists',()=>{
++ assert.equal(clubLogoSource(null,'12345678-1234-1234-1234-123456789abc','CC'),'');assert.equal(clubLogoSource('  ',undefined,'Unknown'),'');for(const key of ['__proto__','constructor','toString'])assert.equal(clubLogoSource(null,key,'CC'),'');
++ for(const id of ['vvf','mii','180-degrees','180-degrees-globe','enactus','enactus-wordmark'])assert.ok(fs.existsSync('public'+clubLogoSource(null,id,'CC')));
++ assert.equal(clubLogoSource(null,undefined,'VVF'),'/logos/vvf.webp');assert.equal(clubLogoSource('/explicit/logo.png','vvf','VVF'),'/explicit/logo.png');
++ const reference='club-assets/12345678-1234-1234-1234-123456789abc/12345678-1234-1234-1234-123456789abd.png';assert.equal(clubLogoSource(reference,'vvf','VVF',true),'/api/club-assets?reference='+encodeURIComponent(reference)+'&preview=1');
++});
++test('a club without artwork renders the existing accessible monogram without an image',()=>{
++ const {ClubLogo}=require('./helpers/component-module.cjs').loadComponent('components/club-logo.tsx');const html=renderToStaticMarkup(React.createElement(ClubLogo,{clubId:'unknown-club',text:'CC',color:'#123456',alt:'Campus Club',size:'lg'}));assert.doesNotMatch(html,/<img|\/logos\//);assert.match(html,/role="img"/);assert.match(html,/aria-label="Campus Club"/);assert.match(html,/size-16/);assert.match(html,/>CC</);
++});
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index 70fbbf8..d2edbe5 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -34 +34 @@ function fixture() {
+-      findMany: async ({ where, include }) => { state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
++      findMany: async ({ where, include, omit }) => { state.pipelineOmit=omit; state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+@@ -157 +157 @@ test('list query omits detail relations while canonical detail still includes th
+- const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.equal(f.state.pipelineQuery.student.include.studentProfile,true);
++ const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.deepEqual(f.state.pipelineOmit,{anonymousReviewText:true});assert.deepEqual(f.state.pipelineQuery.student.include.studentProfile.omit,{bio:true,linkedinUrl:true,resumeUrl:true,headshotUrl:true,scholarStatus:true,highSchool:true,pronouns:true});
+diff --git a/tests/logo-background-browser.test.cjs b/tests/logo-background-browser.test.cjs
+index 8e5c0dd..0d1072b 100644
+--- a/tests/logo-background-browser.test.cjs
++++ b/tests/logo-background-browser.test.cjs
+@@ -16 +16,2 @@ const modes=[['white-png','/logos/white.png',{}],['white-svg','/logos/white.svg'
+-createRoot(document.getElementById('root')).render(<main><h1>Club logo settings</h1><ClubProfileEditor initial={initial} onSave={async value=>{await fetch('/profile',{method:'POST',body:JSON.stringify(value)})}}/><section aria-label="Shared logo presentation">{modes.map(([id,logoUrl,marketing])=><div key={id} data-logo-case={id}><h2>{id}</h2><ClubLogo logoUrl={logoUrl} marketing={marketing} text="CC" color="#315B51" alt={id} size="lg"/></div>)}<div data-logo-case="directory"><DirectoryLogo club={{id:'club',source:'database',logoUrl:'/logos/white.png',marketing:initial.marketing,color:initial.color,logoText:'CC'}}/></div><div data-logo-case="profile"><MarketingProfile compact profile={initial}/></div></section></main>);`
++function Replacement(){const [source,setSource]=React.useState(null);return <div data-logo-case="replacement"><ClubLogo clubId="12345678-1234-1234-1234-123456789abc" logoUrl={source} text="CC" color="#315B51" alt="Replacement club"/><button onClick={()=>setSource('/logos/missing.png')}>Break replacement</button><button onClick={()=>setSource('/logos/dark.png')}>Load replacement</button></div>}
++createRoot(document.getElementById('root')).render(<main><Replacement/><h1>Club logo settings</h1><ClubProfileEditor initial={initial} onSave={async value=>{await fetch('/profile',{method:'POST',body:JSON.stringify(value)})}}/><section aria-label="Shared logo presentation">{modes.map(([id,logoUrl,marketing])=><div key={id} data-logo-case={id}><h2>{id}</h2><ClubLogo logoUrl={logoUrl} marketing={marketing} text="CC" color="#315B51" alt={id} size="lg"/></div>)}<div data-logo-case="directory"><DirectoryLogo club={{id:'club',source:'database',logoUrl:'/logos/white.png',marketing:initial.marketing,color:initial.color,logoText:'CC'}}/></div><div data-logo-case="profile"><MarketingProfile compact profile={initial}/></div></section></main>);`
+@@ -36 +37 @@ createRoot(document.getElementById('root')).render(<main><h1>Club logo settings<
+-    page.on('pageerror',e=>errors.push(e.message));const url=`http://127.0.0.1:${server.address().port}`
++    const requests=[];page.on('request',r=>requests.push(new URL(r.url()).pathname));page.on('pageerror',e=>errors.push(e.message));const url=`http://127.0.0.1:${server.address().port}`
+@@ -37,0 +39,3 @@ createRoot(document.getElementById('root')).render(<main><h1>Club logo settings<
++    assert.equal(await page.locator('[data-logo-case="replacement"] img').count(),0);assert.ok(!requests.some(path=>path.includes('12345678-1234-1234-1234-123456789abc')));
++    await page.getByRole('button',{name:'Break replacement',exact:true}).click();await page.getByRole('img',{name:'Replacement club',exact:true}).waitFor();await expect(page.locator('[data-logo-case="replacement"] img')).toHaveCount(0);
++    await page.getByRole('button',{name:'Load replacement',exact:true}).click();await expect(page.locator('[data-logo-case="replacement"] img')).toHaveCSS('opacity','1');
+diff --git a/tests/navigation-phase4-analysis.test.cjs b/tests/navigation-phase4-analysis.test.cjs
+new file mode 100644
+index 0000000..a026097
+--- /dev/null
++++ b/tests/navigation-phase4-analysis.test.cjs
+@@ -0,0 +1,12 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {sourceMetrics,describe}=require('../scripts/summarize-navigation-phase4.cjs');
++const preparation=()=>({meaningfulMs:20,elapsedMs:30,dom:{document:{ttfbMs:5}},requests:[]});
++const success=()=>({meaningfulMs:10,pageErrorCount:0,preparation:preparation(),requests:[{route:'/api/workspace?kind=pipelineList',status:200,encodedBodyBytes:100,serverTiming:'identity;dur=2, database;dur=3, total;dur=8'}]});
++test('phase 4 source bytes stay unknown for incomplete resources and SSE is accounted separately',()=>{
++ const row={preparation:preparation()};row.preparation.requests=[{type:'script',route:'/script.js',pending:true,encodedBodyBytes:null},{type:'eventsource',route:'/api/communications/stream',pending:true,encodedBodyBytes:null}];let result=sourceMetrics(row);assert.equal(result.encodedBodyBytes,null);assert.equal(result.scriptBytes,null);assert.equal(result.nonSsePending,1);assert.equal(result.requestCount,2);
++ row.preparation.requests[0]={type:'script',route:'/script.js',pending:false,encodedBodyBytes:200};result=sourceMetrics(row);assert.equal(result.encodedBodyBytes,200);assert.equal(result.scriptBytes,200);assert.equal(result.nonSsePending,0);
++});
++test('phase 4 keeps all failures and distinguishes preparation failure from timed readiness failure',()=>{
++ const rows=Array.from({length:9},success),failed={failed:true,stage:'source',preparation:{...preparation(),meaningfulMs:null},requests:[]};let result=describe([...rows,failed]);assert.equal(result.planned,10);assert.equal(result.successful,9);assert.equal(result.source.successful,9);assert.match(result.source.latencyInterpretation,/not established/);
++ result=describe([...rows,{...failed,stage:'measured',preparation:preparation()}]);assert.equal(result.successful,9);assert.equal(result.source.successful,10);assert.equal(result.preparationFailures,0);assert.equal(result.measuredFailures,1);assert.equal(result.meaningfulMs.samples,9);assert.throws(()=>describe(rows));
++});

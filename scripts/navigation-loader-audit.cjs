@@ -16,7 +16,7 @@ async function main(){
  const jar={getAll:()=>[...actor.cookies].map(([name,value])=>({name,value})),get:name=>actor.cookies.has(name)?{value:actor.cookies.get(name)}:undefined,has:name=>actor.cookies.has(name),set:(name,value)=>actor.cookies.set(name,value)};
  let queries=[],auth=[];
  const db=new PrismaClient({datasourceUrl:config.status.DB_URL,log:[{emit:'event',level:'query'}]});
- db.$on('query',e=>{const table=e.query.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1]||null;queries.push({operation:e.query.trim().split(/\s+/)[0],table,durationMs:e.duration});});
+ db.$on('query',e=>{const table=e.query.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1]||null;queries.push({operation:e.query.trim().split(/\s+/)[0],table,durationMs:e.duration,...(process.argv.includes('--pipeline-study')?{detailColumnsInSelect:['anonymousReviewText','bio','linkedinUrl','resumeUrl','headshotUrl','scholarStatus','highSchool','pronouns'].filter(column=>e.query.split(/\bFROM\b/i)[0].includes('\"'+column+'\"'))}:{})});});
  const originalFetch=global.fetch;
  global.fetch=async(input,init)=>{const u=new URL(typeof input==='string'?input:input.url||String(input));assert.equal(u.origin,config.status.API_URL,'Loader audit must never contact an external service');const start=performance.now();const response=await originalFetch(input,init);if(u.pathname.startsWith('/auth/'))auth.push({path:u.pathname,durationMs:performance.now()-start,status:response.status});return response;};
  const cache={};
@@ -44,7 +44,7 @@ async function main(){
    }catch(e){results.push({name,file,fn,unavailable:e.name+': '+String(e.message).split('\n').filter(Boolean).at(-1)});console.log(name+': unavailable');}
   }
   const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
-  if(process.argv.includes('--pipeline-study')){assert.ok(output.startsWith(path.resolve('docs/performance/phase3')+path.sep));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
   fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
  }finally{global.fetch=originalFetch;await db.$disconnect();}
 }

@@ -1,0 +1,5890 @@
+{
+  "generatedAt": "2026-10-24T15:38:23.254Z",
+  "environment": "original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher",
+  "limitations": [
+    "Not Next HTTP latency or production timing.",
+    "Provider durations measure headers, not body consumption.",
+    "Prisma event duration is engine-reported integer milliseconds, not application phase attribution.",
+    "No support-session/demo behavior profiled."
+  ],
+  "results": [
+    {
+      "name": "pipeline",
+      "file": "actions/crm.ts",
+      "fn": "getClubPipeline",
+      "samples": [
+        {
+          "elapsedMs": 932.273666,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 49.806583000000046,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 29
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 7
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 31
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 22
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 93
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 13
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 717.3904999999995,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 47.54433300000028,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 72
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 2
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 690.8632500000003,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 32.953582999999526,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 48
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 61
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 720.5757910000002,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 49.20720900000015,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 80
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 25
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 64
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 3
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 768.2110419999999,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 64.32279199999994,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 71
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 704.5134159999998,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 48.90270799999962,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 20
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 70
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 662.8878750000003,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 65.46633399999973,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 63
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 742.924959,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 66.05729099999917,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 27
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 2
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 28
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 67
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 642.7011669999993,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 37.04149999999936,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 22
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 72
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 710.5132080000003,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 46.822291999998924,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 21
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 25
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 66
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 659.1072089999998,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 44.54650000000038,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 7
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 21
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 65
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 625.5172920000005,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 24.247792000000118,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 65
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 673.596583999999,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 39.27762499999881,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 9
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 63
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 3
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 598.1398750000008,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 26.23662499999955,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 62
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 632.6682500000006,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 37.56262500000048,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 62
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 636.1899580000008,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 45.62854100000004,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 62
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 630.3037499999991,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 39.57900000000154,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 60
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 621.4109580000004,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 40.93387499999881,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 64
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 614.2092919999996,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 42.42733399999997,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 19
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 61
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 2
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        },
+        {
+          "elapsedMs": 722.2232919999988,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 38.778667000002315,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 25
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 73
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 3
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 1
+            }
+          ],
+          "jsonBytes": 42365616
+        }
+      ],
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 662.89,
+        "p95": 768.21,
+        "max": 932.27
+      },
+      "queryCount": {
+        "samples": 20,
+        "p50": 18,
+        "p95": 18,
+        "max": 19
+      },
+      "authVerificationCount": {
+        "samples": 20,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "jsonBytes": {
+        "samples": 20,
+        "p50": 42365616,
+        "p95": 42365616,
+        "max": 42365616
+      }
+    },
+    {
+      "name": "pipelineList",
+      "file": "actions/crm.ts",
+      "fn": "getClubPipelineList",
+      "samples": [
+        {
+          "elapsedMs": 321.37754100000166,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 33.74158300000272,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 384.73649999999907,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 30.51495900000009,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 14
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 6
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 80
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 297.68566700000156,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 24.90454200000022,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 291.41912500000035,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 23.64020800000071,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 293.67545900000187,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 27.602834000001167,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 287.83545799999774,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 26.13875000000189,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 287.5215829999979,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 26.511874999996508,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 299.22470800000156,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 27.590791999999055,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 271.6962500000009,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 17.35204199999862,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 14
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 14
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 297.6011660000004,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 24.29762500000288,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 24
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 293.020833999999,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 23.43066700000054,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 18
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 307.52129200000127,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 25.06079200000022,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 2
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 314.1154170000009,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 23.607540999997582,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 22
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 23
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 286.05795800000124,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 19.69279099999767,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 14
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 288.29925000000003,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 24.080375000001368,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 291.25424999999814,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 25.534708999999566,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 280.8573749999996,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 22.691832999997132,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 280.474041999998,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 20.62679200000275,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 14
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 293.76287500000035,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 24.12300000000323,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 3
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 15
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 5
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        },
+        {
+          "elapsedMs": 287.1994169999998,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 23.79412500000035,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 17
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 16
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 1
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 4
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 22
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 3003626
+        }
+      ],
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 291.42,
+        "p95": 321.38,
+        "max": 384.74
+      },
+      "queryCount": {
+        "samples": 20,
+        "p50": 14,
+        "p95": 14,
+        "max": 14
+      },
+      "authVerificationCount": {
+        "samples": 20,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "jsonBytes": {
+        "samples": 20,
+        "p50": 3003626,
+        "p95": 3003626,
+        "max": 3003626
+      }
+    },
+    {
+      "name": "pipelineDetail",
+      "file": "actions/crm.ts",
+      "fn": "getClubPipeline",
+      "samples": [
+        {
+          "elapsedMs": 20.662083999999595,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 15.110458999999537,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.372333999999682,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.535832999998092,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.992041999998037,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.011500000000524,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.05462500000067,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.70954200000051,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.1070409999993,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 13.539499999998952,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.74333299999853,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.251625000000786,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.802416999998968,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.128540999998222,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.067917000000307,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.601209000000381,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.387917000000016,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.55841700000019,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.67437499999869,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.637791000001016,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.889250000000175,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 15.111707999996725,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 21.344833999999537,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 15.652666999998473,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.788165999998455,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.058833999999479,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.804167000002053,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 15.320083999999042,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.829249999998865,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 13.771542000002228,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.969708000000537,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.49841600000218,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.91125000000102,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.286583000000974,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 19.712749999998778,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.024833999999828,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 21.519916999997804,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 15.153833000000304,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        },
+        {
+          "elapsedMs": 20.73279200000252,
+          "auth": [
+            {
+              "path": "/auth/v1/user",
+              "durationMs": 14.096917000002577,
+              "status": 200
+            }
+          ],
+          "queries": [
+            {
+              "operation": "SELECT",
+              "table": "auth",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubMember",
+              "durationMs": 0
+            },
+            {
+              "operation": "BEGIN",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SET",
+              "table": null,
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Application",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ClubInvitation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "PipelineRound",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Evaluation",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewPanelAssignment",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "User",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "StudentProfile",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "Experience",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationAnswer",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "ApplicationQuestion",
+              "durationMs": 0
+            },
+            {
+              "operation": "SELECT",
+              "table": "InterviewBooking",
+              "durationMs": 0
+            },
+            {
+              "operation": "COMMIT",
+              "table": null,
+              "durationMs": 0
+            }
+          ],
+          "jsonBytes": 8957
+        }
+      ],
+      "elapsedMs": {
+        "samples": 20,
+        "p50": 20.05,
+        "p95": 21.34,
+        "max": 21.52
+      },
+      "queryCount": {
+        "samples": 20,
+        "p50": 18,
+        "p95": 18,
+        "max": 18
+      },
+      "authVerificationCount": {
+        "samples": 20,
+        "p50": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "jsonBytes": {
+        "samples": 20,
+        "p50": 8957,
+        "p95": 8957,
+        "max": 8957
+      }
+    }
+  ]
+}

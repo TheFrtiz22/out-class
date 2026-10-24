@@ -1,0 +1,37 @@
+{
+  "baseline": "ca6899c80689e14bea6ecf8f969b21afdc4fb939",
+  "scope": "Remove guessed club-logo requests and omit list-only scalar overfetch while preserving the compact DTO, canonical privacy projection, and fresh detail authorization. Diagnose source readiness separately; do not claim a fix for unreproduced failures.",
+  "stageOrder": [
+    "instrument sanitized source/document/request diagnostics",
+    "baseline 100/5000 diagnostic observations and original-loader probes",
+    "logo-only build and 5000 diagnostic observations",
+    "narrow list scalar reads and harden legacy logo-key lookup",
+    "freeze final candidate; full ordinary/Auth/concurrency/browser validation",
+    "final BA/AB cold/warm comparison at 100/1000/5000 including every failure",
+    "scoped cleanup and evidence report"
+  ],
+  "constraints": "No production configuration, schema/index, deployment, merge, authorization cache or synthetic loading delay. Use reserved disposable local stack.",
+  "measurement": {
+    "blocks": [
+      "BA",
+      "AB"
+    ],
+    "samplesPerConditionPathBlock": 5,
+    "warmupsPerConditionPathBlock": 1,
+    "plannedPaths": [
+      "recruiting \u2192 applicants",
+      "applicants \u2192 applicantDetail"
+    ],
+    "failurePolicy": "Retain every preparation and measured outcome, do not replace failures. New input diagnostics are non-sensitive state/counts/phase/timing only.",
+    "cohorts": [
+      100,
+      1000,
+      5000
+    ],
+    "fixture": "Three separate synthetic navigation actors and clubs in the same reserved stack. Every build in a cohort uses exactly the same rows; no fixture shrink or guard bypass. Each applicant has the Phase 3 rich profile/essay/review fixture.",
+    "finalProtocol": "Two matched BA/AB blocks, five measured observations and one fixed warmup per path/condition/build/block. Record all failures including preparation. No tests/builds during collection.",
+    "initialPageMetric": "Time from starting document navigation to existing visible useful-content predicate, recorded before request drain. It is a DOM readiness proxy. Preparation elapsed time includes background drain and must not be called initial-content time.",
+    "intermediate": "The logo-only 5000 stage is descriptive, separate from the final paired baseline/candidate study. Its initial legacy-key lookup was hardened before the final candidate; the fixture UUID fallback behavior is identical."
+  },
+  "paginationDecision": "Server cursor pagination remains a separate next-phase contract: current whole-selection quick review, voting pools, per-reviewer score visibility and anonymous ordering must remain complete. This phase narrows SQL width without changing those selection semantics; it does not bound row count."
+}

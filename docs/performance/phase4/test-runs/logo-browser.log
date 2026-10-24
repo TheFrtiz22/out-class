@@ -1,0 +1,11 @@
+✔ missing club artwork has no guessed URL; each inferred legacy source exists (0.729083ms)
+✔ a club without artwork renders the existing accessible monogram without an image (19.477042ms)
+✔ club logos: PNG/SVG/JPEG analysis, shared presentation, manual publication and reload, legacy and broken images (2194.98325ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2523.368459

@@ -31,7 +31,7 @@ function fixture() {
     user: { findUnique: async()=>({disabledAt:state.disabled?new Date():null}) },
     pipelineRound: { findMany: async () => [app.round] },
     application: {
-      findMany: async ({ where, include }) => { state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
+      findMany: async ({ where, include, omit }) => { state.pipelineOmit=omit; state.pipelineQuery=include; if(state.pipelineError)throw state.pipelineError; return (state.pipelineReads++, matches(where)) && (!where.round || app.round.anonymousReview) ? [app] : []; },
       findFirst: async ({ where, select }) => { if(select)state.narrowReads++; return matches(where) ? app : null; }
     },
     clubMember: { findFirst: async () => membership(), findUnique: async({where})=>state.clubAccess && where.userId_clubId.clubId===clubId ? membership():null },
@@ -154,6 +154,6 @@ for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader}
 });
 
 test('list query omits detail relations while canonical detail still includes them',async()=>{
- const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.equal(f.state.pipelineQuery.student.include.studentProfile,true);
+ const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.deepEqual(f.state.pipelineOmit,{anonymousReviewText:true});assert.deepEqual(f.state.pipelineQuery.student.include.studentProfile.omit,{bio:true,linkedinUrl:true,resumeUrl:true,headshotUrl:true,scholarStatus:true,highSchool:true,pronouns:true});
  await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
 });

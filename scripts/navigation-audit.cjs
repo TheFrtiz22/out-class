@@ -191,7 +191,19 @@ async function main() {
     while(s.pending.size && Date.now()<end)await s.page.waitForTimeout(30);
     await s.page.waitForTimeout(80);
   }
-  async function open(s,id) {await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);await settle(s);}
+  async function preparationSnapshot(s, started) {
+    const dom = await s.page.evaluate(() => {
+      const text = document.body?.textContent || "";
+      const nav = performance.getEntriesByType("navigation")[0];
+      return { readyState: document.readyState, opening: text.includes("Opening club workspace…"), selectedLoading: text.includes("Loading workspace…"), pipeline: !!document.querySelector(".oc-live-pipeline"), accessUnavailable: text.includes("Club workspace unavailable"), alerts: document.querySelectorAll('[role="alert"]').length, document: nav ? {ttfbMs:nav.responseStart, domContentLoadedMs:nav.domContentLoadedEventEnd} : null };
+    }).catch(() => null);
+    return { elapsedMs: Date.now()-started, meaningfulMs:s.sourceReadyMs??null, dom, requests: s.requests.map(r => ({route:r.route,type:r.type,method:r.method,status:r.status,failed:!!r.failed,pending:r.end===null,startMs:r.start-started,endMs:r.end===null?null:r.end-started,traceId:r.traceId||null,serverTiming:r.serverTiming||null,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null})) };
+  }
+  async function open(s,id) {
+    const started=Date.now();
+    try { await s.page.goto(config.appUrl+descriptors[id].href,{waitUntil:'domcontentloaded'});await waitReady(s.page,descriptors[id]);s.sourceReadyMs=Date.now()-started;await settle(s); }
+    finally { if(process.argv.includes('--source-diagnostics')) s.preparation=await preparationSnapshot(s,started); }
+  }
   if(process.argv.includes('--initial')){
     const samples=[];
     try{
@@ -302,7 +314,7 @@ async function main() {
       }
       return {route:r.route,type:r.type,method:r.method,status:r.status,serverTiming:r.serverTiming||null,traceId:r.traceId||null,startMs:r.start-clickWall,endMs:r.end===null?null:r.end-clickWall,encodedBodyBytes,failed:r.failed||false,failureReason:r.failureReason||null,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart-r.timing.requestStart:null,transferMs:r.timing?.responseEnd>=0?r.timing.responseEnd-r.timing.responseStart:null,...(process.argv.includes('--phase3')?{bodyBytesSource}:{})};
     });
-    const row={path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
+    const row={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index,clickToUrlMs:marks.url?marks.url-marks.click:null,meaningfulMs:marks.ready-marks.click,interactiveMs:marks.interactive?marks.interactive-marks.click:null,networkCompleteMs:Math.max(0,...rows.filter(r=>r.type!=='eventsource').map(r=>r.endMs||0)),requestCount:rows.length,encodedBodyBytes:rows.reduce((n,r)=>n+(r.encodedBodyBytes||0),0),scriptMs:(afterMetrics.ScriptDuration-beforeMetrics.ScriptDuration)*1000,taskMs:(afterMetrics.TaskDuration-beforeMetrics.TaskDuration)*1000,layoutMs:(afterMetrics.LayoutDuration-beforeMetrics.LayoutDuration)*1000,longTasks:marks.longTasks,reactCommitCount:marks.commits,reactRenderDurationMs:null,requests:rows};
     if(process.argv.includes('--diagnose-hydration')){const diagnostic=await page.evaluate(()=>({hydration:window.__navAudit.hydration,dom:window.__navAudit.domMismatches}));row.hydration=diagnostic.hydration;row.hydrationDom=diagnostic.dom;}
     if(active){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.participant=s.participant;row.wave=index;row.renderedRooms=await page.locator('section[aria-label="Interview rooms"] li').count();row.openInterviewLinks=await page.locator('section[aria-label="Interview rooms"]').getByRole('link',{name:'Open interview',exact:true}).count();}
     if(process.argv.includes('--phase2')){row.pageErrorCount=s.pageErrors.length;row.pageErrorKinds=[...s.pageErrors];row.inputMethod=process.argv.includes('--phase3')&&to==='applicantDetail'?'pointer':'keyboard';row.initialScriptBytes=s.requests.slice(0,startIndex).filter(r=>r.type==='script').reduce((n,r)=>n+(r.bytes||0),0);}
@@ -374,7 +386,7 @@ async function main() {
             let diagnostic=null;
             try { diagnostic=await Promise.race([s.page.evaluate(()=>({tool:new URLSearchParams(location.search).get('tool'),pipeline:!!document.querySelector('.oc-live-pipeline'),sheet:!!document.querySelector('[data-slot="sheet-content"]'),alerts:document.querySelectorAll('[role="alert"]').length,click:window.__navAudit.click,origin:performance.timeOrigin,now:performance.now()})),new Promise(resolve=>setTimeout(()=>resolve(null),2000))]); } catch {}
             const requests=s.requests.slice(attemptStage==='measured'?(s.sampleStartIndex??0):0).map(r=>({route:r.route,type:r.type,method:r.method,status:r.status,failed:r.failed||false,failureReason:r.failureReason||null,encodedBodyBytes:r.bytes}));
-            const observation={path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
+            const observation={...(s.preparation?{preparation:s.preparation}:{}),path:from+' → '+to,condition,index:i,failed:true,stage:attemptStage,error:message,diagnostic:diagnostic?{tool:diagnostic.tool,pipeline:diagnostic.pipeline,sheet:diagnostic.sheet,alerts:diagnostic.alerts}:null,clickToContentLowerBoundMs:attemptStage==='measured'&&diagnostic?.click?diagnostic.now-diagnostic.click:null,meaningfulMs:null,interactiveMs:null,pageErrorCount:s.pageErrors.length,pageErrorKinds:[...s.pageErrors],requests};
             failures.push({path:observation.path,condition,index:i,stage:attemptStage,error:message});allSamples.push(observation);
             console.log('RECORDED FAILURE '+observation.path+' '+condition+' '+(i+1)+'/'+sampleCount+' '+attemptStage);
           } finally {if(!shared)await s.context.close();}

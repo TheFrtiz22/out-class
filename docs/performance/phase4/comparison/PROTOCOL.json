@@ -1,0 +1,167 @@
+{
+  "baseline": "ca6899c80689e14bea6ecf8f969b21afdc4fb939",
+  "planSha256": "c598bc2fb2cf69d7635bc72963d80f82b4e777f02b9d5f5f0e7aeb77866cf025",
+  "toolHashes": {
+    "navigation-audit.cjs": "a0f920e630d631effeffaea31ba84d015da00c1b4670446d11d9483339698696",
+    "navigation-http-diagnostics.cjs": "6a6186fa6bc33334119fafbe00a29cc8b18b814df177a9be1ab02a1948cd5ba8",
+    "navigation-phase4-local.cjs": "566c4929e71e78f89ee1314d5e56cd795f225ba9ac4aa58dbe14d3bd6417c261",
+    "navigation-phase4-study.cjs": "7e8c270ea2e7d6d18ae28703116256648c022459680ac054ef1e4fdb4cc0886b",
+    "navigation-loader-audit.cjs": "1b3e14db9d0dd3706af1259c68f7cea68aa07fd37cc8d1d6d911d72d76aa2f50",
+    "pipeline-scale-fixture.cjs": "a760ff7c0937e01ab1d05ed59c45bff8768af4312f87acd21755a3525b685237"
+  },
+  "buildIds": {
+    "baseline": "Yw7wq85L6rD1hngirqnqg",
+    "candidate": "WWr8d2B70LK55qBEJMcj6"
+  },
+  "completed": [
+    {
+      "directory": "size-100-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 1
+    },
+    {
+      "directory": "size-100-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-100-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 1
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-1000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-1-1-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-1-2-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-2-1-A-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-warmup",
+      "planned": 4,
+      "observed": 4,
+      "failures": 0
+    },
+    {
+      "directory": "size-5000-pair-2-2-B-measure",
+      "planned": 20,
+      "observed": 20,
+      "failures": 0
+    }
+  ],
+  "failures": [],
+  "poolLimitPerClient": 8,
+  "fixtureStrategy": "Independent cohort per size, identical within each cohort/build pair",
+  "complete": true,
+  "applicationStopped": true
+}

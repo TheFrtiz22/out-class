@@ -1,0 +1,6 @@
+{
+  "acceptedForPerformanceClaims": false,
+  "wholeCollectionExcluded": true,
+  "plannedOutcomesRetained": 288,
+  "reason": "Verified host Sleep/Maintenance/DarkWake intervals interrupt this collection. No individual row is removed or replaced. comparison-awake repeats both identical frozen builds and all unchanged cohort fixtures under a verified no-Sleep control."
+}

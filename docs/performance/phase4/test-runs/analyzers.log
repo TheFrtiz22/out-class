@@ -1,0 +1,10 @@
+✔ phase 4 source bytes stay unknown for incomplete resources and SSE is accounted separately (0.317417ms)
+✔ phase 4 keeps all failures and distinguishes preparation failure from timed readiness failure (0.811667ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 193.853583

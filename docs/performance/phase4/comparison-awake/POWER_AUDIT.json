@@ -1,0 +1,9 @@
+{
+  "startedAt": "2026-10-24T18:53:06.584Z",
+  "completedAt": "2026-10-24T18:58:49.874Z",
+  "control": "Temporary caffeinate -imsu assertion scoped to this comparison; no persistent power configuration changed.",
+  "source": "Read-only macOS power-management log; only timestamp/event categories retained.",
+  "events": [],
+  "noSleepEvents": true,
+  "accepted": true
+}
