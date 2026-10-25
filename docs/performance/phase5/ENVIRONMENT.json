@@ -1,0 +1,18 @@
+{
+  "os": "Darwin",
+  "arch": "arm64",
+  "node": "v26.9.0",
+  "memoryGiB": 16,
+  "cpu": "Apple M5",
+  "cpuCount": 10,
+  "versions": {
+    "next": "15.5.27",
+    "react": "19.2.0",
+    "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.116.0",
+    "playwright": "1.64.0"
+  },
+  "fixture": "Reserved app3107/API55321/DB55322; independent synthetic cohorts; per-client database pool limit8; browser read queue limit3; page filters serialize one active read and coalesce pending edits.",
+  "powerControl": "Temporary process-scoped caffeinate; read-only power log acceptance audit. No persistent power changes.",
+  "productionTouched": false
+}

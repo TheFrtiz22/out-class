@@ -19,12 +19,30 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import "./voting-mode.css"
 type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
+type VotingApplicant = Pick<Pipeline["applications"][number], "id" | "roundId" | "status">
 type Workspace = Awaited<ReturnType<typeof getVotingWorkspace>>
 const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", UNRESOLVED: "Unresolved" }
-export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
+export function BoardDecisionMode(props: { applicants: VotingApplicant[]; loadApplicants?: () => Promise<VotingApplicant[]>; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
+  const { loadApplicants } = props
   const params = useSearchParams();
   const [open,setOpen]=useState(params.get("voting") === "1")
-  return <><Button onClick={()=>setOpen(true)}>Start voting</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
+  const [visit,setVisit]=useState(0)
+  const [selection,setSelection]=useState<{ loader: typeof loadApplicants; visit: number; applicants: VotingApplicant[] } | null>(null)
+  const [failed,setFailed]=useState(false),[retry,setRetry]=useState(0)
+  useEffect(() => {
+    if (!open || !loadApplicants) return
+    let current = true
+    setSelection(null); setFailed(false)
+    void loadApplicants().then(applicants => { if (current) setSelection({ loader: loadApplicants, visit, applicants }) }).catch(() => { if (current) setFailed(true) })
+    return () => { current = false }
+  }, [open, loadApplicants, retry, visit])
+  const applicants = loadApplicants ? selection?.loader === loadApplicants && selection.visit === visit ? selection.applicants : null : props.applicants
+  function visibility(value: boolean) {
+    if (!value && document.querySelector('[data-voting-saving="true"]')) return
+    if (value) setVisit(current => current + 1)
+    setSelection(null); setFailed(false); setOpen(value)
+  }
+  return <><Button onClick={()=>visibility(true)}>Start voting</Button><Dialog open={open} onOpenChange={visibility}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open && (failed ? <div role="alert"><p>Couldn’t load the complete applicant selection.</p><Button onClick={() => setRetry(value => value + 1)}>Retry selection</Button></div> : applicants ? <VotingBoard {...props} applicants={applicants} initialSessionId={params.get("sessionId") || undefined} /> : <p role="status">Loading applicant selection…</p>)}</DialogContent></Dialog></>
 }
 export function VotingBoard({ clubId, applicants, onDecision, initialSessionId }: Parameters<typeof BoardDecisionMode>[0] & { initialSessionId?: string }) {
   const demo = useDemoMode()

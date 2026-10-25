@@ -1,0 +1,10 @@
+{
+  "status": "excluded_entirely",
+  "reason": "Stopped for a development-effect lifecycle correctness fix before final source freeze. No performance claim uses these rows.",
+  "completedBlockFiles": 8,
+  "retainedOutcomes": 96,
+  "retainedFailures": 0,
+  "plannedFullCollectionOutcomes": 384,
+  "missingOutcomes": "Collection stopped; missing outcomes are not treated as successes or assigned latencies.",
+  "candidateBuildId": "unkSIkAKTxFfr6CKxEZOS"
+}

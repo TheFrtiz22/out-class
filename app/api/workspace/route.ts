@@ -7,7 +7,8 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { DEMO_COOKIE } from "@/lib/demo/access"
 import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds } from "@/actions/club-overview"
-import { getClubPipeline, getClubPipelineList } from "@/actions/crm"
+import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
+import { pipelinePageQuery } from "@/lib/pipeline-page"
 import { getOrganizationMemberManagement } from "@/actions/organization-members"
 import { getOrganizationInvitations } from "@/actions/club-onboarding"
 import { getClubDirectory, getPublicClub, getCorkboard } from "@/actions/club-directory"
@@ -60,6 +61,8 @@ export async function GET(request: Request) {
       case "members": data = await getOrganizationMemberManagement(...clubArgs.parse(args)); break
       case "pipeline": data = await getClubPipeline(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(args)); break
       case "pipelineList": data = await getClubPipelineList(...z.tuple([z.string().uuid(), z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict().optional()]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+      case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
       case "rounds": data = await getWorkspaceRounds(...clubArgs.parse(args)); break
       case "applicationSettings": data = await getApplicationSettings(...clubArgs.parse(args)); break
       case "pipelineSettings": data = await getPipelineSettings(...clubArgs.parse(args)); break

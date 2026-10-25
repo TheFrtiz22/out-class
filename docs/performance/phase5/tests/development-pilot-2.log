@@ -1,0 +1,66 @@
+Pilot 2 build: Csum1QACZL_mIocDJLSEh
+✔ pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity (2693.874834ms)
+✖ applicant list avoids detail reads; closing a pending detail fences it from the next candidate (1416.888625ms)
+✔ fresh applicant detail preserves an autosaved review draft across close and reopen (2829.429458ms)
+✖ large applicant server pages preserve whole-list search/counts with a fresh read per page (3678.089791ms)
+✔ server pages and explicit selections preserve complete authorized sets, privacy and live revocation (3960.028625ms)
+✖ page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again (3210.284ms)
+✔ rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection (2351.345083ms)
+✔ editable review drafts survive the 100/101 server-page boundary and return navigation (3844.875458ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 5
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24863.053334
+
+✖ failing tests:
+
+test at tests/navigation-phase3-e2e.test.cjs:16:1
+✖ applicant list avoids detail reads; closing a pending detail fences it from the next candidate (1416.888625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  2 !== 1
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase3-e2e.test.cjs:17:389)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/navigation-phase3-e2e.test.cjs:25:1
+✖ large applicant server pages preserve whole-list search/counts with a fresh read per page (3678.089791ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Page 1 of/. Input:
+
+  'Previous page\n\nPage 2 of 50 · Showing 101–200 of 5000\n\nNext page'
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase3-e2e.test.cjs:25:1891)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Previous page\n\nPage 2 of 50 · Showing 101–200 of 5000\n\nNext page',
+    expected: /Page 1 of/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/navigation-phase5-e2e.test.cjs:26:1
+✖ page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again (3210.284ms)
+  locator.waitFor: Error: strict mode violation: getByRole('dialog') resolved to 2 elements:
+      1) <div role="dialog" tabindex="-1" aria-modal="false" aria-labelledby="tutorial-title" aria-describedby="tutorial-description" class="fixed bottom-20 right-4 lg:bottom-4 z-40 w-[calc(100vw-2rem)] max-w-sm max-h-[65dvh] overflow-y-auto rounded-xl border bg-card p-5 text-card-foreground shadow-xl focus-visible:outline-2 focus-visible:outline-ring lg:bottom-6 sm:right-6">…</div> aka getByRole('dialog', { name: 'Your applicant workspace' })
+      2) <div role="dialog" tabindex="-1" id="radix-_r_m_" data-state="closed" data-slot="sheet-content" aria-labelledby="radix-_r_n_" aria-describedby="radix-_r_o_" class="bg-card data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-[var(--oc-z-modal)] flex flex-col gap-4 shadow-modal transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full border-l oc-workspac…>…</div> aka locator('#radix-_r_m_')
+
+  Call log:
+    - waiting for getByRole('dialog') to be hidden
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase5-e2e.test.cjs:29:756) {
+    log: [ "  - waiting for getByRole('dialog') to be hidden" ]
+  }

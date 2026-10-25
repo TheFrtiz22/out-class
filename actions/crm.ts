@@ -1,6 +1,8 @@
 "use server";
 import type { Prisma } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { pipelineListProjection } from "@/lib/pipeline-list";
+import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
 import {decisionPublicationGuard} from "@/lib/decision-publication-guard";
 import { clubWriteTransaction } from "@/utils/club-write-transaction";
 import { publishRecruitmentDecision } from "@/utils/recruitment-offers";
@@ -26,12 +28,27 @@ import { submittedScoreSummary } from "@/lib/interview-review-summary";
 
 const pipelineFilter = z.object({ applicationId: z.string().uuid().optional(), roundId: z.string().uuid().optional(), gender: z.enum(genderValues).optional(), genderCounts: z.boolean().optional() }).strict();
 export async function getClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
-  return readClubPipeline(clubId, input);
+  return (await readClubPipeline(clubId, input)).pipeline;
 }
 
 /** Same live authority and privacy projection; detail collections are read only on opening. */
 export async function getClubPipelineList(clubId: string, input: z.infer<typeof pipelineFilter> = {}) {
-  return pipelineListProjection(await readClubPipeline(clubId, input, true));
+  return pipelineListProjection((await readClubPipeline(clubId, input, true)).pipeline);
+}
+
+export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
+  const query = pipelinePageQuery.parse(input);
+  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, true);
+  // Scope binding only. The cursor never bypasses the live guard or projection.
+  const scope = createHash("sha256").update(JSON.stringify([clubId, membership, pipeline.rounds, pipelineSelectionKey(query)])).digest("hex");
+  return pagePipeline(pipelineListProjection(pipeline), query, membership.id, membership.userId, scope);
+}
+
+/** Explicit whole-selection read for quick review and voting, without identities. */
+export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
+  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
+  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false }, true);
+  return completePipelineSelection(pipelineListProjection(pipeline), query, membership.id, membership.userId);
 }
 
 async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFilter>, listOnly = false) {
@@ -103,7 +120,7 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
     const profiles = filter.genderCounts ? await tx.studentProfile.groupBy({ by: ["gender"], where: { userId: { in: counts.map(c => c.studentId) } }, _count: true }) : [];
 
     phase = "projection-or-commit";
-    return {
+    const pipeline = {
       rounds: rounds.map(r => ({ id: r.id, name: r.name, order: r.order, type: r.type, anonymousReview: r.anonymousReview, genderVisible: hasPermission(membership, "applications.review") && genderVisibility(r.applicantDisplay) })),
       genderCounts: filter.genderCounts ? genderValues.map(gender => ({ gender, count: profiles.find(p => p.gender === gender)?._count ?? 0 })) : null,
       applications: applications.map(raw => {
@@ -120,6 +137,7 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
         return { ...projected, canEvaluate, publicationGuard:decisionPublicationGuard(raw), recruitmentOffer: raw.recruitmentOffer ?? null, roundScore };
       }),
     };
+    return { pipeline, membership };
   }, { isolationLevel: "RepeatableRead" });
   } catch (error) {
     // Never serialize the exception, query, identifiers, or applicant content.

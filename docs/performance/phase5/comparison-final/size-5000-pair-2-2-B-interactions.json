@@ -1,0 +1,153 @@
+{
+  "buildId": "CXHsqP2MspwThdTtPXCme",
+  "size": 5000,
+  "planned": 12,
+  "samples": [
+    {
+      "kind": "next-page",
+      "index": 0,
+      "warmup": true,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 149.511125,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 0,
+      "warmup": true,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 33.222291999999925,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "next-page",
+      "index": 1,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 133.31895800000007,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 1,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 50.53462499999978,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "next-page",
+      "index": 2,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 133.37108400000034,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 2,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 32.71195800000032,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "next-page",
+      "index": 3,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 133.22608300000002,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 3,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 50.55799999999999,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "next-page",
+      "index": 4,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 133.95479099999966,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 4,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 33.18954100000019,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "next-page",
+      "index": 5,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 133.31862499999988,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    },
+    {
+      "kind": "distant-search",
+      "index": 5,
+      "warmup": false,
+      "condition": "warm",
+      "failed": null,
+      "meaningfulMs": 50.22849999999971,
+      "requestCount": 0,
+      "encodedBodyBytes": 0,
+      "pageErrors": [],
+      "requests": []
+    }
+  ],
+  "errors": [],
+  "interpretation": "Warm interactions only. Includes automation action dispatch and two animation frames. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries."
+}

@@ -1,0 +1,620 @@
+{
+  "protocol": {
+    "buildIds": {
+      "baseline": "CXHsqP2MspwThdTtPXCme",
+      "candidate": "VnxJTVDcbkO7F8Qs2Zp4e"
+    },
+    "planned": 96,
+    "measured": 80,
+    "warmups": 16,
+    "failed": 0,
+    "clock": "Browser click/input event to visible candidate predicate plus two animation frames. Driver dispatch/polling is measured separately, not included in meaningfulMs.",
+    "percentiles": "Nearest rank; n=10 per build/cohort/interaction; p95 is maximum. Local descriptive measurements."
+  },
+  "groups": [
+    {
+      "size": 1000,
+      "kind": "next-page",
+      "condition": "warm",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 30.7,
+          "p95": 31.5,
+          "max": 31.5
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 101.89,
+          "p95": 102.16,
+          "max": 102.16
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTtfbMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readServerMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "databaseMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "serializationMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTransferMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 130.4,
+          "p95": 132.9,
+          "max": 132.9
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 217.55,
+          "p95": 218.4,
+          "max": 218.4
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7933,
+          "p95": 7933,
+          "max": 7933
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 99,
+          "p95": 108.59,
+          "max": 108.59
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 96.51,
+          "p95": 106.01,
+          "max": 106.01
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 53.28,
+          "p95": 68.62,
+          "max": 68.62
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.48,
+          "p95": 0.66,
+          "max": 0.66
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7933,
+          "p95": 7933,
+          "max": 7933
+        },
+        "readTransferMs": {
+          "samples": 10,
+          "p50": 0.35,
+          "p95": 0.5,
+          "max": 0.5
+        }
+      }
+    },
+    {
+      "size": 1000,
+      "kind": "distant-search",
+      "condition": "warm",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 27.4,
+          "p95": 28.2,
+          "max": 28.2
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 33.83,
+          "p95": 34.98,
+          "max": 34.98
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTtfbMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readServerMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "databaseMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "serializationMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTransferMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 127.5,
+          "p95": 193.9,
+          "max": 193.9
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 150.5,
+          "p95": 217.41,
+          "max": 217.41
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 758,
+          "p95": 758,
+          "max": 758
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 97.93,
+          "p95": 166.64,
+          "max": 166.64
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 95.68,
+          "p95": 163.89,
+          "max": 163.89
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 52.01,
+          "p95": 76.74,
+          "max": 76.74
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.22,
+          "p95": 0.32,
+          "max": 0.32
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 758,
+          "p95": 758,
+          "max": 758
+        },
+        "readTransferMs": {
+          "samples": 10,
+          "p50": 0.3,
+          "p95": 0.54,
+          "max": 0.54
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "kind": "next-page",
+      "condition": "warm",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 30.2,
+          "p95": 31.4,
+          "max": 31.4
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 101.5,
+          "p95": 102.93,
+          "max": 102.93
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTtfbMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readServerMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "databaseMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "serializationMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTransferMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 346.9,
+          "p95": 367.6,
+          "max": 367.6
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 434.39,
+          "p95": 467.58,
+          "max": 467.58
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 7940,
+          "p95": 7940,
+          "max": 7940
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 313.9,
+          "p95": 335.13,
+          "max": 335.13
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 311.82,
+          "p95": 331,
+          "max": 331
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 229.46,
+          "p95": 259.44,
+          "max": 259.44
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.67,
+          "p95": 2.45,
+          "max": 2.45
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 7940,
+          "p95": 7940,
+          "max": 7940
+        },
+        "readTransferMs": {
+          "samples": 10,
+          "p50": 0.38,
+          "p95": 0.59,
+          "max": 0.59
+        }
+      }
+    },
+    {
+      "size": 5000,
+      "kind": "distant-search",
+      "condition": "warm",
+      "B": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 28.1,
+          "p95": 29.2,
+          "max": 29.2
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 33.93,
+          "p95": 34.82,
+          "max": 34.82
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTtfbMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readServerMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "databaseMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "serializationMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 0,
+          "p95": 0,
+          "max": 0
+        },
+        "readTransferMs": {
+          "samples": 0,
+          "p50": null,
+          "p95": null,
+          "max": null
+        }
+      },
+      "A": {
+        "planned": 10,
+        "successful": 10,
+        "failed": 0,
+        "pageErrors": 0,
+        "httpErrors": 0,
+        "meaningfulMs": {
+          "samples": 10,
+          "p50": 337.1,
+          "p95": 406.4,
+          "max": 406.4
+        },
+        "driverElapsedMs": {
+          "samples": 10,
+          "p50": 365.78,
+          "p95": 435.53,
+          "max": 435.53
+        },
+        "requestCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "encodedBodyBytes": {
+          "samples": 10,
+          "p50": 752,
+          "p95": 752,
+          "max": 752
+        },
+        "readCount": {
+          "samples": 10,
+          "p50": 1,
+          "p95": 1,
+          "max": 1
+        },
+        "readTtfbMs": {
+          "samples": 10,
+          "p50": 304,
+          "p95": 371.6,
+          "max": 371.6
+        },
+        "readServerMs": {
+          "samples": 10,
+          "p50": 299.63,
+          "p95": 369.04,
+          "max": 369.04
+        },
+        "databaseMs": {
+          "samples": 10,
+          "p50": 226.35,
+          "p95": 284.24,
+          "max": 284.24
+        },
+        "serializationMs": {
+          "samples": 10,
+          "p50": 0.24,
+          "p95": 1.43,
+          "max": 1.43
+        },
+        "readBodyBytes": {
+          "samples": 10,
+          "p50": 752,
+          "p95": 752,
+          "max": 752
+        },
+        "readTransferMs": {
+          "samples": 10,
+          "p50": 0.34,
+          "p95": 0.44,
+          "max": 0.44
+        }
+      }
+    }
+  ]
+}

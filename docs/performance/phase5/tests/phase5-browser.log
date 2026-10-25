@@ -1,0 +1,12 @@
+✔ server pages and explicit selections preserve complete authorized sets, privacy and live revocation (3828.226917ms)
+✔ page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again (9716.396625ms)
+✔ rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection (2432.229042ms)
+✔ editable review drafts survive the 100/101 server-page boundary and return navigation (6428.039958ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22773.110958

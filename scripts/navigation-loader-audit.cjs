@@ -10,12 +10,13 @@ const {distribution}=require('./navigation-audit.cjs');
 const root=path.join(os.tmpdir(),'outclass-onboarding-e2e');
 async function main(){
  const config=readConfig(path.join(root,'config.json'));
+ const databaseUrl=new URL(config.status.DB_URL);databaseUrl.searchParams.set('connection_limit','8');
  const fixture=JSON.parse(fs.readFileSync(path.join(root,'navigation-fixture.json')));
- Object.assign(process.env,{DATABASE_URL:config.status.DB_URL,POSTGRES_PRISMA_URL:config.status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:config.status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:config.status.PUBLISHABLE_KEY,SUPABASE_SECRET_KEY:'',SUPABASE_SERVICE_ROLE_KEY:'',RESEND_API_KEY:'',SMTP_HOST:'',COMMUNICATIONS_EMAIL_ENABLED:'false'});
+ Object.assign(process.env,{DATABASE_URL:databaseUrl.href,POSTGRES_PRISMA_URL:databaseUrl.href,NEXT_PUBLIC_SUPABASE_URL:config.status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:config.status.PUBLISHABLE_KEY,SUPABASE_SECRET_KEY:'',SUPABASE_SERVICE_ROLE_KEY:'',RESEND_API_KEY:'',SMTP_HOST:'',COMMUNICATIONS_EMAIL_ENABLED:'false'});
  const actor=new Actor(config);await actor.signIn(fixture.email,fixture.password);
  const jar={getAll:()=>[...actor.cookies].map(([name,value])=>({name,value})),get:name=>actor.cookies.has(name)?{value:actor.cookies.get(name)}:undefined,has:name=>actor.cookies.has(name),set:(name,value)=>actor.cookies.set(name,value)};
  let queries=[],auth=[];
- const db=new PrismaClient({datasourceUrl:config.status.DB_URL,log:[{emit:'event',level:'query'}]});
+ const db=new PrismaClient({datasourceUrl:databaseUrl.href,log:[{emit:'event',level:'query'}]});
  db.$on('query',e=>{const table=e.query.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(?:"public"\.)?"?(\w+)"?/i)?.[1]||null;queries.push({operation:e.query.trim().split(/\s+/)[0],table,durationMs:e.duration,...(process.argv.includes('--pipeline-study')?{detailColumnsInSelect:['anonymousReviewText','bio','linkedinUrl','resumeUrl','headshotUrl','scholarStatus','highSchool','pronouns'].filter(column=>e.query.split(/\bFROM\b/i)[0].includes('\"'+column+'\"'))}:{})});});
  const originalFetch=global.fetch;
  global.fetch=async(input,init)=>{const u=new URL(typeof input==='string'?input:input.url||String(input));assert.equal(u.origin,config.status.API_URL,'Loader audit must never contact an external service');const start=performance.now();const response=await originalFetch(input,init);if(u.pathname.startsWith('/auth/'))auth.push({path:u.pathname,durationMs:performance.now()-start,status:response.status});return response;};
@@ -34,6 +35,8 @@ async function main(){
   if(process.argv.includes('--pipeline-study')) cases.splice(0,cases.length,
     ['pipeline','actions/crm.ts','getClubPipeline',[clubId]],
     ['pipelineList','actions/crm.ts','getClubPipelineList',[clubId]],
+    ['pipelinePage','actions/crm.ts','getClubPipelinePage',[clubId]],
+    ['pipelineSelection','actions/crm.ts','getClubPipelineSelection',[clubId]],
     ['pipelineDetail','actions/crm.ts','getClubPipeline',[clubId,{applicationId:app.id}]]);
   const results=[];
   for(const [name,file,fn,args]of cases){
@@ -44,7 +47,7 @@ async function main(){
    }catch(e){results.push({name,file,fn,unavailable:e.name+': '+String(e.message).split('\n').filter(Boolean).at(-1)});console.log(name+': unavailable');}
   }
   const output=process.argv.includes('--pipeline-study')?path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||''):path.resolve('docs/performance/evidence/loader-samples.json');
-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
   fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({generatedAt:new Date().toISOString(),environment:'original TypeScript loaders, real local Auth/PostgreSQL; Next cookie context adapted; outside RSC cache dispatcher',limitations:['Not Next HTTP latency or production timing.','Provider durations measure headers, not body consumption.','Prisma event duration is engine-reported integer milliseconds, not application phase attribution.','No support-session/demo behavior profiled.'],results},null,2));
  }finally{global.fetch=originalFetch;await db.$disconnect();}
 }

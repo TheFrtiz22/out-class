@@ -1,0 +1,45 @@
+{
+  "ordinary": {
+    "total": 1428,
+    "passed": 1379,
+    "failed": 0,
+    "skipped": 49,
+    "gatedSkips": "Existing environment gated tests plus the four new real Auth/browser cases; the latter all pass in the reserved live run."
+  },
+  "liveAuthNavigationSettings": {
+    "total": 50,
+    "passed": 50,
+    "failed": 0,
+    "skipped": 0
+  },
+  "phase5BrowserRetest": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeConcurrency": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "migrations": {
+    "freshAndLegacy": 57,
+    "rlsTables": 78,
+    "browserRolesDenied": true
+  },
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 22
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "developmentFailures": "Retained separately. Initial component fixtures needed the new page transport/async contract. Product fixes: disabled review editor draft flush, stale cursor restored after clearing a search, and page-boundary duplicate guard. Final selector failure was an exact-label mismatch and existing setup-discard confirmation; fixed in tests, same frozen app build then passed all 50. Preliminary measurement stopped for development effect replay correctness; final reader is created by effect setup and tested across cleanup/setup. Preliminary measurements excluded in full.",
+  "lifecycleRegression": {
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "includes": "Effect cleanup/setup replay followed by a fresh explicit page read."
+  },
+  "buildId": "VnxJTVDcbkO7F8Qs2Zp4e"
+}

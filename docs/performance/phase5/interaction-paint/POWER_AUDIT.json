@@ -1,0 +1,8 @@
+{
+  "startedAt": "2026-10-25T00:48:23.516Z",
+  "completedAt": "2026-10-25T00:49:38.276Z",
+  "control": "Temporary process-scoped caffeinate -imsu; no persistent power changes.",
+  "source": "Read-only power log; actual Sleep/Wake/DarkWake timestamp/category only, excluding scheduled wake requests.",
+  "events": [],
+  "accepted": true
+}

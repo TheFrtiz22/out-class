@@ -9,7 +9,7 @@ function setup(){
  return{...mod.exports,requests,modules,render(props){cursor=0;return mod.exports.SelectedClubWorkspace(props)},async flush(){for(const[i,fn]of effects.splice(0)){cleanups.get(i)?.();cleanups.set(i,fn())}await tick()},setUser(v){user=v},rotate(){epoch={}},setDemo(v){demo=v},setSupport(v){support=v},cleanup(){for(const fn of cleanups.values())fn?.()}};
 }
 test('all four selected resources start their guarded read alongside code loading and never reuse another visit',async()=>{
- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelineList':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
+ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelinePage':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{mode:'applicants',genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
  const pending=f.loadSelectedClubWorkspace('members','club');await tick();assert.equal(f.requests.length,5);f.requests.at(-1).reject(Error('revoked'));await assert.rejects(pending,/revoked/);
 });
 test('late navigation/session/account results cannot reveal a previous projection; retry makes a fresh request',async()=>{

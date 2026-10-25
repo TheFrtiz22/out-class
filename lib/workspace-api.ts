@@ -1,5 +1,6 @@
 "use client"
 import { pipelineListProjection } from "@/lib/pipeline-list";
+import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
 import * as pipelineActions from "@/actions/club-settings";
 import * as pipelineInterviewActions from "@/actions/pipeline-interviews";
 import * as demoPipeline from "@/lib/demo/pipeline";
@@ -137,6 +138,22 @@ export const getClubPipeline = adapt((...args: Parameters<typeof crm.getClubPipe
 export const getClubPipelineList = adapt(
   (...args: Parameters<typeof crm.getClubPipelineList>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineList>>>("pipelineList", args),
   async (...args: Parameters<typeof getClubPipeline>) => pipelineListProjection(await getClubPipeline(...args)),
+)
+export const getClubPipelinePage = adapt(
+  (...args: Parameters<typeof crm.getClubPipelinePage>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelinePage>>>("pipelinePage", args),
+  async (clubId, input = {}) => {
+    const query = pipelinePageQuery.parse(input), member = demoMember()
+    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
+    return pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
+  },
+)
+export const getClubPipelineSelection = adapt(
+  (...args: Parameters<typeof crm.getClubPipelineSelection>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineSelection>>>("pipelineSelection", args),
+  async (clubId, input = {}) => {
+    const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
+    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender })
+    return completePipelineSelection(list, query, member.id, member.userId)
+  },
 )
 export const moveApplicantRound = adapt(crm.moveApplicantRound, (input) => {
   scopedApplication(input.clubId, input.applicationId)

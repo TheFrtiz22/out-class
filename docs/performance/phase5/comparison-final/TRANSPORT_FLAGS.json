@@ -1,0 +1,209 @@
+{
+  "counts": {
+    "warmup B": 3,
+    "measured B": 6,
+    "measured A": 10,
+    "warmup A": 3
+  },
+  "flags": [
+    {
+      "phase": "warmup",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 86,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "warmup",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "warmup",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 86,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "warmup",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "warmup",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 86,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "warmup",
+      "variant": "A",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 86,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    },
+    {
+      "phase": "measured",
+      "variant": "B",
+      "route": "actions/recruitment-management.ts:getRecruitmentCycles",
+      "status": 200,
+      "reason": "net::ERR_ABORTED",
+      "encodedBodyBytes": 81,
+      "bodyBytesSource": "cdp_received_chunks_before_cancel"
+    }
+  ],
+  "interpretation": "HTTP-200 recruitment-cycle response abort flags are retained separately. They have positive captured response bytes and successful useful-content predicates; they are not successful HTTP error responses or failed navigation outcomes."
+}

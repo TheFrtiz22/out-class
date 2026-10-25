@@ -1,0 +1,6 @@
+{
+  "status": "original_supplement_excluded_from_click_latency",
+  "primaryNavigation": "All 288 primary outcomes remain valid; their existing browser MutationObserver/two-frame timestamps do not use locator polling as the clock.",
+  "supplement": "All 96 original supplemental outcomes are retained. Their automation elapsed time includes Playwright locator polling/backoff and action dispatch, so it is not used as click-to-useful-content latency. Request counts, bytes and server observations remain valid.",
+  "repeat": "Repeat the complete 96-outcome supplementary BA/AB set with the same frozen builds and records, using browser click/input -> MutationObserver predicate -> two animation frames timestamps. No individual rows replaced, no application changes or artificial delay."
+}

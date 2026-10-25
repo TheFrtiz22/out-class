@@ -454,3 +454,8 @@ test('Explore and Corkboard share deterministic demo clubs; saved items survive 
  assert.equal(JSON.stringify(demoStore.get().applications),applications);assert.equal(JSON.stringify(demoStore.get().subscriptions),subscriptions);assert.equal(h.calls(),0);
  demoStore.reset();assert.deepEqual((await api.getCorkboard()).items,initial.items);assert.equal(h.calls(),0);
 });
+test('Demo applicant page and complete-selection transports remain isolated and preserve round/search filters',async()=>{
+ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const club=demoStore.get().clubs[0];demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}});
+ const originalFetch=global.fetch;let fetched=0;global.fetch=async()=>{fetched++;throw Error('A Demo read must not reach HTTP')};
+ try{const whole=await api.getClubPipelineList(club.id),page=await api.getClubPipelinePage(club.id),selection=await api.getClubPipelineSelection(club.id);assert.equal(page.page.total,whole.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(selection.applications.length,page.page.total);assert.ok(page.applications.length<=100);const round=whole.rounds[0],filtered=await api.getClubPipelinePage(club.id,{roundId:round.id});assert.ok(filtered.applications.every(a=>a.roundId===round.id));const missing=await api.getClubPipelinePage(club.id,{query:'does not match any fictional candidate'});assert.equal(missing.page.total,0);assert.equal(fetched,0);assert.equal(h.calls(),0);await assert.rejects(api.getClubPipelinePage(demoStore.get().clubs[1].id));}finally{global.fetch=originalFetch}
+});

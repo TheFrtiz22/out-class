@@ -146,7 +146,7 @@ test('pipeline failure diagnostics identify the failing phase without serializin
  assert.doesNotMatch(JSON.stringify(rows),/SELECT|private|example|must not log|123e4567/);
 });
 
-for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
+for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipelinePage']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
  const f=fixture();await f.crm[reader](clubId);f.state.clubAccess=false;await assert.rejects(f.crm[reader](clubId));f.state.clubAccess=true;
  f.state.permissions=[];await assert.rejects(f.crm[reader](clubId));f.state.permissions=['applications.review'];assert.equal((await f.crm[reader](clubId)).applications.length,0);
  f.app.round.anonymousReview=true;const row=(await f.crm[reader](clubId)).applications[0];assert.equal(row.student.studentProfile.firstName,'Applicant');assert.equal(row.student.email,'');
@@ -156,4 +156,12 @@ for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader}
 test('list query omits detail relations while canonical detail still includes them',async()=>{
  const f=fixture();await f.crm.getClubPipelineList(clubId);assert.equal(f.state.pipelineQuery.answers,undefined);assert.equal(f.state.pipelineQuery.bookings,undefined);assert.deepEqual(f.state.pipelineOmit,{anonymousReviewText:true});assert.deepEqual(f.state.pipelineQuery.student.include.studentProfile.omit,{bio:true,linkedinUrl:true,resumeUrl:true,headshotUrl:true,scholarStatus:true,highSchool:true,pronouns:true});
  await f.crm.getClubPipeline(clubId,{applicationId});assert.ok(f.state.pipelineQuery.answers.include.question);assert.ok(f.state.pipelineQuery.bookings.include.slot);assert.ok(f.state.pipelineQuery.student.include.studentProfile.include.experiences);
+});
+
+test('page cursors bind the freshly authorized projection and selection reads contain no identities',async()=>{
+ const f=fixture(),first=await f.crm.getClubPipelinePage(clubId);assert.equal(first.applications[0].id,applicationId);const cursor={id:applicationId,direction:'at',scope:first.page.scope};
+ f.state.permissions.push('applications.review');await assert.rejects(f.crm.getClubPipelinePage(clubId,{cursor}),/selection changed/);
+ for(const query of [{userId:owner},{limit:1000},{applicationId}])await assert.rejects(f.crm.getClubPipelinePage(clubId,query));
+ const selected=await f.crm.getClubPipelineSelection(clubId);assert.deepEqual(selected.applications,[{id:applicationId,roundId,status:'SUBMITTED',canQuickReview:true}]);assert.doesNotMatch(JSON.stringify(selected),/owner@|Student|Fixture|studentId|headshot|score/);
+ f.state.clubAccess=false;await assert.rejects(f.crm.getClubPipelineSelection(clubId));f.state.clubAccess=true;f.state.permissions=[];await assert.rejects(f.crm.getClubPipelineSelection(clubId));
 });

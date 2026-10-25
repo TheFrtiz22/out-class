@@ -10,7 +10,7 @@ export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "anno
 
 // Only the selected tab starts work. Code and its original guarded GET overlap;
 // neither module loading nor a previous tab's data can authorize this visit.
-export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
+export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string, mode: "applicants" | "decisions" | "rejected" = "applicants") {
   switch (kind) {
     case "members": {
       const [module, data] = await Promise.all([
@@ -22,7 +22,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
     case "pipeline": {
       const [module, data] = await Promise.all([
         import("@/components/views/leader-dashboard/live-leader-workspace"),
-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
+        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
       ])
       return { kind, module, data } as const
     }
@@ -53,16 +53,17 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
   const [retry, setRetry] = useState(0)
   // Same full identity/session ownership as interview reads. This is a mounted
   // visit, not a cache: leaving or changing authority always starts a new GET.
-  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demo.ready, demo.isDemoEnabled])
+  const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
+  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
   const [result, setResult] = useState<{ owner: object; value?: Loaded; failed?: boolean } | null>(null)
   useEffect(() => {
     if (!demo.ready || demo.isDemoEnabled || loading || !user) return
     let current = true
-    void loadSelectedClubWorkspace(kind, clubId).then(value => {
+    void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
       if (current) setResult({ owner, value })
     }).catch(() => { if (current) setResult({ owner, failed: true }) })
     return () => { current = false }
-  }, [kind, clubId, owner, demo.ready, demo.isDemoEnabled, loading, user])
+  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user])
   const current = demo.ready && !demo.isDemoEnabled && !loading && result?.owner === owner ? result : null
   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
   const entry = current?.value

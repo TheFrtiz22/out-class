@@ -1,0 +1,11 @@
+✔ pipeline analysis distinguishes original resident detail from the new protected single-applicant read (2.49775ms)
+✔ stress analysis retains preparation failures in the denominator without inventing navigation latency (0.606166ms)
+✔ pipeline page analysis recognizes bounded page reads and preserves unknown byte counts (0.055ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 238.2215

@@ -1,0 +1,87 @@
+{
+  "releaseRecommendation": "HOLD \u2014 initial response bandwidth improvement with material page/search latency regressions; next phase must reduce database work.",
+  "baselineCommit": "dff90cf5eac1044cde8f8e908466f661192aefc9",
+  "buildIds": {
+    "baseline": "CXHsqP2MspwThdTtPXCme",
+    "candidate": "VnxJTVDcbkO7F8Qs2Zp4e"
+  },
+  "accepted": {
+    "primaryOutcomes": 288,
+    "paintInteractionOutcomes": 96,
+    "measured": 320,
+    "warmups": 64,
+    "failed": 0,
+    "pageErrors": 0,
+    "timedHttpErrors": 0,
+    "sourceHttpErrors": 0,
+    "powerAuditsAccepted": true,
+    "transportFlags": {
+      "total": 22,
+      "breakdown": {
+        "warmup B": 3,
+        "measured B": 6,
+        "measured A": 10,
+        "warmup A": 3
+      },
+      "details": "comparison-final/TRANSPORT_FLAGS.json"
+    }
+  },
+  "excluded": {
+    "preliminaryStoppedCollection": 96,
+    "automationTimedSupplement": 96,
+    "reasonFiles": [
+      "comparison/EXCLUDED.json",
+      "comparison-final/INTERACTION_METHOD_NOTE.json"
+    ]
+  },
+  "primaryComparison": "comparison-final/COMPARISON.json (groups only for browser content latency)",
+  "interactionComparison": "interaction-paint/COMPARISON.json",
+  "list5000": {
+    "coldBefore": {
+      "p50": 367.3,
+      "p95": 411
+    },
+    "coldAfter": {
+      "p50": 331.4,
+      "p95": 352.1
+    },
+    "warmBefore": {
+      "p50": 336.4,
+      "p95": 402.8
+    },
+    "warmAfter": {
+      "p50": 324.2,
+      "p95": 359.6
+    },
+    "compressedReadBytesBefore": 353251,
+    "compressedReadBytesAfter": 7270,
+    "reductionPercent": 97.94
+  },
+  "interaction5000": {
+    "nextPage": {
+      "before": {
+        "p50": 30.2,
+        "p95": 31.4
+      },
+      "after": {
+        "p50": 346.9,
+        "p95": 367.6
+      }
+    },
+    "distantSearch": {
+      "before": {
+        "p50": 28.1,
+        "p95": 29.2
+      },
+      "after": {
+        "p50": 337.1,
+        "p95": 406.4
+      }
+    },
+    "requestsBefore": 0,
+    "requestsAfter": 1
+  },
+  "security": "Original live guards/projections and no-store/Cookie behavior retained; successful authorization is never cached between requests.",
+  "productionTouched": false,
+  "publicationPerformed": false
+}

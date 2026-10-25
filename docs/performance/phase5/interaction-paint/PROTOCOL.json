@@ -1,0 +1,68 @@
+{
+  "startedAt": "2026-10-25T00:48:23.516Z",
+  "reason": "Entire supplemental repeat using browser event/content timestamps; original 96 automation-timed outcomes retained separately. Primary navigation collection unchanged.",
+  "buildIds": {
+    "baseline": "CXHsqP2MspwThdTtPXCme",
+    "candidate": "VnxJTVDcbkO7F8Qs2Zp4e"
+  },
+  "toolHashes": {
+    "navigation-phase5-interactions.cjs": "9c50932ad9de62b06d850f9a59795c92a9a32adfd78346003c18efb52d18826f",
+    "navigation-phase5-paint-study.cjs": "60bd35df97b71083f62a0248c74177c2940fe453b9796071dfd174b268bce195",
+    "navigation-phase5-local.cjs": "a1cec81c2f3037bf662c35ce3a9aaf01a60b99ee469824ba2ba7f2f9169c995c"
+  },
+  "planned": 96,
+  "completed": [
+    {
+      "file": "size-1000-pair-1-1-B.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-1-2-A.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-1-A.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-1000-pair-2-2-B.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-1-B.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-1-2-A.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-1-A.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    },
+    {
+      "file": "size-5000-pair-2-2-B.json",
+      "planned": 12,
+      "observed": 12,
+      "failed": 0
+    }
+  ],
+  "complete": true,
+  "failures": [],
+  "completedAt": "2026-10-25T00:49:38.276Z",
+  "applicationStopped": true
+}

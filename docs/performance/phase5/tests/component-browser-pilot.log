@@ -1,0 +1,15 @@
+✔ browser: sortable lists, wide applicant profile, drag/drop, quick decisions, groups and overview (11139.716166ms)
+✔ server pages bound rows and preserve all matches, facets and complete selections beyond 100 (16.074709ms)
+✔ all academic/review/decision filters apply globally before paging; totals remain global (1.224709ms)
+✔ anonymous identity/major and hidden scores cannot affect search, facets, ordering or review filters (18.48025ms)
+✔ every sort has deterministic ID ties, missing-last semantics and reversible page navigation (6.373125ms)
+✔ cursor positions cannot cross selection scope; lost anchors reset safely and at-cursors locate any matching page (1.18075ms)
+✔ browser: unassigned reviews have no editor or draft requests; assigned reviews save on desktop/mobile and become read-only immediately after finalization (3997.421875ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16139.109917

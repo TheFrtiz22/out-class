@@ -1,0 +1,1065 @@
+diff --git a/actions/crm.ts b/actions/crm.ts
+index e418949..a6d455c 100644
+--- a/actions/crm.ts
++++ b/actions/crm.ts
+@@ -2,0 +3 @@ import type { Prisma } from "@prisma/client";
++import { createHash } from "node:crypto";
+@@ -3,0 +5 @@ import { pipelineListProjection } from "@/lib/pipeline-list";
++import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey, type PipelinePageQuery } from "@/lib/pipeline-page";
+@@ -29 +31 @@ export async function getClubPipeline(clubId: string, input: z.infer<typeof pipe
+-  return readClubPipeline(clubId, input);
++  return (await readClubPipeline(clubId, input)).pipeline;
+@@ -34 +36,16 @@ export async function getClubPipelineList(clubId: string, input: z.infer<typeof
+-  return pipelineListProjection(await readClubPipeline(clubId, input, true));
++  return pipelineListProjection((await readClubPipeline(clubId, input, true)).pipeline);
++}
++
++export async function getClubPipelinePage(clubId: string, input: PipelinePageQuery = {}) {
++  const query = pipelinePageQuery.parse(input);
++  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts }, true);
++  // Scope binding only. The cursor never bypasses the live guard or projection.
++  const scope = createHash("sha256").update(JSON.stringify([clubId, membership, pipeline.rounds, pipelineSelectionKey(query)])).digest("hex");
++  return pagePipeline(pipelineListProjection(pipeline), query, membership.id, membership.userId, scope);
++}
++
++/** Explicit whole-selection read for quick review and voting, without identities. */
++export async function getClubPipelineSelection(clubId: string, input: PipelinePageQuery = {}) {
++  const query = pipelinePageQuery.omit({ cursor: true }).parse(input);
++  const { pipeline, membership } = await readClubPipeline(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: false }, true);
++  return completePipelineSelection(pipelineListProjection(pipeline), query, membership.id, membership.userId);
+@@ -106 +123 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
+-    return {
++    const pipeline = {
+@@ -122,0 +140 @@ async function readClubPipeline(clubId: string, input: z.infer<typeof pipelineFi
++    return { pipeline, membership };
+diff --git a/app/api/workspace/route.ts b/app/api/workspace/route.ts
+index a34edd3..7b26532 100644
+--- a/app/api/workspace/route.ts
++++ b/app/api/workspace/route.ts
+@@ -10 +10,2 @@ import { getDashboardReviewQueue, getClubWorkspaceOverview, getWorkspaceRounds }
+-import { getClubPipeline, getClubPipelineList } from "@/actions/crm"
++import { getClubPipeline, getClubPipelineList, getClubPipelinePage, getClubPipelineSelection } from "@/actions/crm"
++import { pipelinePageQuery } from "@/lib/pipeline-page"
+@@ -62,0 +64,2 @@ export async function GET(request: Request) {
++      case "pipelinePage": data = await getClubPipelinePage(...z.tuple([z.string().uuid(), pipelinePageQuery]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
++      case "pipelineSelection": data = await getClubPipelineSelection(...z.tuple([z.string().uuid(), pipelinePageQuery.omit({ cursor: true })]).parse(Array.isArray(args) && args.length === 1 ? [args[0], {}] : args)); break
+diff --git a/components/live-voting/board-decision-mode.tsx b/components/live-voting/board-decision-mode.tsx
+index c586ac1..bf0b28b 100644
+--- a/components/live-voting/board-decision-mode.tsx
++++ b/components/live-voting/board-decision-mode.tsx
+@@ -21,0 +22 @@ type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
++type VotingApplicant = Pick<Pipeline["applications"][number], "id" | "roundId" | "status">
+@@ -24 +25,2 @@ const labels = { PASS: "Pass", HOLD: "Hold / Fringe", NOT_PASS: "Do Not Pass", U
+-export function BoardDecisionMode(props: { applicants: Pipeline["applications"]; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
++export function BoardDecisionMode(props: { applicants: VotingApplicant[]; loadApplicants?: () => Promise<VotingApplicant[]>; rounds: Pipeline["rounds"]; clubId: string; clubName: string; canDecide: boolean; onDecision: (id: string,status: AppStatus)=>void }) {
++  const { loadApplicants } = props
+@@ -27 +29,17 @@ export function BoardDecisionMode(props: { applicants: Pipeline["applications"];
+-  return <><Button onClick={()=>setOpen(true)}>Start voting</Button><Dialog open={open} onOpenChange={value => { if (!value && document.querySelector('[data-voting-saving="true"]')) return; setOpen(value) }}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open&&<VotingBoard {...props} initialSessionId={params.get("sessionId") || undefined} />}</DialogContent></Dialog></>
++  const [visit,setVisit]=useState(0)
++  const [selection,setSelection]=useState<{ loader: typeof loadApplicants; visit: number; applicants: VotingApplicant[] } | null>(null)
++  const [failed,setFailed]=useState(false),[retry,setRetry]=useState(0)
++  useEffect(() => {
++    if (!open || !loadApplicants) return
++    let current = true
++    setSelection(null); setFailed(false)
++    void loadApplicants().then(applicants => { if (current) setSelection({ loader: loadApplicants, visit, applicants }) }).catch(() => { if (current) setFailed(true) })
++    return () => { current = false }
++  }, [open, loadApplicants, retry, visit])
++  const applicants = loadApplicants ? selection?.loader === loadApplicants && selection.visit === visit ? selection.applicants : null : props.applicants
++  function visibility(value: boolean) {
++    if (!value && document.querySelector('[data-voting-saving="true"]')) return
++    if (value) setVisit(current => current + 1)
++    setSelection(null); setFailed(false); setOpen(value)
++  }
++  return <><Button onClick={()=>visibility(true)}>Start voting</Button><Dialog open={open} onOpenChange={visibility}><DialogContent aria-describedby={undefined} className="oc-voting-stage inset-0 flex h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col overflow-y-auto rounded-none bg-background p-6 sm:max-w-none"><DialogTitle>{props.clubName} · Recruitment voting</DialogTitle>{open && (failed ? <div role="alert"><p>Couldn’t load the complete applicant selection.</p><Button onClick={() => setRetry(value => value + 1)}>Retry selection</Button></div> : applicants ? <VotingBoard {...props} applicants={applicants} initialSessionId={params.get("sessionId") || undefined} /> : <p role="status">Loading applicant selection…</p>)}</DialogContent></Dialog></>
+diff --git a/components/selected-club-workspace.tsx b/components/selected-club-workspace.tsx
+index 01bf3e5..cda7ddf 100644
+--- a/components/selected-club-workspace.tsx
++++ b/components/selected-club-workspace.tsx
+@@ -13 +13 @@ export type SelectedClubWorkspaceKind = "members" | "pipeline" | "tasks" | "anno
+-export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string) {
++export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind, clubId: string, mode: "applicants" | "decisions" | "rejected" = "applicants") {
+@@ -25 +25 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
+-        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelineList>>>("pipelineList", [clubId, { genderCounts: false }]),
++        readWorkspace<Awaited<ReturnType<typeof import("@/actions/crm").getClubPipelinePage>>>("pipelinePage", [clubId, { mode, genderCounts: false }]),
+@@ -56 +56,2 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
+-  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, demo.ready, demo.isDemoEnabled])
++  const mode = rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants"
++  const owner = useMemo(() => ({ user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [user, readAuthority, isImpersonating, clubId, kind, privacyScope, retry, mode, demo.ready, demo.isDemoEnabled])
+@@ -61 +62 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
+-    void loadSelectedClubWorkspace(kind, clubId).then(value => {
++    void loadSelectedClubWorkspace(kind, clubId, mode).then(value => {
+@@ -65 +66 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
+-  }, [kind, clubId, owner, demo.ready, demo.isDemoEnabled, loading, user])
++  }, [kind, clubId, mode, owner, demo.ready, demo.isDemoEnabled, loading, user])
+diff --git a/components/views/leader-dashboard/live-applicant-views.tsx b/components/views/leader-dashboard/live-applicant-views.tsx
+index 240df49..fb8004a 100644
+--- a/components/views/leader-dashboard/live-applicant-views.tsx
++++ b/components/views/leader-dashboard/live-applicant-views.tsx
+@@ -19 +19 @@ export type ApplicantLane = (typeof applicantLanes)[number]["id"]
+-type Props = { applicants: Candidate[]; allApplicants?: Candidate[]; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
++type Props = { applicants: Candidate[]; allApplicants?: Candidate[]; laneCounts?: Record<string, number>; rounds: Pipeline["rounds"]; open: (app: Candidate) => void; compact: boolean; name: (app: Candidate) => string; average: (app: Candidate) => number | null; sort?: ApplicantSort; descending?: boolean; sortBy?: (key: ApplicantSort) => void; canMove?: (app: Candidate, lane: ApplicantLane) => boolean; move?: (app: Candidate, lane: ApplicantLane) => void; busy?: boolean }
+@@ -48 +48 @@ export function LiveApplicantList({ applicants, rounds, open, compact, name, sor
+-export function LiveApplicantKanban({ applicants, allApplicants = applicants, rounds, open, name, canMove, move, busy }: Props) {
++export function LiveApplicantKanban({ applicants, allApplicants = applicants, laneCounts, rounds, open, name, canMove, move, busy }: Props) {
+@@ -53 +53 @@ export function LiveApplicantKanban({ applicants, allApplicants = applicants, ro
+-    const total = allApplicants.filter(app => applicantLane(app.status) === lane.id).length
++    const total = laneCounts?.[lane.id] ?? allApplicants.filter(app => applicantLane(app.status) === lane.id).length
+diff --git a/components/views/leader-dashboard/live-leader-workspace.tsx b/components/views/leader-dashboard/live-leader-workspace.tsx
+index afe0f4f..5278625 100644
+--- a/components/views/leader-dashboard/live-leader-workspace.tsx
++++ b/components/views/leader-dashboard/live-leader-workspace.tsx
+@@ -3 +3,2 @@ import "@/components/product/operational-dashboard.css"
+-import { applicantPage, APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
++import type { PipelinePageQuery, PipelineCursor } from "@/lib/pipeline-page"
++import { serializedWorkspaceRead } from "@/lib/serialized-workspace-read"
+@@ -15 +15,0 @@ import { genderValues } from "@/lib/student-profile"
+-import { compareAcademicYears } from "@/lib/recruitment-profile"
+@@ -19 +19 @@ import { applicationDecisionGroup, decisionGroups, type DecisionGroup } from "@/
+-import { compareApplicants, type ApplicantSort } from "@/lib/live-applicant-sorting"
++import { type ApplicantSort } from "@/lib/live-applicant-sorting"
+@@ -32 +32 @@ import { WorkspaceLoading } from "@/components/workspace-loading"
+-import { useEffect, useMemo, useRef, useState } from "react"
++import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+@@ -35 +35 @@ import { BoardDecisionMode } from "@/components/live-voting/board-decision-mode"
+-import { getClubPipelineList, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
++import { getClubPipelinePage, getClubPipelineSelection, moveApplicantRound, setApplicationStatus, reconsiderRejectedApplication, revokeRecruitmentOffer } from "@/lib/workspace-api"
+@@ -63 +63 @@ import { Badge } from "@/components/ui/badge"
+-type Pipeline = Awaited<ReturnType<typeof getClubPipelineList>>
++type Pipeline = Awaited<ReturnType<typeof getClubPipelinePage>>
+@@ -138 +138,6 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [listData, setData] = useState<Pipeline | null>(initialData)
++  const auth = useAuth()
++  const authority = useMemo(() => ({ user: auth.user, readAuthority: auth.readAuthority, support: auth.isImpersonating, membership, demoReady: demo.ready, demoEnabled: demo.isDemoEnabled }), [auth.user, auth.readAuthority, auth.isImpersonating, membership, demo.ready, demo.isDemoEnabled])
++  const pageAuthority = useRef(authority), latestAuthority = useRef(authority)
++  latestAuthority.current = authority
++  const [rawListData, setData] = useState<Pipeline | null>(initialData)
++  const listData = pageAuthority.current === authority ? rawListData : null
+@@ -143 +148,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [page, setPage] = useState(0)
++  const [position, setPosition] = useState<{ key: string; cursor: PipelineCursor } | null>(null)
++  const [acceptedKey, setAcceptedKey] = useState<string | null>(null)
+@@ -161 +167 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const [busy, setBusy] = useState(false)
++  const [writing, setBusy] = useState(false)
+@@ -180 +186 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  useEffect(() => { publish.current?.(data) }, [data])
++  useEffect(() => { if (!previewId) publish.current?.(listData) }, [listData, previewId])
+@@ -184,0 +191,26 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  const readQuery = useMemo<PipelinePageQuery>(() => ({
++    query, mode: rejectedOnly ? "rejected" : decisionsOnly ? "decisions" : "applicants", decisionGroup,
++    ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts,
++    ...(status ? { status: status as PipelinePageQuery["status"] } : {}), ...(review ? { review: review as PipelinePageQuery["review"] } : {}),
++    ...(major ? { major } : {}), ...(year ? { year } : {}),
++    ...(gpa ? { gpa: Number(gpa) } : {}), ...(sat ? { sat: Number(sat) } : {}), ...(act ? { act: Number(act) } : {}), ...(rating ? { rating: Number(rating) } : {}), sort, descending,
++  }), [query, rejectedOnly, decisionsOnly, decisionGroup, round, gender, showGenderCounts, status, review, major, year, gpa, sat, act, rating, sort, descending])
++  const selectionKey = JSON.stringify(readQuery)
++  const cursor = position?.key === selectionKey ? position.cursor : undefined
++  // A changed filter starts a new selection. Clearing that filter later must
++  // not resurrect the previous selection's page cursor.
++  useEffect(() => { if (position && position.key !== selectionKey) setPosition(null) }, [position, selectionKey])
++  const requestKey = JSON.stringify([selectionKey, cursor, revision])
++  const initialKey = useRef(requestKey), latestRequest = useRef(requestKey)
++  latestRequest.current = requestKey
++  const acceptedPage = useRef({ key: acceptedKey, data: listData })
++  acceptedPage.current = { key: acceptedKey, data: listData }
++  const pageReady = !!previewId || acceptedKey === requestKey || acceptedKey === null && validatedInitialData && initialKey.current === requestKey
++  const updating = !previewId && (!pageReady || !listData)
++  const busy = writing || updating
++  const pageQuery = useMemo(() => ({ ...readQuery, ...(cursor ? { cursor } : {}) }), [readQuery, cursor])
++  const latestPageLoad = useRef({ clubId: membership.clubId, pageQuery, requestKey, authority })
++  latestPageLoad.current = { clubId: membership.clubId, pageQuery, requestKey, authority }
++  // Drain an obsolete read before dispatching only the latest selection. A
++  // browser abort cannot reliably cancel SQL already executing on the server.
++  const pageReader = useRef<ReturnType<typeof serializedWorkspaceRead> | null>(null)
+@@ -186,3 +218,24 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    if (previewId) return
+-    if (firstRead.current) { firstRead.current = false; return }
+-    let current = true
++    const reader = serializedWorkspaceRead(async () => {
++      const request = latestPageLoad.current
++      try { return { ...request, data: await getClubPipelinePage(request.clubId, request.pageQuery), failed: false } }
++      catch { return { ...request, data: null, failed: true } }
++    }, result => {
++      if (latestRequest.current !== result.requestKey || latestAuthority.current !== result.authority) return
++      pageAuthority.current = result.authority
++      setData(result.data); setAcceptedKey(result.requestKey); setLoading(false)
++      if (result.failed) setError("Couldn’t load this club’s applicants. Please try again.")
++    }, () => {})
++    pageReader.current = reader
++    return () => { reader.dispose(); if (pageReader.current === reader) pageReader.current = null }
++  }, [])
++  const loadSelection = useCallback(async () => {
++    const result = await getClubPipelineSelection(membership.clubId, readQuery)
++    if (latestAuthority.current !== authority) throw new Error("Applicant selection changed")
++    return result.applications
++  }, [membership.clubId, readQuery, authority])
++  useEffect(() => {
++    if (previewId || !demo.ready || auth.loading || !auth.user) return
++    if (firstRead.current) { firstRead.current = false; setAcceptedKey(requestKey); return }
++    // A drawer boundary may already have fetched this exact page. Do not
++    // dispatch it again when its cursor becomes the visible page position.
++    if (acceptedPage.current.key === requestKey && acceptedPage.current.data) return
+@@ -191,15 +244,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    
+-    getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
+-      .then((result) => {
+-        if (current) setData(result)
+-      })
+-      .catch(() => {
+-        if (current) { setData(null); setError("Couldn’t load this club’s applicants. Please try again.") }
+-      })
+-      .finally(() => {
+-        if (current) setLoading(false)
+-      })
+-    return () => {
+-      current = false
+-    }
+-  }, [membership.clubId, revision, round, gender, showGenderCounts, previewId])
++    void pageReader.current?.refresh()
++  }, [membership.clubId, requestKey, pageQuery, previewId, authority, demo.ready, auth.loading, auth.user, pageReader])
+@@ -221,49 +261,11 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  const applicants = useMemo(() => (data?.applications || []).filter(a=>rejectedOnly?a.status==="REJECTED":decisionsOnly||a.status!=="REJECTED"), [data,rejectedOnly,decisionsOnly])
+-  const filtered = useMemo(
+-    () =>
+-      applicants
+-        .filter((app) => {
+-          const profile = app.student.studentProfile
+-          return (
+-            `${name(app)} ${app.student.email} ${profile?.major || ""}`
+-              .toLowerCase()
+-              .includes(query.trim().toLowerCase()) &&
+-            (rejectedOnly ? app.status === "REJECTED" : decisionsOnly || app.status !== "REJECTED") &&
+-            (!round || app.roundId === round) &&
+-            (!status || app.status === status) &&
+-            (!decisionsOnly || applicationDecisionGroup(app.status) === decisionGroup) &&
+-            (!major || profile?.major === major) &&
+-            (!year || String(profile?.academicYear) === year) &&
+-            (!gpa || (profile?.gpa != null && profile.gpa > Number(gpa))) &&
+-            (!rating || (average(app) != null && average(app)! >= Number(rating))) &&
+-            (!act || (profile?.actScore != null && profile.actScore > Number(act))) &&
+-            (!sat || (profile?.satScore != null && profile.satScore > Number(sat))) &&
+-            (!review ||
+-              (review === "unreviewed"
+-                ? app.evaluations.length === 0
+-                : app.evaluations.some((item) => item.interviewerId === membership.id)))
+-          )
+-        })
+-        .sort((a, b) => compareApplicants(a, b, sort, descending, data?.rounds)),
+-    [
+-      applicants,
+-      data?.rounds,
+-      rejectedOnly,
+-      decisionsOnly,
+-      decisionGroup,
+-      query,
+-      round,
+-      status,
+-      major,
+-      year,
+-      gpa,
+-      sat,
+-      act,
+-      rating,
+-      review,
+-      sort,
+-      descending,
+-      membership.id,
+-    ],
+-  )
+-  const displayed = applicantPage(filtered, page)
++  const applicants = data?.applications || []
++  const filtered = applicants
++  const pageInfo = !previewId ? listData?.page : undefined
++  const total = pageInfo?.total ?? filtered.length
++  const baseTotal = pageInfo?.baseTotal ?? applicants.length
++  const displayed = { items: pageReady ? filtered : [], page: pageInfo?.index ?? 0, count: pageInfo?.count ?? 1, start: pageInfo?.start ?? 0 }
++  function changePage(next: PipelineCursor | null) {
++    if (!next || busy) return
++    focusPage.current = true
++    setPosition({ key: selectionKey, cursor: next })
++  }
+@@ -273 +275 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    if (!focusPage.current) return
++    if (!focusPage.current || !pageReady) return
+@@ -278,2 +280 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  }, [displayed.page, activeId])
+-  useEffect(() => { setPage(0) }, [query, round, status, review, major, year, gpa, sat, act, rating, sort, descending, decisionGroup, gender, rejectedOnly, decisionsOnly])
++  }, [displayed.page, activeId, pageReady])
+@@ -304 +305 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  function open(app?: Candidate) {
++  function open(app?: Pick<Candidate, "id" | "roundId">, located = false) {
+@@ -308 +309,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-    if (app) { const index = filtered.findIndex(item => item.id === app.id); if (index >= 0) setPage(Math.floor(index / APPLICANT_PAGE_SIZE)) }
++    if (app && !located && !previewId && pageInfo && !filtered.some(item => item.id === app.id)) {
++      setPosition({ key: selectionKey, cursor: { id: app.id, direction: "at", scope: pageInfo.scope } })
++    }
+@@ -330,0 +334,20 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++  async function navigateApplicant(direction: -1 | 1) {
++    if (busy || mutating.current || activeIndex < 0) return
++    const adjacent = filtered[activeIndex + direction]
++    if (adjacent) { open(adjacent); return }
++    const next = direction === 1 ? pageInfo?.next : pageInfo?.previous
++    if (!next) return
++    mutating.current = true; setBusy(true)
++    try {
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      const key = selectionKey, owner = authority
++      const result = await getClubPipelinePage(membership.clubId, { ...readQuery, cursor: next })
++      if (latestAuthority.current !== owner || latestRequest.current !== requestKey) return
++      pageAuthority.current = owner; setData(result)
++      const nextKey = JSON.stringify([key, next, revision])
++      setAcceptedKey(nextKey); setPosition({ key, cursor: next })
++      const target = direction === 1 ? result.applications[0] : result.applications.at(-1)
++      if (target) open(target, true)
++    } catch { setMessage("Couldn’t load the next applicant. Your review stays open.") }
++    finally { mutating.current = false; setBusy(false) }
++  }
+@@ -436 +459 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const refreshed = await getClubPipelineList(membership.clubId, { ...(previewId ? { applicationId: previewId } : {}), ...(round ? { roundId: round } : {}), ...(gender ? { gender: gender as (typeof genderValues)[number] } : {}), genderCounts: showGenderCounts })
++      const refreshed = await getClubPipelinePage(membership.clubId, pageQuery)
+@@ -457,2 +480,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      await draftSave.flush()
+-      const refreshed = await writeStatus(active, status)
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      await writeStatus(active, status)
+@@ -460 +483,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      const next = remaining.map(id => refreshed.applications.find(app => app.id === id)).find(app => app && pendingCandidate(app))
++      const selection = await loadSelection()
++      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
+@@ -469,4 +493,27 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-  function startQuickReview() {
+-    const queue = filtered.filter(pendingCandidate)
+-    if (!canDecide || !queue.length) return
+-    setQuickQueue(queue.map(app => app.id)); open(queue[0])
++  async function startQuickReview() {
++    if (!canDecide || busy || mutating.current) return
++    const owner = authority, key = requestKey
++    mutating.current = true; setBusy(true); setMessage("")
++    try {
++      const queue = (await loadSelection()).filter(app => app.canQuickReview)
++      if (latestAuthority.current !== owner || latestRequest.current !== key) return
++      setQuickQueue(queue.map(app => app.id))
++      if (queue[0]) open(queue[0])
++    } catch { setMessage("Couldn’t load the complete review selection. Please try again.") }
++    finally { mutating.current = false; setBusy(false) }
++  }
++  async function skipQuickReview() {
++    if (!active || !quickQueue || busy || mutating.current) return
++    const owner = authority, key = requestKey
++    mutating.current = true; setBusy(true)
++    try {
++      if (canEvaluate && (draftSave.dirty || draftSave.saving)) await draftSave.flush()
++      const remaining = quickQueue.filter(id => id !== active.id)
++      const selection = await loadSelection()
++      if (latestAuthority.current !== owner || latestRequest.current !== key) return
++      const next = remaining.map(id => selection.find(app => app.id === id)).find(app => app?.canQuickReview)
++      setQuickQueue(remaining)
++      if (next) open(next)
++      else open()
++    } catch { setMessage("Couldn’t refresh the complete review selection. Your review stays open.") }
++    finally { mutating.current = false; setBusy(false) }
+@@ -486 +533 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <Button variant="outline" onClick={() => setRevision((value) => value + 1)}>
++        <Button variant="outline" onClick={() => { setPosition(null); setRevision((value) => value + 1) }}>
+@@ -496 +543 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{applicants.filter(app => applicationDecisionGroup(app.status) === group.id).length}</span></Button>)}</div>
++        <div role="group" aria-label="Decision groups" className="flex flex-wrap gap-1 border-b pb-3">{decisionGroups.map(group => <Button key={group.id} variant={decisionGroup === group.id ? "secondary" : "ghost"} aria-pressed={decisionGroup === group.id} onClick={() => setDecisionGroup(group.id)}>{group.label}<span className="ml-2 text-xs font-normal text-muted-foreground">{listData?.facets.decisions[group.id] ?? 0}</span></Button>)}</div>
+@@ -503 +550 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-          {canDecide && <Button variant="outline" disabled={busy || !filtered.some(pendingCandidate)} onClick={startQuickReview}>Quick review</Button>}
++          {canDecide && <Button variant="outline" disabled={busy || !listData?.facets.quickReview} onClick={() => void startQuickReview()}>Quick review</Button>}
+@@ -505,0 +553 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
++        loadApplicants={loadSelection}
+@@ -510 +558,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        onDecision={(id, status) =>
++        onDecision={(id, status) => {
++          setRevision(value => value + 1)
+@@ -521 +570 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        }
++        }}
+@@ -605,6 +654 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-            {[
+-              ...new Set(
+-                applicants.map((app) => app.student.studentProfile?.major).filter(Boolean),
+-              ),
+-            ]
+-              .sort()
++            {(listData?.facets.majors ?? [])
+@@ -622,8 +666 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-            {[
+-              ...new Set(
+-                applicants.flatMap((app) =>
+-                  app.student.studentProfile ? [app.student.studentProfile.academicYear] : [],
+-                ),
+-              ),
+-            ]
+-              .sort(compareAcademicYears)
++            {(listData?.facets.years ?? [])
+@@ -671 +708 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-          {filtered.length} {decisionsOnly ? "applications in this selection" : `of ${applicants.length} applicants · scores out of 10`}
++          {total} {decisionsOnly ? "applications in this selection" : `of ${baseTotal} applicants · scores out of 10`}
+@@ -695 +732 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-      {!filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{applicants.length ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} allApplicants={filtered} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
++      {updating ? <p role="status" aria-live="polite">Updating applicants…</p> : !filtered.length ? <p role="status" className="border-y py-10 text-sm text-muted-foreground">{baseTotal ? (decisionsOnly ? "No applications in this decision group match your filters." : "No applicants match these filters.") : rejectedOnly ? "No rejected applications. Published rejections appear here with their history preserved." : "Submitted applications will appear here. Student drafts stay private."}</p> : decisionsOnly ? <LiveDecisionList applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : view === "kanban" ? <LiveApplicantKanban canMove={canMove} move={(app, lane) => { setBoardError(""); setBoardMove({ id: app.id, lane }) }} busy={busy} laneCounts={listData?.facets.lanes} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} /> : <LiveApplicantList sort={sort} descending={descending} sortBy={sortBy} applicants={displayed.items} rounds={data.rounds} open={open} compact={compact} name={name} average={average} />}
+@@ -697,3 +734,3 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-        <Button variant="outline" aria-label="Previous applicant page" disabled={displayed.page === 0} onClick={() => { focusPage.current = true; setPage(displayed.page - 1) }}>Previous page</Button>
+-        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {filtered.length}</p>
+-        <Button variant="outline" aria-label="Next applicant page" disabled={displayed.page + 1 === displayed.count} onClick={() => { focusPage.current = true; setPage(displayed.page + 1) }}>Next page</Button>
++        <Button variant="outline" aria-label="Previous applicant page" disabled={busy || !pageInfo?.previous} onClick={() => changePage(pageInfo?.previous ?? null)}>Previous page</Button>
++        <p role="status" className="text-sm">Page {displayed.page + 1} of {displayed.count} · Showing {displayed.start + 1}–{displayed.start + displayed.items.length} of {total}</p>
++        <Button variant="outline" aria-label="Next applicant page" disabled={busy || !pageInfo?.next} onClick={() => changePage(pageInfo?.next ?? null)}>Next page</Button>
+@@ -762,2 +799,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-                    disabled={busy || activeIndex <= 0}
+-                    onClick={() => open(filtered[activeIndex - 1])}
++                    disabled={busy || activeIndex < 0 || activeIndex === 0 && !pageInfo?.previous}
++                    onClick={() => void navigateApplicant(-1)}
+@@ -769 +806 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-                      ? `${activeIndex + 1} / ${filtered.length}`
++                      ? `${displayed.start + activeIndex + 1} / ${total}`
+@@ -776,2 +813,2 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1}
+-                    onClick={() => open(filtered[activeIndex + 1])}
++                    disabled={busy || activeIndex < 0 || activeIndex >= filtered.length - 1 && !pageInfo?.next}
++                    onClick={() => void navigateApplicant(1)}
+@@ -980 +1017 @@ function ClubWorkspace({ membership, decisionsOnly = false, rejectedOnly = false
+-                <Button variant="ghost" disabled={busy} onClick={() => { const remaining = quickQueue.filter(id => id !== active.id); const next = remaining.map(id => applicants.find(app => app.id === id)).find(app => app && pendingCandidate(app)); setQuickQueue(remaining); if (next) open(next); else open() }}>Skip</Button>
++                <Button variant="ghost" disabled={busy} onClick={() => void skipQuickReview()}>Skip</Button>
+diff --git a/lib/live-applicant-sorting.ts b/lib/live-applicant-sorting.ts
+index 1e19b7d..9f022d7 100644
+--- a/lib/live-applicant-sorting.ts
++++ b/lib/live-applicant-sorting.ts
+@@ -16 +16 @@ export function compareApplicants(a: SortableApplicant, b: SortableApplicant, ke
+-  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) : 1 : -1
++  if (left == null || left === "" || right == null || right === "") return left == null || left === "" ? right == null || right === "" ? name(a).localeCompare(name(b)) || a.id.localeCompare(b.id) : 1 : -1
+diff --git a/lib/pipeline-page.ts b/lib/pipeline-page.ts
+new file mode 100644
+index 0000000..1d1a11b
+--- /dev/null
++++ b/lib/pipeline-page.ts
+@@ -0,0 +1,88 @@
++import { z } from "zod"
++import type { pipelineListProjection } from "@/lib/pipeline-list"
++import { APPLICANT_PAGE_SIZE } from "@/lib/applicant-pagination"
++import { compareApplicants } from "@/lib/live-applicant-sorting"
++import { compareAcademicYears } from "@/lib/recruitment-profile"
++import { applicationDecisionGroup, decisionGroups } from "@/lib/application-decisions"
++import { applicantLane, applicantLanes } from "@/lib/applicant-board"
++import { genderValues } from "@/lib/student-profile"
++
++// Cursor scope is an equality check, never authorization. Every page and full
++// selection runs the original live guard and canonical privacy projection.
++const cursorSchema = z.object({ id: z.string().uuid(), direction: z.enum(["after", "before", "at"]), scope: z.string().min(1).max(4096) }).strict()
++export const pipelinePageQuery = z.object({
++  query: z.string().max(200).default(""),
++  roundId: z.string().uuid().optional(),
++  gender: z.enum(genderValues).optional(), genderCounts: z.boolean().default(false),
++  mode: z.enum(["applicants", "decisions", "rejected"]).default("applicants"),
++  decisionGroup: z.enum(["pending", "accepted", "waitlisted", "rejected"]).default("pending"),
++  status: z.enum(["SUBMITTED", "IN_REVIEW", "INTERVIEWING", "ACCEPTED", "REJECTED", "WAITLISTED"]).optional(),
++  review: z.enum(["unreviewed", "mine"]).optional(),
++  major: z.string().max(200).optional(), year: z.string().max(100).optional(),
++  gpa: z.number().finite().min(0).max(4).optional(),
++  sat: z.number().int().min(0).max(1600).optional(), act: z.number().int().min(0).max(36).optional(),
++  rating: z.number().finite().min(0).max(10).optional(),
++  sort: z.enum(["name", "round", "year", "gpa", "sat", "act", "status", "score"]).default("name"),
++  descending: z.boolean().default(false), cursor: cursorSchema.optional(),
++}).strict()
++export type PipelinePageQuery = z.input<typeof pipelinePageQuery>
++export type PipelineCursor = z.infer<typeof cursorSchema>
++type List = ReturnType<typeof pipelineListProjection>
++type Candidate = List["applications"][number]
++export type PipelineSelection = Pick<Candidate, "id" | "roundId" | "status"> & { canQuickReview: boolean }
++const applicantName = (app: Candidate) => app.student.studentProfile ? `${app.student.studentProfile.firstName} ${app.student.studentProfile.lastName}` : app.student.email
++
++export function pipelineSelectionKey(input: PipelinePageQuery) {
++  const { cursor: _cursor, ...query } = pipelinePageQuery.parse(input)
++  return JSON.stringify(query)
++}
++
++/** Filtering observes only fields already released by the canonical projector.
++ * Raw identity, unsubmitted evaluations and hidden ratings cannot affect matches.
++ * This scan remains O(N); the wire response and rendered page are bounded. */
++function selectPipeline(data: List, input: PipelinePageQuery, reviewerId: string, userId: string) {
++  const q = pipelinePageQuery.parse(input)
++  const base = data.applications.filter(a => q.mode === "rejected" ? a.status === "REJECTED" : q.mode === "decisions" || a.status !== "REJECTED")
++  const filtered = base.filter(app => {
++    const profile = app.student.studentProfile
++    return `${applicantName(app)} ${app.student.email} ${profile?.major || ""}`.toLowerCase().includes(q.query.trim().toLowerCase()) &&
++      (!q.roundId || app.roundId === q.roundId) && (!q.status || app.status === q.status) &&
++      (q.mode !== "decisions" || applicationDecisionGroup(app.status) === q.decisionGroup) &&
++      (!q.major || profile?.major === q.major) && (!q.year || profile?.academicYear === q.year) &&
++      (q.gpa === undefined || profile?.gpa != null && profile.gpa > q.gpa) &&
++      (q.sat === undefined || profile?.satScore != null && profile.satScore > q.sat) &&
++      (q.act === undefined || profile?.actScore != null && profile.actScore > q.act) &&
++      (q.rating === undefined || app.roundScore?.average != null && app.roundScore.average >= q.rating) &&
++      (!q.review || (q.review === "unreviewed" ? app.evaluations.length === 0 : app.evaluations.some(e => e.interviewerId === reviewerId)))
++  }).sort((a, b) => compareApplicants(a, b, q.sort, q.descending, data.rounds))
++  const canQuickReview = (app: Candidate) => !["ACCEPTED", "REJECTED", "WAITLISTED", "DRAFTING"].includes(app.status) && !app.studentId.startsWith("anonymous-") && app.studentId !== userId
++  return { q, base, filtered, canQuickReview }
++}
++
++export function completePipelineSelection(data: List, input: PipelinePageQuery, reviewerId: string, userId: string): { applications: PipelineSelection[] } {
++  const { filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
++  return { applications: filtered.map(app => ({ id: app.id, roundId: app.roundId, status: app.status, canQuickReview: canQuickReview(app) })) }
++}
++
++export function pagePipeline(data: List, input: PipelinePageQuery, reviewerId: string, userId: string, scope: string) {
++  const { q, base, filtered, canQuickReview } = selectPipeline(data, input, reviewerId, userId)
++  if (q.cursor && q.cursor.scope !== scope) throw new z.ZodError([{ code: "custom", path: ["cursor"], message: "Applicant selection changed. Restart pagination." }])
++  const anchor = q.cursor ? filtered.findIndex(a => a.id === q.cursor!.id) : -1
++  const reset = !!q.cursor && anchor < 0
++  const start = anchor < 0 ? 0 : q.cursor?.direction === "after" ? anchor + 1 : q.cursor?.direction === "before" ? Math.max(0, anchor - APPLICANT_PAGE_SIZE) : Math.floor(anchor / APPLICANT_PAGE_SIZE) * APPLICANT_PAGE_SIZE
++  const applications = filtered.slice(start, start + APPLICANT_PAGE_SIZE)
++  const cursor = (id: string, direction: PipelineCursor["direction"]): PipelineCursor => ({ id, direction, scope })
++  return {
++    rounds: data.rounds, genderCounts: data.genderCounts, applications,
++    page: { scope, start, total: filtered.length, baseTotal: base.length, index: Math.floor(start / APPLICANT_PAGE_SIZE), count: Math.max(1, Math.ceil(filtered.length / APPLICANT_PAGE_SIZE)), reset,
++      previous: start > 0 && applications.length ? cursor(applications[0].id, "before") : null,
++      next: start + applications.length < filtered.length && applications.length ? cursor(applications.at(-1)!.id, "after") : null },
++    facets: {
++      majors: [...new Set(base.map(a => a.student.studentProfile?.major).filter((v): v is string => !!v))].sort(),
++      years: [...new Set(base.flatMap(a => a.student.studentProfile ? [a.student.studentProfile.academicYear] : []))].sort(compareAcademicYears),
++      decisions: Object.fromEntries(decisionGroups.map(g => [g.id, base.filter(a => applicationDecisionGroup(a.status) === g.id).length])),
++      lanes: Object.fromEntries(applicantLanes.map(l => [l.id, filtered.filter(a => applicantLane(a.status) === l.id).length])),
++      quickReview: filtered.filter(canQuickReview).length,
++    },
++  }
++}
+diff --git a/lib/workspace-api.ts b/lib/workspace-api.ts
+index dc3afe8..12f1bb9 100644
+--- a/lib/workspace-api.ts
++++ b/lib/workspace-api.ts
+@@ -2,0 +3 @@ import { pipelineListProjection } from "@/lib/pipeline-list";
++import { pagePipeline, completePipelineSelection, pipelinePageQuery, pipelineSelectionKey } from "@/lib/pipeline-page";
+@@ -140,0 +142,16 @@ export const getClubPipelineList = adapt(
++export const getClubPipelinePage = adapt(
++  (...args: Parameters<typeof crm.getClubPipelinePage>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelinePage>>>("pipelinePage", args),
++  async (clubId, input = {}) => {
++    const query = pipelinePageQuery.parse(input), member = demoMember()
++    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender, genderCounts: query.genderCounts })
++    return pagePipeline(list, query, member.id, member.userId, `demo:${clubId}:${member.id}:${pipelineSelectionKey(query)}`)
++  },
++)
++export const getClubPipelineSelection = adapt(
++  (...args: Parameters<typeof crm.getClubPipelineSelection>) => readWorkspace<Awaited<ReturnType<typeof crm.getClubPipelineSelection>>>("pipelineSelection", args),
++  async (clubId, input = {}) => {
++    const query = pipelinePageQuery.omit({ cursor: true }).parse(input), member = demoMember()
++    const list = await getClubPipelineList(clubId, { roundId: query.roundId, gender: query.gender })
++    return completePipelineSelection(list, query, member.id, member.userId)
++  },
++)
+diff --git a/scripts/navigation-http-diagnostics.cjs b/scripts/navigation-http-diagnostics.cjs
+index ac8fd91..8e2117a 100644
+--- a/scripts/navigation-http-diagnostics.cjs
++++ b/scripts/navigation-http-diagnostics.cjs
+@@ -12 +12 @@ if(process.env.OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS==='1'){
+-    const category=url.pathname==='/api/workspace'?['pipeline','pipelineList','notifications','taskNotifications','invitations','corkboard'].includes(kind)?kind:'workspace_other':url.pathname.startsWith('/_next/')?'static':url.pathname.startsWith('/logos/')?'logo':url.pathname==='/api/communications/stream'?'stream':url.pathname.startsWith('/club/')?'document':url.pathname.startsWith('/api/')?'api_other':'other';
++    const category=url.pathname==='/api/workspace'?['pipeline','pipelineList','pipelinePage','pipelineSelection','notifications','taskNotifications','invitations','corkboard'].includes(kind)?kind:'workspace_other':url.pathname.startsWith('/_next/')?'static':url.pathname.startsWith('/logos/')?'logo':url.pathname==='/api/communications/stream'?'stream':url.pathname.startsWith('/club/')?'document':url.pathname.startsWith('/api/')?'api_other':'other';
+diff --git a/scripts/navigation-loader-audit.cjs b/scripts/navigation-loader-audit.cjs
+index 6066421..09dc5d6 100644
+--- a/scripts/navigation-loader-audit.cjs
++++ b/scripts/navigation-loader-audit.cjs
+@@ -12,0 +13 @@ async function main(){
++ const databaseUrl=new URL(config.status.DB_URL);databaseUrl.searchParams.set('connection_limit','8');
+@@ -14 +15 @@ async function main(){
+- Object.assign(process.env,{DATABASE_URL:config.status.DB_URL,POSTGRES_PRISMA_URL:config.status.DB_URL,NEXT_PUBLIC_SUPABASE_URL:config.status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:config.status.PUBLISHABLE_KEY,SUPABASE_SECRET_KEY:'',SUPABASE_SERVICE_ROLE_KEY:'',RESEND_API_KEY:'',SMTP_HOST:'',COMMUNICATIONS_EMAIL_ENABLED:'false'});
++ Object.assign(process.env,{DATABASE_URL:databaseUrl.href,POSTGRES_PRISMA_URL:databaseUrl.href,NEXT_PUBLIC_SUPABASE_URL:config.status.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:config.status.PUBLISHABLE_KEY,SUPABASE_SECRET_KEY:'',SUPABASE_SERVICE_ROLE_KEY:'',RESEND_API_KEY:'',SMTP_HOST:'',COMMUNICATIONS_EMAIL_ENABLED:'false'});
+@@ -18 +19 @@ async function main(){
+- const db=new PrismaClient({datasourceUrl:config.status.DB_URL,log:[{emit:'event',level:'query'}]});
++ const db=new PrismaClient({datasourceUrl:databaseUrl.href,log:[{emit:'event',level:'query'}]});
+@@ -36,0 +38,2 @@ async function main(){
++    ['pipelinePage','actions/crm.ts','getClubPipelinePage',[clubId]],
++    ['pipelineSelection','actions/crm.ts','getClubPipelineSelection',[clubId]],
+@@ -47 +50 @@ async function main(){
+-  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
++  if(process.argv.includes('--pipeline-study')){assert.ok(['phase3','phase4','phase5'].some(phase=>output.startsWith(path.resolve('docs/performance',phase)+path.sep)));assert.ok(!fs.existsSync(output));assert.ok(results.every(r=>r.samples?.length===20),'Every planned loader sample is required');}
+diff --git a/scripts/navigation-phase5-interactions.cjs b/scripts/navigation-phase5-interactions.cjs
+new file mode 100644
+index 0000000..10e425b
+--- /dev/null
++++ b/scripts/navigation-phase5-interactions.cjs
+@@ -0,0 +1,37 @@
++// Additional warm interactions on the same frozen builds/cohorts as the primary
++// harness. No interception, seeded delay, mutation, or benchmark-only app path.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{performance}=require('node:perf_hooks'),{chromium}=require('playwright');
++const local=require('./navigation-phase5-local.cjs'),{Actor}=require('../tests/helpers/onboarding-e2e.cjs'),{safeRoute}=require('./navigation-audit.cjs');
++async function main(){
++ const out=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'');assert.ok(out.startsWith(path.join(local.repo,'docs/performance/phase5')+path.sep)&&!fs.existsSync(out));
++ const f=JSON.parse(fs.readFileSync(path.join(local.root,'navigation-fixture.json'))),size=f.counts.applicantsInMeasuredClub||100;assert.ok(size>=1000);
++ const actor=new Actor(local.config());await actor.signIn(f.email,f.password);const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage(),requests=[],pending=new Set(),errors=[],samples=[];
++ page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const row={request:r,route:safeRoute(r.url()),type:r.resourceType(),start:performance.now(),end:null,status:null,bytes:null};requests.push(row);if(row.type!=='eventsource')pending.add(r)});
++ page.on('response',r=>{const row=requests.find(q=>q.request===r.request());if(row){row.status=r.status();row.serverTiming=r.headers()['server-timing']||null;row.traceId=r.headers()['x-outclass-trace-id']||null}});
++ page.on('requestfinished',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.timing=r.timing();void r.sizes().then(s=>row.bytes=s.responseBodySize).catch(()=>{})}});page.on('requestfailed',r=>{pending.delete(r);const row=requests.find(q=>q.request===r);if(row){row.end=performance.now();row.failed=true}});
++ async function drain(){const until=performance.now()+10000;while(pending.size&&performance.now()<until)await new Promise(r=>setTimeout(r,20));assert.equal(pending.size,0,'Unfinished non-SSE request');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))}
++ async function capture(kind,index,target,action){
++  await drain();const offset=requests.length,errorOffset=errors.length,start=performance.now();let failed=null,meaningfulMs=null,marks=null,driverElapsedMs=null;
++  await page.evaluate(({target,event})=>{
++   const state={start:0,ready:0,scheduled:false,origin:performance.timeOrigin};window.__phase5Paint=state;
++   const check=()=>{if(!state.start||state.scheduled)return;const found=[...document.querySelectorAll('.oc-live-pipeline [data-applicant-id]')].some(e=>e.getClientRects().length&&e.textContent.includes(target));if(!found)return;state.scheduled=true;requestAnimationFrame(()=>requestAnimationFrame(()=>{state.ready=performance.now()}))};
++   const begin=()=>{if(!state.start)state.start=performance.now();queueMicrotask(check)};
++   document.addEventListener(event,begin,true);const observer=new MutationObserver(check);observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true});state.check=check;state.cleanup=()=>{observer.disconnect();document.removeEventListener(event,begin,true)};
++  },{target,event:kind==='next-page'?'click':'input'});
++  try{await action();await page.evaluate(()=>window.__phase5Paint.check());await page.waitForFunction(()=>window.__phase5Paint.ready>0,null,{timeout:30000});marks=await page.evaluate(()=>{const s=window.__phase5Paint;s.cleanup();return{start:s.start,ready:s.ready,origin:s.origin}});meaningfulMs=marks.ready-marks.start;driverElapsedMs=performance.now()-start;await drain()}catch(e){failed=e.name;process.exitCode=1;await page.evaluate(()=>window.__phase5Paint.cleanup()).catch(()=>{})}
++  const origin=marks?marks.origin+marks.start:performance.timeOrigin+start;
++  const rows=requests.slice(offset).map(r=>({route:r.route,type:r.type,startMs:performance.timeOrigin+r.start-origin,endMs:r.end===null?null:performance.timeOrigin+r.end-origin,status:r.status,failed:!!r.failed,encodedBodyBytes:r.bytes,ttfbMs:r.timing?.responseStart>=0?r.timing.responseStart:null,transferMs:r.timing?.responseEnd>=0&&r.timing?.responseStart>=0?r.timing.responseEnd-r.timing.responseStart:null,serverTiming:r.serverTiming,traceId:r.traceId}));
++  samples.push({kind,index,warmup:index===0,condition:'warm',failed,meaningfulMs,driverElapsedMs,requestCount:rows.length,encodedBodyBytes:rows.every(r=>Number.isFinite(r.encodedBodyBytes))?rows.reduce((n,r)=>n+r.encodedBodyBytes,0):null,pageErrors:errors.slice(errorOffset),requests:rows});
++ }
++ try{
++  await page.goto(local.config().appUrl+'/club/'+f.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');await drain();const pager=page.getByRole('navigation',{name:'Applicant pages',exact:true}),search=page.getByRole('textbox',{name:'Search applicants',exact:true}),last='Scale Student '+String(size-1).padStart(5,'0');
++  for(let i=0;i<6;i++){
++   await capture('next-page',i,'Scale Student 00100',()=>pager.getByRole('button',{name:'Next applicant page',exact:true}).click());
++   await pager.getByRole('button',{name:'Previous applicant page',exact:true}).click();await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++   await capture('distant-search',i,last,()=>search.fill(last));
++   assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await search.evaluate(e=>document.activeElement===e),true);
++   await search.fill('');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await drain();
++  }
++ }finally{fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify({buildId:fs.readFileSync(path.join(local.dist,'BUILD_ID'),'utf8').trim(),size,planned:12,samples,errors,interpretation:'Warm interactions only. Browser event timestamp to MutationObserver content predicate plus two animation frames; driver polling/dispatch is excluded from meaningfulMs and separately retained as driverElapsedMs. Initial preparation, restoration and one warmup per interaction excluded from measured distribution. All failures retained; no retries.'},null,2)+'\n');await context.close();await browser.close()}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': interaction study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase5-local.cjs b/scripts/navigation-phase5-local.cjs
+new file mode 100644
+index 0000000..2b09532
+--- /dev/null
++++ b/scripts/navigation-phase5-local.cjs
+@@ -0,0 +1,12 @@
++// Lifecycle helper restricted to this chat's owned, disposable navigation fixture.
++const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn,spawnSync,execFileSync}=require('node:child_process'),{randomUUID}=require('node:crypto');
++const repo=path.resolve(__dirname,'..'),root=path.join(os.tmpdir(),'outclass-onboarding-e2e'),dist=path.join(repo,'.next-publish');
++const config=()=>require('../tests/helpers/onboarding-e2e.cjs').readConfig(path.join(root,'config.json'));
++function privateRoot(){const location=fs.readFileSync('/tmp/outclass-phase5-builds-path','utf8');assert.ok(location.startsWith(path.join(os.tmpdir(),'outclass-phase5-builds-')));assert.ok(fs.existsSync(location));return location}
++function environment(){const c=config(),s=c.status;assert.equal(c.buildDir,dist);const db=new URL(s.DB_URL);db.searchParams.set('connection_limit','8');return{...process.env,NEXT_PUBLIC_ENABLE_MICROSOFT_AUTH:'false',DATABASE_URL:db.href,POSTGRES_PRISMA_URL:db.href,POSTGRES_URL:db.href,POSTGRES_URL_NON_POOLING:db.href,NEXT_PUBLIC_SUPABASE_URL:s.API_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:s.PUBLISHABLE_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY:s.ANON_KEY,SUPABASE_SECRET_KEY:s.SECRET_KEY,SUPABASE_SERVICE_ROLE_KEY:s.SERVICE_ROLE_KEY,OUTCLASS_PUBLISH_BUILD:'1',OUTCLASS_SITE_URL:c.appUrl,OUTCLASS_PLATFORM_ADMIN_IDS:c.admin.id,SMTP_HOST:'127.0.0.1',SMTP_PORT:'55325',SMTP_USER:'local-test',SMTP_PASSWORD:'local-test',SMTP_FROM_EMAIL:'outclass@virginia.edu',CRON_SECRET:randomUUID(),NODE_EXTRA_CA_CERTS:path.join(root,'mailpit-cert.pem'),COMMUNICATIONS_EMAIL_ENABLED:'true',RESEND_API_KEY:'',RESEND_FROM_EMAIL:''}}
++async function stop(){const listener=spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim();if(!listener)return;const pid=fs.readFileSync(path.join(root,'server.pid'),'utf8').trim();assert.equal(listener,pid);assert.ok(execFileSync('lsof',['-a','-p',pid,'-d','cwd','-Fn'],{encoding:'utf8'}).split('\n').includes('n'+repo));process.kill(Number(pid),'SIGTERM');for(let n=0;n<100;n++){if(!spawnSync('lsof',['-tiTCP:3107','-sTCP:LISTEN'],{encoding:'utf8'}).stdout.trim())return;await new Promise(r=>setTimeout(r,50))}throw Error('Owned app failed to stop')}
++function snapshot(name){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const target=path.join(privateRoot(),name);assert.ok(!fs.existsSync(target));fs.cpSync(dist,target,{recursive:true});return fs.readFileSync(path.join(target,'BUILD_ID'),'utf8').trim()}
++async function start(name,diagnose=false){assert.ok(['baseline','pilot','pilot2','candidate'].includes(name));const source=path.join(privateRoot(),name);assert.ok(fs.existsSync(path.join(source,'BUILD_ID')));await stop();fs.rmSync(dist,{recursive:true});fs.cpSync(source,dist,{recursive:true});const fd=fs.openSync(path.join(root,'phase5-server.log'),'a'),args=diagnose?['--require','./scripts/navigation-http-diagnostics.cjs']:[];args.push('node_modules/next/dist/bin/next','start','-p','3107','-H','127.0.0.1');const app=spawn(process.execPath,args,{cwd:repo,env:{...environment(),OUTCLASS_PHASE_TRACE:diagnose?'1':'0',OUTCLASS_NAVIGATION_HTTP_DIAGNOSTICS:diagnose?'1':'0'},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);app.unref();fs.writeFileSync(path.join(root,'server.pid'),String(app.pid));for(let n=0;n<100;n++){try{if((await fetch(config().appUrl,{signal:AbortSignal.timeout(1000)})).ok)return}catch{}await new Promise(r=>setTimeout(r,200))}throw Error('Owned app did not become ready')}
++async function build(){await stop();const fd=fs.openSync(path.join(root,'phase5-build.log'),'w');const result=spawnSync('npm',['run','build'],{cwd:repo,env:environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(result.status,0,'Inspect owned build log');}
++module.exports={repo,root,dist,config,privateRoot,environment,stop,start,snapshot,build};
++if(require.main===module)(async()=>{const [command,name]=process.argv.slice(2);if(command==='stop')await stop();else if(command==='start')await start(name,process.argv.includes('--diagnose'));else if(command==='snapshot')console.log(snapshot(name));else if(command==='build')await build();else throw Error('Unknown local lifecycle command')})().catch(error=>{console.error(error.name+': '+error.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/navigation-phase5-paint-study.cjs b/scripts/navigation-phase5-paint-study.cjs
+new file mode 100644
+index 0000000..f8ce78b
+--- /dev/null
++++ b/scripts/navigation-phase5-paint-study.cjs
+@@ -0,0 +1,10 @@
++// Full supplemental repeat only: frozen builds/data, matched BA/AB order, all outcomes.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process'),{createHash}=require('node:crypto'),local=require('./navigation-phase5-local.cjs');
++(async()=>{
++ const out=path.join(local.repo,'docs/performance/phase5/interaction-paint');assert.ok(!fs.existsSync(out));fs.mkdirSync(out);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(v=>[v,JSON.parse(fs.readFileSync(path.join(local.repo,'docs/performance/phase5',v.toUpperCase()+'_SOURCE.json')))]));for(const [file,hash]of Object.entries(manifests.candidate.files))assert.equal(createHash('sha256').update(fs.readFileSync(path.join(local.repo,file))).digest('hex'),hash);
++ const protocol={startedAt:new Date().toISOString(),reason:'Entire supplemental repeat using browser event/content timestamps; original 96 automation-timed outcomes retained separately. Primary navigation collection unchanged.',buildIds:Object.fromEntries(Object.entries(manifests).map(([v,m])=>[v,m.buildId])),toolHashes:Object.fromEntries(['navigation-phase5-interactions.cjs','navigation-phase5-paint-study.cjs','navigation-phase5-local.cjs'].map(n=>[n,createHash('sha256').update(fs.readFileSync(path.join(__dirname,n))).digest('hex')])),planned:96,completed:[],complete:false,failures:[]};const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ try{for(const size of [1000,5000]){await local.stop();fs.copyFileSync(path.join(local.privateRoot(),'fixture-'+size+'.json'),path.join(local.root,'navigation-fixture.json'));for(const [pair,order]of ['BA','AB'].entries())for(const [position,letter]of [...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';await local.start(variant);const file=`size-${size}-pair-${pair+1}-${position+1}-${letter}.json`,fd=fs.openSync(path.join(local.root,'phase5-paint.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase5-interactions.cjs','--out='+path.join(out,file)],{cwd:local.repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.ok([0,1].includes(r.status));const data=JSON.parse(fs.readFileSync(path.join(out,file)));assert.equal(data.samples.length,12);protocol.completed.push({file,planned:12,observed:data.samples.length,failed:data.samples.filter(s=>s.failed).length});save();console.log(`Completed browser-timed interactions ${size}, ${pair+1}, ${letter}.`);
++ }}protocol.complete=true;protocol.completedAt=new Date().toISOString();save()}catch(e){protocol.failures.push({name:e.name,message:e.message.split('\n')[0]});save();throw e}finally{await local.stop();protocol.applicationStopped=true;save()}
++})().catch(e=>{console.error(e.name+': complete supplemental study failed');process.exitCode=1});
+diff --git a/scripts/navigation-phase5-study.cjs b/scripts/navigation-phase5-study.cjs
+new file mode 100644
+index 0000000..fbc28bf
+--- /dev/null
++++ b/scripts/navigation-phase5-study.cjs
+@@ -0,0 +1,33 @@
++// Fixed, local-only comparison. Frozen builds and every planned outcome are retained.
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawn,spawnSync}=require('node:child_process'),{createHash}=require('node:crypto');
++const local=require('./navigation-phase5-local.cjs'),repo=local.repo,evidence=path.join(repo,'docs/performance/phase5');
++const hash=b=>createHash('sha256').update(b).digest('hex');
++async function main(){
++ const out=path.resolve(repo,process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase5/comparison');assert.ok(out.startsWith(evidence+path.sep)&&!fs.existsSync(out));fs.mkdirSync(out);
++ const planBytes=fs.readFileSync(path.join(evidence,'PLAN.json')),plan=JSON.parse(planBytes);fs.writeFileSync(path.join(out,'PLAN.json'),planBytes);
++ const manifests=Object.fromEntries(['baseline','candidate'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(evidence,name.toUpperCase()+'_SOURCE.json')))]));
++ for(const name of ['baseline','candidate'])assert.equal(fs.readFileSync(path.join(local.privateRoot(),name,'BUILD_ID'),'utf8').trim(),manifests[name].buildId);
++ for(const [file,digest]of Object.entries(manifests.candidate.files))assert.equal(hash(fs.readFileSync(path.join(repo,file))),digest,file);
++ const protocol={startedAt:new Date().toISOString(),baseline:plan.baseline,planSha256:hash(planBytes),toolHashes:Object.fromEntries(['navigation-audit.cjs','navigation-http-diagnostics.cjs','navigation-phase5-local.cjs','navigation-phase5-study.cjs','navigation-phase5-interactions.cjs','navigation-loader-audit.cjs','pipeline-scale-fixture.cjs'].map(name=>[name,hash(fs.readFileSync(path.join(repo,'scripts',name)))])),buildIds:Object.fromEntries(Object.entries(manifests).map(([name,m])=>[name,m.buildId])),completed:[],failures:[],poolLimitPerClient:8,fixtureStrategy:'Independent cohort per size, identical within each cohort/build pair',complete:false};
++ let phase='starting';const system=[];let previous=require('node:os').cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});const monitor=setInterval(()=>{const os=require('node:os'),next=os.cpus().reduce((a,c)=>({idle:a.idle+c.times.idle,total:a.total+Object.values(c.times).reduce((n,v)=>n+v,0)}),{idle:0,total:0});system.push({at:new Date().toISOString(),phase,cpuBusyPercent:+(100*(1-(next.idle-previous.idle)/(next.total-previous.total))).toFixed(2),load:os.loadavg(),freeMemoryMiB:Math.round(os.freemem()/1048576)});previous=next},1000);
++ const save=()=>fs.writeFileSync(path.join(out,'PROTOCOL.json'),JSON.stringify(protocol,null,2)+'\n');save();
++ async function fixture(size){
++  await local.stop();const current=path.join(local.root,'navigation-fixture.json'),marker=path.join(local.root,'phase3-enriched-count.json'),target=path.join(local.privateRoot(),'fixture-'+size+'.json');
++  if(!fs.existsSync(target)){
++   if(fs.existsSync(current)){const f=JSON.parse(fs.readFileSync(current)),existing=f.counts.applicantsInMeasuredClub||100;const saved=path.join(local.privateRoot(),'fixture-'+existing+'.json');if(!fs.existsSync(saved))fs.copyFileSync(current,saved);fs.rmSync(current);}
++   // Credential-file rebinding only. No database rows are removed or rewritten.
++   fs.rmSync(marker,{force:true});const seed=spawnSync(process.execPath,['scripts/navigation-audit.cjs','--seed'],{cwd:repo,encoding:'utf8'});assert.equal(seed.status,0,'Reserved fixture signup failed');await require('./pipeline-scale-fixture.cjs').scaleFixture(size);fs.copyFileSync(current,target);
++  }
++  fs.copyFileSync(target,current);const f=JSON.parse(fs.readFileSync(current));assert.equal(f.counts.applicantsInMeasuredClub||100,size);const db=new(require('@prisma/client').PrismaClient)({datasourceUrl:local.config().status.DB_URL});try{assert.equal(await db.application.count({where:{clubId:f.clubIds[0]}}),size)}finally{await db.$disconnect()}
++ }
++ async function collect(directory,samples){
++  const fd=fs.openSync(path.join(local.root,'phase5-benchmark.log'),'a');const child=spawn(process.execPath,['scripts/navigation-audit.cjs','--phase2','--phase3','--cold-warm','--record-failures','--source-diagnostics','--samples='+samples,'--out='+directory],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});const status=await new Promise((resolve,reject)=>{child.once('error',reject);child.once('close',resolve)});fs.closeSync(fd);const result={status};
++  const file=path.join(directory,'browser-samples.json');assert.ok(fs.existsSync(file),'Every block must emit all outcomes');const data=JSON.parse(fs.readFileSync(file));assert.equal(data.samples.length,samples*4,'No missing or replacement rows');assert.ok([0,1].includes(result.status));assert.equal(result.status,data.failures.length?1:0);protocol.completed.push({directory:path.relative(out,directory),planned:samples*4,observed:data.samples.length,failures:data.failures.length});save();
++ }
++ try{for(const size of plan.measurement.cohorts){phase='fixture-'+size;await fixture(size);for(const[pair,order]of plan.measurement.blocks.entries())for(const[position,letter]of[...order].entries()){
++  const variant=letter==='B'?'baseline':'candidate';phase=`${size}-${pair}-${letter}-start`;await local.start(variant);const stem=path.join(out,`size-${size}-pair-${pair+1}-${position+1}-${letter}`);phase=`${size}-${pair}-${letter}-warmup`;await collect(stem+'-warmup',1);phase=`${size}-${pair}-${letter}-measure`;await collect(stem+'-measure',5);if(size>=1000){phase=`${size}-${pair}-${letter}-interactions`;const fd=fs.openSync(path.join(local.root,'phase5-interactions.log'),'a'),r=spawnSync(process.execPath,['scripts/navigation-phase5-interactions.cjs','--out='+stem+'-interactions.json'],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);const d=JSON.parse(fs.readFileSync(stem+'-interactions.json'));assert.equal(d.samples.length,12);assert.ok([0,1].includes(r.status));protocol.interactions??=[];protocol.interactions.push({file:path.relative(out,stem+'-interactions.json'),planned:12,observed:d.samples.length,failed:d.samples.filter(s=>s.failed).length});save()}console.log(`Completed ${size}, pair ${pair+1}, ${letter}; all planned outcomes retained.`);
++ }await local.stop();const fd=fs.openSync(path.join(local.root,'phase5-loaders.log'),'a'),probe=spawnSync(process.execPath,['scripts/navigation-loader-audit.cjs','--pipeline-study','--out='+path.join(out,`size-${size}-candidate-loaders.json`)],{cwd:repo,env:local.environment(),stdio:['ignore',fd,fd]});fs.closeSync(fd);assert.equal(probe.status,0);const loaded=JSON.parse(fs.readFileSync(path.join(out,`size-${size}-candidate-loaders.json`))),list=loaded.results.find(r=>r.name==='pipelineList');assert.ok(list.samples.every(s=>s.queries.every(q=>q.detailColumnsInSelect.length===0)),'List SQL still reads omitted detail columns');}protocol.complete=true;protocol.completedAt=new Date().toISOString();save();
++ }catch(error){protocol.failures.push({name:error.name,message:error.message.split('\n')[0]});save();throw error}
++ finally{clearInterval(monitor);await local.stop();fs.writeFileSync(path.join(out,'SYSTEM.json'),JSON.stringify(system,null,2)+'\n');protocol.applicationStopped=true;save();}
++}
++if(require.main===module)main().catch(e=>{console.error(e.name+': '+e.message.split('\n')[0]);process.exitCode=1});
+diff --git a/scripts/summarize-navigation-phase5-paint.cjs b/scripts/summarize-navigation-phase5-paint.cjs
+new file mode 100644
+index 0000000..2aa00c7
+--- /dev/null
++++ b/scripts/summarize-navigation-phase5-paint.cjs
+@@ -0,0 +1,7 @@
++const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{distribution}=require('./navigation-audit.cjs'),{enrich}=require('./summarize-pipeline-navigation.cjs');
++function summarize(root){const protocol=JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));assert.equal(protocol.complete,true);assert.equal(protocol.completed.length,8);assert.equal(protocol.failures.length,0);const power=JSON.parse(fs.readFileSync(path.join(root,'POWER_AUDIT.json')));assert.equal(power.accepted,true);
++ const blocks=protocol.completed.map(b=>{const m=/^size-(1000|5000)-pair-([12])-([12])-([AB]).json$/.exec(b.file);assert.ok(m);const data=JSON.parse(fs.readFileSync(path.join(root,b.file)));assert.equal(data.samples.length,12);return{size:Number(m[1]),variant:m[4],samples:data.samples}}),groups=[];
++ for(const size of [1000,5000])for(const kind of ['next-page','distant-search']){const g={size,kind,condition:'warm'};for(const v of ['B','A']){const all=blocks.filter(b=>b.size===size&&b.variant===v).flatMap(b=>b.samples).filter(r=>!r.warmup&&r.kind===kind);assert.equal(all.length,10);const rows=all.filter(r=>!r.failed).map(enrich);g[v]={planned:all.length,successful:rows.length,failed:all.length-rows.length,pageErrors:all.flatMap(r=>r.pageErrors).length,httpErrors:all.flatMap(r=>r.requests).filter(r=>r.status>=400).length,...Object.fromEntries(['meaningfulMs','driverElapsedMs','requestCount','encodedBodyBytes','readCount','readTtfbMs','readServerMs','databaseMs','serializationMs','readBodyBytes'].map(k=>[k,distribution(rows.map(r=>r[k]))])),readTransferMs:distribution(rows.map(r=>r.requests.find(q=>q.route==='/api/workspace?kind=pipelinePage')?.transferMs))}}groups.push(g)}
++ return{protocol:{buildIds:protocol.buildIds,planned:96,measured:80,warmups:16,failed:blocks.flatMap(b=>b.samples).filter(r=>r.failed).length,clock:'Browser click/input event to visible candidate predicate plus two animation frames. Driver dispatch/polling is measured separately, not included in meaningfulMs.',percentiles:'Nearest rank; n=10 per build/cohort/interaction; p95 is maximum. Local descriptive measurements.'},groups};
++}
++module.exports={summarize};if(require.main===module){const root=path.resolve('docs/performance/phase5/interaction-paint'),data=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(data,null,2)+'\n');console.log(JSON.stringify(data,null,2))}
+diff --git a/scripts/summarize-navigation-phase5.cjs b/scripts/summarize-navigation-phase5.cjs
+new file mode 100644
+index 0000000..c63ef26
+--- /dev/null
++++ b/scripts/summarize-navigation-phase5.cjs
+@@ -0,0 +1,96 @@
++const fs = require('node:fs');
++const path = require('node:path');
++const assert = require('node:assert/strict');
++const { distribution } = require('./navigation-audit.cjs');
++const { enrich } = require('./summarize-pipeline-navigation.cjs');
++const { summarizeGroup } = require('./summarize-pipeline-stress.cjs');
++
++function sourceMetrics(row) {
++  const source = row.preparation;
++  assert.ok(source, 'Source observations are required for every outcome');
++  const requests = source.requests.filter(r => r.type !== 'eventsource');
++  const scripts = requests.filter(r => r.type === 'script');
++  const completeBytes = requests.every(r => Number.isFinite(r.encodedBodyBytes));
++  return {
++    meaningfulMs: source.meaningfulMs,
++    elapsedIncludingDrainMs: source.elapsedMs,
++    documentTtfbMs: source.dom?.document?.ttfbMs ?? null,
++    requestCount: source.requests.length,
++    nonSsePending: requests.filter(r => r.pending).length,
++    logoRequestCount: requests.filter(r => r.route.startsWith('/logos/')).length,
++    httpErrors: requests.filter(r => r.status >= 400).length,
++    encodedBodyBytes: completeBytes ? requests.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++    scriptBytes: scripts.every(r => Number.isFinite(r.encodedBodyBytes)) ? scripts.reduce((n,r) => n+r.encodedBodyBytes,0) : null,
++  };
++}
++function describe(rows) {
++  const result = summarizeGroup(rows);
++  const successful = rows.filter(r => !r.failed);
++  assert.ok(successful.map(enrich).every(r => r.readCount === 1), 'Each successful selected list/detail navigation requires exactly one fresh read');
++  const source = rows.map(sourceMetrics);
++  const sourceMetricsNames = Object.keys(source[0]);
++  const transfer = successful.map(r => r.requests.find(q => /^\/api\/workspace\?kind=pipeline(?:List|Page)?$/.test(q.route))?.transferMs);
++  return {
++    ...result,
++    readTransferMs: distribution(transfer),
++    timedHttpErrors: successful.flatMap(r => r.requests).filter(r => r.status >= 400).length,
++    pendingSourceObservations: source.filter(r => r.nonSsePending > 0).length,
++    source: {
++      planned: rows.length,
++      successful: source.filter(r => Number.isFinite(r.meaningfulMs)).length,
++      latencyInterpretation: source.every(r => Number.isFinite(r.meaningfulMs)) ? 'All planned source preparations; visible DOM content predicate, before background drain.' : 'Successful source preparations only; full-cohort source p95 is not established.',
++      ...Object.fromEntries(sourceMetricsNames.map(name => [name, distribution(source.map(r => r[name]))])),
++    },
++  };
++}
++function summarize(root) {
++  const protocol = JSON.parse(fs.readFileSync(path.join(root,'PROTOCOL.json')));
++  assert.equal(protocol.complete, true);
++  assert.equal(protocol.failures.length, 0, 'Fatal collection failures must be reported separately');
++  assert.equal(protocol.completed.length, 24);
++  const entries = protocol.completed.map(block => {
++    const m = /^size-(100|1000|5000)-pair-([12])-([12])-([AB])-(measure|warmup)$/.exec(block.directory);
++    assert.ok(m, 'Unexpected block');
++    const data = JSON.parse(fs.readFileSync(path.join(root,block.directory,'browser-samples.json')));
++    assert.equal(data.samples.length, block.planned);
++    assert.equal(data.samples.filter(r=>r.failed).length, block.failures);
++    return {size:Number(m[1]),pair:Number(m[2]),variant:m[4],phase:m[5],samples:data.samples};
++  });
++  const measured = entries.filter(e=>e.phase==='measure');
++  const warmups = entries.filter(e=>e.phase==='warmup').flatMap(e=>e.samples);
++  const groups = [];
++  for (const size of [100,1000,5000]) for (const route of ['recruiting → applicants','applicants → applicantDetail']) for (const condition of ['cold','warm']) {
++    const group = {size,path:route,condition};
++    for (const variant of ['B','A']) group[variant]=describe(measured.filter(e=>e.size===size&&e.variant===variant).flatMap(e=>e.samples).filter(r=>r.path===route&&r.condition===condition));
++    group.pairedMedians = [1,2].map(pair=>Object.fromEntries(['B','A'].map(variant=>[variant,distribution(measured.find(e=>e.size===size&&e.pair===pair&&e.variant===variant).samples.filter(r=>r.path===route&&r.condition===condition&&!r.failed).map(r=>r.meaningfulMs))])));
++    groups.push(group);
++  }
++  const all = measured.flatMap(e=>e.samples);
++  return {
++    protocol: {baseline:protocol.baseline,buildIds:protocol.buildIds,planned:all.length+warmups.length,measured:all.length,warmups:warmups.length,failedMeasured:all.filter(r=>r.failed).length,failedWarmups:warmups.filter(r=>r.failed).length,pageErrors:all.reduce((n,r)=>n+(r.pageErrorCount||0),0),timedSuccessfulHttpErrors:all.filter(r=>!r.failed).flatMap(r=>r.requests).filter(r=>r.status>=400).length,sourceHttpErrorsByVariant:Object.fromEntries(['B','A'].map(variant=>[variant,measured.filter(e=>e.variant===variant).flatMap(e=>e.samples).reduce((n,r)=>n+sourceMetrics(r).httpErrors,0)])),percentiles:'Nearest rank, n=10 per build/path/condition; p95 equals maximum. Local descriptive evidence, not a production percentile estimate.'},
++    groups,
++    interactions: summarizeInteractions(root, protocol),
++    failures: measured.flatMap(e=>e.samples.filter(r=>r.failed).map(r=>({size:e.size,variant:e.variant,path:r.path,condition:r.condition,index:r.index,stage:r.stage,diagnostic:r.diagnostic,preparation:r.preparation,error:r.error}))),
++  };
++}
++function summarizeInteractions(root, protocol) {
++  assert.equal(protocol.interactions.length, 8);
++  const blocks=protocol.interactions.map(block=>{
++    const m=/^size-(1000|5000)-pair-([12])-([12])-([AB])-interactions.json$/.exec(block.file);assert.ok(m);
++    const data=JSON.parse(fs.readFileSync(path.join(root,block.file)));assert.equal(data.samples.length,12);
++    return {size:Number(m[1]),variant:m[4],samples:data.samples};
++  });
++  const groups=[];
++  for(const size of [1000,5000])for(const kind of ['next-page','distant-search']){
++    const group={size,kind,condition:'warm'};
++    for(const variant of ['B','A']){
++      const all=blocks.filter(b=>b.size===size&&b.variant===variant).flatMap(b=>b.samples).filter(r=>r.kind===kind&&!r.warmup);assert.equal(all.length,10);
++      const successful=all.filter(r=>!r.failed),enriched=successful.map(enrich);
++      group[variant]={planned:all.length,successful:successful.length,failed:all.length-successful.length,pageErrors:all.flatMap(r=>r.pageErrors).length,httpErrors:all.flatMap(r=>r.requests).filter(r=>r.status>=400).length,interpretation:successful.length===10?'All planned warm observations. Nearest-rank p95 equals maximum at n=10.':'Successful observations only; full-cohort p95 is not established.',...Object.fromEntries(['meaningfulMs','requestCount','encodedBodyBytes','readCount','readStartMs','readTtfbMs','readServerMs','databaseMs','serializationMs','readBodyBytes'].map(metric=>[metric,distribution(enriched.map(r=>r[metric]))]))};
++    }
++    groups.push(group);
++  }
++  return {planned:96,warmups:16,measured:80,failed:blocks.flatMap(b=>b.samples).filter(r=>r.failed).length,groups};
++}
++module.exports = {sourceMetrics,describe,summarize};
++if(require.main===module){const root=path.resolve(process.argv.find(a=>a.startsWith('--out='))?.slice(6)||'docs/performance/phase5/comparison'),result=summarize(root);fs.writeFileSync(path.join(root,'COMPARISON.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result.groups.map(g=>({size:g.size,path:g.path,condition:g.condition,before:g.B.meaningfulMs,after:g.A.meaningfulMs,failures:[g.B.failed,g.A.failed]})),null,2));}
+diff --git a/scripts/summarize-pipeline-navigation.cjs b/scripts/summarize-pipeline-navigation.cjs
+index 37000fb..9886903 100644
+--- a/scripts/summarize-pipeline-navigation.cjs
++++ b/scripts/summarize-pipeline-navigation.cjs
+@@ -2 +2 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
+-function enrich(row){const full=row.requests.filter(r=>/^\/api\/workspace\?kind=pipeline(?:List)?$/.test(r.route));const request=full[0],phases={};assert.ok(full.length<=1);for(const m of(request?.serverTiming||'').matchAll(/([a-z_]+);dur=([\d.]+)/g))phases[m[1]]=Number(m[2]);return{...row,readStartMs:request?.startMs??null,readTtfbMs:request?.ttfbMs??null,readServerMs:phases.total??null,identityMs:phases.identity??null,databaseMs:phases.database??null,acquisitionMs:phases.transaction_acquire??null,serializationMs:phases.serialization??null,readBodyBytes:request?.encodedBodyBytes??0,readCount:full.length,successfulCycleCancellationCount:row.requests.filter(r=>r.failed&&r.status===200&&r.route==='actions/recruitment-management.ts:getRecruitmentCycles').length}};
++function enrich(row){const full=row.requests.filter(r=>/^\/api\/workspace\?kind=pipeline(?:List|Page)?$/.test(r.route));const request=full[0],phases={};assert.ok(full.length<=1);for(const m of(request?.serverTiming||'').matchAll(/([a-z_]+);dur=([\d.]+)/g))phases[m[1]]=Number(m[2]);return{...row,readStartMs:request?.startMs??null,readTtfbMs:request?.ttfbMs??null,readServerMs:phases.total??null,identityMs:phases.identity??null,databaseMs:phases.database??null,acquisitionMs:phases.transaction_acquire??null,serializationMs:phases.serialization??null,readBodyBytes:request?request.encodedBodyBytes??null:0,readCount:full.length,successfulCycleCancellationCount:row.requests.filter(r=>r.failed&&r.status===200&&r.route==='actions/recruitment-management.ts:getRecruitmentCycles').length}};
+diff --git a/tests/club-workspace-refinements-browser.test.cjs b/tests/club-workspace-refinements-browser.test.cjs
+index 10d24c3..15bdc64 100644
+--- a/tests/club-workspace-refinements-browser.test.cjs
++++ b/tests/club-workspace-refinements-browser.test.cjs
+@@ -14 +14 @@ async function fixture() {
+-  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
++  const api = `async function call(path,input){const response=await fetch('/api/'+path,input?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)}:undefined);if(!response.ok)throw Error('Fixture save rejected');return response.json()}exports.getClubPipeline=()=>call('pipeline');exports.getClubPipelineList=()=>call('pipeline');exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await call('pipeline'),q,'owner','owner','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await call('pipeline'),q,'owner','owner');exports.setApplicationStatus=input=>call('status',input);exports.getOrganizationMemberManagement=()=>call('directory');exports.assignOrganizationMemberGroups=input=>call('groups',input);exports.createOrganizationMemberGroups=input=>call('create-groups',input);exports.getApplicantDisplay=()=>call('display');exports.saveApplicantObservation=input=>call('observation',input);exports.deleteApplicantObservation=input=>call('delete-observation',input);exports.listMeetings=async()=>[];exports.submitEvaluation=async()=>({});exports.moveApplicantRound=async()=>({});exports.getRecipientGroups=()=>call('catalog');exports.previewRecipientAudience=()=>call('preview');exports.publishClubAnnouncement=input=>call('announcement',input);exports.getOrganizationSetupChecklist=()=>call('checklist');`
+diff --git a/tests/crm-photo-authorization.test.cjs b/tests/crm-photo-authorization.test.cjs
+index d2edbe5..d2417b9 100644
+--- a/tests/crm-photo-authorization.test.cjs
++++ b/tests/crm-photo-authorization.test.cjs
+@@ -149 +149 @@ test('pipeline failure diagnostics identify the failing phase without serializin
+-for (const reader of ['getClubPipeline', 'getClubPipelineList']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
++for (const reader of ['getClubPipeline', 'getClubPipelineList', 'getClubPipelinePage']) test(`${reader} repeats authorization and masks anonymous/self/foreign rows`, async()=>{
+@@ -159,0 +160,8 @@ test('list query omits detail relations while canonical detail still includes th
++
++test('page cursors bind the freshly authorized projection and selection reads contain no identities',async()=>{
++ const f=fixture(),first=await f.crm.getClubPipelinePage(clubId);assert.equal(first.applications[0].id,applicationId);const cursor={id:applicationId,direction:'at',scope:first.page.scope};
++ f.state.permissions.push('applications.review');await assert.rejects(f.crm.getClubPipelinePage(clubId,{cursor}),/selection changed/);
++ for(const query of [{userId:owner},{limit:1000},{applicationId}])await assert.rejects(f.crm.getClubPipelinePage(clubId,query));
++ const selected=await f.crm.getClubPipelineSelection(clubId);assert.deepEqual(selected.applications,[{id:applicationId,roundId,status:'SUBMITTED',canQuickReview:true}]);assert.doesNotMatch(JSON.stringify(selected),/owner@|Student|Fixture|studentId|headshot|score/);
++ f.state.clubAccess=false;await assert.rejects(f.crm.getClubPipelineSelection(clubId));f.state.clubAccess=true;f.state.permissions=[];await assert.rejects(f.crm.getClubPipelineSelection(clubId));
++});
+diff --git a/tests/demo-mode.test.cjs b/tests/demo-mode.test.cjs
+index 5b33baa..78cc2a2 100644
+--- a/tests/demo-mode.test.cjs
++++ b/tests/demo-mode.test.cjs
+@@ -456,0 +457,5 @@ test('Explore and Corkboard share deterministic demo clubs; saved items survive
++test('Demo applicant page and complete-selection transports remain isolated and preserve round/search filters',async()=>{
++ const h=harness(),{demoStore}=h.load('lib/demo/store.ts'),api=h.load('lib/workspace-api.ts');demoStore.start();const club=demoStore.get().clubs[0];demoStore.mutate(s=>{s.perspective={role:'leader',clubId:club.id}});
++ const originalFetch=global.fetch;let fetched=0;global.fetch=async()=>{fetched++;throw Error('A Demo read must not reach HTTP')};
++ try{const whole=await api.getClubPipelineList(club.id),page=await api.getClubPipelinePage(club.id),selection=await api.getClubPipelineSelection(club.id);assert.equal(page.page.total,whole.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(selection.applications.length,page.page.total);assert.ok(page.applications.length<=100);const round=whole.rounds[0],filtered=await api.getClubPipelinePage(club.id,{roundId:round.id});assert.ok(filtered.applications.every(a=>a.roundId===round.id));const missing=await api.getClubPipelinePage(club.id,{query:'does not match any fictional candidate'});assert.equal(missing.page.total,0);assert.equal(fetched,0);assert.equal(h.calls(),0);await assert.rejects(api.getClubPipelinePage(demoStore.get().clubs[1].id));}finally{global.fetch=originalFetch}
++});
+diff --git a/tests/live-applicant-views.test.cjs b/tests/live-applicant-views.test.cjs
+index 4ece9f9..56c1b62 100644
+--- a/tests/live-applicant-views.test.cjs
++++ b/tests/live-applicant-views.test.cjs
+@@ -25 +25 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  const slots = [], effects = [], calls = [], lookups = []
++  const slots = [], effects = [], calls = [], lookups = [], setups = new Map(), cleanups = new Map()
+@@ -27 +27 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn){index++;return fn()},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;effects.push(fn)}}}
++  const react = {useState(initial){const i=index++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{const next=typeof value==='function'?value(slots[i]):value;changed ||= !Object.is(next,slots[i]);slots[i]=next}]},useRef(initial){const i=index++;return slots[i]??=( {current:initial})},useMemo(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i].deps[j]))slots[i]={deps,value:fn()};return slots[i].value},useCallback(fn,deps){return react.useMemo(()=>fn,deps)},useEffect(fn,deps){const i=index++;if(!slots[i]||deps.some((v,j)=>v!==slots[i][j])){slots[i]=deps;setups.set(i,fn);effects.push([i,fn])}}}
+@@ -28,0 +29,3 @@ function harness(permissions = ['applications.review','applicants.identify','dec
++  const auth={user:{id:'reviewer'},readAuthority:{}};
++  api.getClubPipelinePage=async(club,q={})=>{const data=await api.getClubPipelineList();return compile('lib/pipeline-page.ts').pagePipeline(data,q,'member','reviewer','fixture')};
++  api.getClubPipelineSelection=async(club,q={})=>compile('lib/pipeline-page.ts').completePipelineSelection(await api.getClubPipelineList(),q,'member','reviewer');
+@@ -30 +33 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
++  const C = compile('components/views/leader-dashboard/live-leader-workspace.tsx', {react,'@/contexts/auth-context':{useAuth:()=>auth},'@/hooks/use-pipeline-applicant':{usePipelineApplicant(club,id,revision){const key=`${club}:${id}:${revision}`;if(key!==detailKey){detailKey=key;detail=id?structuredClone(pipeline.applications.find(app=>app.id===id)):null}return{application:detail,error:false,retry(){}}}},'@/contexts/demo-context':{useDemoMode:()=>({isDemoEnabled:false,ready:true})},'@/lib/reviewer-evaluation':{findReviewerEvaluation(...args){const result=compile('lib/reviewer-evaluation.ts').findReviewerEvaluation(...args);lookups.push({round:args[2],result});return result}},'@/lib/workspace-api':api,'@/lib/application-state':{useApplicationState:()=>({leaderFocus:null,clearLeaderFocus(){}})}}, '\nexports.TestWorkspace = ClubWorkspace;').TestWorkspace
+@@ -32 +35 @@ function harness(permissions = ['applications.review','applicants.identify','dec
+-  return {calls,api,lookups,addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length)effects.shift()();if(!changed)return tree}throw Error('Component failed to settle')}}
++  return {calls,api,lookups,replayEffects(){for(const cleanup of cleanups.values())cleanup?.();cleanups.clear();for(const [slot,setup]of setups)cleanups.set(slot,setup())},addCandidate(app){pipeline.applications.push({...structuredClone(pipeline.applications[0]),...app})},setCanEvaluate(value){pipeline.applications[0].canEvaluate=value},addRound(round){pipeline.rounds.push(round)},setEvaluations(evaluations){pipeline.applications[0].evaluations=evaluations},renameRound(name){pipeline.rounds[0].name=name},setServerRound(roundId){pipeline.applications[0].roundId=roundId},setServerStatus(status){pipeline.applications[0].status=status},render(){for(let step=0;step<20;step++){changed=false;index=0;const tree=C({membership,decisionsOnly,rejectedOnly});while(effects.length){const [slot,setup]=effects.shift();cleanups.get(slot)?.();cleanups.set(slot,setup())}if(!changed)return tree}throw Error('Component failed to settle')}}
+@@ -47 +50 @@ test('drawer status writes send expectedStatus, reject stale outcomes, and refre
+-  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+@@ -49 +52 @@ test('drawer status writes send expectedStatus, reject stale outcomes, and refre
+-  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
++  h.setServerStatus('IN_REVIEW');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.filter(c=>c[0]==='load').length,2);await flush();tree=h.render();await flush();tree=h.render();assert.ok(button(tree,'Rescind pending offer'))
+@@ -58,2 +61,2 @@ test('evaluation save updates both presentations and explicit round movement rel
+-  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member');assert.equal(h.calls.find(call=>call[0]==='review')[1].score,8)
+-  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault(){}});await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].evaluations[0].interviewerId,'member');assert.equal(h.calls.find(call=>call[0]==='review')[1].score,8)
++  nodes(tree).find(n=>n.props?.id==='move-round').props.onChange({target:{value:'anonymous-round'}});tree=h.render();button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+@@ -89 +92 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+@@ -92 +95 @@ test('Decisions reuses expected-status mutations and moves saved outcomes betwee
+-  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render()
++  decisionGroupButton(tree,'Accepted').props.onClick();tree=h.render();await flush();tree=h.render()
+@@ -97 +100 @@ test('Decisions preserves stale failures and hides mutation controls from anonym
+-  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  decisionAction(tree,'Accepted').props.onClick();tree=h.render();h.setServerStatus('REJECTED');button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+@@ -108 +111 @@ test('Kanban round moves reject stale data and share the refreshed anonymous pro
+-  button(tree,'Move round').props.onClick();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+@@ -113 +116 @@ test('Kanban round moves reject stale data and share the refreshed anonymous pro
+-  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render()
++  button(tree,'Move round').props.onClick();await flush();h.render();await flush();tree=h.render();await flush();tree=h.render()
+@@ -126 +129 @@ test('Kanban decisions use expected status and appear in List after server reloa
+-  button(tree,'Send now').props.onClick();await flush();tree=h.render()
++  button(tree,'Send now').props.onClick();await flush();tree=h.render();await flush();tree=h.render()
+@@ -157,3 +160,3 @@ test('quick review saves expected-status decisions and advances only after succe
+- button(tree,'Quick review').props.onClick();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
+- button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
+- button(tree,'Deny & next').props.onClick();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
++ button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.match(text(tree),/publish the decision immediately/);
++ button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.deepEqual(h.calls.find(c=>c[0]==='status')[1],{clubId:'club',applicationId:'candidate',status:'ACCEPTED',expectedStatus:'IN_REVIEW'});assert.match(text(nodes(tree).find(n=>n.type==='SheetTitle')),/second@demo.invalid/);
++ button(tree,'Deny & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,2);assert.match(text(tree),/Quick review complete/);
+@@ -162 +165 @@ test('quick review preserves the candidate after a rejected stale write and skip
+- const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
++ const h=harness();h.render();await flush();let tree=h.render();button(tree,'Quick review').props.onClick();await flush();tree=h.render();await flush();tree=h.render();h.setServerStatus('WAITLISTED');button(tree,'Accept & next').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.ok(nodes(tree).find(n=>n.type==='Sheet').props.open);assert.match(text(tree),/candidate stays open/);button(tree,'Skip').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(nodes(tree).find(n=>n.type==='Sheet').props.open,false);assert.equal(h.calls.filter(c=>c[0]==='status').length,1);
+@@ -170 +173 @@ test('board drops require an explicit outcome and preserve expected status',asyn
+- props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
++ props.move(props.applicants[0],'closed');tree=h.render();assert.equal(h.calls.filter(c=>c[0]==='status').length,0);button(tree,'Accept candidate').props.onClick();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED');assert.equal(h.calls.find(c=>c[0]==='status')[1].expectedStatus,'IN_REVIEW');
+@@ -177 +180 @@ test('decision status stays unchanged until the server acknowledges publication'
+- release();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
++ release();await flush();tree=h.render();await flush();tree=h.render();assert.equal(view(tree).props.applicants[0].status,'ACCEPTED')
+@@ -178,0 +182,2 @@ test('decision status stays unchanged until the server acknowledges publication'
++
++test('page reader remains usable after React development effect cleanup and setup replay',async()=>{const h=harness();h.render();await flush();let tree=h.render();assert.ok(view(tree));h.replayEffects();button(tree,'Refresh').props.onClick();h.render();await flush();tree=h.render();assert.ok(view(tree),'effect setup must create a usable reader after disposal');assert.equal(h.calls.filter(c=>c[0]==='load').length,2,'explicit refresh still performs fresh authorization after effect replay')});
+diff --git a/tests/navigation-phase2-e2e.test.cjs b/tests/navigation-phase2-e2e.test.cjs
+index e89afad..99c2d71 100644
+--- a/tests/navigation-phase2-e2e.test.cjs
++++ b/tests/navigation-phase2-e2e.test.cjs
+@@ -12 +12 @@ test('selected tabs request authorized data while code is still loading, then co
+- const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelineList':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
++ const f=await fixture(),browser=await chromium.launch({headless:true});try{for(const[kind,tour,label,text]of cases)await t.test(kind,async()=>{const c=await context(browser,f),page=await c.newPage();let unblock,codeStarted,reads=0;const blocked=[],errors=[];page.on('pageerror',e=>errors.push(e.name));try{await open(page,f,kind==='pipeline');const seen=new Promise(resolve=>unblock=resolve);page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace'&&u.searchParams.get('kind')===(kind==='pipeline'?'pipelinePage':kind)){reads++;unblock();}});const pendingCode=new Promise(resolve=>codeStarted=resolve);const gate=route=>{blocked.push(route);codeStarted()};await page.route('**/_next/static/chunks/*.js',gate);await select(page,tour);await Promise.race([Promise.all([seen,pendingCode]),new Promise((_,reject)=>setTimeout(()=>reject(Error('Data waited for the blocked code chunk')),3000))]);assert.ok(blocked.length,'The selected component really has an unresolved chunk');assert.equal(await page.getByRole('status').filter({hasText:'Loading workspace…'}).count(),1);await Promise.all(blocked.splice(0).map(r=>r.continue()));await page.unroute('**/_next/static/chunks/*.js',gate);await page.locator(`section[aria-label="${label}"]`).getByText(text,{exact:true}).first().waitFor();assert.equal(reads,1);assert.deepEqual(errors,[]);}finally{await page.unroute('**/_next/static/chunks/*.js');await Promise.allSettled(blocked.map(r=>r.continue()));await c.close();}});}finally{await browser.close();}
+diff --git a/tests/navigation-phase3-e2e.test.cjs b/tests/navigation-phase3-e2e.test.cjs
+index 6d82aac..a8cf729 100644
+--- a/tests/navigation-phase3-e2e.test.cjs
++++ b/tests/navigation-phase3-e2e.test.cjs
+@@ -17 +17 @@ test('applicant list avoids detail reads; closing a pending detail fences it fro
+- try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.equal(reads.filter(k=>k==='pipelineList').length,1);assert.equal(reads.includes('pipeline'),false);
++ try{page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{const u=new URL(r.url());if(u.pathname==='/api/workspace')reads.push(u.searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');await page.locator('.oc-live-pipeline').getByText('Audit Student 000',{exact:true}).first().waitFor();assert.ok(reads.filter(k=>k==='pipelinePage').length>=1,'initial session/bootstrap replacement may require another live read');assert.equal(reads.includes('pipeline'),false);
+@@ -25 +25 @@ test('fresh applicant detail preserves an autosaved review draft across close an
+-test('large applicant pages preserve whole-list search/counts and page changes issue no reads',{skip:!configFile},async()=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelineList')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await search.fill('Scale Student 04999');await page.getByText('Scale Student 04999',{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,1)}finally{await context.close();await browser.close()}});
++test('large applicant server pages preserve whole-list search/counts with a fresh read per page',{skip:!configFile},async(t)=>{const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000){t.skip('Requires the registered large fixture');return;}const browser=await chromium.launch({headless:true}),context=await browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}}),page=await context.newPage();let reads=0;try{page.on('request',r=>{if(new URL(r.url()).searchParams.get('kind')==='pipelinePage')reads++});await page.goto(f.config.appUrl+'/club/'+f.data.clubIds[0]+'/workspace?section=recruitment&tool=applicants');const pages=page.getByRole('navigation',{name:'Applicant pages',exact:true});await pages.waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),100);await page.waitForLoadState('networkidle');const initialReads=reads;await pages.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();assert.match(await pages.innerText(),/Page 2 of/);assert.equal(reads,initialReads+1);const search=page.getByRole('textbox',{name:'Search applicants',exact:true});const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill(last);await page.getByText(last,{exact:true}).first().waitFor();assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await pages.count(),0);await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));assert.equal(await search.evaluate(el=>document.activeElement===el),true,'filtering keeps keyboard focus');await search.fill('');await pages.waitFor();assert.match(await pages.innerText(),/Page 1 of/);assert.equal(reads,initialReads+3)}finally{await context.close();await browser.close()}});
+diff --git a/tests/navigation-phase5-e2e.test.cjs b/tests/navigation-phase5-e2e.test.cjs
+new file mode 100644
+index 0000000..dc67039
+--- /dev/null
++++ b/tests/navigation-phase5-e2e.test.cjs
+@@ -0,0 +1,44 @@
++// Real production HTTP/Auth/PostgreSQL. Request gates below are acceptance-only;
++// no gates or synthetic delay are installed in performance collections.
++const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
++const {PrismaClient}=require('@prisma/client'),{chromium}=require('playwright'),{Actor,readConfig}=require('./helpers/onboarding-e2e.cjs'),{load}=require('./helpers/voting-harness.cjs');
++const configFile=process.env.OUTCLASS_ONBOARDING_E2E_CONFIG,decode=load('lib/workspace-wire.ts').decodeWorkspaceData;
++async function fixture(){const config=readConfig(configFile),data=JSON.parse(fs.readFileSync(path.join(path.dirname(configFile),'navigation-fixture.json'))),actor=new Actor(config);await actor.signIn(data.email,data.password);return{config,data,actor,club:data.clubIds[0]};}
++const read=(f,kind,q={},club=f.club,cookie)=>f.actor.request('/api/workspace?'+new URLSearchParams({kind,args:JSON.stringify([club,q])}),cookie?{headers:{cookie}}:{});
++const get=async(f,kind,q={},club)=>{const r=await read(f,kind,q,club);assert.equal(r.status,200,kind);return decode(await r.json())};
++async function context(browser,f){return browser.newContext({viewport:{width:1440,height:1000},storageState:{cookies:[...f.actor.cookies].map(([name,value])=>({name,value,domain:'127.0.0.1',path:'/'})),origins:[]}})}
++test('server pages and explicit selections preserve complete authorized sets, privacy and live revocation',{skip:!configFile,timeout:180000},async()=>{
++ const f=await fixture(),db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),backups=[];
++ try{
++  for(const clubId of f.data.clubIds){const m=await db.clubMember.findFirstOrThrow({where:{clubId,userId:{not:f.data.userId}}});backups.push(m);await db.clubMember.update({where:{id:m.id},data:{isOwner:true,accessRole:'OWNER'}})}
++  const legacy=await get(f,'pipelineList'),response=await read(f,'pipelinePage'),first=decode(await response.json());assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'private, no-store');assert.match(response.headers.get('vary'),/Cookie/);assert.match(response.headers.get('server-timing'),/identity;dur=.*live_session;dur=/);assert.ok(response.headers.get('x-outclass-trace-id'));assert.equal(first.page.total,legacy.applications.filter(a=>a.status!=='REJECTED').length);assert.equal(first.applications.length,Math.min(100,first.page.total));
++  const selection=await get(f,'pipelineSelection');assert.equal(selection.applications.length,first.page.total);assert.ok(selection.applications.every(a=>Object.keys(a).sort().join(',')==='canQuickReview,id,roundId,status'));assert.equal(JSON.stringify(selection).includes('virginia.edu'),false);
++  if(first.page.next){const second=await get(f,'pipelinePage',{cursor:first.page.next});assert.equal(second.page.start,100);assert.equal(second.applications[0].id,selection.applications[100].id);const previous=await get(f,'pipelinePage',{cursor:second.page.previous});assert.deepEqual(previous.applications,first.applications);const last=selection.applications.at(-1),located=await get(f,'pipelinePage',{cursor:{id:last.id,direction:'at',scope:first.page.scope}});assert.ok(located.applications.some(a=>a.id===last.id));}
++  for(const q of [{limit:1000},{userId:f.data.userId},{cursor:{id:selection.applications[0].id,direction:'after',scope:'forged'}},{query:'new selection',cursor:first.page.next}])assert.equal((await read(f,'pipelinePage',q)).status,400);
++  assert.equal((await read(f,'pipelineSelection',{cursor:first.page.next})).status,400);
++  for(const kind of ['pipelinePage','pipelineSelection']){assert.equal((await read(f,kind,{},require('crypto').randomUUID())).status,403);const demo=load('lib/demo/access.ts').DEMO_COOKIE;assert.equal((await read(f,kind,{},f.club,f.actor.cookieHeader()+'; '+demo+'=1')).status,403)}
++  const round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}});try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const anonymous=await get(f,'pipelinePage'),all=await get(f,'pipelineSelection');assert.ok(anonymous.applications.every(a=>a.studentId.startsWith('anonymous-')&&a.student.email===''&&a.student.studentProfile.firstName==='Applicant'));assert.equal((await get(f,'pipelinePage',{query:'Scale Student'})).page.total,0);assert.equal((await get(f,'pipelinePage',{major:'Economics'})).page.total,0);assert.equal(all.applications.some(a=>a.canQuickReview),false);}finally{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}})}
++  const member=await db.clubMember.findUniqueOrThrow({where:{userId_clubId:{userId:f.data.userId,clubId:f.club}}});try{await db.clubMember.update({where:{id:member.id},data:{isOwner:false,accessRole:'MEMBER',permissions:[],interviewOffices:[]}});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind)).status,403)}finally{await db.clubMember.update({where:{id:member.id},data:{isOwner:member.isOwner,accessRole:member.accessRole,permissions:member.permissions,interviewOffices:member.interviewOffices}})}
++  try{await db.user.update({where:{id:f.data.userId},data:{disabledAt:new Date()}});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind)).status,401)}finally{await db.user.update({where:{id:f.data.userId},data:{disabledAt:null}})}
++  const cookie=f.actor.cookieHeader();await f.actor.client.auth.signOut({scope:'local'});for(const kind of ['pipelinePage','pipelineSelection'])assert.equal((await read(f,kind,{},f.club,cookie)).status,401);
++ }finally{for(const m of backups)await db.clubMember.update({where:{id:m.id},data:{isOwner:m.isOwner,accessRole:m.accessRole}});await db.$disconnect()}
++});
++test('page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),reads=[],errors=[];
++ try{page.on('dialog',d=>d.accept());page.on('pageerror',e=>errors.push(e.name));page.on('request',r=>{if(new URL(r.url()).pathname==='/api/workspace')reads.push(new URL(r.url()).searchParams.get('kind'))});await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.getByText('Audit Student 000',{exact:true}).first().waitFor();await page.waitForLoadState('networkidle');assert.ok(reads.filter(k=>k==='pipelinePage').length>=1);assert.equal(reads.includes('pipelineSelection'),false);
++  await page.getByRole('button',{name:/Audit Student 099.*Open applicant/}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();const before=reads.filter(k=>k==='pipelinePage').length;await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:'Scale Student 00100',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelinePage').length,before+1,'drawer boundary must not dispatch the fetched page twice');await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 099',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++  await page.getByRole('button',{name:'Next applicant page',exact:true}).click();await page.getByText('Scale Student 00100',{exact:true}).first().waitFor();await page.getByRole('button',{name:'Quick review',exact:true}).click();await page.getByText(`Quick review · ${f.data.counts.applicantsInMeasuredClub} remaining`,{exact:true}).waitFor();await page.getByRole('heading',{name:'Audit Student 000',exact:true}).waitFor();assert.equal(reads.filter(k=>k==='pipelineSelection').length,1);await page.getByRole('button',{name:'Skip',exact:true}).click();await page.getByRole('heading',{name:'Audit Student 001',exact:true}).waitFor();await page.getByRole('button',{name:'Close',exact:true}).click();await page.locator('[data-slot=sheet-content]').waitFor({state:'hidden'});
++  for(let visit=0;visit<2;visit++){let release,seen;const held=new Promise(r=>seen=r);if(visit===1)await page.route('**/api/workspace?kind=pipelineSelection&*',async route=>{const response=await route.fetch();release=()=>route.fulfill({response});seen()});await page.getByRole('button',{name:'Start voting',exact:true}).click();if(visit===1){await held;assert.equal(await page.getByRole('combobox',{name:/^Recruitment round/}).count(),0,'prior successful selection stays hidden until this visit validates');await release();await page.unroute('**/api/workspace?kind=pipelineSelection&*')}const round=page.getByRole('combobox',{name:/^Recruitment round/});await round.waitFor();const options=await round.locator('option').evaluateAll(nodes=>nodes.map(n=>({value:n.value,text:n.textContent})));await round.selectOption(options.find(n=>n.text==='Applied').value);const pool=page.getByRole('group',{name:'Candidate pool · all submitted candidates unless selected below',exact:true});await pool.waitFor();assert.equal(await pool.getByRole('checkbox').count(),f.data.counts.applicantsInMeasuredClub);const setup=page.getByRole('dialog',{name:'New voting session',exact:true});await setup.getByRole('button',{name:'Done',exact:true}).click();await setup.waitFor({state:'hidden'});const stage=page.locator('.oc-voting-stage');await stage.getByRole('button',{name:'Close',exact:true}).click();await stage.waitFor({state:'hidden'});}
++  assert.equal(reads.filter(k=>k==='pipelineSelection').length,4,'every voting visit revalidates the complete set');assert.deepEqual(errors,[]);
++ }finally{await c.close();await browser.close()}
++});
++test('rapid global searches coalesce obsolete reads, retain keyboard focus and never show a late previous selection',{skip:!configFile,timeout:90000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage(),errors=[],submitted=[];let held,release;
++ try{page.on('request',r=>{const u=new URL(r.url());if(u.searchParams.get('kind')==='pipelinePage')submitted.push(JSON.parse(u.searchParams.get('args'))[1].query)});page.on('pageerror',e=>errors.push(e.name));await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');const search=page.getByRole('textbox',{name:'Search applicants',exact:true});await page.getByText('Audit Student 000',{exact:true}).first().waitFor();const started=new Promise(r=>held=r);await page.route('**/api/workspace?kind=pipelinePage&*',async route=>{const args=JSON.parse(new URL(route.request().url()).searchParams.get('args'));if(args[1].query==='Audit Student 000'){const response=await route.fetch();release=()=>route.fulfill({response}).catch(()=>{});held();}else await route.continue()});await search.fill('Audit Student 000');await started;const last='Scale Student '+String(f.data.counts.applicantsInMeasuredClub-1).padStart(5,'0');await search.fill('intermediate query');await search.fill(last);await release();await page.getByText(last,{exact:true}).first().waitFor();await page.unroute('**/api/workspace?kind=pipelinePage&*');await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));assert.equal(await search.evaluate(el=>document.activeElement===el),true);assert.equal(await page.locator('[data-applicant-id]').filter({visible:true}).count(),1);assert.equal(await page.getByText('Audit Student 000',{exact:true}).count(),0);assert.equal(submitted.includes('intermediate query'),false,'intermediate filters never dispatch while an earlier read is pending');assert.deepEqual(errors,[]);
++ }finally{if(release)await release();await c.close();await browser.close()}
++});
++test('editable review drafts survive the 100/101 server-page boundary and return navigation',{skip:!configFile,timeout:120000},async t=>{
++ const f=await fixture();if((f.data.counts.applicantsInMeasuredClub||100)<1000)return t.skip('Requires the registered large fixture');const db=new PrismaClient({datasourceUrl:f.config.status.DB_URL}),round=await db.pipelineRound.findFirstOrThrow({where:{clubId:f.club,type:'APPLICATION_REVIEW'}}),browser=await chromium.launch({headless:true}),c=await context(browser,f),page=await c.newPage();const existing=await db.editorDraft.findMany({where:{userId:f.data.userId}});assert.equal(existing.length,0,'Only an empty owned draft namespace may be used');
++ try{await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:true}});const first=await get(f,'pipelinePage'),second=await get(f,'pipelinePage',{cursor:first.page.next}),target=first.applications.at(-1),next=second.applications[0];await page.goto(f.config.appUrl+'/club/'+f.club+'/workspace?section=recruitment&tool=applicants');await page.locator(`[data-applicant-id="${target.id}"]`).filter({visible:true}).first().click();const notes=page.getByLabel('Overall evaluation feedback',{exact:true}),score=page.getByLabel('Score (1–10)',{exact:true});await score.waitFor();await page.waitForFunction(()=>!document.getElementById('review-score').disabled);await score.fill('8');await notes.fill('Phase 5 boundary draft continuity');await page.getByRole('button',{name:'Next applicant',exact:true}).click();await page.getByRole('heading',{name:load('lib/anonymous-review.ts').anonymousApplicantLabel(next.id),exact:true}).waitFor();await page.getByRole('button',{name:'Previous applicant',exact:true}).click();await page.getByRole('heading',{name:load('lib/anonymous-review.ts').anonymousApplicantLabel(target.id),exact:true}).waitFor();await page.waitForFunction(()=>document.getElementById('review-notes')?.value==='Phase 5 boundary draft continuity');assert.equal(await score.inputValue(),'8');
++ }finally{await c.close();await browser.close();await db.pipelineRound.update({where:{id:round.id},data:{anonymousReview:round.anonymousReview}});await db.editorDraft.deleteMany({where:{userId:f.data.userId}});await db.$disconnect()}
++});
+diff --git a/tests/pipeline-navigation-analysis.test.cjs b/tests/pipeline-navigation-analysis.test.cjs
+index 1440328..afd240e 100644
+--- a/tests/pipeline-navigation-analysis.test.cjs
++++ b/tests/pipeline-navigation-analysis.test.cjs
+@@ -3,0 +4,2 @@ test('stress analysis retains preparation failures in the denominator without in
++
++test("pipeline page analysis recognizes bounded page reads and preserves unknown byte counts",()=>{const row=enrich({requests:[{route:"/api/workspace?kind=pipelinePage",encodedBodyBytes:null}]});assert.equal(row.readCount,1);assert.equal(row.readBodyBytes,null);assert.equal(enrich({requests:[]}).readBodyBytes,0)});
+diff --git a/tests/pipeline-page.test.cjs b/tests/pipeline-page.test.cjs
+new file mode 100644
+index 0000000..35c4046
+--- /dev/null
++++ b/tests/pipeline-page.test.cjs
+@@ -0,0 +1,39 @@
++const {test}=require('node:test'),assert=require('node:assert/strict');
++const {load,uuid}=require('./helpers/voting-harness.cjs');
++const {pagePipeline,completePipelineSelection,pipelinePageQuery}=load('lib/pipeline-page.ts');
++const round=uuid(9000),reviewer=uuid(9001),user=uuid(9002);
++const app=(i,extra={})=>({id:uuid(i),studentId:uuid(i+10000),roundId:round,status:'SUBMITTED',student:{email:`student${i}@example.invalid`,studentProfile:{firstName:'Student',lastName:String(i).padStart(4,'0'),major:i%2?'Math':'Economics',academicYear:i%2?'First Year':'Third Year',gpa:i%2?3.7:3.1,satScore:i%2?1500:1300,actScore:i%2?34:28}},evaluations:i%3?[{interviewerId:reviewer}]:[],roundScore:i%5?{average:i%2?9:7}:null,...extra});
++const list=n=>({rounds:[{id:round,order:0}],genderCounts:null,applications:Array.from({length:n},(_,i)=>app(i+1))});
++const page=(data,q={},scope='scope')=>pagePipeline(data,q,reviewer,user,scope);
++test('server pages bound rows and preserve all matches, facets and complete selections beyond 100',()=>{
++ const data=list(1000),first=page(data);assert.equal(first.applications.length,100);assert.equal(first.page.total,1000);assert.equal(first.page.count,10);assert.equal(first.page.next.id,uuid(100));assert.equal(first.page.previous,null);assert.equal(first.facets.quickReview,1000);assert.equal(first.facets.lanes.review,1000);assert.deepEqual(first.facets.majors,['Economics','Math']);
++ const ids=[...first.applications.map(a=>a.id)];let current=first;while(current.page.next){current=page(data,{cursor:current.page.next});ids.push(...current.applications.map(a=>a.id))}assert.equal(ids.length,1000);assert.equal(new Set(ids).size,1000);assert.equal(current.page.index,9);const previous=page(data,{cursor:current.page.previous});assert.equal(previous.page.index,8);assert.equal(previous.applications[0].id,uuid(801));
++ const selected=completePipelineSelection(data,{},reviewer,user).applications;assert.equal(selected.length,1000);assert.deepEqual(selected.map(a=>a.id),ids);assert.deepEqual(Object.keys(selected[0]),['id','roundId','status','canQuickReview']);assert.doesNotMatch(JSON.stringify(selected),/student|email|score|major/);
++ const found=page(data,{query:'Student 1000'});assert.equal(found.page.total,1);assert.equal(found.applications[0].id,uuid(1000));assert.equal(found.page.baseTotal,1000);
++});
++test('all academic/review/decision filters apply globally before paging; totals remain global',()=>{
++ const data=list(360);data.applications[0].status='REJECTED';data.applications[1].status='ACCEPTED';data.applications[2].studentId=user;
++ const q={major:'Math',year:'First Year',gpa:3.5,sat:1400,act:30,rating:8,review:'mine',sort:'gpa',descending:true};
++ const result=page(data,q),expected=data.applications.filter(a=>a.status!=='REJECTED'&&a.student.studentProfile.major==='Math'&&a.evaluations.some(e=>e.interviewerId===reviewer)&&a.roundScore?.average>=8);
++ assert.equal(result.page.total,expected.length);assert.equal(result.page.baseTotal,359);assert.ok(result.applications.every(a=>expected.includes(a)));assert.equal(completePipelineSelection(data,q,reviewer,user).applications.length,expected.length);
++ assert.equal(page(data,{gpa:3.7}).page.total,0,'strict greater-than remains strict');assert.equal(page(data,{rating:9}).page.total,143,'rating is inclusive and hidden scores do not match');
++ assert.equal(page(data,{mode:'decisions',decisionGroup:'accepted',query:'no match'}).facets.decisions.accepted,1);assert.equal(page(data,{mode:'rejected'}).page.total,1);
++ const selected=completePipelineSelection(data,{},reviewer,user).applications;assert.equal(selected.find(a=>a.id===uuid(3)).canQuickReview,false,'self excluded');assert.equal(selected.find(a=>a.id===uuid(2)).canQuickReview,false,'recorded decisions excluded');
++});
++test('anonymous identity/major and hidden scores cannot affect search, facets, ordering or review filters',()=>{
++ const {anonymousApplication}=load('lib/anonymous-review.ts'),{pipelineListProjection}=load('lib/pipeline-list.ts');
++ const raw={...app(1),clubId:uuid(9010),answers:[],bookings:[]};raw.student.studentProfile.firstName='SECRET';raw.student.studentProfile.lastName='SECRET';raw.student.studentProfile.major='SECRET';raw.student.studentProfile.gradYear=2028;
++ const masked=anonymousApplication(raw);const data=pipelineListProjection({rounds:[{id:round,order:0}],genderCounts:null,applications:[{...masked,roundScore:null}]});
++ assert.equal(page(data,{query:'SECRET'}).page.total,0);assert.deepEqual(page(data).facets.majors,[]);assert.equal(page(data,{rating:1}).page.total,0);assert.equal(page(data,{query:'Applicant'}).page.total,1);assert.equal(completePipelineSelection(data,{},reviewer,user).applications[0].canQuickReview,false);assert.doesNotMatch(JSON.stringify(page(data)),/SECRET/);
++});
++test('every sort has deterministic ID ties, missing-last semantics and reversible page navigation',()=>{
++ const data=list(240);for(const a of data.applications){a.student.studentProfile.firstName='Same';a.student.studentProfile.lastName='Name';a.student.studentProfile.academicYear='Second Year';a.student.studentProfile.gpa=null;a.student.studentProfile.satScore=null;a.student.studentProfile.actScore=null;a.roundScore=null}data.applications.reverse();
++ for(const sort of ['name','round','year','gpa','sat','act','status','score'])for(const descending of [false,true]){const first=page(data,{sort,descending});const second=page(data,{sort,descending,cursor:first.page.next});const back=page(data,{sort,descending,cursor:second.page.previous});assert.equal(first.applications[0].id,uuid(1),sort);assert.deepEqual(back.applications.map(a=>a.id),first.applications.map(a=>a.id));assert.equal(second.applications[0].id,uuid(101));}
++ assert.equal(data.applications[0].id,uuid(240),'source order is unchanged');
++});
++test('cursor positions cannot cross selection scope; lost anchors reset safely and at-cursors locate any matching page',()=>{
++ const data=list(250),first=page(data);assert.throws(()=>page(data,{cursor:first.page.next},'other-club-or-authority'),/selection changed/);
++ assert.equal(page(data,{cursor:{id:uuid(233),direction:'at',scope:'scope'}}).page.index,2);
++ const cursor=first.page.next;data.applications=data.applications.filter(a=>a.id!==cursor.id);const reset=page(data,{cursor});assert.equal(reset.page.reset,true);assert.equal(reset.page.start,0);
++ for(const q of [{userId:user},{limit:5000},{applicationId:uuid(1)},{sort:'rawScore'},{rating:NaN},{query:'x'.repeat(201)},{cursor:{...cursor,grant:true}}])assert.equal(pipelinePageQuery.safeParse(q).success,false);
++});
+diff --git a/tests/review-editor-access-browser.test.cjs b/tests/review-editor-access-browser.test.cjs
+index 4e8c97f..5673b38 100644
+--- a/tests/review-editor-access-browser.test.cjs
++++ b/tests/review-editor-access-browser.test.cjs
+@@ -11 +11 @@ test('browser: unassigned reviews have no editor or draft requests; assigned rev
+-  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{window.__pipelineDetails=(window.__pipelineDetails||0)+1;const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned')&&!window.__reviewFinalized;return p};exports.getClubPipelineList=async()=>{window.__pipelineLists=(window.__pipelineLists||0)+1;return exports.getClubPipeline()};exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');const value=await r.json();window.__reviewFinalized=true;return value};`,
++  '@/lib/workspace-api':`exports.getClubPipeline=async()=>{window.__pipelineDetails=(window.__pipelineDetails||0)+1;const p=${JSON.stringify(pipeline)};p.applications[0].canEvaluate=new URLSearchParams(location.search).has('assigned')&&!window.__reviewFinalized;return p};exports.getClubPipelineList=async()=>{window.__pipelineLists=(window.__pipelineLists||0)+1;return exports.getClubPipeline()};exports.getClubPipelinePage=async(club,q={})=>require('@/lib/pipeline-page').pagePipeline(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer','fixture');exports.getClubPipelineSelection=async(club,q={})=>require('@/lib/pipeline-page').completePipelineSelection(await exports.getClubPipelineList(),q,'synthetic-member','synthetic-reviewer');exports.submitEvaluation=async input=>{const r=await fetch('/evaluation',{method:'POST',body:JSON.stringify(input)});if(!r.ok)throw Error('Finalization failed');const value=await r.json();window.__reviewFinalized=true;return value};`,
+diff --git a/tests/selected-workspace-loader.test.cjs b/tests/selected-workspace-loader.test.cjs
+index 82a38d8..d41a9fa 100644
+--- a/tests/selected-workspace-loader.test.cjs
++++ b/tests/selected-workspace-loader.test.cjs
+@@ -12 +12 @@ test('all four selected resources start their guarded read alongside code loadin
+- const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelineList':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
++ const f=setup();for(const kind of ['members','pipeline','tasks','announcements']){const pending=f.loadSelectedClubWorkspace(kind,'club');await tick();assert.equal(f.requests.length,f.modules.length);const r=f.requests.at(-1);assert.equal(r.kind,kind==='pipeline'?'pipelinePage':kind);assert.deepEqual(r.args,kind==='pipeline'?['club',{mode:'applicants',genderCounts:false}]:['club']);r.resolve({fixture:true});assert.equal((await pending).kind,kind)}
+diff --git a/tests/serialized-workspace-read.test.cjs b/tests/serialized-workspace-read.test.cjs
+index c19b87d..053d3f7 100644
+--- a/tests/serialized-workspace-read.test.cjs
++++ b/tests/serialized-workspace-read.test.cjs
+@@ -25,0 +26,6 @@ test('errors clear protected data through the caller; retry reauthorizes and dis
++test('rapid page filters drain one active read, discard intermediate queries and dispatch only the latest without caching it',async()=>{
++ let query='first',active=0,max=0;const waiting=[],calls=[],received=[];
++ const reader=serializedWorkspaceRead(async()=>{const current=query;calls.push(current);active++;max=Math.max(max,active);try{return await new Promise(resolve=>waiting.push(()=>resolve(current)))}finally{active--}},v=>received.push(v),e=>{throw e});
++ reader.refresh();for(let i=0;i<20;i++){query='intermediate-'+i;reader.refresh()}query='latest';const pending=reader.refresh();assert.deepEqual(calls,['first']);waiting.shift()();await flush();assert.deepEqual(calls,['first','latest']);assert.deepEqual(received,[]);waiting.shift()();await pending;assert.deepEqual(received,['latest']);assert.equal(max,1);
++ const revisit=reader.refresh();assert.deepEqual(calls,['first','latest','latest'],'a later visit performs fresh live validation');waiting.shift()();await revisit;
++});
+diff --git a/tests/workspace-read-transport.test.cjs b/tests/workspace-read-transport.test.cjs
+index 7aac123..ca9275b 100644
+--- a/tests/workspace-read-transport.test.cjs
++++ b/tests/workspace-read-transport.test.cjs
+@@ -12 +12 @@ test('GET allowlist forwards only validated read arguments, preserves wire dates
+- for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','tasks','meetings','announcements']){
++ for(const kind of ['assignedRooms','interviewWorkspace','interviewRounds','roomWorkspace','pipelineList','pipelinePage','pipelineSelection','tasks','meetings','announcements']){

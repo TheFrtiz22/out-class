@@ -1,0 +1,46 @@
+Pilot build: 3cHzRNOj2SB6FuVIA_K3v
+✔ pipeline list/detail GETs retain live auth, strict arguments, masking and exact list parity (2220.063958ms)
+✔ applicant list avoids detail reads; closing a pending detail fences it from the next candidate (2360.665167ms)
+✔ fresh applicant detail preserves an autosaved review draft across close and reopen (2830.29975ms)
+✖ large applicant server pages preserve whole-list search/counts with a fresh read per page (2082.770917ms)
+✔ server pages and explicit selections preserve complete authorized sets, privacy and live revocation (3791.574291ms)
+✖ page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again (31660.1175ms)
+✔ rapid global searches cancel obsolete reads, retain keyboard focus and never show a late previous selection (2391.385875ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 5
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 48077.363709
+
+✖ failing tests:
+
+test at tests/navigation-phase3-e2e.test.cjs:25:1
+✖ large applicant server pages preserve whole-list search/counts with a fresh read per page (2082.770917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  3 !== 2
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase3-e2e.test.cjs:25:1155)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/navigation-phase5-e2e.test.cjs:26:1
+✖ page boundaries use one fresh page read, full quick-review/voting selection survives pagination and reopen validates again (31660.1175ms)
+  locator.waitFor: Timeout 30000ms exceeded.
+  Call log:
+    - waiting for getByRole('heading', { name: 'Scale Student 00100', exact: true }) to be visible
+
+      at TestContext.<anonymous> (/Users/jesseklinger/.codex/worktrees/phase2-navigation/out-class/tests/navigation-phase5-e2e.test.cjs:29:367) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByRole('heading', { name: 'Scale Student 00100', exact: true }) to be visible" ]
+  }
